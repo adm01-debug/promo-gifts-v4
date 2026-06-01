@@ -8,7 +8,7 @@
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Larger buttons on mobile */
   .btn-mobile {
     min-height: 48px;
@@ -16,18 +16,18 @@
     padding-right: 1.25rem;
     font-size: 1rem;
   }
-  
+
   /* Floating labels for inputs */
   .floating-label {
     position: relative;
   }
-  
+
   .floating-label input:focus + label,
   .floating-label input:not(:placeholder-shown) + label {
     transform: translateY(-1.5rem) scale(0.85);
     color: hsl(var(--primary));
   }
-  
+
   .floating-label label {
     position: absolute;
     left: 0.75rem;
@@ -41,18 +41,18 @@
 
 /* Table responsiveness */
 @media (max-width: 768px) {
-  .table-scroll { 
+  .table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Card-based table alternative */
   .table-as-cards {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .table-as-cards tr {
     display: block;
     background: hsl(var(--card));
@@ -60,18 +60,18 @@
     padding: 1rem;
     border: 1px solid hsl(var(--border));
   }
-  
+
   .table-as-cards td {
     display: flex;
     justify-content: space-between;
     padding: 0.5rem 0;
     border-bottom: 1px solid hsl(var(--border) / 0.5);
   }
-  
+
   .table-as-cards td:last-child {
     border-bottom: none;
   }
-  
+
   .table-as-cards td::before {
     content: attr(data-label);
     font-weight: 600;
@@ -83,13 +83,13 @@
 
 /* Modal responsiveness */
 @media (max-width: 768px) {
-  .modal-mobile { 
+  .modal-mobile {
     max-height: 90vh;
     max-height: 90dvh; /* Dynamic viewport height for mobile */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Sheet modals on mobile */
   .sheet-mobile {
     position: fixed;
@@ -100,7 +100,7 @@
     max-height: 85vh;
     max-height: 85dvh;
   }
-  
+
   /* Drawer handle */
   .sheet-handle {
     width: 2.5rem;
@@ -115,11 +115,11 @@
 @media (max-width: 768px) {
   .form-mobile input,
   .form-mobile select,
-  .form-mobile textarea { 
+  .form-mobile textarea {
     width: 100%;
     font-size: 16px !important; /* Prevent iOS zoom */
   }
-  
+
   /* Stacked form layout */
   .form-grid-mobile {
     display: grid;
@@ -134,12 +134,12 @@
   .nav-bottom-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
-  
+
   /* Hide desktop-only elements */
   .hide-mobile {
     display: none !important;
   }
-  
+
   /* Full width buttons on mobile */
   .btn-full-mobile {
     width: 100%;
@@ -183,7 +183,7 @@
     width: 4px;
     height: 4px;
   }
-  
+
   .scrollbar-products::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.2);
     border-radius: 4px;
@@ -196,7 +196,7 @@
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }
-  
+
   .landscape-hide {
     display: none;
   }

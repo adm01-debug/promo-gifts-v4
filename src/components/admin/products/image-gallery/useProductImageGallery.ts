@@ -14,7 +14,7 @@ import {
   type FilterMode,
   type VariantInfo,
   type GalleryStats,
-} from "./types";
+} from './types';
 
 interface UseProductImageGalleryProps {
   images: string[];

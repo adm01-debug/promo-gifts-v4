@@ -28,18 +28,26 @@ const INFLIGHT = new Map<string, Promise<unknown>>();
  * resolver chega B pedindo [b,c,d], B reaproveita as promises de b e c em
  * vez de disparar nova bridge — só `d` vai pra rede.
  */
-const INFLIGHT_BY_ID: Record<Entity, Map<string, Promise<{ id: string; name: string; code?: string } | undefined>>> = {
+const INFLIGHT_BY_ID: Record<
+  Entity,
+  Map<string, Promise<{ id: string; name: string; code?: string } | undefined>>
+> = {
   categories: new Map(),
   suppliers: new Map(),
   material_types: new Map(),
 };
-const STORE: Record<Entity, Map<string, CacheEntry<{ id: string; name: string; code?: string }>>> = {
+const STORE: Record<
+  Entity,
+  Map<string, CacheEntry<{ id: string; name: string; code?: string }>>
+> = {
   categories: new Map(),
   suppliers: new Map(),
   material_types: new Map(),
 };
 
-function now() { return Date.now(); }
+function now() {
+  return Date.now();
+}
 
 function getFresh<T extends { id: string; name: string; code?: string }>(
   entity: Entity,
@@ -47,7 +55,10 @@ function getFresh<T extends { id: string; name: string; code?: string }>(
 ): T | undefined {
   const e = STORE[entity].get(id);
   if (!e) return undefined;
-  if (e.expiresAt < now()) { STORE[entity].delete(id); return undefined; }
+  if (e.expiresAt < now()) {
+    STORE[entity].delete(id);
+    return undefined;
+  }
   return e.value as T;
 }
 
@@ -78,7 +89,10 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
     if (!raw || seen.has(raw)) continue;
     seen.add(raw);
     const hit = getFresh<T>(entity, raw);
-    if (hit) { out.set(raw, hit); continue; }
+    if (hit) {
+      out.set(raw, hit);
+      continue;
+    }
     if (INFLIGHT_BY_ID[entity].has(raw)) awaitedFromOthers.push(raw);
     else missing.push(raw);
   }
@@ -87,10 +101,15 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
   const piggybackPromises: Promise<void>[] = [];
   for (const id of awaitedFromOthers) {
     const p = INFLIGHT_BY_ID[entity].get(id);
-    if (!p) { missing.push(id); continue; }
-    piggybackPromises.push(p.then((rec) => {
-      if (rec) out.set(id, rec as T);
-    }));
+    if (!p) {
+      missing.push(id);
+      continue;
+    }
+    piggybackPromises.push(
+      p.then((rec) => {
+        if (rec) out.set(id, rec as T);
+      }),
+    );
   }
 
   if (missing.length === 0) {
@@ -107,16 +126,21 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
     const p = (async () => {
       const inFilter = `in.(${missing.join(',')})`;
       const res = await invokeExternalDb<T>({
-        table: entity, operation: 'select',
+        table: entity,
+        operation: 'select',
         select: SELECT_BY_ENTITY[entity],
         filters: { id: inFilter },
         limit: Math.max(missing.length, 20),
       });
       return res.records as T[];
-    })().catch((err) => {
-      logger.warn(`[immutableCache] fetch failed for ${entity}:`, err);
-      return [] as T[];
-    }).finally(() => { INFLIGHT.delete(key); });
+    })()
+      .catch((err) => {
+        logger.warn(`[immutableCache] fetch failed for ${entity}:`, err);
+        return [] as T[];
+      })
+      .finally(() => {
+        INFLIGHT.delete(key);
+      });
     INFLIGHT.set(key, p as Promise<unknown>);
 
     // Registra resolvers individuais por id para piggyback de chamadas concorrentes.
@@ -125,10 +149,13 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
       const perId = new Promise<T | undefined>((resolve) => {
         resolvers.set(id, resolve);
       });
-      INFLIGHT_BY_ID[entity].set(id, perId as Promise<{ id: string; name: string; code?: string } | undefined>);
+      INFLIGHT_BY_ID[entity].set(
+        id,
+        perId as Promise<{ id: string; name: string; code?: string } | undefined>,
+      );
     }
     p.then((recs) => {
-      const byId = new Map(recs.map(r => [r.id, r]));
+      const byId = new Map(recs.map((r) => [r.id, r]));
       for (const id of missing) {
         const r = byId.get(id);
         resolvers.get(id)?.(r);
@@ -162,20 +189,23 @@ export async function getCachedById<T extends { id: string; name: string; code?:
 /** Manual invalidation (useful after admin edits). */
 export function invalidateImmutableCache(entity?: Entity) {
   if (entity) STORE[entity].clear();
-  else { STORE.categories.clear(); STORE.suppliers.clear(); STORE.material_types.clear(); }
+  else {
+    STORE.categories.clear();
+    STORE.suppliers.clear();
+    STORE.material_types.clear();
+  }
 }
 
 /** Synchronous cache peek (no fetch). Returns undefined if missing or stale. */
 export function getFreshFromCacheSafe<T extends { id: string; name: string; code?: string }>(
-  entity: Entity, id: string,
+  entity: Entity,
+  id: string,
 ): T | undefined {
   return getFresh<T>(entity, id);
 }
 
 /** Synchronous cache write (used after a successful bridge fetch). */
-export function putInCacheSafe(
-  entity: Entity, rec: { id: string; name: string; code?: string },
-) {
+export function putInCacheSafe(entity: Entity, rec: { id: string; name: string; code?: string }) {
   if (rec?.id && rec?.name) put(entity, rec);
 }
 

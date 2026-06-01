@@ -1,7 +1,7 @@
 # 📘 Runbook Operacional — Promo Brindes
 
 > Guia de procedimentos para incidentes e operações de rotina  
-> **Última atualização:** 13/04/2026
+> **Última atualização:** 25/05/2026
 
 ---
 
@@ -21,14 +21,45 @@
 ```
 1. DETECTAR → Alerta automático (error-reporter) ou relato manual
 2. CLASSIFICAR → Determinar severidade (P0-P3)
-3. COMUNICAR → Notificar equipe no canal de incidentes
+3. COMUNICAR → Se P0/P1, acionar imediatamente o canal #engenharia-alertas; se P2/P3, registrar no canal de incidentes
 4. INVESTIGAR → Checar logs, métricas e banco de dados
 5. MITIGAR → Aplicar fix temporário se possível
-6. RESOLVER → Implementar correção definitiva
+6. RESOLVER → Implementar correção definitiva dentro do SLA da severidade
 7. POSTMORTEM → Documentar usando [`docs/POSTMORTEM_TEMPLATE.md`](./POSTMORTEM_TEMPLATE.md)
 ```
 
 > **Pós-incidente obrigatório:** todo P0/P1 gera post-mortem em até 48h usando o template padrão. Arquivar em `docs/postmortems/YYYY-MM-DD-slug.md`.
+
+### Alertas para Canal de Engenharia
+
+- **Falha crítica (P0/P1):** abrir thread no `#engenharia-alertas` em até **5 minutos** após classificação.
+- **Mensagem inicial mínima:** severidade, impacto de negócio, escopo afetado, horário de início (UTC), owner atual e próximo checkpoint.
+- **Cadência de atualização:**
+  - **P0:** a cada 15 minutos até mitigação.
+  - **P1:** a cada 30 minutos até mitigação.
+- **Encerramento:** publicar causa raiz resumida + link para ticket/PR de correção e prazo do post-mortem.
+
+### SLA de Correção por Severidade
+
+| Severidade | Exemplo | SLA de correção | Owner primário | Escalonamento automático |
+|------------|---------|------------------|----------------|---------------------------|
+| **P0** | Sistema indisponível / corrupção de dados | **1 hora** | On-call de Engenharia | Tech Lead imediato + CTO em até 15 min |
+| **P1** | Funcionalidade crítica indisponível | **4 horas** | Squad owner da área afetada | Tech Lead em até 30 min |
+| **P2** | Fluxo principal degradado sem parada total | **24 horas** | Squad owner da feature | Engineering Manager se estourar SLA |
+| **P3** | Impacto baixo / cosmético | **Próxima sprint** | Time responsável pelo domínio | Revisão em planning semanal |
+
+> **Regra operacional:** SLA de resposta mede tempo até primeiro atendimento; SLA de correção mede tempo até restaurar operação (mitigação ou fix definitivo com risco controlado).
+
+### Ownership e Escalonamento
+
+1. **Atribuir owner único (DRI)** no momento da classificação do incidente.
+2. **Definir owner de apoio** (backup) para cobrir investigação paralela (logs/DB/integrações).
+3. **Registrar handoff explícito** quando ownership mudar (quem assume, horário UTC e motivo).
+4. **Escalonar automaticamente** quando:
+   - restarem **25% do SLA** sem mitigação;
+   - houver risco de segurança/compliance;
+   - houver dependência externa sem ETA confiável.
+5. **Encerrar incidente** somente após validar serviço, comunicar no canal e criar ação corretiva rastreável (issue/PR).
 
 
 ---

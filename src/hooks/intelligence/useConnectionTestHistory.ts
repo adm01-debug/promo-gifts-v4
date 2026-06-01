@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { ConnectionType } from "@/hooks/intelligence/useConnectionTester";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { ConnectionType } from '@/hooks/intelligence/useConnectionTester';
 
 export interface TestHistoryItem {
   id: string;
@@ -11,13 +11,13 @@ export interface TestHistoryItem {
   message: string | null;
   /** Tipo semântico da falha (gravado pelo backend; null em sucessos ou registros antigos). */
   error_kind?: string | null;
-  triggered_by?: "manual" | "cron" | "webhook";
+  triggered_by?: 'manual' | 'cron' | 'webhook';
   attempts?: number;
 }
 
 interface Options {
   type: ConnectionType;
-  envKey?: "promobrind" | "crm";
+  envKey?: 'promobrind' | 'crm';
   connectionId?: string;
   /** Bumped externally after a "Testar conexão" succeeds — triggers refetch. */
   refreshKey?: number | string;
@@ -44,9 +44,9 @@ export function useConnectionTestHistory({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("connection-tester", {
+      const { data, error: fnErr } = await supabase.functions.invoke('connection-tester', {
         body: {
-          action: "test_history",
+          action: 'test_history',
           type,
           env_key: envKey,
           connection_id: connectionId,
@@ -56,10 +56,10 @@ export function useConnectionTestHistory({
       if (fnErr) throw fnErr;
       if (cancelRef.current) return;
       setItems((data?.items ?? []) as TestHistoryItem[]);
-      setTotal(typeof data?.total === "number" ? data.total : (data?.items?.length ?? 0));
+      setTotal(typeof data?.total === 'number' ? data.total : (data?.items?.length ?? 0));
     } catch (e) {
       if (cancelRef.current) return;
-      setError(e instanceof Error ? e.message : "Erro");
+      setError(e instanceof Error ? e.message : 'Erro');
     } finally {
       if (!cancelRef.current) setLoading(false);
     }
@@ -69,13 +69,17 @@ export function useConnectionTestHistory({
   useEffect(() => {
     cancelRef.current = false;
     fetchOnce();
-    return () => { cancelRef.current = true; };
+    return () => {
+      cancelRef.current = true;
+    };
   }, [fetchOnce, refreshKey]);
 
   // Polling only when enabled (panel open).
   useEffect(() => {
     if (!enabled) return;
-    const id = setInterval(() => { fetchOnce(); }, 60_000);
+    const id = setInterval(() => {
+      fetchOnce();
+    }, 60_000);
     return () => clearInterval(id);
   }, [enabled, fetchOnce]);
 

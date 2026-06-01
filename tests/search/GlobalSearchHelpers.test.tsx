@@ -6,7 +6,7 @@ describe("RankBadge", () => {
   it("renders Trophy icon for index 0", () => {
     const { container } = render(<RankBadge index={0} />);
     expect(container.querySelector("svg")).toBeInTheDocument();
-    expect(container.querySelector(".from-orange")).toBeInTheDocument();
+    expect(container.querySelector(".from-brand-primary")).toBeInTheDocument();
   });
 
   it("renders Medal for index 1", () => {

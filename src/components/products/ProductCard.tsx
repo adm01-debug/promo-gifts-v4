@@ -9,16 +9,15 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
-import {
-  useProductBounds,
-  type ExternalVariantStock,
-  type Product,
-  usePrefetchProduct,
-} from '@/hooks/products';
+import { useProductBounds } from '@/hooks/products/useProductBounds';
+import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
 import { ProductCategoryBadges } from './ProductCategoryBadges';
+import { useLeafCategory } from '@/hooks/products/useProductLeafCategories';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import {
@@ -57,6 +56,7 @@ export interface ProductCardProps {
   noveltyDaysRemaining?: number;
   activeColorFilter?: ActiveColorFilter | null;
   priority?: boolean;
+  onStatusClick?: (type: string, value?: string | number) => void;
 }
 
 export const ProductCard = memo(
@@ -78,12 +78,16 @@ export const ProductCard = memo(
       noveltyDaysRemaining,
       activeColorFilter,
       priority = false,
+      onStatusClick,
     },
     ref,
   ) {
     const navigate = useNavigate();
     const _queryClient = useQueryClient();
     const { prefetchProduct } = usePrefetchProduct();
+    // Categoria-FOLHA (mais específica) resolvida em lote pelo ProductLeafCategoryProvider.
+    // Quando disponível, sobrepõe a categoria "rasa" (raiz/intermediária) no badge.
+    const leafCategory = useLeafCategory(product.id);
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -123,6 +127,31 @@ export const ProductCard = memo(
 
     const favStore = useFavoritesStore();
     const compStore = useComparisonStore();
+
+    const handleStatusClick = useCallback(
+      (type: string, _value?: string | number) => {
+        if (onStatusClick) {
+          onStatusClick(type, _value);
+          return;
+        }
+
+        switch (type) {
+          case 'novelty':
+            navigate('/novidades');
+            break;
+          case 'promotion':
+            navigate('/filtros?onSale=1');
+            break;
+          case 'featured':
+            navigate('/filtros?featured=1');
+            break;
+          case 'kit':
+            navigate('/filtros?isKit=1');
+            break;
+        }
+      },
+      [onStatusClick, navigate],
+    );
 
     const handleVariantComplete = useCallback(
       (variant: ExternalVariantStock | null) => {
@@ -295,13 +324,11 @@ export const ProductCard = memo(
         data-testid="product-card"
         data-product-id={product.id}
         className={cn(
-          'card-lift group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
-          'touch-manipulation transition-all duration-300 ease-out active:scale-[0.98] active:transition-transform active:duration-100',
+          'card-lift card-glow group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
+          'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
-          hasHighlightedColor
-            ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]'
-            : 'border-border/40 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)]',
+          hasHighlightedColor ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]' : '',
         )}
         style={
           hasHighlightedColor && matchedHighlightColor
@@ -372,8 +399,8 @@ export const ProductCard = memo(
           product={product}
           cardImageUrl={cardImageUrl}
           cardSrcSet={cardSrcSet}
-          activeColorName={activeColorName}
-          colorSpecificImage={colorSpecificImage}
+          activeColorName={activeColorName ?? null}
+          colorSpecificImage={colorSpecificImage ?? null}
           imageLoaded={imageLoaded}
           isHovered={isHovered}
           computedImageScale={computedImageScale}
@@ -390,6 +417,7 @@ export const ProductCard = memo(
             setImageLoaded(false);
           }}
           priority={priority}
+          onStatusClick={handleStatusClick}
         />
 
         {/* Quick Actions FAB */}
@@ -429,9 +457,12 @@ export const ProductCard = memo(
         >
           {!hideCategoryBadges && (
             <ProductCategoryBadges
-              category={product.category}
+              category={
+                leafCategory ? { id: leafCategory.id, name: leafCategory.name } : product.category
+              }
               groups={product.groups}
-              categoryUuid={product.category_id}
+              categoryUuid={leafCategory?.id ?? product.category_id}
+              categoryPath={leafCategory?.path}
               className="flex-wrap"
             />
           )}
@@ -485,8 +516,10 @@ export const ProductCard = memo(
                       getStockStatusColor(displayStatus),
                     )}
                   >
-                    <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                    <span className="hidden sm:inline">{getStockStatusLabel(displayStatus)}</span>
+                    <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
+                    <span className="hidden whitespace-nowrap sm:inline">
+                      {getStockStatusLabel(displayStatus)}
+                    </span>
                     <span className="sm:hidden">
                       {displayStatus === 'in-stock'
                         ? '✓'

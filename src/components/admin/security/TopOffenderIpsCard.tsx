@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { Flame, Loader2 } from "lucide-react";
-import { BlockIpButton } from "./BlockIpButton";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { Flame, Loader2 } from 'lucide-react';
+import { BlockIpButton } from './BlockIpButton';
+import { cn } from '@/lib/utils';
 
 interface OffenderRow {
   ip: string;
@@ -24,26 +24,26 @@ export function TopOffenderIpsCard() {
 
     const [loginRes, tokenRes, botRes] = await Promise.all([
       supabase
-        .from("login_attempts")
-        .select("ip_address")
-        .eq("success", false)
-        .gte("created_at", since)
+        .from('login_attempts')
+        .select('ip_address')
+        .eq('success', false)
+        .gte('created_at', since)
         .limit(2000),
       supabase
-        .from("public_token_failures")
-        .select("ip_address")
-        .gte("created_at", since)
+        .from('public_token_failures')
+        .select('ip_address')
+        .gte('created_at', since)
         .limit(2000),
       supabase
-        .from("bot_detection_log")
-        .select("ip_address")
-        .eq("blocked", true)
-        .gte("created_at", since)
+        .from('bot_detection_log')
+        .select('ip_address')
+        .eq('blocked', true)
+        .gte('created_at', since)
         .limit(2000),
     ]);
 
     const map = new Map<string, OffenderRow>();
-    const bump = (ip: string | null, key: keyof Omit<OffenderRow, "ip" | "total">) => {
+    const bump = (ip: string | null, key: keyof Omit<OffenderRow, 'ip' | 'total'>) => {
       if (!ip) return;
       const r = map.get(ip) ?? { ip, loginFailures: 0, tokenFailures: 0, botHits: 0, total: 0 };
       r[key] += 1;
@@ -51,9 +51,9 @@ export function TopOffenderIpsCard() {
       map.set(ip, r);
     };
 
-    (loginRes.data ?? []).forEach((r) => bump(r.ip_address, "loginFailures"));
-    (tokenRes.data ?? []).forEach((r) => bump(r.ip_address, "tokenFailures"));
-    (botRes.data ?? []).forEach((r) => bump(r.ip_address, "botHits"));
+    (loginRes.data ?? []).forEach((r) => bump(r.ip_address, 'loginFailures'));
+    (tokenRes.data ?? []).forEach((r) => bump(r.ip_address, 'tokenFailures'));
+    (botRes.data ?? []).forEach((r) => bump(r.ip_address, 'botHits'));
 
     const top = Array.from(map.values())
       .sort((a, b) => b.total - a.total)
@@ -80,7 +80,9 @@ export function TopOffenderIpsCard() {
       </CardHeader>
       <CardContent className="pt-0">
         {!loading && rows.length === 0 && (
-          <p className="text-xs text-muted-foreground">Nenhuma atividade ofensiva nas últimas 24h.</p>
+          <p className="text-xs text-muted-foreground">
+            Nenhuma atividade ofensiva nas últimas 24h.
+          </p>
         )}
         {rows.length > 0 && (
           <div className="space-y-1.5">
@@ -88,9 +90,9 @@ export function TopOffenderIpsCard() {
               <div
                 key={r.ip}
                 className={cn(
-                  "flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs",
-                  r.total >= 20 && "border-destructive/40 bg-destructive/5",
-                  r.total >= 10 && r.total < 20 && "border-warning/40 bg-warning/5"
+                  'flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs',
+                  r.total >= 20 && 'border-destructive/40 bg-destructive/5',
+                  r.total >= 10 && r.total < 20 && 'border-warning/40 bg-warning/5',
                 )}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">

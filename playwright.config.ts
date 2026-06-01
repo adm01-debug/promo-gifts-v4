@@ -57,7 +57,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: RETRIES,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   // CI dobra o per-test timeout para absorver teardown lento do browser context
   // em rotas com ProtectedRoute (effects pendentes fazem context.close atrasar).
   // Local mantém 45s para detectar regressões cedo.
@@ -190,7 +190,7 @@ export default defineConfig({
       // Specs por rota — área pública (sem auth). Ex.: routes/public/*.spec.ts
       name: 'routes-public',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /routes\/public\/.*\.spec\.ts/,
+      testMatch: [/routes\/public\/.*\.spec\.ts/, /optimized-image-visual\.spec\.ts/],
       grepInvert: /@smoke/,
     },
     {
@@ -210,6 +210,21 @@ export default defineConfig({
       grep: /@mobile/,
       grepInvert: /@smoke/,
     },
+    {
+      name: 'webkit-desktop',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: [/fixtures\/auth\.setup\.ts/],
+      grepInvert: /@smoke/,
+    },
+    {
+      name: 'firefox-desktop',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: [/fixtures\/auth\.setup\.ts/],
+      grepInvert: /@smoke/,
+    },
+
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined

@@ -1,5 +1,13 @@
 export interface VoiceAgentAction {
-  action: "search" | "filter" | "navigate" | "sort" | "clear" | "answer" | "open_oracle" | "open_cart";
+  action:
+    | 'search'
+    | 'filter'
+    | 'navigate'
+    | 'sort'
+    | 'clear'
+    | 'answer'
+    | 'open_oracle'
+    | 'open_cart';
   response: string;
   data?: {
     query?: string;
@@ -18,7 +26,7 @@ export interface VoiceAgentAction {
   };
 }
 
-export type VoiceAgentPhase = "idle" | "listening" | "processing" | "speaking" | "error";
+export type VoiceAgentPhase = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
 
 export interface UseVoiceAgentOptions {
   onAction?: (action: VoiceAgentAction) => void;

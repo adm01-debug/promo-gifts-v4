@@ -1,5 +1,8 @@
 import { useEffect, useMemo } from 'react';
-import { useExternalSuppliers, type ExternalSupplier } from "@/hooks/intelligence/useExternalDatabase";
+import {
+  useExternalSuppliers,
+  type ExternalSupplier,
+} from '@/hooks/intelligence/useExternalDatabase';
 
 export interface SupplierOption {
   id: string;
@@ -19,16 +22,16 @@ export function useSuppliers() {
 
   // Buscar fornecedores ao montar
   useEffect(() => {
-    fetchAll({ 
+    fetchAll({
       orderBy: { column: 'name', ascending: true },
-      limit: 100 
+      limit: 100,
     });
   }, []);
 
   // Transformar dados para o formato usado pelos componentes
   const suppliers = useMemo((): SupplierOption[] => {
     if (!data?.length) return [];
-    
+
     return data.map((supplier: ExternalSupplier) => ({
       id: supplier.id,
       name: supplier.name,

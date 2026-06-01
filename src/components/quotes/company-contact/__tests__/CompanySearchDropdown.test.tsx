@@ -25,14 +25,26 @@ const mockCompanies = [
 ];
 
 const mockHistory = [
-  { id: '1', label: 'Alpha Corp', type: 'company', metadata: { cnpj: '111' }, timestamp: Date.now() },
-  { id: '2', label: 'Beta Solutions', type: 'company', metadata: { cnpj: '22.222.222/0001-22' }, timestamp: Date.now() },
+  {
+    id: '1',
+    label: 'Alpha Corp',
+    type: 'company',
+    metadata: { cnpj: '111' },
+    timestamp: Date.now(),
+  },
+  {
+    id: '2',
+    label: 'Beta Solutions',
+    type: 'company',
+    metadata: { cnpj: '22.222.222/0001-22' },
+    timestamp: Date.now(),
+  },
 ];
 
 describe('CompanySearchDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     (useQuery as any).mockReturnValue({
       data: mockCompanies,
       isLoading: false,
@@ -53,7 +65,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -72,7 +84,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -96,7 +108,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -118,7 +130,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -158,7 +170,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null} // Not showing the "selected" state card to keep dropdown open
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -178,13 +190,13 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'NonExistent' } });
-    
+
     await waitFor(() => {
       expect(screen.queryByTestId('history-item-1')).not.toBeInTheDocument();
     });
@@ -213,7 +225,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');

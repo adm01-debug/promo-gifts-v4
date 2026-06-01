@@ -1,7 +1,7 @@
-import { Navigate, Route } from "react-router-dom";
-import { AdminRoute } from "@/components/layout/AdminRoute";
-import { DevRoute } from "@/components/layout/DevRoute";
-import { DeprecatedRoute } from "@/components/layout/DeprecatedRoute";
+import { Navigate, Route } from 'react-router-dom';
+import { AdminRoute } from '@/components/layout/AdminRoute';
+import { DevRoute } from '@/components/layout/DevRoute';
+import { DeprecatedRoute } from '@/components/layout/DeprecatedRoute';
 import {
   AdminAiUsagePage,
   AdminClientPerformancePage,
@@ -40,7 +40,8 @@ import {
   StorageTestPage,
   SystemStatusPage,
   TrendsPage,
-} from "./lazy-pages";
+  ObservabilityDashboardPage,
+} from './lazy-pages';
 
 /**
  * Admin routes — supervisor + dev (gestão de negócio).
@@ -125,6 +126,7 @@ export const adminRoutes = (
       <Route path="/admin/storage-test" element={<StorageTestPage />} />
       <Route path="/admin/qa" element={<QAPage />} />
       <Route path="/admin/qa/sidebar" element={<SidebarQAPage />} />
+      <Route path="/admin/observabilidade" element={<ObservabilityDashboardPage />} />
     </Route>
   </Route>
 );

@@ -25,7 +25,7 @@ export type ComparisonWindow = '24h' | '7d' | '30d';
 export interface ResolveProductsSelectMetrics {
   samples: number;
   errors: number;
-  errorRate: number;        // 0..1
+  errorRate: number; // 0..1
   avgMs: number;
   p50Ms: number;
   p95Ms: number;
@@ -67,17 +67,23 @@ function percentile(sorted: number[], p: number): number {
 function summarize(rows: TelemetryRow[]): ResolveProductsSelectMetrics {
   if (rows.length === 0) {
     return {
-      samples: 0, errors: 0, errorRate: 0,
-      avgMs: 0, p50Ms: 0, p95Ms: 0, p99Ms: 0,
-      avgRecords: 0, cpuPerRecordUs: 0,
+      samples: 0,
+      errors: 0,
+      errorRate: 0,
+      avgMs: 0,
+      p50Ms: 0,
+      p95Ms: 0,
+      p99Ms: 0,
+      avgRecords: 0,
+      cpuPerRecordUs: 0,
     };
   }
-  const errors = rows.filter(r => r.severity === 'error').length;
+  const errors = rows.filter((r) => r.severity === 'error').length;
   // Para latência, descartamos linhas de erro (duração não é comparável).
-  const okRows = rows.filter(r => r.severity !== 'error');
-  const durations = okRows.map(r => r.duration_ms).sort((a, b) => a - b);
+  const okRows = rows.filter((r) => r.severity !== 'error');
+  const durations = okRows.map((r) => r.duration_ms).sort((a, b) => a - b);
   const sumMs = durations.reduce((a, v) => a + v, 0);
-  const records = okRows.map(r => r.record_count ?? 0).filter(n => n > 0);
+  const records = okRows.map((r) => r.record_count ?? 0).filter((n) => n > 0);
   const sumRecords = records.reduce((a, v) => a + v, 0);
   const avgRecords = records.length > 0 ? sumRecords / records.length : 0;
   const avgMs = durations.length > 0 ? sumMs / durations.length : 0;
@@ -117,7 +123,7 @@ function pctDelta(before: number, after: number): number {
 
 const WINDOW_MS: Record<ComparisonWindow, number> = {
   '24h': 86_400_000,
-  '7d':  7 * 86_400_000,
+  '7d': 7 * 86_400_000,
   '30d': 30 * 86_400_000,
 };
 
@@ -136,8 +142,8 @@ export function useResolveProductsSelectComparison(
       // Uma única query cobrindo a janela inteira (cutover ± window),
       // depois particionamos no client. Mais barato que 2 round-trips.
       const all = await fetchRows(fromIso, toIso);
-      const beforeRows = all.filter(r => r.created_at < cutoverIso);
-      const afterRows = all.filter(r => r.created_at >= cutoverIso);
+      const beforeRows = all.filter((r) => r.created_at < cutoverIso);
+      const afterRows = all.filter((r) => r.created_at >= cutoverIso);
 
       const before = summarize(beforeRows);
       const after = summarize(afterRows);

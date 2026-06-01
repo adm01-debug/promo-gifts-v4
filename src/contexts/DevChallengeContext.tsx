@@ -24,9 +24,9 @@
  *     dispara duas ações sensíveis em paralelo e a primeira "rouba" o token
  *     destinado à segunda.
  */
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
-import { StepUpAuthDialog } from "@/components/auth/StepUpAuthDialog";
-import type { StepUpAction } from "@/hooks/auth";
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { StepUpAuthDialog } from '@/components/auth/StepUpAuthDialog';
+import type { StepUpAction } from '@/hooks/auth';
 
 interface ChallengeRequest {
   action: StepUpAction;
@@ -126,7 +126,7 @@ export function DevChallengeProvider({ children }: { children: ReactNode }) {
 export function useDevChallenge(): DevChallengeContextValue {
   const ctx = useContext(DevChallengeContext);
   if (!ctx) {
-    throw new Error("useDevChallenge deve ser usado dentro de <DevChallengeProvider>");
+    throw new Error('useDevChallenge deve ser usado dentro de <DevChallengeProvider>');
   }
   return ctx;
 }

@@ -5,16 +5,16 @@
  * persistido em localStorage. Permite mostrar/ocultar zonas inteiras sem
  * recarregar a página, com guarda contra ocultar todas (mantém ao menos 1).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-export type ZoneId = "health" | "operation" | "connections" | "ai-router";
+export type ZoneId = 'health' | 'operation' | 'connections' | 'ai-router';
 
-const STORAGE_KEY = "connections.zone-visibility.v1";
+const STORAGE_KEY = 'connections.zone-visibility.v1';
 const ALL_VISIBLE: Record<ZoneId, boolean> = {
   health: true,
   operation: true,
   connections: true,
-  "ai-router": true,
+  'ai-router': true,
 };
 
 function loadInitial(): Record<ZoneId, boolean> {
@@ -55,15 +55,12 @@ export function useZoneVisibility() {
       health: false,
       operation: false,
       connections: false,
-      "ai-router": false,
+      'ai-router': false,
       [zone]: true,
     });
   }, []);
 
-  const hiddenCount = useMemo(
-    () => Object.values(visible).filter((v) => !v).length,
-    [visible],
-  );
+  const hiddenCount = useMemo(() => Object.values(visible).filter((v) => !v).length, [visible]);
 
   return { visible, toggle, showAll, isolateZone, hiddenCount };
 }

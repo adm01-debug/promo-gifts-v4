@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { OverviewRow } from "@/hooks/intelligence";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { OverviewRow } from '@/hooks/intelligence';
 
 export interface ConsecutiveFailureInfo {
   count: number;
@@ -25,13 +25,16 @@ export function useConsecutiveFailures(rows: OverviewRow[], pollMs = 30000) {
   const cancelRef = useRef(false);
 
   // Derived signature: trigger refetch when row identity set changes.
-  const keysSig = rows.map((r) => r.key).sort().join("|");
+  const keysSig = rows
+    .map((r) => r.key)
+    .sort()
+    .join('|');
 
   const fetchOnce = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("connection-tester", {
-        body: { action: "consecutive_failures_overview", type: "supabase" },
+      const { data, error } = await supabase.functions.invoke('connection-tester', {
+        body: { action: 'consecutive_failures_overview', type: 'supabase' },
       });
       if (cancelRef.current) return;
       if (error || !data?.items) {
@@ -54,16 +57,22 @@ export function useConsecutiveFailures(rows: OverviewRow[], pollMs = 30000) {
     cancelRef.current = false;
     if (rows.length === 0) {
       setMap(new Map());
-      return () => { cancelRef.current = true; };
+      return () => {
+        cancelRef.current = true;
+      };
     }
     fetchOnce();
-    return () => { cancelRef.current = true; };
+    return () => {
+      cancelRef.current = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keysSig, fetchOnce]);
 
   useEffect(() => {
     if (pollMs <= 0 || rows.length === 0) return;
-    const id = setInterval(() => { fetchOnce(); }, pollMs);
+    const id = setInterval(() => {
+      fetchOnce();
+    }, pollMs);
     return () => clearInterval(id);
   }, [pollMs, rows.length, fetchOnce]);
 

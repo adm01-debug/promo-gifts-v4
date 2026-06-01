@@ -11,4 +11,4 @@ export {
   type DraggableDashboardProps,
   type DraggableWidgetProps,
   type WidgetPickerProps,
-} from "./DraggableDashboard";
+} from './DraggableDashboard';

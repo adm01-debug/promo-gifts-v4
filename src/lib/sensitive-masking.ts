@@ -16,7 +16,7 @@
  *  - Idempotente: aplicar duas vezes não introduz ruído extra.
  */
 
-const BULLET = "\u2022";
+const BULLET = '\u2022';
 const FILL = BULLET.repeat(4);
 
 /** Sufixo padronizado para qualquer segredo — sempre 4 chars + 4 bullets. */
@@ -97,8 +97,16 @@ export function containsSensitive(text: string | null | undefined): boolean {
   if (!text) return false;
   if (/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/.test(text)) return true;
   if (/https?:\/\/[a-z0-9]{16,}\.supabase\.(co|in)/i.test(text)) return true;
-  if (/[?&](?:auth|apikey|api_key|token|access_token|refresh_token|key|secret)=[^&#\s"']+/i.test(text)) return true;
-  if (/"(?:authorization|apikey|api_key|token|access_token|refresh_token|password|secret|service_role|service_role_key|anon_key)"\s*:\s*"[^"•]+"/i.test(text)) return true;
+  if (
+    /[?&](?:auth|apikey|api_key|token|access_token|refresh_token|key|secret)=[^&#\s"']+/i.test(text)
+  )
+    return true;
+  if (
+    /"(?:authorization|apikey|api_key|token|access_token|refresh_token|password|secret|service_role|service_role_key|anon_key)"\s*:\s*"[^"•]+"/i.test(
+      text,
+    )
+  )
+    return true;
   if (/Bearer\s+[A-Za-z0-9._-]{8,}/.test(text) && !/Bearer\s+\u2022{4}/.test(text)) return true;
   return false;
 }

@@ -3,13 +3,13 @@
  *
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
-  invokeBatchBridge,
-  fetchPromobrindCategories,
   type LightweightProduct,
-} from '@/lib/external-db';
+} from '@/lib/external-db/products-lightweight';
+import { fetchPromobrindCategories } from '@/lib/external-db/products-detail';
 
 // Re-export type for consumers
 export type { ProductLightweight } from '@/types/product-catalog';
@@ -20,7 +20,7 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
 
   return {
-    id: p.id,
+    id: String(p.id),
     name: p.name,
     sku: p.sku,
     supplier_reference: p.supplier_reference ?? null,
@@ -52,7 +52,7 @@ export function mapLightweightToProduct(
     : null;
 
   return {
-    id: p.id,
+    id: String(p.id),
     name: p.name,
     description: '',
     category_id: resolvedCategoryId,
@@ -130,9 +130,17 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   }
 }
 
-async function fetchCatalogPage(offset: number, search?: string): Promise<CatalogPage> {
+async function fetchCatalogPage(
+  offset: number,
+  search?: string,
+  categories?: string[],
+  suppliers?: string[],
+): Promise<CatalogPage> {
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
+  if (categories && categories.length > 0) filters.category_id = categories;
+  if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
+
   const orderBy = { column: 'name', ascending: true };
 
   const isFirstLoad = offset === 0;
@@ -153,23 +161,58 @@ async function fetchCatalogPage(offset: number, search?: string): Promise<Catalo
 
   let batchResults;
   try {
-    batchResults = await invokeBatchBridge(batchQueries);
+    batchResults = await Promise.all(batchQueries.map((q) => dbInvoke(q)));
   } catch {
-    const [fallbackProducts, categoriesById] = await Promise.all([
-      fetchPromobrindProductsLightweight({
-        search,
-        limit: CATALOG_PAGE_SIZE,
-        offset,
+    // BUG-LOAD-01 FIX: O fallback anterior usava fetchPromobrindProductsLightweight
+    // com limit=500, que faz short-circuit para UMA única query REST quando `limit`
+    // é especificado — retornando apenas 500 produtos e totalEstimate=null.
+    // Resultado: UI exibia "500 itens" mesmo com 6000+ no banco.
+    //
+    // Novo fallback: replicar o mesmo comportamento do batch bridge usando
+    // dbInvoke em paralelo (que roteia para REST nativo quando o
+    // kill-switch 'edge_external_db_bridge' está OFF). Assim:
+    //   - Primeiro carregamento: 4 × 500 = 2000 produtos em paralelo
+    //   - Carregamentos seguintes: 1 × 500 = 500 produtos
+    //   - totalEstimate correto via countMode:'exact' na primeira página
+    const restQueries = Array.from({ length: pagesToFetch }, (_, i) =>
+      dbInvoke<LightweightProduct>({
+        table: 'products',
+        operation: 'select',
+        select: PRODUCT_SELECT_LIGHTWEIGHT,
+        filters,
         orderBy,
-        filters: { active: true },
-      }),
+        limit: CATALOG_PAGE_SIZE,
+        offset: offset + i * CATALOG_PAGE_SIZE,
+        ...(i === 0 && isFirstLoad ? { countMode: 'exact' } : {}),
+      }).catch(() => ({ records: [] as LightweightProduct[], count: null as number | null })),
+    );
+
+    const [pageResults, categoriesById] = await Promise.all([
+      Promise.all(restQueries),
       categoriesPromise,
     ]);
 
+    const fallbackProducts: Product[] = [];
+    let fallbackTotalEstimate: number | null = null;
+    let fallbackLastPageSize = 0;
+
+    for (const result of pageResults) {
+      fallbackProducts.push(
+        ...result.records.map((p) => mapLightweightToProduct(p, categoriesById)),
+      );
+      fallbackLastPageSize = result.records.length;
+      if (result.count !== null && fallbackTotalEstimate === null) {
+        fallbackTotalEstimate = result.count;
+      }
+    }
+
+    const fallbackFetchedUpTo = offset + pagesToFetch * CATALOG_PAGE_SIZE;
+    const fallbackHasMore = fallbackLastPageSize === CATALOG_PAGE_SIZE;
+
     return {
-      products: fallbackProducts.map((p) => mapLightweightToProduct(p, categoriesById)),
-      nextOffset: fallbackProducts.length === CATALOG_PAGE_SIZE ? offset + CATALOG_PAGE_SIZE : null,
-      totalEstimate: null,
+      products: fallbackProducts,
+      nextOffset: fallbackHasMore ? fallbackFetchedUpTo : null,
+      totalEstimate: fallbackTotalEstimate,
     };
   }
 
@@ -221,15 +264,22 @@ export function useProductsLightweight() {
 
 /**
  * Hook com paginação infinita server-side para o catálogo.
- * Primeiro carregamento: 200 produtos (2 páginas batch).
- * Carregamentos seguintes: 100 produtos por vez, sob demanda.
+ * Primeiro carregamento: 2000 produtos (4 páginas em paralelo).
+ * Carregamentos seguintes: 500 produtos por vez, sob demanda.
  */
-export function useProductsCatalog(filters?: { search?: string }) {
+export function useProductsCatalog(filters?: {
+  search?: string;
+  categories?: string[];
+  suppliers?: string[];
+}) {
   const search = filters?.search || '';
+  const categories = filters?.categories || [];
+  const suppliers = filters?.suppliers || [];
 
   return useInfiniteQuery<CatalogPage, Error>({
-    queryKey: ['promobrind-products-catalog', search],
-    queryFn: ({ pageParam }) => fetchCatalogPage(pageParam as number, search || undefined),
+    queryKey: ['promobrind-products-catalog', search, categories, suppliers],
+    queryFn: ({ pageParam }) =>
+      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     staleTime: 30 * 60 * 1000,

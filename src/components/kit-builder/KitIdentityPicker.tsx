@@ -12,13 +12,29 @@ import { cn } from '@/lib/utils';
 import type { KitIdentity } from '@/lib/kit-builder';
 
 const PRESET_COLORS = [
-  '#3B82F6', '#8B5CF6', '#EC4899', '#EF4444',
-  '#F59E0B', '#10B981', '#22C55E', '#6366F1',
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
+  '#EF4444',
+  '#F59E0B',
+  '#10B981',
+  '#22C55E',
+  '#6366F1',
 ];
 
 const PRESET_ICONS = [
-  'Package', 'Gift', 'Heart', 'Star', 'Crown', 'Sparkles',
-  'Briefcase', 'Coffee', 'Laptop', 'Leaf', 'Trophy', 'Users',
+  'Package',
+  'Gift',
+  'Heart',
+  'Star',
+  'Crown',
+  'Sparkles',
+  'Briefcase',
+  'Coffee',
+  'Laptop',
+  'Leaf',
+  'Trophy',
+  'Users',
 ] as const;
 
 interface Props {
@@ -36,14 +52,17 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
     isFavorite: identity?.isFavorite ?? false,
   };
 
-  const Icon = (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[current.icon] || Lucide.Package;
+  const Icon =
+    (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+      current.icon
+    ] || Lucide.Package;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2" aria-label="Editar identidade do kit">
           <span
-            className="w-4 h-4 rounded-full border border-border"
+            className="h-4 w-4 rounded-full border border-border"
             style={{ background: current.color }}
             aria-hidden
           />
@@ -54,7 +73,7 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
       <PopoverContent align="end" className="w-80 space-y-4">
         <div className="flex items-center gap-2">
           <Palette className="h-4 w-4 text-primary" />
-          <h4 className="font-semibold text-sm">Identidade do kit</h4>
+          <h4 className="text-sm font-semibold">Identidade do kit</h4>
         </div>
 
         {/* Color */}
@@ -68,8 +87,10 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
                 aria-label={`Cor ${c}`}
                 onClick={() => onChange({ ...current, color: c })}
                 className={cn(
-                  'w-7 h-7 rounded-full border-2 transition-transform hover:scale-110',
-                  current.color === c ? 'border-foreground ring-2 ring-primary/30' : 'border-border',
+                  'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110',
+                  current.color === c
+                    ? 'border-foreground ring-2 ring-primary/30'
+                    : 'border-border',
                 )}
                 style={{ background: c }}
               />
@@ -82,7 +103,9 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
           <Label className="text-xs">Ícone</Label>
           <div className="grid grid-cols-6 gap-2">
             {PRESET_ICONS.map((name) => {
-              const Cmp = (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
+              const Cmp = (
+                Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>
+              )[name];
               if (!Cmp) return null;
               const active = current.icon === name;
               return (
@@ -92,8 +115,10 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
                   aria-label={name}
                   onClick={() => onChange({ ...current, icon: name })}
                   className={cn(
-                    'h-9 rounded-md border flex items-center justify-center transition-colors',
-                    active ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted',
+                    'flex h-9 items-center justify-center rounded-md border transition-colors',
+                    active
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:bg-muted',
                   )}
                 >
                   <Cmp className="h-4 w-4" />
@@ -105,7 +130,9 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
 
         {/* Tag */}
         <div className="space-y-2">
-          <Label htmlFor="kit-tag" className="text-xs">Etiqueta</Label>
+          <Label htmlFor="kit-tag" className="text-xs">
+            Etiqueta
+          </Label>
           <Input
             id="kit-tag"
             value={current.tag}

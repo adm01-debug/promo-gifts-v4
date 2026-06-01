@@ -1,13 +1,13 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Clock, Trash2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useRecentlyViewedStore } from "@/stores/useRecentlyViewedStore";
-import { useProductsContext } from "@/contexts/ProductsContext";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Clock, Trash2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
+import { useProductsContext } from '@/contexts/ProductsContext';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface RecentlyViewedPopoverProps {
   maxVisible?: number;
@@ -15,17 +15,13 @@ interface RecentlyViewedPopoverProps {
 
 export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopoverProps) {
   const navigate = useNavigate();
-  const {
-    items,
-    itemCount,
-    removeFromRecentlyViewed,
-    clearRecentlyViewed,
-  } = useRecentlyViewedStore();
+  const { items, itemCount, removeFromRecentlyViewed, clearRecentlyViewed } =
+    useRecentlyViewedStore();
   const { getProductsByIds } = useProductsContext();
 
   const products = useMemo(
     () => getProductsByIds(items.map((i) => i.productId)).slice(0, maxVisible),
-    [getProductsByIds, items, maxVisible]
+    [getProductsByIds, items, maxVisible],
   );
 
   return (
@@ -33,17 +29,18 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="icon" aria-label="Horário"
+          size="icon"
+          aria-label="Horário"
           className={cn(
-            "relative h-10 w-10 rounded-full border-border/50 transition-colors",
-            itemCount > 0 ? "hover:border-primary/50" : "opacity-60 hover:opacity-100"
+            'relative h-10 w-10 rounded-full border-border/50 transition-colors',
+            itemCount > 0 ? 'hover:border-primary/50' : 'opacity-60 hover:opacity-100',
           )}
         >
           <Clock className="h-4 w-4" />
           {itemCount > 0 && (
             <Badge
               variant="secondary"
-              className="absolute -top-1.5 -right-1.5 h-5 min-w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full"
+              className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground"
             >
               {itemCount}
             </Badge>
@@ -58,7 +55,7 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>Vistos recentemente</span>
               {itemCount > 0 && (
-                <span className="text-muted-foreground text-xs">({itemCount})</span>
+                <span className="text-xs text-muted-foreground">({itemCount})</span>
               )}
             </div>
             {itemCount > 0 && (
@@ -69,7 +66,9 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
                     onClick={clearRecentlyViewed}
-                   aria-label="Excluir"><Trash2 className="h-3.5 w-3.5" />
+                    aria-label="Excluir"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Limpar histórico</TooltipContent>
@@ -78,25 +77,27 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
           </div>
 
           {itemCount === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">
+            <p className="py-4 text-center text-xs text-muted-foreground">
               Nenhum produto visualizado ainda
             </p>
           ) : (
             <div className="grid grid-cols-5 gap-2">
               {products.map((product) => (
-                <div key={product.id} className="relative group">
+                <div key={product.id} className="group relative">
                   <button
                     onClick={() => navigate(`/produto/${product.id}`)}
                     className={cn(
-                      "w-full aspect-square rounded-lg overflow-hidden border-2 border-border/50",
-                      "bg-muted cursor-pointer hover:border-primary/50 transition-all duration-200",
-                      "hover:scale-105 hover:shadow-md"
+                      'aspect-square w-full overflow-hidden rounded-lg border-2 border-border/50',
+                      'cursor-pointer bg-muted transition-all duration-200 hover:border-primary/50',
+                      'hover:scale-105 hover:shadow-md',
                     )}
                   >
                     <img
                       src={product.images[0]}
                       alt={product.name}
-                      className="w-full h-full object-cover" loading="lazy" />
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </button>
                   <button
                     onClick={(e) => {
@@ -104,16 +105,16 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
                       removeFromRecentlyViewed(product.id);
                     }}
                     className={cn(
-                      "absolute -top-1 -right-1 w-4 h-4 rounded-full",
-                      "bg-muted-foreground/80 text-background",
-                      "flex items-center justify-center",
-                      "opacity-0 group-hover:opacity-100 transition-opacity",
-                      "hover:bg-destructive"
+                      'absolute -right-1 -top-1 h-4 w-4 rounded-full',
+                      'bg-muted-foreground/80 text-background',
+                      'flex items-center justify-center',
+                      'opacity-0 transition-opacity group-hover:opacity-100',
+                      'hover:bg-destructive',
                     )}
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>
-                  <p className="text-[9px] text-muted-foreground text-center mt-1 truncate leading-tight">
+                  <p className="mt-1 truncate text-center text-[9px] leading-tight text-muted-foreground">
                     {product.name}
                   </p>
                 </div>

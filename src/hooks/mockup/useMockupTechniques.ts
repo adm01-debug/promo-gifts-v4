@@ -1,16 +1,17 @@
 /**
  * useMockupTechniques — Filter techniques by product using fn_get_product_customization_options RPC
  *
- * v6.0 Performance Optimized:
- * - Aggressive caching of technique dimensions in sessionStorage.
- * - keepPreviousData for zero-flicker transitions.
- * - Map-based lookup for speed.
+ * v6.1 Fixes (audit sprint-2, 26/05/2026):
+ * BUG-B: During product-data loading, return unfiltered techniques instead of [] to
+ *        avoid a flash of empty dropdown.
+ * BUG-D: Skip techniques without a code before inserting into the sessionStorage Map
+ *        to prevent orphaned null-key entries.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useMemo } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
-import { invokeExternalDb } from '@/lib/external-db';
 import { adaptCustomizationOptions } from '@/lib/personalization/adapters';
 
 interface Technique {
@@ -108,7 +109,7 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
         /* ignore */
       }
 
-      const techResult = await invokeExternalDb<{ id: string; code: string; name: string }>({
+      const techResult = await dbInvoke<{ id: string; code: string; name: string }>({
         table: 'personalization_techniques',
         operation: 'select',
         limit: 200,
@@ -116,7 +117,7 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
 
       if (!techResult.records.length) return new Map();
 
-      const faixaResult = await invokeExternalDb<{
+      const faixaResult = await dbInvoke<{
         tabela_preco_gravacao_id: string;
         largura_max: number | null;
         altura_max: number | null;
@@ -136,6 +137,9 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
 
       const codeMap = new Map<string, { maxWidth: number | null; maxHeight: number | null }>();
       for (const tech of techResult.records) {
+        // BUG-D FIX: skip techniques without code to prevent null/undefined Map keys.
+        if (!tech.code) continue;
+
         const faixas = faixasByTech.get(tech.id) || [];
         if (!faixas.length) continue;
 
@@ -175,6 +179,25 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
   });
 }
 
+/** Sentinel that builds a TechniqueWithLimits with all limits null (used as loading placeholder). */
+function toUnlimited(t: Technique): TechniqueWithLimits {
+  return {
+    ...t,
+    maxWidth: null,
+    maxHeight: null,
+    areaName: null,
+    locationName: null,
+    maxColors: null,
+    chargesPerColor: false,
+    usesDimension: false,
+    isCurved: false,
+    setupCost: null,
+    variationLabel: null,
+    groupCode: null,
+    shape: null,
+  };
+}
+
 export function useFilteredTechniques(
   techniques: Technique[],
   selectedProduct: { id: string } | null,
@@ -190,24 +213,14 @@ export function useFilteredTechniques(
 
   return useMemo(() => {
     if (!selectedProduct || !techniques.length) {
-      return techniques.map((t) => ({
-        ...t,
-        maxWidth: null,
-        maxHeight: null,
-        areaName: null,
-        locationName: null,
-        maxColors: null,
-        chargesPerColor: false,
-        usesDimension: false,
-        isCurved: false,
-        setupCost: null,
-        variationLabel: null,
-        groupCode: null,
-        shape: null,
-      }));
+      return techniques.map(toUnlimited);
     }
 
-    if (customizationData === undefined && isFetching) return [];
+    // BUG-B FIX: return all techniques (unfiltered) while product data is loading
+    // instead of [] — prevents a flash of empty dropdown on product selection.
+    if (customizationData === undefined && isFetching) {
+      return techniques.map(toUnlimited);
+    }
 
     if (customizationData?.locations && customizationData.locations.length === 0) {
       return techniques.map((t) => {

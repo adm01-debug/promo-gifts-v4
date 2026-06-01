@@ -2,10 +2,10 @@
  * GenerateButton — CTA dedicado para disparar a geração de mockup com IA.
  * Apresenta estados de loading, disabled e pulse de destaque quando pronto.
  */
-import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { Button } from '@/components/ui/button';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface GenerateButtonProps {
   onClick: () => void;
@@ -21,7 +21,7 @@ export function GenerateButton({
   isGenerating,
   disabled = false,
   hasAllRequirements = true,
-  label = "Gerar Mockup com IA",
+  label = 'Gerar Mockup com IA',
   className,
 }: GenerateButtonProps) {
   const isReady = hasAllRequirements && !disabled && !isGenerating;
@@ -30,7 +30,7 @@ export function GenerateButton({
     <motion.div
       whileHover={isReady ? { scale: 1.02 } : undefined}
       whileTap={isReady ? { scale: 0.98 } : undefined}
-      className={cn("relative", className)}
+      className={cn('relative', className)}
     >
       {isReady && (
         <motion.span
@@ -47,18 +47,18 @@ export function GenerateButton({
         disabled={disabled || isGenerating}
         data-testid="mockup-generate-button"
         className={cn(
-          "relative w-full font-semibold",
-          isReady && "bg-gradient-to-r from-primary to-primary/80 shadow-lg"
+          'relative w-full font-semibold',
+          isReady && 'bg-gradient-to-r from-primary to-primary/80 shadow-lg',
         )}
       >
         {isGenerating ? (
           <>
-            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             Gerando…
           </>
         ) : (
           <>
-            <Sparkles className="h-5 w-5 mr-2" />
+            <Sparkles className="mr-2 h-5 w-5" />
             {label}
           </>
         )}

@@ -136,11 +136,11 @@ export function MyRecentQuotesWidget() {
                       variant={q.status === 'draft' ? 'secondary' : 'outline'}
                       className="px-1.5 py-0 text-[10px]"
                     >
-                      {STATUS_LABELS[q.status] ?? q.status}
+                      {(q.status ? STATUS_LABELS[q.status] : undefined) ?? q.status}
                     </Badge>
                     <span className="flex items-center gap-0.5">
                       <Clock className="h-2.5 w-2.5" />
-                      {formatDistanceToNow(new Date(q.updated_at), {
+                      {formatDistanceToNow(new Date(q.updated_at ?? Date.now()), {
                         addSuffix: true,
                         locale: ptBR,
                       })}

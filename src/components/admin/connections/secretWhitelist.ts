@@ -7,27 +7,27 @@
  */
 
 export const ALLOWED_SECRET_NAMES: ReadonlySet<string> = new Set([
-  "EXTERNAL_PROMOBRIND_URL",
-  "EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY",
-  "EXTERNAL_PROMOBRIND_ANON_KEY",
-  "EXTERNAL_CRM_URL",
-  "EXTERNAL_CRM_SERVICE_ROLE_KEY",
-  "EXTERNAL_CRM_ANON_KEY",
-  "BITRIX24_WEBHOOK_URL",
-  "BITRIX24_DOMAIN",
-  "BITRIX24_USER_ID",
-  "BITRIX24_TOKEN",
-  "N8N_BASE_URL",
-  "N8N_API_KEY",
-  "MCP_SHARED_SECRET",
-  "GITHUB_TOKEN",
-  "GITHUB_REPO",
-  "GITHUB_DEFAULT_BRANCH",
+  'EXTERNAL_PROMOBRIND_URL',
+  'EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY',
+  'EXTERNAL_PROMOBRIND_ANON_KEY',
+  'EXTERNAL_CRM_URL',
+  'EXTERNAL_CRM_SERVICE_ROLE_KEY',
+  'EXTERNAL_CRM_ANON_KEY',
+  'BITRIX24_WEBHOOK_URL',
+  'BITRIX24_DOMAIN',
+  'BITRIX24_USER_ID',
+  'BITRIX24_TOKEN',
+  'N8N_BASE_URL',
+  'N8N_API_KEY',
+  'MCP_SHARED_SECRET',
+  'GITHUB_TOKEN',
+  'GITHUB_REPO',
+  'GITHUB_DEFAULT_BRANCH',
 ]);
 
 export const ALLOWED_SECRET_PREFIXES: readonly string[] = [
-  "OUTBOUND_WEBHOOK_SECRET_",
-  "INBOUND_WEBHOOK_HMAC_",
+  'OUTBOUND_WEBHOOK_SECRET_',
+  'INBOUND_WEBHOOK_HMAC_',
 ];
 
 /** Conservative pattern: uppercase, digits and underscores only. */
@@ -36,7 +36,7 @@ const NAME_SHAPE = /^[A-Z][A-Z0-9_]{2,63}$/;
 export interface SecretNameValidation {
   ok: boolean;
   /** Stable code so callers can branch (e.g. show different chips). */
-  code?: "empty" | "bad_shape" | "not_whitelisted";
+  code?: 'empty' | 'bad_shape' | 'not_whitelisted';
   message?: string;
   hint?: string;
 }
@@ -47,12 +47,12 @@ export interface SecretNameValidation {
  * one of the allowed prefixes AND has a sane shape.
  */
 export function validateSecretName(name: string): SecretNameValidation {
-  const trimmed = (name ?? "").trim();
+  const trimmed = (name ?? '').trim();
   if (!trimmed) {
     return {
       ok: false,
-      code: "empty",
-      message: "Informe o nome da credencial.",
+      code: 'empty',
+      message: 'Informe o nome da credencial.',
     };
   }
 
@@ -66,7 +66,7 @@ export function validateSecretName(name: string): SecretNameValidation {
     if (!NAME_SHAPE.test(trimmed)) {
       return {
         ok: false,
-        code: "bad_shape",
+        code: 'bad_shape',
         message: `Nomes com prefixo ${matchedPrefix} devem usar apenas A–Z, 0–9 e _ (3–64 chars).`,
         hint: `Ex: ${matchedPrefix}MEU_SISTEMA`,
       };
@@ -76,9 +76,9 @@ export function validateSecretName(name: string): SecretNameValidation {
 
   return {
     ok: false,
-    code: "not_whitelisted",
+    code: 'not_whitelisted',
     message: `O nome "${trimmed}" não está na lista permitida de credenciais.`,
-    hint: `Aceitos: ${Array.from(ALLOWED_SECRET_NAMES).slice(0, 4).join(", ")}… ou prefixos ${ALLOWED_SECRET_PREFIXES.join(", ")}`,
+    hint: `Aceitos: ${Array.from(ALLOWED_SECRET_NAMES).slice(0, 4).join(', ')}… ou prefixos ${ALLOWED_SECRET_PREFIXES.join(', ')}`,
   };
 }
 

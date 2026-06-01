@@ -1,11 +1,11 @@
 ﻿/**
- * Domain Transformers: PersonalizaÃ§Ã£o
+ * Domain Transformers: Personalização
  *
- * FunÃ§Ãµes puras para transformaÃ§Ã£o entre formatos de dados.
- * Converte entre tipos de infraestrutura (API/DB) e tipos de domÃ­nio.
+ * Funções puras para transformação entre formatos de dados.
+ * Converte entre tipos de infraestrutura (API/DB) e tipos de domínio.
  *
- * SSOT: Este mÃ³dulo Ã© a Ãºnica fonte de transformadores de dados.
- * Hooks devem importar daqui, nÃ£o definir transformadores prÃ³prios.
+ * SSOT: Este módulo é a única fonte de transformadores de dados.
+ * Hooks devem importar daqui, não definir transformadores próprios.
  */
 
 import type { PriceTableInput, TechniqueInput, PriceTier } from './types';
@@ -19,7 +19,7 @@ import type {
 } from '@/types/tecnica-unificada';
 
 // ============================================
-// RAW DB â†’ PORTUGUESE DOMAIN TYPES (para hooks)
+// RAW DB → PORTUGUESE DOMAIN TYPES (para hooks)
 // ============================================
 
 /**
@@ -111,7 +111,7 @@ export function rawToTabelaPrecoTecnica(raw: CustomizationPriceTableRaw): Tabela
 }
 
 /**
- * Batch: Transforma array de tÃ©cnicas raw
+ * Batch: Transforma array de técnicas raw
  */
 export function transformRawToTecnicas(raws: PersonalizationTechniqueRaw[]): TecnicaUnificada[] {
   return raws.map(rawToTecnicaUnificada);
@@ -243,7 +243,7 @@ export function rawTableToPriceTableInput(raw: CustomizationPriceTableRaw): Pric
 }
 
 /**
- * Extrai faixas de preÃ§o do formato raw
+ * Extrai faixas de preço do formato raw
  */
 function extractTiersFromRaw(raw: CustomizationPriceTableRaw): PriceTier[] {
   const tiers: PriceTier[] = [];
@@ -307,7 +307,7 @@ export function rawTechniqueToTechniqueInput(raw: PersonalizationTechniqueRaw): 
 // ============================================
 
 /**
- * Formata preÃ§o para exibiÃ§Ã£o
+ * Formata preço para exibição
  */
 export function formatPrice(value: number, currency = 'BRL'): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -317,24 +317,24 @@ export function formatPrice(value: number, currency = 'BRL'): string {
 }
 
 /**
- * Formata Ã¡rea para exibiÃ§Ã£o
+ * Formata área para exibição
  */
 export function formatArea(widthCm: number, heightCm: number): string {
   return `${widthCm} x ${heightCm} cm`;
 }
 
 /**
- * Formata SLA para exibiÃ§Ã£o
+ * Formata SLA para exibição
  */
 export function formatSla(days: number | null): string {
   if (days === null) return 'A consultar';
   if (days === 0) return 'Pronta entrega';
-  if (days === 1) return '1 dia Ãºtil';
-  return `${days} dias Ãºteis`;
+  if (days === 1) return '1 dia útil';
+  return `${days} dias úteis`;
 }
 
 /**
- * Formata economia para exibiÃ§Ã£o
+ * Formata economia para exibição
  */
 export function formatSavings(percentOff: number): string {
   if (percentOff <= 0) return '';
@@ -353,7 +353,7 @@ export function transformTables(tabelas: TabelaPrecoTecnica[]): PriceTableInput[
 }
 
 /**
- * Transforma array de tÃ©cnicas
+ * Transforma array de técnicas
  */
 export function transformTechniques(tecnicas: TecnicaUnificada[]): TechniqueInput[] {
   return tecnicas.map(tecnicaToTechniqueInput);
@@ -367,7 +367,7 @@ export function transformRawTables(raws: CustomizationPriceTableRaw[]): PriceTab
 }
 
 /**
- * Transforma array de tÃ©cnicas raw
+ * Transforma array de técnicas raw
  */
 export function transformRawTechniques(raws: PersonalizationTechniqueRaw[]): TechniqueInput[] {
   return raws.map(rawTechniqueToTechniqueInput);

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { OverviewRow } from "@/hooks/intelligence";
-import type { ConsecutiveFailureInfo } from "@/hooks/common";
-import { CONSECUTIVE_FAILURE_THRESHOLD } from "@/lib/connections-config";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { OverviewRow } from '@/hooks/intelligence';
+import type { ConsecutiveFailureInfo } from '@/hooks/common';
+import { CONSECUTIVE_FAILURE_THRESHOLD } from '@/lib/connections-config';
 
-export type OverviewStatusFilter = "all" | "ok" | "fail";
-export type OverviewWindowFilter = "any" | "5m" | "1h" | "24h" | "7d" | "never";
+export type OverviewStatusFilter = 'all' | 'ok' | 'fail';
+export type OverviewWindowFilter = 'any' | '5m' | '1h' | '24h' | '7d' | 'never';
 
 export interface OverviewFilters {
   types: string[];
@@ -15,18 +15,18 @@ export interface OverviewFilters {
 
 const DEFAULT_FILTERS: OverviewFilters = {
   types: [],
-  status: "all",
-  window: "any",
+  status: 'all',
+  window: 'any',
   onlyConsecutiveFailures: false,
 };
 
-const STORAGE_KEY = "connections-overview-filters";
+const STORAGE_KEY = 'connections-overview-filters';
 
-const WINDOW_MS: Record<Exclude<OverviewWindowFilter, "any" | "never">, number> = {
-  "5m": 5 * 60_000,
-  "1h": 60 * 60_000,
-  "24h": 24 * 60 * 60_000,
-  "7d": 7 * 24 * 60 * 60_000,
+const WINDOW_MS: Record<Exclude<OverviewWindowFilter, 'any' | 'never'>, number> = {
+  '5m': 5 * 60_000,
+  '1h': 60 * 60_000,
+  '24h': 24 * 60 * 60_000,
+  '7d': 7 * 24 * 60 * 60_000,
 };
 
 export function applyFilters(
@@ -38,12 +38,12 @@ export function applyFilters(
   return rows.filter((r) => {
     if (filters.types.length > 0 && !filters.types.includes(r.type)) return false;
 
-    if (filters.status === "ok" && r.last_test_ok !== true) return false;
-    if (filters.status === "fail" && r.last_test_ok !== false) return false;
+    if (filters.status === 'ok' && r.last_test_ok !== true) return false;
+    if (filters.status === 'fail' && r.last_test_ok !== false) return false;
 
-    if (filters.window === "never") {
+    if (filters.window === 'never') {
       if (r.last_test_at !== null) return false;
-    } else if (filters.window !== "any") {
+    } else if (filters.window !== 'any') {
       if (!r.last_test_at) return false;
       const ts = new Date(r.last_test_at).getTime();
       if (Number.isNaN(ts)) return false;
@@ -61,16 +61,21 @@ export function applyFilters(
 
 export function useConnectionsOverviewFilters() {
   const [filters, setFilters] = useState<OverviewFilters>(() => {
-    if (typeof window === "undefined") return DEFAULT_FILTERS;
+    if (typeof window === 'undefined') return DEFAULT_FILTERS;
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return DEFAULT_FILTERS;
       const parsed = JSON.parse(raw);
       return {
         types: Array.isArray(parsed.types) ? parsed.types : [],
-        status: ["all", "ok", "fail"].includes(parsed.status) ? parsed.status : "all",
-        window: ["any", "5m", "1h", "24h", "7d", "never"].includes(parsed.window) ? parsed.window : "any",
-        onlyConsecutiveFailures: typeof parsed.onlyConsecutiveFailures === "boolean" ? parsed.onlyConsecutiveFailures : false,
+        status: ['all', 'ok', 'fail'].includes(parsed.status) ? parsed.status : 'all',
+        window: ['any', '5m', '1h', '24h', '7d', 'never'].includes(parsed.window)
+          ? parsed.window
+          : 'any',
+        onlyConsecutiveFailures:
+          typeof parsed.onlyConsecutiveFailures === 'boolean'
+            ? parsed.onlyConsecutiveFailures
+            : false,
       };
     } catch {
       return DEFAULT_FILTERS;
@@ -112,11 +117,21 @@ export function useConnectionsOverviewFilters() {
 
   const activeCount = useMemo(() => {
     let n = filters.types.length;
-    if (filters.status !== "all") n += 1;
-    if (filters.window !== "any") n += 1;
+    if (filters.status !== 'all') n += 1;
+    if (filters.window !== 'any') n += 1;
     if (filters.onlyConsecutiveFailures) n += 1;
     return n;
   }, [filters]);
 
-  return { filters, setFilters, toggleType, setStatus, setWindow, removeType, setOnlyConsecutiveFailures, reset, activeCount };
+  return {
+    filters,
+    setFilters,
+    toggleType,
+    setStatus,
+    setWindow,
+    removeType,
+    setOnlyConsecutiveFailures,
+    reset,
+    activeCount,
+  };
 }

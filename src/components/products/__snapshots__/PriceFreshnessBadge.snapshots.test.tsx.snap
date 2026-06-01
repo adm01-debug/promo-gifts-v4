@@ -63,7 +63,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · há 31 dias
+              (há 31 dias)
             </span>
           </div>
           <div
@@ -76,25 +76,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 02/04/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (02 de abril de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 02/04/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-muted-foreground"
@@ -114,11 +104,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -145,7 +135,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <span
             class="tabular-nums"
           >
-            hoje
+            há 0d
             <span
               class="text-muted-foreground"
             >
@@ -171,7 +161,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · hoje
+              (hoje)
             </span>
           </div>
           <div
@@ -184,25 +174,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/05/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de maio de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/05/2026, 06:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -275,7 +255,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · (há 61 dias)
+              (há 61 dias)
             </span>
           </div>
           <div
@@ -288,25 +268,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/03/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de março de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/03/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-amber-600 dark:text-amber-400"
@@ -387,7 +357,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -461,7 +431,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               <span
                 class="text-muted-foreground"
               >
-                · (há 61 dias)
+                (há 61 dias)
               </span>
             </div>
             <div
@@ -474,25 +444,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               </span>
                
               <span
-                class="tabular-nums font-medium"
+                class="font-medium tabular-nums"
               >
                 em 03/03/2026
               </span>
-              <span
-                class="text-muted-foreground"
-              >
-                 (03 de março de 2026)
-              </span>
-            </div>
-            <div
-              class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-            >
-              Hora local: 03/03/2026, 09:00
             </div>
             <div
               class="leading-snug text-muted-foreground"
             >
-              Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+              Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
             </div>
             <div
               class="leading-snug text-amber-600 dark:text-amber-400"
@@ -560,7 +520,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · há 31 dias
+              (há 31 dias)
             </span>
           </div>
           <div
@@ -573,25 +533,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 02/04/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (02 de abril de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 02/04/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-muted-foreground"
@@ -611,11 +561,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center justify-center text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -658,7 +608,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · hoje
+              (hoje)
             </span>
           </div>
           <div
@@ -671,25 +621,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/05/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de maio de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/05/2026, 06:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -752,7 +692,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · (há 61 dias)
+              (há 61 dias)
             </span>
           </div>
           <div
@@ -765,25 +705,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/03/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de março de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/03/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-amber-600 dark:text-amber-400"
@@ -859,7 +789,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -904,7 +834,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <span>
             Atualizado há 31 dias
             <span
-              class="text-muted-foreground tabular-nums"
+              class="tabular-nums text-muted-foreground"
             >
                · em 02/04/2026
             </span>
@@ -928,7 +858,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · há 31 dias
+              (há 31 dias)
             </span>
           </div>
           <div
@@ -941,25 +871,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 02/04/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (02 de abril de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 02/04/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-muted-foreground"
@@ -979,10 +899,10 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
           role="status"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -1009,7 +929,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <span>
             Atualizado hoje
             <span
-              class="text-muted-foreground tabular-nums"
+              class="tabular-nums text-muted-foreground"
             >
                · em 03/05/2026
             </span>
@@ -1033,7 +953,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · hoje
+              (hoje)
             </span>
           </div>
           <div
@@ -1046,25 +966,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/05/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de maio de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/05/2026, 06:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -1110,7 +1020,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <span>
             Preço pode estar defasado (há 61 dias)
             <span
-              class="text-muted-foreground tabular-nums"
+              class="tabular-nums text-muted-foreground"
             >
                · em 03/03/2026
             </span>
@@ -1134,7 +1044,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · (há 61 dias)
+              (há 61 dias)
             </span>
           </div>
           <div
@@ -1147,25 +1057,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/03/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de março de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/03/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-amber-600 dark:text-amber-400"
@@ -1243,7 +1143,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -1313,7 +1213,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · há 31 dias
+              (há 31 dias)
             </span>
           </div>
           <div
@@ -1326,25 +1226,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 02/04/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (02 de abril de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 02/04/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-muted-foreground"
@@ -1364,7 +1254,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400"
           role="status"
         >
@@ -1397,7 +1287,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-emerald-700/70 dark:text-emerald-400/70"
             >
-               · hoje
+               · há 0 dias
             </span>
           </span>
         </span>
@@ -1419,7 +1309,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · hoje
+              (hoje)
             </span>
           </div>
           <div
@@ -1432,25 +1322,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/05/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de maio de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/05/2026, 06:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>
@@ -1471,7 +1351,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle h-4 w-4 shrink-0 mt-0.5"
+            class="lucide lucide-alert-triangle mt-0.5 h-4 w-4 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1496,12 +1376,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             class="flex flex-col gap-0.5 leading-tight"
           >
             <span
-              class="font-display font-semibold text-sm"
+              class="font-display text-sm font-semibold"
             >
               Preço pode estar defasado
             </span>
             <span
-              class="text-xs text-amber-800/90 dark:text-amber-200/80 tabular-nums"
+              class="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80"
             >
               Última atualização em 03/03/2026 (há 61 dias)
             </span>
@@ -1530,7 +1410,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             <span
               class="text-muted-foreground"
             >
-              · (há 61 dias)
+              (há 61 dias)
             </span>
           </div>
           <div
@@ -1543,25 +1423,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             </span>
              
             <span
-              class="tabular-nums font-medium"
+              class="font-medium tabular-nums"
             >
               em 03/03/2026
             </span>
-            <span
-              class="text-muted-foreground"
-            >
-               (03 de março de 2026)
-            </span>
-          </div>
-          <div
-            class="leading-snug text-[11px] text-muted-foreground tabular-nums"
-          >
-            Hora local: 03/03/2026, 09:00
           </div>
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
           <div
             class="leading-snug text-amber-600 dark:text-amber-400"
@@ -1638,7 +1508,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <div
             class="leading-snug text-muted-foreground"
           >
-            Regra: até 30 dias = atualizado · 31–60 dias = próximo do limite · acima de 60 dias = possivelmente defasado.
+            Regra de Preços: Até 30 dias = Atualizado / 31–60 dias = Próximo do limite / Acima de 60 dias = Possivelmente defasado
           </div>
         </div>
       </div>

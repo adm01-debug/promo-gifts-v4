@@ -1,4 +1,5 @@
 import { publicCorsHeaders } from '../_shared/cors.ts';
+import { runBotProtection } from '../_shared/bot-protection.ts';
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
@@ -7,8 +8,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const headers = { ...publicCorsHeaders, 'Content-Type': 'application/json' };
 
+  const botResult = await runBotProtection(
+    req,
+    { endpoint: 'get-visitor-info', maxRequests: 30, windowSeconds: 60 },
+    publicCorsHeaders,
+  );
+  if (!botResult.allowed) return botResult.blockResponse!;
+
   try {
-    // Extract visitor IP from proxy headers
+    // Extract visitor IP from proxy headers — only use the first (leftmost) entry
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||

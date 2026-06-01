@@ -360,6 +360,8 @@ interface ResolutionLogPayload {
   duration_ms: number;
   via_alias: boolean;
   error?: string;
+  /** True quando o valor foi obtido via bulk fetch (1 query para N nomes). */
+  bulk?: boolean;
 }
 
 function logResolution(payload: ResolutionLogPayload): void {
@@ -535,13 +537,131 @@ export async function getCredential(
   return value;
 }
 
-/** Resolve many credentials in parallel. */
+/**
+ * Resolve many credentials with **single SQL round-trip** (vs N round-trips
+ * em `Promise.all(resolveCredential)`). Estratégia:
+ *
+ *   1. Separa nomes em "cached" (TTL válido) vs "missing".
+ *   2. Para os missing, faz UMA query `WHERE secret_name IN (...)` retornando
+ *      todos os valores DB de uma vez. Popula cache em bulk.
+ *   3. Para qualquer ainda não resolvido, faz fallback Deno.env.get síncrono.
+ *
+ * Benchmark esperado: 6 credenciais cold path → 1 query (~30ms) em vez de
+ * 6 queries paralelas (~6×80ms cada em isolate frio). Reduz contenção do
+ * connection pool do PgBouncer.
+ *
+ * Bug P1-05 da auditoria 24/05/2026: logs mostravam 8+ requests/segundo a
+ * integration_credentials, todas mesma key, indicando que isolates frios
+ * estavam disparando N queries individuais em cascata.
+ */
 export async function resolveCredentials(
   names: string[],
   serviceClient?: SupabaseClient | null,
-): Promise<Record<string, CredentialResolution>> {
-  const entries = await Promise.all(
-    names.map(async (n) => [n, await resolveCredential(n, serviceClient)] as const),
-  );
-  return Object.fromEntries(entries);
+): Promise<Record<string, CredentialResolution>> {  const startedAt = Date.now();
+  const result: Record<string, CredentialResolution> = {};
+  const missing: string[] = [];
+
+  // 1) Cache lookup pass
+  for (const name of names) {
+    const cached = CACHE.get(name);
+    if (cached && cached.expires_at > startedAt) {
+      const duration = Date.now() - startedAt;
+      recordResolution({
+        name,
+        source: cached.source,
+        duration_ms: duration,
+        cached: true,
+        expired_before: false,
+      });
+      result[name] = { value: cached.value, source: cached.source, resolved_name: name };
+    } else {
+      missing.push(name);
+    }
+  }
+
+  if (missing.length === 0) return result;
+
+  // 2) Bulk DB fetch para os missing
+  const client = serviceClient ?? getInternalServiceClient();
+  const dbHits = new Set<string>();
+
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from("integration_credentials")
+        .select("secret_name, secret_value")
+        .in("secret_name", missing);
+
+      if (!error && Array.isArray(data)) {
+        for (const row of data) {
+          const name = row.secret_name as string;
+          const value = row.secret_value as string | null;
+          if (!value) continue;
+          const now = Date.now();
+          CACHE.set(name, { value, source: "db", expires_at: now + TTL_MS, stored_at: now });
+          const duration = Date.now() - startedAt;
+          recordResolution({
+            name,
+            source: "db",
+            duration_ms: duration,
+            cached: false,
+            expired_before: false,
+          });
+          logResolution({
+            event: "credential_resolved",
+            name,
+            resolved_name: name,
+            source: "db",
+            has_value: true,
+            value_length: value.length,
+            cached: false,
+            duration_ms: duration,
+            via_alias: false,
+            bulk: true,
+          });
+          result[name] = { value, source: "db", resolved_name: name };
+          dbHits.add(name);
+        }
+      } else if (error) {
+        console.error("[credentials] bulk DB fetch failed:", error.message);
+      }
+    } catch (err) {
+      console.error("[credentials] bulk fetch threw:", err);
+    }
+  }
+
+  // 3) Fallback env (e aliases) para o que ainda falta
+  for (const name of missing) {
+    if (dbHits.has(name)) continue;
+    // Reaproveita o caminho single-name que já trata env + ALIASES + cache miss
+    result[name] = await resolveCredential(name, serviceClient);
+  }
+
+  return result;
+}
+
+/**
+ * Pre-aquece o cache para uma lista de credenciais no boot do isolate.
+ *
+ * Uso típico (top-level da edge function, antes do serve()):
+ *   await warmupCredentials([
+ *     "EXTERNAL_PROMOBRIND_URL",
+ *     "EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY",
+ *   ]);
+ *
+ * Idempotente; não bloqueia em erro (loga e segue, fallback acontece no
+ * primeiro request real). Garante 1 query DB por cold start em vez de N.
+ *
+ * Bug P1-05 da auditoria 24/05/2026.
+ */
+export async function warmupCredentials(
+  names: readonly string[],
+  serviceClient?: SupabaseClient | null,
+): Promise<void> {
+  if (names.length === 0) return;
+  try {
+    await resolveCredentials([...names], serviceClient);
+  } catch (err) {
+    console.warn("[credentials] warmup failed (non-fatal):", err);
+  }
 }

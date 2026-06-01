@@ -1,18 +1,34 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2, Loader2, Check, X } from "lucide-react";
-import { InlineEditField } from "../InlineEditField";
-import { ImageUploadButton } from "../ImageUploadButton";
-import type { GroupLocation, GroupLocationTechnique, Technique } from "../hooks/useGroupPersonalization";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Trash2, Loader2, Check, X } from 'lucide-react';
+import { InlineEditField } from '../InlineEditField';
+import { ImageUploadButton } from '../ImageUploadButton';
+import type {
+  GroupLocation,
+  GroupLocationTechnique,
+  Technique,
+} from '../hooks/useGroupPersonalization';
 
 interface GroupLocationCardProps {
   location: GroupLocation;
@@ -21,21 +37,31 @@ interface GroupLocationCardProps {
   locationTechniques: GroupLocationTechnique[];
   onUpdateLocation: (data: { id: string; [key: string]: unknown }) => void;
   onDeleteLocation: (id: string) => void;
-  onAddTechnique: (data: { group_location_id: string; technique_id: string; max_colors?: number }) => void;
+  onAddTechnique: (data: {
+    group_location_id: string;
+    technique_id: string;
+    max_colors?: number;
+  }) => void;
   addTechniquePending: boolean;
   onUpdateTechnique: (data: { id: string; [key: string]: unknown }) => void;
   onDeleteTechnique: (id: string) => void;
 }
 
 export function GroupLocationCard({
-  location, selectedGroup, techniques, locationTechniques,
-  onUpdateLocation, onDeleteLocation,
-  onAddTechnique, addTechniquePending,
-  onUpdateTechnique, onDeleteTechnique,
+  location,
+  selectedGroup,
+  techniques,
+  locationTechniques,
+  onUpdateLocation,
+  onDeleteLocation,
+  onAddTechnique,
+  addTechniquePending,
+  onUpdateTechnique,
+  onDeleteTechnique,
 }: GroupLocationCardProps) {
   const [isAddTechniqueOpen, setIsAddTechniqueOpen] = useState(false);
-  const [newTechniqueId, setNewTechniqueId] = useState("");
-  const [newMaxColors, setNewMaxColors] = useState("");
+  const [newTechniqueId, setNewTechniqueId] = useState('');
+  const [newMaxColors, setNewMaxColors] = useState('');
 
   const handleAddTechnique = () => {
     if (!newTechniqueId) return;
@@ -45,18 +71,20 @@ export function GroupLocationCard({
       max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
     });
     setIsAddTechniqueOpen(false);
-    setNewTechniqueId("");
-    setNewMaxColors("");
+    setNewTechniqueId('');
+    setNewMaxColors('');
   };
 
   return (
-    <div className="border rounded-lg p-3 bg-muted/30">
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-3">
+    <div className="rounded-lg border bg-muted/30 p-3">
+      <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-6">
         <div>
           <Label className="text-xs text-muted-foreground">Código</Label>
           <InlineEditField
             value={location.location_code}
-            onSave={(value) => onUpdateLocation({ id: location.id, location_code: value.toUpperCase() })}
+            onSave={(value) =>
+              onUpdateLocation({ id: location.id, location_code: value.toUpperCase() })
+            }
             className="font-mono text-xs"
           />
         </div>
@@ -70,8 +98,10 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Larg. (cm)</Label>
           <InlineEditField
-            value={location.max_width_cm?.toString() || ""}
-            onSave={(value) => onUpdateLocation({ id: location.id, max_width_cm: value ? parseFloat(value) : null })}
+            value={location.max_width_cm?.toString() || ''}
+            onSave={(value) =>
+              onUpdateLocation({ id: location.id, max_width_cm: value ? parseFloat(value) : null })
+            }
             type="number"
             placeholder="—"
           />
@@ -79,8 +109,10 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Alt. (cm)</Label>
           <InlineEditField
-            value={location.max_height_cm?.toString() || ""}
-            onSave={(value) => onUpdateLocation({ id: location.id, max_height_cm: value ? parseFloat(value) : null })}
+            value={location.max_height_cm?.toString() || ''}
+            onSave={(value) =>
+              onUpdateLocation({ id: location.id, max_height_cm: value ? parseFloat(value) : null })
+            }
             type="number"
             placeholder="—"
           />
@@ -88,8 +120,10 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Área (cm²)</Label>
           <InlineEditField
-            value={location.max_area_cm2?.toString() || ""}
-            onSave={(value) => onUpdateLocation({ id: location.id, max_area_cm2: value ? parseFloat(value) : null })}
+            value={location.max_area_cm2?.toString() || ''}
+            onSave={(value) =>
+              onUpdateLocation({ id: location.id, max_area_cm2: value ? parseFloat(value) : null })
+            }
             type="number"
             placeholder="—"
           />
@@ -98,7 +132,9 @@ export function GroupLocationCard({
           <div className="flex items-center gap-1">
             <Switch
               checked={location.is_active}
-              onCheckedChange={(checked) => onUpdateLocation({ id: location.id, is_active: checked })}
+              onCheckedChange={(checked) =>
+                onUpdateLocation({ id: location.id, is_active: checked })
+              }
             />
             <Label className="text-xs">Ativo</Label>
           </div>
@@ -111,7 +147,7 @@ export function GroupLocationCard({
           <Button
             size="sm"
             variant="ghost"
-            className="text-destructive hover:text-destructive h-7 w-7 p-0"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
             onClick={() => onDeleteLocation(location.id)}
           >
             <Trash2 className="h-3 w-3" />
@@ -120,13 +156,13 @@ export function GroupLocationCard({
       </div>
 
       {/* Techniques */}
-      <div className="border-t pt-2 mt-2">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mt-2 border-t pt-2">
+        <div className="mb-2 flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Técnicas permitidas:</span>
           <Dialog open={isAddTechniqueOpen} onOpenChange={setIsAddTechniqueOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="ghost" className="h-6 px-2">
-                <Plus className="h-3 w-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 <span className="text-xs">Técnica</span>
               </Button>
             </DialogTrigger>
@@ -161,13 +197,17 @@ export function GroupLocationCard({
                     value={newMaxColors}
                     onChange={(e) => setNewMaxColors(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Deixe em branco para sem limite</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Deixe em branco para sem limite
+                  </p>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddTechniqueOpen(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsAddTechniqueOpen(false)}>
+                  Cancelar
+                </Button>
                 <Button onClick={handleAddTechnique} disabled={addTechniquePending}>
-                  {addTechniquePending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {addTechniquePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Associar
                 </Button>
               </DialogFooter>
@@ -179,23 +219,27 @@ export function GroupLocationCard({
             <Tooltip key={lt.id}>
               <TooltipTrigger asChild>
                 <Badge
-                  variant={lt.is_default ? "default" : "outline"}
-                  className="text-xs gap-1 group cursor-pointer"
+                  variant={lt.is_default ? 'default' : 'outline'}
+                  className="group cursor-pointer gap-1 text-xs"
                   onClick={() => onUpdateTechnique({ id: lt.id, is_default: !lt.is_default })}
                 >
                   {lt.is_default && <Check className="h-2 w-2" />}
                   {lt.technique?.name}
                   {lt.max_colors && <span className="opacity-70">({lt.max_colors} cores)</span>}
-                  <button aria-label="Fechar"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                    onClick={(e) => { e.stopPropagation(); onDeleteTechnique(lt.id); }}
+                  <button
+                    aria-label="Fechar"
+                    className="ml-1 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteTechnique(lt.id);
+                    }}
                   >
                     <X className="h-2 w-2" />
                   </button>
                 </Badge>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Clique para {lt.is_default ? "remover" : "definir"} como padrão</p>
+                <p>Clique para {lt.is_default ? 'remover' : 'definir'} como padrão</p>
               </TooltipContent>
             </Tooltip>
           ))}

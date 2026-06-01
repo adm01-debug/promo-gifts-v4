@@ -55,8 +55,8 @@ interface StarfieldCanvasProps {
 
 const COLORS = [
   'rgba(255, 255, 255, 0.9)', // branco
-  'rgba(96, 165, 250, 0.9)',  // azul claro (blue-400)
-  'rgba(59, 130, 246, 0.9)',  // azul (blue-500)
+  'rgba(96, 165, 250, 0.9)', // azul claro (blue-400)
+  'rgba(59, 130, 246, 0.9)', // azul (blue-500)
 ];
 
 function createStars(count: number, width: number, height: number): Star[] {
@@ -111,12 +111,15 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
       for (const star of starsRef.current) {
         // Drift horizontal (loop infinito wrapping)
         const driftX = reducedMotion ? 0 : (elapsed / 1000) * star.driftSpeed;
-        const x = (star.x + driftX) % (width + 50) - 25;
+        const x = ((star.x + driftX) % (width + 50)) - 25;
 
         // Breathing: opacidade modulada por seno
         const breathT = reducedMotion
           ? 1
-          : 0.4 + 0.6 * (0.5 + 0.5 * Math.sin((elapsed / star.breathDuration) * Math.PI * 2 + star.breathPhase));
+          : 0.4 +
+            0.6 *
+              (0.5 +
+                0.5 * Math.sin((elapsed / star.breathDuration) * Math.PI * 2 + star.breathPhase));
 
         // Glow: usa shadow para criar brilho
         ctx.beginPath();
@@ -158,7 +161,7 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
   return (
     <canvas
       ref={canvasRef}
-      className={className ?? 'absolute inset-0 pointer-events-none'}
+      className={className ?? 'pointer-events-none absolute inset-0'}
       aria-hidden="true"
       data-testid="starfield-canvas"
     />

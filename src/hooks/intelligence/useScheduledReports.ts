@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -82,7 +83,8 @@ export function useScheduledReports() {
           frequency: input.frequency,
           email_to: input.email_to,
           report_name: input.report_name,
-          filters: (input.filters || {}) as Record<string, unknown>,
+          // filters holds user-defined report criteria persisted as JSON
+          filters: (input.filters ?? {}) as unknown as Json,
           next_run_at: nextRun.toISOString(),
         });
 

@@ -379,7 +379,7 @@ function HistoryRow({ item: it, onClick, highlighted, rowRef }: RowProps) {
               <span className="truncate">{tail}</span>
             </span>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-sm break-words">
+          <TooltipContent side="top" className="break-words">
             {kindCopy ? `${kindCopy.title} — ${tail}` : tail}
           </TooltipContent>
         </Tooltip>
@@ -568,7 +568,7 @@ export function ConnectionTestHistoryPanel({
           </span>
           <span className="inline-flex items-center gap-2">
             {!expanded && items.length >= 2 && (
-              <TooltipProvider delayDuration={150}>
+              <TooltipProvider>
                 <LatencySparkline items={items} />
               </TooltipProvider>
             )}
@@ -700,7 +700,7 @@ export function ConnectionTestHistoryPanel({
               {emptyMessage(filter, source)}
             </div>
           ) : (
-            <TooltipProvider delayDuration={150}>
+            <TooltipProvider>
               <ul className="space-y-0.5">
                 {pendingTest && <PendingHistoryRow startedAt={pendingTest.startedAt} />}
                 {previewItems.map((it) => (
@@ -773,7 +773,7 @@ export function ConnectionTestHistoryPanel({
               {emptyMessage(filter, source)}
             </div>
           ) : (
-            <TooltipProvider delayDuration={150}>
+            <TooltipProvider>
               <ul className="space-y-0.5">
                 {pendingTest && <PendingHistoryRow startedAt={pendingTest.startedAt} />}
                 {visibleItems.map((it) => (

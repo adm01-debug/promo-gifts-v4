@@ -28,9 +28,7 @@ export function useWizardPricing({ state, dispatch }: UseWizardPricingParams) {
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    const persToRecalc = state.personalizations.filter(
-      (p) => (p.pricing as unknown)?._needsRecalc === true,
-    );
+    const persToRecalc = state.personalizations.filter((p) => p.pricing._needsRecalc === true);
     if (persToRecalc.length === 0) return;
 
     if (recalcTimerRef.current) clearTimeout(recalcTimerRef.current);

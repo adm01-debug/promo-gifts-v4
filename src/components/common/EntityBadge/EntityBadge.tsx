@@ -1,12 +1,7 @@
-import React from "react";
-import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * Generic entity badge — base for MaterialBadge, RamoAtividadeBadge, etc.
@@ -31,9 +26,9 @@ export interface EntityBadgeProps {
   /** Optional emoji or single-character icon shown before the dot */
   icon?: string | null;
   /** Visual size */
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   /** Visual variant */
-  variant?: "default" | "outline" | "solid" | "ghost";
+  variant?: 'default' | 'outline' | 'solid' | 'ghost';
   /** When true and `groupLabel` is set, renders `${groupLabel}${groupSeparator}${name}` */
   showGroup?: boolean;
   /** Separator between group label and name. Default: ": " */
@@ -55,9 +50,9 @@ export interface EntityBadgeProps {
 }
 
 const DEFAULT_MAX_WIDTH = {
-  sm: "max-w-[100px]",
-  md: "max-w-[120px]",
-  lg: "max-w-[150px]",
+  sm: 'max-w-[100px]',
+  md: 'max-w-[120px]',
+  lg: 'max-w-[150px]',
 };
 
 export function EntityBadge({
@@ -65,10 +60,10 @@ export function EntityBadge({
   groupLabel,
   hexCode,
   icon,
-  size = "md",
-  variant = "default",
+  size = 'md',
+  variant = 'default',
   showGroup = false,
-  groupSeparator = ": ",
+  groupSeparator = ': ',
   onClick,
   onRemove,
   className,
@@ -78,34 +73,33 @@ export function EntityBadge({
   tooltipContent,
 }: EntityBadgeProps) {
   const sizeClasses = {
-    sm: "text-[11px] px-2 py-0.5 gap-1",
-    md: "text-xs px-2.5 py-1 gap-1.5",
-    lg: "text-sm px-3 py-1.5 gap-2",
+    sm: 'text-[11px] px-2 py-0.5 gap-1',
+    md: 'text-xs px-2.5 py-1 gap-1.5',
+    lg: 'text-sm px-3 py-1.5 gap-2',
   };
 
   const dotSizeClasses = {
-    sm: "w-1.5 h-1.5",
-    md: "w-2 h-2",
-    lg: "w-2.5 h-2.5",
+    sm: 'w-1.5 h-1.5',
+    md: 'w-2 h-2',
+    lg: 'w-2.5 h-2.5',
   };
 
   const variantClasses = {
-    default: "bg-muted text-muted-foreground hover:bg-muted/80",
-    outline: "border border-border bg-transparent hover:bg-muted/50",
-    solid: "bg-foreground text-background hover:bg-foreground/90",
-    ghost: "bg-transparent text-muted-foreground hover:bg-muted/50",
+    default: 'bg-muted text-muted-foreground hover:bg-muted/80',
+    outline: 'border border-border bg-transparent hover:bg-muted/50',
+    solid: 'bg-foreground text-background hover:bg-foreground/90',
+    ghost: 'bg-transparent text-muted-foreground hover:bg-muted/50',
   };
 
-  const displayText =
-    showGroup && groupLabel ? `${groupLabel}${groupSeparator}${name}` : name;
+  const displayText = showGroup && groupLabel ? `${groupLabel}${groupSeparator}${name}` : name;
 
   const badgeContent = (
     <span
       className={cn(
-        "inline-flex items-center rounded-full font-medium transition-colors",
+        'inline-flex items-center rounded-full font-medium transition-colors',
         sizeClasses[size],
         variantClasses[variant],
-        onClick && "cursor-pointer",
+        onClick && 'cursor-pointer',
         className,
       )}
       onClick={onClick}
@@ -113,17 +107,17 @@ export function EntityBadge({
       {icon && <span className="leading-none">{icon}</span>}
       {hexCode && (
         <span
-          className={cn("rounded-full shrink-0", dotSizeClasses[size])}
+          className={cn('shrink-0 rounded-full', dotSizeClasses[size])}
           style={{ backgroundColor: hexCode }}
           aria-hidden="true"
         />
       )}
       <span
         className={cn(
-          "truncate",
-          size === "sm" && truncateMaxWidth.sm,
-          size === "md" && truncateMaxWidth.md,
-          size === "lg" && truncateMaxWidth.lg,
+          'truncate',
+          size === 'sm' && truncateMaxWidth.sm,
+          size === 'md' && truncateMaxWidth.md,
+          size === 'lg' && truncateMaxWidth.lg,
         )}
       >
         {displayText}
@@ -136,18 +130,18 @@ export function EntityBadge({
             onRemove();
           }}
           className={cn(
-            "rounded-full hover:bg-foreground/10 transition-colors shrink-0",
-            size === "sm" && "p-0.5",
-            size === "md" && "p-0.5",
-            size === "lg" && "p-1",
+            'shrink-0 rounded-full transition-colors hover:bg-foreground/10',
+            size === 'sm' && 'p-0.5',
+            size === 'md' && 'p-0.5',
+            size === 'lg' && 'p-1',
           )}
           aria-label={`Remover ${name}`}
         >
           <X
             className={cn(
-              size === "sm" && "w-2.5 h-2.5",
-              size === "md" && "w-3 h-3",
-              size === "lg" && "w-3.5 h-3.5",
+              size === 'sm' && 'h-2.5 w-2.5',
+              size === 'md' && 'h-3 w-3',
+              size === 'lg' && 'h-3.5 w-3.5',
             )}
           />
         </button>
@@ -161,8 +155,8 @@ export function EntityBadge({
       {groupLabel && <div className="font-medium">{groupLabel}</div>}
       <div>{name}</div>
       {productCount !== undefined && (
-        <div className="text-xs opacity-80 mt-1">
-          {productCount} produto{productCount !== 1 ? "s" : ""}
+        <div className="mt-1 text-xs opacity-80">
+          {productCount} produto{productCount !== 1 ? 's' : ''}
         </div>
       )}
     </>

@@ -54,7 +54,7 @@ export function resolveAllMatchingColors(
   const seen = new Set<string>();
   const results: MatchedColorVariant[] = [];
 
-  const addMatch = (color: typeof productColors[0], slug: string) => {
+  const addMatch = (color: (typeof productColors)[0], slug: string) => {
     // Dedup by name+hex (not slug) to avoid duplicates when group and variation point to same color
     const dedupKey = (color.name || '') + '|' + (color.hex || '');
     if (seen.has(dedupKey)) return;
@@ -70,7 +70,7 @@ export function resolveAllMatchingColors(
 
   // Match by group slugs
   for (const groupSlug of activeColorFilter.groups) {
-    const matches = productColors.filter(c => {
+    const matches = productColors.filter((c) => {
       if (c.groupSlug === groupSlug) return true;
       const g = (c.group || '').toLowerCase().trim();
       const s = groupSlug.toLowerCase().trim();
@@ -95,7 +95,7 @@ export function resolveAllMatchingColors(
 
   // Match by variation slugs
   for (const varSlug of activeColorFilter.variations) {
-    const match = productColors.find(c => c.variationSlug === varSlug);
+    const match = productColors.find((c) => c.variationSlug === varSlug);
     if (match) {
       addMatch(match, varSlug);
     }

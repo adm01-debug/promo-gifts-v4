@@ -1,4 +1,4 @@
-import type { SecretStatus } from "@/hooks/admin";
+import type { SecretStatus } from '@/hooks/admin';
 
 export interface ValidatorRule {
   /** Returns true if the value is a valid format. */
@@ -20,7 +20,7 @@ export interface ValidationResult {
 const isHttpsUrl = (v: string): URL | null => {
   try {
     const u = new URL(v);
-    if (u.protocol !== "https:") return null;
+    if (u.protocol !== 'https:') return null;
     return u;
   } catch {
     return null;
@@ -28,17 +28,18 @@ const isHttpsUrl = (v: string): URL | null => {
 };
 
 const isJwt = (v: string): boolean => {
-  if (!v.startsWith("eyJ")) return false;
-  const parts = v.split(".");
+  if (!v.startsWith('eyJ')) return false;
+  const parts = v.split('.');
   if (parts.length !== 3) return false;
   return v.length >= 100;
 };
 
 function urlEndsWithSupabase(v: string): ValidationResult {
   const u = isHttpsUrl(v);
-  if (!u) return { ok: false, message: "URL deve começar com https://" };
-  if (v.endsWith("/")) return { ok: false, message: "Remova a barra final ('/')." };
-  if (!u.hostname.endsWith(".supabase.co")) return { ok: false, message: "Host deve terminar em .supabase.co" };
+  if (!u) return { ok: false, message: 'URL deve começar com https://' };
+  if (v.endsWith('/')) return { ok: false, message: "Remova a barra final ('/')." };
+  if (!u.hostname.endsWith('.supabase.co'))
+    return { ok: false, message: 'Host deve terminar em .supabase.co' };
   return { ok: true };
 }
 
@@ -46,7 +47,7 @@ function jwtRule(label: string, v: string): ValidationResult {
   if (!isJwt(v)) {
     return {
       ok: false,
-      message: `${label} deve ser um JWT válido (eyJ…, 3 segmentos, ≥100 chars)${v.length > 0 ? ` — atual: ${v.length} chars` : ""}`,
+      message: `${label} deve ser um JWT válido (eyJ…, 3 segmentos, ≥100 chars)${v.length > 0 ? ` — atual: ${v.length} chars` : ''}`,
     };
   }
   return { ok: true };
@@ -55,100 +56,100 @@ function jwtRule(label: string, v: string): ValidationResult {
 export const SECRET_VALIDATORS: Record<string, ValidatorRule> = {
   EXTERNAL_PROMOBRIND_URL: {
     test: (v) => urlEndsWithSupabase(v).ok,
-    message: "URL deve ser https://abc.supabase.co (sem barra final).",
-    hint: "Formato esperado: https://<projeto>.supabase.co",
+    message: 'URL deve ser https://abc.supabase.co (sem barra final).',
+    hint: 'Formato esperado: https://<projeto>.supabase.co',
     minLength: 25,
   },
   EXTERNAL_CRM_URL: {
     test: (v) => urlEndsWithSupabase(v).ok,
-    message: "URL deve ser https://abc.supabase.co (sem barra final).",
-    hint: "Formato esperado: https://<projeto>.supabase.co",
+    message: 'URL deve ser https://abc.supabase.co (sem barra final).',
+    hint: 'Formato esperado: https://<projeto>.supabase.co',
     minLength: 25,
   },
   EXTERNAL_PROMOBRIND_ANON_KEY: {
     test: isJwt,
-    message: "Anon Key deve ser um JWT (eyJ…, ≥100 chars).",
-    hint: "Token JWT do Supabase (eyJ…)",
+    message: 'Anon Key deve ser um JWT (eyJ…, ≥100 chars).',
+    hint: 'Token JWT do Supabase (eyJ…)',
     minLength: 100,
   },
   EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY: {
     test: isJwt,
-    message: "Service Role Key deve ser um JWT (eyJ…, ≥100 chars).",
-    hint: "Token JWT do Supabase (eyJ…)",
+    message: 'Service Role Key deve ser um JWT (eyJ…, ≥100 chars).',
+    hint: 'Token JWT do Supabase (eyJ…)',
     minLength: 100,
   },
   EXTERNAL_CRM_ANON_KEY: {
     test: isJwt,
-    message: "Anon Key deve ser um JWT (eyJ…, ≥100 chars).",
-    hint: "Token JWT do Supabase (eyJ…)",
+    message: 'Anon Key deve ser um JWT (eyJ…, ≥100 chars).',
+    hint: 'Token JWT do Supabase (eyJ…)',
     minLength: 100,
   },
   EXTERNAL_CRM_SERVICE_ROLE_KEY: {
     test: isJwt,
-    message: "Service Role Key deve ser um JWT (eyJ…, ≥100 chars).",
-    hint: "Token JWT do Supabase (eyJ…)",
+    message: 'Service Role Key deve ser um JWT (eyJ…, ≥100 chars).',
+    hint: 'Token JWT do Supabase (eyJ…)',
     minLength: 100,
   },
   BITRIX24_WEBHOOK_URL: {
     test: (v) => {
       const u = isHttpsUrl(v);
       if (!u) return false;
-      if (!v.includes("/rest/")) return false;
-      if (!v.endsWith("/")) return false;
+      if (!v.includes('/rest/')) return false;
+      if (!v.endsWith('/')) return false;
       return true;
     },
-    message: "Webhook deve ser https://…/rest/<id>/<token>/ (com barra no final).",
-    hint: "Ex: https://seudominio.bitrix24.com.br/rest/1/abc123xyz/",
+    message: 'Webhook deve ser https://…/rest/<id>/<token>/ (com barra no final).',
+    hint: 'Ex: https://seudominio.bitrix24.com.br/rest/1/abc123xyz/',
     minLength: 60,
   },
   BITRIX24_DOMAIN: {
-    test: (v) => /^[a-z0-9-]+\.bitrix24\.[a-z.]+$/i.test(v) && !v.includes("://"),
-    message: "Domínio sem https://, ex: minhaempresa.bitrix24.com.br",
-    hint: "Apenas o host (sem https://, sem barra)",
+    test: (v) => /^[a-z0-9-]+\.bitrix24\.[a-z.]+$/i.test(v) && !v.includes('://'),
+    message: 'Domínio sem https://, ex: minhaempresa.bitrix24.com.br',
+    hint: 'Apenas o host (sem https://, sem barra)',
   },
   BITRIX24_USER_ID: {
     test: (v) => /^[1-9][0-9]*$/.test(v),
-    message: "User ID deve ser um inteiro positivo.",
-    hint: "Ex: 1",
+    message: 'User ID deve ser um inteiro positivo.',
+    hint: 'Ex: 1',
   },
   BITRIX24_TOKEN: {
     test: (v) => /^[a-z0-9]{10,60}$/i.test(v),
-    message: "Token deve ser alfanumérico (10–60 caracteres).",
+    message: 'Token deve ser alfanumérico (10–60 caracteres).',
   },
   N8N_BASE_URL: {
     test: (v) => {
       const u = isHttpsUrl(v);
       if (!u) return false;
-      if (v.endsWith("/")) return false;
-      if (u.pathname && u.pathname !== "/" && u.pathname !== "") return false;
+      if (v.endsWith('/')) return false;
+      if (u.pathname && u.pathname !== '/' && u.pathname !== '') return false;
       return true;
     },
-    message: "Apenas o host: https://n8n.suaempresa.com (sem caminho, sem barra final).",
-    hint: "Ex: https://n8n.suaempresa.com",
+    message: 'Apenas o host: https://n8n.suaempresa.com (sem caminho, sem barra final).',
+    hint: 'Ex: https://n8n.suaempresa.com',
     minLength: 15,
   },
   N8N_API_KEY: {
     test: (v) => v.length >= 20 && !/\s/.test(v),
-    message: "API Key deve ter ≥20 chars e nenhum espaço.",
+    message: 'API Key deve ter ≥20 chars e nenhum espaço.',
     minLength: 20,
   },
   MCP_SERVER_URL: {
     test: (v) => {
       try {
         const u = new URL(v);
-        return u.protocol === "https:" || u.protocol === "wss:";
+        return u.protocol === 'https:' || u.protocol === 'wss:';
       } catch {
         return false;
       }
     },
-    message: "URL deve usar https:// ou wss://",
+    message: 'URL deve usar https:// ou wss://',
     minLength: 15,
   },
 };
 
 const DEFAULT_RULE: ValidatorRule = {
   test: (v) => v.length >= 4,
-  message: "Valor deve ter pelo menos 4 caracteres.",
+  message: 'Valor deve ter pelo menos 4 caracteres.',
 };
 
 /**
@@ -169,7 +170,7 @@ export function validateSecret(name: string, value: string): ValidationResult {
   if (value.length < MIN_SUFFIX_LENGTH) {
     return {
       ok: false,
-      message: `Valor muito curto: ${value.length} ${value.length === 1 ? "caractere" : "caracteres"}. O sufixo mascarado (••••XXXX) exige pelo menos ${MIN_SUFFIX_LENGTH} caracteres para ser exibido com segurança.`,
+      message: `Valor muito curto: ${value.length} ${value.length === 1 ? 'caractere' : 'caracteres'}. O sufixo mascarado (••••XXXX) exige pelo menos ${MIN_SUFFIX_LENGTH} caracteres para ser exibido com segurança.`,
       hint: rule.hint,
     };
   }
@@ -177,17 +178,17 @@ export function validateSecret(name: string, value: string): ValidationResult {
     return { ok: true, hint: rule.hint };
   }
   // Specialized message for Supabase URLs
-  if (name === "EXTERNAL_PROMOBRIND_URL" || name === "EXTERNAL_CRM_URL") {
+  if (name === 'EXTERNAL_PROMOBRIND_URL' || name === 'EXTERNAL_CRM_URL') {
     const detail = urlEndsWithSupabase(value);
     if (!detail.ok) return { ok: false, message: detail.message, hint: rule.hint };
   }
   if (
-    name === "EXTERNAL_PROMOBRIND_ANON_KEY" ||
-    name === "EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY" ||
-    name === "EXTERNAL_CRM_ANON_KEY" ||
-    name === "EXTERNAL_CRM_SERVICE_ROLE_KEY"
+    name === 'EXTERNAL_PROMOBRIND_ANON_KEY' ||
+    name === 'EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY' ||
+    name === 'EXTERNAL_CRM_ANON_KEY' ||
+    name === 'EXTERNAL_CRM_SERVICE_ROLE_KEY'
   ) {
-    const label = name.includes("SERVICE_ROLE") ? "Service Role Key" : "Anon Key";
+    const label = name.includes('SERVICE_ROLE') ? 'Service Role Key' : 'Anon Key';
     return { ok: false, message: jwtRule(label, value).message, hint: rule.hint };
   }
   return { ok: false, message: rule.message, hint: rule.hint };
@@ -198,10 +199,7 @@ export function validateSecret(name: string, value: string): ValidationResult {
  * validator's minLength threshold (i.e. looks suspicious / probably truncated
  * or wrong).
  */
-export function hasSuspiciousLength(
-  secrets: SecretStatus[],
-  names: string[],
-): boolean {
+export function hasSuspiciousLength(secrets: SecretStatus[], names: string[]): boolean {
   for (const name of names) {
     const rule = SECRET_VALIDATORS[name];
     if (!rule?.minLength) continue;
@@ -223,7 +221,7 @@ export function getSecretHint(name: string): string | undefined {
 export interface PreflightIssue {
   name: string;
   label: string;
-  reason: "missing" | "too_short";
+  reason: 'missing' | 'too_short';
   message: string;
   hint?: string;
   currentLength?: number;
@@ -249,7 +247,7 @@ export function getPreflightIssues(
       issues.push({
         name,
         label,
-        reason: "missing",
+        reason: 'missing',
         message: `${label} não está configurado.`,
         hint: rule?.hint,
       });
@@ -259,7 +257,7 @@ export function getPreflightIssues(
       issues.push({
         name,
         label,
-        reason: "too_short",
+        reason: 'too_short',
         message: `${label} tem ${s.length} caracteres (mínimo esperado: ${rule.minLength}). Provavelmente truncado ou em formato errado.`,
         hint: rule.hint,
         currentLength: s.length ?? 0,
@@ -269,4 +267,3 @@ export function getPreflightIssues(
   }
   return issues;
 }
-

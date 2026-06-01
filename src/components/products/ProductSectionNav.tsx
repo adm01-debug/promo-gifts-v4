@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface SectionTab {
   id: string;
@@ -18,7 +18,7 @@ interface ProductSectionNavProps {
  * Highlights the active section as user scrolls.
  */
 export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
-  const [activeId, setActiveId] = useState(tabs[0]?.id || "");
+  const [activeId, setActiveId] = useState(tabs[0]?.id || '');
   const navRef = useRef<HTMLDivElement>(null);
   const isClickScrolling = useRef(false);
 
@@ -34,7 +34,7 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
           }
         }
       },
-      { rootMargin: "-120px 0px -60% 0px", threshold: 0.1 }
+      { rootMargin: '-120px 0px -60% 0px', threshold: 0.1 },
     );
 
     tabs.forEach(({ id }) => {
@@ -48,12 +48,14 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
   const handleClick = useCallback((id: string) => {
     setActiveId(id);
     isClickScrolling.current = true;
-    
+
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       // Reset flag after scroll animation
-      setTimeout(() => { isClickScrolling.current = false; }, 800);
+      setTimeout(() => {
+        isClickScrolling.current = false;
+      }, 800);
     }
   }, []);
 
@@ -62,7 +64,11 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
     if (!navRef.current) return;
     const activeBtn = navRef.current.querySelector(`[data-tab="${activeId}"]`);
     if (activeBtn) {
-      (activeBtn as HTMLElement).scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      (activeBtn as HTMLElement).scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
   }, [activeId]);
 
@@ -72,10 +78,10 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
     <div
       ref={navRef}
       className={cn(
-        "sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-40 flex gap-1 overflow-x-auto scrollbar-hide",
-        "bg-background/95 backdrop-blur-md border-b border-border",
-        "-mx-4 px-4 md:-mx-0 md:px-0 py-1.5",
-        className
+        'scrollbar-hide sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-40 flex gap-1 overflow-x-auto',
+        'border-b border-border bg-background/95 backdrop-blur-md',
+        '-mx-4 px-4 py-1.5 md:-mx-0 md:px-0',
+        className,
       )}
     >
       {tabs.map((tab) => {
@@ -86,10 +92,10 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
             data-tab={tab.id}
             onClick={() => handleClick(tab.id)}
             className={cn(
-              "relative whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-full transition-colors shrink-0",
+              'relative shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
               isActive
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
             )}
           >
             {tab.icon && <span className="mr-1.5">{tab.icon}</span>}
@@ -97,8 +103,8 @@ export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
             {isActive && (
               <motion.div
                 layoutId="section-nav-indicator"
-                className="absolute inset-0 bg-secondary rounded-full -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="absolute inset-0 -z-10 rounded-full bg-secondary"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
           </button>

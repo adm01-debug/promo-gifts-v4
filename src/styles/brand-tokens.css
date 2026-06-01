@@ -1,33 +1,18 @@
 /**
- * Brand color tokens (Etapa 17 — fase 1)
+ * Brand color tokens
  *
- * Semantic-named aliases for the existing `--orange*` tokens in `src/index.css`.
- * Same HSL values, different (and clearer) names. Isolated in this file to
- * keep the migration self-contained and easy to delete in fase 3.
- *
- * Migration plan:
- *   - Fase 1 (this PR): brand-* coexist with orange-* (additive, zero risk)
- *   - Fase 2 (future PR): sweep src/ replacing bg-orange*, text-orange*,
- *     border-orange*, hover:*-orange*, etc. with bg-brand-primary* etc.
- *   - Fase 3 (future PR): remove --orange* from src/index.css + the
- *     `orange.*` block from tailwind.config.ts (consumers = 0)
- *
- * To roll back: just delete this file and remove its import from main.tsx.
- * The `brand-primary` Tailwind tokens will fall back to undefined HSL values,
- * which is harmless until any class consumer is added.
+ * Sincronizado para sempre usar valores de modo escuro.
  */
 
 :root {
-  /* Light mode — mirrors --orange* in src/index.css :root block */
   --brand-primary: 217 91% 60%;
-  --brand-primary-hover: 217 91% 55%;
-  --brand-primary-active: 217 91% 50%;
-  --brand-primary-glow: 217 91% 75%;
-  --brand-primary-foreground: 0 0% 100%;
+  --brand-primary-hover: 217 91% 66%;
+  --brand-primary-active: 217 91% 72%;
+  --brand-primary-glow: 217 91% 74%;
+  --brand-primary-foreground: 217 91% 6%;
 }
 
 .dark {
-  /* Dark mode — mirrors --orange* in src/index.css .dark block */
   --brand-primary: 217 91% 60%;
   --brand-primary-hover: 217 91% 66%;
   --brand-primary-active: 217 91% 72%;

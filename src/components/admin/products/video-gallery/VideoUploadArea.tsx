@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Upload, Loader2, Plus, FileVideo, Palette, Youtube } from 'lucide-react';
-import { type VideoVariant, VIDEO_TYPES } from "./types";
+import { type VideoVariant, VIDEO_TYPES } from './types';
 
 interface Props {
   productId?: string;

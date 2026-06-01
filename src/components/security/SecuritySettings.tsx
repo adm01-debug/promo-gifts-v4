@@ -9,7 +9,7 @@ export function SecuritySettings() {
           Visualize e gerencie todas as configurações de segurança da sua conta em um só lugar.
         </p>
       </div>
-      
+
       <SecurityDashboard />
     </div>
   );

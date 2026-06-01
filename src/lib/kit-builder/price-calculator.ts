@@ -1,16 +1,16 @@
 ﻿/**
  * Kit Builder - Price Calculator
- * CÃ¡lculos de preÃ§o para kits
+ * Cálculos de preço para kits
  */
 
 import type { KitItem, KitBox, KitPersonalization } from './types';
 
 // ============================================
-// CÃLCULOS DE PREÃ‡O
+// CÁLCULOS DE PREÇO
 // ============================================
 
 /**
- * Calcula o preÃ§o total da caixa
+ * Calcula o preço total da caixa
  */
 export function calculateBoxPrice(box: KitBox | null, quantity: number = 1): number {
   if (!box) return 0;
@@ -18,7 +18,7 @@ export function calculateBoxPrice(box: KitBox | null, quantity: number = 1): num
 }
 
 /**
- * Calcula o preÃ§o total dos itens
+ * Calcula o preço total dos itens
  */
 export function calculateItemsPrice(items: KitItem[]): number {
   return items.reduce((total, item) => {
@@ -27,7 +27,7 @@ export function calculateItemsPrice(items: KitItem[]): number {
 }
 
 /**
- * Calcula o preÃ§o estimado de personalizaÃ§Ã£o
+ * Calcula o preço estimado de personalização
  */
 export function calculatePersonalizationPrice(
   personalization: KitPersonalization,
@@ -36,12 +36,12 @@ export function calculatePersonalizationPrice(
 ): number {
   let total = 0;
 
-  // PersonalizaÃ§Ã£o da caixa
+  // Personalização da caixa
   if (personalization.box.enabled && personalization.box.estimatedPrice) {
     total += personalization.box.estimatedPrice * quantity;
   }
 
-  // PersonalizaÃ§Ã£o dos itens
+  // Personalização dos itens
   items.forEach((item) => {
     const itemPersonalization = personalization.items[item.id];
     if (itemPersonalization?.enabled && itemPersonalization.estimatedPrice) {
@@ -53,7 +53,7 @@ export function calculatePersonalizationPrice(
 }
 
 /**
- * Calcula o preÃ§o total do kit
+ * Calcula o preço total do kit
  */
 export function calculateTotalKitPrice(
   box: KitBox | null,
@@ -88,7 +88,7 @@ export function calculateTotalKitPrice(
 }
 
 /**
- * Calcula economia em relaÃ§Ã£o Ã  compra individual
+ * Calcula economia em relação Ã  compra individual
  */
 export function calculateSavings(
   kitPrice: number,
@@ -107,7 +107,7 @@ export function calculateSavings(
 }
 
 // ============================================
-// FORMATAÃ‡ÃƒO
+// FORMATAÇÃO
 // ============================================
 
 // Import + re-export from centralized format module
@@ -115,7 +115,7 @@ import { formatCurrency } from '@/lib/format';
 export { formatCurrency };
 
 /**
- * Formata preÃ§o por unidade
+ * Formata preço por unidade
  */
 export function formatUnitPrice(total: number, quantity: number): string {
   if (quantity === 0) return formatCurrency(0);
@@ -123,7 +123,7 @@ export function formatUnitPrice(total: number, quantity: number): string {
 }
 
 // ============================================
-// BREAKDOWN DO PREÃ‡O
+// BREAKDOWN DO PREÇO
 // ============================================
 
 export interface PriceBreakdownItem {
@@ -135,7 +135,7 @@ export interface PriceBreakdownItem {
 }
 
 /**
- * Gera breakdown detalhado do preÃ§o
+ * Gera breakdown detalhado do preço
  */
 export function generatePriceBreakdown(
   box: KitBox | null,
@@ -154,10 +154,10 @@ export function generatePriceBreakdown(
       totalPrice: box.price * kitQuantity,
     });
 
-    // PersonalizaÃ§Ã£o da caixa
+    // Personalização da caixa
     if (personalization.box.enabled && personalization.box.estimatedPrice) {
       breakdown.push({
-        label: `â†³ GravaÃ§Ã£o: ${personalization.box.techniqueName || 'PersonalizaÃ§Ã£o'}`,
+        label: `↳ Gravação: ${personalization.box.techniqueName || 'Personalização'}`,
         quantity: kitQuantity,
         unitPrice: personalization.box.estimatedPrice,
         totalPrice: personalization.box.estimatedPrice * kitQuantity,
@@ -176,11 +176,11 @@ export function generatePriceBreakdown(
       totalPrice: item.price * totalQty,
     });
 
-    // PersonalizaÃ§Ã£o do item
+    // Personalização do item
     const itemPersonalization = personalization.items[item.id];
     if (itemPersonalization?.enabled && itemPersonalization.estimatedPrice) {
       breakdown.push({
-        label: `â†³ GravaÃ§Ã£o: ${itemPersonalization.techniqueName || 'PersonalizaÃ§Ã£o'}`,
+        label: `↳ Gravação: ${itemPersonalization.techniqueName || 'Personalização'}`,
         quantity: totalQty,
         unitPrice: itemPersonalization.estimatedPrice,
         totalPrice: itemPersonalization.estimatedPrice * totalQty,

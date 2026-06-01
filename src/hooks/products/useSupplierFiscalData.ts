@@ -1,12 +1,12 @@
 /**
  * Hook to fetch fiscal data from variant_supplier_sources + supplier_branches
  * for a given product's preferred supplier source.
- * 
+ *
  * INHERITANCE: If no VSS record exists, falls back to supplier_branches defaults.
  * OVERRIDE: saveFiscalOverride() creates/updates VSS records to override inherited data.
  */
+import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { useCallback } from 'react';
 import { logger } from '@/lib/logger';
 
@@ -78,7 +78,8 @@ interface BranchRecord {
   default_operation_nature: string | null;
 }
 
-const BRANCH_SELECT = 'id, branch_name, cnpj, state_uf, tax_regime, icms_internal_rate, icms_interstate_rate, default_cst, default_cfop_internal, default_cfop_interstate, default_pis_rate, default_cofins_rate, default_cest, default_csosn, default_operation_nature';
+const BRANCH_SELECT =
+  'id, branch_name, cnpj, state_uf, tax_regime, icms_internal_rate, icms_interstate_rate, default_cst, default_cfop_internal, default_cfop_interstate, default_pis_rate, default_cofins_rate, default_cest, default_csosn, default_operation_nature';
 
 /**
  * Builds SupplierFiscalData from branch defaults (inheritance mode).
@@ -108,11 +109,14 @@ function buildFromBranch(branch: BranchRecord): SupplierFiscalData {
 /**
  * Fetches fiscal data for a specific supplier source (by supplier_id + product variants).
  * Uses the external DB bridge to query variant_supplier_sources.
- * 
+ *
  * INHERITANCE: If no VSS record exists for the product+supplier combo,
  * falls back to supplier_branches defaults for that supplier.
  */
-export function useSupplierFiscalData(productId: string | undefined, supplierId: string | undefined) {
+export function useSupplierFiscalData(
+  productId: string | undefined,
+  supplierId: string | undefined,
+) {
   const queryClient = useQueryClient();
   const queryKey = ['supplier-fiscal-data', productId, supplierId];
 
@@ -122,39 +126,41 @@ export function useSupplierFiscalData(productId: string | undefined, supplierId:
       if (!productId || !supplierId) return null;
 
       // 1. First get variant IDs for this product to scope the VSS query
-      const variantsResult = await invokeExternalDb<{ id: string }>({
-        table: 'product_variants',
-        operation: 'select',
-        select: 'id',
-        filters: { product_id: productId },
-        limit: 200,
-      });
+      const variantsResult = await supabase
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', productId)
+        .limit(200);
+
+      if (variantsResult.error) throw variantsResult.error;
 
       let vss: VSSRecord | null = null;
       let matchedVariantId: string | null = null;
 
-      if (variantsResult.records.length) {
+      if (variantsResult.data.length) {
         // 2. Get variant_supplier_sources for this supplier + product's variants
-        const variantIds = variantsResult.records.map(v => v.id);
-        
+        const variantIds = variantsResult.data.map((v) => v.id);
+
         for (const variantId of variantIds.slice(0, 5)) {
-          const vssResult = await invokeExternalDb<VSSRecord>({
-            table: 'variant_supplier_sources',
-            operation: 'select',
-            select: 'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
-            filters: { supplier_id: supplierId, variant_id: variantId },
-            limit: 1,
-          });
-          if (vssResult.records.length) {
-            vss = vssResult.records[0];
+          const vssResult = await supabase
+            .from('variant_supplier_sources')
+            .select(
+              'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
+            )
+            .eq('supplier_id', supplierId)
+            .eq('variant_id', variantId)
+            .limit(1);
+
+          if (vssResult.data?.length) {
+            vss = vssResult.data[0] as VSSRecord;
             matchedVariantId = variantId;
             break;
           }
         }
 
         // Keep first variant ID for potential new VSS creation
-        if (!matchedVariantId && variantsResult.records.length) {
-          matchedVariantId = variantsResult.records[0].id;
+        if (!matchedVariantId && variantsResult.data.length) {
+          matchedVariantId = variantsResult.data[0].id;
         }
       }
 
@@ -163,15 +169,13 @@ export function useSupplierFiscalData(productId: string | undefined, supplierId:
         let branchData: Partial<BranchRecord> = {};
         if (vss.supplier_branch_id) {
           try {
-            const branchResult = await invokeExternalDb<BranchRecord>({
-              table: 'supplier_branches',
-              operation: 'select',
-              select: BRANCH_SELECT,
-              filters: { id: vss.supplier_branch_id },
-              limit: 1,
-            });
-            if (branchResult.records.length) {
-              branchData = branchResult.records[0];
+            const branchResult = await supabase
+              .from('supplier_branches')
+              .select(BRANCH_SELECT)
+              .eq('id', vss.supplier_branch_id)
+              .limit(1);
+            if (branchResult.data?.length) {
+              branchData = branchResult.data[0];
             }
           } catch (err) {
             logger.warn('[useSupplierFiscalData] Failed to fetch branch data:', err);
@@ -202,22 +206,24 @@ export function useSupplierFiscalData(productId: string | undefined, supplierId:
 
       // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults
       try {
-        const branchesResult = await invokeExternalDb<BranchRecord>({
-          table: 'supplier_branches',
-          operation: 'select',
-          select: BRANCH_SELECT,
-          filters: { supplier_id: supplierId, is_active: true },
-          limit: 5,
-        });
+        const branchesResult = await supabase
+          .from('supplier_branches')
+          .select(BRANCH_SELECT)
+          .eq('supplier_id', supplierId)
+          .eq('is_active', true)
+          .limit(5);
 
-        if (branchesResult.records.length) {
-          const branch = branchesResult.records[0];
+        if (branchesResult.data?.length) {
+          const branch = branchesResult.data[0] as BranchRecord;
           const result = buildFromBranch(branch);
           result._variantId = matchedVariantId || undefined;
           return result;
         }
       } catch (err) {
-        logger.warn('[useSupplierFiscalData] Failed to fetch branch defaults for inheritance:', err);
+        logger.warn(
+          '[useSupplierFiscalData] Failed to fetch branch defaults for inheritance:',
+          err,
+        );
       }
 
       return null;
@@ -229,111 +235,105 @@ export function useSupplierFiscalData(productId: string | undefined, supplierId:
   /**
    * Save fiscal override: creates or updates a variant_supplier_sources record.
    */
-  const saveFiscalOverride = useCallback(async (input: FiscalOverrideInput): Promise<boolean> => {
-    if (!productId || !supplierId) return false;
+  const saveFiscalOverride = useCallback(
+    async (input: FiscalOverrideInput): Promise<boolean> => {
+      if (!productId || !supplierId) return false;
 
-    try {
-      // Get existing data to know if we're creating or updating
-      const currentData = query.data;
-      let variantId = currentData?._variantId;
+      try {
+        // Get existing data to know if we're creating or updating
+        const currentData = query.data;
+        let variantId = currentData?._variantId;
 
-      // If no variant exists, create a default one for this product
-      if (!variantId) {
-        logger.log('[saveFiscalOverride] No variant found, creating default variant for product:', productId);
-        try {
-          const createResult = await invokeExternalDb<{ id: string }>({
-            table: 'product_variants',
-            operation: 'insert',
-            data: {
-              product_id: productId,
-              sku: `DEFAULT-${productId.substring(0, 8)}`,
-              is_active: true,
-              attributes: {},
-            },
-          });
-          if (createResult.records?.length) {
-            variantId = createResult.records[0].id;
-          } else if ((createResult as Record<string, unknown>).id) {
-            variantId = (createResult as Record<string, unknown>).id as string;
+        // If no variant exists, create a default one for this product
+        if (!variantId) {
+          logger.log(
+            '[saveFiscalOverride] No variant found, creating default variant for product:',
+            productId,
+          );
+          try {
+            const createResult = await supabase
+              .from('product_variants')
+              .insert({
+                product_id: productId,
+                sku: `DEFAULT-${productId.substring(0, 8)}`,
+                is_active: true,
+                attributes: {},
+              })
+              .select('id');
+            if (createResult.data?.length) {
+              variantId = createResult.data[0].id;
+            }
+          } catch (err) {
+            console.error('[saveFiscalOverride] Failed to create default variant:', err);
           }
-        } catch (err) {
-          console.error('[saveFiscalOverride] Failed to create default variant:', err);
-        }
-      }
-
-      if (!variantId) {
-        console.error('[saveFiscalOverride] No variant ID available even after creation attempt');
-        return false;
-      }
-
-      // Check if VSS record already exists
-      const existingResult = await invokeExternalDb<{ id: string }>({
-        table: 'variant_supplier_sources',
-        operation: 'select',
-        select: 'id',
-        filters: { supplier_id: supplierId, variant_id: variantId },
-        limit: 1,
-      });
-
-      const payload = {
-        cst: input.cst || null,
-        cfop: input.cfop || null,
-        icms_rate: input.icms_rate,
-        pis_rate: input.pis_rate,
-        cofins_rate: input.cofins_rate,
-        cest: input.cest || null,
-        csosn: input.csosn || null,
-        operation_nature: input.operation_nature || null,
-      };
-
-      if (existingResult.records.length) {
-        // Update existing VSS
-        await invokeExternalDb({
-          table: 'variant_supplier_sources',
-          operation: 'update',
-          id: existingResult.records[0].id,
-          data: payload,
-        });
-      } else {
-        // Fetch organization_id from an existing VSS record for this supplier
-        let organizationId: string | null = null;
-        try {
-          const orgResult = await invokeExternalDb<{ organization_id: string }>({
-            table: 'variant_supplier_sources',
-            operation: 'select',
-            select: 'organization_id',
-            filters: { supplier_id: supplierId },
-            limit: 1,
-          });
-          if (orgResult.records.length) {
-            organizationId = orgResult.records[0].organization_id;
-          }
-        } catch (e) {
-          logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', e);
         }
 
-        // Create new VSS with supplier_branch_id from inherited data
-        await invokeExternalDb({
-          table: 'variant_supplier_sources',
-          operation: 'insert',
-          data: {
+        if (!variantId) {
+          console.error('[saveFiscalOverride] No variant ID available even after creation attempt');
+          return false;
+        }
+
+        // Check if VSS record already exists
+        const existingResult = await supabase
+          .from('variant_supplier_sources')
+          .select('id')
+          .eq('supplier_id', supplierId)
+          .eq('variant_id', variantId)
+          .limit(1);
+
+        const payload = {
+          cst: input.cst || null,
+          cfop: input.cfop || null,
+          icms_rate: input.icms_rate,
+          pis_rate: input.pis_rate,
+          cofins_rate: input.cofins_rate,
+          cest: input.cest || null,
+          csosn: input.csosn || null,
+          operation_nature: input.operation_nature || null,
+        };
+
+        if (existingResult.data?.length) {
+          // Update existing VSS
+          await supabase
+            .from('variant_supplier_sources')
+            .update(payload)
+            .eq('id', existingResult.data[0].id);
+        } else {
+          // Fetch organization_id from an existing VSS record for this supplier
+          let organizationId: string | null = null;
+          try {
+            const orgResult = await supabase
+              .from('variant_supplier_sources')
+              .select('organization_id')
+              .eq('supplier_id', supplierId)
+              .limit(1);
+            if (orgResult.data?.length) {
+              organizationId = orgResult.data[0].organization_id;
+            }
+          } catch (e) {
+            logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', e);
+          }
+
+          // Create new VSS with supplier_branch_id from inherited data
+          await supabase.from('variant_supplier_sources').insert({
             ...payload,
             supplier_id: supplierId,
             variant_id: variantId,
             supplier_branch_id: currentData?.supplier_branch_id || null,
             ...(organizationId ? { organization_id: organizationId } : {}),
-          },
-        });
-      }
+          });
+        }
 
-      // Invalidate and refetch
-      await queryClient.invalidateQueries({ queryKey });
-      return true;
-    } catch (err) {
-      console.error('[saveFiscalOverride] Failed to save fiscal override:', err);
-      return false;
-    }
-  }, [productId, supplierId, query.data, queryClient, queryKey]);
+        // Invalidate and refetch
+        await queryClient.invalidateQueries({ queryKey });
+        return true;
+      } catch (err) {
+        console.error('[saveFiscalOverride] Failed to save fiscal override:', err);
+        return false;
+      }
+    },
+    [productId, supplierId, query.data, queryClient, queryKey],
+  );
 
   /**
    * Revert to inherited: deletes the VSS record so data falls back to branch defaults.
@@ -347,20 +347,15 @@ export function useSupplierFiscalData(productId: string | undefined, supplierId:
       const variantId = currentData._variantId;
       if (!variantId) return false;
 
-      const vssResult = await invokeExternalDb<{ id: string }>({
-        table: 'variant_supplier_sources',
-        operation: 'select',
-        select: 'id',
-        filters: { supplier_id: supplierId, variant_id: variantId },
-        limit: 1,
-      });
+      const vssResult = await supabase
+        .from('variant_supplier_sources')
+        .select('id')
+        .eq('supplier_id', supplierId)
+        .eq('variant_id', variantId)
+        .limit(1);
 
-      if (vssResult.records.length) {
-        await invokeExternalDb({
-          table: 'variant_supplier_sources',
-          operation: 'delete',
-          id: vssResult.records[0].id,
-        });
+      if (vssResult.data?.length) {
+        await supabase.from('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
       }
 
       await queryClient.invalidateQueries({ queryKey });

@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-const STORAGE_KEY = "recently-viewed-products";
+const STORAGE_KEY = 'recently-viewed-products';
 const MAX_ITEMS = 10;
 
 export interface RecentlyViewedItem {
@@ -61,10 +61,10 @@ export const useRecentlyViewedStore = create<RecentlyViewedStore>((set, get) => 
 
       const { items } = get();
       const filtered = items.filter((item) => item.productId !== productId);
-      const next = [
-        { productId, viewedAt: new Date().toISOString() },
-        ...filtered,
-      ].slice(0, MAX_ITEMS);
+      const next = [{ productId, viewedAt: new Date().toISOString() }, ...filtered].slice(
+        0,
+        MAX_ITEMS,
+      );
       saveToStorage(next);
       set({ items: next, itemCount: next.length });
     },

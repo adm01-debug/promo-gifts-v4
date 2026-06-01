@@ -2,7 +2,7 @@ import { useState, Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { performanceTracker } from '@/utils/performance';
 import { useScrollLockFix } from '@/hooks/ui/useScrollLockFix';
-import { useGlobalShortcuts } from '@/hooks/ui';
+import { useGlobalShortcuts } from '@/hooks/ui/useGlobalShortcuts';
 
 import { SkipToContent } from '@/components/common/SkipToContent';
 
@@ -52,7 +52,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       'route-start:' + location.pathname,
       'main-layout-mounted',
     );
-  }, []);
+  }, [location.pathname]);
 
   // Propaga --breadcrumb-h ao :root para que stickys filhos (toolbars de
   // página) ancorem corretamente abaixo do Header + Breadcrumb. Em "/" a
@@ -85,7 +85,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
       <div className="flex">
         <div className="print:hidden">
-          <Suspense fallback={<div className="hidden h-screen w-16 lg:w-64 flex-shrink-0 lg:block bg-sidebar/5 border-r border-sidebar-border/10" />}>
+          <Suspense
+            fallback={
+              <div className="hidden h-screen w-16 flex-shrink-0 border-r border-sidebar-border/10 bg-sidebar/5 lg:block lg:w-64" />
+            }
+          >
             <SidebarReorganized
               isOpen={sidebarOpen}
               onToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -114,7 +118,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             style={{ top: 'var(--header-h, 56px)' }}
             data-testid="breadcrumb-bar"
           >
-            <div className="mx-auto max-w-[1920px] px-3 py-2 sm:px-4 lg:px-6">
+            <div className="mx-auto max-w-[1920px] px-3 py-1 sm:px-4 lg:px-6">
               <Suspense fallback={<div className="h-6" />}>
                 <PersistentBreadcrumbs showBackButton />
               </Suspense>

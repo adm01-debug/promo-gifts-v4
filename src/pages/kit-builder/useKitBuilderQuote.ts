@@ -8,8 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import type { KitState } from '@/hooks/kit-builder';
-import type { KitItem } from '@/lib/kit-builder/types';
+import { calculateTotalKitPrice, type KitState, type KitItem } from '@/lib/kit-builder';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 export function useKitBuilderQuote() {
   const { user } = useAuth();
@@ -34,18 +34,33 @@ export function useKitBuilderQuote() {
       const boxRef = kitState.box;
       const itemsRef = kitState.items;
       const personRef = kitState.personalization;
+      const pricing = calculateTotalKitPrice(boxRef, itemsRef, personRef, kitQuantity);
+      const quotePayload = {
+        seller_id: user.id,
+        status: 'draft',
+        // Empty string lets the `set_quote_number` BEFORE INSERT trigger generate it.
+        quote_number: '',
+        client_name: 'Sem cliente',
+        subtotal: pricing.subtotal,
+        discount_percent: 0,
+        discount_amount: 0,
+        total: pricing.total,
+        negotiation_markup_percent: 0,
+        notes: `Kit: ${kitMetadataNote}`,
+        internal_notes: `Criado pelo Kit Builder. Quantidade de kits: ${kitQuantity}.`,
+        tags: {
+          source: 'kit-builder',
+          kit_name: kitLabel,
+          kit_quantity: kitQuantity,
+          kit_identity_tag: kitState.identity?.tag ?? null,
+        },
+      } satisfies TablesInsert<'quotes'>;
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase
-        // rls-allow: insert cria orçamento do usuário atual; RLS valida user_id
+        // rls-allow: insert cria orçamento do usuário atual; RLS valida seller_id
         .from('quotes')
-        .insert({
-          user_id: user.id,
-          status: 'draft',
-          title: kitLabel,
-          notes: `Kit: ${kitMetadataNote}`,
-          quantity: kitQuantity,
-        })
+        .insert(quotePayload)
         .select('id')
         .single();
 
@@ -53,18 +68,20 @@ export function useKitBuilderQuote() {
       if (!quote) throw new Error('Failed to create quote');
 
       const kitGroupId = crypto.randomUUID();
-      const quoteItems: Array<Record<string, unknown>> = [];
+      const quoteItems: TablesInsert<'quote_items'>[] = [];
 
       // Add box if present
       if (boxRef) {
+        const boxQty = kitQuantity;
         quoteItems.push({
           quote_id: quote.id,
           product_name: boxRef.name,
           product_sku: boxRef.sku || null,
           product_image_url: boxRef.imageUrl || null,
           product_id: boxRef.id,
-          quantity: kitQuantity,
+          quantity: boxQty,
           unit_price: boxRef.price,
+          subtotal: boxRef.price * boxQty,
           sort_order: 0,
           notes: 'Caixa/embalagem do kit',
           color_name: null,
@@ -75,14 +92,16 @@ export function useKitBuilderQuote() {
       }
 
       itemsRef.forEach((item: KitItem, index: number) => {
+        const itemQty = item.quantity * kitQuantity;
         quoteItems.push({
           quote_id: quote.id,
           product_name: item.name,
           product_sku: item.sku || null,
           product_image_url: item.imageUrl || null,
           product_id: item.id,
-          quantity: item.quantity * kitQuantity,
+          quantity: itemQty,
           unit_price: item.price,
+          subtotal: item.price * itemQty,
           sort_order: index + 1,
           notes: item.isOptional ? 'Item opcional' : null,
           color_name: item.selectedColor?.name || null,
@@ -101,7 +120,7 @@ export function useKitBuilderQuote() {
 
         // Personalizations
         if (insertedItems) {
-          const personalizations: Array<Record<string, unknown>> = [];
+          const personalizations: TablesInsert<'quote_item_personalizations'>[] = [];
 
           if (personRef.box.enabled && boxRef) {
             const boxId = boxRef.id;
@@ -111,12 +130,12 @@ export function useKitBuilderQuote() {
               personalizations.push({
                 quote_item_id: boxQuoteItem.id,
                 technique_name: bp.techniqueName || null,
-                colors_count: bp.colors || null,
+                colors_count: bp.colors || undefined,
                 width_cm: bp.width || null,
                 height_cm: bp.height || null,
-                unit_cost: bp.estimatedPrice || null,
-                total_cost: bp.estimatedPrice ? bp.estimatedPrice * kitQuantity : null,
-                setup_cost: null,
+                unit_cost: bp.estimatedPrice || undefined,
+                total_cost: bp.estimatedPrice ? bp.estimatedPrice * kitQuantity : undefined,
+                setup_cost: undefined,
                 personalized_quantity: kitQuantity,
                 notes: bp.position ? `Posição: ${bp.position}` : null,
               });
@@ -132,12 +151,12 @@ export function useKitBuilderQuote() {
                 personalizations.push({
                   quote_item_id: itemQuoteItem.id,
                   technique_name: itemP.techniqueName || null,
-                  colors_count: itemP.colors || null,
+                  colors_count: itemP.colors || undefined,
                   width_cm: itemP.width || null,
                   height_cm: itemP.height || null,
-                  unit_cost: itemP.estimatedPrice || null,
-                  total_cost: itemP.estimatedPrice ? itemP.estimatedPrice * totalQty : null,
-                  setup_cost: null,
+                  unit_cost: itemP.estimatedPrice || undefined,
+                  total_cost: itemP.estimatedPrice ? itemP.estimatedPrice * totalQty : undefined,
+                  setup_cost: undefined,
                   personalized_quantity: totalQty,
                   notes: itemP.position ? `Posição: ${itemP.position}` : null,
                 });

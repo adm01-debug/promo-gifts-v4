@@ -4,10 +4,10 @@
  * - 1..4: jump to specific step
  * Disabled when focus is in inputs/textareas/contentEditable.
  */
-import { useEffect } from "react";
-import type { KitBuilderStep } from "@/lib/kit-builder";
+import { useEffect } from 'react';
+import type { KitBuilderStep } from '@/lib/kit-builder';
 
-const STEP_BY_INDEX: KitBuilderStep[] = ["box", "items", "personalization", "summary"];
+const STEP_BY_INDEX: KitBuilderStep[] = ['box', 'items', 'personalization', 'summary'];
 
 interface Options {
   enabled?: boolean;
@@ -35,26 +35,23 @@ export function useKitWizardShortcuts({
       if (!target) return;
       const tag = target.tagName;
       const isField =
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        target.isContentEditable;
+        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
       if (isField) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      if (e.key === "ArrowLeft") {
-        if (currentStep === "box") return;
+      if (e.key === 'ArrowLeft') {
+        if (currentStep === 'box') return;
         e.preventDefault();
         onPrev();
         return;
       }
-      if (e.key === "ArrowRight") {
-        if (currentStep === "summary" || !canProceed) return;
+      if (e.key === 'ArrowRight') {
+        if (currentStep === 'summary' || !canProceed) return;
         e.preventDefault();
         onNext();
         return;
       }
-      if (["1", "2", "3", "4"].includes(e.key)) {
+      if (['1', '2', '3', '4'].includes(e.key)) {
         const idx = Number(e.key) - 1;
         const target = STEP_BY_INDEX[idx];
         if (!target) return;
@@ -65,7 +62,7 @@ export function useKitWizardShortcuts({
         }
       }
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [enabled, canProceed, currentStep, completedSteps, onPrev, onNext, onJump]);
 }

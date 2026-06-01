@@ -298,19 +298,22 @@ export function useMagicUpState() {
       setSelectedTechnique(null);
       return;
     }
+    // Guarda contra resposta fora-de-ordem: ao trocar de produto rapidamente, a
+    // resposta mais lenta (produto antigo) não pode sobrescrever o estado atual.
+    let cancelled = false;
     (async () => {
       setLoadingColors(true);
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
+        const { dbInvoke } = await import('@/lib/db/postgrest');
         const [variantsResult, imagesResult] = await Promise.all([
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_variants',
             operation: 'select',
             filters: { product_id: selectedProduct.id },
             orderBy: { column: 'color_name', ascending: true },
             limit: 100,
           }),
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_images',
             operation: 'select',
             filters: { product_id: selectedProduct.id },
@@ -318,6 +321,7 @@ export function useMagicUpState() {
             limit: 100,
           }),
         ]);
+        if (cancelled) return;
         const images: ProductImage[] = (imagesResult.records || [])
           .filter((img: Record<string, unknown>) => img.image_type !== 'box')
           .map((img: Record<string, unknown>) => ({
@@ -341,12 +345,16 @@ export function useMagicUpState() {
         });
         setColors(Array.from(uniqueColors.values()));
       } catch {
+        if (cancelled) return;
         setColors([]);
         setProductImages([]);
       } finally {
-        setLoadingColors(false);
+        if (!cancelled) setLoadingColors(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedProduct?.id]);
 
   // ─── Print Areas from customization data ───────────────────────

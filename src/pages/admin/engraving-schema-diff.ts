@@ -153,11 +153,14 @@ export interface TableDiff {
   expectedColumns: string[];
   actualColumns: string[];
   missingInDb: string[]; // front espera, banco não tem -> BREAKING
-  newInDb: string[];     // banco tem, front não usa -> oportunidade
+  newInDb: string[]; // banco tem, front não usa -> oportunidade
   consumers: string[];
 }
 
-export function diffColumns(expected: string[], actual: string[]): {
+export function diffColumns(
+  expected: string[],
+  actual: string[],
+): {
   missingInDb: string[];
   newInDb: string[];
 } {
@@ -186,7 +189,9 @@ export function buildMarkdownReport(diffs: TableDiff[]): string {
     lines.push(`- Colunas reais (banco): **${d.actualColumns.length}**`);
     lines.push('');
     lines.push('### 🔴 Faltando no banco (BREAKING — front lê)');
-    lines.push(d.missingInDb.length ? d.missingInDb.map((c) => `- \`${c}\``).join('\n') : '_nenhuma_');
+    lines.push(
+      d.missingInDb.length ? d.missingInDb.map((c) => `- \`${c}\``).join('\n') : '_nenhuma_',
+    );
     lines.push('');
     lines.push('### 🟢 Novas no banco (oportunidade)');
     lines.push(d.newInDb.length ? d.newInDb.map((c) => `- \`${c}\``).join('\n') : '_nenhuma_');

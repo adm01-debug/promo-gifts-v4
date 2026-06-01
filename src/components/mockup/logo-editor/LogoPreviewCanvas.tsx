@@ -69,7 +69,9 @@ export function LogoPreviewCanvas({
 
       {/* Preview area */}
       <div
-        ref={containerRef}
+        // RefObject<T | null> (from useRef<T | null>) is structurally identical to
+        // the LegacyRef<T> the JSX ref prop expects in @types/react 18.3; narrow the type param.
+        ref={containerRef as React.RefObject<HTMLDivElement>}
         className="relative aspect-square overflow-hidden rounded-lg border bg-muted/30"
       >
         <img

@@ -82,6 +82,46 @@ SELECT public.get_connections_auto_test_interval();
 
 ## 🔐 Rotação de Credenciais CRM
 
+
+### Rotação de chave usada por cron jobs (`apikey`)
+
+Quando a chave de autenticação de Edge Functions for rotacionada, **os crons também precisam ser validados**.
+
+**Pré-requisitos de runtime (sem hardcode em migration):**
+
+```sql
+-- Definir no ambiente/role do banco (ou via ALTER DATABASE ... SET)
+-- app.supabase_functions_base_url = https://<project-ref>.supabase.co
+-- app.supabase_anon_key           = <jwt anon atual>
+SELECT current_setting('app.supabase_functions_base_url', true) AS base_url;
+SELECT current_setting('app.supabase_anon_key', true)           AS anon_key_present;
+```
+
+**Checklist pós-rotação:**
+
+```sql
+-- 1) Validar comandos dos jobs (não pode conter host fixo nem 'eyJ...')
+SELECT jobname, command
+  FROM cron.job
+ WHERE jobname IN ('connections-auto-test','external-db-bridge-keepalive');
+
+-- 2) Disparo manual de fumaça
+SELECT public.run_connections_auto_test();
+
+-- 3) Saúde recente do cron
+SELECT j.jobname, d.status, d.return_message, d.start_time
+  FROM cron.job_run_details d
+  JOIN cron.job j ON j.jobid = d.jobid
+ WHERE j.jobname IN ('connections-auto-test','external-db-bridge-keepalive')
+ ORDER BY d.start_time DESC
+ LIMIT 20;
+```
+
+Se `current_setting(..., true)` retornar `NULL`, o cron vai falhar com erro de URL/header ausente. Ajuste as variáveis e reexecute a validação.
+
+---
+
+
 1. **Provedor:** gerar nova `service_role` key no dashboard Supabase do CRM.
 2. **Aplicar:** `/admin/conexoes` → Tab "Supabase" → Card CRM → "Rotacionar".
 3. **Verificar:** seletor de empresas no front carrega em <3s.
@@ -186,3 +226,35 @@ Todas usam `resolveCredential()` — DB-first, env como fallback.
 - `supabase/migrations/20260429163414_*.sql` — schedule do cron
 - `supabase/migrations/20260429163441_*.sql` — RLS para dev
 - `docs/RUNBOOK.md` — runbook geral
+
+## Estratégia de promoção dev → stage → prod para jobs agendados (Edge URL)
+
+A partir da migration `20260525113000_runtime_edge_function_base_url.sql`, os callers SQL (`cron`, trigger e RPC) **não dependem mais de URL hardcoded por ambiente**. A URL base é resolvida em runtime por `public.get_edge_functions_base_url()` com precedência:
+
+1. `current_setting('app.edge_functions_base_url', true)`
+2. Vault secret `EDGE_FUNCTIONS_BASE_URL`
+3. Falha explícita (fail-closed)
+
+### Como promover sem editar migration histórica
+
+1. Defina o valor por ambiente:
+   - **dev:** URL do projeto dev (`https://<dev-ref>.supabase.co`)
+   - **stage:** URL do projeto stage (`https://<stage-ref>.supabase.co`)
+   - **prod:** URL do projeto prod (`https://doufsxqlfjyuvxuezpln.supabase.co`)
+2. Rode migrations normalmente em cada ambiente.
+3. Valide resolução com:
+
+```sql
+SELECT * FROM public.validate_edge_functions_base_url('dev');
+SELECT * FROM public.validate_edge_functions_base_url('stage');
+SELECT * FROM public.validate_edge_functions_base_url('prod');
+```
+
+`ok=true` confirma que o endpoint resolvido está aderente ao padrão esperado do ambiente.
+
+### Checklist operacional por ambiente
+
+- Confirmar que `connections-auto-test` está agendado (`cron.job`) e ativo.
+- Confirmar que os últimos runs chamam a edge correta (logs da função + `cron.job_run_details`).
+- Em rotação de endpoint, atualizar configuração (GUC/secret) **antes** de janela de execução crítica de cron.
+- Não reescrever migrations antigas para trocar URL: a promoção ocorre apenas por configuração de runtime.

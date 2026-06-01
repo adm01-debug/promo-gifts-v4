@@ -2,184 +2,187 @@
  * ProductCardImage — Image section with carousel, badges, and color dots.
  * Extracted from ProductCard.tsx.
  */
-import { memo } from "react";
-import { Sparkles, Package } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NoveltyBadge } from "./NoveltyBadge";
-import { cn } from "@/lib/utils";
-import { isLightColor } from "@/hooks/products";
-import { OptimizedImage } from "@/components/ui/OptimizedImage";
-import type { MatchedColorVariant } from "@/utils/color-variant-carousel";
+import { memo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ProductStatusBadge } from './ProductStatusBadge';
+import { cn } from '@/lib/utils';
+import { isLightColor } from '@/hooks/products/useColorSystem';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
+
+const DEFAULT_IMAGE_CONFIG = {
+  blurAmount: 12,
+  zoomAmount: 1.08,
+  duration: 600,
+};
 
 interface ProductCardImageProps {
-  priority?: boolean;
-  product: {
-    name: string;
-    featured?: boolean;
-    newArrival?: boolean;
-    isKit?: boolean;
-    onSale?: boolean;
-    images: string[];
-    colors: Array<{ hex: string; name: string; group: string; groupSlug?: string; variationSlug?: string }>;
-  };
-  cardImageUrl: string;
-  cardSrcSet?: string;
-  activeColorName: string | null;
-  colorSpecificImage: string | null;
-  imageLoaded: boolean;
-  isHovered: boolean;
-  computedImageScale: number;
-  isNovelty: boolean;
+  imageUrl: string;
+  name: string;
+  sku: string;
+  featured?: boolean;
+  isNovelty?: boolean;
   noveltyDaysRemaining?: number;
-  highlightColors?: string[];
-  activeColorFilter?: { groups?: string[]; variations?: string[] } | null;
-  // Multi-variant carousel
-  allMatchingVariants: MatchedColorVariant[];
-  hasMultipleVariants: boolean;
-  safeVariantIdx: number;
-  onImageLoad: () => void;
-  onVariantChange: (idx: number) => void;
+  newArrival?: boolean;
+  isKit?: boolean;
+  onSale?: boolean;
+  stockStatus?: 'ok' | 'low' | 'critical' | 'unavailable';
+  computedImageScale?: number;
+  colors?: { hex: string; name?: string }[];
+  activeColorIdx?: number;
+  onColorClick?: (idx: number) => void;
+  colorVariants?: MatchedColorVariant[];
+  onStatusClick?: (type: string) => void;
+  lqip?: string;
 }
 
 export const ProductCardImage = memo(function ProductCardImage({
-  product, cardImageUrl, cardSrcSet, activeColorName, colorSpecificImage,
-  imageLoaded, isHovered, computedImageScale, isNovelty, noveltyDaysRemaining,
-  highlightColors, activeColorFilter,
-  allMatchingVariants, hasMultipleVariants, safeVariantIdx,
-  onImageLoad, onVariantChange,
-  priority = false,
+  imageUrl,
+  name,
+  sku,
+  featured,
+  isNovelty,
+  noveltyDaysRemaining,
+  newArrival,
+  isKit,
+  onSale,
+  stockStatus,
+  computedImageScale = 1,
+  colors = [],
+  activeColorIdx = 0,
+  onColorClick,
+  colorVariants,
+  onStatusClick,
+  lqip,
 }: ProductCardImageProps) {
+  const activeVariant = colorVariants?.[activeColorIdx];
+  const activeSrc = activeVariant?.imageUrl || imageUrl;
+  const activeLqip = activeVariant?.lqip || lqip;
+
   return (
-    <div
-      className="relative aspect-[4/5] overflow-hidden product-img-container bg-muted/30"
-      style={{ zIndex: 0 }}
-      onTouchStart={hasMultipleVariants ? (e) => {
-        (e.currentTarget as HTMLElement & { _swipeX?: number })._swipeX = e.touches[0].clientX;
-      } : undefined}
-      onTouchEnd={hasMultipleVariants ? (e) => {
-        const el = e.currentTarget as HTMLElement & { _swipeX?: number };
-        const startX = el._swipeX;
-        if (startX === null) return;
-        const diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) > 40) {
-          e.stopPropagation();
-          onVariantChange(diff < 0
-            ? (safeVariantIdx + 1) % allMatchingVariants.length
-            : (safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length);
-        }
-        el._swipeX = undefined;
-      } : undefined}
-    >
-      {/* Image */}
+    <div className="relative aspect-square overflow-hidden">
       <OptimizedImage
-        src={cardImageUrl}
-        alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        className={cn(
-          "w-full h-full object-contain ease-out",
-          hasMultipleVariants ? "transition-all duration-300" : "transition-all duration-700"
-        )}
-        style={imageLoaded ? { transform: `scale(${computedImageScale})`, willChange: "transform" } : undefined}
-        onLoad={onImageLoad}
+        src={activeSrc}
+        alt={name}
+        lqip={activeLqip}
+        className={cn('h-full w-full object-contain')}
+        style={{
+          transform: `scale(${computedImageScale})`,
+          willChange: 'transform',
+          transition: 'transform 0.3s ease-out',
+        }}
         containerClassName="h-full w-full"
-        priority={priority}
+        {...DEFAULT_IMAGE_CONFIG}
       />
 
-      {/* Active color badge (mobile) */}
-      {activeColorName && colorSpecificImage && (
-        <div className="absolute top-2 right-2 z-10 sm:hidden">
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-card/90 backdrop-blur-sm shadow-sm">{activeColorName}</Badge>
+      {/* Stock badge */}
+      {stockStatus === 'unavailable' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+          <Badge variant="destructive" className="text-[10px]">
+            Fora de estoque
+          </Badge>
         </div>
       )}
 
-      {/* Hover gradient */}
-      <div className={cn("absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent transition-opacity duration-500", isHovered ? "opacity-100" : "opacity-0")} />
-
-      {/* Featured glow */}
-      {product.featured && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />}
-
       {/* Badges - Top Left */}
-      <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-1.5 z-10">
-        {product.featured && (
-          <Badge className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-lg animate-glow-pulse">
-            <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-            <span className="hidden sm:inline">Destaque</span><span className="sm:hidden">★</span>
-          </Badge>
+      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
+        {featured && (
+          <ProductStatusBadge
+            type="featured"
+            size="sm"
+            onClick={() => onStatusClick?.('featured')}
+          />
         )}
+
         {isNovelty && noveltyDaysRemaining !== undefined ? (
-          <NoveltyBadge daysRemaining={noveltyDaysRemaining} size="sm" />
-        ) : product.newArrival && (
-          <Badge className="bg-gradient-to-r from-info to-info/80 text-info-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md">
-            <span className="hidden sm:inline">Novidade</span><span className="sm:hidden">Novo</span>
-          </Badge>
+          <ProductStatusBadge
+            type="novelty"
+            daysRemaining={noveltyDaysRemaining}
+            size="sm"
+            onClick={() => onStatusClick?.('novelty')}
+          />
+        ) : (
+          newArrival && (
+            <ProductStatusBadge
+              type="novelty"
+              value="Novo"
+              size="sm"
+              onClick={() => onStatusClick?.('novelty')}
+            />
+          )
         )}
-        {product.isKit && (
-          <Badge className="bg-gradient-to-r from-warning to-warning/80 text-warning-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md">
-            <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />Kit
-          </Badge>
+
+        {isKit && (
+          <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
         )}
-        {product.onSale && (
-          <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md animate-pulse">
-            <span className="hidden sm:inline">Promoção</span><span className="sm:hidden">%</span>
-          </Badge>
+
+        {onSale && (
+          <ProductStatusBadge
+            type="promotion"
+            value="-20%"
+            size="sm"
+            onClick={() => onStatusClick?.('promotion')}
+          />
+        )}
+
+        {(stockStatus === 'low' || stockStatus === 'critical') && (
+          <ProductStatusBadge
+            type="urgency"
+            urgencyType={stockStatus}
+            value={stockStatus === 'critical' ? 'Crítico' : 'Baixo'}
+            size="sm"
+            onClick={() => onStatusClick?.('urgency')}
+          />
         )}
       </div>
 
-      {/* Color dots on hover — hidden if multi-variant carousel is active to avoid overlap */}
-      {product.colors.length > 0 && !hasMultipleVariants && (
-        <div className={cn("absolute bottom-3 left-3 right-3 z-10 transition-all duration-400 ease-out", isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
-          <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-md rounded-full px-3 py-2 shadow-lg border border-border/50">
-            {product.colors.slice(0, 6).map((color, idx) => {
-              const isDotHighlighted = highlightColors?.includes(color.group) ||
-                (activeColorFilter?.groups?.includes(color.groupSlug || '') ?? false) ||
-                (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
-              return (
-                <Tooltip key={idx}>
-                  <TooltipTrigger asChild>
-                    <div className={cn("w-5 h-5 rounded-full border-2 shadow-sm cursor-pointer transition-all duration-200 hover:scale-125 hover:shadow-md",
-                      isDotHighlighted ? "border-success ring-2 ring-success/30 scale-110" : "border-border/50"
-                    )} style={{ backgroundColor: color.hex, borderColor: color.hex === '#FFFFFF' ? 'hsl(var(--border))' : undefined }} />
-                  </TooltipTrigger>
-                  <TooltipContent>{color.name}</TooltipContent>
-                </Tooltip>
-              );
-            })}
-            {product.colors.length > 6 && <span className="text-xs font-medium text-muted-foreground ml-1">+{product.colors.length - 6}</span>}
-          </div>
-        </div>
-      )}
-
-      {/* Multi-variant carousel dots */}
-      {hasMultipleVariants && (
-        <div
-          role="tablist"
-          aria-label={`Variantes de cor: ${allMatchingVariants.map(v => v.name).join(', ')}`}
-          className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 bg-card/95 backdrop-blur-lg rounded-full px-2.5 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.15)] border border-border/40 dark:shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); onVariantChange((safeVariantIdx + 1) % allMatchingVariants.length); }
-            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); onVariantChange((safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length); }
-          }}
+      {/* SKU badge - bottom right */}
+      <div className="absolute bottom-1.5 right-1.5 z-10">
+        <Badge
+          variant="secondary"
+          className="h-auto bg-background/80 px-1.5 py-0.5 text-[9px] font-medium leading-none backdrop-blur-sm"
         >
-          {allMatchingVariants.map((v, i) => (
-            <button key={v.groupSlug || v.variationSlug || i} role="tab" type="button"
-              tabIndex={i === safeVariantIdx ? 0 : -1} aria-selected={i === safeVariantIdx}
-              aria-current={i === safeVariantIdx ? 'true' : undefined}
-              onClick={(e) => { e.stopPropagation(); onVariantChange(i); }}
-              aria-label={`Ver variante ${v.name}`} title={v.name}
-              className={cn("w-5 h-5 rounded-full border-2 transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                i === safeVariantIdx ? "ring-2 ring-offset-2 ring-offset-card scale-110" : "border-border/50 opacity-70 hover:opacity-100"
-              )}
-              style={{
-                backgroundColor: v.hex,
-                borderColor: i === safeVariantIdx ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground))' : v.hex) : undefined,
-                ['--tw-ring-color' as string]: i === safeVariantIdx ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground) / 0.6)' : v.hex) : undefined,
-              }}
-            />
+          {sku}
+        </Badge>
+      </div>
+
+      {/* Color dots */}
+      {colors.length > 0 && (
+        <div className="absolute bottom-1.5 left-1.5 z-10 flex gap-0.5">
+          {colors.slice(0, 6).map((color, idx) => (
+            <Tooltip key={`${color.hex}-${idx}`}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'h-3 w-3 rounded-full border transition-all hover:scale-125',
+                    activeColorIdx === idx
+                      ? 'scale-125 border-primary shadow-sm'
+                      : 'border-transparent',
+                  )}
+                  style={{ backgroundColor: color.hex }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onColorClick?.(idx);
+                  }}
+                  aria-label={color.name || color.hex}
+                >
+                  {activeColorIdx === idx && isLightColor(color.hex) && (
+                    <span className="sr-only">Cor selecionada</span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {color.name || color.hex}
+              </TooltipContent>
+            </Tooltip>
           ))}
-          <span className="text-[10px] font-medium text-muted-foreground ml-0.5 max-w-[60px] truncate hidden sm:inline" title={allMatchingVariants[safeVariantIdx]?.name}>{allMatchingVariants[safeVariantIdx]?.name}</span>
-          <span className="text-[10px] font-medium text-muted-foreground ml-0.5" aria-live="polite">{safeVariantIdx + 1}/{allMatchingVariants.length}</span>
+          {colors.length > 6 && (
+            <span className="flex h-3 items-center text-[9px] text-muted-foreground">
+              +{colors.length - 6}
+            </span>
+          )}
         </div>
       )}
     </div>

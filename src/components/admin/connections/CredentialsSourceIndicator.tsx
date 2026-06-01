@@ -172,7 +172,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       <div className="min-w-[260px] flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium leading-none">Fonte das credenciais</p>
-          <TooltipProvider delayDuration={200}>
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -183,7 +183,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   SSOT
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
+              <TooltipContent side="top" className=" ">
                 Single Source of Truth: os valores exibidos vêm da tabela
                 <code className="mx-1 font-mono">integration_credentials</code>
                 lida via edge function
@@ -203,7 +203,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <TooltipProvider delayDuration={150}>
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -215,7 +215,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   DB · {counts.db}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">Origem: banco (SSOT) — {counts.db}</p>
                 <p>
                   Valor persistido em <code className="font-mono">integration_credentials</code> e
@@ -244,7 +244,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   ENV · {counts.env}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">
                   Origem: variável de ambiente (legado) — {counts.env}
                 </p>
@@ -276,7 +276,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   AUSENTE · {counts.none}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">Sem valor em DB nem em ENV — {counts.none}</p>
                 <p>
                   O <code className="font-mono">secrets-manager</code> não encontrou o segredo em
@@ -323,7 +323,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       </div>
 
       {onRefresh && (
-        <TooltipProvider delayDuration={200}>
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -344,7 +344,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 <span className="ml-1.5 text-xs">{refreshing ? 'Atualizando…' : 'Atualizar'}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
+            <TooltipContent side="top" className=" ">
               Invalida o cache do <code className="font-mono">secrets-manager</code> e recarrega{' '}
               <code className="font-mono">integration_credentials</code> imediatamente. Útil após
               editar secrets em outra aba.

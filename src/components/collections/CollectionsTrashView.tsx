@@ -2,16 +2,16 @@
  * CollectionsTrashView — Lixeira de itens removidos de uma coleção.
  * Espelho de FavoritesTrashView. TTL de 30 dias.
  */
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { RotateCcw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useProductsContext } from "@/contexts/ProductsContext";
-import { useCollectionsContext } from "@/contexts/CollectionsContext";
-import { DeleteConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { EmptyState } from "@/components/common/EmptyState";
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { RotateCcw, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useProductsContext } from '@/contexts/ProductsContext';
+import { useCollectionsContext } from '@/contexts/CollectionsContext';
+import { DeleteConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface TrashRow {
   id: string;
@@ -38,12 +38,12 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
   const load = async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from("collection_items_trash" as never)
-      .select("*")
-      .eq("collection_id", collectionId)
-      .order("deleted_at", { ascending: false });
+      .from('collection_items_trash' as never)
+      .select('*')
+      .eq('collection_id', collectionId)
+      .order('deleted_at', { ascending: false });
     if (error) {
-      toast.error("Erro ao carregar lixeira");
+      toast.error('Erro ao carregar lixeira');
       setItems([]);
     } else {
       setItems((data as unknown as TrashRow[]) ?? []);
@@ -74,46 +74,46 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
   const handleRestore = async (productId: string) => {
     const ok = await restoreFromTrash(collectionId, productId);
     if (ok) {
-      toast.success("Produto restaurado");
+      toast.success('Produto restaurado');
       load();
     } else {
-      toast.error("Não foi possível restaurar");
+      toast.error('Não foi possível restaurar');
     }
   };
 
   const handlePurge = async (id: string) => {
     const { error } = await supabase
-      .from("collection_items_trash" as never)
+      .from('collection_items_trash' as never)
       .delete()
-      .eq("id", id);
-    if (error) toast.error("Erro ao excluir");
+      .eq('id', id);
+    if (error) toast.error('Erro ao excluir');
     else {
-      toast.success("Item excluído permanentemente");
+      toast.success('Item excluído permanentemente');
       load();
     }
   };
 
   const handlePurgeAll = async () => {
     const { error } = await supabase
-      .from("collection_items_trash" as never)
+      .from('collection_items_trash' as never)
       .delete()
-      .eq("collection_id", collectionId);
-    if (error) toast.error("Erro ao esvaziar lixeira");
+      .eq('collection_id', collectionId);
+    if (error) toast.error('Erro ao esvaziar lixeira');
     else {
-      toast.success("Lixeira esvaziada");
+      toast.success('Lixeira esvaziada');
       setConfirmEmpty(false);
       load();
     }
   };
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground p-8 text-center">Carregando lixeira…</div>;
+    return <div className="p-8 text-center text-sm text-muted-foreground">Carregando lixeira…</div>;
   }
 
   if (items.length === 0) {
     return (
       <EmptyState
-        variant="default"
+        variant="generic"
         title="Lixeira vazia"
         description="Itens removidos aparecem aqui por 30 dias antes de serem excluídos definitivamente."
       />
@@ -124,7 +124,7 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {items.length} {items.length === 1 ? "item removido" : "itens removidos"} • TTL de 30 dias
+          {items.length} {items.length === 1 ? 'item removido' : 'itens removidos'} • TTL de 30 dias
         </p>
         <Button
           variant="outline"
@@ -132,43 +132,46 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
           className="text-destructive hover:text-destructive"
           onClick={() => setConfirmEmpty(true)}
         >
-          <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Esvaziar lixeira
+          <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Esvaziar lixeira
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((it) => {
           const p = productMap.get(it.product_id);
           const daysLeft = formatDaysLeft(it.expires_at);
           const thumb = it.thumbnail_url ?? p?.images?.[0];
           return (
-            <div key={it.id} className="flex gap-3 p-3 rounded-xl border border-border bg-card">
-              <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
+            <div key={it.id} className="flex gap-3 rounded-xl border border-border bg-card p-3">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {thumb && (
                   <img
                     src={thumb}
                     alt={p?.name ?? it.product_id}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                     loading="lazy"
                   />
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{p?.name ?? it.product_id}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{p?.name ?? it.product_id}</p>
                 {it.color_name && (
-                  <p className="text-xs text-muted-foreground truncate">Cor: {it.color_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">Cor: {it.color_name}</p>
                 )}
-                <Badge variant={daysLeft <= 5 ? "destructive" : "secondary"} className="text-[10px] mt-1">
-                  {daysLeft} dia{daysLeft !== 1 ? "s" : ""} restantes
+                <Badge
+                  variant={daysLeft <= 5 ? 'destructive' : 'secondary'}
+                  className="mt-1 text-[10px]"
+                >
+                  {daysLeft} dia{daysLeft !== 1 ? 's' : ''} restantes
                 </Badge>
-                <div className="flex gap-1.5 mt-2">
+                <div className="mt-2 flex gap-1.5">
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs"
                     onClick={() => handleRestore(it.product_id)}
                   >
-                    <RotateCcw className="h-3 w-3 mr-1" /> Restaurar
+                    <RotateCcw className="mr-1 h-3 w-3" /> Restaurar
                   </Button>
                   <Button
                     size="sm"

@@ -1,4 +1,4 @@
-import { type GateFlagProvider, type GateValue } from "./types";
+import { type GateFlagProvider, type GateValue } from './types';
 import { EnvGateProvider, LocalStorageGateProvider } from './providers';
 import type { AppRole } from '@/contexts/AuthContext';
 

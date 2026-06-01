@@ -1,7 +1,7 @@
-import { useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Target, RotateCw, RotateCcw, FlipHorizontal2, FlipVertical2 } from "lucide-react";
+import { useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Target, RotateCw, RotateCcw, FlipHorizontal2, FlipVertical2 } from 'lucide-react';
 
 interface LogoQuickActionsProps {
   logoPreview: string | null;
@@ -41,33 +41,64 @@ export function LogoQuickActions({
       <div className="flex gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => onPositionChange(50, positionY)} disabled={!logoPreview} className="flex-1">
-              <Target className="h-3.5 w-3.5 mr-1" />Centro V
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPositionChange(50, positionY)}
+              disabled={!logoPreview}
+              className="flex-1"
+            >
+              <Target className="mr-1 h-3.5 w-3.5" />
+              Centro V
             </Button>
           </TooltipTrigger>
           <TooltipContent>Alinhar à linha vertical central</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => onPositionChange(50, 50)} disabled={!logoPreview} className="flex-1">
-              <Target className="h-3.5 w-3.5 mr-1" />Centro
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPositionChange(50, 50)}
+              disabled={!logoPreview}
+              className="flex-1"
+            >
+              <Target className="mr-1 h-3.5 w-3.5" />
+              Centro
             </Button>
           </TooltipTrigger>
           <TooltipContent>Centralizar horizontal e verticalmente</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => onPositionChange(positionX, 50)} disabled={!logoPreview} className="flex-1">
-              <Target className="h-3.5 w-3.5 mr-1" />Centro H
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPositionChange(positionX, 50)}
+              disabled={!logoPreview}
+              className="flex-1"
+            >
+              <Target className="mr-1 h-3.5 w-3.5" />
+              Centro H
             </Button>
           </TooltipTrigger>
           <TooltipContent>Alinhar à linha horizontal central</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={toggleOrientation} disabled={!logoPreview} className="flex-1">
-              {((logoRotation || 0) % 180 === 0) ? <FlipVertical2 className="h-4 w-4 mr-1" /> : <FlipHorizontal2 className="h-4 w-4 mr-1" />}
-              {((logoRotation || 0) % 180 === 0) ? "Vertical" : "Horizontal"}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleOrientation}
+              disabled={!logoPreview}
+              className="flex-1"
+            >
+              {(logoRotation || 0) % 180 === 0 ? (
+                <FlipVertical2 className="mr-1 h-4 w-4" />
+              ) : (
+                <FlipHorizontal2 className="mr-1 h-4 w-4" />
+              )}
+              {(logoRotation || 0) % 180 === 0 ? 'Vertical' : 'Horizontal'}
             </Button>
           </TooltipTrigger>
           <TooltipContent>Alternar orientação do logo</TooltipContent>
@@ -75,20 +106,40 @@ export function LogoQuickActions({
       </div>
 
       {/* Rotation controls */}
-      <div className="flex gap-2 items-center">
-        <Button variant="outline" size="sm" onClick={rotateCounterClockwise} disabled={!logoPreview} className="flex-1">
-          <RotateCcw className="h-4 w-4 mr-1" />-15°
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={rotateCounterClockwise}
+          disabled={!logoPreview}
+          className="flex-1"
+        >
+          <RotateCcw className="mr-1 h-4 w-4" />
+          -15°
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant={logoRotation ? "secondary" : "outline"} size="sm" onClick={() => onRotationChange?.(0)} disabled={!logoPreview || !logoRotation} className="min-w-[48px]">
+            <Button
+              variant={logoRotation ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => onRotationChange?.(0)}
+              disabled={!logoPreview || !logoRotation}
+              className="min-w-[48px]"
+            >
               {logoRotation || 0}°
             </Button>
           </TooltipTrigger>
           <TooltipContent>Resetar rotação para 0°</TooltipContent>
         </Tooltip>
-        <Button variant="outline" size="sm" onClick={rotateClockwise} disabled={!logoPreview} className="flex-1">
-          <RotateCw className="h-4 w-4 mr-1" />+15°
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={rotateClockwise}
+          disabled={!logoPreview}
+          className="flex-1"
+        >
+          <RotateCw className="mr-1 h-4 w-4" />
+          +15°
         </Button>
       </div>
     </>

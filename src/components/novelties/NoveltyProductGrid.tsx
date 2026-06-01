@@ -11,6 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
   Package,
   ArrowUpDown,
   Building2,
@@ -22,7 +31,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
-import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
+import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
@@ -35,7 +44,8 @@ import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { NoveltyGridCard, NoveltyTableView } from './NoveltyCards';
+import { NoveltyTableView } from './NoveltyCards';
+import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
 
 type ViewMode = 'grid' | 'list' | 'table';
 type SortMode =
@@ -79,8 +89,10 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 200 });
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -165,6 +177,17 @@ export function NoveltyProductGrid() {
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
     selectedSupplier !== 'all' || selectedCategory !== 'all' || searchQuery.trim() !== '';
@@ -182,7 +205,7 @@ export function NoveltyProductGrid() {
     isInCompare,
     addToCompare,
     removeFromCompare,
-    canAdd: canAddToCompare,
+    canAddMore: canAddToCompare,
   } = useComparisonStore();
   const onToggleCompare = useCallback(
     (productId: string) => {
@@ -229,7 +252,7 @@ export function NoveltyProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 10 }).map((_, i) => (
+            {Array.from({ length: 15 }).map((_, i) => (
               <ProductCardSkeleton key={i} variant={viewMode === 'list' ? 'compact' : 'default'} />
             ))}
           </div>
@@ -248,7 +271,7 @@ export function NoveltyProductGrid() {
               : 'Nenhuma novidade encontrada'}
           </p>
           {hasActiveFilters ? (
-            <Button variant="link-primary" className="mt-1 text-xs" onClick={clearFilters}>
+            <Button variant="link" className="mt-1 text-xs" onClick={clearFilters}>
               Limpar filtros
             </Button>
           ) : (
@@ -267,6 +290,12 @@ export function NoveltyProductGrid() {
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
+          onStatusClick={(type) => {
+            if (type === 'novelty') return; // already on novelty page
+            if (type === 'promotion') navigate('/filtros?onSale=1');
+            if (type === 'featured') navigate('/filtros?featured=1');
+            if (type === 'kit') navigate('/filtros?isKit=1');
+          }}
         />
       );
     const effectiveCols = Math.min(gridColumns, filteredProducts.length) as ColumnCount;
@@ -325,23 +354,20 @@ export function NoveltyProductGrid() {
     }
 
     return (
-      <div className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)}`}>
-        {filteredProducts.map((product, index) => (
-          <div
-            key={product.novelty_id}
-            className="stagger-item"
-            style={{ animationDelay: `${Math.min(index * 25, 250)}ms` }}
-          >
-            <NoveltyGridCard
-              product={product}
-              onClick={() => handleProductClick(product.product_id)}
-              selectionMode={selectionMode}
-              isSelected={sel.selectedIds.has(product.product_id)}
-              onToggleSelect={() => sel.toggleSelect(product.product_id)}
-            />
-          </div>
-        ))}
-      </div>
+      <VirtualizedNoveltyGrid
+        products={paginatedProducts}
+        gridColumns={effectiveCols}
+        selectionMode={selectionMode}
+        selectedIds={sel.selectedIds}
+        onToggleSelect={sel.toggleSelect}
+        onProductClick={handleProductClick}
+        onStatusClick={(type) => {
+          if (type === 'novelty') return;
+          if (type === 'promotion') navigate('/filtros?onSale=1');
+          if (type === 'featured') navigate('/filtros?featured=1');
+          if (type === 'kit') navigate('/filtros?isKit=1');
+        }}
+      />
     );
   };
 
@@ -579,6 +605,63 @@ export function NoveltyProductGrid() {
           )}
         </AnimatePresence>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center py-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={cn(
+                    currentPage === 1 && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                if (
+                  totalPages > 7 &&
+                  page !== 1 &&
+                  page !== totalPages &&
+                  Math.abs(page - currentPage) > 1
+                ) {
+                  if (page === currentPage - 2 || page === currentPage + 2) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+                  return null;
+                }
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={currentPage === page}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={cn(
+                    currentPage === totalPages && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {selectionMode && (
         <BulkActionBar

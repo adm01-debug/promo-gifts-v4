@@ -3,9 +3,9 @@
  * Fetches aggregated daily market activity (units_depleted) from supplier
  * stock_daily_summary via external-db-bridge, avoiding N+1 queries.
  */
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { invokeExternalDb } from "@/lib/external-db";
+import { dbInvoke } from '@/lib/db/postgrest';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 
 // Per-product sparkline data
@@ -45,7 +45,7 @@ export function SparklineSalesProvider({ productIds, children }: Props) {
   }, [productIds]);
 
   const { data: sparkMap } = useQuery({
-    queryKey: ["sparkline-supplier-batch", stableIds],
+    queryKey: ['sparkline-supplier-batch', stableIds],
     queryFn: () => fetchSupplierSparklineBatch(stableIds),
     enabled: stableIds.length > 0,
     staleTime: 60 * 60 * 1000,
@@ -81,7 +81,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
   for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
     const batch = productIds.slice(i, i + BATCH_SIZE);
     try {
-      const result = await invokeExternalDb<StockDailySummaryRow>({
+      const result = await dbInvoke<StockDailySummaryRow>({
         table: 'stock_daily_summary',
         operation: 'select',
         select: 'product_id, summary_date, units_depleted',

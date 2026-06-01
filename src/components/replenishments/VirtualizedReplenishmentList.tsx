@@ -1,9 +1,9 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type ReplenishmentWithDetails, type replenishmentToProduct } from "@/hooks/products";
-import { ProductListItem } from "@/components/products/ProductListItem";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import { cn } from "@/lib/utils";
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { type ReplenishmentWithDetails, type replenishmentToProduct } from '@/hooks/products';
+import { ProductListItem } from '@/components/products/ProductListItem';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { cn } from '@/lib/utils';
 
 interface VirtualizedListProps {
   products: ReplenishmentWithDetails[];
@@ -45,15 +45,15 @@ export function VirtualizedReplenishmentList({
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: "calc(100vh - 280px)" }}
+      style={{ maxHeight: 'calc(100vh - 280px)' }}
       role="list"
       aria-label="Lista de produtos repostos"
     >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
+          width: '100%',
+          position: 'relative',
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -67,24 +67,38 @@ export function VirtualizedReplenishmentList({
               key={virtualRow.key}
               role="listitem"
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 left: 0,
-                width: "100%",
+                width: '100%',
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <div className={cn("flex items-center gap-1", isSelected && "ring-2 ring-primary rounded-xl")}>
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  isSelected && 'rounded-xl ring-2 ring-primary',
+                )}
+              >
                 {selectionMode && (
-                  <div className="flex-shrink-0 ml-1">
-                    <SelectionCheckbox checked={isSelected} onChange={() => onToggleSelect(item.product_id)} size="md" aria-label={`Selecionar ${item.product_name}`} />
+                  <div className="ml-1 flex-shrink-0">
+                    <SelectionCheckbox
+                      checked={isSelected}
+                      onChange={() => onToggleSelect(item.product_id)}
+                      size="md"
+                      aria-label={`Selecionar ${item.product_name}`}
+                    />
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <ProductListItem
                     product={prod}
-                    onClick={() => selectionMode ? onToggleSelect(item.product_id) : onProductClick(item.product_id)}
+                    onClick={() =>
+                      selectionMode
+                        ? onToggleSelect(item.product_id)
+                        : onProductClick(item.product_id)
+                    }
                     isFavorited={isFavorite(item.product_id)}
                     onToggleFavorite={toggleFavorite}
                     isInCompare={isInCompare(item.product_id)}

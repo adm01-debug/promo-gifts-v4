@@ -17,6 +17,20 @@ test.describe("Login Page", () => {
     await expectVisibleByTestId(page, "login-email-input");
     await expectVisibleByTestId(page, "login-password-input");
     await expectVisibleByTestId(page, "login-submit");
+    
+    // Garante que o card de status da infraestrutura NÃO está presente (Desktop)
+    await expect(page.locator('text=Status da Infraestrutura')).not.toBeVisible();
+    await expect(page.locator('text=Banco de Dados')).not.toBeVisible();
+    await expect(page.locator('[data-testid="infrastructure-status-card"]')).not.toBeAttached();
+  });
+
+  test("não exibe card de status em mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await gotoAndSettle(page, "/login");
+    
+    // Garante que o card de status da infraestrutura NÃO está presente (Mobile)
+    await expect(page.locator('text=Status da Infraestrutura')).not.toBeVisible();
+    await expect(page.locator('[data-testid="infrastructure-status-card"]')).not.toBeAttached();
   });
 
   test("submit vazio mantém usuário em /login", async ({ page }) => {

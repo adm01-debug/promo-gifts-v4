@@ -1,8 +1,12 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+// BUG-A12 FIX (26/05/2026): padronizado para npm:zod@3.23.8.
+// Anteriormente usava https://deno.land/x/zod@v3.22.4/mod.ts (versão mais antiga,
+// fonte diferente), causando inconsistência de validação entre edge functions.
+import { z } from 'npm:zod@3.23.8';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
 
 const VALID_VOICE_IDS = [
   '5lrBPYY4YvMbKHTo8kvZ', // Chosen voice (default)
@@ -26,7 +30,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate user
     let userId: string;
     try {
       const authResult = await authenticateRequest(req);
@@ -44,7 +47,7 @@ Deno.serve(async (req) => {
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    const { value: ELEVENLABS_API_KEY } = await resolveCredential('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }
@@ -68,9 +71,6 @@ Deno.serve(async (req) => {
     }
 
     const { text, voiceId } = parsed.data;
-
-    // Use chosen voice by default
-    // If voiceId provided but not in allowlist, still use it (custom voices)
     const selectedVoiceId = voiceId || '5lrBPYY4YvMbKHTo8kvZ';
 
     const response = await fetchWithBreaker(
@@ -112,7 +112,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Return raw binary audio for best performance
     const audioBuffer = await response.arrayBuffer();
 
     return new Response(audioBuffer, {

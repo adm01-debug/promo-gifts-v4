@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useProductAnalytics, type Product } from "@/hooks/products";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useProductAnalytics, type Product } from '@/hooks/products';
 
-const STORAGE_KEY = "product-favorites";
+const STORAGE_KEY = 'product-favorites';
 
 export interface FavoriteItem {
   productId: string;
@@ -31,7 +31,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
         setFavorites(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading favorites:", e);
+      console.error('Error loading favorites:', e);
     }
     setIsLoaded(true);
   }, []);
@@ -52,7 +52,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
         productId,
         productSku: productId,
         productName: productId,
-        viewType: "favorite",
+        viewType: 'favorite',
       });
       return [...prev, { productId, addedAt: new Date().toISOString() }];
     });
@@ -73,7 +73,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
         productId,
         productSku: productId,
         productName: productId,
-        viewType: "favorite",
+        viewType: 'favorite',
       });
       return [...prev, { productId, addedAt: new Date().toISOString() }];
     });
@@ -81,13 +81,13 @@ export function useFavorites(options?: UseFavoritesOptions) {
 
   const isFavorite = useCallback(
     (productId: string) => favorites.some((f) => f.productId === productId),
-    [favorites]
+    [favorites],
   );
 
   const getFavoriteProductsFromMap = useCallback(
     (getProductsByIds: (ids: string[]) => Product[]): Product[] =>
       getProductsByIds(favorites.map((f) => f.productId)),
-    [favorites]
+    [favorites],
   );
 
   const clearFavorites = useCallback(() => {

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,10 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { BookmarkPlus } from "lucide-react";
-import { type QuoteTemplateItem } from "@/hooks/quotes";
-import { QuoteTemplateForm } from "./QuoteTemplateForm";
+} from '@/components/ui/dialog';
+import { BookmarkPlus } from 'lucide-react';
+import { type QuoteTemplateItem } from '@/hooks/quotes';
+import { QuoteTemplateForm } from './QuoteTemplateForm';
 
 interface SaveAsTemplateButtonProps {
   items: QuoteTemplateItem[];
@@ -26,8 +26,8 @@ export function SaveAsTemplateButton({
   items,
   discountPercent = 0,
   discountAmount = 0,
-  notes = "",
-  internalNotes = "",
+  notes = '',
+  internalNotes = '',
   trigger,
   onSaved,
 }: SaveAsTemplateButtonProps) {
@@ -39,8 +39,8 @@ export function SaveAsTemplateButton({
   };
 
   const _initialTemplate = {
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     is_default: false,
     items_data: items,
     discount_percent: discountPercent,
@@ -55,17 +55,15 @@ export function SaveAsTemplateButton({
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm">
-            <BookmarkPlus className="h-4 w-4 mr-2" />
+            <BookmarkPlus className="mr-2 h-4 w-4" />
             Salvar como Template
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Salvar como Template</DialogTitle>
-          <DialogDescription>
-            Salve este orçamento como um template reutilizável
-          </DialogDescription>
+          <DialogDescription>Salve este orçamento como um template reutilizável</DialogDescription>
         </DialogHeader>
         <QuoteTemplateForm
           initialItems={items}

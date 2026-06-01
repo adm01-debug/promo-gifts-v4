@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/common';
 import {
   SORT_OPTIONS,
@@ -28,16 +28,35 @@ export function useFilterPanelState(
   const [localSearch, setLocalSearch] = useState(filters.search);
   const debouncedSearch = useDebounce(localSearch, 500);
 
+  // BUG-19 FIX: stale closure — refs para capturar sempre os valores mais recentes
+  // de filters e onFilterChange dentro do effect que só roda quando debouncedSearch muda.
+  // Sem esse padrão, o effect fechava sobre versões antigas, sobrescrevendo filtros
+  // alterados durante os 500ms de debounce (ex: cor selecionada era apagada).
+  const filtersRef = useRef(filters);
+  const onFilterChangeRef = useRef(onFilterChange);
   useEffect(() => {
-    if (debouncedSearch !== filters.search) {
-      onFilterChange({ ...filters, search: debouncedSearch });
+    filtersRef.current = filters;
+  });
+  useEffect(() => {
+    onFilterChangeRef.current = onFilterChange;
+  });
+
+  useEffect(() => {
+    if (debouncedSearch !== filtersRef.current.search) {
+      onFilterChangeRef.current({ ...filtersRef.current, search: debouncedSearch });
     }
   }, [debouncedSearch]);
 
+  // BUG-SF-07 FIX: sync de localSearch para qualquer mudança externa de filters.search
+  // (preset aplicado, URL navigation, voice action). Antes só sincronizava quando === '',
+  // deixando o campo de busca visualmente desatualizado ao navegar para /?search=caneta.
+  // O effect não cria loop: quando localSearch muda via user input, o debounce dispara e
+  // onFilterChange atualiza filters.search — na próxima checagem, filters.search === localSearch.
   useEffect(() => {
-    if (filters.search !== localSearch && filters.search === '') {
-      setLocalSearch('');
+    if (filters.search !== localSearch) {
+      setLocalSearch(filters.search || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search]);
 
   const { data: categoryIcons = [] } = useCategoryIcons();
@@ -233,10 +252,10 @@ export function useFilterPanelState(
   const sectionSummaries = useMemo(() => {
     const summaries: Record<string, string> = {};
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
-      summaries.preco = `R$${filters.priceRange[0]}â€“${filters.priceRange[1] >= 9999 ? 'âˆž' : filters.priceRange[1]}`;
+      summaries.preco = `R$${filters.priceRange[0]}–${filters.priceRange[1] >= 9999 ? '∞' : filters.priceRange[1]}`;
     }
     if (filters.minStock > 0) {
-      summaries.estoque = `â‰¥${filters.minStock} un.`;
+      summaries.estoque = `≥${filters.minStock} un.`;
     }
     if (filters.sortBy !== 'name') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);

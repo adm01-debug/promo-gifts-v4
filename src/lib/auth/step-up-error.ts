@@ -16,12 +16,9 @@
  * resposta é 4xx, mas também propaga `error` (FunctionsHttpError). Esta
  * função inspeciona ambos os caminhos sem expor `request_id` ou stacks.
  */
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
-export type StepUpErrorKind =
-  | "step_up_required"
-  | "step_up_invalid"
-  | "dev_role_required";
+export type StepUpErrorKind = 'step_up_required' | 'step_up_invalid' | 'dev_role_required';
 
 interface BackendErrorShape {
   error?: string;
@@ -31,16 +28,20 @@ interface BackendErrorShape {
 
 function collectCandidates(data: unknown, error: unknown): BackendErrorShape[] {
   const candidates: BackendErrorShape[] = [];
-  if (data && typeof data === "object") candidates.push(data as BackendErrorShape);
-  if (error && typeof error === "object") {
+  if (data && typeof data === 'object') candidates.push(data as BackendErrorShape);
+  if (error && typeof error === 'object') {
     const e = error as { context?: { body?: unknown }; message?: string };
     const body = e.context?.body;
-    if (typeof body === "string") {
-      try { candidates.push(JSON.parse(body) as BackendErrorShape); } catch { /* noop */ }
-    } else if (body && typeof body === "object") {
+    if (typeof body === 'string') {
+      try {
+        candidates.push(JSON.parse(body) as BackendErrorShape);
+      } catch {
+        /* noop */
+      }
+    } else if (body && typeof body === 'object') {
       candidates.push(body as BackendErrorShape);
     }
-    if (typeof e.message === "string") candidates.push({ error: e.message });
+    if (typeof e.message === 'string') candidates.push({ error: e.message });
   }
   return candidates;
 }
@@ -57,29 +58,30 @@ export function extractStepUpError(
     // `error: "forbidden"` com `reason: "not_dev" | "dev_role_required" | "not_dev_at_edge"`,
     // e o mcp-server pode devolver `MCP_KEY_AUTO_REVOKED_DEV_LOST`.
     const isDevLost =
-      c.reason === "dev_role_required" ||
-      c.reason === "not_dev" ||
-      c.reason === "not_dev_at_edge" ||
-      c.error === "MCP_KEY_AUTO_REVOKED_DEV_LOST" ||
-      c.error === "dev_role_required";
+      c.reason === 'dev_role_required' ||
+      c.reason === 'not_dev' ||
+      c.reason === 'not_dev_at_edge' ||
+      c.error === 'MCP_KEY_AUTO_REVOKED_DEV_LOST' ||
+      c.error === 'dev_role_required';
     if (isDevLost) {
       return {
-        kind: "dev_role_required",
+        kind: 'dev_role_required',
         message:
-          typeof c.message === "string" && c.message.trim().length > 0
+          typeof c.message === 'string' && c.message.trim().length > 0
             ? c.message
-            : "Seu papel de desenvolvedor foi removido entre a confirmação e a execução desta operação. Peça para um administrador restaurar o acesso e refaça a verificação dupla.",
+            : 'Seu papel de desenvolvedor foi removido entre a confirmação e a execução desta operação. Peça para um administrador restaurar o acesso e refaça a verificação dupla.',
       };
     }
 
-    if (c.error === "step_up_required" || c.error === "step_up_invalid") {
+    if (c.error === 'step_up_required' || c.error === 'step_up_invalid') {
       return {
         kind: c.error,
-        message: typeof c.message === "string" && c.message.trim().length > 0
-          ? c.message
-          : c.error === "step_up_required"
-            ? "Confirme sua identidade (senha + código por e-mail) para continuar."
-            : "Verificação dupla expirou ou é inválida. Refaça a confirmação.",
+        message:
+          typeof c.message === 'string' && c.message.trim().length > 0
+            ? c.message
+            : c.error === 'step_up_required'
+              ? 'Confirme sua identidade (senha + código por e-mail) para continuar.'
+              : 'Verificação dupla expirou ou é inválida. Refaça a confirmação.',
       };
     }
   }
@@ -92,32 +94,27 @@ export function extractStepUpError(
  * (caso o admin já tenha restaurado o papel), mas o texto deixa claro
  * que pode ser necessário aguardar a restauração do acesso.
  */
-export function showStepUpToast(
-  kind: StepUpErrorKind,
-  message: string,
-  onRetry: () => void,
-): void {
-  if (kind === "dev_role_required") {
-    toast.error("Acesso de desenvolvedor revogado", {
+export function showStepUpToast(kind: StepUpErrorKind, message: string, onRetry: () => void): void {
+  if (kind === 'dev_role_required') {
+    toast.error('Acesso de desenvolvedor revogado', {
       id: `step-up-${kind}`,
       description: message,
       duration: 12000,
       action: {
-        label: "Refazer verificação",
+        label: 'Refazer verificação',
         onClick: onRetry,
       },
     });
     return;
   }
-  const title = kind === "step_up_required"
-    ? "Verificação dupla obrigatória"
-    : "Verificação dupla inválida";
+  const title =
+    kind === 'step_up_required' ? 'Verificação dupla obrigatória' : 'Verificação dupla inválida';
   toast.error(title, {
     id: `step-up-${kind}`,
     description: message,
     duration: 8000,
     action: {
-      label: "Refazer verificação",
+      label: 'Refazer verificação',
       onClick: onRetry,
     },
   });
@@ -127,11 +124,7 @@ export function showStepUpToast(
  * Atalho: detecta + dispara o toast. Retorna `true` se foi tratado
  * (caller deve abortar fluxo padrão de erro).
  */
-export function handleStepUpError(
-  data: unknown,
-  error: unknown,
-  onRetry: () => void,
-): boolean {
+export function handleStepUpError(data: unknown, error: unknown, onRetry: () => void): boolean {
   const detected = extractStepUpError(data, error);
   if (!detected) return false;
   showStepUpToast(detected.kind, detected.message, onRetry);

@@ -36,20 +36,47 @@ const TABLE_ALIASES: Record<string, string> = {
   tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',
 };
 
+/**
+ * Helper de retry para useQuery: não retentar erros 4xx (erros do cliente).
+ * 400 Bad Request não vai resolver entre tentativas — é bug no código.
+ * Apenas 5xx (erros do servidor) justificam retry.
+ *
+ * @example
+ * useQuery({ ..., retry: shouldRetry })
+ */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 2) return false;
+  const status = (error as { status?: number })?.status;
+  if (typeof status === 'number' && status < 500) return false;
+  return true;
+}
+
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const table = TABLE_ALIASES[options.table] ?? options.table;
   let query = supabase.from(table).select(options.select || '*');
 
   if (options.filters) {
     for (const [key, value] of Object.entries(options.filters)) {
-      if (Array.isArray(value)) query = query.in(key, value);
-      else if (value === null) query = query.is(key, null);
-      else if (typeof value === 'object' && value !== null && 'op' in value) {
+      if (Array.isArray(value)) {
+        query = query.in(key, value);
+      } else if (value === null) {
+        query = query.is(key, null);
+      } else if (typeof value === 'object' && value !== null && 'op' in value) {
         const op = (value as { op: string }).op;
         const val = (value as { value: unknown }).value;
-        if (op === 'gte') query = query.gte(key, val);
+        // FIX: 'lt' e 'gt' estavam ausentes — caíam no else e geravam
+        // .eq(col, {op:'lt',value:X}) → PostgREST: col=eq.[object Object] → 400
+        if (op === 'lt') query = query.lt(key, val);
         else if (op === 'lte') query = query.lte(key, val);
+        else if (op === 'gt') query = query.gt(key, val);
+        else if (op === 'gte') query = query.gte(key, val);
         else if (op === 'eq') query = query.eq(key, val);
+        else if (op === 'neq') query = query.neq(key, val);
+        else {
+          logger.warn(
+            `[postgrest] operador desconhecido '${op}' para coluna '${key}' — filtro ignorado`,
+          );
+        }
       } else {
         query = query.eq(key, value);
       }

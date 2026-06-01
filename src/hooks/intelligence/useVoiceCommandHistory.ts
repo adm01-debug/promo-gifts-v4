@@ -43,7 +43,7 @@ const normalizeCommand = (command: string): string => {
 
 const detectCommandType = (command: string): VoiceCommandRecord['type'] => {
   const normalized = normalizeCommand(command);
-  
+
   if (/^(limpar|resetar|remover filtros|limpar tudo)/.test(normalized)) {
     return 'clear';
   }
@@ -56,7 +56,7 @@ const detectCommandType = (command: string): VoiceCommandRecord['type'] => {
   if (/(filtrar|buscar|mostrar|encontrar|quero|preciso)/.test(normalized)) {
     return 'filter';
   }
-  
+
   return 'search';
 };
 
@@ -66,10 +66,12 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return parsed.map((item: { transcript?: string; command?: string; timestamp?: string; type?: string }) => ({
-          ...item,
-          timestamp: new Date(item.timestamp),
-        }));
+        return parsed.map(
+          (item: { transcript?: string; command?: string; timestamp?: string; type?: string }) => ({
+            ...item,
+            timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+          }),
+        );
       }
     } catch (error) {
       console.error('Error loading voice command history:', error);
@@ -86,28 +88,27 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
     }
   }, [history]);
 
-  const addCommand = useCallback((
-    command: string,
-    type?: VoiceCommandRecord['type'],
-    successful: boolean = true
-  ) => {
-    const normalizedCommand = normalizeCommand(command);
-    const detectedType = type || detectCommandType(command);
-    
-    const newRecord: VoiceCommandRecord = {
-      id: crypto.randomUUID(),
-      command,
-      normalizedCommand,
-      timestamp: new Date(),
-      type: detectedType,
-      successful,
-    };
+  const addCommand = useCallback(
+    (command: string, type?: VoiceCommandRecord['type'], successful: boolean = true) => {
+      const normalizedCommand = normalizeCommand(command);
+      const detectedType = type || detectCommandType(command);
 
-    setHistory(prev => {
-      const updated = [newRecord, ...prev].slice(0, MAX_HISTORY);
-      return updated;
-    });
-  }, []);
+      const newRecord: VoiceCommandRecord = {
+        id: crypto.randomUUID(),
+        command,
+        normalizedCommand,
+        timestamp: new Date(),
+        type: detectedType,
+        successful,
+      };
+
+      setHistory((prev) => {
+        const updated = [newRecord, ...prev].slice(0, MAX_HISTORY);
+        return updated;
+      });
+    },
+    [],
+  );
 
   const clearHistory = useCallback(() => {
     setHistory([]);
@@ -115,19 +116,19 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
   }, []);
 
   const removeCommand = useCallback((id: string) => {
-    setHistory(prev => prev.filter(item => item.id !== id));
+    setHistory((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   // Analyze patterns from history
   const patterns = useMemo((): CommandPattern[] => {
     const patternMap = new Map<string, CommandPattern>();
 
-    history.forEach(record => {
+    history.forEach((record) => {
       if (!record.successful) return;
-      
+
       const key = record.normalizedCommand;
       const existing = patternMap.get(key);
-      
+
       if (existing) {
         existing.count += 1;
         if (record.timestamp > existing.lastUsed) {
@@ -148,43 +149,46 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
       const now = Date.now();
       const aRecency = 1 / (1 + (now - a.lastUsed.getTime()) / (1000 * 60 * 60 * 24));
       const bRecency = 1 / (1 + (now - b.lastUsed.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       const aScore = a.count * 0.7 + aRecency * 10 * 0.3;
       const bScore = b.count * 0.7 + bRecency * 10 * 0.3;
-      
+
       return bScore - aScore;
     });
   }, [history]);
 
   // Get most frequent commands
   const frequentCommands = useMemo((): CommandPattern[] => {
-    return patterns
-      .filter(p => p.count >= 2)
-      .slice(0, FREQUENT_LIMIT);
+    return patterns.filter((p) => p.count >= 2).slice(0, FREQUENT_LIMIT);
   }, [patterns]);
 
   // Get recent unique commands
   const recentCommands = useMemo((): VoiceCommandRecord[] => {
     const seen = new Set<string>();
-    return history.filter(record => {
-      if (seen.has(record.normalizedCommand)) return false;
-      seen.add(record.normalizedCommand);
-      return true;
-    }).slice(0, RECENT_LIMIT);
+    return history
+      .filter((record) => {
+        if (seen.has(record.normalizedCommand)) return false;
+        seen.add(record.normalizedCommand);
+        return true;
+      })
+      .slice(0, RECENT_LIMIT);
   }, [history]);
 
   // Get suggestions based on partial input
-  const getSuggestions = useCallback((partial?: string): CommandPattern[] => {
-    if (!partial) {
-      return frequentCommands;
-    }
+  const getSuggestions = useCallback(
+    (partial?: string): CommandPattern[] => {
+      if (!partial) {
+        return frequentCommands;
+      }
 
-    const normalizedPartial = normalizeCommand(partial);
-    
-    return patterns
-      .filter(p => normalizeCommand(p.command).includes(normalizedPartial))
-      .slice(0, FREQUENT_LIMIT);
-  }, [patterns, frequentCommands]);
+      const normalizedPartial = normalizeCommand(partial);
+
+      return patterns
+        .filter((p) => normalizeCommand(p.command).includes(normalizedPartial))
+        .slice(0, FREQUENT_LIMIT);
+    },
+    [patterns, frequentCommands],
+  );
 
   return {
     history,

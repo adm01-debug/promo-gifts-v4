@@ -55,7 +55,8 @@ test.describe("Mockup Module Comprehensive Flow", () => {
     
     const fileInput = page.locator('[data-testid^="mockup-logo-upload-input-"]').first();
     // Using a relative path that should work in the sandbox
-    const logoPath = path.resolve("public/placeholder.svg");
+    // PNG (not SVG): SVG logos are rejected — they cannot be rasterised by the compositor.
+    const logoPath = path.resolve("public/images/promo-brindes-logo.png");
     await fileInput.setInputFiles(logoPath);
     
     // Wait for the logo preview image to appear

@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-23T20:45:26.686Z",
-  "total": 82,
+  "generated_at": "2026-05-27T01:55:53.293Z",
+  "total": 84,
   "counts": {
-    "shared": 82,
+    "shared": 84,
     "inline": 0,
     "none": 0
   },
@@ -336,6 +336,14 @@
       "allowOrigin": null
     },
     {
+      "name": "load-test",
+      "mode": "shared",
+      "allowHeaders": [],
+      "exposeHeaders": [],
+      "allowMethods": null,
+      "allowOrigin": null
+    },
+    {
       "name": "log-login-attempt",
       "mode": "shared",
       "allowHeaders": [],
@@ -617,6 +625,14 @@
     },
     {
       "name": "validate-access",
+      "mode": "shared",
+      "allowHeaders": [],
+      "exposeHeaders": [],
+      "allowMethods": null,
+      "allowOrigin": null
+    },
+    {
+      "name": "verify-2fa-token",
       "mode": "shared",
       "allowHeaders": [],
       "exposeHeaders": [],

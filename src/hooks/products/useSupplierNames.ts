@@ -2,8 +2,9 @@
  * Hook para buscar nomes dos fornecedores a partir de IDs.
  * Consulta a tabela 'suppliers' no banco externo.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeBatchBridge, type BatchQuery } from '@/lib/external-db';
+import { type BatchQuery } from '@/lib/external-db';
 
 /**
  * Busca nomes dos fornecedores para um conjunto de IDs.
@@ -20,7 +21,7 @@ export function useSupplierNames(supplierIds: string[]) {
 
       try {
         // Batch all supplier lookups in one bridge call
-        const queries: BatchQuery[] = uniqueIds.map(id => ({
+        const queries: BatchQuery[] = uniqueIds.map((id) => ({
           table: 'suppliers',
           select: 'id,name',
           filters: { id },
@@ -28,7 +29,7 @@ export function useSupplierNames(supplierIds: string[]) {
           cacheKey: `supplier-${id}`,
         }));
 
-        const results = await invokeBatchBridge(queries);
+        const results = await Promise.all(queries.map((q) => dbInvoke(q)));
         const map = new Map<string, string>();
 
         results.forEach((result, idx) => {
@@ -43,7 +44,7 @@ export function useSupplierNames(supplierIds: string[]) {
         return map;
       } catch {
         // Fallback: use truncated IDs as names
-        return new Map(uniqueIds.map(id => [id, `Fornecedor ${id.slice(0, 6)}`]));
+        return new Map(uniqueIds.map((id) => [id, `Fornecedor ${id.slice(0, 6)}`]));
       }
     },
     enabled: uniqueIds.length > 0,

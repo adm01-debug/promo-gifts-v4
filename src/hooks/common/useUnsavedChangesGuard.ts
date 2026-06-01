@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState } from 'react';
 
 interface UseUnsavedChangesGuardOptions {
   /** Whether there are unsaved changes */
@@ -14,7 +14,7 @@ interface UseUnsavedChangesGuardOptions {
  */
 export function useUnsavedChangesGuard({
   hasUnsavedChanges,
-  message = "Você tem alterações não salvas. Deseja realmente sair?",
+  message = 'Você tem alterações não salvas. Deseja realmente sair?',
 }: UseUnsavedChangesGuardOptions) {
   const [showDialog, setShowDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -29,8 +29,8 @@ export function useUnsavedChangesGuard({
       return message;
     };
 
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsavedChanges, message]);
 
   // Guard for in-app navigation
@@ -43,7 +43,7 @@ export function useUnsavedChangesGuard({
         action();
       }
     },
-    [hasUnsavedChanges]
+    [hasUnsavedChanges],
   );
 
   const confirmLeave = useCallback(() => {

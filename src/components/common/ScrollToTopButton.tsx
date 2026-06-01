@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
@@ -12,18 +11,16 @@ interface ScrollToTopButtonProps {
   className?: string;
 }
 
-export function ScrollToTopButton({ 
-  containerRef, 
+export function ScrollToTopButton({
+  containerRef,
   threshold = 400,
-  className 
+  className,
 }: ScrollToTopButtonProps) {
   const [show, setShow] = useState(false);
 
   const handleScroll = useCallback(() => {
-    const scrollTop = containerRef?.current 
-      ? containerRef.current.scrollTop 
-      : window.scrollY;
-    
+    const scrollTop = containerRef?.current ? containerRef.current.scrollTop : window.scrollY;
+
     setShow(scrollTop > threshold);
   }, [containerRef, threshold]);
 
@@ -47,8 +44,8 @@ export function ScrollToTopButton({
           exit={{ opacity: 0, scale: 0.8, y: 10 }}
           onClick={scrollToTop}
           className={cn(
-            "fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all hover:bg-brand-primary/90 active:scale-95 sm:bottom-8 sm:right-8",
-            className
+            'fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all hover:bg-brand-primary/90 active:scale-95 sm:bottom-8 sm:right-8',
+            className,
           )}
           aria-label="Voltar ao topo"
           title="Voltar ao topo"
@@ -59,4 +56,3 @@ export function ScrollToTopButton({
     </AnimatePresence>
   );
 }
-

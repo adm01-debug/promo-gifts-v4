@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles, PartyPopper } from "lucide-react";
-import { MiniConfetti } from "./MiniConfetti";
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, Sparkles, PartyPopper } from 'lucide-react';
+import { MiniConfetti } from './MiniConfetti';
 
-type CelebrationType = "success" | "achievement" | "level-up" | "milestone";
+type CelebrationType = 'success' | 'achievement' | 'level-up' | 'milestone';
 
 interface SuccessCelebrationProps {
   show: boolean;
@@ -14,37 +14,40 @@ interface SuccessCelebrationProps {
   onComplete?: () => void;
 }
 
-const celebrationConfig: Record<CelebrationType, {
-  icon: typeof Check;
-  gradient: string;
-  iconColor: string;
-}> = {
+const celebrationConfig: Record<
+  CelebrationType,
+  {
+    icon: typeof Check;
+    gradient: string;
+    iconColor: string;
+  }
+> = {
   success: {
     icon: Check,
-    gradient: "from-success to-success/80",
-    iconColor: "text-success-foreground",
+    gradient: 'from-success to-success/80',
+    iconColor: 'text-success-foreground',
   },
   achievement: {
     icon: Sparkles,
-    gradient: "from-brand-primary to-brand-primary/80",
-    iconColor: "text-brand-primary-foreground",
+    gradient: 'from-brand-primary to-brand-primary/80',
+    iconColor: 'text-brand-primary-foreground',
   },
-  "level-up": {
+  'level-up': {
     icon: Sparkles,
-    gradient: "from-primary to-primary/80",
-    iconColor: "text-primary-foreground",
+    gradient: 'from-primary to-primary/80',
+    iconColor: 'text-primary-foreground',
   },
   milestone: {
     icon: PartyPopper,
-    gradient: "from-primary to-brand-primary",
-    iconColor: "text-primary-foreground",
+    gradient: 'from-primary to-brand-primary',
+    iconColor: 'text-primary-foreground',
   },
 };
 
 export function SuccessCelebration({
   show,
-  type = "success",
-  title = "Sucesso!",
+  type = 'success',
+  title = 'Sucesso!',
   subtitle,
   duration = 2500,
   onComplete,
@@ -70,13 +73,13 @@ export function SuccessCelebration({
 
   return (
     <>
-      <MiniConfetti 
-        trigger={showConfetti} 
+      <MiniConfetti
+        trigger={showConfetti}
         count={30}
         duration={duration}
         onComplete={() => setShowConfetti(false)}
       />
-      
+
       <AnimatePresence>
         {isVisible && (
           <motion.div
@@ -100,7 +103,7 @@ export function SuccessCelebration({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{
-                type: "spring",
+                type: 'spring',
                 stiffness: 300,
                 damping: 20,
               }}
@@ -115,7 +118,7 @@ export function SuccessCelebration({
                 transition={{
                   duration: 1.5,
                   repeat: Infinity,
-                  ease: "easeInOut",
+                  ease: 'easeInOut',
                 }}
               />
 
@@ -124,22 +127,22 @@ export function SuccessCelebration({
                 className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${config.gradient} shadow-xl`}
                 animate={{
                   boxShadow: [
-                    "0 0 20px hsl(var(--primary) / 0.3)",
-                    "0 0 40px hsl(var(--primary) / 0.5)",
-                    "0 0 20px hsl(var(--primary) / 0.3)",
+                    '0 0 20px hsl(var(--primary) / 0.3)',
+                    '0 0 40px hsl(var(--primary) / 0.5)',
+                    '0 0 20px hsl(var(--primary) / 0.3)',
                   ],
                 }}
                 transition={{
                   duration: 1,
                   repeat: Infinity,
-                  ease: "easeInOut",
+                  ease: 'easeInOut',
                 }}
               >
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{
-                    type: "spring",
+                    type: 'spring',
                     stiffness: 400,
                     damping: 15,
                     delay: 0.2,
@@ -162,7 +165,7 @@ export function SuccessCelebration({
                       duration: 1.5,
                       delay: i * 0.3,
                       repeat: Infinity,
-                      ease: "easeOut",
+                      ease: 'easeOut',
                     }}
                   />
                 ))}
@@ -201,8 +204,8 @@ export function SuccessCelebration({
                   key={i}
                   className="absolute"
                   style={{
-                    top: "50%",
-                    left: "50%",
+                    top: '50%',
+                    left: '50%',
                   }}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{
@@ -214,7 +217,7 @@ export function SuccessCelebration({
                   transition={{
                     duration: 1,
                     delay: 0.5 + i * 0.05,
-                    ease: "easeOut",
+                    ease: 'easeOut',
                   }}
                 >
                   <Sparkles className="h-4 w-4 text-brand-primary" />

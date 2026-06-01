@@ -82,7 +82,8 @@ export function SecurityDashboard() {
         .eq('is_active', true)
         .order('full_name')
         .then(({ data }) => {
-          if (data) setUsers(data);
+          if (data)
+            setUsers(data.filter((u): u is typeof u & { user_id: string } => u.user_id !== null));
         });
     }
   }, [isAdmin]);
@@ -293,8 +294,11 @@ export function SecurityDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-start gap-3 rounded-lg bg-background p-3">
+              {recommendations.map((rec) => (
+                <div
+                  key={rec.title}
+                  className="flex items-start gap-3 rounded-lg bg-background p-3"
+                >
                   <div
                     className={`rounded-full p-2 ${rec.priority === 'high' ? 'bg-destructive/10 text-destructive' : 'bg-brand-primary/10 text-brand-primary'}`}
                   >

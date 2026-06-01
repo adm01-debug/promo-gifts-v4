@@ -1,8 +1,8 @@
-import { forwardRef } from "react";
-import { Loader2 } from "lucide-react";
-import { Button, type ButtonProps } from "./button";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { forwardRef } from 'react';
+import { Loader2 } from 'lucide-react';
+import { Button, type ButtonProps } from './button';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingButtonProps extends ButtonProps {
   isLoading?: boolean;
@@ -10,7 +10,7 @@ interface LoadingButtonProps extends ButtonProps {
   successText?: string;
   isSuccess?: boolean;
   icon?: React.ReactNode;
-  iconPosition?: "left" | "right";
+  iconPosition?: 'left' | 'right';
 }
 
 /**
@@ -26,12 +26,12 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
       successText,
       isSuccess = false,
       icon,
-      iconPosition = "left",
+      iconPosition = 'left',
       disabled,
       className,
       ...props
     },
-    ref
+    ref,
   ) => {
     const isDisabled = disabled || isLoading;
 
@@ -40,10 +40,10 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         ref={ref}
         disabled={isDisabled}
         className={cn(
-          "relative overflow-hidden",
-          isLoading && "cursor-wait",
-          isSuccess && "bg-success hover:bg-success/90",
-          className
+          'relative overflow-hidden',
+          isLoading && 'cursor-wait',
+          isSuccess && 'bg-success hover:bg-success/90',
+          className,
         )}
         {...props}
       >
@@ -93,18 +93,18 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
               exit={{ opacity: 0, y: -10 }}
               className="flex items-center gap-2"
             >
-              {icon && iconPosition === "left" && icon}
+              {icon && iconPosition === 'left' && icon}
               {children}
-              {icon && iconPosition === "right" && icon}
+              {icon && iconPosition === 'right' && icon}
             </motion.span>
           )}
         </AnimatePresence>
       </Button>
     );
-  }
+  },
 );
 
-LoadingButton.displayName = "LoadingButton";
+LoadingButton.displayName = 'LoadingButton';
 
 /**
  * IconButton - Compact button for icons only
@@ -115,10 +115,12 @@ export const IconButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
       <Button
         ref={ref}
         size="icon"
-        className={cn("relative", isLoading && "cursor-wait", className)}
+        className={cn('relative', isLoading && 'cursor-wait', className)}
         disabled={props.disabled || isLoading}
         {...props}
-       aria-label="AnimatePresence"><AnimatePresence mode="wait">
+        aria-label="AnimatePresence"
+      >
+        <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.span
               key="loading"
@@ -141,7 +143,7 @@ export const IconButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         </AnimatePresence>
       </Button>
     );
-  }
+  },
 );
 
-IconButton.displayName = "IconButton";
+IconButton.displayName = 'IconButton';

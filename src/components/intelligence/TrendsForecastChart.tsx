@@ -2,29 +2,39 @@
  * TrendsForecastChart — gráfico de atividade com projeção 7d e detecção de anomalias.
  * Substitui o ActivityChart simples quando `enableForecast` está ligado.
  */
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { BarChart3, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { BarChart3, AlertCircle } from 'lucide-react';
 import {
-  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot,
-} from "recharts";
-import { useMemo } from "react";
-import { projectForecast, detectAnomalies } from "@/lib/forecast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceDot,
+} from 'recharts';
+import { useMemo } from 'react';
+import { projectForecast, detectAnomalies } from '@/lib/forecast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const tooltipStyle = {
-  backgroundColor: "hsl(var(--card))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: "8px",
-  fontSize: "12px",
+  backgroundColor: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
+  borderRadius: '8px',
+  fontSize: '12px',
 };
 
 interface TrendsForecastChartProps {
-  dailyTrends: Array<{ date: string; views: number; searches: number; dateLabel?: string }> | undefined;
+  dailyTrends:
+    | Array<{ date: string; views: number; searches: number; dateLabel?: string }>
+    | undefined;
   isLoading: boolean;
   showForecast: boolean;
   onToggleForecast: (v: boolean) => void;
@@ -44,13 +54,15 @@ export function TrendsForecastChart({
 }: TrendsForecastChartProps) {
   const chartData = useMemo(() => {
     if (!dailyTrends?.length) return [];
-    const viewsSeries = dailyTrends.map(d => ({ date: d.date, value: d.views }));
+    const viewsSeries = dailyTrends.map((d) => ({ date: d.date, value: d.views }));
 
     const projected = showForecast
       ? projectForecast(viewsSeries, 7)
-      : viewsSeries.map(s => ({ ...s, isForecast: false } as ReturnType<typeof projectForecast>[number]));
+      : viewsSeries.map(
+          (s) => ({ ...s, isForecast: false }) as ReturnType<typeof projectForecast>[number],
+        );
 
-    const anomalies = detectAnomalies(dailyTrends.map(d => d.views));
+    const anomalies = detectAnomalies(dailyTrends.map((d) => d.views));
 
     const prevByIndex = new Map<number, number>();
     if (showCompare && previousTrends?.length) {
@@ -61,47 +73,56 @@ export function TrendsForecastChart({
       const real = i < dailyTrends.length ? dailyTrends[i] : null;
       return {
         date: p.date,
-        dateLabel: format(new Date(p.date), "dd/MM", { locale: ptBR }),
-        views: p.isForecast ? null : real?.views ?? null,
-        searches: p.isForecast ? null : real?.searches ?? null,
+        dateLabel: format(new Date(p.date), 'dd/MM', { locale: ptBR }),
+        views: p.isForecast ? null : (real?.views ?? null),
+        searches: p.isForecast ? null : (real?.searches ?? null),
         forecast: p.isForecast ? p.value : null,
         forecastUpper: p.isForecast ? p.upper : null,
         forecastLower: p.isForecast ? p.lower : null,
-        previousViews: !p.isForecast ? prevByIndex.get(i) ?? null : null,
+        previousViews: !p.isForecast ? (prevByIndex.get(i) ?? null) : null,
         isAnomaly: !p.isForecast && i < anomalies.length ? anomalies[i] : false,
         anomalyValue: !p.isForecast && i < anomalies.length && anomalies[i] ? real?.views : null,
       };
     });
   }, [dailyTrends, showForecast, showCompare, previousTrends]);
 
-  const anomalyCount = chartData.filter(d => d.isAnomaly).length;
+  const anomalyCount = chartData.filter((d) => d.isAnomaly).length;
 
   return (
     <Card>
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Atividade ao Longo do Tempo
             {anomalyCount > 0 && (
-              <Badge variant="outline" className="ml-2 bg-warning/10 text-warning border-warning/30 text-[10px]">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                {anomalyCount} {anomalyCount === 1 ? "pico" : "picos"} detectado{anomalyCount === 1 ? "" : "s"}
+              <Badge
+                variant="outline"
+                className="ml-2 border-warning/30 bg-warning/10 text-[10px] text-warning"
+              >
+                <AlertCircle className="mr-1 h-3 w-3" />
+                {anomalyCount} {anomalyCount === 1 ? 'pico' : 'picos'} detectado
+                {anomalyCount === 1 ? '' : 's'}
               </Badge>
             )}
           </CardTitle>
           <CardDescription>
-            Visualizações e buscas {showForecast && "+ projeção 7d"} {showCompare && "+ comparação vs período anterior"}
+            Visualizações e buscas {showForecast && '+ projeção 7d'}{' '}
+            {showCompare && '+ comparação vs período anterior'}
           </CardDescription>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-2">
             <Switch id="cmp" checked={showCompare} onCheckedChange={onToggleCompare} />
-            <Label htmlFor="cmp" className="cursor-pointer">vs anterior</Label>
+            <Label htmlFor="cmp" className="cursor-pointer">
+              vs anterior
+            </Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch id="fc" checked={showForecast} onCheckedChange={onToggleForecast} />
-            <Label htmlFor="fc" className="cursor-pointer">previsão 7d</Label>
+            <Label htmlFor="fc" className="cursor-pointer">
+              previsão 7d
+            </Label>
           </div>
         </div>
       </CardHeader>
@@ -109,9 +130,9 @@ export function TrendsForecastChart({
         {isLoading ? (
           <Skeleton className="h-[320px] w-full" />
         ) : chartData.length === 0 ? (
-          <div className="h-[320px] flex items-center justify-center text-muted-foreground">
+          <div className="flex h-[320px] items-center justify-center text-muted-foreground">
             <div className="text-center">
-              <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <BarChart3 className="mx-auto mb-2 h-12 w-12 opacity-50" />
               <p>Nenhum dado disponível</p>
             </div>
           </div>
@@ -175,7 +196,7 @@ export function TrendsForecastChart({
                     stroke="hsl(var(--chart-3))"
                     strokeDasharray="6 4"
                     strokeWidth={2}
-                    dot={{ r: 3, fill: "hsl(var(--chart-3))" }}
+                    dot={{ r: 3, fill: 'hsl(var(--chart-3))' }}
                   />
                 </>
               )}

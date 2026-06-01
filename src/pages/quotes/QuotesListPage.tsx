@@ -40,12 +40,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { EmptyState } from '@/components/common/EmptyState';
-import { QuoteCardSkeleton } from '@/components/common/ContextualSkeleton';
+import { QuotesSkeleton } from '@/components/layout/SkeletonLoaders';
 import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
 import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
 import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
+import type { QuoteStatus } from '@/types/quote';
 
 export default function QuotesListPage() {
   const {
@@ -75,27 +76,7 @@ export default function QuotesListPage() {
   } = useQuotesListPage();
 
   if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl">
-              <FileText className="h-7 w-7" />
-              Orçamentos
-            </h1>
-            <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Carregando orçamentos…
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <QuoteCardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    );
+    return <QuotesSkeleton />;
   }
 
   const hasActiveFilters = !!searchTerm || statusFilter !== 'all';
@@ -284,7 +265,7 @@ export default function QuotesListPage() {
                 onBulkStatusChange={async (ids, status) => {
                   let successCount = 0;
                   for (const id of ids) {
-                    const ok = await updateQuoteStatus(id, status as string);
+                    const ok = await updateQuoteStatus(id, status as QuoteStatus);
                     if (ok) successCount++;
                   }
                   toast.success(`${successCount} orçamento(s) atualizado(s)`);
@@ -300,8 +281,17 @@ export default function QuotesListPage() {
                 onBulkExport={(ids) => {
                   const selected = filteredQuotes.filter((q) => q.id && ids.includes(q.id));
                   import('@/utils/excelExport').then(({ exportToExcel }) => {
-                    exportToExcel(
-                      selected.map((q) => ({
+                    exportToExcel({
+                      filename: 'orcamentos_selecionados',
+                      columns: [
+                        { key: 'Número', header: 'Número' },
+                        { key: 'Empresa', header: 'Empresa' },
+                        { key: 'Contato', header: 'Contato' },
+                        { key: 'Status', header: 'Status' },
+                        { key: 'Valor', header: 'Valor' },
+                        { key: 'Data', header: 'Data' },
+                      ],
+                      data: selected.map((q) => ({
                         Número: q.quote_number,
                         Empresa: q.client_company || '',
                         Contato: q.client_name || '',
@@ -309,8 +299,7 @@ export default function QuotesListPage() {
                         Valor: q.total || 0,
                         Data: q.created_at ? format(new Date(q.created_at), 'dd/MM/yyyy') : '',
                       })),
-                      'orcamentos_selecionados',
-                    );
+                    });
                     toast.success(`${ids.length} orçamento(s) exportado(s)`);
                   });
                 }}

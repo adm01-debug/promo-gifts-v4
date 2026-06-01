@@ -1,6 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -43,7 +44,34 @@ export function useQuotes() {
   const scope = useSalesScope();
   const queryClient = useQueryClient();
 
-  // Queries
+  // BUG-NEW-02: Adiciona assinatura Realtime para orçamentos.
+  // Garante que mudanças feitas em outras abas ou por outros usuários (em escopos compartilhados)
+  // reflitam imediatamente na lista sem necessidade de refresh manual.
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('quotes-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quotes',
+          // O filtro simplificado garante que qualquer mudança no escopo do usuário invalide o cache
+          filter: scope === 'self' ? `user_id=eq.${userId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, scope, queryClient]);
+
   const {
     data: quotes = [],
     isLoading,
@@ -59,10 +87,9 @@ export function useQuotes() {
     queryKey: ['techniques'],
     queryFn: () => quoteService.fetchTechniques(),
     enabled: !!userId,
-    staleTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000,
   });
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: ({ quote, items }: { quote: Partial<Quote>; items: QuoteItem[] }) => {
       if (!userId) throw new Error('Usuario nao autenticado');
@@ -119,7 +146,6 @@ export function useQuotes() {
     },
   });
 
-  // Actions
   const fetchQuote = async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
@@ -201,9 +227,15 @@ export function useQuotes() {
           discount_amount: original.discount_amount,
           notes: original.notes,
           payment_terms: original.payment_terms,
+          payment_method: original.payment_method,
           delivery_time: original.delivery_time,
           shipping_type: original.shipping_type,
           shipping_cost: original.shipping_cost,
+          // BUG-NEW-01 FIX: preserve negotiation_markup_percent when duplicating.
+          // Previously this field was omitted, causing the markup to be lost (reset
+          // to 0) on every duplication. The total would diverge from the original
+          // without any visible explanation, potentially sending wrong pricing to clients.
+          negotiation_markup_percent: original.negotiation_markup_percent ?? 0,
           internal_notes: `Duplicado de ${original.quote_number}`,
           valid_until: original.valid_until,
         },

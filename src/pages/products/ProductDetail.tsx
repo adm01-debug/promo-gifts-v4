@@ -13,6 +13,11 @@ const SmartRecommendations = lazyWithRetry(() =>
     default: m.SmartRecommendations,
   })),
 );
+const SmartRecommendationsMock = lazyWithRetry(() =>
+  import('@/components/products/SmartRecommendationsMock').then((m) => ({
+    default: m.SmartRecommendationsMock,
+  })),
+);
 const StockHistoryChart = lazyWithRetry(() =>
   import('@/components/products/StockHistoryChart').then((m) => ({ default: m.StockHistoryChart })),
 );
@@ -39,7 +44,6 @@ const PackagingModal = lazyWithRetry(() =>
 import {
   useProduct,
   useProductAnalytics,
-  useProductIntelligenceBadges,
   useSimilarProducts,
   useSupplierTrust,
   type ExternalVariantStock,
@@ -49,9 +53,7 @@ import { useToast } from '@/hooks/ui';
 import type { Product, ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
-import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
 import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
@@ -60,7 +62,7 @@ import { ProductDetailHero } from '@/pages/products/product-detail/ProductDetail
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ModalSkeleton } from '@/components/layout/SkeletonLoaders';
+import { ProductDetailSkeleton, ModalSkeleton } from '@/components/layout/SkeletonLoaders';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -88,32 +90,14 @@ export default function ProductDetail() {
       similarItems.slice(0, 12).map((it) => ({
         id: it.id,
         name: it.name,
+        sku: it.sku,
         category: it.category_name || product?.category?.name || 'Brindes',
         priceRange: formatCurrency(it.price),
+        imageUrl: it.image_url,
         tags: [it.supplier_name].filter(Boolean) as string[],
       })),
     [similarItems, product?.category?.name],
   );
-
-  const catalogFlags = useMemo(
-    () =>
-      product
-        ? {
-            featured: product.featured,
-            newArrival: product.newArrival,
-            onSale: product.onSale,
-            lowStock: product.stockStatus === 'low-stock',
-            stock: product.stock,
-          }
-        : undefined,
-    [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
-  );
-
-  const {
-    badges: intellBadges,
-    turnoverScore: intellTurnover,
-    isDemo: intellIsDemo,
-  } = useProductIntelligenceBadges(id, catalogFlags);
 
   const { data: viewCount = 0 } = useQuery({
     queryKey: ['product-views-count', id],
@@ -156,7 +140,7 @@ export default function ProductDetail() {
       url: currentUrl,
       brand: {
         '@type': 'Brand',
-        name: product.supplier?.name || 'Promo Gifts',
+        name: product.supplier?.name || 'Promo Brindes',
       },
       offers: {
         '@type': 'Offer',
@@ -170,7 +154,7 @@ export default function ProductDetail() {
             : product.stockStatus === 'out-of-stock'
               ? 'https://schema.org/OutOfStock'
               : 'https://schema.org/LimitedAvailability',
-        seller: { '@type': 'Organization', name: 'Promo Gifts' },
+        seller: { '@type': 'Organization', name: 'Promo Brindes' },
         url: currentUrl,
       },
       category: product.category?.name,
@@ -302,7 +286,7 @@ export default function ProductDetail() {
   return (
     <>
       <PageSEO
-        title={`${product.name} | Promo Gifts`}
+        title={`${product.name} | Promo Brindes`}
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
@@ -325,12 +309,6 @@ export default function ProductDetail() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
-        <IntelligenceBadges
-          badges={intellBadges}
-          turnoverScore={intellTurnover}
-          isDemo={intellIsDemo}
-        />
-
         <ProductDetailHero
           product={product}
           id={id || ''}
@@ -343,6 +321,10 @@ export default function ProductDetail() {
           onOpenPackagingModal={() => setPackagingModalOpen(true)}
           onOpenFutureStock={() => setFutureStockOpen(true)}
           onOpenSupplierComparison={() => setSupplierCompareOpen(true)}
+          isLoadingTags={isLoading}
+          hasErrorTags={isError}
+          isLoadingNiches={isLoading}
+          hasErrorNiches={isError}
         />
 
         <div className="border-t border-border/60 pt-6 xl:pt-8">
@@ -357,7 +339,7 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        {aiCandidates.length > 0 && (
+        {product.sku === '09138' ? (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
             <Suspense
               fallback={
@@ -366,15 +348,29 @@ export default function ProductDetail() {
                 </div>
               }
             >
-              <SmartRecommendations
-                currentProductId={product.id}
-                candidateProducts={aiCandidates}
-                maxResults={6}
-                title="Recomendações inteligentes para este produto"
-                onProductClick={(pid) => navigate(`/produto/${pid}`)}
-              />
+              <SmartRecommendationsMock />
             </Suspense>
           </div>
+        ) : (
+          aiCandidates.length > 0 && (
+            <div className="border-t border-border/60 pt-6 xl:pt-8">
+              <Suspense
+                fallback={
+                  <div className="flex h-48 items-center justify-center">
+                    <Skeleton className="h-full w-full" />
+                  </div>
+                }
+              >
+                <SmartRecommendations
+                  currentProductId={product.id}
+                  candidateProducts={aiCandidates}
+                  maxResults={6}
+                  title="Recomendações inteligentes para este produto"
+                  onProductClick={(pid) => navigate(`/produto/${pid}`)}
+                />
+              </Suspense>
+            </div>
+          )
         )}
 
         <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-2 xl:gap-6 xl:pt-8">

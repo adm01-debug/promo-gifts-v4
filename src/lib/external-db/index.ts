@@ -21,6 +21,8 @@ export {
   invokeExternalDbDelete,
   invokeBatchBridge,
   invokeBridge,
+  isWriteOperation,
+  WriteUnavailableError,
 } from './bridge';
 export type {
   InvokeOptions,
@@ -31,6 +33,15 @@ export type {
   Operation,
 } from './bridge';
 
+// Silent-empty diagnostics (Etapa 1) — source for Etapa 2 telemetry + console.
+export {
+  reportSilentEmpty,
+  getSilentEmptyReport,
+  getSilentEmptySummary,
+  resetSilentEmptyReport,
+} from './silent-empty-report';
+export type { SilentEmptyEvent, SilentEmptyReason } from './silent-empty-report';
+
 // Batch Import
 export { checkExistingSkus, executeBatchImport, generateErrorReportCSV } from './batch-import';
 export type { ImportMode, ImportRow, BatchImportProgress, BatchImportResult } from './batch-import';
@@ -40,8 +51,11 @@ export type { PromobrindProduct } from './product-types';
 export { getProductImageUrl, getProductPrice, getProductStock } from './product-types';
 export {
   PRODUCT_SELECT_FIELDS_WITH_SALE,
+  PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_LEGACY,
+  PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_DETAIL,
+  PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
 

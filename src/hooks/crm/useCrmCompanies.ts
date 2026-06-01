@@ -90,9 +90,11 @@ export function useCrmInfiniteCompanySelector() {
           table: 'companies',
           operation: 'select',
           select: 'id, razao_social, nome_fantasia, ramo_atividade, logo_url, cnpj',
-          filters: { deleted_at: null },
+          // Filtrar apenas clientes ativos reduz drasticamente o conjunto de linhas
+          // (sem esse filtro o SELECT estourava o statement_timeout do CRM).
+          filters: { deleted_at: null, is_customer: true },
           orderBy: { column: 'razao_social', ascending: true },
-          limit: 100,
+          limit: 50,
           offset: pageParam,
         });
 
@@ -112,7 +114,7 @@ export function useCrmInfiniteCompanySelector() {
             logo_url: c.logo_url,
             cnpj: c.cnpj,
           })),
-          nextOffset: records.length === 100 ? pageParam + 100 : undefined,
+          nextOffset: records.length === 50 ? pageParam + 50 : undefined,
         };
       } catch (err) {
         const duration = Math.round(performance.now() - startedAt);

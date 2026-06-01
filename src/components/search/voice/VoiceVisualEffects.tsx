@@ -1,6 +1,6 @@
-import { useMemo, useId } from "react";
-import { motion } from "framer-motion";
-import type { PhaseColors } from "./usePhaseColors";
+import { useMemo, useId } from 'react';
+import { motion } from 'framer-motion';
+import type { PhaseColors } from './usePhaseColors';
 
 /* ------------------------------------------------------------------ */
 /*  Deterministic pseudo-random — stable across re-renders             */
@@ -16,9 +16,24 @@ function seededRandom(seed: number): () => number {
 /* ------------------------------------------------------------------ */
 /*  Flowing Wave Ring — SVG animated wave loops                        */
 /* ------------------------------------------------------------------ */
-export function FlowingWaveRing({ radius, color, speed, amplitude, waves, opacity, strokeWidth = 1.5, reverse = false }: {
-  radius: number; color: string; speed: number; amplitude: number; waves: number;
-  opacity: number; strokeWidth?: number; reverse?: boolean;
+export function FlowingWaveRing({
+  radius,
+  color,
+  speed,
+  amplitude,
+  waves,
+  opacity,
+  strokeWidth = 1.5,
+  reverse = false,
+}: {
+  radius: number;
+  color: string;
+  speed: number;
+  amplitude: number;
+  waves: number;
+  opacity: number;
+  strokeWidth?: number;
+  reverse?: boolean;
 }) {
   const filterId = useId();
 
@@ -34,7 +49,7 @@ export function FlowingWaveRing({ radius, color, speed, amplitude, waves, opacit
         const y = radius + r * Math.sin(angle);
         points.push(`${x},${y}`);
       }
-      return points.join(" ");
+      return points.join(' ');
     });
   }, [radius, amplitude, waves]);
 
@@ -48,7 +63,7 @@ export function FlowingWaveRing({ radius, color, speed, amplitude, waves, opacit
         top: `calc(50% - ${radius}px)`,
       }}
       animate={{ rotate: reverse ? -360 : 360 }}
-      transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
+      transition={{ duration: speed, repeat: Infinity, ease: 'linear' }}
     >
       <svg width={radius * 2} height={radius * 2} viewBox={`0 0 ${radius * 2} ${radius * 2}`}>
         <defs>
@@ -69,8 +84,10 @@ export function FlowingWaveRing({ radius, color, speed, amplitude, waves, opacit
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             filter={`url(#${filterId})`}
-            animate={{ opacity: [opacity * (1 - w * 0.12), opacity * 0.3, opacity * (1 - w * 0.12)] }}
-            transition={{ duration: 2.5 + w * 0.6, repeat: Infinity, ease: "easeInOut" }}
+            animate={{
+              opacity: [opacity * (1 - w * 0.12), opacity * 0.3, opacity * (1 - w * 0.12)],
+            }}
+            transition={{ duration: 2.5 + w * 0.6, repeat: Infinity, ease: 'easeInOut' }}
           />
         ))}
       </svg>
@@ -81,8 +98,16 @@ export function FlowingWaveRing({ radius, color, speed, amplitude, waves, opacit
 /* ------------------------------------------------------------------ */
 /*  Particle Field — sparkling dots orbiting the core                  */
 /* ------------------------------------------------------------------ */
-export function ParticleField({ colors, count, radius, isActive }: {
-  colors: string[]; count: number; radius: number; isActive: boolean;
+export function ParticleField({
+  colors,
+  count,
+  radius,
+  isActive,
+}: {
+  colors: string[];
+  count: number;
+  radius: number;
+  isActive: boolean;
 }) {
   const particles = useMemo(() => {
     const rand = seededRandom(42 + count);
@@ -114,20 +139,24 @@ export function ParticleField({ colors, count, radius, isActive }: {
               top: `calc(50% + ${y}px)`,
               boxShadow: `0 0 ${p.size * 4}px ${p.color}`,
             }}
-            animate={isActive ? {
-              opacity: [0.15, 1, 0.15],
-              scale: [0.4, 2, 0.4],
-              x: [0, Math.cos(rad) * 10, 0],
-              y: [0, Math.sin(rad) * 10, 0],
-            } : {
-              opacity: [0.1, 0.5, 0.1],
-              scale: [0.7, 1.3, 0.7],
-            }}
+            animate={
+              isActive
+                ? {
+                    opacity: [0.15, 1, 0.15],
+                    scale: [0.4, 2, 0.4],
+                    x: [0, Math.cos(rad) * 10, 0],
+                    y: [0, Math.sin(rad) * 10, 0],
+                  }
+                : {
+                    opacity: [0.1, 0.5, 0.1],
+                    scale: [0.7, 1.3, 0.7],
+                  }
+            }
             transition={{
               duration: p.speed,
               repeat: Infinity,
               delay: p.delay,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
         );
@@ -139,14 +168,22 @@ export function ParticleField({ colors, count, radius, isActive }: {
 /* ------------------------------------------------------------------ */
 /*  Light Rays — radial beams shooting from the core                   */
 /* ------------------------------------------------------------------ */
-export function LightRays({ color1, color2, count, isActive }: {
-  color1: string; color2: string; count: number; isActive: boolean;
+export function LightRays({
+  color1,
+  color2,
+  count,
+  isActive,
+}: {
+  color1: string;
+  color2: string;
+  count: number;
+  isActive: boolean;
 }) {
   return (
     <motion.div
       className="absolute inset-0"
       animate={{ rotate: 360 }}
-      transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+      transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
     >
       {Array.from({ length: count }).map((_, i) => {
         const angle = (i / count) * 360;
@@ -158,9 +195,9 @@ export function LightRays({ color1, color2, count, isActive }: {
             style={{
               width: 1.5,
               background: `linear-gradient(to top, ${color}, transparent)`,
-              left: "50%",
-              top: "50%",
-              transformOrigin: "bottom center",
+              left: '50%',
+              top: '50%',
+              transformOrigin: 'bottom center',
               transform: `rotate(${angle}deg) translateY(-50px)`,
               borderRadius: 2,
             }}
@@ -172,7 +209,7 @@ export function LightRays({ color1, color2, count, isActive }: {
               duration: 1.2 + (i % 4) * 0.3,
               repeat: Infinity,
               delay: i * 0.12,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
         );
@@ -184,7 +221,15 @@ export function LightRays({ color1, color2, count, isActive }: {
 /* ------------------------------------------------------------------ */
 /*  Spectrum Waveform — brilliant animated bars                        */
 /* ------------------------------------------------------------------ */
-export function SpectrumWaveform({ colors, isActive, isSpeaking }: { colors: PhaseColors; isActive: boolean; isSpeaking?: boolean }) {
+export function SpectrumWaveform({
+  colors,
+  isActive,
+  isSpeaking,
+}: {
+  colors: PhaseColors;
+  isActive: boolean;
+  isSpeaking?: boolean;
+}) {
   const barCount = 15;
 
   // Pre-compute stable random offsets
@@ -194,15 +239,15 @@ export function SpectrumWaveform({ colors, isActive, isSpeaking }: { colors: Pha
   }, [barCount]);
 
   return (
-    <div className="flex items-center justify-center gap-[3px] h-8">
+    <div className="flex h-8 items-center justify-center gap-[3px]">
       {Array.from({ length: barCount }).map((_, i) => {
         const center = (barCount - 1) / 2;
         const distFromCenter = Math.abs(i - center) / center;
         // Speaking: smoother, wider bars. Listening: sharper, reactive bars
         const maxH = isActive
           ? isSpeaking
-            ? 22 - distFromCenter * 8   // Speaking: more uniform, flowing
-            : 26 - distFromCenter * 12   // Listening: peaky
+            ? 22 - distFromCenter * 8 // Speaking: more uniform, flowing
+            : 26 - distFromCenter * 12 // Listening: peaky
           : 10 - distFromCenter * 5;
         const minH = isSpeaking ? 5 : 3;
         const color = i % 3 === 0 ? colors.primary : i % 3 === 1 ? colors.secondary : colors.accent;
@@ -220,12 +265,12 @@ export function SpectrumWaveform({ colors, isActive, isSpeaking }: { colors: Pha
             transition={{
               duration: isActive
                 ? isSpeaking
-                  ? 0.55 + barOffsets[i] * 0.5  // Speaking: slower, wave-like
-                  : 0.35 + barOffsets[i]          // Listening: fast, reactive
+                  ? 0.55 + barOffsets[i] * 0.5 // Speaking: slower, wave-like
+                  : 0.35 + barOffsets[i] // Listening: fast, reactive
                 : 1 + barOffsets[i] * 2,
               repeat: Infinity,
               delay: isSpeaking ? i * 0.08 : i * 0.05, // Speaking: staggered wave effect
-              ease: isSpeaking ? "easeInOut" : "easeInOut",
+              ease: isSpeaking ? 'easeInOut' : 'easeInOut',
             }}
           />
         );

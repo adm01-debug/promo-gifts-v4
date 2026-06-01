@@ -163,7 +163,8 @@ interface MetricProps {
   tone?: 'default' | 'success' | 'warning' | 'destructive';
 }
 
-function Metric({ icon: Icon, label, value, badge, tone = 'default' }: MetricProps) {
+function Metric({ icon: iconElement, label, value, badge, tone = 'default' }: MetricProps) {
+  const Icon = iconElement;
   const iconCls = {
     default: 'text-muted-foreground',
     success: 'text-success',
@@ -186,7 +187,7 @@ function Metric({ icon: Icon, label, value, badge, tone = 'default' }: MetricPro
 }
 
 function SourceCountChip({
-  icon: Icon,
+  icon: iconElement,
   tone,
   count,
   label,
@@ -200,6 +201,7 @@ function SourceCountChip({
   onClick: () => void;
   emphasize?: boolean;
 }) {
+  const Icon = iconElement;
   const cls = {
     success: 'border-success/30 bg-success/10 text-success hover:bg-success/15',
     warning: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',

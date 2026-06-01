@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useProductAnalytics, type Product } from "@/hooks/products";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useProductAnalytics, type Product } from '@/hooks/products';
 
-const STORAGE_KEY = "product-comparison";
+const STORAGE_KEY = 'product-comparison';
 const MAX_COMPARE_ITEMS = 4;
 
 interface UseComparisonOptions {
@@ -34,7 +34,7 @@ export function useComparison(options?: UseComparisonOptions) {
         setCompareIds(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading comparison:", e);
+      console.error('Error loading comparison:', e);
     }
     setIsLoaded(true);
   }, []);
@@ -62,7 +62,7 @@ export function useComparison(options?: UseComparisonOptions) {
         productId,
         productSku: productId,
         productName: productId,
-        viewType: "compare",
+        viewType: 'compare',
       });
       return [...prev, productId];
     });
@@ -73,38 +73,35 @@ export function useComparison(options?: UseComparisonOptions) {
     setCompareIds((prev) => prev.filter((id) => id !== productId));
   }, []);
 
-  const toggleCompare = useCallback(
-    (productId: string): { added: boolean; isFull: boolean } => {
-      let result = { added: false, isFull: false };
+  const toggleCompare = useCallback((productId: string): { added: boolean; isFull: boolean } => {
+    let result = { added: false, isFull: false };
 
-      setCompareIds((prev) => {
-        if (prev.includes(productId)) {
-          result = { added: false, isFull: false };
-          return prev.filter((id) => id !== productId);
-        }
-        if (prev.length >= MAX_COMPARE_ITEMS) {
-          result = { added: false, isFull: true };
-          return prev;
-        }
-        result = { added: true, isFull: false };
-        onProductAddedRef.current?.();
-        trackProductViewRef.current({
-          productId,
-          productSku: productId,
-          productName: productId,
-          viewType: "compare",
-        });
-        return [...prev, productId];
+    setCompareIds((prev) => {
+      if (prev.includes(productId)) {
+        result = { added: false, isFull: false };
+        return prev.filter((id) => id !== productId);
+      }
+      if (prev.length >= MAX_COMPARE_ITEMS) {
+        result = { added: false, isFull: true };
+        return prev;
+      }
+      result = { added: true, isFull: false };
+      onProductAddedRef.current?.();
+      trackProductViewRef.current({
+        productId,
+        productSku: productId,
+        productName: productId,
+        viewType: 'compare',
       });
+      return [...prev, productId];
+    });
 
-      return result;
-    },
-    []
-  );
+    return result;
+  }, []);
 
   const isInCompare = useCallback(
     (productId: string) => compareIds.includes(productId),
-    [compareIds]
+    [compareIds],
   );
 
   /**
@@ -112,9 +109,8 @@ export function useComparison(options?: UseComparisonOptions) {
    * Deve ser chamado pelo contexto/provider que tem acesso a `getProductsByIds`.
    */
   const getCompareProductsFromMap = useCallback(
-    (getProductsByIds: (ids: string[]) => Product[]): Product[] =>
-      getProductsByIds(compareIds),
-    [compareIds]
+    (getProductsByIds: (ids: string[]) => Product[]): Product[] => getProductsByIds(compareIds),
+    [compareIds],
   );
 
   const clearCompare = useCallback(() => {

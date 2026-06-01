@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface A11yContextType {
   reducedMotion: boolean;
   highContrast: boolean;
-  fontSize: "normal" | "large" | "larger";
+  fontSize: 'normal' | 'large' | 'larger';
   keyboardMode: boolean;
-  announceMessage: (message: string, priority?: "polite" | "assertive") => void;
-  setFontSize: (size: "normal" | "large" | "larger") => void;
+  announceMessage: (message: string, priority?: 'polite' | 'assertive') => void;
+  setFontSize: (size: 'normal' | 'large' | 'larger') => void;
   setHighContrast: (enabled: boolean) => void;
 }
 
@@ -15,7 +15,7 @@ const A11yContext = createContext<A11yContextType | null>(null);
 export function useA11y() {
   const context = useContext(A11yContext);
   if (!context) {
-    throw new Error("useA11y must be used within an AccessibilityProvider");
+    throw new Error('useA11y must be used within an AccessibilityProvider');
   }
   return context;
 }
@@ -23,34 +23,37 @@ export function useA11y() {
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
-  const [fontSize, setFontSize] = useState<"normal" | "large" | "larger">("normal");
+  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'larger'>('normal');
   const [keyboardMode, setKeyboardMode] = useState(false);
-  const [announcement, setAnnouncement] = useState<{ message: string; priority: "polite" | "assertive" } | null>(null);
+  const [announcement, setAnnouncement] = useState<{
+    message: string;
+    priority: 'polite' | 'assertive';
+  } | null>(null);
 
   // Detect reduced motion preference
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReducedMotion(mediaQuery.matches);
 
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   // Detect high contrast preference
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-contrast: more)");
+    const mediaQuery = window.matchMedia('(prefers-contrast: more)');
     setHighContrast(mediaQuery.matches);
 
     const handler = (e: MediaQueryListEvent) => setHighContrast(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   // Detect keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab") {
+      if (e.key === 'Tab') {
         setKeyboardMode(true);
       }
     };
@@ -59,12 +62,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       setKeyboardMode(false);
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousedown', handleMouseDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mousedown', handleMouseDown);
     };
   }, []);
 
@@ -72,9 +75,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     const fontSizeMap = {
-      normal: "16px",
-      large: "18px",
-      larger: "20px",
+      normal: '16px',
+      large: '18px',
+      larger: '20px',
     };
     root.style.fontSize = fontSizeMap[fontSize];
   }, [fontSize]);
@@ -82,22 +85,22 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   // Apply high contrast class
   useEffect(() => {
     if (highContrast) {
-      document.documentElement.classList.add("high-contrast");
+      document.documentElement.classList.add('high-contrast');
     } else {
-      document.documentElement.classList.remove("high-contrast");
+      document.documentElement.classList.remove('high-contrast');
     }
   }, [highContrast]);
 
   // Apply keyboard mode class
   useEffect(() => {
     if (keyboardMode) {
-      document.documentElement.classList.add("keyboard-mode");
+      document.documentElement.classList.add('keyboard-mode');
     } else {
-      document.documentElement.classList.remove("keyboard-mode");
+      document.documentElement.classList.remove('keyboard-mode');
     }
   }, [keyboardMode]);
 
-  const announceMessage = (message: string, priority: "polite" | "assertive" = "polite") => {
+  const announceMessage = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
     setAnnouncement({ message, priority });
     // Clear after announcement
     setTimeout(() => setAnnouncement(null), 1000);
@@ -116,23 +119,13 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      
+
       {/* Screen Reader Announcements */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
-        {announcement?.priority === "polite" && announcement.message}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement?.priority === 'polite' && announcement.message}
       </div>
-      <div
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-        className="sr-only"
-      >
-        {announcement?.priority === "assertive" && announcement.message}
+      <div role="alert" aria-live="assertive" aria-atomic="true" className="sr-only">
+        {announcement?.priority === 'assertive' && announcement.message}
       </div>
     </A11yContext.Provider>
   );
@@ -143,16 +136,7 @@ export function SkipToContent() {
   return (
     <a
       href="#main-content"
-      className="
-        fixed top-0 left-0 z-[9999]
-        px-4 py-2 m-3
-        bg-primary text-primary-foreground
-        font-semibold rounded-lg
-        transform -translate-y-full
-        focus:translate-y-0
-        transition-transform
-        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-      "
+      className="fixed left-0 top-0 z-[9999] m-3 -translate-y-full transform rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
     >
       Pular para o conteúdo principal
     </a>
@@ -166,13 +150,13 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>, isActive: boolea
 
     const element = ref.current;
     const focusableElements = element.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     const firstFocusable = focusableElements[0] as HTMLElement;
     const lastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
+      if (e.key !== 'Tab') return;
 
       if (e.shiftKey) {
         if (document.activeElement === firstFocusable) {
@@ -187,11 +171,11 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>, isActive: boolea
       }
     };
 
-    element.addEventListener("keydown", handleKeyDown);
+    element.addEventListener('keydown', handleKeyDown);
     firstFocusable?.focus();
 
     return () => {
-      element.removeEventListener("keydown", handleKeyDown);
+      element.removeEventListener('keydown', handleKeyDown);
     };
   }, [ref, isActive]);
 }
@@ -200,20 +184,20 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>, isActive: boolea
 export function useKeyboardShortcut(
   shortcut: string,
   callback: () => void,
-  options: { enabled?: boolean; preventDefault?: boolean } = {}
+  options: { enabled?: boolean; preventDefault?: boolean } = {},
 ) {
   const { enabled = true, preventDefault = true } = options;
 
   useEffect(() => {
     if (!enabled) return;
 
-    const keys = shortcut.toLowerCase().split("+");
+    const keys = shortcut.toLowerCase().split('+');
     const targetKey = keys[keys.length - 1];
     const modifiers = {
-      ctrl: keys.includes("ctrl"),
-      shift: keys.includes("shift"),
-      alt: keys.includes("alt"),
-      meta: keys.includes("meta") || keys.includes("cmd"),
+      ctrl: keys.includes('ctrl'),
+      shift: keys.includes('shift'),
+      alt: keys.includes('alt'),
+      meta: keys.includes('meta') || keys.includes('cmd'),
     };
 
     const handler = (e: KeyboardEvent) => {
@@ -232,7 +216,7 @@ export function useKeyboardShortcut(
       }
     };
 
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [shortcut, callback, enabled, preventDefault]);
 }

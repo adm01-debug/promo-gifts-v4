@@ -2,11 +2,11 @@
  * CatalogBulkModals — Renders BulkActionBar + all bulk modals.
  * Single source instead of 3x duplication.
  */
-import { BulkActionBar } from "@/components/products/BulkActionBar";
-import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
-import { BulkAddToCartModal } from "@/components/catalog/BulkAddToCartModal";
-import { BulkVariantWizard } from "@/components/catalog/BulkVariantWizard";
-import type { useCatalogSelection } from "./useCatalogSelection";
+import { BulkActionBar } from '@/components/products/BulkActionBar';
+import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
+import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
+import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
+import type { useCatalogSelection } from './useCatalogSelection';
 
 type Sel = ReturnType<typeof useCatalogSelection>;
 
@@ -41,7 +41,10 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
       {sel.firstSelectedProduct && (
         <AddToCollectionModal
           open={sel.collectionModalOpen}
-          onOpenChange={(open) => { sel.setCollectionModalOpen(open); if (!open) sel.clearSelection(); }}
+          onOpenChange={(open) => {
+            sel.setCollectionModalOpen(open);
+            if (!open) sel.clearSelection();
+          }}
           productId={sel.firstSelectedId}
           productName={`${sel.selectedIds?.size || 0} produtos selecionados`}
         />
@@ -59,7 +62,7 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
         open={sel.variantWizardOpen}
         onOpenChange={sel.setVariantWizardOpen}
         products={sel.bulkCartProducts || []}
-        mode={sel.wizardMode || "cart"}
+        mode={sel.wizardMode || 'cart'}
         onComplete={sel.handleWizardComplete}
       />
     </>

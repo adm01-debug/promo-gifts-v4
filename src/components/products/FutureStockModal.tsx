@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, parseISO, addDays, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   CalendarClock,
@@ -11,7 +11,10 @@ import {
   ArrowUpDown,
   Filter,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,10 +27,10 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
-  useProductVariantsWithStock,
-  processStockEntries,
   calculateColorSummary,
-} from '@/hooks/products';
+  processStockEntries,
+  useProductVariantsWithStock,
+} from '@/hooks/products/useVariantSupplierSources';
 import { sortColorSummary } from '@/utils/colorSorting';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -52,55 +55,86 @@ export function FutureStockModal({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('nearest');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+
+  const toggleGroup = (colorName: string) => {
+    setExpandedGroups((prev) =>
+      prev.includes(colorName) ? prev.filter((name) => name !== colorName) : [...prev, colorName],
+    );
+  };
 
   // Buscar variantes com dados de estoque/reposição
   const { data: variantsWithStock = [], isLoading, error } = useProductVariantsWithStock(productId);
 
-  // Processar entradas de reposição
-  const stockEntries = useMemo(() => processStockEntries(variantsWithStock), [variantsWithStock]);
-
-  // Calcular resumo por cor e ordenar
-  const colorSummary = useMemo(
-    () => sortColorSummary(calculateColorSummary(variantsWithStock, stockEntries)),
-    [variantsWithStock, stockEntries],
+  // Processar entradas de reposição (todas as 1/2/3 previsões)
+  const allStockEntries = useMemo(
+    () => processStockEntries(variantsWithStock),
+    [variantsWithStock],
   );
 
-  // Aplicar filtros e ordenação
-  const filteredAndSortedEntries = useMemo(() => {
+  // Aplicar filtros de período e cor às entradas
+  const { filteredEntries, periodFilteredEntries } = useMemo(() => {
     const now = new Date();
-    let entries = [...stockEntries];
+    // Normalizar "agora" para o início do dia para evitar que previsões de hoje pareçam "atrasadas" por causa do horário
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Filtrar por cor
-    if (selectedColor) {
-      entries = entries.filter((entry) => entry.colorName === selectedColor);
-    }
-
-    // Filtrar por período
+    // 1. Filtrar primeiro apenas por período (usado para o resumo de cores)
+    let periodFiltered = [...allStockEntries];
     if (dateFilter !== 'all') {
-      entries = entries.filter((entry) => {
+      periodFiltered = periodFiltered.filter((entry) => {
         const entryDate = parseISO(entry.expectedDate);
         switch (dateFilter) {
           case 'past':
-            return isBefore(entryDate, now);
+            return isBefore(entryDate, todayStart);
           case '7days':
-            return isAfter(entryDate, now) && isBefore(entryDate, addDays(now, 7));
+            // Inclui hoje + próximos 7 dias (até o final do 7º dia seguinte)
+            return !isBefore(entryDate, todayStart) && isBefore(entryDate, addDays(todayStart, 8));
           case '30days':
-            return isAfter(entryDate, now) && isBefore(entryDate, addDays(now, 30));
+            return !isBefore(entryDate, todayStart) && isBefore(entryDate, addDays(todayStart, 31));
           case '90days':
-            return isAfter(entryDate, now) && isBefore(entryDate, addDays(now, 90));
+            return !isBefore(entryDate, todayStart) && isBefore(entryDate, addDays(todayStart, 91));
           default:
             return true;
         }
       });
     }
 
-    // Ordenar
+    // 2. Filtrar por cor (usado para a lista final)
+    let finalFiltered = [...periodFiltered];
+    if (selectedColor) {
+      finalFiltered = finalFiltered.filter((entry) => entry.colorName === selectedColor);
+    }
+
+    return {
+      filteredEntries: finalFiltered,
+      periodFilteredEntries: periodFiltered,
+    };
+  }, [allStockEntries, dateFilter, selectedColor]);
+
+  // Calcular resumo por cor usando as entradas filtradas por período
+  // Isso garante que o grid de cores mostre a quantidade que chegará NO PERÍODO selecionado
+  const colorSummary = useMemo(
+    () => sortColorSummary(calculateColorSummary(variantsWithStock, periodFilteredEntries)),
+    [variantsWithStock, periodFilteredEntries],
+  );
+
+  // Ordenar a lista final
+  const sortedEntries = useMemo(() => {
+    const entries = [...filteredEntries];
     entries.sort((a, b) => {
       switch (sortOrder) {
-        case 'nearest':
-          return new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime();
-        case 'farthest':
-          return new Date(b.expectedDate).getTime() - new Date(a.expectedDate).getTime();
+        case 'nearest': {
+          const timeA = new Date(a.expectedDate).getTime();
+          const timeB = new Date(b.expectedDate).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+          return (a.entryIndex || 0) - (b.entryIndex || 0); // Desempate pelo índice da entrada
+        }
+        case 'farthest': {
+          const timeA = new Date(a.expectedDate).getTime();
+          const timeB = new Date(b.expectedDate).getTime();
+          if (timeA !== timeB) return timeB - timeA;
+          return (b.entryIndex || 0) - (a.entryIndex || 0);
+        }
         case 'quantity-desc':
           return b.expectedQuantity - a.expectedQuantity;
         case 'quantity-asc':
@@ -109,11 +143,10 @@ export function FutureStockModal({
           return 0;
       }
     });
-
     return entries;
-  }, [stockEntries, selectedColor, dateFilter, sortOrder]);
+  }, [filteredEntries, sortOrder]);
 
-  const hasNoFutureStock = stockEntries.length === 0;
+  const hasNoFutureStock = allStockEntries.length === 0;
   const hasVariants = variantsWithStock.length > 0;
   const hasActiveFilters = selectedColor || dateFilter !== 'all';
 
@@ -183,7 +216,7 @@ export function FutureStockModal({
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-                      <SelectTrigger className="h-9 w-[160px] text-sm">
+                      <SelectTrigger className="h-9 w-[180px] text-sm [&>span]:truncate [&>span]:whitespace-nowrap">
                         <SelectValue placeholder="Ordenar por" />
                       </SelectTrigger>
                       <SelectContent>
@@ -253,59 +286,70 @@ export function FutureStockModal({
                       const isSelected = selectedColor === color.name;
 
                       return (
-                        <button
-                          key={color.name}
-                          onClick={() => setSelectedColor(isSelected ? null : color.name)}
-                          title={`${color.name}\nAtual: ${color.currentStock.toLocaleString('pt-BR')}\nPrevisto: +${color.incomingTotal.toLocaleString('pt-BR')}`}
-                          className={cn(
-                            'relative overflow-hidden rounded-lg transition-all duration-200',
-                            'border bg-card hover:scale-105 hover:shadow-md',
-                            isSelected &&
-                              'ring-2 ring-primary ring-offset-1 ring-offset-background',
-                            !hasEntries && 'opacity-40 grayscale',
-                          )}
-                          style={{
-                            borderColor: isSelected ? (color.hex ?? undefined) : undefined,
-                          }}
-                        >
-                          {/* Imagem ou cor sólida */}
-                          <div className="relative aspect-square overflow-hidden">
-                            {color.thumbnail ? (
-                              <img
-                                src={color.thumbnail}
-                                alt={color.name}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className="h-full w-full"
-                                style={{ backgroundColor: color.hex || '#888' }}
-                              />
-                            )}
-                            {/* Badge de quantidade incoming */}
-                            {hasEntries && (
-                              <div className="absolute bottom-0.5 right-0.5 rounded bg-primary/90 px-1 py-0.5 text-[9px] font-bold text-primary-foreground">
-                                +
-                                {color.incomingTotal >= 1000
-                                  ? `${(color.incomingTotal / 1000).toFixed(1)}k`
-                                  : color.incomingTotal}
+                        <Tooltip key={color.name}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedColor(isSelected ? null : color.name)}
+                              className={cn(
+                                'relative overflow-hidden rounded-lg transition-all duration-200',
+                                'border bg-card hover:scale-105 hover:shadow-md',
+                                isSelected &&
+                                  'ring-2 ring-primary ring-offset-1 ring-offset-background',
+                                !hasEntries && 'opacity-40 grayscale',
+                              )}
+                              style={{
+                                borderColor: isSelected ? (color.hex ?? undefined) : undefined,
+                              }}
+                            >
+                              {/* Imagem ou cor sólida */}
+                              <div className="relative aspect-square overflow-hidden">
+                                {color.thumbnail ? (
+                                  <img
+                                    src={color.thumbnail}
+                                    alt={color.name}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div
+                                    className="h-full w-full"
+                                    style={{ backgroundColor: color.hex || '#888' }}
+                                  />
+                                )}
+                                {/* Badge de quantidade incoming */}
+                                {hasEntries && (
+                                  <div className="absolute bottom-0.5 right-0.5 rounded bg-primary/90 px-1 py-0.5 text-[9px] font-bold text-primary-foreground">
+                                    +
+                                    {color.incomingTotal >= 1000
+                                      ? `${(color.incomingTotal / 1000).toFixed(1)}k`
+                                      : color.incomingTotal}
+                                  </div>
+                                )}
+                                {/* Estoque atual no topo */}
+                                <div className="absolute left-0.5 top-0.5 rounded bg-background/80 px-1 py-0.5 text-[9px] font-medium text-foreground">
+                                  {color.currentStock >= 1000
+                                    ? `${(color.currentStock / 1000).toFixed(1)}k`
+                                    : color.currentStock}
+                                </div>
                               </div>
-                            )}
-                            {/* Estoque atual no topo */}
-                            <div className="absolute left-0.5 top-0.5 rounded bg-background/80 px-1 py-0.5 text-[9px] font-medium text-foreground">
-                              {color.currentStock >= 1000
-                                ? `${(color.currentStock / 1000).toFixed(1)}k`
-                                : color.currentStock}
+                              {/* Nome da cor */}
+                              <div className="bg-card p-1 text-center">
+                                <span className="block truncate text-[10px] font-medium leading-tight">
+                                  {color.name}
+                                </span>
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold">{color.name}</span>
+                              <span>Atual: {color.currentStock.toLocaleString('pt-BR')} un.</span>
+                              <span>
+                                Previsto: +{color.incomingTotal.toLocaleString('pt-BR')} un.
+                              </span>
                             </div>
-                          </div>
-                          {/* Nome da cor */}
-                          <div className="bg-card p-1 text-center">
-                            <span className="block truncate text-[10px] font-medium leading-tight">
-                              {color.name}
-                            </span>
-                          </div>
-                        </button>
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     })}
                   </div>
@@ -348,132 +392,193 @@ export function FutureStockModal({
               !isLoading &&
               !error &&
               hasVariants && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Previsões de reposição ({filteredAndSortedEntries.length})
-                    </span>
-                    {filteredAndSortedEntries.length === 0 && hasActiveFilters && (
-                      <span className="text-xs text-muted-foreground">
-                        Nenhum resultado para os filtros selecionados
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {filteredAndSortedEntries.map((entry) => {
-                      const expectedDate = parseISO(entry.expectedDate);
-                      const daysUntil = Math.ceil(
-                        (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-                      );
-                      const isUrgent = daysUntil <= 7 && daysUntil >= 0;
-                      const isPast = daysUntil < 0;
+                <div className="space-y-6">
+                  {/* Agrupamento por cor */}
+                  {Array.from(new Set(sortedEntries.map((e) => e.colorName))).map((colorName) => {
+                    const colorEntries = sortedEntries.filter((e) => e.colorName === colorName);
+                    // Agrupar por variante dentro da cor
+                    const variantIds = Array.from(new Set(colorEntries.map((e) => e.variantId)));
+                    const isExpanded =
+                      expandedGroups.includes(colorName) || selectedColor === colorName;
 
-                      return (
-                        <div
-                          key={entry.id}
-                          className={cn(
-                            'flex items-center gap-4 rounded-xl border bg-card p-4 transition-all',
-                            isUrgent && !isPast && 'border-warning/30 bg-warning/5',
-                            isPast && 'border-destructive/30 bg-destructive/5',
-                          )}
+                    return (
+                      <div
+                        key={colorName}
+                        className="space-y-4 rounded-2xl border border-border/50 bg-muted/30 p-1"
+                      >
+                        <button
+                          onClick={() => toggleGroup(colorName)}
+                          className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-muted/50"
                         >
-                          {/* Imagem ou Cor */}
-                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border">
-                            {entry.thumbnail ? (
-                              <img
-                                src={entry.thumbnail}
-                                alt={entry.colorName}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className="h-full w-full"
-                                style={{ backgroundColor: entry.colorHex ?? '#888' }}
-                              />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex items-center gap-2">
-                              <span className="font-medium text-foreground">{entry.colorName}</span>
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  'px-2 py-0 text-[10px]',
-                                  isPast
-                                    ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                                    : isUrgent
-                                      ? 'border-warning/20 bg-warning/10 text-warning'
-                                      : 'border-info/20 bg-info/10 text-info',
-                                )}
-                              >
-                                {isPast
-                                  ? 'Atrasado'
-                                  : isUrgent
-                                    ? 'Em breve'
-                                    : `Previsão ${entry.entryIndex}`}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3.5 w-3.5" />
-                                {format(expectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                                <span
-                                  className={cn(
-                                    'ml-1 font-medium',
-                                    isPast
-                                      ? 'text-destructive'
-                                      : isUrgent
-                                        ? 'text-warning'
-                                        : 'text-foreground/70',
-                                  )}
-                                >
-                                  (
-                                  {isPast
-                                    ? `${Math.abs(daysUntil)} dias atrás`
-                                    : daysUntil === 0
-                                      ? 'hoje'
-                                      : daysUntil === 1
-                                        ? 'amanhã'
-                                        : `${daysUntil} dias`}
-                                  )
-                                </span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Package className="h-3.5 w-3.5" />
-                                SKU: {entry.supplierSku}
-                              </span>
-                            </div>
-                            {/* Estoque atual da variante */}
-                            <div className="mt-1 text-xs text-muted-foreground/70">
-                              Estoque atual: {(entry.currentStock ?? 0).toLocaleString('pt-BR')} un
-                              {(entry.reservedStock ?? 0) > 0 && (
-                                <span className="ml-2">
-                                  (reservado: {(entry.reservedStock ?? 0).toLocaleString('pt-BR')})
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Quantidade */}
-                          <div className="shrink-0 text-right">
-                            <span className="text-xl font-bold text-primary">
-                              +{entry.expectedQuantity.toLocaleString('pt-BR')}
+                          <div className="flex items-center gap-3 border-l-4 border-primary pl-3">
+                            <div
+                              className="h-4 w-4 rounded-full border border-background shadow-sm"
+                              style={{ backgroundColor: colorEntries[0]?.colorHex || '#888' }}
+                            />
+                            <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                              {colorName}
                             </span>
-                            <p className="text-xs text-muted-foreground">unidades</p>
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                              {colorEntries.length}{' '}
+                              {colorEntries.length === 1 ? 'previsão' : 'previsões'}
+                            </Badge>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="space-y-6 px-3 pb-4">
+                            {variantIds.map((vId) => {
+                              // Ordenação cronológica automática dentro da variante
+                              const variantEntries = colorEntries
+                                .filter((e) => e.variantId === vId)
+                                .sort(
+                                  (a, b) =>
+                                    new Date(a.expectedDate).getTime() -
+                                    new Date(b.expectedDate).getTime(),
+                                );
+
+                              const first = variantEntries[0];
+
+                              return (
+                                <div key={vId} className="space-y-3">
+                                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight text-muted-foreground/70">
+                                    <Package className="h-3 w-3" />
+                                    Variante SKU: {first.supplierSku}
+                                  </div>
+
+                                  <div className="relative grid gap-3 pl-4">
+                                    {/* Linha vertical da timeline */}
+                                    <div className="absolute bottom-2 left-1.5 top-2 w-0.5 bg-border/40" />
+
+                                    {variantEntries.map((entry) => {
+                                      const expectedDate = parseISO(entry.expectedDate);
+                                      const daysUntil = Math.ceil(
+                                        (expectedDate.getTime() - Date.now()) /
+                                          (1000 * 60 * 60 * 24),
+                                      );
+                                      const isUrgent = daysUntil <= 7 && daysUntil >= 0;
+                                      const isPast = daysUntil < 0;
+
+                                      return (
+                                        <div
+                                          key={entry.id}
+                                          className={cn(
+                                            'relative flex items-center gap-4 rounded-xl border bg-card p-3 transition-all hover:border-primary/30',
+                                            isUrgent && !isPast && 'border-warning/30 bg-warning/5',
+                                            isPast && 'border-destructive/30 bg-destructive/5',
+                                          )}
+                                        >
+                                          {/* Marcador da timeline */}
+                                          <div
+                                            className={cn(
+                                              'absolute -left-[18px] h-2.5 w-2.5 rounded-full border-2 border-background',
+                                              isPast
+                                                ? 'bg-destructive'
+                                                : isUrgent
+                                                  ? 'bg-warning'
+                                                  : 'bg-primary',
+                                            )}
+                                          />
+                                          {/* Indicador visual de cor/thumb */}
+                                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border">
+                                            {entry.thumbnail ? (
+                                              <img
+                                                src={entry.thumbnail}
+                                                alt={entry.colorName}
+                                                className="h-full w-full object-cover"
+                                                loading="lazy"
+                                              />
+                                            ) : (
+                                              <div
+                                                className="h-full w-full"
+                                                style={{
+                                                  backgroundColor: entry.colorHex ?? '#888',
+                                                }}
+                                              />
+                                            )}
+                                          </div>
+
+                                          {/* Info */}
+                                          <div className="min-w-0 flex-1">
+                                            <div className="mb-0.5 flex items-center gap-2">
+                                              <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                  'px-1.5 py-0 text-[9px] font-bold uppercase',
+                                                  isPast
+                                                    ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                                    : isUrgent
+                                                      ? 'border-warning/20 bg-warning/10 text-warning'
+                                                      : 'border-primary/20 bg-primary/10 text-primary',
+                                                )}
+                                              >
+                                                {isPast
+                                                  ? 'Atrasado'
+                                                  : isUrgent
+                                                    ? 'Em breve'
+                                                    : `Previsão ${entry.entryIndex}`}
+                                              </Badge>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-sm">
+                                              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                                {format(expectedDate, "dd 'de' MMM", {
+                                                  locale: ptBR,
+                                                })}
+                                              </span>
+                                              <span
+                                                className={cn(
+                                                  'text-xs font-semibold',
+                                                  isPast
+                                                    ? 'text-destructive'
+                                                    : isUrgent
+                                                      ? 'text-warning'
+                                                      : 'text-primary',
+                                                )}
+                                              >
+                                                {isPast
+                                                  ? `${Math.abs(daysUntil)}d atrasado`
+                                                  : daysUntil === 0
+                                                    ? 'chega hoje'
+                                                    : `em ${daysUntil}d`}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* Quantidade */}
+                                          <div className="shrink-0 text-right">
+                                            <div className="flex items-baseline justify-end gap-1">
+                                              <span className="text-lg font-bold text-primary">
+                                                +{entry.expectedQuantity.toLocaleString('pt-BR')}
+                                              </span>
+                                              <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                un
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )
             )}
 
             {/* Resumo total */}
-            {!isLoading && !error && !hasNoFutureStock && filteredAndSortedEntries.length > 0 && (
+            {!isLoading && !error && !hasNoFutureStock && sortedEntries.length > 0 && (
               <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -485,14 +590,14 @@ export function FutureStockModal({
                         {hasActiveFilters ? 'Total filtrado' : 'Total previsto'}
                       </span>
                       <p className="text-sm text-muted-foreground">
-                        {filteredAndSortedEntries.length} reposição(ões) agendada(s)
+                        {sortedEntries.length} reposição(ões) agendada(s)
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-bold text-primary">
                       +
-                      {filteredAndSortedEntries
+                      {sortedEntries
                         .reduce((sum, e) => sum + e.expectedQuantity, 0)
                         .toLocaleString('pt-BR')}
                     </span>

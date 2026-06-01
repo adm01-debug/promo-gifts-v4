@@ -2,12 +2,12 @@
  * useChurnRisk — sinal binário de risco de churn baseado em recência + tendência.
  * Critérios: recência > 2× intervalo médio entre pedidos OU recência > 90d combinada com queda recente.
  */
-import { useMemo } from "react";
-import { useClientBI } from "@/hooks/bi/useClientBI";
+import { useMemo } from 'react';
+import { useClientBI } from '@/hooks/bi/useClientBI';
 
 export interface ChurnRiskResult {
   atRisk: boolean;
-  severity: "high" | "medium" | "low" | "none";
+  severity: 'high' | 'medium' | 'low' | 'none';
   daysSinceLastOrder: number | null;
   averageInterval: number | null; // dias
   reason: string | null;
@@ -42,11 +42,11 @@ export function useChurnRisk(clientId: string | null | undefined): ChurnRiskResu
     if (days === null) {
       return {
         atRisk: false,
-        severity: "none",
+        severity: 'none',
         daysSinceLastOrder: null,
         averageInterval: avgInterval,
         reason: null,
-        suggestedAction: "Sem histórico para avaliar risco.",
+        suggestedAction: 'Sem histórico para avaliar risco.',
       };
     }
 
@@ -54,13 +54,13 @@ export function useChurnRisk(clientId: string | null | undefined): ChurnRiskResu
     if ((avgInterval && days > avgInterval * 2 && days > 60) || days > 120) {
       return {
         atRisk: true,
-        severity: "high",
+        severity: 'high',
         daysSinceLastOrder: days,
         averageInterval: avgInterval,
         reason: avgInterval
           ? `Última compra há ${days}d (média histórica: ${avgInterval}d). Cliente dobrou o intervalo — risco alto.`
           : `Sem compra há ${days}d — janela crítica de churn.`,
-        suggestedAction: "Ligar hoje · oferta personalizada · agendar visita esta semana.",
+        suggestedAction: 'Ligar hoje · oferta personalizada · agendar visita esta semana.',
       };
     }
 
@@ -68,21 +68,21 @@ export function useChurnRisk(clientId: string | null | undefined): ChurnRiskResu
     if (avgInterval && days > avgInterval * 1.5 && days > 45) {
       return {
         atRisk: true,
-        severity: "medium",
+        severity: 'medium',
         daysSinceLastOrder: days,
         averageInterval: avgInterval,
         reason: `Última compra há ${days}d vs média ${avgInterval}d — atenção.`,
-        suggestedAction: "WhatsApp esta semana · enviar novidades do setor.",
+        suggestedAction: 'WhatsApp esta semana · enviar novidades do setor.',
       };
     }
 
     return {
       atRisk: false,
-      severity: "low",
+      severity: 'low',
       daysSinceLastOrder: days,
       averageInterval: avgInterval,
       reason: null,
-      suggestedAction: "Cliente dentro do padrão — manter cadência normal.",
+      suggestedAction: 'Cliente dentro do padrão — manter cadência normal.',
     };
   }, [bi]);
 }

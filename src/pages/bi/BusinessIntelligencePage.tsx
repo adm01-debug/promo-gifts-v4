@@ -92,243 +92,243 @@ export default function BusinessIntelligencePage() {
   });
 
   return (
-      <>
-        <PageSEO
-          title="Business Analytic"
-          description="Inteligência comercial 360° por cliente: histórico, afinidade, tendências do setor e recomendações."
-          path="/ferramentas/bi"
-          noIndex
-        />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-          {/* Header compacto */}
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-700 shadow-lg shadow-violet-500/25">
-                <Brain className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1
-                  data-testid="page-title-bi"
-                  className="font-display text-xl font-bold text-foreground"
-                >
-                  Business Analytic
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Inteligência comercial 360° · histórico, afinidade, tendência setorial
-                </p>
-              </div>
+    <>
+      <PageSEO
+        title="Business Analytic"
+        description="Inteligência comercial 360° por cliente: histórico, afinidade, tendências do setor e recomendações."
+        path="/ferramentas/bi"
+        noIndex
+      />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        {/* Header compacto */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-700 shadow-lg shadow-violet-500/25">
+              <Brain className="h-5 w-5 text-primary-foreground" />
             </div>
-            {clientId && (
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1.5"
-                  onClick={() => setTourForce(true)}
-                  title="Tour guiado"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => navigate(`/ferramentas/bi/comparar?ids=${clientId}`)}
-                >
-                  <GitCompare className="h-4 w-4" />
-                  Comparar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => setBriefingOpen(true)}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Briefing
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 border-violet-500/30 hover:bg-violet-500/10"
-                  onClick={() => setCopilotOpen(true)}
-                  data-tour="copilot"
-                >
-                  <Bot className="h-4 w-4 text-violet-500" />
-                  Pergunte ao BI
-                </Button>
-                <ExecutiveSummaryButton
-                  clientId={clientId}
-                  clientName={clientName}
-                  ramoAtividade={ramoAtividade}
-                />
-              </div>
-            )}
+            <div>
+              <h1
+                data-testid="page-title-bi"
+                className="font-display text-xl font-bold text-foreground"
+              >
+                Business Analytic
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Inteligência comercial 360° · histórico, afinidade, tendência setorial
+              </p>
+            </div>
           </div>
-
-          {/* Seletor de cliente */}
-          <Card className="border-[1.5px]">
-            <CardContent className="p-4">
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Cliente da carteira
-              </label>
-              <ClientSelector value={clientId} onChange={handleSelect} />
-
-              {company && (
-                <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t pt-4 text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="font-medium">{getCompanyDisplayName(company)}</span>
-                  </div>
-                  {company.cnpj && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <FileText className="h-3.5 w-3.5" />
-                      <span className="text-xs">{company.cnpj}</span>
-                    </div>
-                  )}
-                  {ramoAtividade && (
-                    <div className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-primary" />
-                      <Badge variant="secondary" className="text-xs">
-                        {ramoAtividade}
-                      </Badge>
-                    </div>
-                  )}
-                  {company.cidade && (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span className="text-xs">
-                        {company.cidade}
-                        {company.estado ? `/${company.estado}` : ''}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Empty state */}
-          {!clientId && (
-            <Card className="border-[1.5px] border-dashed">
-              <CardContent className="space-y-4 p-12 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                  <Info className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-display text-lg font-semibold">Selecione um cliente</h3>
-                <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                  Escolha uma empresa da sua carteira acima para gerar inteligência comercial
-                  personalizada: Health Score, próxima ação sugerida, afinidade, tendências do setor,
-                  lookalikes e recomendações curadas.
-                </p>
-                <div className="pt-2">
-                  <Button
-                    onClick={() => handleSelect(DEMO_CLIENT_ID)}
-                    variant="outline"
-                    className="gap-2 border-[1.5px] border-violet-500/40 hover:bg-violet-500/10"
-                  >
-                    <Sparkles className="h-4 w-4 text-violet-500" />
-                    Visualizar com dados demo
-                  </Button>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Cliente fictício "Acme Brindes" para preview completo
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Demo banner */}
-          {isDemoClient(clientId) && (
-            <Card className="border-[1.5px] border-violet-500/40 bg-violet-500/5">
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="h-4 w-4 text-violet-500" />
-                  <span className="font-medium">Modo Demonstração</span>
-                  <span className="text-muted-foreground">
-                    · Cliente fictício com dados simulados em todas as zonas
-                  </span>
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => handleSelect(null)}>
-                  Sair do modo demo
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Zonas de inteligência */}
           {clientId && (
-            <BICategoryFocusProvider>
-              <div className="space-y-4">
-                {/* HERO — Health Score + insight cross-zona + CTA */}
-                <ClientHealthHero
-                  clientId={clientId}
-                  ramoAtividade={ramoAtividade}
-                  clientName={clientName}
-                  data-tour="health-hero"
-                />
-                <div data-tour="health-hero" />
-
-                <div data-tour="churn-banner">
-                  <ChurnRiskBanner
-                    clientId={clientId}
-                    clientName={clientName}
-                    clientPhone={clientPhone}
-                  />
-                </div>
-
-                {/* PROTAGONISTA — Eixo CATEGORIA: cliente × setor */}
-                <div data-tour="category-radar">
-                  <ClientCategoryRadar
-                    clientId={clientId}
-                    ramoAtividade={ramoAtividade}
-                    clientName={clientName}
-                  />
-                </div>
-
-                <CategoryFocusBar />
-
-                <ClientOverview360 clientId={clientId} />
-                <div data-tour="orders-timeline">
-                  <EnrichedOrdersTimeline clientId={clientId} />
-                </div>
-
-                <ClientVsIndustryComparison clientId={clientId} ramoAtividade={ramoAtividade} />
-                <ClientAffinityProducts clientId={clientId} />
-                <BundleSuggestions clientId={clientId} />
-                <IndustryTrendingProducts ramoAtividade={ramoAtividade} clientId={clientId} />
-                <div data-tour="seasonality">
-                  <ClientSeasonalityHeatmap clientId={clientId} ramoAtividade={ramoAtividade} />
-                </div>
-                <ClientLookalikes clientId={clientId} ramoAtividade={ramoAtividade} />
-                <EmpiricalRecommendations ramoAtividade={ramoAtividade} clientId={clientId} />
-              </div>
-            </BICategoryFocusProvider>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-1.5"
+                onClick={() => setTourForce(true)}
+                title="Tour guiado"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => navigate(`/ferramentas/bi/comparar?ids=${clientId}`)}
+              >
+                <GitCompare className="h-4 w-4" />
+                Comparar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setBriefingOpen(true)}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Briefing
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-violet-500/30 hover:bg-violet-500/10"
+                onClick={() => setCopilotOpen(true)}
+                data-tour="copilot"
+              >
+                <Bot className="h-4 w-4 text-violet-500" />
+                Pergunte ao BI
+              </Button>
+              <ExecutiveSummaryButton
+                clientId={clientId}
+                clientName={clientName}
+                ramoAtividade={ramoAtividade}
+              />
+            </div>
           )}
         </div>
 
-        {clientId && <BITourGuide force={tourForce} onClose={() => setTourForce(false)} />}
+        {/* Seletor de cliente */}
+        <Card className="border-[1.5px]">
+          <CardContent className="p-4">
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Cliente da carteira
+            </label>
+            <ClientSelector value={clientId} onChange={handleSelect} />
 
-        {/* Drawers globais */}
-        {clientId && (
-          <>
-            <BIBriefingMode
-              open={briefingOpen}
-              onOpenChange={setBriefingOpen}
-              clientId={clientId}
-              clientName={clientName}
-              ramoAtividade={ramoAtividade}
-            />
-            <BIAiCopilot
-              open={copilotOpen}
-              onOpenChange={setCopilotOpen}
-              clientId={clientId}
-              clientName={clientName}
-              ramoAtividade={ramoAtividade}
-            />
-          </>
+            {company && (
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t pt-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium">{getCompanyDisplayName(company)}</span>
+                </div>
+                {company.cnpj && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span className="text-xs">{company.cnpj}</span>
+                  </div>
+                )}
+                {ramoAtividade && (
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5 text-primary" />
+                    <Badge variant="secondary" className="text-xs">
+                      {ramoAtividade}
+                    </Badge>
+                  </div>
+                )}
+                {company.cidade && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span className="text-xs">
+                      {company.cidade}
+                      {company.estado ? `/${company.estado}` : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Empty state */}
+        {!clientId && (
+          <Card className="border-[1.5px] border-dashed">
+            <CardContent className="space-y-4 p-12 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                <Info className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="font-display text-lg font-semibold">Selecione um cliente</h3>
+              <p className="mx-auto max-w-md text-sm text-muted-foreground">
+                Escolha uma empresa da sua carteira acima para gerar inteligência comercial
+                personalizada: Health Score, próxima ação sugerida, afinidade, tendências do setor,
+                lookalikes e recomendações curadas.
+              </p>
+              <div className="pt-2">
+                <Button
+                  onClick={() => handleSelect(DEMO_CLIENT_ID)}
+                  variant="outline"
+                  className="gap-2 border-[1.5px] border-violet-500/40 hover:bg-violet-500/10"
+                >
+                  <Sparkles className="h-4 w-4 text-violet-500" />
+                  Visualizar com dados demo
+                </Button>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Cliente fictício "Acme Brindes" para preview completo
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </>
+
+        {/* Demo banner */}
+        {isDemoClient(clientId) && (
+          <Card className="border-[1.5px] border-violet-500/40 bg-violet-500/5">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className="h-4 w-4 text-violet-500" />
+                <span className="font-medium">Modo Demonstração</span>
+                <span className="text-muted-foreground">
+                  · Cliente fictício com dados simulados em todas as zonas
+                </span>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => handleSelect(null)}>
+                Sair do modo demo
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Zonas de inteligência */}
+        {clientId && (
+          <BICategoryFocusProvider>
+            <div className="space-y-4">
+              {/* HERO — Health Score + insight cross-zona + CTA */}
+              <ClientHealthHero
+                clientId={clientId}
+                ramoAtividade={ramoAtividade}
+                clientName={clientName}
+                data-tour="health-hero"
+              />
+              <div data-tour="health-hero" />
+
+              <div data-tour="churn-banner">
+                <ChurnRiskBanner
+                  clientId={clientId}
+                  clientName={clientName}
+                  clientPhone={clientPhone}
+                />
+              </div>
+
+              {/* PROTAGONISTA — Eixo CATEGORIA: cliente × setor */}
+              <div data-tour="category-radar">
+                <ClientCategoryRadar
+                  clientId={clientId}
+                  ramoAtividade={ramoAtividade}
+                  clientName={clientName}
+                />
+              </div>
+
+              <CategoryFocusBar />
+
+              <ClientOverview360 clientId={clientId} />
+              <div data-tour="orders-timeline">
+                <EnrichedOrdersTimeline clientId={clientId} />
+              </div>
+
+              <ClientVsIndustryComparison clientId={clientId} ramoAtividade={ramoAtividade} />
+              <ClientAffinityProducts clientId={clientId} />
+              <BundleSuggestions clientId={clientId} />
+              <IndustryTrendingProducts ramoAtividade={ramoAtividade} clientId={clientId} />
+              <div data-tour="seasonality">
+                <ClientSeasonalityHeatmap clientId={clientId} ramoAtividade={ramoAtividade} />
+              </div>
+              <ClientLookalikes clientId={clientId} ramoAtividade={ramoAtividade} />
+              <EmpiricalRecommendations ramoAtividade={ramoAtividade} clientId={clientId} />
+            </div>
+          </BICategoryFocusProvider>
+        )}
+      </div>
+
+      {clientId && <BITourGuide force={tourForce} onClose={() => setTourForce(false)} />}
+
+      {/* Drawers globais */}
+      {clientId && (
+        <>
+          <BIBriefingMode
+            open={briefingOpen}
+            onOpenChange={setBriefingOpen}
+            clientId={clientId}
+            clientName={clientName}
+            ramoAtividade={ramoAtividade}
+          />
+          <BIAiCopilot
+            open={copilotOpen}
+            onOpenChange={setCopilotOpen}
+            clientId={clientId}
+            clientName={clientName}
+            ramoAtividade={ramoAtividade}
+          />
+        </>
+      )}
+    </>
   );
 }
 

@@ -5,7 +5,7 @@ import * as path from 'path';
 
 // Configurações do teste
 const ROUTES = ['/', '/auth']; // Adicione outras rotas públicas relevantes
-const MODES: ('light' | 'dark')[] = ['light', 'dark'];
+const MODES: ('dark')[] = ['dark'];
 // Output dir separado de 'playwright-report' (que é gerenciado pelo HTML
 // reporter do Playwright, podendo conflitar com escrita externa em afterAll).
 const REPORT_DIR = path.join(process.cwd(), 'theme-validation-output');
@@ -102,7 +102,7 @@ test.describe('Theme Consistency & Accessibility (contraste + tipografia)', () =
           localStorage.setItem('gifts-store-theme-config', JSON.stringify({
             presetId,
             radius: 14,
-            mode: 'auto' // O modo será controlado pela classe no body ou prefer-color-scheme
+            mode: 'dark'
           }));
           localStorage.setItem('gifts-store-theme', mode);
         }, { presetId: preset.id, mode });

@@ -13,8 +13,8 @@
  *   - Calcula métricas: total runs, sucesso, falha, taxa, latência média/p95,
  *     primeiro e último evento na janela.
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface IncidentDetailsInput {
   /** Timestamp do incidente (ISO). */
@@ -69,7 +69,7 @@ export interface IncidentMetrics {
 
 export interface IncidentEntity {
   id: string;
-  kind: "connection" | "webhook";
+  kind: 'connection' | 'webhook';
   name: string;
   type?: string | null;
   url?: string | null;
@@ -89,27 +89,30 @@ function p95(nums: number[]): number | null {
   return sorted[idx];
 }
 
-async function resolveEntity(entityId: string, kindHint?: string | null): Promise<IncidentEntity | null> {
+async function resolveEntity(
+  entityId: string,
+  kindHint?: string | null,
+): Promise<IncidentEntity | null> {
   // Heurística por kind: webhook_* ⇒ tenta webhook primeiro; senão tenta conexão.
-  const tryWebhookFirst = kindHint?.startsWith("webhook");
+  const tryWebhookFirst = kindHint?.startsWith('webhook');
 
   const tryWebhook = async (): Promise<IncidentEntity | null> => {
     const { data } = await supabase
-      .from("outbound_webhooks")
-      .select("id, name, url")
-      .eq("id", entityId)
+      .from('outbound_webhooks')
+      .select('id, name, url')
+      .eq('id', entityId)
       .maybeSingle();
-    if (data) return { id: data.id, kind: "webhook", name: data.name, url: data.url };
+    if (data) return { id: data.id, kind: 'webhook', name: data.name, url: data.url };
     return null;
   };
 
   const tryConnection = async (): Promise<IncidentEntity | null> => {
     const { data } = await supabase
-      .from("external_connections")
-      .select("id, name, type")
-      .eq("id", entityId)
+      .from('external_connections')
+      .select('id, name, type')
+      .eq('id', entityId)
       .maybeSingle();
-    if (data) return { id: data.id, kind: "connection", name: data.name, type: data.type };
+    if (data) return { id: data.id, kind: 'connection', name: data.name, type: data.type };
     return null;
   };
 
@@ -132,23 +135,25 @@ async function fetchDetails(input: IncidentDetailsInput): Promise<IncidentDetail
 
   // Tests
   let testQuery = supabase
-    .from("connection_test_history")
-    .select("id, tested_at, success, latency_ms, status_code, error_message, error_kind, triggered_by, attempts")
-    .gte("tested_at", start)
-    .lte("tested_at", end)
-    .order("tested_at", { ascending: false })
+    .from('connection_test_history')
+    .select(
+      'id, tested_at, success, latency_ms, status_code, error_message, error_kind, triggered_by, attempts',
+    )
+    .gte('tested_at', start)
+    .lte('tested_at', end)
+    .order('tested_at', { ascending: false })
     .limit(200);
-  if (input.entityId) testQuery = testQuery.eq("connection_id", input.entityId);
+  if (input.entityId) testQuery = testQuery.eq('connection_id', input.entityId);
 
   // Deliveries
   let delivQuery = supabase
-    .from("webhook_deliveries")
-    .select("id, webhook_id, event, delivered_at, success, status_code, attempt, error_message")
-    .gte("delivered_at", start)
-    .lte("delivered_at", end)
-    .order("delivered_at", { ascending: false })
+    .from('webhook_deliveries')
+    .select('id, webhook_id, event, delivered_at, success, status_code, attempt, error_message')
+    .gte('delivered_at', start)
+    .lte('delivered_at', end)
+    .order('delivered_at', { ascending: false })
     .limit(200);
-  if (input.entityId) delivQuery = delivQuery.eq("webhook_id", input.entityId);
+  if (input.entityId) delivQuery = delivQuery.eq('webhook_id', input.entityId);
 
   const [{ data: tests }, { data: deliveries }, entity] = await Promise.all([
     testQuery,
@@ -161,8 +166,11 @@ async function fetchDetails(input: IncidentDetailsInput): Promise<IncidentDetail
 
   const testSuccess = testRows.filter((t) => t.success).length;
   const testFail = testRows.length - testSuccess;
-  const latencies = testRows.map((t) => t.latency_ms).filter((n): n is number => typeof n === "number");
-  const avgLat = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null;
+  const latencies = testRows
+    .map((t) => t.latency_ms)
+    .filter((n): n is number => typeof n === 'number');
+  const avgLat =
+    latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null;
 
   const delivSuccess = delivRows.filter((d) => d.success).length;
   const delivFail = delivRows.length - delivSuccess;
@@ -198,7 +206,7 @@ async function fetchDetails(input: IncidentDetailsInput): Promise<IncidentDetail
 export function useIncidentDetails(input: IncidentDetailsInput | null) {
   return useQuery({
     queryKey: [
-      "incident-details",
+      'incident-details',
       input?.occurredAt,
       input?.entityId ?? null,
       input?.kind ?? null,

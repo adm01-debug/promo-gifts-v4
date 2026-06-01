@@ -50,6 +50,114 @@ function safeCrmErrorFields(error: unknown): Record<string, unknown> {
 }
 
 // ============================================
+// CIRCUIT BREAKER para 429 / rate-limit
+// ============================================
+
+/**
+ * Cooldown base em ms. Aumenta com backoff exponencial em hits consecutivos.
+ * 1o hit: 60s | 2o: 120s | 3o+: 240s (cap 5 min)
+ */
+const RATE_LIMIT_COOLDOWN_BASE_MS = 60_000;
+const RATE_LIMIT_COOLDOWN_MAX_MS = 300_000; // 5 min
+let rateLimitedUntil = 0; // timestamp em ms
+let consecutiveRateLimitHits = 0;
+
+function isRateLimited(): boolean {
+  return Date.now() < rateLimitedUntil;
+}
+
+function activateRateLimitCooldown(): void {
+  consecutiveRateLimitHits = Math.min(consecutiveRateLimitHits + 1, 4);
+  const cooldownMs = Math.min(
+    RATE_LIMIT_COOLDOWN_BASE_MS * Math.pow(2, consecutiveRateLimitHits - 1),
+    RATE_LIMIT_COOLDOWN_MAX_MS,
+  );
+  rateLimitedUntil = Date.now() + cooldownMs;
+  logger.warn(
+    `[CRM-DB] 429 detectado (hit #${consecutiveRateLimitHits}) — circuit breaker ativo por ${
+      cooldownMs / 1000
+    }s. Proxima chamada liberada as ${new Date(rateLimitedUntil).toISOString()}`,
+  );
+  // Drena fila imediatamente: rejeita todos os callers aguardando sem despachar
+  drainQueueWith429(cooldownMs);
+}
+
+/** Verifica se o erro indica rate-limit (429). */
+function isRateLimitError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('429') ||
+    lower.includes('too many requests') ||
+    lower.includes('rate limit') ||
+    lower.includes('ratelimit')
+  );
+}
+
+// ============================================
+// CONCURRENCY SEMAPHORE
+// Evita burst de N requests simultaneos no page-load que causam 429 em cascata.
+//
+// Root cause: todos os hooks disparavam ao mesmo tempo, todos passavam por
+// isRateLimited()=false antes de qualquer resposta 429 voltar, todos
+// despachavam para crm-db-bridge em paralelo.
+//
+// Com o semaforo: max MAX_CONCURRENT_REQUESTS em voo simultaneo.
+// Os demais entram na fila. Quando o 1o request recebe 429:
+//   1. activateRateLimitCooldown() e chamado
+//   2. drainQueueWith429() rejeita TODOS os itens da fila imediatamente
+//   3. Nenhum caller pendente chega a disparar o fetch
+// ============================================
+
+const MAX_CONCURRENT_REQUESTS = 3;
+let _concurrentActive = 0;
+const _concurrentQueue: Array<{ resolve: () => void; reject: (e: Error) => void }> = [];
+
+function acquireCrmSlot(): Promise<void> {
+  if (_concurrentActive < MAX_CONCURRENT_REQUESTS) {
+    _concurrentActive++;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve, reject) => {
+    _concurrentQueue.push({ resolve, reject });
+  });
+}
+
+function releaseCrmSlot(): void {
+  _concurrentActive = Math.max(0, _concurrentActive - 1);
+  const next = _concurrentQueue.shift();
+  if (next) {
+    // Verifica circuit breaker antes de promover o proximo waiter
+    if (isRateLimited()) {
+      const remainMs = rateLimitedUntil - Date.now();
+      next.reject(
+        new Error(
+          `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+        ),
+      );
+      releaseCrmSlot(); // continua drenando
+    } else {
+      _concurrentActive++;
+      next.resolve();
+    }
+  }
+}
+
+/**
+ * Drena TODA a fila de espera com erro de rate-limit.
+ * Chamado imediatamente quando um 429 e detectado, para que os callers
+ * pendentes nao sejam despachados para a edge function.
+ */
+function drainQueueWith429(cooldownMs: number): void {
+  const remainS = Math.ceil(cooldownMs / 1000);
+  const err = new Error(`CRM rate-limit: aguarde ${remainS}s antes de tentar novamente`);
+  let item = _concurrentQueue.shift();
+  while (item) {
+    item.reject(err);
+    item = _concurrentQueue.shift();
+  }
+}
+
+// ============================================
 // BATCH SUPPORT — multiple SELECT queries in one call
 // ============================================
 
@@ -67,56 +175,85 @@ export interface CrmBatchResult {
   success: boolean;
   data?: { records: unknown[]; count: number };
   error?: string;
-  /** Tabela ausente no schema do CRM (não é falha de conexão). */
+  /** Tabela ausente no schema do CRM (nao e falha de conexao). */
   unavailable?: boolean;
   /** Aviso descritivo associado a `unavailable`. */
   warning?: string;
 }
 
 /**
- * Executa múltiplas queries SELECT no CRM em uma única invocação.
+ * Executa multiplas queries SELECT no CRM em uma unica invocacao.
  */
 export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatchResult[]> {
-  const startedAt = performance.now();
-  const body = { operation: 'batch', queries };
-  const reqBytes = estimatePayloadBytes(body);
-  const requestId = newRequestId();
-  const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
-    body,
-    headers: { [REQUEST_ID_HEADER]: requestId },
-  });
+  // Circuit breaker: bloqueia se em cooldown de 429
+  if (isRateLimited()) {
+    const remainMs = rateLimitedUntil - Date.now();
+    logger.warn(
+      `[CRM-DB] Batch bloqueado pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`,
+    );
+    throw new Error(
+      `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+    );
+  }
 
-  const serverRequestId =
-    data && typeof data === 'object' && 'request_id' in data
-      ? String((data as { request_id?: unknown }).request_id ?? '')
-      : undefined;
+  // Semaforo de concorrencia
+  await acquireCrmSlot();
+  try {
+    // Re-check apos adquirir slot (pode ter aguardado na fila)
+    if (isRateLimited()) {
+      const remainMs = rateLimitedUntil - Date.now();
+      throw new Error(
+        `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+      );
+    }
 
-  recordBridgeCall({
-    bridge: 'crm-db-bridge',
-    op: 'batch',
-    target: queries.map((q) => q.table).join(','),
-    durationMs: performance.now() - startedAt,
-    reqBytes,
-    respBytes: error ? 0 : estimatePayloadBytes(data),
-    ok: !error && !!data?.success,
-    errorMessage: error?.message ?? (data?.success ? undefined : data?.error),
-    requestId,
-    serverRequestId: serverRequestId || undefined,
-  });
-
-  if (error) {
-    logger.error('[CRM-DB] Batch error', {
-      requestId,
-      ...safeCrmErrorFields(error),
+    const startedAt = performance.now();
+    const body = { operation: 'batch', queries };
+    const reqBytes = estimatePayloadBytes(body);
+    const requestId = newRequestId();
+    const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
+      body,
+      headers: { [REQUEST_ID_HEADER]: requestId },
     });
-    throw new Error(`CRM batch error: ${error.message}`);
-  }
 
-  if (!data?.success) {
-    throw new Error(data?.error || 'CRM batch unknown error');
-  }
+    const serverRequestId =
+      data && typeof data === 'object' && 'request_id' in data
+        ? String((data as { request_id?: unknown }).request_id ?? '')
+        : undefined;
 
-  return data.results as CrmBatchResult[];
+    recordBridgeCall({
+      bridge: 'crm-db-bridge',
+      op: 'batch',
+      target: queries.map((q) => q.table).join(','),
+      durationMs: performance.now() - startedAt,
+      reqBytes,
+      respBytes: error ? 0 : estimatePayloadBytes(data),
+      ok: !error && !!data?.success,
+      errorMessage: error?.message ?? (data?.success ? undefined : data?.error),
+      requestId,
+      serverRequestId: serverRequestId || undefined,
+    });
+
+    if (error) {
+      const msg = error.message ?? '';
+      if (isRateLimitError(msg)) activateRateLimitCooldown();
+      logger.error('[CRM-DB] Batch error', {
+        requestId,
+        ...safeCrmErrorFields(error),
+      });
+      throw new Error(`CRM batch error: ${error.message}`);
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'CRM batch unknown error');
+    }
+
+    // Reset hit counter on success
+    consecutiveRateLimitHits = 0;
+    return data.results as CrmBatchResult[];
+  } finally {
+    releaseCrmSlot();
+  }
 }
 
 // ============================================
@@ -125,6 +262,12 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
 
 const MAX_RETRIES = 2;
 const INITIAL_BACKOFF_MS = 600;
+
+/**
+ * Padroes que indicam erros TRANSIENTES — vale retry com backoff.
+ * INTENCIONALMENTE excluidos: 'FunctionsHttpError' e 'non-2xx' (muito amplos,
+ * capturavam 429 e geravam loop de retries).
+ */
 const RETRYABLE_PATTERNS = [
   'statement timeout',
   '57014',
@@ -132,8 +275,6 @@ const RETRYABLE_PATTERNS = [
   '503',
   '504',
   'bad gateway',
-  'FunctionsHttpError',
-  'non-2xx',
   'network',
   'fetch',
   'ECONNRESET',
@@ -143,8 +284,31 @@ const RETRYABLE_PATTERNS = [
   'boot',
 ];
 
+/**
+ * Padroes que indicam erros DEFINITIVOS — nunca fazer retry.
+ */
+const NON_RETRYABLE_PATTERNS = [
+  '429',
+  'too many requests',
+  'rate limit',
+  'ratelimit',
+  '400',
+  '401',
+  '403',
+  '404',
+  '410',
+  'permission denied',
+  'jwt',
+  'unauthorized',
+  'duplicate key',
+  'violates',
+  'syntax error',
+];
+
 function isRetryableCrmError(msg: string): boolean {
   const lower = msg.toLowerCase();
+  // Qualquer padrao definitivo bloqueia retry
+  if (NON_RETRYABLE_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) return false;
   return RETRYABLE_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
 }
 
@@ -177,76 +341,118 @@ async function extractCrmErrorMessage(error: unknown): Promise<string> {
 // ============================================
 
 /**
- * Invoca o crm-db-bridge para acessar dados do CRM externo (com retry automático)
+ * Invoca o crm-db-bridge para acessar dados do CRM externo (com retry automatico).
+ *
+ * Protecoes:
+ * - Semaforo de concorrencia: max MAX_CONCURRENT_REQUESTS em paralelo
+ * - Circuit breaker para 429: bloqueia chamadas por 60s+ apos rate-limit (backoff exponencial)
+ * - drainQueueWith429: drena fila imediatamente ao detectar 429
+ * - NON_RETRYABLE_PATTERNS: 429, 4xx, JWT errors nunca sao retentados
  */
 export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
-  const startedAt = performance.now();
-  const reqBytes = estimatePayloadBytes(query);
-  const opLabel = query.operation || 'invoke';
-  const requestId = newRequestId();
-
-  const record = (ok: boolean, data: unknown, errMsg?: string) => {
-    const serverRequestId =
-      data && typeof data === 'object' && 'request_id' in data
-        ? String((data as { request_id?: unknown }).request_id ?? '')
-        : '';
-    recordBridgeCall({
-      bridge: 'crm-db-bridge',
-      op: opLabel,
-      target: query.table,
-      durationMs: performance.now() - startedAt,
-      reqBytes,
-      respBytes: ok ? estimatePayloadBytes(data) : 0,
-      ok,
-      errorMessage: errMsg,
-      requestId,
-      serverRequestId: serverRequestId || undefined,
-    });
-  };
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
-      body: query,
-      headers: { [REQUEST_ID_HEADER]: requestId },
-    });
-
-    if (!error && !data?.error) {
-      record(true, data);
-      return data as CrmResponse<T>;
-    }
-
-    const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
-
-    if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
-      const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
-      logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
-        requestId,
-        message: safeCrmLogMessage(msg),
-      });
-      await new Promise((r) => setTimeout(r, delay));
-      continue;
-    }
-
-    record(false, null, msg);
-
-    // Final attempt failed
-    if (error) {
-      logger.error('[CRM-DB] Edge function error', {
-        requestId,
-        message: safeCrmLogMessage(msg),
-      });
-      throw new Error(`CRM DB error: ${msg}`);
-    }
-
-    logger.error('[CRM-DB] Query error', {
-      requestId,
-      message: safeCrmLogMessage(msg),
-    });
-    throw new Error(`CRM query error: ${msg}`);
+  // Circuit breaker: bloqueia se em cooldown de 429
+  if (isRateLimited()) {
+    const remainMs = rateLimitedUntil - Date.now();
+    logger.warn(
+      `[CRM-DB] Chamada bloqueada pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`,
+    );
+    throw new Error(
+      `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+    );
   }
 
-  record(false, null, 'max retries exceeded');
-  throw new Error('CRM DB: max retries exceeded');
+  // Semaforo de concorrencia — bloqueia ate ter slot disponivel
+  await acquireCrmSlot();
+  try {
+    // Re-check apos adquirir slot (pode ter aguardado na fila enquanto outro request ativava 429)
+    if (isRateLimited()) {
+      const remainMs = rateLimitedUntil - Date.now();
+      throw new Error(
+        `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+      );
+    }
+
+    const startedAt = performance.now();
+    const reqBytes = estimatePayloadBytes(query);
+    const opLabel = query.operation || 'invoke';
+    const requestId = newRequestId();
+
+    const record = (ok: boolean, data: unknown, errMsg?: string) => {
+      const serverRequestId =
+        data && typeof data === 'object' && 'request_id' in data
+          ? String((data as { request_id?: unknown }).request_id ?? '')
+          : '';
+      recordBridgeCall({
+        bridge: 'crm-db-bridge',
+        op: opLabel,
+        target: query.table,
+        durationMs: performance.now() - startedAt,
+        reqBytes,
+        respBytes: ok ? estimatePayloadBytes(data) : 0,
+        ok,
+        errorMessage: errMsg,
+        requestId,
+        serverRequestId: serverRequestId || undefined,
+      });
+    };
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
+        body: query,
+        headers: { [REQUEST_ID_HEADER]: requestId },
+      });
+
+      if (!error && !data?.error) {
+        record(true, data);
+        consecutiveRateLimitHits = 0;
+        return data as CrmResponse<T>;
+      }
+
+      const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
+
+      // Rate-limit: ativa circuit breaker (que drena a fila) e nao faz retry
+      if (isRateLimitError(msg)) {
+        activateRateLimitCooldown();
+        record(false, null, msg);
+        logger.error('[CRM-DB] Edge function error', {
+          requestId,
+          message: safeCrmLogMessage(msg),
+        });
+        throw new Error(`CRM DB error: ${msg}`);
+      }
+
+      if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
+        const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
+          requestId,
+          message: safeCrmLogMessage(msg),
+        });
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
+      record(false, null, msg);
+
+      if (error) {
+        logger.error('[CRM-DB] Edge function error', {
+          requestId,
+          message: safeCrmLogMessage(msg),
+        });
+        throw new Error(`CRM DB error: ${msg}`);
+      }
+
+      logger.error('[CRM-DB] Query error', {
+        requestId,
+        message: safeCrmLogMessage(msg),
+      });
+      throw new Error(`CRM query error: ${msg}`);
+    }
+
+    record(false, null, 'max retries exceeded');
+    throw new Error('CRM DB: max retries exceeded');
+  } finally {
+    releaseCrmSlot();
+  }
 }
 
 /**

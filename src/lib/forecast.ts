@@ -26,7 +26,8 @@ export function linearRegression(values: number[]): {
   const meanX = xs.reduce((a, b) => a + b, 0) / n;
   const meanY = values.reduce((a, b) => a + b, 0) / n;
 
-  let num = 0, den = 0;
+  let num = 0,
+    den = 0;
   for (let i = 0; i < n; i++) {
     num += (xs[i] - meanX) * (values[i] - meanY);
     den += (xs[i] - meanX) ** 2;
@@ -53,12 +54,12 @@ export function projectForecast(
   forecastDays: number,
 ): ForecastPoint[] {
   if (series.length < 3) {
-    return series.map(s => ({ ...s, isForecast: false }));
+    return series.map((s) => ({ ...s, isForecast: false }));
   }
-  const values = series.map(s => s.value);
+  const values = series.map((s) => s.value);
   const { slope, intercept, residualStd } = linearRegression(values);
 
-  const result: ForecastPoint[] = series.map(s => ({
+  const result: ForecastPoint[] = series.map((s) => ({
     date: s.date,
     value: s.value,
     isForecast: false,
@@ -85,15 +86,12 @@ export function projectForecast(
 /**
  * Detecta anomalias via z-score. threshold padrão = 2σ.
  */
-export function detectAnomalies(
-  values: number[],
-  threshold = 2,
-): boolean[] {
+export function detectAnomalies(values: number[], threshold = 2): boolean[] {
   const n = values.length;
   if (n < 4) return values.map(() => false);
   const mean = values.reduce((a, b) => a + b, 0) / n;
   const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
   const std = Math.sqrt(variance);
   if (std === 0) return values.map(() => false);
-  return values.map(v => Math.abs((v - mean) / std) >= threshold);
+  return values.map((v) => Math.abs((v - mean) / std) >= threshold);
 }

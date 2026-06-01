@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldAlert, Bot } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { HardeningTrendChart } from "./HardeningTrendChart";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ShieldAlert, Bot } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { HardeningTrendChart } from './HardeningTrendChart';
 
 interface AuditRow {
   id: string;
@@ -28,16 +35,16 @@ export function AutoDefenseTab() {
 
       const [recent, week] = await Promise.all([
         supabase
-          .from("admin_audit_log")
-          .select("id, ip_address, resource_id, details, created_at")
-          .eq("action", "auto_ip_block")
-          .order("created_at", { ascending: false })
+          .from('admin_audit_log')
+          .select('id, ip_address, resource_id, details, created_at')
+          .eq('action', 'auto_ip_block')
+          .order('created_at', { ascending: false })
           .limit(20),
         supabase
-          .from("admin_audit_log")
-          .select("id", { count: "exact", head: true })
-          .eq("action", "auto_ip_block")
-          .gte("created_at", sevenDaysAgo),
+          .from('admin_audit_log')
+          .select('id', { count: 'exact', head: true })
+          .eq('action', 'auto_ip_block')
+          .gte('created_at', sevenDaysAgo),
       ]);
 
       setRows((recent.data || []) as AuditRow[]);
@@ -63,9 +70,11 @@ export function AutoDefenseTab() {
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold tabular-nums">{count7d}</span>
-              <span className="text-sm text-muted-foreground">auto-bloqueios nos últimos 7 dias</span>
+              <span className="text-sm text-muted-foreground">
+                auto-bloqueios nos últimos 7 dias
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="mt-3 text-xs text-muted-foreground">
               Verificação a cada 15 minutos. Combina falhas de login, tokens públicos e bots
               detectados.
             </p>
@@ -85,7 +94,8 @@ export function AutoDefenseTab() {
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nenhum auto-bloqueio registrado. O sistema só dispara quando um IP atinge ≥30 ofensas em 1h.
+              Nenhum auto-bloqueio registrado. O sistema só dispara quando um IP atinge ≥30 ofensas
+              em 1h.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -100,22 +110,27 @@ export function AutoDefenseTab() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => {
-                    const details = (r.details ?? {}) as { offense_count?: number; expires_at?: string };
+                    const details = (r.details ?? {}) as {
+                      offense_count?: number;
+                      expires_at?: string;
+                    };
                     return (
                       <TableRow key={r.id}>
-                        <TableCell className="font-mono text-xs">{r.ip_address || r.resource_id || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {r.ip_address || r.resource_id || '—'}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="destructive" className="text-xs">
-                            {details.offense_count ?? "—"}
+                            {details.offense_count ?? '—'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                           {details.expires_at
-                            ? format(new Date(details.expires_at), "dd/MM HH:mm", { locale: ptBR })
-                            : "—"}
+                            ? format(new Date(details.expires_at), 'dd/MM HH:mm', { locale: ptBR })
+                            : '—'}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {format(new Date(r.created_at), "dd/MM HH:mm:ss", { locale: ptBR })}
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                          {format(new Date(r.created_at), 'dd/MM HH:mm:ss', { locale: ptBR })}
                         </TableCell>
                       </TableRow>
                     );

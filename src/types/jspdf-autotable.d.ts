@@ -2,9 +2,9 @@
  * Type declarations for jspdf-autotable plugin.
  * Eliminates doc.lastAutoTable pattern.
  */
-import "jspdf";
+import 'jspdf';
 
-declare module "jspdf" {
+declare module 'jspdf' {
   interface jsPDF {
     lastAutoTable: {
       finalY: number;

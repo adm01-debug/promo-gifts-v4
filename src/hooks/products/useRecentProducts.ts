@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
 export interface RecentProduct {
   id: string;
@@ -47,42 +47,45 @@ export function useRecentProducts() {
   }, [user?.id]);
 
   // Add a product to recents
-  const addRecentProduct = useCallback((product: {
-    id: string;
-    name: string;
-    sku: string;
-    price: number;
-    image_url?: string | null;
-  }) => {
-    if (!user?.id) return;
+  const addRecentProduct = useCallback(
+    (product: {
+      id: string;
+      name: string;
+      sku: string;
+      price: number;
+      image_url?: string | null;
+    }) => {
+      if (!user?.id) return;
 
-    setRecentProducts(prev => {
-      // Remove if already exists
-      const filtered = prev.filter(p => p.id !== product.id);
-      
-      // Add at beginning with timestamp
-      const newRecent: RecentProduct = {
-        ...product,
-        selectedAt: Date.now(),
-      };
-      
-      const updated = [newRecent, ...filtered].slice(0, MAX_RECENT_PRODUCTS);
-      
-      // Persist to localStorage
-      try {
-        localStorage.setItem(getStorageKey(user.id), JSON.stringify(updated));
-      } catch (e) {
-        logger.warn('Error saving recent products:', e);
-      }
-      
-      return updated;
-    });
-  }, [user?.id]);
+      setRecentProducts((prev) => {
+        // Remove if already exists
+        const filtered = prev.filter((p) => p.id !== product.id);
+
+        // Add at beginning with timestamp
+        const newRecent: RecentProduct = {
+          ...product,
+          selectedAt: Date.now(),
+        };
+
+        const updated = [newRecent, ...filtered].slice(0, MAX_RECENT_PRODUCTS);
+
+        // Persist to localStorage
+        try {
+          localStorage.setItem(getStorageKey(user.id), JSON.stringify(updated));
+        } catch (e) {
+          logger.warn('Error saving recent products:', e);
+        }
+
+        return updated;
+      });
+    },
+    [user?.id],
+  );
 
   // Clear all recents
   const clearRecentProducts = useCallback(() => {
     if (!user?.id) return;
-    
+
     setRecentProducts([]);
     try {
       localStorage.removeItem(getStorageKey(user.id));
@@ -92,15 +95,21 @@ export function useRecentProducts() {
   }, [user?.id]);
 
   // Check if a product is recent
-  const isRecent = useCallback((productId: string) => {
-    return recentProducts.some(p => p.id === productId);
-  }, [recentProducts]);
+  const isRecent = useCallback(
+    (productId: string) => {
+      return recentProducts.some((p) => p.id === productId);
+    },
+    [recentProducts],
+  );
 
-  return useMemo(() => ({
-    recentProducts,
-    addRecentProduct,
-    clearRecentProducts,
-    isRecent,
-    hasRecents: recentProducts.length > 0,
-  }), [recentProducts, addRecentProduct, clearRecentProducts, isRecent]);
+  return useMemo(
+    () => ({
+      recentProducts,
+      addRecentProduct,
+      clearRecentProducts,
+      isRecent,
+      hasRecents: recentProducts.length > 0,
+    }),
+    [recentProducts, addRecentProduct, clearRecentProducts, isRecent],
+  );
 }

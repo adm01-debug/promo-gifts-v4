@@ -5,16 +5,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
-import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
-import { ProductListItemSkeleton } from '@/components/products/ProductListItemSkeleton';
-import { ProductTableSkeleton } from '@/components/products/ProductTableSkeleton';
+import {
+  ProductCardSkeleton,
+  ProductGridSkeleton,
+  ProductTableSkeleton,
+} from '@/components/loading/ModernSkeletons';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
-import { cn } from '@/lib/utils';
-import { type Product, type ViewMode } from '@/hooks/products';
+import type { Product } from '@/types/product-catalog';
+import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { SparklineSalesProvider } from '@/hooks/intelligence';
+import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
+import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 interface CatalogContentProps {
@@ -46,6 +49,7 @@ interface CatalogContentProps {
   activeColorFilter?: ActiveColorFilter | null;
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
+  hideCategoryBadges?: boolean;
 }
 
 export const CatalogContent = memo(function CatalogContent({
@@ -77,6 +81,7 @@ export const CatalogContent = memo(function CatalogContent({
   activeColorFilter,
   activeProductId: _activeProductId,
   setActiveProductId: _setActiveProductId,
+  hideCategoryBadges = false,
 }: CatalogContentProps) {
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
@@ -84,50 +89,30 @@ export const CatalogContent = memo(function CatalogContent({
   if (shouldShowCatalogSkeleton) {
     if (viewMode === 'list') {
       return (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
               className="duration-300 animate-in fade-in slide-in-from-left-2"
               style={{ animationDelay: `${i * 30}ms` }}
             >
-              <ProductListItemSkeleton />
+              <ProductCardSkeleton variant="compact" selectionMode={selectionMode} />
             </div>
           ))}
         </div>
       );
     }
     if (viewMode === 'table') {
-      return <ProductTableSkeleton rows={10} />;
+      return <ProductTableSkeleton rows={10} selectionMode={selectionMode} />;
     }
     return (
-      <div
-        className={cn(
-          'grid',
-          {
-            'grid-cols-2 sm:grid-cols-3': gridColumns === 3,
-            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4': gridColumns === 4,
-            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5': gridColumns === 5,
-            'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6': gridColumns === 6,
-            'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8': gridColumns === 8,
-          },
-          gridColumns >= 8
-            ? 'gap-x-4 gap-y-8'
-            : gridColumns >= 6
-              ? 'gap-x-6 gap-y-8'
-              : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8',
-        )}
-      >
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div
-            key={i}
-            className="duration-300 animate-in fade-in"
-            style={{ animationDelay: `${i * 40}ms` }}
-          >
-            <ProductCardSkeleton />
-          </div>
-        ))}
-      </div>
+      <ProductGridSkeleton
+        count={12}
+        columns={gridColumns}
+        variant="default"
+        hideCategoryBadges={hideCategoryBadges}
+        selectionMode={selectionMode}
+      />
     );
   }
 
@@ -141,75 +126,81 @@ export const CatalogContent = memo(function CatalogContent({
             ? 'Tente ajustar seus filtros para ver mais resultados.'
             : 'Explore nosso catálogo completo para encontrar o que procura.'
         }
-        action={{
-          label: 'Limpar todos os filtros',
-          onClick: onResetFilters,
-        }}
+        action={
+          onResetFilters
+            ? {
+                label: 'Limpar todos os filtros',
+                onClick: onResetFilters,
+              }
+            : undefined
+        }
       />
     );
   }
 
   return (
     <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
-      <SparklineSalesProvider>
-        {viewMode === 'grid' && (
-          <ProductGrid
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            columns={gridColumns}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+      <SparklineSalesProvider productIds={paginatedProducts.map((p) => p.id)}>
+        <ProductLeafCategoryProvider productIds={paginatedProducts.map((p) => p.id)}>
+          {viewMode === 'grid' && (
+            <ProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              columns={gridColumns}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
 
-        {viewMode === 'list' && (
-          <ProductList
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            externalSelectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+          {viewMode === 'list' && (
+            <ProductList
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              externalSelectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
 
-        {viewMode === 'table' && (
-          <ProductTableView
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onShareProduct={handleShareProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+          {viewMode === 'table' && (
+            <ProductTableView
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onShareProduct={handleShareProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
+        </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
 
       {hasMoreProducts && (

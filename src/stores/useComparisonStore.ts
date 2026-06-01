@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-const STORAGE_KEY = "product-comparison";
+const STORAGE_KEY = 'product-comparison';
 const MAX_COMPARE_ITEMS = 4;
 
 export interface CompareVariantInfo {
@@ -35,7 +35,10 @@ interface ComparisonActions {
   addToCompare: (productId: string, variant?: CompareVariantInfo) => boolean;
   removeFromCompare: (productId: string, variantId?: string | null) => void;
   removeByIndex: (index: number) => void;
-  toggleCompare: (productId: string, variant?: CompareVariantInfo) => { added: boolean; isFull: boolean };
+  toggleCompare: (
+    productId: string,
+    variant?: CompareVariantInfo,
+  ) => { added: boolean; isFull: boolean };
   isInCompare: (productId: string, variantId?: string | null) => boolean;
   clearCompare: () => void;
   getCompareVariant: (productId: string) => CompareVariantInfo | undefined;
@@ -73,7 +76,7 @@ function saveToStorage(items: CompareItem[]) {
 function applyState(next: CompareItem[]) {
   return {
     compareItems: next,
-    compareIds: next.map(i => i.productId),
+    compareIds: next.map((i) => i.productId),
     compareCount: next.length,
     canAddMore: next.length < MAX_COMPARE_ITEMS,
   };
@@ -89,7 +92,10 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     addToCompare: (productId: string, variant?: CompareVariantInfo) => {
       const { compareItems } = get();
       const key = itemKey(productId, variant);
-      if (compareItems.some(i => itemKeyFromItem(i) === key) || compareItems.length >= MAX_COMPARE_ITEMS) {
+      if (
+        compareItems.some((i) => itemKeyFromItem(i) === key) ||
+        compareItems.length >= MAX_COMPARE_ITEMS
+      ) {
         return false;
       }
       const next = [...compareItems, { productId, variant }];
@@ -109,7 +115,7 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
       });
       // Fallback: if variantId not provided, remove first occurrence of productId
       if (!variantId) {
-        const idx = get().compareItems.findIndex(i => i.productId === productId);
+        const idx = get().compareItems.findIndex((i) => i.productId === productId);
         if (idx >= 0) {
           const items = [...get().compareItems];
           items.splice(idx, 1);
@@ -136,9 +142,9 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
       const key = itemKey(productId, variant);
       // If no variant provided, match by productId only (first occurrence)
       const existingIdx = variant
-        ? compareItems.findIndex(i => itemKeyFromItem(i) === key)
-        : compareItems.findIndex(i => i.productId === productId);
-      
+        ? compareItems.findIndex((i) => itemKeyFromItem(i) === key)
+        : compareItems.findIndex((i) => i.productId === productId);
+
       if (existingIdx >= 0) {
         const next = compareItems.filter((_, idx) => idx !== existingIdx);
         saveToStorage(next);
@@ -158,7 +164,7 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
       const items = get().compareItems;
       if (variantId) {
         const key = `${productId}::${variantId}`;
-        return items.some(i => itemKeyFromItem(i) === key);
+        return items.some((i) => itemKeyFromItem(i) === key);
       }
       return items.some((i) => i.productId === productId);
     },

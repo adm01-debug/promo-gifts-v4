@@ -3,6 +3,7 @@ import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { safeErrorResponse } from "../_shared/error-response.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -71,7 +72,8 @@ Deno.serve(async (req) => {
     };
     let targetBucket = "personalization-images";
     let targetPrefix = "verified";
-    const vtApiKey = Deno.env.get("VIRUSTOTAL_API_KEY");
+    // fix: ssot-bypass — credential vault
+    const vtApiKey = await getCredential("VIRUSTOTAL_API_KEY");
 
     if (vtApiKey) {
       try {

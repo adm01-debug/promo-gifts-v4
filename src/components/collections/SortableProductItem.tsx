@@ -2,16 +2,16 @@
  * SortableProductItem — Draggable product row for collection management.
  * Extracted from CollectionDetailPage for modularity.
  */
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, FileText, Trash2 } from "lucide-react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import { PriceDropBadge } from "@/components/favorites/PriceDropBadge";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GripVertical, FileText, Trash2 } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { PriceDropBadge } from '@/components/favorites/PriceDropBadge';
+import { cn } from '@/lib/utils';
 
 interface SortableProductItemProps {
   product: {
@@ -46,13 +46,12 @@ export function SortableProductItem({
   notes,
   onNotesChange,
 }: SortableProductItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: product.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: product.id,
+  });
 
   const priceDiffPct =
-    priceAtSave && product.price
-      ? ((product.price - priceAtSave) / priceAtSave) * 100
-      : null;
+    priceAtSave && product.price ? ((product.price - priceAtSave) / priceAtSave) * 100 : null;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -69,24 +68,20 @@ export function SortableProductItem({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex flex-col gap-2 p-3 rounded-xl border-[1.5px] bg-card transition-all duration-200",
+        'flex flex-col gap-2 rounded-xl border-[1.5px] bg-card p-3 transition-all duration-200',
         isSelected
-          ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10"
-          : "border-primary/15 hover:border-primary/30 hover:shadow-sm"
+          ? 'border-primary/50 bg-primary/5 shadow-md shadow-primary/10'
+          : 'border-primary/15 hover:border-primary/30 hover:shadow-sm',
       )}
     >
       <div className="flex items-center gap-3">
         <div onClick={(e) => e.stopPropagation()}>
-          <SelectionCheckbox
-            checked={isSelected}
-            onChange={onToggleSelect}
-            size="sm"
-          />
+          <SelectionCheckbox checked={isSelected} onChange={onToggleSelect} size="sm" />
         </div>
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+          className="shrink-0 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
           aria-label="Arrastar"
         >
           <GripVertical className="h-4 w-4" />
@@ -95,13 +90,13 @@ export function SortableProductItem({
           <img
             src={displayImage}
             alt={product.name}
-            className="w-12 h-12 rounded-lg object-cover"
+            className="h-12 w-12 rounded-lg object-cover"
             loading="lazy"
           />
         )}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{product.name}</p>
+            <p className="truncate text-sm font-medium">{product.name}</p>
             {priceDiffPct !== null && (
               <PriceDropBadge
                 priceDiffPct={priceDiffPct}
@@ -117,11 +112,11 @@ export function SortableProductItem({
             {variant?.color_hex && (
               <span className="flex items-center gap-1">
                 <span
-                  className="w-2.5 h-2.5 rounded-full border border-border"
+                  className="h-2.5 w-2.5 rounded-full border border-border"
                   style={{ backgroundColor: variant.color_hex }}
                 />
                 {variant.color_name && (
-                  <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                  <span className="max-w-[80px] truncate text-xs text-muted-foreground">
                     {variant.color_name}
                   </span>
                 )}
@@ -136,7 +131,7 @@ export function SortableProductItem({
           className="shrink-0 text-muted-foreground hover:text-primary"
           onClick={() => setShowNotes((v) => !v)}
         >
-          <FileText className={cn("h-4 w-4", notes && "text-primary")} />
+          <FileText className={cn('h-4 w-4', notes && 'text-primary')} />
         </Button>
         <Button
           variant="ghost"
@@ -152,15 +147,15 @@ export function SortableProductItem({
         {showNotes && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+            animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
             <Input
               placeholder="Nota de venda (ex: cliente gosta deste modelo)..."
-              defaultValue={notes || ""}
+              defaultValue={notes || ''}
               onBlur={(e) => onNotesChange(e.target.value)}
-              className="text-xs h-8 ml-[76px]"
+              className="ml-[76px] h-8 text-xs"
             />
           </motion.div>
         )}

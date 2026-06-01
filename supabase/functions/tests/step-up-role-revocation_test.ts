@@ -259,7 +259,7 @@ Deno.test({
           challenge_id: challengeId,
         }),
       });
-      await tokRes.text();
+      await tokRes.text(); // Consume body to avoid leak
       assert(tokRes.ok, `inserir token: ${tokRes.status}`);
 
       // 5. Caminho positivo: com role dev, consume retorna true

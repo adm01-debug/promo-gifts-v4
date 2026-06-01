@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../render-helpers";
 import React from "react";
+import { AriaLiveProvider } from "@/components/a11y/AriaLive";
 
 // ── Stub out all heavy lazy-loaded sub-components ────────────────
 
@@ -70,9 +71,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
   it("renders PersistentBreadcrumbs inside the layout", async () => {
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div data-testid="page-content">Page</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div data-testid="page-content">Page</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     expect(await screen.findByTestId("persistent-breadcrumbs")).toBeInTheDocument();
@@ -83,9 +86,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
     // O espaçamento vertical vem do wrapper (py-2), não de mb-4 no breadcrumb.
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div>Content</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div>Content</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     const breadcrumbs = await screen.findByTestId("persistent-breadcrumbs");
@@ -95,9 +100,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
   it("renders PersistentBreadcrumbs with showBackButton=true", async () => {
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div>Content</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div>Content</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     const breadcrumbs = await screen.findByTestId("persistent-breadcrumbs");
@@ -110,9 +117,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
     // Sobe a árvore até encontrar um ancestral com print:hidden.
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div>Content</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div>Content</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     const breadcrumbs = await screen.findByTestId("persistent-breadcrumbs");
@@ -131,9 +140,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
   it("renders children inside the main content area", async () => {
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div data-testid="child-content">My Page Content</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div data-testid="child-content">My Page Content</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     expect(screen.getByTestId("child-content")).toBeInTheDocument();
@@ -143,9 +154,11 @@ describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
   it("renders PersistentBreadcrumbs before children in the DOM order", async () => {
     const { MainLayout } = await import("@/components/layout/MainLayout");
     renderWithProviders(
-      <MainLayout>
-        <div data-testid="child-node">Child</div>
-      </MainLayout>
+      <AriaLiveProvider>
+        <MainLayout>
+          <div data-testid="child-node">Child</div>
+        </MainLayout>
+      </AriaLiveProvider>,
     );
 
     const breadcrumbs = await screen.findByTestId("persistent-breadcrumbs");

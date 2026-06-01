@@ -16,8 +16,11 @@ export const defaultAdvancedFilters: AdvancedFilterState = {
   endomarketing: [],
   ramosAtividade: [],
   segmentosAtividade: [],
-  priceRange: [0, 1000],
-  quantityRange: [1, 10000],
+  // FIX-11: era [0, 1000] — inconsistente com defaultFilters.priceRange [0, 9999]
+  // e com a lógica de filtro que usa 9999 como "sem limite superior".
+  priceRange: [0, 9999],
+  // BUG-SF-16 FIX: quantityRange removido — era campo orphaned (não aparecia na UI,
+  // não era serializado na URL, não era aplicado ao filtro). Ver advancedFilters.ts.
   stockStatus: 'all',
   minStock: 0,
   isKit: false,
@@ -38,7 +41,6 @@ export const STOCK_FILTER_OPTIONS: StockFilterOption[] = [
 ];
 
 export const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Relevância (Busca)' },
   { value: 'name', label: 'Nome (A-Z)' },
   { value: 'price-asc', label: 'Menor Preço' },
   { value: 'price-desc', label: 'Maior Preço' },

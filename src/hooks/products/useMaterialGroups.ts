@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { materialService, type MaterialGroup } from "@/services/materialService";
+import { useQuery } from '@tanstack/react-query';
+import { materialService, type MaterialGroup } from '@/services/materialService';
 
 export interface UseMaterialGroupsReturn {
   groups: MaterialGroup[];
@@ -20,7 +20,7 @@ export function useMaterialGroups(): UseMaterialGroupsReturn {
   });
 
   const groups = data?.groups || [];
-  
+
   const totalGroups = groups.length;
   const totalMaterials = groups.reduce((sum, g) => sum + (g.total_materials || 0), 0);
   const totalProducts = groups.reduce((sum, g) => sum + (g.products_using || 0), 0);

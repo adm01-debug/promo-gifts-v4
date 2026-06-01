@@ -1,5 +1,17 @@
 # Onda 10 — sync-quote-bitrix auth hardening (B-2 encerrada)
 
+> **🔄 ATUALIZACAO 2026-05-30 (ONDA-16):** O bloqueio descrito abaixo em
+> *"Por que `authorize(req)` sem `requireRole`"* — o `ROLE_RANK['vendedor']`
+> retornando `undefined` (NaN instavel) — **foi resolvido**. O `_shared/authorize.ts`
+> agora conhece `vendedor` (rank 1) e `admin` (rank 2), e usa `rankOf()` que
+> trata role desconhecida como 0. Portanto **`requireRole: 'vendedor'` ja e
+> seguro** nesta edge e pode ser reativado para defesa-em-profundidade
+> (restringe a chamada a usuarios internos, nao apenas "qualquer autenticado").
+> Modelo de roles canonico: ver `docs/hardening/ONDA-16-ROLE-MODEL-AGENTE-VENDEDOR.md`.
+> A tabela de roles abaixo (que listava `agente`/`supervisor` como "novas" com 0
+> usuarios) esta historicamente desatualizada: as roles reais sao
+> `vendedor`/`admin`/`dev`; `agente`/`supervisor` sao apenas aliases no codigo.
+
 **Data:** 14 de maio de 2026  
 **PR alvo:** cleanup/onda-10-sync-quote-bitrix-auth  
 **Bloqueador resolvido:** B-2 da auditoria de 10/mai/2026 (ÚLTIMO BLOQUEADOR B-* PRÉ-PROD)  
@@ -90,6 +102,10 @@ Mas o banco hoje tem roles **legadas** coexistindo:
 | `supervisor` (nova) | 0 |
 
 Se eu passasse `requireRole: 'agente'`, o helper compararia `ROLE_RANK['vendedor']` (undefined) com `ROLE_RANK['agente']` (1) — comportamento NaN instável. Para não depender disso e não quebrar vendedores reais, omiti `requireRole`.
+
+> **Nota (ONDA-16, 2026-05-30):** este paragrafo descreve o estado de 14/mai.
+> O NaN foi corrigido — ver callout no topo. Hoje `requireRole: 'vendedor'` e
+> deterministico e seguro.
 
 **Mas isso ainda resolve B-2** porque `authorize()` chama `supabase.auth.getUser(token)` que retorna `null` para anon key (o anon key não representa um usuário real). Portanto:
 

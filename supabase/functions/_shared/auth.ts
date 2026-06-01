@@ -27,8 +27,6 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY');
-
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -76,28 +74,53 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
 }
 
 /**
- * Hierarquia: dev > supervisor > agente. `admin` é alias legado de supervisor.
+ * Hierarquia: dev > supervisor/admin > vendedor (alias historico: 'agente').
+ * `admin` é alias legado de supervisor.
+ *
+ * IMPORTANTE: a role real de vendedor no banco e 'vendedor'. Historicamente o
+ * codigo gateava por 'agente', um nome que NUNCA existiu em user_roles. Como
+ * requireRole nao promovia roles superiores para requisitos de tier-base, isso
+ * dava 403 para vendedores E admins, deixando passar apenas 'dev'. As funcoes
+ * afetadas: categories-api, quote-sync, bi-copilot, comparison-ai-advisor,
+ * kit-ai-builder, dropbox-list. O fix abaixo trata 'agente'=='vendedor' como
+ * tier-base satisfeita por qualquer usuario interno autenticado.
  */
+
+/** Conjunto de roles internas conhecidas (tier-base e acima). */
+const INTERNAL_ROLES = ['vendedor', 'agente', 'coordenador', 'supervisor', 'admin', 'dev'];
+
 function isDevRole(auth: AuthResult): boolean {
-  return auth.userRoles.includes('dev') || auth.userRoles.includes('simulation');
+  return auth.userRoles.includes('dev');
 }
 
 function isSupervisorOrAbove(auth: AuthResult): boolean {
   return (
     auth.userRoles.includes('dev') ||
-    auth.userRoles.includes('simulation') ||
     auth.userRoles.includes('supervisor') ||
     auth.userRoles.includes('admin')
   );
 }
 
+/** Tier-base: qualquer usuario interno autenticado (vendedor/agente ou acima). */
+function isAgenteOrAbove(auth: AuthResult): boolean {
+  return auth.userRoles.some((r) => INTERNAL_ROLES.includes(r));
+}
+
 /**
  * Require the user to have a specific role.
+ *
+ * Hierarquia aplicada:
+ *  - dev                       -> passa em qualquer requisito
+ *  - admin/supervisor          -> 'admin' | 'supervisor' (supervisor-or-above)
+ *  - vendedor (== 'agente')    -> 'agente' | 'vendedor' (qualquer usuario interno)
+ *  - outros nomes de role      -> match exato em userRoles (comportamento legado)
  */
 export function requireRole(auth: AuthResult, requiredRole: string): void {
   if (isDevRole(auth)) return;
   if (requiredRole === 'admin' || requiredRole === 'supervisor') {
     if (isSupervisorOrAbove(auth)) return;
+  } else if (requiredRole === 'agente' || requiredRole === 'vendedor') {
+    if (isAgenteOrAbove(auth)) return;
   } else if (auth.userRoles.includes(requiredRole)) {
     return;
   }

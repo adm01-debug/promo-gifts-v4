@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -20,7 +21,8 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendKey = Deno.env.get("RESEND_API_KEY");
+    // fix: ssot-bypass — credential vault
+    const resendKey = await getCredential("RESEND_API_KEY");
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Find reports due to run

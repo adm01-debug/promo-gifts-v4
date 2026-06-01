@@ -1,6 +1,6 @@
 /**
  * useCustomizationPrice — Hook para calcular preço de gravação
- * 
+ *
  * Chama fn_get_customization_price via external-db-bridge.
  * Formato de resposta v6 (flat, conforme briefing 12/02/2026).
  */
@@ -12,7 +12,7 @@ import { PRICE_CONTRACT } from '@/lib/personalization/rpc-contracts';
 import type { CustomizationPriceResponseV6 } from '@/types/customization';
 
 export interface CalculatePriceParamsV6 {
-  areaId: string;          // technique_id from fn_get_product_customization_options
+  areaId: string; // technique_id from fn_get_product_customization_options
   quantidade: number;
   numCores?: number;
   larguraCm?: number | null;
@@ -23,45 +23,46 @@ export function useCustomizationPriceCalculator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const calculatePrice = useCallback(async (
-    params: CalculatePriceParamsV6
-  ): Promise<CustomizationPriceResponseV6 | null> => {
-    setLoading(true);
-    setError(null);
+  const calculatePrice = useCallback(
+    async (params: CalculatePriceParamsV6): Promise<CustomizationPriceResponseV6 | null> => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const rpcParams: Record<string, unknown> = {
-        p_area_id: params.areaId,
-        p_quantidade: params.quantidade,
-        p_num_cores: params.numCores ?? 1,
-      };
+      try {
+        const rpcParams: Record<string, unknown> = {
+          p_area_id: params.areaId,
+          p_quantidade: params.quantidade,
+          p_num_cores: params.numCores ?? 1,
+        };
 
-      if (params.larguraCm !== null && params.larguraCm > 0) {
-        rpcParams.p_largura_cm = params.larguraCm;
-      }
-      if (params.alturaCm !== null && params.alturaCm > 0) {
-        rpcParams.p_altura_cm = params.alturaCm;
-      }
+        if (typeof params.larguraCm === 'number' && params.larguraCm > 0) {
+          rpcParams.p_largura_cm = params.larguraCm;
+        }
+        if (typeof params.alturaCm === 'number' && params.alturaCm > 0) {
+          rpcParams.p_altura_cm = params.alturaCm;
+        }
 
-      const result = await invokeExternalRpc<CustomizationPriceResponseV6>(
-        'fn_get_customization_price',
-        rpcParams
-      );
+        const result = await invokeExternalRpc<CustomizationPriceResponseV6>(
+          'fn_get_customization_price',
+          rpcParams,
+        );
 
-      setLoading(false);
-      if (!result?.success) {
-        setError(result?.error || 'Erro no cálculo de preço');
+        setLoading(false);
+        if (!result?.success) {
+          setError(result?.error || 'Erro no cálculo de preço');
+          return null;
+        }
+        validateRpcPayload(PRICE_CONTRACT, result as unknown as Record<string, unknown>);
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao calcular preço';
+        setError(message);
+        setLoading(false);
         return null;
       }
-      validateRpcPayload(PRICE_CONTRACT, result as unknown as Record<string, unknown>);
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao calcular preço';
-      setError(message);
-      setLoading(false);
-      return null;
-    }
-  }, []);
+    },
+    [],
+  );
 
   return { calculatePrice, loading, error };
 }
@@ -114,7 +115,7 @@ export function useCustomizationPriceReactive(
 
         const result = await invokeExternalRpc<CustomizationPriceResponseV6>(
           'fn_get_customization_price',
-          rpcParams
+          rpcParams,
         );
 
         if (result?.success) {

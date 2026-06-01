@@ -4,6 +4,7 @@
  * Shows size_code when available, grouping by color with size sub-options.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Check, Loader2, Palette, Ruler } from 'lucide-react';
@@ -11,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { invokeExternalDb } from '@/lib/external-db';
 
 interface VariantOption {
   id: string;
@@ -66,7 +66,7 @@ export function VariantSelector({
     queryFn: async () => {
       if (!allowedVariantIds.length) return [];
 
-      const result = await invokeExternalDb<VariantOption>({
+      const result = await dbInvoke<VariantOption>({
         table: 'product_variants',
         operation: 'select',
         select:

@@ -4,11 +4,11 @@
  * - Quando logado, faz upsert em user_comparisons (sem share_token, slot "current")
  * - Faz merge inteligente ao logar: união (max 4) com base no localStorage
  */
-import { useEffect, useRef } from "react";
-import { useComparisonStore, type CompareItem } from "@/stores/useComparisonStore";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useRef } from 'react';
+import { useComparisonStore, type CompareItem } from '@/stores/useComparisonStore';
+import { supabase } from '@/integrations/supabase/client';
 
-const CURRENT_SLOT_KEY = "current"; // marker no campo client_name para o slot "atual"
+const CURRENT_SLOT_KEY = 'current'; // marker no campo client_name para o slot "atual"
 
 export function useComparisonSync() {
   const { compareItems } = useComparisonStore();
@@ -26,12 +26,12 @@ export function useComparisonSync() {
 
       try {
         const { data: rows } = await supabase
-          .from("user_comparisons")
-          .select("id, items, updated_at")
-          .eq("user_id", userId)
-          .eq("client_name", CURRENT_SLOT_KEY)
-          .is("share_token", null)
-          .order("updated_at", { ascending: false })
+          .from('user_comparisons')
+          .select('id, items, updated_at')
+          .eq('user_id', userId)
+          .eq('client_name', CURRENT_SLOT_KEY)
+          .is('share_token', null)
+          .order('updated_at', { ascending: false })
           .limit(1);
 
         const remote = (rows?.[0]?.items as CompareItem[] | undefined) ?? [];
@@ -39,7 +39,8 @@ export function useComparisonSync() {
 
         // Merge inteligente: união preservando ordem local primeiro, max 4
         const seen = new Set<string>();
-        const keyOf = (i: CompareItem) => i.variant?.variant_id ? `${i.productId}::${i.variant.variant_id}` : i.productId;
+        const keyOf = (i: CompareItem) =>
+          i.variant?.variant_id ? `${i.productId}::${i.variant.variant_id}` : i.productId;
         const merged: CompareItem[] = [];
         for (const item of [...local, ...remote]) {
           const k = keyOf(item);
@@ -52,18 +53,20 @@ export function useComparisonSync() {
         if (JSON.stringify(merged) !== JSON.stringify(local)) {
           useComparisonStore.setState({
             compareItems: merged,
-            compareIds: merged.map(i => i.productId),
+            compareIds: merged.map((i) => i.productId),
             compareCount: merged.length,
             canAddMore: merged.length < 4,
           });
         }
       } catch (e) {
-        console.warn("[useComparisonSync] hydrate failed", e);
+        console.warn('[useComparisonSync] hydrate failed', e);
       } finally {
         hydratedRef.current = true;
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Upsert com debounce ao mudar
@@ -74,30 +77,31 @@ export function useComparisonSync() {
       try {
         // Busca registro existente do slot "current"
         const { data: existing } = await supabase
-          .from("user_comparisons")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("client_name", CURRENT_SLOT_KEY)
-          .is("share_token", null)
+          .from('user_comparisons')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('client_name', CURRENT_SLOT_KEY)
+          .is('share_token', null)
           .maybeSingle();
 
         if (existing) {
           await supabase
-            .from("user_comparisons")
-            .update({ items: JSON.parse(JSON.stringify(compareItems)), updated_at: new Date().toISOString() })
-            .eq("id", existing.id);
-        } else if (compareItems.length > 0) {
-          await supabase
-            .from("user_comparisons")
-            .insert({
-              user_id: userId,
-              client_name: CURRENT_SLOT_KEY,
+            .from('user_comparisons')
+            .update({
               items: JSON.parse(JSON.stringify(compareItems)),
-              is_public: false,
-            });
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id);
+        } else if (compareItems.length > 0) {
+          await supabase.from('user_comparisons').insert({
+            user_id: userId,
+            client_name: CURRENT_SLOT_KEY,
+            items: JSON.parse(JSON.stringify(compareItems)),
+            is_public: false,
+          });
         }
       } catch (e) {
-        console.warn("[useComparisonSync] upsert failed", e);
+        console.warn('[useComparisonSync] upsert failed', e);
       }
     }, 1500);
     return () => clearTimeout(t);

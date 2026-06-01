@@ -8,9 +8,9 @@
  *
  * Não cria cron — segue padrão do projeto (poll/polling em hooks).
  */
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Args {
   clientId: string | null;
@@ -20,8 +20,18 @@ interface Args {
 }
 
 const MONTHS = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 function dedupKey(userId: string, clientId: string, peakMonth: number) {
@@ -44,32 +54,32 @@ export function useSeasonalPeakNotifications({
 
     const key = dedupKey(user.id, clientId, nextPeakMonth);
     try {
-      if (localStorage.getItem(key) === "1") return;
+      if (localStorage.getItem(key) === '1') return;
     } catch {
       return;
     }
 
-    const monthLabel = MONTHS[nextPeakMonth - 1] ?? "—";
+    const monthLabel = MONTHS[nextPeakMonth - 1] ?? '—';
     const title =
       daysToNextPeak === 0
         ? `📅 ${clientName} está em pico sazonal hoje`
-        : `📅 ${clientName} entra em pico em ${daysToNextPeak} ${daysToNextPeak === 1 ? "dia" : "dias"}`;
+        : `📅 ${clientName} entra em pico em ${daysToNextPeak} ${daysToNextPeak === 1 ? 'dia' : 'dias'}`;
     const message = `${clientName} historicamente concentra compras em ${monthLabel}. Momento ideal para abordagem.`;
 
     (async () => {
       try {
-        const { error } = await supabase.from("workspace_notifications").insert({
+        const { error } = await supabase.from('workspace_notifications').insert({
           user_id: user.id,
           title,
           message,
-          type: "info",
-          category: "bi_seasonal_peak",
+          type: 'info',
+          category: 'bi_seasonal_peak',
           action_url: `/ferramentas/bi?clientId=${encodeURIComponent(clientId)}`,
           metadata: { clientId, peakMonth: nextPeakMonth, daysToPeak: daysToNextPeak },
         });
         if (!error) {
           try {
-            localStorage.setItem(key, "1");
+            localStorage.setItem(key, '1');
           } catch {
             // ignore
           }

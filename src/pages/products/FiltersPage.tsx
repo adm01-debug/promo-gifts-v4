@@ -97,6 +97,7 @@ export default function FiltersPage() {
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
+        // BUG-VOZ FIX: sortMap não continha 'best-seller-supplier' e 'best-seller-promo'.
         const sortMap: Record<string, string> = {
           'price-asc': 'price-asc',
           'price-desc': 'price-desc',
@@ -104,6 +105,8 @@ export default function FiltersPage() {
           stock: 'stock',
           newest: 'newest',
           popularity: 'popularity',
+          'best-seller-supplier': 'best-seller-supplier',
+          'best-seller-promo': 'best-seller-promo',
         };
         const sortValue = sortMap[action.data.sortBy] || 'name';
         state.setSortBy(sortValue);
@@ -322,15 +325,33 @@ export default function FiltersPage() {
                   <TooltipTrigger asChild>
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <SelectTrigger
-                        className="w-44 shrink-0 sm:w-52"
+                        className={cn(
+                          'w-44 shrink-0 transition-all sm:w-52',
+                          state.sortBy !== 'name' &&
+                            'border-primary bg-primary/5 ring-1 ring-primary/20',
+                        )}
                         aria-label="Ordenar produtos"
+                        data-testid="catalog-sort-trigger"
                       >
-                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        <ArrowUpDown
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            state.sortBy !== 'name' ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                        />
                         <SelectValue placeholder="Ordenar" />
+                        {/* BUG-G7: Mobile indicator when sorted */}
+                        {state.sortBy !== 'name' && (
+                          <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         {SORT_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            data-testid={`catalog-sort-item-${option.value}`}
+                          >
                             {option.label}
                           </SelectItem>
                         ))}
@@ -338,7 +359,9 @@ export default function FiltersPage() {
                     </Select>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Ordenar resultados (nome, preço, novidades, popularidade)
+                    {state.sortBy !== 'name'
+                      ? `Ordenado por: ${SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label}`
+                      : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -454,10 +477,10 @@ export default function FiltersPage() {
                     <VirtualizedProductGrid
                       products={state.filteredProducts}
                       isLoading={state.isLoadingProducts}
-                      onProductClick={(product) =>
+                      onProductClick={(productId) =>
                         state.selectionMode
-                          ? sel.toggleSelect(product.id)
-                          : navigate(`/produto/${product.id}`)
+                          ? sel.toggleSelect(productId)
+                          : navigate(`/produto/${productId}`)
                       }
                       isFavorited={isFavorite}
                       onToggleFavorite={toggleFavorite}

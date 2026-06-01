@@ -2,19 +2,36 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 
-// Allowed external domains for proxying
+// BUG-A04 FIX (26/05/2026): Expanded ALLOWED_DOMAINS to include all active suppliers.
+// Previously only 'spotgifts.com.br' was allowed — XBZ, Asia Import, Só Marcas and
+// Cloudflare Images were all blocked with 403.
 const ALLOWED_DOMAINS = [
+  // Promo Brindes suppliers
   'www.spotgifts.com.br',
   'spotgifts.com.br',
+  'api.minhaxbz.com.br',         // XBZ API images
+  'minhaxbz.com.br',
+  'asiaimport.com.br',           // Asia Import
+  'www.asiaimport.com.br',
+  'somarcas.com.br',             // Só Marcas
+  'www.somarcas.com.br',
+  // Cloudflare Images (imagedelivery.net is the CDN domain)
+  'imagedelivery.net',
+  // Supabase Storage (for locally cached/uploaded images)
+  'doufsxqlfjyuvxuezpln.supabase.co',
+  'supabase.co',
 ];
 
-// Allowed referer hosts (anti-hotlinking)
+// BUG-A05 FIX (26/05/2026): Added staging/beta domains to ALLOWED_REFERER_HOSTS.
+// promo-gifts-beta.vercel.app was missing — staging environment was rejected.
 const ALLOWED_REFERER_HOSTS = [
   'criar-together-now.lovable.app',
   'promogifts.com.br',
   'www.promogifts.com.br',
-  'lovable.app',          // any *.lovable.app subdomain
+  'promo-gifts-beta.vercel.app',  // Staging/beta Vercel deployment
+  'lovable.app',                  // any *.lovable.app subdomain
   'lovableproject.com',
+  'vercel.app',                   // Generic Vercel preview deployments
 ];
 
 // Localhost/127.0.0.1 conditional (Hardening 6.3)
@@ -39,18 +56,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Anti-scraping protection (bot UA check + rate limit per IP)
-    // Generous limit because images are loaded in batches; abuse means hundreds/min from same IP.
     const protection = await runBotProtection(req, {
       endpoint: 'image-proxy',
-      maxRequests: 200,        // 200 imagens/min por IP
+      maxRequests: 200,
       windowSeconds: 60,
-      blockSeconds: 1800,      // 30min de bloqueio
+      blockSeconds: 1800,
       allowSearchBots: true,
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    // 2. Anti-hotlinking: only serve when called from our own domains
     const referer = req.headers.get('referer') || req.headers.get('origin');
     if (referer && !isAllowedReferer(referer)) {
       return new Response(JSON.stringify({ error: 'Hotlinking not allowed' }), {
@@ -80,7 +94,7 @@ Deno.serve(async (req) => {
     }
 
     if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname)) {
-      return new Response(JSON.stringify({ error: 'Domain not allowed' }), {
+      return new Response(JSON.stringify({ error: 'Domain not allowed', hostname: parsedUrl.hostname }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -100,32 +114,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Hardening 6.3: Max bytes limit
-    const maxBytes = parseInt(Deno.env.get('IMAGE_PROXY_MAX_BYTES') || '5242880', 10); // Default 5MB
+    const maxBytes = parseInt(Deno.env.get('IMAGE_PROXY_MAX_BYTES') || '5242880', 10);
     const contentLength = imageResponse.headers.get('content-length');
     
     if (contentLength && parseInt(contentLength, 10) > maxBytes) {
       console.warn(`[image-proxy] Blocking oversized image: ${contentLength} bytes from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Image too large' }), {
-        status: 413, // Payload Too Large
+        status: 413,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const contentType = imageResponse.headers.get('Content-Type') || 'image/jpeg';
     
-    // Critical #4 fix: Validate Content-Type to prevent content-sniffing or HTML injection
     if (!contentType.toLowerCase().startsWith('image/')) {
       console.warn(`[image-proxy] Blocking non-image content: ${contentType} from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Source is not an image' }), {
-        status: 415, // Unsupported Media Type
+        status: 415,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
 
-    // Secondary check if Content-Length was missing
     if (imageBuffer.byteLength > maxBytes) {
       console.warn(`[image-proxy] Blocking oversized buffer: ${imageBuffer.byteLength} bytes from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Image too large' }), {

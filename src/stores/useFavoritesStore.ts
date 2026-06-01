@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-const STORAGE_KEY = "product-favorites";
+const STORAGE_KEY = 'product-favorites';
 
 export interface FavoriteVariantInfo {
   color_name?: string | null;
@@ -82,8 +82,7 @@ export const useFavoritesStore = create<FavoritesStore>((set, get) => {
       set({ favorites: next, favoriteCount: next.length });
     },
 
-    isFavorite: (productId: string) =>
-      get().favorites.some((f) => f.productId === productId),
+    isFavorite: (productId: string) => get().favorites.some((f) => f.productId === productId),
 
     getFavoriteVariant: (productId: string) =>
       get().favorites.find((f) => f.productId === productId)?.variant,

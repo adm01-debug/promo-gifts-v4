@@ -71,14 +71,8 @@ export function useFavoritesPageState() {
   useLegacyFavoritesMigration();
 
   const { favorites, clearFavorites, favoriteCount, toggleFavorite } = useFavoritesStore();
-  const {
-    lists,
-    createList,
-    updateList,
-    deleteList,
-    generateShareToken,
-    revokeShareToken,
-  } = useFavoriteLists();
+  const { lists, createList, updateList, deleteList, generateShareToken, revokeShareToken } =
+    useFavoriteLists();
   const { items: trashItems } = useFavoriteTrash();
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
 

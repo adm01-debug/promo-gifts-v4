@@ -49,6 +49,9 @@ export interface Product {
   packingType?: string | null;
   packingClassification?: string | null;
   hasCommercialPackaging?: boolean | null;
+  /** BUG-15c: adicionado para suportar filtro hasPersonalization no Super Filtro e Catálogo.
+   *  Mapeado do campo has_personalization na DB (via product mapper). */
+  hasPersonalization?: boolean | null;
   repackingType?: string | null;
   packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
   boxImage?: string | null;
@@ -171,6 +174,7 @@ export interface ProductVariation {
 
 export interface ProductFilters {
   category?: string;
+  categoryId?: string | number;
   search?: string;
   minPrice?: number;
   maxPrice?: number;

@@ -203,13 +203,19 @@ export async function fetchOptionForTechnique(
     );
   } catch (err) {
     rpcError = err instanceof Error ? err.message : 'Erro desconhecido na RPC';
-    logger.warn('[simulationPriceFetcher] RPC fn_get_customization_price falhou — usando fallback legado', err);
+    logger.warn(
+      '[simulationPriceFetcher] RPC fn_get_customization_price falhou — usando fallback legado',
+      err,
+    );
   }
 
   if (!result?.success) {
     const reason =
       rpcError ??
-      (typeof result === 'object' && result && 'error' in result && typeof (result as { error?: unknown }).error === 'string'
+      (typeof result === 'object' &&
+      result &&
+      'error' in result &&
+      typeof (result as { error?: unknown }).error === 'string'
         ? (result as { error: string }).error
         : 'RPC fn_get_customization_price não retornou preço para esta combinação');
     return buildLegacyFallbackOption(
@@ -287,8 +293,12 @@ export async function fetchAllOptions({
   const tasks = selectedTechniqueIds.map(async (techId) => {
     const technique = techniques.find((t) => t.id === techId);
     if (!technique) return null;
-    const settings =
-      techniqueSettings[techId] ?? { colors: 1, width: 10, height: 10, positions: 1 };
+    const settings = techniqueSettings[techId] ?? {
+      colors: 1,
+      width: 10,
+      height: 10,
+      positions: 1,
+    };
     try {
       return await fetchOptionForTechnique(
         technique,

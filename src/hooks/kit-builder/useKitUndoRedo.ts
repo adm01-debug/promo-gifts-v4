@@ -1,26 +1,47 @@
 /**
  * Kit Undo/Redo Hook
  * Maintains a history stack of kit state snapshots.
+ *
+ * O snapshot guarda o estado COMPLETO e restaurável do kit (caixa, itens,
+ * personalização, etc.) — não uma versão lossy (boxId/keys) que não permitia
+ * restaurar fielmente. `useKitBuilder.restoreKitSnapshot` consome este shape.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import type { KitBox, KitItem, KitType, KitIdentity, KitPersonalization } from '@/lib/kit-builder';
 
-interface UndoRedoSnapshot {
-  boxId: string | null;
-  items: Array<{ id: string; quantity: number; sku: string }>;
-  personalizationKeys: string[];
+export interface KitSnapshot {
   name: string;
+  kitType: KitType;
+  box: KitBox | null;
+  items: KitItem[];
+  personalization: KitPersonalization;
   kitQuantity: number;
+  identity?: KitIdentity;
 }
 
 const MAX_HISTORY = 30;
 
 export function useKitUndoRedo() {
-  const [history, setHistory] = useState<UndoRedoSnapshot[]>([]);
-  const [future, setFuture] = useState<UndoRedoSnapshot[]>([]);
+  const [history, setHistory] = useState<KitSnapshot[]>([]);
+  const [future, setFuture] = useState<KitSnapshot[]>([]);
   const isRestoringRef = useRef(false);
+  // BUG-16 FIX: store the restore timer id so it can be cleared on unmount
+  // and before each new undo/redo call. Previously both undo() and redo()
+  // called setTimeout without storing the id — on unmount the 100ms timer
+  // would fire and attempt to mutate a ref on a component that may have been
+  // destroyed. Also: if undo was called rapidly, multiple timers could stack,
+  // each resetting isRestoringRef independently.
+  const restoreTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const pushSnapshot = useCallback((snapshot: UndoRedoSnapshot) => {
+  // Cleanup the restore timer on unmount
+  useEffect(() => {
+    return () => {
+      if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    };
+  }, []);
+
+  const pushSnapshot = useCallback((snapshot: KitSnapshot) => {
     if (isRestoringRef.current) return;
     setHistory((prev) => {
       const last = prev[prev.length - 1];
@@ -35,7 +56,7 @@ export function useKitUndoRedo() {
   const canUndo = history.length > 1;
   const canRedo = future.length > 0;
 
-  const undo = useCallback((): UndoRedoSnapshot | null => {
+  const undo = useCallback((): KitSnapshot | null => {
     if (history.length <= 1) return null;
     isRestoringRef.current = true;
     const newHistory = [...history];
@@ -47,25 +68,33 @@ export function useKitUndoRedo() {
     const prev = newHistory[newHistory.length - 1];
     setHistory(newHistory);
     setFuture((f) => [current, ...f]);
-    setTimeout(() => {
+    // Clear any pending timer before scheduling the reset
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    restoreTimerRef.current = setTimeout(() => {
+      restoreTimerRef.current = undefined;
       isRestoringRef.current = false;
     }, 100);
     return prev;
   }, [history]);
 
-  const redo = useCallback((): UndoRedoSnapshot | null => {
+  const redo = useCallback((): KitSnapshot | null => {
     if (future.length === 0) return null;
     isRestoringRef.current = true;
     const [next, ...rest] = future;
     setFuture(rest);
     setHistory((prev) => [...prev, next]);
-    setTimeout(() => {
+    // Clear any pending timer before scheduling the reset
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    restoreTimerRef.current = setTimeout(() => {
+      restoreTimerRef.current = undefined;
       isRestoringRef.current = false;
     }, 100);
     return next;
   }, [future]);
 
   const reset = useCallback(() => {
+    // Clear any pending restore timer when resetting
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
     setHistory([]);
     setFuture([]);
   }, []);

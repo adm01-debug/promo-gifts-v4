@@ -1,12 +1,16 @@
 /**
  * ProductFormFullscreen — Stepper horizontal com preview lateral
  * Refatorado: conteúdo das etapas em ProductFormStepContent.tsx
+ *
+ * Sprint 3 (26/05/2026):
+ *   BUG-03: engravingFlushRef prop passed down through to ProductFormStepContent
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productFormSchema, type ProductFormData, defaultFormValues } from './ProductFormSchema';
+import { useSystemSettings } from '@/hooks/admin/useSystemSettings';
 import { ProductPreviewPanel } from './ProductPreviewPanel';
 import { HorizontalStepper, type StepDef } from './HorizontalStepper';
 import { ProductFormStepContent } from './ProductFormStepContent';
@@ -36,10 +40,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSkuValidation } from './hooks/useSkuValidation';
 import { useProductSeoAI } from '@/hooks/products';
 
-// ============================================
-// TYPES & STEPS
-// ============================================
-
 interface ProductFormFullscreenProps {
   initialData?: Partial<ProductFormData>;
   productImages?: string[];
@@ -48,6 +48,9 @@ interface ProductFormFullscreenProps {
   onCancel: () => void;
   isSaving: boolean;
   isEdit: boolean;
+  /** BUG-03: ref populated by ProductEngravingSection with flushLocalAreas */
+  engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 const STEPS: StepDef[] = [
@@ -106,7 +109,7 @@ const STEPS: StepDef[] = [
     icon: Boxes,
     requiredFields: [],
     fieldLabels: {},
-  } as StepDef,
+  } as unknown as StepDef,
   {
     id: 'media',
     label: 'Mídia',
@@ -125,10 +128,6 @@ const STEPS: StepDef[] = [
   },
 ];
 
-// ============================================
-// MAIN
-// ============================================
-
 export function ProductFormFullscreen({
   initialData,
   productImages: initialImages = [],
@@ -137,6 +136,8 @@ export function ProductFormFullscreen({
   onCancel,
   isSaving,
   isEdit,
+  engravingFlushRef,
+  lastPriceUpdate,
 }: ProductFormFullscreenProps) {
   const [images, setImages] = useState<string[]>(initialImages);
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(isEdit);
@@ -150,6 +151,9 @@ export function ProductFormFullscreen({
     return stored !== null ? stored === 'true' : true;
   });
 
+  const { getSetting } = useSystemSettings();
+  const globalDefault = parseInt(getSetting('default_price_freshness_threshold', '60'), 10);
+
   const {
     register,
     handleSubmit,
@@ -162,6 +166,13 @@ export function ProductFormFullscreen({
     resolver: zodResolver(productFormSchema),
     defaultValues: { ...defaultFormValues, ...initialData },
   });
+
+  // Update threshold for new products if global default changes or is loaded
+  useEffect(() => {
+    if (!isEdit && !initialData?.price_freshness_threshold_days) {
+      setValue('price_freshness_threshold_days', globalDefault);
+    }
+  }, [globalDefault, isEdit, initialData, setValue]);
 
   const formValues = watch();
   const supplierId = formValues.supplier_id || '';
@@ -190,7 +201,6 @@ export function ProductFormFullscreen({
     has_optional_packaging: formValues.has_optional_packaging,
     has_commercial_packaging: formValues.has_commercial_packaging,
   };
-
   const expirations: Record<string, string | null> = {
     is_featured_expires_at: formValues.is_featured_expires_at ?? null,
     is_bestseller_expires_at: formValues.is_bestseller_expires_at ?? null,
@@ -209,11 +219,9 @@ export function ProductFormFullscreen({
     setStepIndex,
   );
 
-  // Effects
   useEffect(() => {
-    if (!skuManuallyEdited && !isEdit && supplierRefValue) {
+    if (!skuManuallyEdited && !isEdit && supplierRefValue)
       setValue('sku', supplierRefValue, { shouldValidate: true });
-    }
   }, [supplierRefValue, skuManuallyEdited, isEdit, setValue]);
 
   useEffect(() => {
@@ -284,7 +292,6 @@ export function ProductFormFullscreen({
   }, [errors]);
 
   const [direction, setDirection] = useState(0);
-
   const goStep = useCallback(
     (i: number) => {
       setDirection(i > stepIndex ? 1 : -1);
@@ -317,14 +324,12 @@ export function ProductFormFullscreen({
     e.preventDefault();
     const isValid = await trigger();
     const totalMissing = missingFields.reduce((sum, arr) => sum + arr.length, 0);
-
     if (!isValid || totalMissing > 0) {
       setShowValidation(true);
       const firstBadStep = missingFields.findIndex((arr) => arr.length > 0);
       if (firstBadStep >= 0 && firstBadStep !== stepIndex) goStep(firstBadStep);
       return;
     }
-
     clearDraft();
     handleSubmit(async (data) => {
       if (skuStatus === 'duplicate') return;
@@ -339,7 +344,6 @@ export function ProductFormFullscreen({
 
   return (
     <form onSubmit={handleSubmitWithValidation} className="flex flex-col gap-4">
-      {/* STEPPER BAR */}
       <Card className="border-border/50 bg-card/80 px-6 py-4">
         <div className="flex items-end justify-between gap-6">
           <div className="min-w-0 flex-1">
@@ -377,7 +381,6 @@ export function ProductFormFullscreen({
         </div>
       </Card>
 
-      {/* CONTENT + PREVIEW */}
       <div className="flex gap-6">
         <div className="min-w-0 flex-1 space-y-5">
           {skuStatus === 'duplicate' && (
@@ -405,6 +408,7 @@ export function ProductFormFullscreen({
               exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
             >
+              {/* BUG-03: engravingFlushRef is threaded down to ProductFormStepContent → ProductEngravingSection */}
               <ProductFormStepContent
                 stepId={currentStep.id}
                 formProps={formProps}
@@ -435,6 +439,8 @@ export function ProductFormFullscreen({
                 expirations={expirations}
                 generateSeoAI={generateSeoAI}
                 isSeoGenerating={isSeoGenerating}
+                engravingFlushRef={engravingFlushRef}
+                lastPriceUpdate={lastPriceUpdate}
               />
             </motion.div>
           </AnimatePresence>
@@ -469,7 +475,6 @@ export function ProductFormFullscreen({
             </motion.div>
           )}
 
-          {/* Navigation footer */}
           <div className="flex items-center justify-between pb-20 pt-2 lg:pb-4">
             <div className="flex items-center gap-3">
               {hasPrev && (
@@ -522,7 +527,6 @@ export function ProductFormFullscreen({
           </div>
         </div>
 
-        {/* Preview sidebar */}
         <div className="hidden shrink-0 flex-col xl:flex">
           <div className="sticky top-24">
             <div className="mb-2 flex items-center justify-end">
@@ -568,7 +572,6 @@ export function ProductFormFullscreen({
         </div>
       </div>
 
-      {/* Mobile bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 p-3 backdrop-blur-sm lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <div className="flex items-center gap-2">

@@ -31,6 +31,9 @@ export function SearchWithSuggestions({
   const inputRef = useRef<HTMLInputElement>(null);
   const onSearchRef = useRef(onSearch);
   const lastSearchedRef = useRef('');
+  // FIX BUG-GS-11: track the active SpeechRecognition instance so we can abort
+  // it before creating a new one, preventing concurrent instances on rapid clicks.
+  const recognitionRef = useRef<InstanceType<typeof SpeechRecognition> | null>(null);
   const debouncedQuery = useDebounce(query, 300);
 
   // Keep onSearch ref updated to avoid stale closures
@@ -76,16 +79,28 @@ export function SearchWithSuggestions({
       return;
     }
 
-    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-    const recognition = new SpeechRecognition();
+    // FIX BUG-GS-11: abort any in-flight recognition before creating a new one.
+    // Without this, rapid button clicks spawn multiple concurrent SpeechRecognition
+    // instances that fight over the microphone and produce duplicate/garbled results.
+    recognitionRef.current?.abort();
+
+    const SpeechRecognitionCtor = window.webkitSpeechRecognition || window.SpeechRecognition;
+    const recognition = new SpeechRecognitionCtor();
+    recognitionRef.current = recognition;
 
     recognition.lang = 'pt-BR';
     recognition.continuous = false;
     recognition.interimResults = false;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;

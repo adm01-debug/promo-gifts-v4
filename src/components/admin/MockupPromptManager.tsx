@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const anySupabase = supabase as any;
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,7 +85,7 @@ export function MockupPromptManager() {
       setTechniques((tr.data || []) as unknown as Technique[]);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
-        description: err instanceof Error ? err.message : undefined,
+        description: sanitizeError(err),
       });
     } finally {
       setIsLoading(false);
@@ -136,7 +137,7 @@ export function MockupPromptManager() {
       fetchAll();
     } catch (err: unknown) {
       toast.error('Erro ao salvar', {
-        description: err instanceof Error ? err.message : undefined,
+        description: sanitizeError(err),
       });
     } finally {
       setSavingId(null);
@@ -197,7 +198,7 @@ export function MockupPromptManager() {
       fetchAll();
     } catch (err: unknown) {
       toast.error('Erro ao criar prompt', {
-        description: err instanceof Error ? err.message : undefined,
+        description: sanitizeError(err),
       });
     }
   };

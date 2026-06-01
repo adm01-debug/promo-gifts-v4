@@ -1,15 +1,19 @@
-import { ProductCard } from "./ProductCard";
-import type { Product } from "@/hooks/products";
-import type { ActiveColorFilter } from "@/utils/color-image-resolver";
-import { useEffect, useState, useRef } from "react";
-import { useReducedMotion } from "@/hooks/ui";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import { cn } from "@/lib/utils";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
+import { ProductCard } from './ProductCard';
+import type { Product } from '@/types/product-catalog';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { useEffect, useState, useRef } from 'react';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { cn } from '@/lib/utils';
+import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 export interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -27,21 +31,22 @@ export interface ProductGridProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  onStatusClick?: (type: string, value?: string | number) => void;
 }
 
-function ProductCardWrapper({ 
-  product, 
-  index, 
-  isVisible,
+function ProductCardWrapper({
+  product,
+  index,
+  isVisible: _isVisible,
   hideCategoryBadges,
   selectionMode,
   selectedIds,
   onToggleSelect,
   priority,
   ...restProps
-}: { 
-  product: Product; 
-  index: number; 
+}: {
+  product: Product;
+  index: number;
   isVisible: boolean;
   hideCategoryBadges?: boolean;
   selectionMode?: boolean;
@@ -53,8 +58,41 @@ function ProductCardWrapper({
   const [hasAnimated, setHasAnimated] = useState(reducedMotion);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Bug P2-06: lazy mount via IntersectionObserver para reduzir custo de DOM
+  // quando o grid tem 200+ produtos. Cards fora da viewport (com margem de
+  // 800px = ~2 viewports antes/depois) ficam como placeholder vazio mantendo
+  // altura. priority=true (primeiros 8 cards above-the-fold) montam sempre.
+  const [inView, setInView] = useState(priority === true);
   useEffect(() => {
-    if (reducedMotion) { setHasAnimated(true); return; }
+    if (inView) return; // já está montado, IO desliga
+    if (!ref.current) return;
+    const el = ref.current;
+    if (typeof IntersectionObserver === 'undefined') {
+      // SSR/jsdom: monta direto
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: '800px 0px', threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView, priority]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setHasAnimated(true);
+      return;
+    }
     if (!hasAnimated) {
       const timer = setTimeout(() => setHasAnimated(true), Math.min(index * 80, 800));
       return () => clearTimeout(timer);
@@ -67,20 +105,33 @@ function ProductCardWrapper({
     <div
       ref={ref}
       className={cn(
-        reducedMotion ? '' : `transition-all duration-500 ease-out ${
-          hasAnimated ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
-        }`,
-        "relative",
-        isSelected && "ring-2 ring-primary/40 rounded-xl"
+        reducedMotion
+          ? ''
+          : `transition-all duration-500 ease-out ${
+              hasAnimated
+                ? 'translate-y-0 scale-100 opacity-100'
+                : 'translate-y-8 scale-95 opacity-0'
+            }`,
+        'relative',
+        // Placeholder mantém footprint visual (altura ~card) enquanto não monta
+        !inView && 'min-h-[480px] sm:min-h-[520px]',
+        isSelected && 'rounded-xl ring-2 ring-primary/40',
       )}
-      style={reducedMotion ? undefined : {
-        transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
-      }}
+      style={
+        reducedMotion
+          ? undefined
+          : {
+              transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
+            }
+      }
     >
-      {selectionMode && onToggleSelect && (
-        <div 
-          className="absolute top-2 left-2 z-20"
-          onClick={(e) => { e.stopPropagation(); onToggleSelect(product.id); }}
+      {inView && selectionMode && onToggleSelect && (
+        <div
+          className="absolute left-2 top-2 z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(product.id);
+          }}
         >
           <SelectionCheckbox
             checked={!!isSelected}
@@ -89,31 +140,42 @@ function ProductCardWrapper({
           />
         </div>
       )}
-      <ProductCard 
-        product={product} 
-        hideCategoryBadges={hideCategoryBadges} 
-        {...restProps}
-        priority={priority}
-        onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
-      />
+      {inView ? (
+        <ProductCard
+          product={product}
+          hideCategoryBadges={hideCategoryBadges}
+          {...restProps}
+          priority={priority}
+          onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
+        />
+      ) : (
+        /* Placeholder leve que espelha exatamente a estrutura do card real para evitar saltos (CLS) */
+        <ProductCardSkeleton
+          variant="default"
+          animate={false}
+          hideCategoryBadges={hideCategoryBadges}
+        />
+      )}
     </div>
   );
 }
 
 const columnClasses: Record<number, string> = {
-  3: "grid-cols-2 sm:grid-cols-3",
-  4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-  6: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-  8: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8",
+  3: 'grid-cols-2 sm:grid-cols-3',
+  4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+  6: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
+  8: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
 };
 
-export function ProductGrid({ 
+export function ProductGrid({
   products,
   isLoading,
+  isError,
+  onRetry,
   onProductClick,
-  onViewProduct, 
-  onShareProduct, 
+  onViewProduct,
+  onShareProduct,
   onFavoriteProduct,
   isFavorite,
   onToggleFavorite,
@@ -127,6 +189,7 @@ export function ProductGrid({
   selectionMode,
   selectedIds,
   onToggleSelect,
+  onStatusClick,
 }: ProductGridProps) {
   const [isGridVisible, setIsGridVisible] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -139,51 +202,82 @@ export function ProductGrid({
     return () => clearTimeout(timer);
   }, [products, isLoading]);
 
+  if (isError) {
+    return (
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Ops! Falha ao carregar produtos
+        </h3>
+        <p className="mb-6 max-w-md text-sm text-muted-foreground">
+          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+        </p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RotateCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   const showEmptyState = !isLoading && products.length === 0;
 
   if (showEmptyState) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <span className="text-3xl">📦</span>
         </div>
-        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
           Nenhum produto encontrado
         </h3>
-        <p className="text-muted-foreground max-w-md">
+        <p className="max-w-md text-muted-foreground">
           Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
         </p>
       </div>
     );
   }
 
-  const displayProducts = isLoading && products.length === 0 
-    ? Array.from({ length: 12 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
-    : products;
-
+  type SkeletonEntry = { id: string; isSkeleton: true };
+  const displayProducts: Array<Product | SkeletonEntry> =
+    isLoading && products.length === 0
+      ? Array.from({ length: 15 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
+      : products;
 
   return (
-    <div 
+    <div
       ref={gridRef}
-      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8'}`}
+      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
     >
-      {displayProducts.map((product, index) => (
-        (product as any).isSkeleton ? (
-          <ProductCardSkeleton key={product.id} />
+      {displayProducts.map((product, index) =>
+        'isSkeleton' in product && product.isSkeleton ? (
+          <ProductCardSkeleton
+            key={product.id}
+            variant="default"
+            selectionMode={selectionMode}
+            hideCategoryBadges={hideCategoryBadges}
+          />
         ) : (
           <ProductCardWrapper
-            key={product.id}
-            product={product}
+            key={(product as Product).id}
+            product={product as Product}
             index={index}
             isVisible={isGridVisible}
             priority={index < 8}
-            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+            onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
             onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
             onToggleCompare={onToggleCompare}
             canAddToCompare={canAddToCompare}
             highlightColors={highlightColors}
@@ -192,9 +286,10 @@ export function ProductGrid({
             selectionMode={selectionMode}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
+            onStatusClick={onStatusClick}
           />
-        )
-      ))}
+        ),
+      )}
     </div>
   );
 }

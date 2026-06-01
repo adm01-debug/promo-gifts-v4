@@ -29,7 +29,10 @@ describe('index.html — preload de fontes', () => {
 
   it('inclui fallback <noscript> com a stylesheet', () => {
     expect(indexHtml).toContain('<noscript>');
-    expect(indexHtml).toMatch(/<noscript>[\s\S]*Inter[\s\S]*<\/noscript>/);
+    // Inter foi removido do preload via Google Fonts (carregado via CSS local nas GX skins).
+    // noscript contém apenas Outfit + Plus Jakarta Sans.
+    expect(indexHtml).toMatch(/<noscript>[\s\S]*rel="stylesheet"[\s\S]*<\/noscript>/);
+    expect(indexHtml).toMatch(/<noscript>[\s\S]*Outfit[\s\S]*<\/noscript>/);
   });
 
   it('a CSP autoriza fonts.googleapis.com (style-src) e fonts.gstatic.com (font-src)', () => {

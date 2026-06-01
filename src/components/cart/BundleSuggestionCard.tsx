@@ -4,19 +4,15 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface BundleSuggestion {
-  product_id: string;
-  product_name: string;
-  product_image_url: string | null;
-  cooccurrence_count: number;
-  frequency_percent: number;
-}
+type BundleSuggestion =
+  Database['public']['Functions']['get_bundle_suggestions']['Returns'][number];
 
 interface BundleSuggestionCardProps {
   productId: string;
@@ -29,15 +25,14 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
     queryKey: ['bundle-suggestions', productId],
     enabled: !!productId,
     queryFn: async (): Promise<BundleSuggestion[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)('get_bundle_suggestions', {
+      const { data, error } = await supabase.rpc('get_bundle_suggestions', {
         _product_id: productId,
       });
       if (error) {
         console.warn('get_bundle_suggestions error:', error);
         return [];
       }
-      return (data ?? []) as BundleSuggestion[];
+      return data ?? [];
     },
     staleTime: 1000 * 60 * 30,
   });

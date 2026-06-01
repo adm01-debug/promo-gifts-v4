@@ -109,7 +109,8 @@ function CollectionTableRow({
 }: CollectionTableRowProps) {
   const previewImage = products[0]?.image_url;
   const iconChar = collection.icon || '📁';
-  const iconColor = (collection as unknown as { iconColor?: string }).iconColor || collection.color || '#6366f1';
+  const iconColor =
+    (collection as unknown as { iconColor?: string }).iconColor || collection.color || '#6366f1';
 
   return (
     <motion.tr
@@ -308,7 +309,15 @@ export function CollectionTableView({
                   <CollectionTableRow
                     key={collection.id}
                     collection={collection}
-                    products={getCollectionProducts(collection.id) as { id: string; name: string; image_url?: string | null; sku?: string; price?: number | null; }[]}
+                    products={
+                      getCollectionProducts(collection.id) as {
+                        id: string;
+                        name: string;
+                        image_url?: string | null;
+                        sku?: string;
+                        price?: number | null;
+                      }[]
+                    }
                     isSelected={selectedCollectionIds.has(collection.id)}
                     isSelectionMode={isSelectionMode}
                     onToggleSelect={() => onToggleSelect(collection.id)}

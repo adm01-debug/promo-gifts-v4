@@ -67,7 +67,7 @@ export interface EdgeFnResponseSpec {
 
 export function mockEdgeFunctionFetch(byPath: Record<string, EdgeFnResponseSpec>) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
-    const url = typeof input === "string" ? input : (input as URL).toString();
+    const url = !input ? "" : typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
     const match = Object.entries(byPath).find(([path]) => url.includes(path));
     if (!match) {
       return new Response(JSON.stringify({ error: "Not mocked: " + url }), { status: 501 });

@@ -52,6 +52,9 @@ export interface LocationTechnique {
   technique_id: string;
   composed_code: string;
   max_colors: number | null;
+  /**
+   * Updates do toggle "definir como padrão" não persistem no DB.
+   */
   is_default: boolean;
   is_active: boolean;
   technique?: Technique;

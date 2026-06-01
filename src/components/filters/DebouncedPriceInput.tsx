@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef } from 'react';
+import { Input } from '@/components/ui/input';
 
 interface DebouncedPriceInputProps {
   value: number | string;
@@ -17,7 +17,7 @@ export function DebouncedPriceInput({
   fallback = 0,
   placeholder,
   min,
-  className = "",
+  className = '',
   debounceMs = 600,
 }: DebouncedPriceInputProps) {
   const [localValue, setLocalValue] = useState(String(value));

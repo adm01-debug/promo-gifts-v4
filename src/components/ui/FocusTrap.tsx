@@ -3,8 +3,8 @@
  * Traps keyboard focus within a container for accessibility
  */
 
-import { useEffect, useRef, type ReactNode, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, type ReactNode, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FocusTrapProps {
   children: ReactNode;
@@ -39,7 +39,7 @@ export function FocusTrap({
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
     return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
     ).filter((el) => el.offsetParent !== null);
   }, []);
 
@@ -108,10 +108,7 @@ export function FocusTrap({
     if (!active) return;
 
     const handleFocusIn = (e: FocusEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         e.stopImmediatePropagation();
         focusFirst();
       }
@@ -130,9 +127,9 @@ export function FocusTrap({
         style={{ position: 'absolute', width: 1, height: 1, margin: -1, opacity: 0 }}
         aria-hidden="true"
       />
-      
+
       {children}
-      
+
       {/* End sentinel */}
       <div
         tabIndex={active ? 0 : -1}
@@ -152,7 +149,7 @@ export function useFocusTrap(active: boolean = true) {
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
     return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
     ).filter((el) => el.offsetParent !== null);
   }, []);
 
@@ -266,16 +263,16 @@ export function AccessibleModal({
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal content */}
       <div
         ref={containerRef}
         className={cn(
-          "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-          "w-full max-w-lg max-h-[85vh] overflow-auto",
-          "bg-background border rounded-lg shadow-lg",
-          "p-6",
-          className
+          'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+          'max-h-[85vh] w-full max-w-lg overflow-auto',
+          'rounded-lg border bg-background shadow-lg',
+          'p-6',
+          className,
         )}
       >
         {children}

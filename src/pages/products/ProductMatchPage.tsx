@@ -1,7 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useProductMatch, useProducts, type MatchFilters, type MatchResult, type Product } from "@/hooks/products";
+import {
+  useProductMatch,
+  useProducts,
+  type MatchFilters,
+  type MatchResult,
+  type Product,
+} from '@/hooks/products';
 import { MOCK_MATCH_PRODUCTS } from '@/data/mock-match-products';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +28,7 @@ import {
 export default function ProductMatchPage() {
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [filters, setFilters] = useState<MatchFilters>({});
+  const [filters, setFilters] = useState<Partial<MatchFilters>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: dbProducts = [] } = useProducts({ limit: 500 });
@@ -43,14 +49,16 @@ export default function ProductMatchPage() {
 
   const stats = useMemo(() => {
     const byType = { identical: 0, similar: 0, complementary: 0 };
-    matches.forEach(m => byType[m.matchType]++);
+    matches.forEach((m) => byType[m.matchType]++);
     return byType;
   }, [matches]);
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return allProducts.slice(0, 50);
     const q = searchQuery.toLowerCase();
-    return allProducts.filter(p => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)).slice(0, 50);
+    return allProducts
+      .filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q))
+      .slice(0, 50);
   }, [allProducts, searchQuery]);
 
   const handleSelectProduct = useCallback((product: Product) => {
@@ -78,20 +86,26 @@ export default function ProductMatchPage() {
 
   return (
     <>
-      <PageSEO title="Match de Produtos" description="Encontre produtos similares e complementares." path="/match" />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 py-4 space-y-4">
+      <PageSEO
+        title="Match de Produtos"
+        description="Encontre produtos similares e complementares."
+        path="/match"
+      />
+      <div className="mx-auto w-full max-w-[1920px] space-y-4 px-3 py-4 sm:px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <div>
             <h1 className="font-display text-xl font-bold">Match de Produtos</h1>
-            <p className="text-sm text-muted-foreground">Selecione um produto para encontrar similares e complementares</p>
+            <p className="text-sm text-muted-foreground">
+              Selecione um produto para encontrar similares e complementares
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Product Selector */}
-          <div className="lg:col-span-1 space-y-3">
+          <div className="space-y-3 lg:col-span-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar produto..."
                 value={searchQuery}
@@ -99,20 +113,25 @@ export default function ProductMatchPage() {
                 className="pl-9"
               />
             </div>
-            <ScrollArea className="h-[500px] border rounded-lg">
-              <div className="p-2 space-y-1">
-                {filteredProducts.map(p => (
+            <ScrollArea className="h-[500px] rounded-lg border">
+              <div className="space-y-1 p-2">
+                {filteredProducts.map((p) => (
                   <button
                     key={p.id}
                     className={cn(
-                      "w-full flex items-center gap-3 p-2 rounded-lg text-left hover:bg-muted transition-colors",
-                      selectedProduct?.id === p.id && "bg-primary/10 border border-primary/20"
+                      'flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted',
+                      selectedProduct?.id === p.id && 'border border-primary/20 bg-primary/10',
                     )}
                     onClick={() => handleSelectProduct(p)}
                   >
-                    <img src={p.images?.[0]} alt={p.name} className="w-10 h-10 object-contain rounded bg-muted shrink-0" loading="lazy" />
+                    <img
+                      src={p.images?.[0]}
+                      alt={p.name}
+                      className="h-10 w-10 shrink-0 rounded bg-muted object-contain"
+                      loading="lazy"
+                    />
                     <div className="min-w-0">
-                      <p className="text-xs font-medium truncate">{p.name}</p>
+                      <p className="truncate text-xs font-medium">{p.name}</p>
                       <p className="text-[10px] text-muted-foreground">{p.sku}</p>
                     </div>
                   </button>
@@ -122,7 +141,7 @@ export default function ProductMatchPage() {
           </div>
 
           {/* Match Results */}
-          <div className="lg:col-span-2 space-y-3">
+          <div className="space-y-3 lg:col-span-2">
             {selectedProduct ? (
               <>
                 {/* Filters */}
@@ -130,53 +149,84 @@ export default function ProductMatchPage() {
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                        {filters.category ?? 'Categoria'}
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+                        {filters.categoryFilter ?? 'Categoria'}
                         <ChevronDown className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuRadioGroup value={filters.category ?? ''} onValueChange={v => setFilters(f => ({ ...f, category: v || undefined }))}>
+                      <DropdownMenuRadioGroup
+                        value={filters.categoryFilter ?? ''}
+                        onValueChange={(v) =>
+                          setFilters((f) => ({ ...f, categoryFilter: v || undefined }))
+                        }
+                      >
                         <DropdownMenuRadioItem value="">Todas</DropdownMenuRadioItem>
-                        {categories.map(c => <DropdownMenuRadioItem key={c} value={c}>{c}</DropdownMenuRadioItem>)}
+                        {categories.map((c) => (
+                          <DropdownMenuRadioItem key={c} value={c}>
+                            {c}
+                          </DropdownMenuRadioItem>
+                        ))}
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                        {filters.supplier ?? 'Fornecedor'}
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+                        {filters.supplierFilter ?? 'Fornecedor'}
                         <ChevronDown className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuRadioGroup value={filters.supplier ?? ''} onValueChange={v => setFilters(f => ({ ...f, supplier: v || undefined }))}>
+                      <DropdownMenuRadioGroup
+                        value={filters.supplierFilter ?? ''}
+                        onValueChange={(v) =>
+                          setFilters((f) => ({ ...f, supplierFilter: v || undefined }))
+                        }
+                      >
                         <DropdownMenuRadioItem value="">Todos</DropdownMenuRadioItem>
-                        {suppliers.map(s => <DropdownMenuRadioItem key={s} value={s}>{s}</DropdownMenuRadioItem>)}
+                        {suppliers.map((s) => (
+                          <DropdownMenuRadioItem key={s} value={s}>
+                            {s}
+                          </DropdownMenuRadioItem>
+                        ))}
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
                   {/* Stats */}
                   <div className="ml-auto flex items-center gap-2">
-                    {(['identical', 'similar', 'complementary'] as MatchResult['matchType'][]).map(type => (
-                      <Badge key={type} variant="outline" className={cn('text-[10px]', matchColor[type])}>
-                        {matchLabel[type]}: {stats[type]}
-                      </Badge>
-                    ))}
+                    {(['identical', 'similar', 'complementary'] as MatchResult['matchType'][]).map(
+                      (type) => (
+                        <Badge
+                          key={type}
+                          variant="outline"
+                          className={cn('text-[10px]', matchColor[type])}
+                        >
+                          {matchLabel[type]}: {stats[type]}
+                        </Badge>
+                      ),
+                    )}
                   </div>
                 </div>
 
                 {/* Selected product info */}
                 <Card>
                   <CardContent className="flex items-center gap-3 p-3">
-                    <img src={selectedProduct.images?.[0]} alt={selectedProduct.name} className="w-12 h-12 object-contain rounded bg-muted" loading="lazy" />
+                    <img
+                      src={selectedProduct.images?.[0]}
+                      alt={selectedProduct.name}
+                      className="h-12 w-12 rounded bg-muted object-contain"
+                      loading="lazy"
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{selectedProduct.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedProduct.sku} · {selectedProduct.supplier?.name}</p>
+                      <p className="truncate text-sm font-medium">{selectedProduct.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedProduct.sku} · {selectedProduct.supplier?.name}
+                      </p>
                     </div>
-                    <p className="text-lg font-bold text-primary tabular-nums shrink-0">
+                    <p className="shrink-0 text-lg font-bold tabular-nums text-primary">
                       R$ {selectedProduct.price?.toFixed(2)}
                     </p>
                   </CardContent>
@@ -188,54 +238,80 @@ export default function ProductMatchPage() {
                 {matches.length > 0 && matches.length > 0 ? (
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-2">
-                      {matches.map(match => (
+                      {matches.map((match) => (
                         <Card
                           key={match.product.id}
-                          className="cursor-pointer hover:border-primary/40 transition-colors"
+                          className="cursor-pointer transition-colors hover:border-primary/40"
                           onClick={() => navigate(`/produto/${match.product.id}`)}
                         >
                           <CardContent className="flex items-center gap-3 p-3">
-                            <img src={match.product.images?.[0]} alt={match.product.name} className="w-10 h-10 object-contain rounded bg-muted shrink-0" loading="lazy" />
+                            <img
+                              src={match.product.images?.[0]}
+                              alt={match.product.name}
+                              className="h-10 w-10 shrink-0 rounded bg-muted object-contain"
+                              loading="lazy"
+                            />
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className="text-xs font-medium truncate">{match.product.name}</p>
-                                <Badge variant="outline" className={cn('text-[10px] shrink-0 flex items-center gap-1', matchColor[match.matchType])}>
+                              <div className="mb-0.5 flex items-center gap-2">
+                                <p className="truncate text-xs font-medium">{match.product.name}</p>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'flex shrink-0 items-center gap-1 text-[10px]',
+                                    matchColor[match.matchType],
+                                  )}
+                                >
                                   {matchIcon[match.matchType]}
                                   {matchLabel[match.matchType]}
                                 </Badge>
                               </div>
-                              <p className="text-[10px] text-muted-foreground">{match.product.sku} · {match.product.supplier?.name}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {match.product.sku} · {match.product.supplier?.name}
+                              </p>
                               {match.reasons?.length > 0 && (
-                                <p className="text-[10px] text-primary/70 mt-0.5">{match.reasons.slice(0, 2).join(' · ')}</p>
+                                <p className="mt-0.5 text-[10px] text-primary/70">
+                                  {match.reasons.slice(0, 2).join(' · ')}
+                                </p>
                               )}
                             </div>
-                            <div className="text-right shrink-0">
+                            <div className="shrink-0 text-right">
                               <p className="text-sm font-bold tabular-nums">
                                 R$ {match.product.price?.toFixed(2)}
                               </p>
-                              <p className={cn('text-[10px]', match.product.price < selectedProduct.price ? 'text-green-600' : 'text-muted-foreground')}>
-                                {match.product.price < selectedProduct.price ? '↓ mais barato' : match.product.price === selectedProduct.price ? '= mesmo preço' : '↑ mais caro'}
+                              <p
+                                className={cn(
+                                  'text-[10px]',
+                                  match.product.price < selectedProduct.price
+                                    ? 'text-green-600'
+                                    : 'text-muted-foreground',
+                                )}
+                              >
+                                {match.product.price < selectedProduct.price
+                                  ? '↓ mais barato'
+                                  : match.product.price === selectedProduct.price
+                                    ? '= mesmo preço'
+                                    : '↑ mais caro'}
                               </p>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                           </CardContent>
                         </Card>
                       ))}
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <div className="py-12 text-center text-muted-foreground">
+                    <Target className="mx-auto mb-3 h-12 w-12 opacity-30" />
                     <p className="text-sm">Nenhum match encontrado</p>
-                    <p className="text-xs mt-1">Tente ajustar os filtros</p>
+                    <p className="mt-1 text-xs">Tente ajustar os filtros</p>
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-20 text-muted-foreground">
-                <Zap className="h-16 w-16 mx-auto mb-4 opacity-20" />
+              <div className="py-20 text-center text-muted-foreground">
+                <Zap className="mx-auto mb-4 h-16 w-16 opacity-20" />
                 <p className="font-display text-lg font-semibold">Selecione um produto</p>
-                <p className="text-sm mt-1">Escolha um produto na lista ao lado para ver matches</p>
+                <p className="mt-1 text-sm">Escolha um produto na lista ao lado para ver matches</p>
               </div>
             )}
           </div>

@@ -17,34 +17,39 @@ import {
   Wifi,
   AlertTriangle,
   RotateCw,
-  Database,
-  Server,
-  Activity,
   CheckCircle2,
-  XCircle,
   Rocket,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AuthBrandingPanel, SpaceScene } from '@/pages/auth/AuthBranding';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useToast } from '@/hooks/ui';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LegalFooter } from '@/components/auth/LegalFooter';
-import { useDevGate, useIPValidation } from '@/hooks/admin';
+
+import { useDevGate } from '@/hooks/admin/useDevGate';
+import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
+import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { logger } from '@/lib/logger';
 
 type LoginForm = LoginFormData;
 
 // ContinuousRockets and AuthBrandingPanel extracted to ./auth/AuthBranding.tsx
+
+const authButtonClass = (...parts: Array<string | false | null | undefined>) =>
+  [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+    ...parts,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -56,12 +61,12 @@ export default function Auth() {
   const { isAllowed: isDevAllowed } = useDevGate();
 
   /**
-   * Destino pÃ³s-login. PrecedÃªncia:
+   * Destino pós-login. Precedência:
    *  1. `location.state.from` (vindo do ProtectedRoute na mesma aba)
    *  2. `?redirect=/path` na URL (deep-link manual)
    *  3. `sessionStorage` (sobrevive ao round-trip OAuth)
    *  4. fallback `/`
-   * Consumido aqui para que login por e-mail/senha tambÃ©m respeite o destino.
+   * Consumido aqui para que login por e-mail/senha também respeite o destino.
    */
   const resolveRedirectTargetCb = useCallback((): string => {
     const fromState = (
@@ -80,21 +85,11 @@ export default function Auth() {
   const [blockedIP, setBlockedIP] = useState<string | null>(null);
   const [currentIP, setCurrentIP] = useState<string | null>(null);
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
-  // Fallback social â†’ email/senha: mensagem amigÃ¡vel quando OAuth falha.
+  // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
-  // External Database Check State
-  const [dbStatus, setDbStatus] = useState<{
-    principal: { ok: boolean; url?: string; source?: string; loading: boolean };
-    external: { ok: boolean; url?: string; source?: string; loading: boolean };
-    crm: { ok: boolean; url?: string; source?: string; loading: boolean };
-  }>({
-    principal: { ok: false, loading: true },
-    external: { ok: false, loading: true },
-    crm: { ok: false, loading: true },
-  });
   const emailInputRef = useRef<HTMLInputElement | null>(null);
-  // FunÃ§Ã£o `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
+  // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
   const handleRetryGoogle = useCallback(() => {
     setSocialError(null);
@@ -130,11 +125,11 @@ export default function Auth() {
     (message: string, opts?: { autoFallback?: boolean }) => {
       const copy = resolveOAuthError(message);
       setSocialError(copy);
-      // Fallback automÃ¡tico em falhas recuperÃ¡veis (timeout/silencioso):
-      // o usuÃ¡rio nÃ£o precisa clicar â€” o foco vai direto pro e-mail.
+      // Fallback automático em falhas recuperáveis (timeout/silencioso):
+      // o usuário não precisa clicar — o foco vai direto pro e-mail.
       if (opts?.autoFallback && !copy.isConfig) {
         toast({
-          title: 'Login com Google indisponÃ­vel',
+          title: 'Login com Google indisponível',
           description: 'Mudamos para entrada com e-mail e senha automaticamente.',
         });
         setTimeout(() => focusEmailFallback(), 50);
@@ -145,67 +140,22 @@ export default function Auth() {
     [toast, focusEmailFallback],
   );
 
-  // Fetch IP, geolocation and backend status
+  // Fetch visitor IP and geolocation
   useEffect(() => {
-    // Guarda de cancelamento: evita setState apÃ³s o unmount do componente.
-    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
-    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
-    // (em testes, isso vaza como "ReferenceError: window is not defined").
     let cancelled = false;
+    const isLighthousePlaceholder = isSupabaseLighthousePlaceholder();
 
     const loadInfo = async () => {
-      // 1. IP Info
-      try {
-        const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!cancelled && !error && data) {
-          if (data.ip) setCurrentIP(data.ip);
-          if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
-        }
-      } catch {
-        // silent fail
-      }
-
-      if (cancelled) return;
-
-      // 2. Principal Backend (Directly from env or client)
-      const principalUrl =
-        import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-      const isExternal = !!import.meta.env.VITE_EXTERNAL_SUPABASE_URL;
-
-      setDbStatus((prev) => ({
-        ...prev,
-        principal: {
-          ok: !!principalUrl,
-          url: principalUrl,
-          source: isExternal ? 'Externo (Principal)' : 'Lovable Cloud',
-          loading: false,
-        },
-      }));
-
-      // 3. External (GestÃ£o de Produtos) via bridge ping op
-      try {
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: { operation: 'ping' },
-        });
-
-        if (cancelled) return;
-
-        if (!error && data?.ok) {
-          setDbStatus((prev) => ({
-            ...prev,
-            external: {
-              ok: data.config?.has_url && data.config?.has_key,
-              url: data.config?.url || 'Configurado',
-              source: data.config?.is_external ? 'Externo' : 'Cloud',
-              loading: false,
-            },
-          }));
-        } else {
-          setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
-        }
-      } catch {
-        if (!cancelled) {
-          setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
+      if (!isLighthousePlaceholder) {
+        try {
+          const supabase = await getSupabaseClient();
+          const { data, error } = await supabase.functions.invoke('get-visitor-info');
+          if (!cancelled && !error && data) {
+            if (data.ip) setCurrentIP(data.ip);
+            if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
+          }
+        } catch {
+          // silent fail
         }
       }
     };
@@ -218,8 +168,10 @@ export default function Auth() {
   }, []);
 
   // Redirect if already logged in (only on initial load)
+  const navigatedRef = useRef(false);
   useEffect(() => {
-    if (user && !authLoading && !isSubmitting) {
+    if (user && !authLoading && !isSubmitting && !navigatedRef.current) {
+      navigatedRef.current = true;
       const target = resolveRedirectTargetCb();
       setTimeout(() => navigate(target, { replace: true }), 100);
     }
@@ -246,7 +198,7 @@ export default function Auth() {
           variant: 'destructive',
           title: 'Acesso Bloqueado',
           description:
-            ipValidation.error || `Seu IP (${ipValidation.currentIP}) nÃ£o estÃ¡ autorizado.`,
+            ipValidation.error || `Seu IP (${ipValidation.currentIP}) não está autorizado.`,
           duration: 10000,
         });
         return false;
@@ -283,33 +235,42 @@ export default function Auth() {
         logger.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
         await logLoginAttempt(data.email, null, false, error.message);
 
-        let description = error.message;
-        let diagnosis = 'Verifique as credenciais';
-        let title = 'Erro ao entrar';
+        let description = 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.';
+        let title = 'Não foi possível entrar';
+        let hint = 'Se o erro persistir, tente redefinir sua senha ou use o login social.';
 
-        // HeurÃ­stica de erro baseada no cÃ³digo e mensagem
         if (error.message.includes('Invalid login credentials') || error.status === 400) {
-          description = 'Email ou senha incorretos. Por favor, tente novamente.';
-          diagnosis = 'AUTH_FAILED: Credenciais invÃ¡lidas (400).';
+          title = 'E-mail ou Senha Incorretos';
+          description =
+            'Não encontramos uma conta com esses dados. Verifique se digitou corretamente ou use "Esqueci minha senha".';
+          hint = 'Dica: Verifique se o Caps Lock está ativado.';
         } else if (error.message.includes('Email not confirmed')) {
-          description = 'E-mail pendente de confirmaÃ§Ã£o. Por favor, valide sua conta.';
-          diagnosis = 'AUTH_CONFIRM: UsuÃ¡rio existe mas e-mail nÃ£o foi confirmado.';
+          title = 'E-mail não confirmado';
+          description =
+            'Sua conta ainda não foi ativada. Verifique sua caixa de entrada e spam pelo e-mail de confirmação.';
+          hint = 'Ainda não recebeu? Aguarde alguns minutos antes de solicitar um novo envio.';
         } else if (error.message.includes('rate limit') || error.status === 429) {
-          title = 'Conta Temporariamente Bloqueada';
-          description = 'Muitas tentativas falhas. Por seguranÃ§a, aguarde alguns minutos.';
-          diagnosis = 'RATE_LIMIT: Bloqueio temporÃ¡rio ativado (429).';
+          title = 'Acesso Temporariamente Suspenso';
+          description =
+            'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
+          hint = 'Tome um café e tente novamente em instantes.';
         } else if (
           error.status === 0 ||
           error.message.includes('network') ||
           error.message.includes('Fetch')
         ) {
-          title = 'Erro de ConexÃ£o';
-          description = 'NÃ£o foi possÃ­vel alcanÃ§ar o servidor. Verifique sua internet.';
-          diagnosis = 'NETWORK_ERROR: Falha fÃ­sica ou DNS (0).';
-        } else if (error.message.includes('Database error') || error.status >= 500) {
-          title = 'Erro no Servidor';
-          description = 'O sistema estÃ¡ instÃ¡vel no momento. Nossa equipe jÃ¡ foi notificada.';
-          diagnosis = `SERVER_ERROR: Erro interno do Supabase (${error.status || 500}).`;
+          title = 'Erro de Conexão';
+          description =
+            'Parece que você está sem internet ou nosso servidor está temporariamente inacessível.';
+          hint = 'Verifique sua conexão Wi-Fi ou dados móveis.';
+        } else if (
+          error.message.includes('Database error') ||
+          (error.status !== undefined && error.status >= 500)
+        ) {
+          title = 'Sistema em Manutenção';
+          description =
+            'Estamos ajustando os motores das nossas galáxias. O serviço deve voltar ao normal em breve.';
+          hint = 'Nossa equipe técnica já foi notificada.';
         }
 
         toast({
@@ -317,18 +278,26 @@ export default function Auth() {
           title: title,
           description: (
             <div className="space-y-3">
-              <p className="font-medium">{description}</p>
-              <div className="rounded-lg border border-white/5 bg-black/40 p-2 font-mono text-[10px] text-white/50">
-                DIAGNÃ“STICO: {diagnosis}
+              <p className="font-medium leading-relaxed">{description}</p>
+              <div className="rounded-xl border border-white/10 bg-black/40 p-3 shadow-inner">
+                <p className="text-[11px] leading-snug text-white/70">
+                  <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-primary">
+                    Como resolver:
+                  </span>
+                  {hint}
+                </p>
               </div>
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto p-0 text-xs text-white/60 hover:text-white"
-                onClick={() => navigate('/admin/status')}
-              >
-                Verificar status do sistema â†’
-              </Button>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  className={authButtonClass(
+                    'h-8 rounded-lg bg-white/5 px-3 text-[10px] uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white',
+                  )}
+                  onClick={() => window.location.reload()}
+                >
+                  Recarregar
+                </button>
+              </div>
             </div>
           ),
         });
@@ -355,6 +324,7 @@ export default function Auth() {
         logger.warn('[AUTH_CRED_STORE] Credential store failed');
       }
 
+      const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       const userId = session?.user?.id;
@@ -362,8 +332,8 @@ export default function Auth() {
       if (!userId) {
         toast({
           variant: 'destructive',
-          title: 'Erro de sessÃ£o',
-          description: 'Login realizado mas a sessÃ£o nÃ£o pÃ´de ser iniciada.',
+          title: 'Erro de sessão',
+          description: 'Login realizado mas a sessão não pôde ser iniciada.',
         });
         return;
       }
@@ -382,10 +352,10 @@ export default function Auth() {
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
         toast({
           variant: 'destructive',
-          title: 'Erro de SessÃ£o',
+          title: 'Erro de Sessão',
           description: (
             <div className="space-y-2">
-              <p>Autenticado, mas nÃ£o conseguimos carregar suas permissÃµes.</p>
+              <p>Autenticado, mas não conseguimos carregar suas permissões.</p>
               <div className="rounded border border-white/5 bg-black/40 p-2 font-mono text-[9px] text-white/50">
                 {isRLSError ? 'RLS_BLOCK' : 'PROFILE_MISSING'}: {profileError.code} -{' '}
                 {profileError.message}
@@ -399,13 +369,13 @@ export default function Auth() {
         toast({
           variant: 'destructive',
           title: 'Acesso Bloqueado',
-          description: 'Sua conta estÃ¡ inativa. Entre em contato com o administrador.',
+          description: 'Sua conta está inativa. Entre em contato com o administrador.',
         });
         await signOut();
         return;
       }
 
-      // 2. VerificaÃ§Ã£o de Roles (user_roles)
+      // 2. Verificação de Roles (user_roles)
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
@@ -417,14 +387,14 @@ export default function Auth() {
         });
       }
 
-      // 3. ValidaÃ§Ã£o final de IP e Redirecionamento
+      // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
     } catch {
       logger.error('[AUTH_LOGIN_EXCEPTION] Unexpected login exception');
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
-        description: 'NÃ£o foi possÃ­vel conectar ao servidor. Verifique sua internet.',
+        description: 'Não foi possível conectar ao servidor. Verifique sua internet.',
       });
     } finally {
       setIsSubmitting(false);
@@ -436,7 +406,7 @@ export default function Auth() {
       <main
         className="flex min-h-screen items-center justify-center bg-background"
         role="main"
-        aria-label="Carregando autenticaÃ§Ã£o"
+        aria-label="Carregando autenticação"
       >
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </main>
@@ -459,8 +429,8 @@ export default function Auth() {
             </div>
           </div>
           <div className="space-y-2 text-center">
-            <h2 className="font-display text-2xl font-bold">VocÃª jÃ¡ estÃ¡ conectado</h2>
-            <p className="text-sm text-white/60">Redirecionando para sua Ã¡rea segura...</p>
+            <h2 className="font-display text-2xl font-bold">Você já está conectado</h2>
+            <p className="text-sm text-white/60">Redirecionando para sua área segura...</p>
           </div>
         </div>
       </main>
@@ -471,14 +441,14 @@ export default function Auth() {
     <main
       className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#030508] lg:flex-row"
       role="main"
-      aria-label="AutenticaÃ§Ã£o"
+      aria-label="Autenticação"
     >
       {/* Fundo unificado azul-noite saturado com cena espacial coordenada */}
       <SpaceScene />
 
       <PageSEO
         title="Login | Promo Gifts"
-        description="Acesse a plataforma Promo Gifts. Entre com suas credenciais para gerenciar seus produtos e orÃ§amentos com a melhor IA das GalÃ¡xias!"
+        description="Acesse a plataforma Promo Gifts. Entre com suas credenciais para gerenciar seus produtos e orçamentos com a melhor IA das Galáxias!"
         path="/auth"
       />
       {/* Left side - Branding */}
@@ -505,24 +475,25 @@ export default function Auth() {
                       Acesso Bloqueado
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Seu endereÃ§o IP (
+                      Seu endereço IP (
                       <span className="font-mono font-semibold text-foreground">{blockedIP}</span>)
-                      nÃ£o estÃ¡ autorizado a acessar esta conta.
+                      não está autorizado a acessar esta conta.
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Entre em contato com o administrador do sistema para liberar seu acesso.
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
+                    <button
+                      type="button"
+                      className={authButtonClass(
+                        'mt-2 h-9 rounded-lg border-2 border-primary/30 bg-background px-3 text-primary hover:border-primary hover:bg-primary/5',
+                      )}
                       onClick={() => {
                         setIpBlocked(false);
                         setBlockedIP(null);
                       }}
                     >
                       Tentar novamente
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -534,301 +505,272 @@ export default function Auth() {
             aria-labelledby="auth-title"
             className={`relative overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-500 ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
-            <AnimatePresence mode="wait">
-              {loginStatus === 'success' ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center justify-center px-8 py-16 text-center"
-                >
-                  <div className="relative mb-8">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
-                    <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/20">
-                      <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.4 }}
-                      className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#030508] bg-emerald-500 shadow-lg"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-white" />
-                    </motion.div>
+            {loginStatus === 'success' ? (
+              <div
+                key="success"
+                className="flex flex-col items-center justify-center px-8 py-16 text-center duration-500 animate-in fade-in zoom-in"
+              >
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
+                  <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/20">
+                    <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                   </div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="font-display text-3xl font-bold tracking-tight text-white"
-                  >
-                    Decolagem autorizada!
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-3 text-base text-white/50"
-                  >
-                    Bem-vindo a bordo. Iniciando sistemas...
-                  </motion.p>
-                </motion.div>
-              ) : showForgotPassword ? (
-                <motion.div
-                  key="forgot-password"
-                  initial={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardContent className="pb-7 pt-7">
-                    <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
-                  </CardContent>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="login-form"
-                  initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardHeader className="pb-3 pt-9">
-                    <div className="space-y-1 text-center">
-                      <div
-                        className="font-display text-[1.036rem] font-normal tracking-tight text-white"
-                        id="auth-title"
-                      >
-                        Entre com suas credenciais para Brilhar, vocÃª nasce para isso!
-                      </div>
-                      <p className="text-[13px] text-white/50">
-                        Inicie sua jornada rumo ao sucesso
-                      </p>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-5 pb-9">
-                    {socialError && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        role="alert"
-                        className="relative animate-fade-in space-y-3 overflow-hidden rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl"
-                      >
-                        <div className="absolute right-0 top-0 p-2 opacity-10">
-                          <ShieldAlert className="h-12 w-12 text-amber-500" />
-                        </div>
-
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <div className="flex-1 space-y-2">
-                            <h3
-                              className="font-display text-base font-bold text-amber-200"
-                              data-testid="social-login-error-title"
-                            >
-                              {socialError.title}
-                            </h3>
-                            <p
-                              className="text-[13px] leading-relaxed text-amber-100/70"
-                              data-testid="social-login-error-description"
-                            >
-                              {socialError.description}
-                            </p>
-                            {socialError.code && (
-                              <p
-                                className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
-                                data-testid="social-login-error-code"
-                              >
-                                Código: {socialError.code}
-                              </p>
-                            )}
-                            {socialError.hint && (
-                              <div
-                                className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
-                                data-testid="social-login-error-hint"
-                              >
-                                <p className="text-[11px] leading-snug text-white/60">
-                                  <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-amber-500">
-                                    SoluÃ§Ã£o:
-                                  </span>
-                                  {socialError.hint}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 pt-3">
-                          <div className="flex items-center gap-2">
-                            {!socialError.isConfig && (
-                              <Button
-                                type="button"
-                                className="h-11 flex-1 gap-2 rounded-xl bg-amber-500 text-xs font-bold text-black shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95"
-                                onClick={handleRetryGoogle}
-                              >
-                                <RotateCw className="h-4 w-4" />
-                                Tentar Google Novamente
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-11 flex-1 rounded-xl border-white/10 bg-white/5 text-xs font-bold text-white transition-all hover:bg-white/10 active:scale-95"
-                              onClick={focusEmailFallback}
-                            >
-                              Usar E-mail
-                            </Button>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-8 text-[10px] uppercase tracking-widest text-white/30 hover:bg-transparent hover:text-white/60"
-                            onClick={() => setSocialError(null)}
-                          >
-                            Ignorar aviso
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    <form
-                      onSubmit={loginForm.handleSubmit(handleLogin)}
-                      className="space-y-4"
-                      data-testid="login-form"
-                      name="login"
-                      noValidate
+                  <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#030508] bg-emerald-500 shadow-lg duration-300 animate-in zoom-in">
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <h2 className="font-display text-3xl font-bold tracking-tight text-white">
+                  Decolagem autorizada!
+                </h2>
+                <p className="mt-3 text-base text-white/50">
+                  Bem-vindo a bordo. Iniciando sistemas...
+                </p>
+              </div>
+            ) : showForgotPassword ? (
+              <div
+                key="forgot-password"
+                className="duration-300 animate-in fade-in slide-in-from-right-2"
+              >
+                <CardContent className="pb-7 pt-7">
+                  <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+                </CardContent>
+              </div>
+            ) : (
+              <div
+                key="login-form"
+                className="duration-300 animate-in fade-in slide-in-from-left-2"
+              >
+                <CardHeader className="pb-3 pt-9">
+                  <div className="space-y-1 text-center">
+                    <div
+                      className="font-display text-[1.036rem] font-normal tracking-tight text-white"
+                      id="auth-title"
                     >
-                      <div className="space-y-2">
-                        <Label htmlFor="login-email" className="text-foreground">
-                          Email
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="login-email"
-                            data-testid="login-email-input"
-                            type="email"
-                            placeholder="seu@email.com"
-                            autoComplete="email"
-                            inputMode="email"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            className="border-white/10 bg-white/5 pl-10 lowercase transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
-                            {...loginForm.register('email')}
-                            onChange={(e) => {
-                              const lower = e.target.value.toLowerCase();
-                              if (e.target.value !== lower) e.target.value = lower;
-                              loginForm.register('email').onChange(e);
-                            }}
-                            ref={(el) => {
-                              loginForm.register('email').ref(el);
-                              emailInputRef.current = el;
-                            }}
-                          />
-                        </div>
-                        {loginForm.formState.errors.email && (
-                          <p className="text-sm text-destructive" data-testid="login-error-msg">
-                            {loginForm.formState.errors.email.message}
-                          </p>
-                        )}
+                      Entre com suas credenciais para Brilhar, você nasce para isso!
+                    </div>
+                    <p className="text-[13px] text-white/50">Inicie sua jornada rumo ao sucesso</p>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-5 pb-9">
+                  {socialError && (
+                    <div
+                      role="alert"
+                      className="relative space-y-3 overflow-hidden rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2"
+                    >
+                      <div className="absolute right-0 top-0 p-2 opacity-10">
+                        <ShieldAlert className="h-12 w-12 text-amber-500" />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="login-password"
-                          title="password"
-                          className="text-foreground"
-                        >
-                          Senha de Acesso
-                        </Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="login-password"
-                            data-testid="login-password-input"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                            autoComplete="current-password"
-                            className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
-                            {...loginForm.register('password')}
-                          />
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <h3
+                            className="font-display text-base font-bold text-amber-200"
+                            data-testid="social-login-error-title"
+                          >
+                            {socialError.title}
+                          </h3>
+                          <p
+                            className="text-[13px] leading-relaxed text-amber-100/70"
+                            data-testid="social-login-error-description"
+                          >
+                            {socialError.description}
+                          </p>
+                          {socialError.code && (
+                            <p
+                              className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
+                              data-testid="social-login-error-code"
+                            >
+                              Código: {socialError.code}
+                            </p>
+                          )}
+                          {socialError.hint && (
+                            <div
+                              className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
+                              data-testid="social-login-error-hint"
+                            >
+                              <p className="text-[11px] leading-snug text-white/60">
+                                <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                                  Solução:
+                                </span>
+                                {socialError.hint}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 pt-3">
+                        <div className="flex items-center gap-2">
+                          {!socialError.isConfig && (
+                            <button
+                              type="button"
+                              className={authButtonClass(
+                                'h-11 flex-1 rounded-xl bg-amber-500 text-xs text-black shadow-lg shadow-amber-500/20 hover:bg-amber-600 active:scale-95',
+                              )}
+                              onClick={handleRetryGoogle}
+                            >
+                              <RotateCw className="h-4 w-4" />
+                              Tentar Google Novamente
+                            </button>
+                          )}
                           <button
                             type="button"
-                            data-testid="login-password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
-                            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                            aria-pressed={showPassword}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
+                            className={authButtonClass(
+                              'h-11 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 active:scale-95',
                             )}
+                            onClick={focusEmailFallback}
+                          >
+                            Usar E-mail
                           </button>
                         </div>
-                        {loginForm.formState.errors.password && (
-                          <p className="text-sm text-destructive">
-                            {loginForm.formState.errors.password.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-end">
                         <button
                           type="button"
-                          data-testid="login-forgot-link"
-                          className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 transition-colors hover:text-blue-300"
-                          onClick={() => setShowForgotPassword(true)}
+                          className={authButtonClass(
+                            'h-8 rounded-lg px-3 text-[10px] uppercase tracking-widest text-white/30 hover:bg-transparent hover:text-white/60',
+                          )}
+                          onClick={() => setSocialError(null)}
                         >
-                          Esqueci minha senha
+                          Ignorar aviso
                         </button>
                       </div>
+                    </div>
+                  )}
 
-                      <Button
-                        type="submit"
-                        data-testid="login-submit"
-                        className="h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
-                        disabled={isSubmitting || loginStatus === 'success'}
+                  <form
+                    onSubmit={loginForm.handleSubmit(handleLogin)}
+                    className="space-y-4"
+                    data-testid="login-form"
+                    name="login"
+                    noValidate
+                  >
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="login-email"
+                        className="text-sm font-medium leading-none text-foreground"
                       >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Iniciando Sistemas...
-                          </>
-                        ) : loginStatus === 'success' ? (
-                          <>
-                            <div className="flex items-center gap-2 duration-300 animate-in zoom-in">
-                              <Rocket className="h-4 w-4 -rotate-45" />
-                              <span>Decolando!</span>
-                            </div>
-                          </>
-                        ) : (
-                          'Entrar na Plataforma'
-                        )}
-                      </Button>
-
-                      <div className="relative py-2">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-white/10" />
-                        </div>
-                        <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                          <span className="rounded-full border border-white/5 bg-black/80 px-4 text-white/30">
-                            ou
-                          </span>
-                        </div>
+                        Email
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          data-testid="login-email-input"
+                          type="email"
+                          placeholder="seu@email.com"
+                          autoComplete="email"
+                          inputMode="email"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          className="border-white/10 bg-white/5 pl-10 lowercase transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
+                          {...loginForm.register('email')}
+                          onChange={(e) => {
+                            const lower = e.target.value.toLowerCase();
+                            if (e.target.value !== lower) e.target.value = lower;
+                            loginForm.register('email').onChange(e);
+                          }}
+                          ref={(el) => {
+                            loginForm.register('email').ref(el);
+                            emailInputRef.current = el;
+                          }}
+                        />
                       </div>
+                      {loginForm.formState.errors.email && (
+                        <p className="text-sm text-destructive" data-testid="login-error-msg">
+                          {loginForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
 
-                      <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
-                    </form>
-                  </CardContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="login-password"
+                        title="password"
+                        className="text-sm font-medium leading-none text-foreground"
+                      >
+                        Senha de Acesso
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          data-testid="login-password-input"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
+                          {...loginForm.register('password')}
+                        />
+                        <button
+                          type="button"
+                          data-testid="login-password-toggle"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
+                          aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                          aria-pressed={showPassword}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                      {loginForm.formState.errors.password && (
+                        <p className="text-sm text-destructive">
+                          {loginForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end">
+                      <button
+                        type="button"
+                        data-testid="login-forgot-link"
+                        className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 transition-colors hover:text-blue-300"
+                        onClick={() => setShowForgotPassword(true)}
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      data-testid="login-submit"
+                      className={authButtonClass(
+                        'h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]',
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Iniciando Sistemas...
+                        </>
+                      ) : (
+                        'Entrar na Plataforma'
+                      )}
+                    </button>
+
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-white/10" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+                        <span className="rounded-full border border-white/5 bg-black/80 px-4 text-white/30">
+                          ou
+                        </span>
+                      </div>
+                    </div>
+
+                    <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
+                  </form>
+                </CardContent>
+              </div>
+            )}
           </Card>
 
           {/* IP/Location Widget */}
@@ -853,71 +795,7 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Backend Status Widget â€” apenas visÃ­vel para devs (gate via useDevGate) */}
-          {isDevAllowed && (
-            <div
-              className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 opacity-0 shadow-xl backdrop-blur-md"
-              style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <Server className="h-4 w-4 text-blue-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
-                  Status da Infraestrutura
-                </span>
-              </div>
-
-              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Principal DB */}
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Database className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Principal</span>
-                  </div>
-                  {dbStatus.principal.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.principal.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-success">
-                        {dbStatus.principal.source}
-                      </span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                  )}
-                </div>
-
-                {/* External DB (GestÃ£o de Produtos) */}
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Produtos</span>
-                  </div>
-                  {dbStatus.external.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.external.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-success">
-                        Externo
-                      </span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-warning">
-                        Pendente
-                      </span>
-                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <p className="px-2 text-center text-[10px] italic text-white/30">
-                VerificaÃ§Ã£o em tempo real das instÃ¢ncias Supabase configuradas via secrets.
-              </p>
-            </div>
-          )}
+          {/* Backend Status Widget removido a pedido do PO */}
 
           <LegalFooter />
         </div>

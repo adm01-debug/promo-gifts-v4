@@ -9,20 +9,20 @@
  *    selecionar outra técnica troca e mantém as dimensões já preenchidas.
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
-import { Pencil, Info } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TechniqueCard } from "./TechniqueCard";
-import { ConfigurationPanelV6 } from "./ConfigurationPanelV6";
+import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
+import { Pencil, Info } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TechniqueCard } from './TechniqueCard';
+import { ConfigurationPanelV6 } from './ConfigurationPanelV6';
 import type {
   TechniqueOption,
   GravacaoLocation,
   CustomizationPriceResponseV6,
   PersonalizationItem,
-} from "@/types/customization";
+} from '@/types/customization';
 
 interface LocationPanelProps {
   location: GravacaoLocation;
@@ -49,7 +49,7 @@ interface LocationDraft {
   savedAt: string;
 }
 
-const DRAFT_STORAGE_PREFIX = "qb:loc-draft";
+const DRAFT_STORAGE_PREFIX = 'qb:loc-draft';
 const DRAFT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 
 function draftKey(productId: string | undefined, locationCode: string): string | null {
@@ -58,7 +58,7 @@ function draftKey(productId: string | undefined, locationCode: string): string |
 }
 
 function readDraft(key: string | null): LocationDraft | null {
-  if (!key || typeof window === "undefined") return null;
+  if (!key || typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(key);
     if (!raw) return null;
@@ -73,8 +73,8 @@ function readDraft(key: string | null): LocationDraft | null {
   }
 }
 
-function writeDraft(key: string | null, draft: Omit<LocationDraft, "savedAt">) {
-  if (!key || typeof window === "undefined") return;
+function writeDraft(key: string | null, draft: Omit<LocationDraft, 'savedAt'>) {
+  if (!key || typeof window === 'undefined') return;
   try {
     const payload: LocationDraft = { ...draft, savedAt: new Date().toISOString() };
     window.sessionStorage.setItem(key, JSON.stringify(payload));
@@ -84,7 +84,7 @@ function writeDraft(key: string | null, draft: Omit<LocationDraft, "savedAt">) {
 }
 
 function clearDraft(key: string | null) {
-  if (!key || typeof window === "undefined") return;
+  if (!key || typeof window === 'undefined') return;
   try {
     window.sessionStorage.removeItem(key);
   } catch {
@@ -94,12 +94,15 @@ function clearDraft(key: string | null) {
 
 /** Agrupa técnicas por grupo_tecnica */
 function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOption[]> {
-  return options.reduce((groups, t) => {
-    const group = t.grupo_tecnica || "OUTROS";
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(t);
-    return groups;
-  }, {} as Record<string, TechniqueOption[]>);
+  return options.reduce(
+    (groups, t) => {
+      const group = t.grupo_tecnica || 'OUTROS';
+      if (!groups[group]) groups[group] = [];
+      groups[group].push(t);
+      return groups;
+    },
+    {} as Record<string, TechniqueOption[]>,
+  );
 }
 
 interface SelectedTechniqueBarProps {
@@ -120,24 +123,22 @@ function SelectedTechniqueBar({
   return (
     <div
       className={
-        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors " +
+        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ' +
         (isPickerOpen
-          ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
-          : "border-primary/30 bg-primary/5")
+          ? 'border-primary/60 bg-primary/10 ring-1 ring-primary/30'
+          : 'border-primary/30 bg-primary/5')
       }
     >
       <div className="flex min-w-0 items-center gap-2">
         <span
           className={
-            "h-2 w-2 shrink-0 rounded-full bg-primary transition-transform " +
-            (isPickerOpen ? "animate-pulse scale-110" : "")
+            'h-2 w-2 shrink-0 rounded-full bg-primary transition-transform ' +
+            (isPickerOpen ? 'scale-110 animate-pulse' : '')
           }
           aria-hidden
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {technique.tecnica_nome}
-          </p>
+          <p className="truncate text-sm font-semibold text-foreground">{technique.tecnica_nome}</p>
           {technique.grupo_tecnica && (
             <p className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
               {technique.grupo_tecnica}
@@ -148,7 +149,7 @@ function SelectedTechniqueBar({
       <Button
         ref={changeButtonRef}
         type="button"
-        variant={isPickerOpen ? "default" : "outline"}
+        variant={isPickerOpen ? 'default' : 'outline'}
         size="sm"
         className="h-8 shrink-0 gap-1.5"
         onClick={onChangeClick}
@@ -162,7 +163,7 @@ function SelectedTechniqueBar({
         data-testid="customization-change-technique"
       >
         <Pencil className="h-3.5 w-3.5" />
-        {isPickerOpen ? "Fechar" : "Trocar"}
+        {isPickerOpen ? 'Fechar' : 'Trocar'}
       </Button>
     </div>
   );
@@ -180,7 +181,7 @@ export function LocationPanel({
     [productId, location.location_code],
   );
 
-  const [announcement, setAnnouncement] = useState("");
+  const [announcement, setAnnouncement] = useState('');
 
   // Hidrata estado inicial: confirmada > rascunho persistido > nada.
   const initialDraft = useMemo<LocationDraft | null>(
@@ -208,7 +209,6 @@ export function LocationPanel({
     height: confirmedPersonalization?.height ?? initialDraft?.height,
     colors: confirmedPersonalization?.numberOfColors ?? initialDraft?.colors,
   });
-
 
   // Persiste rascunho sempre que técnica/picker muda. Dimensões são persistidas em handleDimensionsChange.
   useEffect(() => {
@@ -269,7 +269,7 @@ export function LocationPanel({
     }
 
     if (!selectedTechnique) {
-      setAnnouncement("");
+      setAnnouncement('');
       return;
     }
 
@@ -311,16 +311,30 @@ export function LocationPanel({
         const currentH = lastDimsRef.current.height;
         const currentC = lastDimsRef.current.colors;
 
-        forcedW = technique.usa_dimensao && currentW !== undefined && currentW !== null && currentW > (technique.efetiva_largura_max || 0);
-        forcedH = technique.usa_dimensao && currentH !== undefined && currentH !== null && currentH > (technique.efetiva_altura_max || 0);
-        forcedC = technique.cobra_por_cor && currentC !== undefined && currentC !== null && currentC > (technique.max_cores || 1);
+        forcedW =
+          technique.usa_dimensao &&
+          currentW !== undefined &&
+          currentW !== null &&
+          currentW > (technique.efetiva_largura_max || 0);
+        forcedH =
+          technique.usa_dimensao &&
+          currentH !== undefined &&
+          currentH !== null &&
+          currentH > (technique.efetiva_altura_max || 0);
+        forcedC =
+          technique.cobra_por_cor &&
+          currentC !== undefined &&
+          currentC !== null &&
+          currentC > (technique.max_cores || 1);
 
         if (forcedW || forcedH || forcedC) {
           const reasons = [];
-          if (forcedW) reasons.push("Largura");
-          if (forcedH) reasons.push("Altura");
-          if (forcedC) reasons.push("Cores");
-          setClampNotice(`As dimensões (${reasons.join(", ")}) foram ajustadas aos limites da nova técnica.`);
+          if (forcedW) reasons.push('Largura');
+          if (forcedH) reasons.push('Altura');
+          if (forcedC) reasons.push('Cores');
+          setClampNotice(
+            `As dimensões (${reasons.join(', ')}) foram ajustadas aos limites da nova técnica.`,
+          );
         }
       }
 
@@ -339,9 +353,13 @@ export function LocationPanel({
         if (forcedW) {
           document.querySelector<HTMLElement>('[data-testid="customization-width-input"]')?.focus();
         } else if (forcedH) {
-          document.querySelector<HTMLElement>('[data-testid="customization-height-input"]')?.focus();
+          document
+            .querySelector<HTMLElement>('[data-testid="customization-height-input"]')
+            ?.focus();
         } else if (forcedC) {
-          document.querySelector<HTMLElement>('[data-testid^="customization-color-button-"]')?.focus();
+          document
+            .querySelector<HTMLElement>('[data-testid^="customization-color-button-"]')
+            ?.focus();
         }
       }, 50);
     },
@@ -378,7 +396,9 @@ export function LocationPanel({
 
       // Se a técnica atual NÃO cobra por cor, forçamos colors a undefined para o rascunho
       // Isso evita que rascunhos de Silk (monocromático) carreguem cores anteriores de um Transfer.
-      const colorsToPersist = selectedTechnique?.cobra_por_cor ? lastDimsRef.current.colors : undefined;
+      const colorsToPersist = selectedTechnique?.cobra_por_cor
+        ? lastDimsRef.current.colors
+        : undefined;
 
       // Persiste o rascunho atualizado (só se há técnica selecionada e não está confirmada).
       if (
@@ -406,12 +426,18 @@ export function LocationPanel({
   // - troca de técnica → usa últimas dimensões digitadas, com clamp aos limites da nova técnica
   //   (evita estourar largura/altura máxima quando a nova técnica é menor).
   const clamp = (v: number | undefined, max: number | undefined) =>
-    v === null || v === undefined ? undefined : max !== null && max !== undefined && v > max ? max : v;
+    v === null || v === undefined
+      ? undefined
+      : max !== null && max !== undefined && v > max
+        ? max
+        : v;
 
   const isSameAsConfirmed =
     selectedTechnique?.technique_id === confirmedPersonalization?.techniqueId;
   const rawWidth = isSameAsConfirmed ? confirmedPersonalization?.width : lastDimsRef.current.width;
-  const rawHeight = isSameAsConfirmed ? confirmedPersonalization?.height : lastDimsRef.current.height;
+  const rawHeight = isSameAsConfirmed
+    ? confirmedPersonalization?.height
+    : lastDimsRef.current.height;
   const rawColors = isSameAsConfirmed
     ? confirmedPersonalization?.numberOfColors
     : lastDimsRef.current.colors;
@@ -450,11 +476,13 @@ export function LocationPanel({
           />
 
           {clampNotice && !isPickerOpen && (
-            <Alert variant="default" className="bg-amber-50 border-amber-200 py-2" data-testid="clamp-notice">
+            <Alert
+              variant="default"
+              className="border-amber-200 bg-amber-50 py-2"
+              data-testid="clamp-notice"
+            >
               <Info className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-xs text-amber-800">
-                {clampNotice}
-              </AlertDescription>
+              <AlertDescription className="text-xs text-amber-800">{clampNotice}</AlertDescription>
             </Alert>
           )}
         </div>
@@ -471,10 +499,10 @@ export function LocationPanel({
               ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
               : `Escolha a técnica de gravação para ${location.location_name}.`
           }
-          className="space-y-3 animate-in fade-in slide-in-from-top-1 rounded-lg border border-primary/20 bg-primary/[0.02] p-3"
+          className="space-y-3 rounded-lg border border-primary/20 bg-primary/[0.02] p-3 animate-in fade-in slide-in-from-top-1"
           data-testid="customization-technique-picker"
           onKeyDown={(e) => {
-            if (e.key === "Escape" && selectedTechnique) {
+            if (e.key === 'Escape' && selectedTechnique) {
               setIsPickerOpen(false);
             }
           }}
@@ -493,7 +521,7 @@ export function LocationPanel({
           {Object.entries(grouped).map(([grupo, techs]) => (
             <div key={grupo} className="space-y-1.5">
               {Object.keys(grouped).length > 1 && (
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
+                <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {grupo}
                 </p>
               )}

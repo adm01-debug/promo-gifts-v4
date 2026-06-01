@@ -1,4 +1,4 @@
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route } from 'react-router-dom';
 import {
   CollectionDetailPage,
   CollectionsPage,
@@ -9,8 +9,8 @@ import {
   ProductDetail,
   ReplenishmentsPage,
   SellerCartsPage,
-} from "./lazy-pages";
-import { ValidProductIdRoute } from "./guards/ValidProductIdRoute";
+} from './lazy-pages';
+import { ValidProductIdRoute } from './guards/ValidProductIdRoute';
 
 /**
  * Product routes — products list, detail, filters, novelties, replenishments,

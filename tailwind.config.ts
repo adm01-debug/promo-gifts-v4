@@ -60,13 +60,6 @@ export default {
           hover: "hsl(var(--cart-hover))",
           foreground: "hsl(var(--cart-foreground))",
         },
-        orange: {
-          DEFAULT: "hsl(var(--orange))",
-          hover: "hsl(var(--orange-hover))",
-          active: "hsl(var(--orange-active))",
-          glow: "hsl(var(--orange-glow))",
-          foreground: "hsl(var(--orange-foreground))",
-        },
         // Brand aliases (Etapa 17) — enables bg-brand-primary, text-brand-primary,
         // border-brand-primary, etc. Coexists with the orange.* tokens during the
         // 3-phase migration. CSS vars defined in src/styles/brand-tokens.css.

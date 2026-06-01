@@ -6,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 type ValidationResult = Awaited<
   ReturnType<ReturnType<typeof useIPValidation>['validateIPForAuthenticatedUser']>
 >;
-type InvokeResult = { data: unknown; error: null | { message: string } };
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
@@ -211,8 +210,9 @@ describe('useIPValidation', () => {
     });
 
     it('manages isValidating state correctly', async () => {
-      let resolveInvoke: (value: InvokeResult) => void;
-      const invokePromise = new Promise<InvokeResult>((resolve) => {
+      type InvokeReturn = Awaited<ReturnType<typeof supabase.functions.invoke>>;
+      let resolveInvoke: (value: InvokeReturn) => void;
+      const invokePromise = new Promise<InvokeReturn>((resolve) => {
         resolveInvoke = resolve;
       });
 

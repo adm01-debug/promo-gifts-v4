@@ -12,7 +12,7 @@ import { loadThemeConfig, applyThemePreset, applyRadius } from '@/lib/theme-pres
  */
 export function ThemeInitializer() {
   const ctx = useContext(ThemeContext);
-  
+
   useEffect(() => {
     // Only run when context is actually available
     if (!ctx) {
@@ -29,4 +29,3 @@ export function ThemeInitializer() {
 
   return null;
 }
-

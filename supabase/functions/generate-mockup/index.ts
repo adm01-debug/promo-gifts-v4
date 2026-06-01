@@ -1,344 +1,330 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
-import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
-import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
-import { z } from 'npm:zod@3.23.8';
-import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { runBotProtection } from '../_shared/bot-protection.ts';
-import { safeJson } from '../_shared/json-parser.ts';
-import { assertAllowedExternalUrl, ExternalUrlError } from '../_shared/url-allowlist.ts';
-import { safeErrorFields } from '../_shared/log-safety.ts';
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { authenticateRequest, authErrorResponse } from "../_shared/auth.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
 
-const MockupBodySchema = z.object({
-  productImageUrl: z.string().url().max(2000),
-  logoBase64: z.string().max(5_000_000).optional(),
-  logoUrl: z.string().url().max(2000).optional(),
-  techniqueName: z.string().max(200).optional(),
-  techniquePrompt: z.string().max(5000).optional(),
-  techniqueId: z.string().max(100).optional(),
-  positionX: z.number().min(0).max(100),
-  positionY: z.number().min(0).max(100),
-  logoWidthCm: z.number().positive().max(200).optional(),
-  logoHeightCm: z.number().positive().max(200).optional(),
-  logoRotation: z.number().min(-360).max(360).optional().default(0),
-  logoScale: z.number().min(1).max(500).optional().default(100),
-  productName: z.string().max(500).optional(),
-});
+// ─ Types ─────────────────────────────────────────────────────────────────
 
-// CORS headers are now dynamic — use getCorsHeaders(req) inside the handler
-// See _shared/cors.ts for the centralized configuration
+interface GenerateMockupBody {
+  productImageUrl?: string;
+  logoBase64?: string;
+  logoUrl?: string;
+  // techniqueName/techniquePrompt are echoed back as metadata only — this function
+  // is a deterministic canvas compositor (the AI/"nano-banana" route was removed),
+  // so the prompt has NO visual effect. Kept for response provenance/back-compat.
+  techniqueName?: string;
+  techniquePrompt?: string;
+  positionX?: number;
+  positionY?: number;
+  logoWidthCm?: number;
+  logoHeightCm?: number;
+  logoRotation?: number;
+  logoScale?: number;
+  productName?: string;
+}
+
+// ─ Validation ──────────────────────────────────────────────────────────────
+
+function validationError(
+  message: string,
+  corsHeaders: Record<string, string>,
+  errorCode?: string,
+): Response {
+  return new Response(
+    JSON.stringify({ error: "validation_failed", errorCode, message }),
+    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
+
+function isValidHttpUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch { return false; }
+}
+
+// SSRF mitigation: optionally restrict which hosts the function will fetch from.
+// Configured via MOCKUP_FETCH_ALLOWED_HOSTS (comma-separated hostnames). When unset
+// the function allows all hosts (logged) so existing product CDNs keep working — set
+// the env var to lock it down once the legitimate domains are confirmed.
+function hostAllowed(rawUrl: string): boolean {
+  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (allow.length === 0) {
+    console.warn("[generate-mockup] MOCKUP_FETCH_ALLOWED_HOSTS not set — allowing all hosts");
+    return true;
+  }
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase();
+    return allow.some((a) => host === a || host.endsWith("." + a));
+  } catch {
+    return false;
+  }
+}
+
+// SVG cannot be rasterised by createImageBitmap in the Deno edge runtime, so it must
+// be rejected up-front with an actionable, machine-readable error code.
+function looksLikeSvg(bytes: Uint8Array): boolean {
+  const head = new TextDecoder("utf-8", { fatal: false })
+    .decode(bytes.subarray(0, 512))
+    .toLowerCase();
+  return head.includes("<svg") || (head.includes("<?xml") && head.includes("svg"));
+}
+
+function svgError(corsHeaders: Record<string, string>): Response {
+  return validationError(
+    "Logos SVG não são suportados. Use PNG ou JPG.",
+    corsHeaders,
+    "SVG_NOT_SUPPORTED",
+  );
+}
+
+// ─ Image helpers ────────────────────────────────────────────────────────────
+
+async function fetchBytes(url: string, ms = 14_000): Promise<Uint8Array> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching image`);
+    return new Uint8Array(await res.arrayBuffer());
+  } finally { clearTimeout(t); }
+}
+
+function base64ToBytes(dataUrl: string): Uint8Array {
+  const b64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// ─ Canvas composition ───────────────────────────────────────────────────────
+
+const CANVAS_PX = 1024;
+
+// BUG-A13 FIX (26/05/2026): OffscreenCanvas pode não estar disponível em todos
+// os runtimes Deno Edge. Adicionado try/catch específico com mensagem clara.
+// BUG-A15 FIX (26/05/2026): Substituídas declarações `var` por `const`/`let`
+// dentro de compositeImages() (era código de era antes do ES6).
+async function compositeImages(
+  productBytes: Uint8Array,
+  logoBytes: Uint8Array,
+  posXPct: number,
+  posYPct: number,
+  logoWRatio: number,
+  logoHRatio: number,
+  rotDeg: number,
+  scalePct: number,
+): Promise<Blob> {
+  // BUG-A13 FIX: Guard explícito para OffscreenCanvas indisponível
+  if (typeof OffscreenCanvas === "undefined") {
+    throw new Error(
+      "OffscreenCanvas não está disponível neste runtime. " +
+      "A função generate-mockup requer Deno com suporte a Canvas. " +
+      "Verifique se a edge function está com a flag --unstable-canvas ativada."
+    );
+  }
+
+  const canvas = new OffscreenCanvas(CANVAS_PX, CANVAS_PX);
+  // deno-lint-ignore no-explicit-any
+  const ctx = canvas.getContext("2d") as any;
+  if (!ctx) throw new Error("OffscreenCanvas 2d context unavailable");
+
+  const [prodBmp, logoBmp] = await Promise.all([
+    // deno-lint-ignore no-explicit-any
+    createImageBitmap(new Blob([productBytes as unknown as any])),
+    // deno-lint-ignore no-explicit-any
+    createImageBitmap(new Blob([logoBytes as unknown as any])),
+  ]);
+
+  // BUG-A15 FIX: const/let em vez de var
+  // Product -- cover-fill crop
+  const pa = prodBmp.width / prodBmp.height;
+  let sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
+  if (pa > 1) { sw = prodBmp.height; sx = (prodBmp.width - sw) / 2; }
+  else        { sh = prodBmp.width;  sy = (prodBmp.height - sh) / 2; }
+  ctx.drawImage(prodBmp, sx, sy, sw, sh, 0, 0, CANVAS_PX, CANVAS_PX);
+
+  // Logo -- positioned, rotated, scaled
+  const cx = (posXPct / 100) * CANVAS_PX;
+  const cy = (posYPct / 100) * CANVAS_PX;
+  const s  = scalePct / 100;
+  const lw = logoWRatio * CANVAS_PX * s;
+  const lh = logoHRatio * CANVAS_PX * s;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((rotDeg * Math.PI) / 180);
+  ctx.drawImage(logoBmp, -lw / 2, -lh / 2, lw, lh);
+  ctx.restore();
+
+  return await canvas.convertToBlob({ type: "image/png" });
+}
+
+// ─ Handler ─────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const killResponse = await assertSwitchEnabled("edge_generate_mockup", req, corsHeaders);
+  if (killResponse) return killResponse;
+
+  let auth: Awaited<ReturnType<typeof authenticateRequest>>;
+  try { auth = await authenticateRequest(req); }
+  catch (e) { return authErrorResponse(e, corsHeaders); }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method_not_allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
+  let body: GenerateMockupBody;
   try {
-    const auth = await authenticateRequest(req);
-    const user = { id: auth.userId };
+    const parsed = await req.json();
+    // Guard: null / array / primitive bodies would throw when we access
+    // body.productImageUrl below — treat them as an empty object so the
+    // validation error path fires cleanly instead of a 500.
+    body = (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
+      ? (parsed as GenerateMockupBody)
+      : ({} as GenerateMockupBody);
+  } catch { return validationError("Request body must be valid JSON", corsHeaders); }
 
-    const protection = await runBotProtection(
-      req,
-      {
-        endpoint: 'generate-mockup',
-        maxRequests: 15,
-        windowSeconds: 60,
-        blockSeconds: 3600,
-        customIdentifier: `user:${user.id}`,
-      },
-      corsHeaders,
-    );
-    if (!protection.allowed) return protection.blockResponse!;
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
+  if (!isValidHttpUrl(body.productImageUrl))
+    return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);
 
-    const rawBody = await safeJson(req);
-    if (!rawBody) {
-      return new Response(JSON.stringify({ error: 'Invalid or empty request body' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const parsed = MockupBodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
+  if (!hostAllowed(body.productImageUrl!))
+    return validationError("productImageUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
 
-    const {
-      productImageUrl,
-      logoBase64,
-      logoUrl,
-      techniqueName,
-      techniquePrompt,
-      techniqueId,
-      positionX,
-      positionY,
-      logoWidthCm,
-      logoHeightCm,
-      logoRotation,
-      logoScale,
-      productName,
-    } = parsed.data;
+  const hasLogo = body.logoBase64 || isValidHttpUrl(body.logoUrl);
+  if (!hasLogo)
+    return validationError("Either logoBase64 or a valid logoUrl is required", corsHeaders);
 
-    // Onda 14 / item 3.7: SSRF allowlist. Rejeita URLs externas fora dos hostnames conhecidos
-    // (Cloudflare Images, fornecedores ativos, Supabase Storage). Bloqueia IPs privados.
-    try {
-      assertAllowedExternalUrl(productImageUrl, 'productImageUrl');
-      if (logoUrl) assertAllowedExternalUrl(logoUrl, 'logoUrl');
-    } catch (err) {
-      if (err instanceof ExternalUrlError) {
-        return new Response(
-          JSON.stringify({
-            error: err.message,
-            errorCode: 'URL_NOT_ALLOWED',
-            field: err.fieldName,
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
-      throw err;
-    }
+  if (body.logoUrl && !body.logoBase64 && !hostAllowed(body.logoUrl))
+    return validationError("logoUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
 
-    let logoImageSrc = logoBase64 || logoUrl;
+  // G1: reject SVG data URLs before any fetch/decode work.
+  if (body.logoBase64 && /^data:image\/svg/i.test(body.logoBase64.trim()))
+    return svgError(corsHeaders);
 
-    if (!logoImageSrc) {
-      return new Response(JSON.stringify({ error: 'Product image and logo are required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+  const posX    = Math.max(0, Math.min(100, body.positionX ?? 50));
+  const posY    = Math.max(0, Math.min(100, body.positionY ?? 50));
+  const logoWR  = Math.max(0.05, Math.min(0.9, (body.logoWidthCm  ?? 5) / 20));
+  const logoHR  = Math.max(0.05, Math.min(0.9, (body.logoHeightCm ?? 3) / 20));
+  const rotation = body.logoRotation ?? 0;
+  const scale    = Math.max(10, Math.min(300, body.logoScale ?? 100));
 
-    const isSvg =
-      typeof logoImageSrc === 'string' &&
-      (logoImageSrc.startsWith('data:image/svg+xml') || logoImageSrc.endsWith('.svg'));
+  const t0 = Date.now();
 
-    if (isSvg) {
+  try {
+    // G10: fetch product image and logo in parallel (was a sequential waterfall up to ~24s).
+    const [prodSettled, logoSettled] = await Promise.allSettled([
+      fetchBytes(body.productImageUrl!, 12_000),
+      (async () =>
+        body.logoBase64 ? base64ToBytes(body.logoBase64) : await fetchBytes(body.logoUrl!, 12_000))(),
+    ]);
+
+    if (prodSettled.status === "rejected") {
       return new Response(
         JSON.stringify({
-          error: 'Logos em formato SVG não são suportados. Por favor, converta para PNG ou JPG.',
-          errorCode: 'SVG_NOT_SUPPORTED',
+          error: "product_image_unavailable",
+          message: (prodSettled.reason as Error)?.message ?? "Falha ao baixar imagem do produto",
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (logoSettled.status === "rejected") {
+      return new Response(
+        JSON.stringify({
+          error: "logo_unavailable",
+          message: (logoSettled.reason as Error)?.message ?? "Falha ao processar o logo",
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    console.log('Generating mockup', {
-      hasProductName: !!productName,
-      hasTechniqueName: !!techniqueName,
-      hasLogoBase64: !!logoBase64,
-      hasLogoUrl: !!logoUrl,
-    });
+    const productBytes = prodSettled.value;
+    const logoBytes = logoSettled.value;
 
-    // Calculate position descriptions
-    const horizontalPos =
-      positionX < 25
-        ? 'far left'
-        : positionX < 40
-          ? 'left of center'
-          : positionX > 75
-            ? 'far right'
-            : positionX > 60
-              ? 'right of center'
-              : 'horizontally centered';
-    const verticalPos =
-      positionY < 25
-        ? 'near the very top'
-        : positionY < 40
-          ? 'in the upper third'
-          : positionY > 75
-            ? 'near the very bottom'
-            : positionY > 60
-              ? 'in the lower third'
-              : 'vertically centered';
-    const positionDesc = `${verticalPos}, ${horizontalPos}`;
-    // logoWidthCm/logoHeightCm são opcionais no schema; usar fallback de 10cm
-    // (tamanho médio típico de área de gravação) quando ausentes.
-    const safeLogoWidthCm = logoWidthCm ?? 10;
-    const safeLogoHeightCm = logoHeightCm ?? 10;
-    const relativeSize = (safeLogoWidthCm + safeLogoHeightCm) / 2 / 30;
-    const sizeDesc = relativeSize < 0.15 ? 'small' : relativeSize < 0.3 ? 'medium-sized' : 'large';
+    // G1: reject SVG content that slipped in via a URL fetch.
+    if (looksLikeSvg(productBytes) || looksLikeSvg(logoBytes)) return svgError(corsHeaders);
 
-    const scaleInstruction =
-      logoScale < 100
-        ? `\n- Logo fill: the logo should fill only ${logoScale}% of the engraving area, leaving proportional empty space around it`
-        : logoScale > 100
-          ? `\n- Logo fill: the logo should OVERFLOW beyond the engraving area boundaries, scaled to ${logoScale}% of the area (the logo appears ${Math.round((logoScale / 100) * 10) / 10}x larger than the base engraving zone)`
-          : '';
-    const rotationInstruction = logoRotation
-      ? `\n- Logo rotation: ${logoRotation}° clockwise from its natural upright orientation`
-      : '';
+    // G4: this is canvas composition (no AI). The name reflects the total time budget.
+    if (Date.now() - t0 > 20_000) {
+      return new Response(
+        JSON.stringify({ error: "composition_timeout", message: "Tempo limite excedido" }),
+        { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
-    // Try to load prompt from database
-    let promptTemplate: string | null = null;
-    let aiModel = 'google/gemini-2.5-flash-image-preview';
-
+    let compositeBlob: Blob;
     try {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      compositeBlob = await compositeImages(
+        productBytes, logoBytes, posX, posY, logoWR, logoHR, rotation, scale,
       );
-
-      // Try technique-specific prompt first
-      if (techniqueId) {
-        const { data: techConfig } = await supabaseClient
-          .from('mockup_prompt_configs')
-          .select('prompt_text, ai_model')
-          .eq('config_key', `technique_${techniqueId}`)
-          .eq('is_active', true)
-          .single();
-
-        if (techConfig) {
-          console.log('Using technique-specific prompt config');
-          // Technique prompt is appended to technique description
-        }
-      }
-
-      // Load main prompt
-      const { data: mainConfig } = await supabaseClient
-        .from('mockup_prompt_configs')
-        .select('prompt_text, ai_model')
-        .eq('config_key', 'main_prompt')
-        .eq('is_active', true)
-        .single();
-
-      if (mainConfig) {
-        promptTemplate = mainConfig.prompt_text;
-        aiModel = mainConfig.ai_model;
-        console.log('Using DB prompt template', { hasModel: !!aiModel });
-      }
-    } catch (dbErr) {
-      console.warn('Could not load prompt from DB, using default:', safeErrorFields(dbErr));
+    } catch (e) {
+      console.error("[generate-mockup] canvas error:", e);
+      // BUG-A13 FIX: distingue erro de canvas indisponível de erro de composição
+      const msg = (e as Error).message;
+      const isRuntimeError = msg.includes("OffscreenCanvas não está disponível");
+      return new Response(
+        JSON.stringify({
+          error: isRuntimeError ? "canvas_runtime_unavailable" : "composition_failed",
+          message: msg,
+        }),
+        { status: isRuntimeError ? 501 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Build the final prompt
-    let prompt: string;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    if (promptTemplate) {
-      // Replace template variables — todos os valores são coagidos para string
-      // (productName/techniquePrompt são opcionais no schema; default '').
-      prompt = promptTemplate
-        .replace(/\{\{productName\}\}/g, productName ?? '')
-        .replace(/\{\{techniquePrompt\}\}/g, techniquePrompt ?? '')
-        .replace(/\{\{positionX\}\}/g, String(positionX))
-        .replace(/\{\{positionY\}\}/g, String(positionY))
-        .replace(/\{\{horizontalPos\}\}/g, horizontalPos)
-        .replace(/\{\{verticalPos\}\}/g, verticalPos)
-        .replace(/\{\{positionDesc\}\}/g, positionDesc)
-        .replace(/\{\{sizeDesc\}\}/g, sizeDesc)
-        .replace(/\{\{logoWidthCm\}\}/g, String(logoWidthCm))
-        .replace(/\{\{logoHeightCm\}\}/g, String(logoHeightCm))
-        .replace(/\{\{scaleInstruction\}\}/g, scaleInstruction)
-        .replace(/\{\{rotationInstruction\}\}/g, rotationInstruction);
-    } else {
-      // Fallback hardcoded prompt (legacy)
-      prompt = `You are a professional product mockup generator. Apply the provided company logo onto the product image at the EXACT position specified.
-
-Product: ${productName}
-Technique: ${techniquePrompt}
-
-EXACT LOGO POSITION (this is critical, do NOT deviate):
-- Horizontal: ${positionX}% from the left edge (${horizontalPos})
-- Vertical: ${positionY}% from the top edge (${verticalPos})
-- The logo must be placed at EXACTLY this coordinate on the product surface: ${positionDesc}
-- Logo size: ${sizeDesc} (approximately ${logoWidthCm}cm x ${logoHeightCm}cm)${scaleInstruction}${rotationInstruction}
-
-STRICT RULES - MUST FOLLOW ALL:
-1. Place the logo at EXACTLY the specified position (${positionX}% horizontal, ${positionY}% vertical). This is the most important rule.
-2. DO NOT move the logo to a different location than specified. If the position says "lower third", the logo MUST be in the lower third, NOT in the middle or upper area.
-3. DO NOT change the product size, proportions, dimensions, framing, or crop in any way.
-4. The output must have the exact same composition and scale as the input product image.
-5. The logo should follow the contours/curves of the product surface naturally.
-6. Apply realistic lighting and shadows matching the product.
-7. Maintain identical background, lighting, and photography style.
-
-Output the final image maintaining the exact same dimensions and aspect ratio as the original product photo.`;
-    }
-
-    console.log('Sending request to Lovable AI Gateway', { model: aiModel });
-
-    const response = await callAiWithTracking({
-      userId: user.id,
-      functionName: 'generate-mockup',
-      model: aiModel,
-      apiKey: LOVABLE_API_KEY,
-      requestBody: {
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: productImageUrl } },
-              { type: 'image_url', image_url: { url: logoImageSrc } },
-            ],
-          },
-        ],
-        modalities: ['image', 'text'],
-      },
-    });
-
-    if (!response.ok) {
-      await response.text();
-      console.error('AI Gateway error:', { status: response.status });
-
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
-
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please add more credits.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
-
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('AI Gateway response received');
-
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-    if (!generatedImage) {
-      console.error('No image in response', {
-        hasChoices: Array.isArray(data?.choices),
-        choiceCount: Array.isArray(data?.choices) ? data.choices.length : 0,
+    const filePath = `${auth.userId}/mockups/${Date.now()}-${crypto.randomUUID()}.png`;
+    const { error: upErr } = await supabase.storage
+      .from("mockup-assets")
+      .upload(filePath, await compositeBlob.arrayBuffer(), {
+        contentType: "image/png",
+        upsert: false,
       });
-      throw new Error('No image generated in response');
+
+    if (upErr) {
+      console.error("[generate-mockup] storage upload error:", upErr);
+      return new Response(
+        JSON.stringify({ error: "storage_upload_failed", message: upErr.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    console.log('Mockup generated successfully');
+    const { data: urlData } = supabase.storage.from("mockup-assets").getPublicUrl(filePath);
+    const mockupUrl = urlData?.publicUrl;
+    if (!mockupUrl) {
+      return new Response(
+        JSON.stringify({ error: "url_resolution_failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const ms = Date.now() - t0;
+    console.log(`[generate-mockup] ok user=${auth.userId} ms=${ms}`);
 
     return new Response(
       JSON.stringify({
-        mockupUrl: generatedImage,
-        message: data.choices?.[0]?.message?.content || 'Mockup generated successfully',
+        ok: true,
+        mockupUrl,
+        mockup_url: mockupUrl,
+        mockup_id: filePath.split("/").pop()?.replace(".png", "") ?? null,
+        generated_at: new Date().toISOString(),
+        generation_ms: ms,
+        technique: body.techniqueName ?? "custom",
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error: unknown) {
-    if (error instanceof QuotaExceededError) {
-      return new Response(
-        JSON.stringify({ error: 'Limite mensal de IA atingido. Contate o administrador.' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-    if ((error as any)?.status === 401 || (error as any)?.status === 403) {
-      return authErrorResponse(error, corsHeaders);
-    }
-    console.error('Error generating mockup:', safeErrorFields(error));
-    const message = error instanceof Error ? error.message : 'Failed to generate mockup';
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+
+  } catch (err: unknown) {
+    console.error("[generate-mockup] unhandled error:", err);
+    return new Response(
+      JSON.stringify({ error: "internal_error", message: err instanceof Error ? err.message : "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

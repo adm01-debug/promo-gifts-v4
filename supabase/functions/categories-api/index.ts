@@ -1,32 +1,51 @@
-import { getCorsHeaders } from '../_shared/cors.ts';
-import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { getCredential } from '../_shared/credentials.ts';
+import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { z } from '../_shared/zod-validate.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 
 const CategoriesRequestSchema = z.object({
   action: z.enum(['tree', 'all', 'descendants', 'products_by_categories']),
-  categoryIds: z.array(z.string().uuid()).max(200).optional(),
+  categoryIds: z.array(z.string()).max(200).optional(),
   includeDescendants: z.boolean().optional(),
 });
 
+// Roles internas validas deste sistema. A role 'agente' historicamente usada
+// no gate NAO existe no banco (as reais sao vendedor/admin/dev); mantemos
+// 'agente' e 'coordenador'/'supervisor' por compatibilidade futura.
+const INTERNAL_ROLES = ['vendedor', 'agente', 'coordenador', 'supervisor', 'admin', 'dev'];
+
 Deno.serve(async (req) => {
+  // CORS preflight MUST be handled BEFORE auth — OPTIONS requests don't
+  // carry auth tokens, so authenticateRequest would reject them with 401.
+  // Chrome requires a 2xx response to OPTIONS for the preflight to pass.
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
   const corsHeaders = getCorsHeaders(req);
-  // Auth: exige vendedor autenticado (agente ou acima)
+
+  // Auth: exige usuario interno autenticado (qualquer role conhecida).
+  // BUGFIX: o gate anterior era requireRole(authCtx, 'agente'), mas 'agente'
+  // nao existe no sistema -> 403 para vendedores E admins (so dev passava).
+  // Dados aqui sao metadados publicos de catalogo, mesmo nivel da materials-api.
   try {
     const authCtx = await authenticateRequest(req);
-    requireRole(authCtx, 'agente');
+    const hasInternalRole = authCtx.userRoles.some((r) => INTERNAL_ROLES.includes(r));
+    if (!hasInternalRole) {
+      return authErrorResponse(
+        { status: 403, message: 'Acesso restrito a usuarios internos' },
+        corsHeaders,
+      );
+    }
   } catch (authErr) {
     return authErrorResponse(authErr, corsHeaders);
   }
 
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // fix: ssot-bypass — credential vault
+    const externalUrl = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const externalKey = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
 
     if (!externalUrl || !externalKey) {
       throw new Error('Missing external database configuration');

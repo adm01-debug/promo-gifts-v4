@@ -2,8 +2,6 @@ import React, { useEffect, type CSSProperties } from 'react';
 import {
   User,
   Menu,
-  Sun,
-  Moon,
   Heart,
   GitCompare,
   Search,
@@ -12,9 +10,11 @@ import {
   Shield,
   MoreHorizontal,
   Palette,
+  BookOpen,
+  Tag,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -28,10 +28,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentSection, useIsScrolled, useToast } from '@/hooks/ui';
+import { useCurrentSection } from '@/hooks/ui/useCurrentSection';
+import { useIsScrolled } from '@/hooks/ui/useScroll';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
-import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
+
 import { useSearchStore } from '@/stores/useSearchStore';
 
 import { StockAlertsIndicator } from '@/components/inventory/StockAlertsIndicator';
@@ -49,12 +52,32 @@ interface HeaderProps {
 }
 
 export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
-  const { theme, actualTheme, setTheme, toggleTheme, isFallback } = useTheme();
+  const { actualTheme, tooltipStyle, setTooltipStyle, isFallback } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const compareCount = useComparisonStore((s) => s.compareCount);
   const { user, profile, role, signOut, rolesLoaded } = useAuth();
+
+  const _isBadgeEnabled = useBadgeVisibilityStore((s) => s.isBadgeEnabled);
+  const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
+  const initializeFromProfile = useBadgeVisibilityStore((s) => s.initializeFromProfile);
+
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) {
+      return actualTheme === 'dark' ? settings.dark : settings.light;
+    }
+    return s.badgesEnabled;
+  });
+
+  // Sync profile preferences with store
+  useEffect(() => {
+    if (profile?.preferences) {
+      initializeFromProfile(profile.preferences);
+    }
+  }, [profile?.preferences, initializeFromProfile]);
   const currentSection = useCurrentSection();
   const { restartTour } = useOnboardingContext();
   const setOpenSearch = useSearchStore((s) => s.setOpen);
@@ -94,12 +117,25 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
     };
   }, []);
 
-  const handleToggleTheme = () => {
-    if (theme === 'auto') {
-      setTheme(actualTheme === 'dark' ? 'light' : 'dark');
-      return;
+  const handleToggleBadges = async () => {
+    const success = await toggleBadges(location.pathname, actualTheme, user?.id);
+    if (!success) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Sincronização',
+        description:
+          'Não foi possível salvar sua preferência no servidor. Ela será mantida apenas nesta sessão.',
+      });
     }
-    toggleTheme();
+  };
+
+  const handleToggleTooltipStyle = () => {
+    const nextStyle = tooltipStyle === 'compact' ? 'standard' : 'compact';
+    setTooltipStyle(nextStyle);
+    toast({
+      title: `Dicas: ${nextStyle === 'compact' ? 'Compacto' : 'Padrão'}`,
+      description: `O tamanho das dicas foi alterado para ${nextStyle === 'compact' ? 'Compacto (10px)' : 'Padrão (13px)'}.`,
+    });
   };
 
   const handleSignOut = async () => {
@@ -175,8 +211,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 {currentSection}
               </span>
             </div>
-            <div className="mx-1 h-8 w-px bg-border/20" />
-            <OrganizationSwitcher />
           </div>
         </div>
 
@@ -195,7 +229,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <span className="hidden sm:inline">Theme Safe-Mode</span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[200px] text-xs">
+              <TooltipContent>
                 O ThemeProvider não foi detectado. O sistema está rodando em modo de segurança com o
                 tema padrão.
               </TooltipContent>
@@ -213,7 +247,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
           </Button>
 
           {/* ── Cluster 1: Transacional (carrinho, notificações, alertas) ── */}
-          <div className="flex items-center gap-1 rounded-2xl border border-border/20 bg-muted/30 px-1.5 py-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 px-1.5 py-1 sm:gap-1.5">
             <CartHeaderButton />
             <div className="mx-0.5 h-4 w-px bg-border/40" />
             <DiscountApprovalHeaderBadge />
@@ -250,7 +284,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="border-border bg-card text-xs">
+              <TooltipContent>
                 Favoritos{' '}
                 <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
                   Alt+F
@@ -278,7 +312,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="border-border bg-card text-xs">
+              <TooltipContent>
                 Comparar{' '}
                 <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
                   Alt+C
@@ -291,26 +325,45 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleToggleTheme}
+                  onClick={handleToggleTooltipStyle}
                   className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
-                  aria-label="Tema claro"
+                  aria-label="Alternar tamanho do tooltip"
                 >
-                  <Sun
-                    className="h-[17px] w-[17px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
-                    strokeWidth={1.75}
-                  />
-                  <Moon
-                    className="absolute h-[17px] w-[17px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
-                    strokeWidth={1.75}
-                  />
-                  <span className="sr-only">Alternar tema</span>
+                  <BookOpen className="h-[17px] w-[17px]" strokeWidth={1.75} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="border-border bg-card text-xs">
-                {actualTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}{' '}
-                <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  Alt+T
-                </kbd>
+              <TooltipContent>
+                Altere o tamanho do texto de Dicas para{' '}
+                {tooltipStyle === 'compact' ? 'Padrão' : 'Compacto'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleBadges}
+                  aria-label={
+                    badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'
+                  }
+                  aria-pressed={badgesEnabled}
+                  className={cn(
+                    'relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-primary/10 hover:text-foreground',
+                    badgesEnabled ? 'text-muted-foreground' : 'text-muted-foreground/40',
+                  )}
+                >
+                  <Tag className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                  {!badgesEnabled && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 h-[1.5px] w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-current"
+                    />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Etiquetas dos Produtos —{' '}
+                {badgesEnabled ? 'Clique para ocultar' : 'Clique para reativar'}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -348,13 +401,16 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem onClick={handleToggleTheme} className="cursor-pointer">
-                  {actualTheme === 'dark' ? (
-                    <Sun className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Moon className="mr-2 h-4 w-4" />
-                  )}
-                  {actualTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+                <DropdownMenuItem onClick={handleToggleTooltipStyle} className="cursor-pointer">
+                  <Palette className="mr-2 h-4 w-4" />
+                  Tooltips: {tooltipStyle === 'compact' ? 'Standard' : 'Compact'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)}
+                  className="cursor-pointer"
+                >
+                  <Tag className="mr-2 h-4 w-4" />
+                  Badges: {badgesEnabled ? 'Ocultar' : 'Exibir'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

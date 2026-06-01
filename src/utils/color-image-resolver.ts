@@ -7,7 +7,8 @@
  * 3. Retorna color.image (thumbnail da variante daquela cor)
  */
 
-import type { Product, ProductColor, ProductVariation } from '@/hooks/products';
+import type { Product, ProductColor } from '@/hooks/products';
+import type { ProductVariation } from '@/types/product-catalog';
 
 export interface ActiveColorFilter {
   groups: string[]; // slugs dos grupos selecionados (ex: ['rosa', 'azul'])

@@ -7,7 +7,9 @@ export interface QuoteComment {
   id: string;
   quote_id: string;
   user_id: string;
+  /** Client-side threading marker. The DB does not persist a parent reference. */
   parent_id: string | null;
+  /** Maps to the DB `comment` column. */
   content: string;
   is_internal?: boolean | null;
   is_edited: boolean;
@@ -54,7 +56,15 @@ export function useQuoteComments(quoteId: string | undefined) {
       }
 
       const enriched: QuoteComment[] = (data || []).map((c) => ({
-        ...c,
+        id: c.id,
+        quote_id: c.quote_id,
+        user_id: c.user_id,
+        parent_id: null,
+        content: c.comment,
+        is_internal: c.is_internal,
+        is_edited: false,
+        created_at: c.created_at ?? '',
+        updated_at: c.updated_at ?? '',
         author_name: profileMap[c.user_id]?.full_name || 'Usuário',
         author_avatar: profileMap[c.user_id]?.avatar_url || null,
       }));
@@ -93,8 +103,7 @@ export function useQuoteComments(quoteId: string | undefined) {
       const { error } = await supabase.from('quote_comments').insert({
         quote_id: quoteId,
         user_id: user.id,
-        parent_id: parentId || null,
-        content,
+        comment: content,
       });
 
       if (error) throw error;
@@ -114,7 +123,7 @@ export function useQuoteComments(quoteId: string | undefined) {
     try {
       const { error } = await supabase
         .from('quote_comments')
-        .update({ content, is_edited: true, updated_at: new Date().toISOString() })
+        .update({ comment: content, updated_at: new Date().toISOString() })
         .eq('id', commentId);
 
       if (error) throw error;

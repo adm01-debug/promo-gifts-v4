@@ -1,8 +1,8 @@
-﻿import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
 
 /**
- * processVoiceTranscript â€” Sends transcript to AI and returns structured action.
+ * processVoiceTranscript — Sends transcript to AI and returns structured action.
  * Uses fetch with AbortController for proper timeout support (15s).
  */
 export async function processVoiceTranscript(transcript: string): Promise<VoiceAgentAction> {
@@ -13,13 +13,13 @@ export async function processVoiceTranscript(transcript: string): Promise<VoiceA
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const authToken = session?.access_token || SUPABASE_PUBLISHABLE_KEY;
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-agent`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/voice-agent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        apikey: SUPABASE_PUBLISHABLE_KEY,
         Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ transcript }),
@@ -47,7 +47,7 @@ function validateAction(action: VoiceAgentAction): VoiceAgentAction {
   if (!action?.action || !action?.response) {
     return {
       action: 'answer',
-      response: action?.response || 'Desculpe, nÃ£o entendi. Pode repetir?',
+      response: action?.response || 'Desculpe, não entendi. Pode repetir?',
       data: {},
     };
   }

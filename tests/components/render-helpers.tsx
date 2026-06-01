@@ -40,6 +40,8 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 
   return {
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "test-anon-key",
     supabase: {
       auth: {
         getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
@@ -87,6 +89,8 @@ vi.mock("@/integrations/supabase/client", () => {
         }),
       },
     },
+    SUPABASE_URL: 'https://test.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
   };
 });
 

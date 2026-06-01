@@ -7,7 +7,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 interface UnsavedChangesDialogProps {
   open: boolean;
@@ -20,7 +20,7 @@ export function UnsavedChangesDialog({
   open,
   onConfirm,
   onCancel,
-  message = "Você tem alterações não salvas. Deseja realmente sair?",
+  message = 'Você tem alterações não salvas. Deseja realmente sair?',
 }: UnsavedChangesDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -31,7 +31,10 @@ export function UnsavedChangesDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Continuar editando</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             Sair sem salvar
           </AlertDialogAction>
         </AlertDialogFooter>

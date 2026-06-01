@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { PromobrindProduct } from '@/lib/external-db';
 
 // Re-export extracted hooks for backwards compatibility
-export { useProductInsights } from "@/hooks/products/useProductInsights";
-export { useClientTopProducts } from "@/hooks/crm/useClientTopProducts";
+export { useProductInsights } from '@/hooks/products/useProductInsights';
+export { useClientTopProducts } from '@/hooks/crm/useClientTopProducts';
 
 interface ProductRecommendation {
   id: string;

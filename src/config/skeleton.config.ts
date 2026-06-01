@@ -1,4 +1,3 @@
-
 /**
  * Configuration for skeleton loading thresholds per module/route.
  * Values are in milliseconds.
@@ -14,12 +13,12 @@ export const SKELETON_THRESHOLDS: Record<string, number> = {
   Tools: 2500,
   Profile: 1000,
   Auth: 1500,
-  
+
   // Specific fallbacks
   Generic: 2000,
-  
+
   // Default threshold if not specified
-  DEFAULT: 2000
+  DEFAULT: 2000,
 };
 
 /**

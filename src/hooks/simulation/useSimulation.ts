@@ -1,3 +1,4 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { type ExternalTechnique } from '@/types/external-db';
 // src/hooks/useSimulation.ts
 // Hook centralizado para lógica do simulador — refactored
@@ -5,12 +6,7 @@ import { type ExternalTechnique } from '@/types/external-db';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  invokeExternalDb,
-  fetchPromobrindProducts,
-  getProductPrice,
-  getProductImageUrl,
-} from '@/lib/external-db';
+import { fetchPromobrindProducts, getProductPrice, getProductImageUrl } from '@/lib/external-db';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
@@ -167,7 +163,7 @@ export function useSimulation() {
   const { data: techniques, isLoading: techniquesLoading } = useQuery({
     queryKey: ['simulator-techniques-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         filters: { is_active: true },
@@ -196,7 +192,7 @@ export function useSimulation() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('personalization_simulations')
-        .select(`*, bitrix_clients (id, name, ramo)`)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -206,7 +202,7 @@ export function useSimulation() {
       }));
     },
   });
-  const savedSimulations = (_savedSimulations ?? []) as SavedSimulation[];
+  const savedSimulations = (_savedSimulations ?? []) as unknown as SavedSimulation[];
 
   // ─── Derived ──────────────────────────────────────────────
   const selectedProduct = useMemo(

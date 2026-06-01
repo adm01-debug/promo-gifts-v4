@@ -1,0 +1,28 @@
+-- ============================================================
+-- Migration: [REMOVIDA / NO-OP] - RLS rewrite em user_roles/order_items/admin_audit_log
+-- ============================================================
+-- Esta migration foi REMOVIDA em 26/05/2026 antes de ser aplicada em produção.
+--
+-- Motivo da remoção:
+--   1. DROP POLICY em massa nas policies existentes (user_roles_delete_guarded,
+--      user_roles_insert_guarded, user_roles_update_guarded, Users read own roles,
+--      order_items_select/insert/update/delete, "Admins or above can insert
+--      audit entries", "Devs can read audit logs") — eliminaria policies em uso
+--      sem revisão de impacto.
+--   2. CREATE POLICY com can_view_all_sales(auth.uid()) — chama função com 1 arg
+--      mas a função no banco tem 0 args → migration falharia em CREATE POLICY.
+--   3. Reescrita assume organization_members como modelo de segregação; o modelo
+--      atual em produção usa policies guarded com lógica diferente.
+--
+-- Se RLS rewrite for desejado, criar PR humano dedicado com:
+--   - levantamento das policies atuais e do que elas garantem
+--   - validação de can_view_all_sales(uuid) (criar overload se necessário)
+--   - testes de regressão por persona antes de aplicar
+--   - aplicação em janela controlada com rollback plan
+--
+-- ⚠️ Plano detalhado em: docs/RLS_REWRITE_PLAN.md
+--
+-- Arquivo mantido para preservar o checksum da sequência de migrations.
+-- ============================================================
+
+SELECT 1 WHERE FALSE; -- no-op

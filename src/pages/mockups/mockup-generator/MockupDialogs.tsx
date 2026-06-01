@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 interface TechniqueChangeDialogProps {
   open: boolean;
@@ -23,10 +23,22 @@ interface TechniqueChangeDialogProps {
 }
 
 export function TechniqueChangeDialog({
-  open, onOpenChange, fromName, toName, hasGeneratedMockup, onConfirm, onCancel,
+  open,
+  onOpenChange,
+  fromName,
+  toName,
+  hasGeneratedMockup,
+  onConfirm,
+  onCancel,
 }: TechniqueChangeDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) onCancel(); }}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) onCancel();
+      }}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Alterar técnica de personalização?</AlertDialogTitle>
@@ -37,16 +49,16 @@ export function TechniqueChangeDialog({
             <span className="block text-sm">
               • O logo será mantido, mas as dimensões serão ajustadas aos limites da nova técnica.
               {hasGeneratedMockup && (
-                <span className="block">• O mockup gerado será descartado (será necessário gerar novamente).</span>
+                <span className="block">
+                  • O mockup gerado será descartado (será necessário gerar novamente).
+                </span>
               )}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
-            Alterar técnica
-          </AlertDialogAction>
+          <AlertDialogAction onClick={onConfirm}>Alterar técnica</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -65,13 +77,14 @@ export function DeleteMockupDialog({ open, onOpenChange, onConfirm }: DeleteDial
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir mockup?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta ação não pode ser desfeita.
-          </AlertDialogDescription>
+          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             Excluir
           </AlertDialogAction>
         </AlertDialogFooter>

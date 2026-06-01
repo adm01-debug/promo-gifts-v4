@@ -3,9 +3,9 @@
  * Consome stock_daily_summary via external-db-bridge.
  * Retorna dados agregados + breakdown por fornecedor para comparação.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
-import type { StockDailySummary } from "@/hooks/intelligence/useStockHistory";
+import type { StockDailySummary } from '@/hooks/intelligence/useStockHistory';
 
 export interface MacroMarketPoint {
   date: string;
@@ -56,7 +56,7 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
       const filters: Record<string, unknown> = {};
       if (supplierId) filters.supplier_id = supplierId;
 
-      const result = await invokeExternalDb<StockDailySummary>({
+      const result = await dbInvoke<StockDailySummary>({
         table: 'stock_daily_summary',
         operation: 'select',
         select: 'summary_date, stock_close, units_depleted, units_restocked, supplier_id',
@@ -68,15 +68,23 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
       // Aggregate by date (for chart)
       const dateMap = new Map<string, MacroMarketPoint>();
       // Per-supplier aggregation
-      const supplierDataMap = new Map<string, {
-        depleted7d: number; depleted30d: number; restocked30d: number;
-        latestStock: number; latestDate: string;
-        dailyDepleted7d: number[]; dailyDepleted30d: number[];
-      }>();
+      const supplierDataMap = new Map<
+        string,
+        {
+          depleted7d: number;
+          depleted30d: number;
+          restocked30d: number;
+          latestStock: number;
+          latestDate: string;
+          dailyDepleted7d: number[];
+          dailyDepleted30d: number[];
+        }
+      >();
       const uniqueSuppliers = new Set<string>();
 
       const now = new Date();
-      const d7 = new Date(now); d7.setDate(d7.getDate() - 7);
+      const d7 = new Date(now);
+      d7.setDate(d7.getDate() - 7);
       const d7Str = d7.toISOString().split('T')[0];
 
       for (const row of result.records) {
@@ -101,9 +109,13 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
         if (row.supplier_id) {
           uniqueSuppliers.add(row.supplier_id);
           const sd = supplierDataMap.get(row.supplier_id) || {
-            depleted7d: 0, depleted30d: 0, restocked30d: 0,
-            latestStock: 0, latestDate: '',
-            dailyDepleted7d: [], dailyDepleted30d: [],
+            depleted7d: 0,
+            depleted30d: 0,
+            restocked30d: 0,
+            latestStock: 0,
+            latestDate: '',
+            dailyDepleted7d: [],
+            dailyDepleted30d: [],
           };
           sd.depleted30d += row.units_depleted;
           sd.restocked30d += row.units_restocked;
@@ -139,16 +151,15 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
         }
       }
 
-      const activeDays = daily.filter(d => d.depleted > 0).length;
+      const activeDays = daily.filter((d) => d.depleted > 0).length;
       const avgDailyDepletion = activeDays > 0 ? totalDepleted30d / activeDays : 0;
 
       // Build supplier metrics
       const suppliers: MacroSupplierMetrics[] = [];
       supplierDataMap.forEach((sd, sid) => {
-        const avg7d = sd.dailyDepleted7d.length > 0
-          ? sd.depleted7d / sd.dailyDepleted7d.length : 0;
-        const avg30d = sd.dailyDepleted30d.length > 0
-          ? sd.depleted30d / sd.dailyDepleted30d.length : 0;
+        const avg7d = sd.dailyDepleted7d.length > 0 ? sd.depleted7d / sd.dailyDepleted7d.length : 0;
+        const avg30d =
+          sd.dailyDepleted30d.length > 0 ? sd.depleted30d / sd.dailyDepleted30d.length : 0;
         const trend = avg30d > 0 ? avg7d / avg30d : 1;
         const daysToStockout = avg7d > 0 ? Math.round(sd.latestStock / avg7d) : null;
 

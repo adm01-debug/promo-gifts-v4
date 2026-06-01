@@ -26,6 +26,10 @@ jobs:
           set -euo pipefail
 
           REQUIRED="Lint, Typecheck & Test"
+          # Vercel preview build status — gate adicional contra deploys vermelhos.
+          # Tolerante: se Vercel ainda não estiver configurado como required,
+          # emite warning ao invés de fail (permite roll-out gradual).
+          VERCEL_REQUIRED="Vercel"
           PROTECTION_URL="https://api.github.com/repos/$REPO/branches/main/protection"
 
           HTTP=$(curl -sS -o /tmp/protection.json -w "%{http_code}" \
@@ -79,3 +83,16 @@ jobs:
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`$REQUIRED\` is required." >> "$GITHUB_STEP_SUMMARY"
+
+          # Verificação adicional (não-bloqueante): Vercel deveria ser required.
+          # Background: 26/05/2026 — 20 deploys Vercel ficaram ERROR durante
+          # 90 minutos enquanto 19 commits adicionais entraram em main sem aviso
+          # porque o check do Vercel não bloqueava merge.
+          if printf '%s\n' "$CONTEXTS" | grep -qiE "(vercel|deploy)"; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ Vercel/deploy check também está required (proteção adicional contra deploys vermelhos)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Nenhum check do Vercel/deploy está required em main. Recomendado adicionar para prevenir merge enquanto deploys estão quebrados (caso 26/05/2026)."
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "⚠️ **Vercel/deploy check NÃO está required em main.** Considere adicionar \`Vercel\` ou \`Vercel Preview Comments\` à lista de required checks. Ver \`docs/BUG_REPORT_20260526.md\` para histórico." >> "$GITHUB_STEP_SUMMARY"
+          fi

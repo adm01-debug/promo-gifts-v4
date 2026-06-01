@@ -92,7 +92,7 @@ export interface ExternalProductVariant {
   length_cm?: number;
   weight_g?: number;
   images?: unknown[];
-  
+
   selected_thumbnail?: string;
   selected_videos?: unknown[];
   bitrix_product_id?: number;

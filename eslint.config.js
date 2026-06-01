@@ -30,6 +30,8 @@ export default [
       '*.config.ts',
       '.eslintrc.cjs',
       '.eslintrc.json',
+      // Gerado pelo Lovable com brace imbalance — não parseável pelo TS/Prettier/ESLint
+      'src/pages/tools/VisualSearchPage.tsx',
     ],
   },
 
@@ -68,8 +70,14 @@ export default [
       // TypeScript strict rules
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/naming-convention': [
         'warn',
@@ -77,7 +85,11 @@ export default [
         { selector: 'typeAlias', format: ['PascalCase'] },
         { selector: 'enum', format: ['PascalCase'] },
         { selector: 'enumMember', format: ['UPPER_CASE', 'PascalCase'] },
-        { selector: 'variable', modifiers: ['const', 'exported'], format: ['camelCase', 'PascalCase', 'UPPER_CASE'] },
+        {
+          selector: 'variable',
+          modifiers: ['const', 'exported'],
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+        },
         { selector: 'function', format: ['camelCase', 'PascalCase'] },
         { selector: 'parameter', format: ['camelCase'], leadingUnderscore: 'allow' },
         { selector: 'typeLike', format: ['PascalCase'] },
@@ -89,7 +101,7 @@ export default [
       'no-duplicate-imports': 'error',
       'no-else-return': 'warn',
       'prefer-const': 'error',
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
 
       // React
       'react/no-danger': 'warn',
@@ -107,11 +119,19 @@ export default [
   // Relaxa regras de produção (idem ao bloco tests/**)
   // ──────────────────────────────────────────────────────────────────────
   {
-    files: ['src/**/__tests__/**/*.{ts,tsx}', 'src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}', 'src/tests/**/*.{ts,tsx}'],
+    files: [
+      'src/**/__tests__/**/*.{ts,tsx}',
+      'src/**/*.test.{ts,tsx}',
+      'src/**/*.spec.{ts,tsx}',
+      'src/tests/**/*.{ts,tsx}',
+    ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'no-console': 'off',
 
       // ──────────────────────────────────────────────────────────────
@@ -143,12 +163,14 @@ export default [
       'no-restricted-syntax': [
         'error',
         {
-          selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
+          selector:
+            "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
           message:
             'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },
         {
-          selector: "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
+          selector:
+            "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
           message:
             'Anti-padrão T-FIX-5b: forEach() com expect() — array vazio faz o teste passar silenciosamente. Adicione expect(array).not.toHaveLength(0) antes do forEach, ou use it.each() para expor cada caso como teste isolado. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },
@@ -172,7 +194,10 @@ export default [
       ...typescript.configs.recommended.rules,
       // E2E tem fixtures, helpers e selectors — relaxar regras de produção:
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off',
       'no-empty-pattern': 'off', // Playwright fixtures: ({}, testInfo) => ...
@@ -207,8 +232,7 @@ export default [
         {
           // page.fill(<sel>, "literal-sem-prefixo-E2E")
           // Detecta literais que NÃO começam com "[E2E" (cobre "[E2E]" global e "[E2E:slug]" escopado).
-          selector:
-            "CallExpression[callee.property.name='fill'] > Literal[value=/^(?!\\[E2E).+/]",
+          selector: "CallExpression[callee.property.name='fill'] > Literal[value=/^(?!\\[E2E).+/]",
           message:
             'Proibido `.fill("literal")` em campos de specs — use `resources.createX()` (fixture) ou `e2eName(label, { prefix })` para garantir cleanup escopado por spec.',
         },
@@ -237,7 +261,10 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off',
       // Tests podem usar mocks/stubs com nomes não convencionais
@@ -252,12 +279,14 @@ export default [
       'no-restricted-syntax': [
         'error',
         {
-          selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
+          selector:
+            "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
           message:
             'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },
         {
-          selector: "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
+          selector:
+            "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
           message:
             'Anti-padrão T-FIX-5b: forEach() com expect() — array vazio faz o teste passar silenciosamente. Adicione expect(array).not.toHaveLength(0) antes do forEach, ou use it.each() para expor cada caso como teste isolado. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },

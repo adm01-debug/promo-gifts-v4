@@ -153,11 +153,15 @@ export function useQuoteTemplates() {
 
       if (fetchError) throw fetchError;
 
-      const sellersWithInfo = (data || []).map((profile) => ({
-        id: profile.user_id,
-        full_name: profile.full_name,
-        email: profile.full_name || 'Vendedor',
-      }));
+      const sellersWithInfo = (data || [])
+        .filter(
+          (profile): profile is typeof profile & { user_id: string } => profile.user_id !== null,
+        )
+        .map((profile) => ({
+          id: profile.user_id,
+          full_name: profile.full_name,
+          email: profile.full_name || 'Vendedor',
+        }));
 
       setSellers(sellersWithInfo);
     } catch (err) {

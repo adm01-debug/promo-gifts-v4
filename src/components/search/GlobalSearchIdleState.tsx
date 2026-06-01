@@ -173,7 +173,7 @@ function NavCard({
 interface GlobalSearchIdleStateProps {
   history: string[];
   popularProducts: Array<{ id: string; name: string; sku: string; view_count: number }>;
-  contextualSuggestions: Array<{ id: string; text: string; icon: string; type: string }>;
+  contextualSuggestions: Array<{ id: string; text: string; icon?: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;
   routeContext: { section: string };
   quickActionsData: Array<QuickAction>;
@@ -338,32 +338,35 @@ export function GlobalSearchIdleState({
         </div>
       )}
 
-      {/* Quick Shortcuts */}
-      <div className="duration-300 animate-in fade-in-0" style={{ animationDelay: '240ms' }}>
-        <SectionHeader
-          icon={<Zap />}
-          label="Atalhos"
-          gradient="bg-gradient-to-br from-brand-primary/12 to-brand-primary/4"
-        />
-        <div className="flex flex-wrap gap-2 px-4 pb-2" role="group" aria-label="Atalhos rápidos">
-          {quickSuggestions.map((qs, i) => (
-            <motion.button
-              key={`q-${i}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15, delay: 0.28 + i * 0.03 }}
-              onClick={() => onSuggestionClick(qs.label)}
-              aria-label={`Buscar ${qs.label}`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-150 [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))] [color:hsl(var(--command-text-muted))] hover:text-foreground hover:shadow-sm hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]"
-            >
-              <span className="text-sm leading-none opacity-70">{qs.icon}</span>
-              <span>{qs.label}</span>
-            </motion.button>
-          ))}
+      {/* Quick Shortcuts — only rendered when there are items to avoid calling .map() on undefined
+          and to prevent showing an empty "Atalhos" section */}
+      {quickSuggestions.length > 0 && (
+        <div className="duration-300 animate-in fade-in-0" style={{ animationDelay: '240ms' }}>
+          <SectionHeader
+            icon={<Zap />}
+            label="Atalhos"
+            gradient="bg-gradient-to-br from-brand-primary/12 to-brand-primary/4"
+          />
+          <div className="flex flex-wrap gap-2 px-4 pb-2" role="group" aria-label="Atalhos rápidos">
+            {quickSuggestions.map((qs, i) => (
+              <motion.button
+                key={`q-${i}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15, delay: 0.28 + i * 0.03 }}
+                onClick={() => onSuggestionClick(qs.label)}
+                aria-label={`Buscar ${qs.label}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-150 [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))] [color:hsl(var(--command-text-muted))] hover:text-foreground hover:shadow-sm hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]"
+              >
+                <span className="text-sm leading-none opacity-70">{qs.icon}</span>
+                <span>{qs.label}</span>
+              </motion.button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Go To — Navigation Grid */}
       <div className="pb-2 duration-300 animate-in fade-in-0" style={{ animationDelay: '320ms' }}>

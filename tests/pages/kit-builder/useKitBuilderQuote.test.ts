@@ -14,7 +14,14 @@ vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("@/lib/kit-builder", () => ({
-  calculateTotalKitPrice: () => ({ total: 250 }),
+  calculateTotalKitPrice: () => ({
+    boxPrice: 150,
+    itemsPrice: 100,
+    personalizationPrice: 0,
+    subtotal: 250,
+    total: 250,
+    unitPrice: 250,
+  }),
 }));
 
 const USER_ID = "vendedor-uuid-7";

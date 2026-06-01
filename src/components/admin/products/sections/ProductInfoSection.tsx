@@ -121,9 +121,7 @@ export function ProductInfoSection({
                   <TooltipTrigger asChild>
                     <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">
-                    SKU já usado em "{duplicateName}"
-                  </TooltipContent>
+                  <TooltipContent>SKU já usado em "{duplicateName}"</TooltipContent>
                 </Tooltip>
               )}
             </div>

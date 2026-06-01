@@ -1,4 +1,5 @@
 {
+  "crossorigin": "use-credentials",
   "name": "Promo Gifts",
   "short_name": "Promo Gifts",
   "description": "Plataforma de gestão de brindes corporativos personalizados — catálogo inteligente, orçamentos e mockups com IA.",

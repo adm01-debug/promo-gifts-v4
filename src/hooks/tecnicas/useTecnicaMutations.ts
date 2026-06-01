@@ -1,11 +1,11 @@
 /**
  * Hook: Mutations de Técnicas
- * 
+ *
  * Responsável por: CRUD operations (create, update, delete, toggle)
  */
+import { dbInvokeSingle } from '@/lib/db/postgrest';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDbSingle } from '@/lib/external-db';
-import { TECNICAS_QUERY_KEYS } from "@/hooks/tecnicas/keys";
+import { TECNICAS_QUERY_KEYS } from '@/hooks/tecnicas/keys';
 import type { PersonalizationTechniqueRaw } from '@/types/tecnica-unificada';
 import { toast } from 'sonner';
 
@@ -18,7 +18,7 @@ export function useTecnicaMutations() {
   // Toggle status
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
-      await invokeExternalDbSingle({
+      await dbInvokeSingle({
         table: 'personalization_techniques',
         operation: 'update',
         id,
@@ -37,7 +37,7 @@ export function useTecnicaMutations() {
   // Create
   const createMutation = useMutation({
     mutationFn: async (data: Partial<PersonalizationTechniqueRaw>) => {
-      await invokeExternalDbSingle({
+      await dbInvokeSingle({
         table: 'personalization_techniques',
         operation: 'insert',
         data,
@@ -55,7 +55,7 @@ export function useTecnicaMutations() {
   // Update
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Partial<PersonalizationTechniqueRaw>) => {
-      await invokeExternalDbSingle({
+      await dbInvokeSingle({
         table: 'personalization_techniques',
         operation: 'update',
         id,
@@ -74,7 +74,7 @@ export function useTecnicaMutations() {
   // Delete
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await invokeExternalDbSingle({
+      await dbInvokeSingle({
         table: 'personalization_techniques',
         operation: 'delete',
         id,
@@ -94,26 +94,27 @@ export function useTecnicaMutations() {
     toggleStatus: toggleStatusMutation.mutate,
     toggleStatusAsync: toggleStatusMutation.mutateAsync,
     isToggling: toggleStatusMutation.isPending,
-    
+
     // Create
     create: createMutation.mutate,
     createAsync: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
-    
+
     // Update
     update: updateMutation.mutate,
     updateAsync: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    
+
     // Delete
     remove: deleteMutation.mutate,
     removeAsync: deleteMutation.mutateAsync,
     isRemoving: deleteMutation.isPending,
-    
+
     // Combined loading state
-    isMutating: toggleStatusMutation.isPending || 
-                createMutation.isPending || 
-                updateMutation.isPending || 
-                deleteMutation.isPending,
+    isMutating:
+      toggleStatusMutation.isPending ||
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
   };
 }

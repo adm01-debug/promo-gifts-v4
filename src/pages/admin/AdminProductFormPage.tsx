@@ -1,19 +1,25 @@
 /**
  * AdminProductFormPage — Página full-screen para criar/editar produtos
  * Substitui o Dialog modal por uma experiência imersiva com sidebar de navegação
+ *
+ * Sprint 3 (26/05/2026):
+ *   BUG-03: engravingFlushRef criado aqui e passado para ProductFormFullscreen.
+ *            Após criação bem-sucedida do produto, chama flushLocalAreas(newProduct.id)
+ *            ANTES de navigate() para que as áreas de gravação configuradas no wizard
+ *            sejam persistidas e apareçam em edit mode.
  */
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { dbInvokeSingle } from '@/lib/db/postgrest';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  invokeExternalDbSingle,
   fetchPromobrindProductById,
   getProductImageUrl,
   getProductPrice,
   getProductStock,
   type PromobrindProduct,
 } from '@/lib/external-db';
-import { useAuditLog } from '@/hooks/admin';
+import { useAuditLog, fetchAuditHistory } from '@/hooks/admin';
 import { toast } from 'sonner';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 import { Loader2, ArrowLeft, History, Pencil, Copy, FileDown } from 'lucide-react';
@@ -22,7 +28,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { PageSEO } from '@/components/seo/PageSEO';
 
-// Lazy load heavy sub-components
 const ProductFormFullscreen = lazyWithRetry(() =>
   import('@/components/admin/products/ProductFormFullscreen').then((m) => ({
     default: m.ProductFormFullscreen,
@@ -31,6 +36,21 @@ const ProductFormFullscreen = lazyWithRetry(() =>
 const AuditHistory = lazyWithRetry(() =>
   import('@/components/audit/AuditHistory').then((m) => ({ default: m.AuditHistory })),
 );
+
+const PRICE_FRESHNESS_THRESHOLD_COLUMN = 'price_freshness_threshold_days';
+
+function isMissingPriceFreshnessThresholdColumn(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /price_freshness_threshold_days|column products\.price_freshness_threshold_days does not exist/i.test(
+    message,
+  );
+}
+
+function withoutPriceFreshnessThreshold(data: Record<string, unknown>): Record<string, unknown> {
+  const fallbackData = { ...data };
+  delete fallbackData[PRICE_FRESHNESS_THRESHOLD_COLUMN];
+  return fallbackData;
+}
 
 export default function AdminProductFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,8 +62,15 @@ export default function AdminProductFormPage() {
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'form' | 'history'>('form');
+  const [lastPriceUpdate, setLastPriceUpdate] = useState<{ date: string; user: string } | null>(
+    null,
+  );
 
-  // Load duplicate data from sessionStorage for new products
+  // BUG-03 FIX: ref populated by ProductEngravingSection with flushLocalAreas.
+  // After product creation, we call this before navigate() so local engraving areas
+  // are persisted and immediately visible when the page re-renders in edit mode.
+  const engravingFlushRef = useRef<((id: string) => Promise<void>) | null>(null);
+
   useEffect(() => {
     if (!isEdit) {
       const stored = sessionStorage.getItem('duplicate_product');
@@ -62,10 +89,8 @@ export default function AdminProductFormPage() {
 
   const { logAction, getChangedFields } = useAuditLog();
 
-  // Load product data for edit mode
   useEffect(() => {
     if (!isEdit) return;
-
     const loadProduct = async () => {
       if (!id) return;
       setIsLoading(true);
@@ -85,8 +110,27 @@ export default function AdminProductFormPage() {
         setIsLoading(false);
       }
     };
-
     loadProduct();
+
+    // Fetch last price freshness update from audit log
+    if (isEdit && id) {
+      const loadHistory = async () => {
+        const logs = await fetchAuditHistory('products', id);
+        const priceLog = logs.find(
+          (log) =>
+            log.action === 'UPDATE' &&
+            log.new_values &&
+            'price_freshness_threshold_days' in log.new_values,
+        );
+        if (priceLog) {
+          setLastPriceUpdate({
+            date: priceLog.created_at,
+            user: priceLog.profiles?.full_name || priceLog.profiles?.email || 'Sistema',
+          });
+        }
+      };
+      loadHistory();
+    }
   }, [id, isEdit, navigate]);
 
   const productToFormData = useCallback((p: PromobrindProduct): Partial<ProductFormData> => {
@@ -108,6 +152,7 @@ export default function AdminProductFormPage() {
       product_type: p.product_type ?? (p.is_kit ? 'kit' : 'product'),
       min_quantity: p.min_quantity ?? 1,
       min_order_quantity: p.min_order_quantity ?? null,
+      price_freshness_threshold_days: p.price_freshness_threshold_days ?? 60,
       height_cm: p.height_cm ?? null,
       width_cm: p.width_cm ?? null,
       length_cm: p.length_cm ?? null,
@@ -167,7 +212,6 @@ export default function AdminProductFormPage() {
       requires_special_shipping: p.requires_special_shipping ?? false,
       shipping_notes: p.shipping_notes ?? '',
       lead_time_days: p.lead_time_days ?? null,
-      // product_type already set above at line ~92
       supply_mode: p.supply_mode ?? '',
       warranty_months: p.warranty_months ?? null,
       gender: p.gender ?? '',
@@ -184,7 +228,6 @@ export default function AdminProductFormPage() {
   const handleFormSubmit = async (data: ProductFormData, images: string[]) => {
     setIsSaving(true);
     try {
-      // Validate duplicate SKU
       const skuChanged = isEdit && product && data.sku !== product.sku;
       if (!isEdit || skuChanged) {
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
@@ -221,6 +264,7 @@ export default function AdminProductFormPage() {
         is_kit: data.product_type === 'kit',
         min_quantity: data.min_quantity ?? 1,
         min_order_quantity: data.min_order_quantity ?? null,
+        price_freshness_threshold_days: data.price_freshness_threshold_days ?? 60,
         is_active: data.is_active,
         active: data.is_active,
         is_featured: data.is_featured,
@@ -231,7 +275,6 @@ export default function AdminProductFormPage() {
         is_bestseller_expires_at: data.is_bestseller_expires_at || null,
         is_new_expires_at: data.is_new_expires_at || null,
         is_on_sale_expires_at: data.is_on_sale_expires_at || null,
-        // is_kit already set above at line ~201
         has_commercial_packaging: data.has_commercial_packaging,
         is_imported: data.is_imported,
         is_textil: data.is_textil,
@@ -266,12 +309,6 @@ export default function AdminProductFormPage() {
         supplier_product_url: data.supplier_product_url || null,
         supply_mode: data.supply_mode || null,
         ipi_rate: data.ipi_rate ?? null,
-        // Campos fiscais que NÃO existem no banco externo — mantidos apenas no formulário local
-        // cfop, csosn, icms_rate, pis_rate, cofins_rate, tax_regime
-        // Campos abaixo não existem no banco externo, mantidos apenas no formulário local
-        // cest, freight_class, default_carrier, shipping_weight_kg, shipping_width_cm,
-        // shipping_height_cm, shipping_length_cm, cubic_weight, requires_special_shipping,
-        // shipping_notes, product_type, warranty_months
         lead_time_days: data.lead_time_days ?? null,
         gender: data.gender || null,
         meta_title: data.meta_title || null,
@@ -295,13 +332,29 @@ export default function AdminProductFormPage() {
         productData.primary_image_url = images[0];
       }
 
+      let savedProductData = productData;
+
       if (isEdit && product) {
-        await invokeExternalDbSingle<PromobrindProduct>({
-          table: 'products',
-          operation: 'update',
-          id: product.id,
-          data: productData,
-        });
+        try {
+          await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'update',
+            id: product.id,
+            data: productData,
+          });
+        } catch (error) {
+          if (!isMissingPriceFreshnessThresholdColumn(error)) throw error;
+          savedProductData = withoutPriceFreshnessThreshold(productData);
+          await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'update',
+            id: product.id,
+            data: savedProductData,
+          });
+          toast.warning(
+            'Produto salvo. A validade do preço usará 60 dias até a coluna existir no banco.',
+          );
+        }
 
         const { oldFields, newFields } = getChangedFields(
           {
@@ -311,10 +364,10 @@ export default function AdminProductFormPage() {
             sale_price: getProductPrice(product),
             stock_quantity: getProductStock(product),
             is_active: product.is_active,
+            price_freshness_threshold_days: product.price_freshness_threshold_days,
           },
-          productData,
+          savedProductData,
         );
-
         if (Object.keys(newFields).length > 0) {
           await logAction({
             action: 'UPDATE',
@@ -326,15 +379,28 @@ export default function AdminProductFormPage() {
         }
 
         toast.success('Produto atualizado com sucesso');
-        // Reload product data
         const refreshed = await fetchPromobrindProductById(product.id);
         if (refreshed) setProduct(refreshed);
       } else {
-        const newProduct = await invokeExternalDbSingle<PromobrindProduct>({
-          table: 'products',
-          operation: 'insert',
-          data: { ...productData, created_at: new Date().toISOString() },
-        });
+        let newProduct: PromobrindProduct;
+        try {
+          newProduct = await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'insert',
+            data: { ...productData, created_at: new Date().toISOString() },
+          });
+        } catch (error) {
+          if (!isMissingPriceFreshnessThresholdColumn(error)) throw error;
+          savedProductData = withoutPriceFreshnessThreshold(productData);
+          newProduct = await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'insert',
+            data: { ...savedProductData, created_at: new Date().toISOString() },
+          });
+          toast.warning(
+            'Produto criado. A validade do preço usará 60 dias até a coluna existir no banco.',
+          );
+        }
 
         if (newProduct) {
           await logAction({
@@ -343,14 +409,28 @@ export default function AdminProductFormPage() {
             entityId: newProduct.id,
             oldValues: null,
             newValues: {
-              sku: productData.sku,
-              name: productData.name,
-              sale_price: productData.sale_price,
-              is_active: productData.is_active,
+              sku: savedProductData.sku,
+              name: savedProductData.name,
+              sale_price: savedProductData.sale_price,
+              is_active: savedProductData.is_active,
             },
           });
+
+          // BUG-03 FIX: flush local engraving areas to DB BEFORE navigating to edit mode.
+          // This prevents areas configured in the wizard from being silently discarded.
+          if (engravingFlushRef.current) {
+            try {
+              await engravingFlushRef.current(newProduct.id);
+            } catch (flushErr) {
+              // Non-fatal: log and continue — user can re-add areas in edit mode
+              console.error('[AdminProductFormPage] Failed to flush engraving areas:', flushErr);
+              toast.warning(
+                'Produto criado, mas algumas áreas de gravação não puderam ser salvas. Verifique na aba de Gravação.',
+              );
+            }
+          }
+
           toast.success('Produto criado! Agora vincule Tags, Ramos, Marketing e Técnicas.');
-          // Navigate to edit mode for the newly created product
           navigate(`/admin/cadastros/produto/${newProduct.id}`, { replace: true });
           return;
         }
@@ -409,9 +489,7 @@ export default function AdminProductFormPage() {
         <h1 data-testid="page-title-admin-produto" className="sr-only">
           {isEdit ? 'Editar Produto' : 'Novo Produto'}
         </h1>
-        {/* Breadcrumbs are rendered by MainLayout's PersistentBreadcrumbs */}
 
-        {/* Header */}
         {isEdit && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -452,8 +530,7 @@ export default function AdminProductFormPage() {
                       toast.success('PDF gerado com sucesso!');
                     }}
                   >
-                    <FileDown className="h-3.5 w-3.5" />
-                    Exportar PDF
+                    <FileDown className="h-3.5 w-3.5" /> Exportar PDF
                   </Button>
                   <Button
                     variant="outline"
@@ -465,8 +542,7 @@ export default function AdminProductFormPage() {
                       navigate('/admin/cadastros/produto/novo');
                     }}
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    Duplicar
+                    <Copy className="h-3.5 w-3.5" /> Duplicar
                   </Button>
                 </>
               )}
@@ -478,12 +554,10 @@ export default function AdminProductFormPage() {
                 >
                   <TabsList className="h-9">
                     <TabsTrigger value="form" className="gap-1.5 text-xs">
-                      <Pencil className="h-3.5 w-3.5" />
-                      Editar
+                      <Pencil className="h-3.5 w-3.5" /> Editar
                     </TabsTrigger>
                     <TabsTrigger value="history" className="gap-1.5 text-xs">
-                      <History className="h-3.5 w-3.5" />
-                      Histórico
+                      <History className="h-3.5 w-3.5" /> Histórico
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -492,7 +566,6 @@ export default function AdminProductFormPage() {
           </div>
         )}
 
-        {/* Content */}
         <Suspense
           fallback={
             <div className="flex items-center justify-center py-16">
@@ -521,6 +594,8 @@ export default function AdminProductFormPage() {
               onCancel={() => navigate('/admin/cadastros')}
               isSaving={isSaving}
               isEdit={isEdit}
+              engravingFlushRef={engravingFlushRef}
+              lastPriceUpdate={lastPriceUpdate}
             />
           ) : (
             isEdit &&

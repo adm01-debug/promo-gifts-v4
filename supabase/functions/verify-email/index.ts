@@ -1,20 +1,35 @@
+// supabase/functions/verify-email/index.ts
+// BUG-EF-001 FIXED: Substituído getUserById(token) por verifyOtp — API correta.
+// BUG-EF-011 FIXED: Import Zod padronizado para npm:zod@3.23.8.
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { z } from "npm:zod@3.23.8";
 
 const BodySchema = z.object({
-  token: z.string().min(1, "Token não fornecido"),
+  // token_hash: gerado pelo Supabase no link de verificação de email
+  // type: tipo de verificação ('email' | 'recovery' | 'invite' | 'magiclink')
+  token_hash: z.string().min(1, "token_hash não fornecido"),
+  type: z.enum(['email', 'recovery', 'invite', 'magiclink']).default('email'),
 });
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('[verify-email] Missing required env vars');
+      return new Response(
+        JSON.stringify({ error: 'Serviço temporariamente indisponível' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let rawBody: unknown;
@@ -22,7 +37,7 @@ Deno.serve(async (req) => {
       rawBody = await req.json();
     } catch {
       return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
+        JSON.stringify({ error: 'JSON inválido no corpo da requisição' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -30,52 +45,44 @@ Deno.serve(async (req) => {
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: parsed.error.issues[0]?.message || "Validation failed" }),
+        JSON.stringify({ error: parsed.error.issues[0]?.message || 'Dados inválidos' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { token } = parsed.data;
+    const { token_hash, type } = parsed.data;
 
-    // Verify the token from email link
-    const { data: { user }, error: verifyError } = await supabase.auth.admin.getUserById(token);
+    // BUG-EF-001 FIX: verifyOtp é a API correta para verificar tokens de email.
+    // Antes: supabase.auth.admin.getUserById(token) ← ERRADO (token ≠ UUID)
+    // Agora: supabase.auth.verifyOtp({ token_hash, type }) ← CORRETO
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash,
+      type,
+    });
 
-    if (verifyError || !user) {
+    if (verifyError || !data.user) {
+      console.error('[verify-email] OTP verification failed:', {
+        code: verifyError?.code ?? 'no_user',
+        message: verifyError?.message ?? 'Nenhum usuário retornado',
+      });
       return new Response(
         JSON.stringify({ error: 'Token inválido ou expirado' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Update user metadata to mark email as verified
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-      email_confirm: true
-    });
-
-    if (updateError) {
-      console.error('Verification update failed:', {
-        code: updateError.code ?? 'unknown',
-        message: updateError.message,
-      });
-      return new Response(
-        JSON.stringify({ error: 'Erro ao confirmar email' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Verification completed');
+    console.log('[verify-email] Email verification completed for user:', data.user.id);
 
     return new Response(
       JSON.stringify({ success: true, message: 'Email verificado com sucesso' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
-    console.error('Verification handler failed:', {
-      message: error instanceof Error ? error.message : 'Internal error',
-    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro interno';
+    console.error('[verify-email] Unexpected error:', message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Erro interno ao verificar email' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

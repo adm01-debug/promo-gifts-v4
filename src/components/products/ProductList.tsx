@@ -1,17 +1,21 @@
-import { useEffect, useState, useCallback } from "react";
-import { ProductListItem } from "./ProductListItem";
-import { BulkActionBar } from "./BulkActionBar";
-import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import type { Product } from "@/hooks/products";
-import type { ActiveColorFilter } from "@/utils/color-image-resolver";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
+import { useEffect, useState, useCallback } from 'react';
+import { ProductListItem } from './ProductListItem';
+import { BulkActionBar } from './BulkActionBar';
+import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import type { Product } from '@/hooks/products';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 export interface ProductListProps {
   products: Product[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -52,39 +56,38 @@ function ProductListItemWrapper({
     return () => clearTimeout(timer);
   }, [index]);
 
-    return (
-      <div
-        className={cn(
-          "relative transition-all duration-300 ease-out group/row",
-          hasAnimated ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3",
-          isSelected && "ring-2 ring-primary/40 rounded-xl bg-primary/5"
-        )}
-      >
-        <div className={cn(
-          "flex items-center gap-2",
-          selectionMode && "pl-1"
-        )}>
-          {selectionMode && (
-            <div className="flex-shrink-0">
-              <SelectionCheckbox
-                checked={isSelected}
-                onChange={() => onToggleSelect(product.id)}
-                size="md"
-              />
-            </div>
-          )}
-
-          <div className="flex-1 min-w-0">
-            <ProductListItem product={product} {...props} />
+  return (
+    <div
+      className={cn(
+        'group/row relative transition-all duration-300 ease-out',
+        hasAnimated ? 'translate-x-0 opacity-100' : '-translate-x-3 opacity-0',
+        isSelected && 'rounded-xl bg-primary/5 ring-2 ring-primary/40',
+      )}
+    >
+      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')}>
+        {selectionMode && (
+          <div className="flex-shrink-0">
+            <SelectionCheckbox
+              checked={isSelected}
+              onChange={() => onToggleSelect(product.id)}
+              size="md"
+            />
           </div>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <ProductListItem product={product} {...props} />
         </div>
       </div>
-    );
+    </div>
+  );
 }
 
 export function ProductList({
   products,
   isLoading = false,
+  isError,
+  onRetry,
   onProductClick,
   onViewProduct,
   onShareProduct,
@@ -101,7 +104,8 @@ export function ProductList({
   onToggleSelect: externalToggleSelect,
 }: ProductListProps) {
   // Determine if we're using external or internal selection state
-  const isExternallyControlled = externalSelectedIds !== undefined && externalToggleSelect !== undefined;
+  const isExternallyControlled =
+    externalSelectedIds !== undefined && externalToggleSelect !== undefined;
 
   // Internal fallback state (only used when NOT externally controlled)
   const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
@@ -109,25 +113,30 @@ export function ProductList({
 
   // Resolve which state to use
   const selectedIds = isExternallyControlled ? externalSelectedIds : internalSelectedIds;
-  const selectionMode = isExternallyControlled ? (externalSelectionMode ?? false) : internalSelectedIds.size > 0;
+  const selectionMode = isExternallyControlled
+    ? (externalSelectionMode ?? false)
+    : internalSelectedIds.size > 0;
 
   // Clear internal selection when products change significantly
   useEffect(() => {
     if (!isExternallyControlled) setInternalSelectedIds(new Set());
   }, [products.length, isExternallyControlled]);
 
-  const toggleSelect = useCallback((id: string) => {
-    if (isExternallyControlled) {
-      externalToggleSelect!(id);
-    } else {
-      setInternalSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    }
-  }, [isExternallyControlled, externalToggleSelect]);
+  const toggleSelect = useCallback(
+    (id: string) => {
+      if (isExternallyControlled) {
+        externalToggleSelect!(id);
+      } else {
+        setInternalSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+      }
+    },
+    [isExternallyControlled, externalToggleSelect],
+  );
 
   const selectAll = useCallback(() => {
     if (!isExternallyControlled) {
@@ -150,7 +159,9 @@ export function ProductList({
         added++;
       }
     });
-    toast.success(`${added} produto${added > 1 ? "s" : ""} adicionado${added > 1 ? "s" : ""} aos favoritos`);
+    toast.success(
+      `${added} produto${added > 1 ? 's' : ''} adicionado${added > 1 ? 's' : ''} aos favoritos`,
+    );
     clearSelection();
   }, [selectedIds, onToggleFavorite, isFavorite, clearSelection]);
 
@@ -160,7 +171,9 @@ export function ProductList({
     ids.forEach((id) => {
       if (!isInCompare?.(id)) onToggleCompare(id);
     });
-    toast.success(`${ids.length} produto${ids.length > 1 ? "s" : ""} adicionado${ids.length > 1 ? "s" : ""} à comparação`);
+    toast.success(
+      `${ids.length} produto${ids.length > 1 ? 's' : ''} adicionado${ids.length > 1 ? 's' : ''} à comparação`,
+    );
     clearSelection();
   }, [selectedIds, onToggleCompare, isInCompare, clearSelection]);
 
@@ -168,61 +181,85 @@ export function ProductList({
     setCollectionModalOpen(true);
   }, []);
 
+  if (isError) {
+    return (
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Ops! Falha ao carregar lista
+        </h3>
+        <p className="mb-6 max-w-md text-sm text-muted-foreground">
+          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+        </p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RotateCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   if (products.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <span className="text-3xl">📦</span>
         </div>
-        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
           Nenhum produto encontrado
         </h3>
-        <p className="text-muted-foreground max-w-md">
+        <p className="max-w-md text-muted-foreground">
           Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
         </p>
       </div>
     );
   }
 
-  const displayProducts = isLoading && products.length === 0
-    ? Array.from({ length: 8 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
-    : products;
-
-  const skeletonVariant = "compact";
-
+  type SkeletonEntry = { id: string; isSkeleton: true };
+  const displayProducts: Array<Product | SkeletonEntry> =
+    isLoading && products.length === 0
+      ? Array.from({ length: 8 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
+      : products;
 
   // Get first selected product for collection modal
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
+  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
   const firstSelectedProduct = products.find((p) => p.id === firstSelectedId);
 
   return (
     <>
       <div className="flex flex-col gap-2">
-        {displayProducts.map((product, index) => (
-          (product as any).isSkeleton ? (
-            <ProductCardSkeleton key={product.id} variant={skeletonVariant} />
+        {displayProducts.map((product, index) =>
+          'isSkeleton' in product && product.isSkeleton ? (
+            <ProductCardSkeleton key={product.id} variant="compact" selectionMode={selectionMode} />
           ) : (
             <ProductListItemWrapper
-              key={product.id}
-              product={product}
+              key={(product as Product).id}
+              product={product as Product}
               index={index}
-              isSelected={selectedIds.has(product.id)}
+              isSelected={selectedIds.has((product as Product).id)}
               selectionMode={selectionMode}
               onToggleSelect={toggleSelect}
-              onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+              onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
               onView={onViewProduct}
               onShare={onShareProduct}
               onFavorite={onFavoriteProduct}
-              isFavorited={isFavorite ? isFavorite(product.id) : false}
+              isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
               onToggleFavorite={onToggleFavorite}
-              isInCompare={isInCompare ? isInCompare(product.id) : false}
+              isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
               onToggleCompare={onToggleCompare}
               canAddToCompare={canAddToCompare}
               highlightColors={highlightColors}
               activeColorFilter={activeColorFilter}
             />
-          )
-        ))}
+          ),
+        )}
       </div>
 
       {/* Only render internal BulkActionBar when NOT externally controlled */}

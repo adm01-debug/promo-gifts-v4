@@ -1,7 +1,7 @@
 /**
  * useInfiniteScroll — observa um elemento sentinela e dispara loadMore quando entra na viewport.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface UseInfiniteScrollOptions {
   hasMore: boolean;
@@ -15,7 +15,7 @@ export function useInfiniteScroll({
   hasMore,
   isLoading,
   onLoadMore,
-  rootMargin = "200px",
+  rootMargin = '200px',
   threshold = 0,
 }: UseInfiniteScrollOptions) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -28,7 +28,7 @@ export function useInfiniteScroll({
       ([entry]) => {
         if (entry.isIntersecting) onLoadMore();
       },
-      { rootMargin, threshold }
+      { rootMargin, threshold },
     );
 
     observer.observe(node);

@@ -42,7 +42,6 @@ export function formatUnitPrice(value: number): string {
  * SSOT para persistência monetária e cálculos de impostos/margens.
  */
 export const round2 = (n: number | null | undefined): number => {
-  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  const v = typeof n === 'number' && Number.isFinite(n) ? n : 0;
   return Math.round((v + Number.EPSILON) * 100) / 100;
 };
-

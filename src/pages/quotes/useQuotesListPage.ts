@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
-import { useQuoteFunnel, useQuotes } from "@/hooks/quotes";
+import { useQuoteFunnel, useQuotes } from '@/hooks/quotes';
 
 export type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'expiring';
 

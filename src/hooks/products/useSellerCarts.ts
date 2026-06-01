@@ -157,17 +157,28 @@ export function useSellerCarts() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Carrinho removido');
     },
+    onError: (err: Error) => {
+      toast.error('Operação falhou', { description: sanitizeError(err) });
+    },
   });
 
   // Add item to cart
   const addItem = useMutation({
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
-      const { data: existing } = await supabase
+      // Dedup pela identidade COMPLETA da variante (produto + cor). Antes casava
+      // só por product_id, o que (a) mesclava a 2ª cor na linha da 1ª — perdendo
+      // a variante — e (b) estourava o .maybeSingle() quando 2+ linhas do mesmo
+      // produto coexistiam. `.eq` não casa NULL no PostgREST: usar `.is` p/ nulos.
+      const colorName = item.color_name ?? null;
+      let lookup = supabase
         .from('seller_cart_items')
         .select('id, quantity')
         .eq('cart_id', cartId)
-        .eq('product_id', item.product_id)
-        .maybeSingle();
+        .eq('product_id', item.product_id);
+      lookup =
+        colorName === null ? lookup.is('color_name', null) : lookup.eq('color_name', colorName);
+
+      const { data: existing } = await lookup.limit(1).maybeSingle();
 
       if (existing) {
         const { error } = await supabase
@@ -198,6 +209,9 @@ export function useSellerCarts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
+    onError: (err: Error) => {
+      toast.error('Não foi possível adicionar ao carrinho', { description: sanitizeError(err) });
+    },
   });
 
   // Remove item
@@ -208,6 +222,9 @@ export function useSellerCarts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível remover o item', { description: sanitizeError(err) });
     },
   });
 
@@ -223,6 +240,9 @@ export function useSellerCarts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
+    onError: (err: Error) => {
+      toast.error('Não foi possível atualizar a quantidade', { description: sanitizeError(err) });
+    },
   });
 
   // Update item notes
@@ -237,18 +257,31 @@ export function useSellerCarts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
+    onError: (err: Error) => {
+      toast.error('Não foi possível salvar a observação', { description: sanitizeError(err) });
+    },
   });
 
   // Update item sort order
   const updateItemSortOrder = useMutation({
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
-      const promises = items.map(({ id, sort_order }) =>
-        supabase.from('seller_cart_items').update({ sort_order }).eq('id', id),
-      );
-      await Promise.all(promises);
+      // Aplica em série e aborta no primeiro erro: evita reordenação parcial
+      // silenciosa (Promise.all engolia falhas individuais sem propagar).
+      for (const { id, sort_order } of items) {
+        const { error } = await supabase
+          .from('seller_cart_items')
+          .update({ sort_order })
+          .eq('id', id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (err: Error) => {
+      // Revalida do servidor para desfazer a ordem otimista que ficou parcial.
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast.error('Não foi possível reordenar os itens', { description: sanitizeError(err) });
     },
   });
 
@@ -264,6 +297,9 @@ export function useSellerCarts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
+    onError: (err: Error) => {
+      toast.error('Não foi possível salvar as observações', { description: sanitizeError(err) });
+    },
   });
 
   // Update cart status
@@ -274,6 +310,9 @@ export function useSellerCarts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível atualizar o status', { description: sanitizeError(err) });
     },
   });
 
@@ -341,6 +380,9 @@ export function useSellerCarts() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Item movido para outro carrinho');
     },
+    onError: (err: Error) => {
+      toast.error('Não foi possível mover o item', { description: sanitizeError(err) });
+    },
   });
 
   // Duplicate item to another cart
@@ -362,12 +404,16 @@ export function useSellerCarts() {
         color_name: item.color_name,
         color_hex: item.color_hex,
         notes: item.notes,
+        sort_order: item.sort_order,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Item duplicado para outro carrinho');
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível duplicar o item', { description: sanitizeError(err) });
     },
   });
 
@@ -403,6 +449,9 @@ export function useSellerCarts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível restaurar os itens', { description: sanitizeError(err) });
     },
   });
 

@@ -13,7 +13,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type EnrichedArea, getTechniqueIcon, getTechniqueColor } from "./types";
+import { type EnrichedArea, getTechniqueIcon, getTechniqueColor } from './types';
 
 interface EngravingAreaCardProps {
   area: EnrichedArea;

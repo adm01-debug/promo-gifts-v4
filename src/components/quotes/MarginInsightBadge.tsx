@@ -79,7 +79,7 @@ export function MarginInsightBadge({
               </span>
             </Badge>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs text-xs">
+          <TooltipContent side="top" className=" ">
             <p className="mb-1 font-medium">Margem de negociação ativa</p>
             <p className="text-muted-foreground">
               Markup interno: <strong>+{effectiveMarkupPercent.toFixed(1)}%</strong>
@@ -101,7 +101,7 @@ export function MarginInsightBadge({
     );
   }
 
-  if (median === null) return null;
+  if (median === null || median === undefined) return null;
 
   const delta = currentMarginPercent - median;
   const isAbove = delta >= 0;
@@ -127,7 +127,7 @@ export function MarginInsightBadge({
             <Info className="h-2.5 w-2.5 opacity-60" />
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs">
+        <TooltipContent side="top" className=" ">
           <p className="mb-1 font-medium">Insight de margem</p>
           <p className="text-muted-foreground">
             Sua mediana histórica: <strong>{median.toFixed(1)}%</strong>

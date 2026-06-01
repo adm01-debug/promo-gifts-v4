@@ -1,9 +1,23 @@
-import { Profiler, type ProfilerOnRenderCallback } from "react";
-import { logger } from "@/lib/logger";
+import { Profiler, type ProfilerOnRenderCallback } from 'react';
+import { logger } from '@/lib/logger';
+
+interface DiagnosticEntry {
+  id: string;
+  phase: string;
+  actualDuration: number;
+  commitTime: number;
+  timestamp: number;
+}
+
+declare global {
+  interface Window {
+    __DIAGNOSTICS__?: DiagnosticEntry[];
+  }
+}
 
 /**
  * Diagnostic Profiler Wrapper
- * 
+ *
  * Usage:
  * <DiagnosticProfiler id="MockupGenerator">
  *   <YourComponent />
@@ -32,7 +46,7 @@ export function DiagnosticProfiler({ id, children }: { id: string; children: Rea
       });
     }
 
-    if (typeof window !== "undefined" && window.__DIAGNOSTICS__) {
+    if (typeof window !== 'undefined' && window.__DIAGNOSTICS__) {
       window.__DIAGNOSTICS__.push({
         id,
         phase,
@@ -51,7 +65,9 @@ export function DiagnosticProfiler({ id, children }: { id: string; children: Rea
 }
 
 // Inicializa o tracker global de diagnóstico se solicitado via URL ?diagnostics=true
-if (typeof window !== "undefined" && window.location.search.includes("diagnostics=true")) {
-  (window as Record<string, unknown>).__DIAGNOSTICS__ = [];
-  console.info("🛠️ Modo de Diagnóstico Ativado. Acesse window.__DIAGNOSTICS__ para ver os logs de renderização.");
+if (typeof window !== 'undefined' && window.location.search.includes('diagnostics=true')) {
+  window.__DIAGNOSTICS__ = [];
+  console.info(
+    '🛠️ Modo de Diagnóstico Ativado. Acesse window.__DIAGNOSTICS__ para ver os logs de renderização.',
+  );
 }

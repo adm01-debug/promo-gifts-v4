@@ -18,7 +18,7 @@ interface Props {
 
 export function OtherSuppliersRow({ product, formatCurrency, onAddToCompare }: Props) {
   const [open, setOpen] = useState(false);
-  const { data: result, isLoading } = useSupplierComparison(open ? product : null);
+  const { result, isLoading } = useSupplierComparison(open ? product : null);
 
   return (
     <div className="rounded-lg border border-border bg-muted/20">

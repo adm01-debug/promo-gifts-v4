@@ -1,28 +1,34 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/ui";
-import { supabase } from "@/integrations/supabase/client";
-import { Ban, Loader2 } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/ui';
+import { supabase } from '@/integrations/supabase/client';
+import { Ban, Loader2 } from 'lucide-react';
 
 interface BlockIpButtonProps {
   defaultIp?: string;
   defaultReason?: string;
-  size?: "sm" | "default";
-  variant?: "outline" | "destructive" | "ghost";
+  size?: 'sm' | 'default';
+  variant?: 'outline' | 'destructive' | 'ghost';
   onBlocked?: () => void;
 }
 
 export function BlockIpButton({
-  defaultIp = "",
-  defaultReason = "",
-  size = "sm",
-  variant = "outline",
+  defaultIp = '',
+  defaultReason = '',
+  size = 'sm',
+  variant = 'outline',
   onBlocked,
 }: BlockIpButtonProps) {
   const [open, setOpen] = useState(false);
@@ -34,27 +40,27 @@ export function BlockIpButton({
 
   const submit = async () => {
     if (!ip.trim()) {
-      toast({ title: "IP obrigatório", variant: "destructive" });
+      toast({ title: 'IP obrigatório', variant: 'destructive' });
       return;
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("block-ip-temporarily", {
+      const { data, error } = await supabase.functions.invoke('block-ip-temporarily', {
         body: { ip: ip.trim(), reason: reason.trim() || undefined, hours },
       });
       if (error) throw error;
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       toast({
-        title: "IP bloqueado",
+        title: 'IP bloqueado',
         description: `${ip} bloqueado por ${hours}h`,
       });
       setOpen(false);
       onBlocked?.();
     } catch (err) {
       toast({
-        title: "Erro ao bloquear",
-        description: err instanceof Error ? err.message : "Erro desconhecido",
-        variant: "destructive",
+        title: 'Erro ao bloquear',
+        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -62,7 +68,16 @@ export function BlockIpButton({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) { setIp(defaultIp); setReason(defaultReason); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setIp(defaultIp);
+          setReason(defaultReason);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button size={size} variant={variant} className="gap-1.5">
           <Ban className="h-3.5 w-3.5" /> Bloquear IP
@@ -110,9 +125,11 @@ export function BlockIpButton({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            Cancelar
+          </Button>
           <Button variant="destructive" onClick={submit} disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+            {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
             Confirmar bloqueio
           </Button>
         </DialogFooter>

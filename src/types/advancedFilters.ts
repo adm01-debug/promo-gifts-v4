@@ -53,43 +53,55 @@ export interface AdvancedFilterState {
   materials: string[];
   techniques: string[];
   tags: string[];
-  
+
   // Sistema hierárquico de cores
   colorGroups: string[];
   colorVariations: string[];
   colorNuances: string[];
-  
+
   // Filtros de marketing
   datasComemorativas: string[];
   publicoAlvo: string[];
   endomarketing: string[];
   ramosAtividade: string[];
   segmentosAtividade: string[];
-  
+
   // Faixa de preço
   priceRange: [number, number];
-  
-  // Tiragem/Quantidade
-  quantityRange: [number, number];
-  
+
+  // BUG-SF-16 FIX: quantityRange foi removido — era declarado mas nunca:
+  // (a) exibido no painel de filtros, (b) serializado na URL, (c) aplicado ao filtro de produtos.
+  // Se implementado no futuro, deve ser adicionado também em FilterState e useFiltersPageState.
+
   // Estoque
   stockStatus: StockFilterOption['value'];
   minStock: number;
-  
+
   // Características
   isKit: boolean;
   isFeatured: boolean;
   isNew: boolean;
   hasPersonalization: boolean;
-  
+
   // Gênero
   gender: string[];
-  
+
   // Prazo de entrega
   maxLeadTimeDays: number | null;
-  
+
   // Ordenação
-  sortBy: 'name' | 'price_asc' | 'price_desc' | 'newest' | 'stock' | 'popularity';
+  // BUG-SF-09 FIX: era 'price_asc'/'price_desc' (underscore) — SORT_OPTIONS usa hyphen ('price-asc').
+  // Adicionados todos os valores reais de SORT_OPTIONS para evitar divergência de tipo.
+  sortBy:
+    | 'name'
+    | 'price-asc'
+    | 'price-desc'
+    | 'newest'
+    | 'stock'
+    | 'popularity'
+    | 'best-seller-supplier'
+    | 'best-seller-promo'
+    | string;
 }
 
 export interface ColorGroupData {

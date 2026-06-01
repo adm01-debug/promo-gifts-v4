@@ -1,0 +1,50 @@
+name: OptimizedImage E2E CI
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/components/ui/OptimizedImage.tsx'
+      - 'src/pages/tools/OptimizedImageDemo.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/optimized-image-*.spec.ts'
+      - '.github/workflows/optimized-image-e2e.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'src/components/ui/OptimizedImage.tsx'
+      - 'src/pages/tools/OptimizedImageDemo.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/optimized-image-*.spec.ts'
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    # /debug/images is now a public route (outside ProtectedRoute) —
+    # no auth setup required. Tests run cleanly against routes-public project.
+    - name: Run OptimizedImage E2E tests
+      run: npx playwright test optimized-image-detection.spec.ts optimized-image-visual.spec.ts --project=routes-public
+      env:
+        CI: true
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key' }}
+
+    - uses: actions/upload-artifact@v5
+      if: always()
+      with:
+        name: optimized-image-report
+        path: playwright-report/
+        retention-days: 7

@@ -6,8 +6,8 @@ import React from "react";
 
 vi.mock("@/contexts/ThemeContext", () => ({
   useTheme: vi.fn().mockReturnValue({
-    theme: "light",
-    actualTheme: "light",
+    theme: "dark",
+    actualTheme: "dark",
     setTheme: vi.fn(),
     toggleTheme: vi.fn(),
   }),

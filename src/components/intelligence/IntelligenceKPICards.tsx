@@ -1,9 +1,9 @@
-import { DollarSign, ShoppingCart, Receipt, TrendingUp, BarChart3 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { KpiCard } from "@/components/ui/kpi-card";
-import { useCommercialKPIs } from "@/hooks/intelligence";
+import { DollarSign, ShoppingCart, Receipt, TrendingUp, BarChart3 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { useCommercialKPIs } from '@/hooks/intelligence';
 
 interface Props {
   days: number;
@@ -14,11 +14,22 @@ interface Props {
   supplierName?: string | null;
 }
 
-export function IntelligenceKPICards({ days, categoryId, supplierId, productId, categoryName, supplierName }: Props) {
+export function IntelligenceKPICards({
+  days,
+  categoryId,
+  supplierId,
+  productId,
+  categoryName,
+  supplierName,
+}: Props) {
   const { data: kpis, isLoading } = useCommercialKPIs(days, categoryId, supplierId, productId);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0,
+    }).format(v);
 
   const filterLabel = categoryName || supplierName || null;
 
@@ -26,8 +37,10 @@ export function IntelligenceKPICards({ days, categoryId, supplierId, productId, 
     return (
       <Card>
         <CardContent className="py-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-lg" />
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -39,19 +52,22 @@ export function IntelligenceKPICards({ days, categoryId, supplierId, productId, 
   return (
     <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
       <CardContent className="py-4">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="mb-3 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Resumo</span>
           {filterLabel && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+            <Badge
+              variant="outline"
+              className="border-primary/30 px-1.5 py-0 text-[10px] text-primary"
+            >
               {filterLabel}
             </Badge>
           )}
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">
+          <Badge variant="secondary" className="ml-auto px-1.5 py-0 text-[10px]">
             {days} dias
           </Badge>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <KpiCard
             icon={DollarSign}
             label="Faturamento"

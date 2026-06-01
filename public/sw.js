@@ -1,9 +1,9 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 1.1.0 (Elite Optimized)
+// Versão: 1.3.0
 
-const CACHE_NAME = 'app-cache-v1';
-const IMAGE_CACHE_NAME = 'images-cache-v1';
+const CACHE_NAME = 'app-cache-v3';
+const IMAGE_CACHE_NAME = 'images-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -21,7 +21,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: limpar caches antigos
+// Activate: limpar TODOS os caches antigos
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME, IMAGE_CACHE_NAME];
   event.waitUntil(
@@ -42,8 +42,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin (except images)
+  // Skip non-GET
   if (request.method !== 'GET') return;
+
+  // Skip cross-origin requests (Supabase, APIs externas, outros domínios Vercel)
+  if (url.origin !== self.location.origin) return;
 
   // Image Strategy: Cache First, Network Fallback
   if (request.destination === 'image' || /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(url.pathname)) {

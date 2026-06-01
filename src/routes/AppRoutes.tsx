@@ -4,19 +4,34 @@ import NProgress from 'nprogress';
 import { performanceTracker } from '@/utils/performance';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 
-import { MainLayout } from '@/components/layout/MainLayout';
 import { getFallback } from '@/components/layout/SkeletonLoaders';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { adminRoutes } from './admin-routes';
 import { homeAndClientRoutes, notFoundRoute } from './client-routes';
 import { productRoutes } from './product-routes';
 import { publicRoutes } from './public-routes';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
+import { OptimizedImageDemo } from './lazy-pages';
 
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.1 });
 
-/** Location-aware Suspense that renders route-specific skeletons. */
+const AppProviders = lazyWithRetry(() =>
+  import('@/components/providers/AppProviders').then((m) => ({ default: m.AppProviders })),
+);
+const MainLayout = lazyWithRetry(() =>
+  import('@/components/layout/MainLayout').then((m) => ({ default: m.MainLayout })),
+);
+
+function ProtectedAppLayout() {
+  return (
+    <AppProviders>
+      <MainLayout />
+    </AppProviders>
+  );
+}
+
 function RouteSuspense({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
 
@@ -24,21 +39,31 @@ function RouteSuspense({ children }: { children: ReactNode }) {
     // Start progress and performance tracking on pathname change (navigation)
     NProgress.start();
     performanceTracker.startRouteTransition(pathname);
-    
-    // Complete progress after a short delay (once the new route should be rendering)
-    const timer = setTimeout(() => {
+
+    // No longer using a fixed delay: we wait for the Suspense to resolve.
+    // NProgress.done() should be called when the component is mounted.
+    // However, since this is a global wrapper, we'll use a safer approach.
+    return () => {
       NProgress.done();
       performanceTracker.endRouteTransition(pathname);
-    }, 200);
-
-    return () => {
-      clearTimeout(timer);
-      NProgress.done();
     };
-
   }, [pathname]);
 
-  return <Suspense fallback={getFallback(pathname)}>{children}</Suspense>;
+  return (
+    <Suspense
+      fallback={<div onAnimationStart={() => NProgress.start()}>{getFallback(pathname)}</div>}
+    >
+      <RouteSuspenseDone>{children}</RouteSuspenseDone>
+    </Suspense>
+  );
+}
+
+/** Helper to signal completion when Suspense resolves */
+function RouteSuspenseDone({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    NProgress.done();
+  }, []);
+  return <>{children}</>;
 }
 
 /**
@@ -46,6 +71,7 @@ function RouteSuspense({ children }: { children: ReactNode }) {
  *
  * Composition:
  * - `publicRoutes` (login, reset, callback, unauthorized) — no auth required
+ * - `debugRoutes` — dev/QA tools, no auth, publicly accessible in all envs
  * - `<ProtectedRoute />` wrapper, with sub-groups inside:
  *   - `productRoutes` — products, filters, novelties, favorites, etc
  *   - `quoteRoutes` — orçamentos
@@ -62,8 +88,16 @@ export function AppRoutes() {
       <Routes>
         {publicRoutes}
 
+        {/* Debug / QA routes — no auth required in any environment.
+            These pages do not expose sensitive user data and must be
+            accessible to E2E tests (Playwright routes-public project)
+            and to local development tooling without a logged-in session.
+            /debug/images was previously inside toolsRoutes (ProtectedRoute)
+            which caused E2E specs to fail with auth redirect. */}
+        <Route path="/debug/images" element={<OptimizedImageDemo />} />
+
         <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
+          <Route element={<ProtectedAppLayout />}>
             {productRoutes}
             {quoteRoutes}
             {adminRoutes}

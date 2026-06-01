@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { untypedFrom } from '@/lib/supabase-untyped';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface TrackViewParams {
@@ -15,6 +15,13 @@ interface TrackSearchParams {
   filtersUsed?: Record<string, unknown>;
 }
 
+interface TrackSortParams {
+  sortBy: string;
+  previousSortBy?: string;
+  resultsCount: number;
+  hasSearch: boolean;
+}
+
 export function useProductAnalytics() {
   const { user } = useAuth();
 
@@ -25,7 +32,7 @@ export function useProductAnalytics() {
       try {
         // Using type assertion since table was just created
         // Silently insert - all errors are ignored for analytics to not affect UX
-        await untypedFrom('product_views').insert({
+        await supabase.from('product_views').insert({
           product_id: productId,
           product_sku: productSku,
           product_name: productName,
@@ -42,16 +49,15 @@ export function useProductAnalytics() {
   );
 
   const trackSearch = useCallback(
-    async ({ searchTerm, resultsCount, filtersUsed = {} }: TrackSearchParams) => {
+    async ({ searchTerm, resultsCount }: TrackSearchParams) => {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
         // Silently insert - all errors are ignored for analytics to not affect UX
-        await untypedFrom('search_analytics').insert({
+        await supabase.from('search_analytics').insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
-          seller_id: user.id,
-          filters_used: filtersUsed,
+          user_id: user.id,
         });
         // Note: We intentionally ignore ALL errors for analytics
       } catch {
@@ -61,5 +67,31 @@ export function useProductAnalytics() {
     [user?.id],
   );
 
-  return { trackProductView, trackSearch };
+  /**
+   * trackSort — Records sort events in catalog_analytics table.
+   */
+  const trackSort = useCallback(
+    async ({ sortBy, previousSortBy, resultsCount, hasSearch }: TrackSortParams) => {
+      if (!user?.id) return;
+
+      try {
+        await supabase.from('catalog_analytics').insert({
+          user_id: user.id,
+          event_type: 'sort',
+          event_data: {
+            sortBy,
+            previousSortBy,
+            resultsCount,
+            hasSearch,
+            url: window.location.href,
+          },
+        });
+      } catch {
+        // Silently ignore all tracking errors
+      }
+    },
+    [user?.id],
+  );
+
+  return { trackProductView, trackSearch, trackSort };
 }

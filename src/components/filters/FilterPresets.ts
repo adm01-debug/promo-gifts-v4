@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 import type { FilterState } from './FilterPanel';
 
 export interface FilterPreset {
@@ -44,12 +45,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: row.name,
           description: row.description ?? undefined,
           filters: row.filter_config as unknown as FilterState,
-          context: row.category,
-          is_default: row.is_default,
+          context: row.category ?? context,
+          is_default: row.is_default ?? false,
           icon: row.icon ?? undefined,
           color: row.color ?? undefined,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
+          created_at: row.created_at ?? '',
+          updated_at: row.updated_at ?? '',
         })),
       );
     } catch (err) {
@@ -88,7 +89,9 @@ export function useFilterPresets(context: string = 'catalog') {
             user_id: user.id,
             name: preset.name,
             description: preset.description || null,
-            filter_config: preset.filters as unknown as Record<string, unknown>,
+            // FilterState is a flat, JSON-serializable object; widen via unknown
+            // because TS won't structurally match it to Json (no index signature).
+            filter_config: preset.filters as unknown as Json,
             category: context,
             icon: preset.icon || null,
             color: preset.color || null,
@@ -103,12 +106,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: data.name,
           description: data.description ?? undefined,
           filters: data.filter_config as unknown as FilterState,
-          context: data.category,
-          is_default: data.is_default,
+          context: data.category ?? context,
+          is_default: data.is_default ?? false,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          created_at: data.created_at ?? '',
+          updated_at: data.updated_at ?? '',
         };
 
         setPresets((prev) => [newPreset, ...prev]);
@@ -134,7 +137,7 @@ export function useFilterPresets(context: string = 'catalog') {
           .update({
             ...restUpdates,
             updated_at: new Date().toISOString(),
-            ...(filterState !== undefined ? { filter_config: filterState as unknown } : {}),
+            ...(filterState !== undefined ? { filter_config: filterState as unknown as Json } : {}),
           })
           .eq('id', id)
           .select()
@@ -147,12 +150,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: data.name,
           description: data.description ?? undefined,
           filters: data.filter_config as unknown as FilterState,
-          context: data.category,
-          is_default: data.is_default,
+          context: data.category ?? context,
+          is_default: data.is_default ?? false,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          created_at: data.created_at ?? '',
+          updated_at: data.updated_at ?? '',
         };
 
         setPresets((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -163,7 +166,7 @@ export function useFilterPresets(context: string = 'catalog') {
         return null;
       }
     },
-    [],
+    [context],
   );
 
   const deletePreset = useCallback(async (id: string): Promise<boolean> => {
@@ -186,16 +189,27 @@ export function useFilterPresets(context: string = 'catalog') {
       if (!user) return;
       try {
         // Remove default from all presets of this context
-        await supabase.from('saved_filters').update({ is_default: false }).eq('category', context);
+        const { error: resetError } = await supabase
+          .from('saved_filters')
+          .update({ is_default: false })
+          .eq('category', context);
+
+        if (resetError) throw resetError;
 
         // Set selected as default
         if (id) {
-          await supabase.from('saved_filters').update({ is_default: true }).eq('id', id);
+          const { error: setError } = await supabase
+            .from('saved_filters')
+            .update({ is_default: true })
+            .eq('id', id);
+
+          if (setError) throw setError;
         }
 
         setPresets((prev) => prev.map((p) => ({ ...p, is_default: p.id === id })));
       } catch (err) {
         console.error('Error setting default preset:', err);
+        toast.error('Erro ao definir preset padrão');
       }
     },
     [user, context],

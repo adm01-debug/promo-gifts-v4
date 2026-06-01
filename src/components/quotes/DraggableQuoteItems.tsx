@@ -219,11 +219,11 @@ function SortableItem({
                       className="h-8 w-28 text-sm"
                     />
                     <PriceFreshnessBadge
-                      updatedAt={item.price_updated_at}
+                      priceUpdatedAt={item.price_updated_at}
                       confirmedAt={item.price_confirmed_at}
                       thresholdDays={item.price_freshness_threshold_days}
                       onConfirm={onConfirmPrice}
-                      size="sm"
+                      variant="compact"
                     />
                   </div>
                 </div>

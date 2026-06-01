@@ -14,15 +14,15 @@ export interface Product {
   subcategory: string | null;
   supplier_id: string | null;
   supplier_name: string | null;
-  image_url?: string | null;               // Primary image (convenience, = images[0])
-  og_image_url?: string | null;            // OG image for social sharing
-  category?: ProductCategoryRef | null;    // Objeto aninhado (join com categories)
-  supplier?: ProductSupplierRef | null;    // Objeto aninhado (join com suppliers)
-  images: string[] | null;                 // Array de URLs
-  colors: ProductColor[] | null;           // JSONB array
-  materials: string[] | null;              // JSONB array
-  variations: ProductVariation[] | null;   // JSONB array
-  tags: Record<string, unknown> | null;    // JSONB
+  image_url?: string | null; // Primary image (convenience, = images[0])
+  og_image_url?: string | null; // OG image for social sharing
+  category?: ProductCategoryRef | null; // Objeto aninhado (join com categories)
+  supplier?: ProductSupplierRef | null; // Objeto aninhado (join com suppliers)
+  images: string[] | null; // Array de URLs
+  colors: ProductColor[] | null; // JSONB array
+  materials: string[] | null; // JSONB array
+  variations: ProductVariation[] | null; // JSONB array
+  tags: Record<string, unknown> | null; // JSONB
   featured: boolean | null;
   new_arrival: boolean | null;
   on_sale: boolean | null;

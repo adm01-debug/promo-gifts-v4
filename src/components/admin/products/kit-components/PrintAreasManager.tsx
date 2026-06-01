@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { PrintAreaForm } from './PrintAreaForm';
 import { fetchPrintAreas, createPrintArea, updatePrintArea, deletePrintArea } from './api';
-import { type PrintArea, type PrintAreaFormData, EMPTY_PRINT_AREA } from "./types";
+import { type PrintArea, type PrintAreaFormData, EMPTY_PRINT_AREA } from './types';
 
 export function PrintAreasManager({
   componentId,

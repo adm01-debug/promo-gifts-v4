@@ -6,7 +6,7 @@ export function useBulkSelection<T extends { id: string }>(items: T[]) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleItem = useCallback((id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -21,7 +21,7 @@ export function useBulkSelection<T extends { id: string }>(items: T[]) {
     if (selectedIds.size === items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(items.map(item => item.id)));
+      setSelectedIds(new Set(items.map((item) => item.id)));
     }
   }, [items, selectedIds.size]);
 
@@ -29,9 +29,12 @@ export function useBulkSelection<T extends { id: string }>(items: T[]) {
     setSelectedIds(new Set());
   }, []);
 
-  const isSelected = useCallback((id: string) => {
-    return selectedIds.has(id);
-  }, [selectedIds]);
+  const isSelected = useCallback(
+    (id: string) => {
+      return selectedIds.has(id);
+    },
+    [selectedIds],
+  );
 
   const isAllSelected = items.length > 0 && selectedIds.size === items.length;
   const isSomeSelected = selectedIds.size > 0 && selectedIds.size < items.length;
@@ -44,6 +47,6 @@ export function useBulkSelection<T extends { id: string }>(items: T[]) {
     clearSelection,
     isSelected,
     isAllSelected,
-    isSomeSelected
+    isSomeSelected,
   };
 }

@@ -34,7 +34,6 @@ import {
   Settings,
   Plug,
   ChevronsDownUp,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +42,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarBrandHeader } from './sidebar/SidebarBrandHeader';
 import { FocusTrap } from '@/components/ui/FocusTrap';
 import { useMediaQuery } from '@/hooks/ui/useMediaQuery';
-
 import { SidebarNavGroup, type NavGroup } from './sidebar/SidebarNavGroup';
 import { RestrictedRouteNotice } from './sidebar/RestrictedRouteNotice';
 import { isDevOnlyPath, isAdminOnlyPath } from '@/lib/navigation/restricted-routes';
@@ -99,6 +97,7 @@ const navGroups: NavGroup[] = [
       { icon: Sparkles, label: 'Magic Up', href: '/magic-up' },
       { icon: Crosshair, label: 'Match', href: '/match' },
       { icon: Boxes, label: 'Kit Maker', href: '/montar-kit' },
+      { icon: Zap, label: 'Raio X', href: '/raio-x' },
       { icon: Calculator, label: 'Simulador', href: '/simulador', shortcut: 'Alt+S' },
       { icon: BarChart3, label: 'Preços por Tiragem', href: '/simulador-precos' },
       { icon: DollarSign, label: 'Busca por Preço', href: '/busca-preco' },
@@ -111,7 +110,9 @@ const navGroups: NavGroup[] = [
     defaultOpen: false,
     items: [
       { icon: Brain, label: 'Inteligência de Mercado', href: '/inteligencia-comercial' },
-      { icon: Sparkles, label: 'Estoque', href: '/estoque' },
+      // NOTE: '/estoque' removido deste grupo -- duplicata com catalog/Estoque.
+      // href único por item evita que computeOpenGroups abra dois grupos simultaneamente
+      // (root cause do stack overflow em 25/05/2026).
       { icon: Activity, label: 'Tendências', href: '/tendencias' },
     ],
   },
@@ -150,9 +151,29 @@ const navGroups: NavGroup[] = [
       },
       { icon: ShieldCheck, label: 'Auditoria RBAC', href: '/admin/rbac-rotas', devOnly: true },
       { icon: Activity, label: 'Status do Sistema', href: '/admin/status', devOnly: true },
+      {
+        icon: SlidersHorizontal,
+        label: 'Observabilidade',
+        href: '/admin/observabilidade',
+        devOnly: true,
+      },
     ],
   },
 ];
+
+/**
+ * Pure module-level function — called once on mount and on route change.
+ * Returns a new object only when values differ, so React bails out via
+ * functional-update reference equality check.
+ */
+function computeOpenGroups(pathname: string): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  navGroups.forEach((group) => {
+    const hasActive = group.items.some((item) => isNavItemActive(pathname, item.href, item.exact));
+    next[group.id] = hasActive || (group.defaultOpen ?? false);
+  });
+  return next;
+}
 
 export const SidebarReorganized = React.memo(
   React.forwardRef<HTMLElement, SidebarProps>(function SidebarReorganized(
@@ -163,60 +184,45 @@ export const SidebarReorganized = React.memo(
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    // Propaga --sidebar-w no :root para que o Header fixo possa offset
-    // corretamente da largura da sidebar em desktop (lg+).
     useEffect(() => {
       document.documentElement.style.setProperty('--sidebar-w', isCollapsed ? '4rem' : '16rem');
     }, [isCollapsed]);
-    const _isItemActive = (href: string, exact?: boolean) =>
-      isNavItemActive(location.pathname, href, exact);
 
-    // Compute which groups should be auto-opened for the current route.
-    // Derived synchronously from `location` so back/forward navigation never
-    // flickers (no post-commit useEffect lag).
-    const computeAutoOpen = useCallback(() => {
-      const next: Record<string, boolean> = {};
-      navGroups.forEach((group) => {
-        const hasActive = group.items.some((item) =>
-          isNavItemActive(location.pathname, item.href, item.exact),
-        );
-        next[group.id] = hasActive || (group.defaultOpen ?? false);
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+      computeOpenGroups(location.pathname),
+    );
+
+    const prevPathRef = React.useRef(location.pathname);
+    useEffect(() => {
+      if (prevPathRef.current === location.pathname) return;
+      prevPathRef.current = location.pathname;
+      const next = computeOpenGroups(location.pathname);
+      setOpenGroups((prev) => {
+        const changed = Object.keys(next).some((k) => prev[k] !== next[k]);
+        return changed ? next : prev;
       });
-      return next;
     }, [location.pathname]);
-
-    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(computeAutoOpen);
-
-    // Track the last pathname we synced so we only override user-toggled state
-    // when the route actually changes (incl. via popstate / back-forward).
-    const lastSyncedPathRef = React.useRef(location.pathname);
-    if (lastSyncedPathRef.current !== location.pathname) {
-      lastSyncedPathRef.current = location.pathname;
-      // setState during render is safe here: React bails out on equal state and
-      // schedules the update before paint, eliminating the 1-frame flicker.
-      setOpenGroups(computeAutoOpen());
-    }
 
     const { isAdmin, isDev } = useAuth();
     const isMobile = useMediaQuery('(max-width: 1023px)');
 
-    // Pending discount approval count for admin badge
     const { data: pendingApprovalCount } = useQuery({
       queryKey: ['pending-discount-approvals-count'],
       queryFn: async () => {
         const { count } = await supabase
-          // rls-allow: admin-only badge; RLS filtra
+          // rls-allow: admin-only badge query, guarded by `enabled: isAdmin`
           .from('discount_approval_requests')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
         return count || 0;
       },
-      enabled: isAdmin,
+      enabled: Boolean(isAdmin),
       refetchInterval: 30_000,
       staleTime: 15_000,
+      retry: 0,
+      retryOnMount: false,
     });
 
-    // Inject badge into navGroups dynamically
     const enrichedNavGroups = useMemo(() => {
       if (!isAdmin || !pendingApprovalCount) return navGroups;
       return navGroups.map((group) => {
@@ -232,7 +238,8 @@ export const SidebarReorganized = React.memo(
       });
     }, [isAdmin, pendingApprovalCount]);
 
-    const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+    const toggleCollapse = () => setIsCollapsed((c) => !c);
+
     const collapseAllGroups = () => {
       setOpenGroups((prev) => {
         const collapsed: Record<string, boolean> = {};
@@ -243,18 +250,15 @@ export const SidebarReorganized = React.memo(
       });
     };
 
-    // Global keyboard shortcuts for navigation
     useEffect(() => {
       const shortcutMap: Record<string, string> = {};
       navGroups.forEach((g) =>
         g.items.forEach((item) => {
           if (item.shortcut) {
-            const key = item.shortcut.replace('Alt+', '').toLowerCase();
-            shortcutMap[key] = item.href;
+            shortcutMap[item.shortcut.replace('Alt+', '').toLowerCase()] = item.href;
           }
         }),
       );
-
       const handler = (e: KeyboardEvent) => {
         if (e.altKey && !e.ctrlKey && !e.metaKey) {
           const target = e.target as HTMLElement;
@@ -277,26 +281,15 @@ export const SidebarReorganized = React.memo(
 
     const hasAnyGroupOpen = Object.values(openGroups).some(Boolean);
 
-    // Receives the next open value from Radix Collapsible. Trusting Radix's
-    // value (instead of inverting our own) keeps state consistent if the
-    // Collapsible re-emits the same state due to focus/escape interactions.
-    const toggleGroup = (groupId: string, next: boolean) => {
+    const toggleGroup = useCallback((groupId: string, next: boolean) => {
       setOpenGroups((prev) => (prev[groupId] === next ? prev : { ...prev, [groupId]: next }));
-    };
+    }, []);
 
-    // Defense-in-depth: além das flags declarativas (`devOnly`/`adminOnly`),
-    // o SSOT `restricted-routes.ts` é consultado por `href`. Assim:
-    //  - rota dev-only ⇒ visível só p/ isDev (mesmo se faltou marcar a flag)
-    //  - rota admin-only ⇒ visível só p/ isAdmin (= supervisor OU dev)
-    //  - supervisor SEM dev nunca enxerga itens técnicos, mesmo que outro
-    //    desenvolvedor os marque erroneamente como `adminOnly`.
     const isItemVisible = useCallback(
       (item: { href?: string; adminOnly?: boolean; devOnly?: boolean }): boolean => {
         const href = item.href ?? '';
-        // 1) Flags declarativas
         if (item.devOnly && !isDev) return false;
         if (item.adminOnly && !isAdmin) return false;
-        // 2) SSOT por path (defesa contra flags faltantes/erradas)
         if (href && isDevOnlyPath(href) && !isDev) return false;
         if (href && isAdminOnlyPath(href) && !isAdmin) return false;
         return true;
@@ -312,7 +305,6 @@ export const SidebarReorganized = React.memo(
             ...g,
             items: g.items.filter(isItemVisible).map((i) => ({
               ...i,
-              // Filtra também os filhos (ex.: subitens de Cadastros)
               children: i.children?.filter(isItemVisible),
             })),
           }))
@@ -322,7 +314,6 @@ export const SidebarReorganized = React.memo(
 
     return (
       <>
-        {/* Mobile overlay */}
         {isOpen && (
           <div
             className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
@@ -330,19 +321,19 @@ export const SidebarReorganized = React.memo(
             aria-hidden="true"
           />
         )}
-
-        {/* Sidebar */}
         <aside
           ref={ref}
           data-tour="sidebar"
           role="navigation"
           aria-label="Menu principal"
-          style={{ ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem' }}
+          style={{
+            ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem',
+            transitionTimingFunction: 'cubic-bezier(0.23,1,0.32,1)',
+          }}
           className={cn(
-            'ease-[cubic-bezier(0.23,1,0.32,1)] theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
+            'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
             isCollapsed ? 'overflow-visible' : 'overflow-hidden',
             'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
-
             isOpen
               ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]'
               : '-translate-x-full lg:translate-x-0',
@@ -358,20 +349,17 @@ export const SidebarReorganized = React.memo(
                 isCollapsed && 'overflow-visible',
               )}
             >
-              {/* Brand Header */}
               <div className="group/brand relative border-b border-white/[0.05] bg-gradient-to-b from-white/[0.02] to-transparent">
                 <SidebarBrandHeader isCollapsed={isCollapsed} />
                 <div className="pointer-events-none absolute inset-0 rounded-full bg-primary/5 opacity-0 blur-2xl transition-opacity duration-500 group-hover/brand:opacity-100" />
               </div>
-
-              {/* Collapse controls (desktop) */}
               <div className="mb-3 mt-4 hidden items-center justify-between gap-2 px-3 lg:flex">
                 {!isCollapsed && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      'h-8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
+                      'h%8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
                       'text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary',
                       'rounded-xl opacity-60 transition-all duration-300 hover:opacity-100',
                       !hasAnyGroupOpen && 'invisible',
@@ -387,7 +375,7 @@ export const SidebarReorganized = React.memo(
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    'h-8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
+                    'h%8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
                     'rounded-xl transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary',
                     isCollapsed && 'mx-auto',
                   )}
@@ -402,11 +390,7 @@ export const SidebarReorganized = React.memo(
                   )}
                 </Button>
               </div>
-
-              {/* Aviso quando vendedor/admin tenta abrir rota técnica via URL/histórico */}
               <RestrictedRouteNotice isCollapsed={isCollapsed} />
-
-              {/* Navigation Groups */}
               <nav
                 className={cn(
                   'scrollbar-thin min-h-0 flex-1 px-2',
@@ -416,7 +400,6 @@ export const SidebarReorganized = React.memo(
               >
                 {filteredGroups.map((group, index) => (
                   <div key={group.id}>
-                    {/* Separator between groups */}
                     {index > 0 && !isCollapsed && (
                       <div className="mx-2 my-2.5 h-px bg-sidebar-border/40" />
                     )}
@@ -424,7 +407,6 @@ export const SidebarReorganized = React.memo(
                       <div className="mx-auto my-1.5 h-px w-4 bg-sidebar-border/30" />
                     )}
                     <SidebarNavGroup
-                      key={group.id}
                       group={group}
                       isOpen={openGroups[group.id] ?? false}
                       isCollapsed={isCollapsed}

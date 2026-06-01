@@ -97,11 +97,17 @@ export function validatePixKey(chave: string, tipo: string): string | null {
 /** Placeholder dinâmico baseado no tipo */
 export function pixPlaceholder(tipo: string): string {
   switch (tipo) {
-    case 'CPF': return '000.000.000-00';
-    case 'CNPJ': return '00.000.000/0000-00';
-    case 'Telefone': return '(00) 00000-0000';
-    case 'Email': return 'email@exemplo.com';
-    case 'Aleatória': return 'Chave aleatória';
-    default: return 'Selecione o tipo primeiro';
+    case 'CPF':
+      return '000.000.000-00';
+    case 'CNPJ':
+      return '00.000.000/0000-00';
+    case 'Telefone':
+      return '(00) 00000-0000';
+    case 'Email':
+      return 'email@exemplo.com';
+    case 'Aleatória':
+      return 'Chave aleatória';
+    default:
+      return 'Selecione o tipo primeiro';
   }
 }

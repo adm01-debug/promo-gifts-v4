@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Filter, Palette } from 'lucide-react';
-import { type FilterMode, type VariantInfo, type GalleryStats, IMAGE_TYPES } from "./types";
+import { type FilterMode, type VariantInfo, type GalleryStats, IMAGE_TYPES } from './types';
 
 interface Props {
   filterMode: FilterMode;

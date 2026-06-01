@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Loader2, Download, ShoppingCart, MessageCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/kit-builder";
+import { Button } from '@/components/ui/button';
+import { Loader2, Download, ShoppingCart, MessageCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/kit-builder';
 
 interface KitActionsBarProps {
   isValid: boolean;
@@ -15,14 +15,30 @@ interface KitActionsBarProps {
   onExportPDF?: () => void;
 }
 
-export function KitActionsBar({ isValid, isAddingToQuote, kitName, kitTag, kitQuantity, unitPrice, total, items, onAddToQuote, onExportPDF }: KitActionsBarProps) {
+export function KitActionsBar({
+  isValid,
+  isAddingToQuote,
+  kitName,
+  kitTag,
+  kitQuantity,
+  unitPrice,
+  total,
+  items,
+  onAddToQuote,
+  onExportPDF,
+}: KitActionsBarProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Button variant="outline" onClick={onExportPDF}>
-        <Download className="h-4 w-4 mr-2" />Exportar PDF
+        <Download className="mr-2 h-4 w-4" />
+        Exportar PDF
       </Button>
       <Button disabled={!isValid || isAddingToQuote} onClick={onAddToQuote}>
-        {isAddingToQuote ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
+        {isAddingToQuote ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <ShoppingCart className="mr-2 h-4 w-4" />
+        )}
         {isAddingToQuote ? 'Criando...' : 'Criar Orçamento'}
       </Button>
       <Button
@@ -32,12 +48,13 @@ export function KitActionsBar({ isValid, isAddingToQuote, kitName, kitTag, kitQu
         onClick={() => {
           const kitLabel = kitName || 'Kit Personalizado';
           const title = kitTag ? `*${kitLabel} — ${kitTag}*` : `*${kitLabel}*`;
-          const itemsList = items.map(i => `• ${i.quantity}x ${i.name}`).join('\n');
+          const itemsList = items.map((i) => `• ${i.quantity}x ${i.name}`).join('\n');
           const text = `${title} (${kitQuantity}x)\n\n${itemsList}\n\n💰 *${formatCurrency(unitPrice)}/kit*\n📦 Total: *${formatCurrency(total)}*`;
           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }}
       >
-        <MessageCircle className="h-4 w-4 mr-2" />WhatsApp
+        <MessageCircle className="mr-2 h-4 w-4" />
+        WhatsApp
       </Button>
     </div>
   );

@@ -32,15 +32,17 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { formatTooltipNumber, formatTooltipPercent } from '@/lib/format-utils';
 import {
   useMarketIntelligenceMacro,
-  type MacroSupplierMetrics,
   type MacroMarketPoint,
+  type MacroSupplierMetrics,
   type MacroMarketKpis,
-} from '@/hooks/intelligence';
-import { useSupplierNames } from '@/hooks/products';
+} from '@/hooks/intelligence/useMarketIntelligenceMacro';
+import { useSupplierNames } from '@/hooks/products/useSupplierNames';
 import { safeParseDateForChart } from '@/lib/stock-chart-utils';
 import { SupplierChartFilter } from '@/components/products/SupplierChartFilter';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Props {
   days?: number;
@@ -290,21 +292,65 @@ export function MarketIntelligenceChart({
           <KpiCard
             icon={ShoppingCart}
             label="Vendas no mercado"
-            value={avgDepletion.toFixed(1)}
+            value={isLoading ? '...' : formatTooltipNumber(avgDepletion, 1)}
             sub="un/dia (média 7d)"
             highlight={avgDepletion >= 20}
+            tooltip={
+              isLoading ? (
+                <div className="space-y-2 p-1">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : (
+                <>
+                  Velocidade média de saída:{' '}
+                  <span className="font-bold">{formatTooltipNumber(avgDepletion, 1)} un/dia</span>.
+                  <br />
+                  <br />
+                  <span className="font-semibold italic text-primary">Dica de Argumentação:</span>
+                  {avgDepletion > 30
+                    ? ` "Este produto está voando com ${formatTooltipNumber(avgDepletion, 1)} saídas/dia! Recomendo garantir o lote agora para não perder o timing de venda."`
+                    : avgDepletion > 0
+                      ? ` "Temos um giro saudável de ${formatTooltipNumber(avgDepletion, 1)} unidades/dia. É um item de segurança para o seu estoque base."`
+                      : ' Sem registros de saída recente no mercado. Pode ser uma oportunidade de nicho ou aguardando reposição.'}
+                </>
+              )
+            }
           />
           <KpiCard
             icon={BarChart3}
             label="Demanda"
-            value={demandLevel}
+            value={isLoading ? '...' : demandLevel}
             sub={trendLabel}
             customValueColor={demandColor}
+            tooltip={
+              isLoading ? (
+                <div className="space-y-2 p-1">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : (
+                <>
+                  Nível de interesse:{' '}
+                  <span className="font-bold">{demandLevel || 'Sem dados'}</span>.
+                  <br />
+                  <br />
+                  <span className="font-semibold italic text-primary">Cenário Prático:</span>
+                  {demandLevel === 'Muito Alta' || demandLevel === 'Alta'
+                    ? ` "Interesse ${demandLevel} detectado! Ótimo momento para combos, aproveitando que a busca orgânica está no pico."`
+                    : demandLevel === 'Moderada'
+                      ? ' "Demanda equilibrada. Momento ideal para manter o estoque de segurança e focar em vendas consultivas."'
+                      : ' "Interesse em fase inicial ou baixa. Foco em ações de marketing para despertar o desejo no seu cliente."'}
+                </>
+              )
+            }
           />
           <KpiCard
             icon={trendRatio > 1.2 ? TrendingUp : trendRatio < 0.8 ? TrendingDown : BarChart3}
             label="Tendência"
-            value={`${trendPercent >= 0 ? '+' : ''}${trendPercent}%`}
+            value={isLoading ? '...' : formatTooltipPercent(trendPercent)}
             sub={
               trendRatio > 1
                 ? 'demanda crescente'
@@ -313,12 +359,66 @@ export function MarketIntelligenceChart({
                   : 'demanda estável'
             }
             highlight={trendRatio > 1.3}
+            tooltip={
+              isLoading ? (
+                <div className="space-y-2 p-1">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : (
+                <>
+                  Variação da procura:{' '}
+                  <span className="font-bold">{formatTooltipPercent(trendPercent)}</span>.
+                  <br />
+                  <br />
+                  <span className="font-semibold italic text-primary">Como agir:</span>
+                  {trendPercent > 15
+                    ? ` "A procura subiu ${formatTooltipPercent(trendPercent)} esta semana! Se esperarmos, o preço pode subir ou o lote esgotar rápido."`
+                    : trendPercent < -15
+                      ? ` "Notamos um recuo de ${formatTooltipPercent(trendPercent)}. É a janela perfeita para negociarmos uma condição agressiva."`
+                      : ' O mercado segue estável. Temos previsibilidade total de custos e prazos para o seu pedido hoje.'}
+                </>
+              )
+            }
           />
           <KpiCard
             icon={Package}
             label="Disponível"
-            value={(kpis?.totalCurrentStock ?? 0).toLocaleString('pt-BR')}
+            value={isLoading ? '...' : formatTooltipNumber(kpis?.totalCurrentStock, 0)}
             sub={supplierText}
+            tooltip={
+              isLoading ? (
+                <div className="space-y-2 p-1">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : (
+                <>
+                  Estoque global:{' '}
+                  <span className="font-bold">
+                    {formatTooltipNumber(kpis?.totalCurrentStock, 0)} un
+                  </span>
+                  .
+                  <br />
+                  Duração estimada:{' '}
+                  <span className="font-bold">
+                    {avgDepletion > 0
+                      ? Math.round((kpis?.totalCurrentStock ?? 0) / avgDepletion)
+                      : '---'}{' '}
+                    dias
+                  </span>
+                  .
+                  <br />
+                  <br />
+                  <span className="font-semibold italic text-primary">Gatilho de Venda:</span>
+                  {avgDepletion > 0 && (kpis?.totalCurrentStock ?? 0) / avgDepletion < 15
+                    ? ` "Urgente: Restam só ${formatTooltipNumber(kpis?.totalCurrentStock, 0)} unidades no mercado (menos de 15 dias). Garanta sua cota!"`
+                    : ` "Estoque de ${formatTooltipNumber(kpis?.totalCurrentStock, 0)} un disponível. A tendência sugere que este é o momento seguro para reposição."`}
+                </>
+              )
+            }
           />
         </div>
 

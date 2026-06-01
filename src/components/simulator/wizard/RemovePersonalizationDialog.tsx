@@ -40,10 +40,11 @@ export function RemovePersonalizationDialog({
         {trigger || (
           <Button
             variant="ghost"
-            size="icon" aria-label="Fechar"
+            size="icon"
+            aria-label="Fechar"
             className={cn(
               variant === 'icon' ? 'h-6 w-6 text-muted-foreground hover:text-destructive' : '',
-              className
+              className,
             )}
             onClick={(e) => e.stopPropagation()}
           >
@@ -58,8 +59,9 @@ export function RemovePersonalizationDialog({
             Remover gravação?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            A personalização <strong>{techniqueName}</strong> no local <strong>{locationName}</strong> será 
-            removida. Você precisará configurá-la novamente se quiser adicioná-la de volta.
+            A personalização <strong>{techniqueName}</strong> no local{' '}
+            <strong>{locationName}</strong> será removida. Você precisará configurá-la novamente se
+            quiser adicioná-la de volta.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { ChevronDown, Check } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
-import type { RamoAtividadeGroup, SegmentoComplete } from "@/types/ramo-atividade";
-import { SegmentoCheckbox } from "./SegmentoCheckbox";
+import { useState } from 'react';
+import { ChevronDown, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import type { RamoAtividadeGroup, SegmentoComplete } from '@/types/ramo-atividade';
+import { SegmentoCheckbox } from './SegmentoCheckbox';
 
 interface RamoAtividadeGroupAccordionProps {
   group: RamoAtividadeGroup;
@@ -34,55 +34,61 @@ export function RamoAtividadeGroupAccordion({
   productCountsByRamo,
 }: RamoAtividadeGroupAccordionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  
-  const selectedCount = segmentos.filter(s => selectedSegmentos.includes(s.segmento_slug)).length;
+
+  const selectedCount = segmentos.filter((s) => selectedSegmentos.includes(s.segmento_slug)).length;
   const hasSelection = selectedCount > 0 || isRamoSelected;
-  const allSegmentosSelected = segmentos.length > 0 && segmentos.every(s => selectedSegmentos.includes(s.segmento_slug));
+  const allSegmentosSelected =
+    segmentos.length > 0 && segmentos.every((s) => selectedSegmentos.includes(s.segmento_slug));
 
   if (compact) {
     return (
-      <div className={cn(
-        "rounded-md overflow-hidden transition-all duration-200",
-        hasSelection ? "bg-primary/5" : "bg-muted/20"
-      )}>
+      <div
+        className={cn(
+          'overflow-hidden rounded-md transition-all duration-200',
+          hasSelection ? 'bg-primary/5' : 'bg-muted/20',
+        )}
+      >
         {/* Header compacto */}
         <div className="flex items-center gap-2 p-2">
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="p-0.5 hover:bg-muted rounded transition-colors"
+            className="rounded p-0.5 transition-colors hover:bg-muted"
             aria-label={`${isOpen ? 'Recolher' : 'Expandir'} segmentos de ${group.group_name}`}
           >
-            <ChevronDown className={cn(
-              "w-3 h-3 text-muted-foreground transition-transform duration-200",
-              isOpen && "rotate-180"
-            )} />
+            <ChevronDown
+              className={cn(
+                'h-3 w-3 text-muted-foreground transition-transform duration-200',
+                isOpen && 'rotate-180',
+              )}
+            />
           </button>
-          
-          <label className="flex items-center gap-2 flex-1 cursor-pointer">
+
+          <label className="flex flex-1 cursor-pointer items-center gap-2">
             <Checkbox
               checked={isRamoSelected || allSegmentosSelected}
               onCheckedChange={() => onRamoToggle(group.group_slug)}
               className="data-[state=checked]:bg-primary"
             />
-            
-            
-            <span className={cn(
-              "text-sm",
-              hasSelection ? "font-medium text-primary" : "text-foreground"
-            )}>
+
+            <span
+              className={cn(
+                'text-sm',
+                hasSelection ? 'font-medium text-primary' : 'text-foreground',
+              )}
+            >
               {group.group_name}
             </span>
           </label>
 
           {(() => {
-            const ramoCount = productCountsByRamo?.ramoCounts.get(group.group_name.toLowerCase()) || 0;
+            const ramoCount =
+              productCountsByRamo?.ramoCounts.get(group.group_name.toLowerCase()) || 0;
             return (
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                {selectedCount > 0 && `${selectedCount}/`}{group.total_segmentos}
-                {ramoCount > 0 && (
-                  <span className="text-primary/70">· {ramoCount}</span>
-                )}
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                {selectedCount > 0 && `${selectedCount}/`}
+                {group.total_segmentos}
+                {ramoCount > 0 && <span className="text-primary/70">· {ramoCount}</span>}
               </span>
             );
           })()}
@@ -90,8 +96,8 @@ export function RamoAtividadeGroupAccordion({
 
         {/* Lista compacta */}
         {isOpen && segmentos.length > 0 && (
-          <div className="px-2 pb-2 space-y-0.5 ml-6 border-l-2 border-muted">
-            {segmentos.map(segmento => (
+          <div className="ml-6 space-y-0.5 border-l-2 border-muted px-2 pb-2">
+            {segmentos.map((segmento) => (
               <SegmentoCheckbox
                 key={segmento.segmento_id}
                 segmento={segmento}
@@ -108,12 +114,14 @@ export function RamoAtividadeGroupAccordion({
   }
 
   return (
-    <div className={cn(
-      "rounded-xl overflow-hidden transition-all duration-300",
-      hasSelection 
-        ? "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent ring-1 ring-primary/25 shadow-sm" 
-        : "bg-muted/30 hover:bg-muted/40"
-    )}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-xl transition-all duration-300',
+        hasSelection
+          ? 'bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/25'
+          : 'bg-muted/30 hover:bg-muted/40',
+      )}
+    >
       {/* Header do grupo */}
       <div className="flex items-center gap-3 p-3">
         {/* Botão de expandir */}
@@ -121,75 +129,74 @@ export function RamoAtividadeGroupAccordion({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "p-1.5 rounded-lg transition-all duration-200",
-            isOpen 
-              ? "bg-primary/15 text-primary" 
-              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+            'rounded-lg p-1.5 transition-all duration-200',
+            isOpen
+              ? 'bg-primary/15 text-primary'
+              : 'bg-muted/50 text-muted-foreground hover:bg-muted',
           )}
           aria-label={`${isOpen ? 'Recolher' : 'Expandir'} segmentos de ${group.group_name}`}
         >
-          <ChevronDown className={cn(
-            "w-4 h-4 transition-transform duration-300",
-            isOpen && "rotate-180"
-          )} />
+          <ChevronDown
+            className={cn('h-4 w-4 transition-transform duration-300', isOpen && 'rotate-180')}
+          />
         </button>
-        
+
         {/* Checkbox do grupo */}
         <div className="relative">
           <Checkbox
             checked={isRamoSelected || allSegmentosSelected}
             onCheckedChange={() => onRamoToggle(group.group_slug)}
             className={cn(
-              "w-5 h-5 transition-all duration-200",
-              "data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              'h-5 w-5 transition-all duration-200',
+              'data-[state=checked]:border-primary data-[state=checked]:bg-primary',
             )}
           />
           {/* Indicador de seleção parcial */}
           {selectedCount > 0 && !isRamoSelected && !allSegmentosSelected && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full" />
+            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary" />
           )}
         </div>
-        
-        
+
         {/* Info do grupo */}
-        <div className="flex-1 min-w-0">
-          <span className={cn(
-            "font-medium text-sm transition-colors duration-200",
-            hasSelection ? "text-primary" : "text-foreground"
-          )}>
+        <div className="min-w-0 flex-1">
+          <span
+            className={cn(
+              'text-sm font-medium transition-colors duration-200',
+              hasSelection ? 'text-primary' : 'text-foreground',
+            )}
+          >
             {group.group_name}
           </span>
-          
+
           {/* Descrição se houver */}
           {group.group_description && !isOpen && (
-            <p className="text-xs text-muted-foreground truncate">
-              {group.group_description}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{group.group_description}</p>
           )}
         </div>
 
         {/* Contadores */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-2">
           {/* Badge de selecionados */}
           {selectedCount > 0 && (
-            <span className="bg-primary text-primary-foreground text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center shadow-sm">
+            <span className="min-w-[22px] rounded-full bg-primary px-2 py-0.5 text-center text-[11px] font-bold text-primary-foreground shadow-sm">
               {selectedCount}
             </span>
           )}
-          
+
           {/* Total de segmentos + product count */}
-          <div className={cn(
-            "flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-colors",
-            hasSelection 
-              ? "bg-primary/15 text-primary" 
-              : "bg-muted text-muted-foreground"
-          )}>
+          <div
+            className={cn(
+              'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors',
+              hasSelection ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
+            )}
+          >
             <span className="font-medium">{group.total_segmentos}</span>
             <span className="text-[10px]">seg.</span>
             {(() => {
-              const ramoCount = productCountsByRamo?.ramoCounts.get(group.group_name.toLowerCase()) || 0;
+              const ramoCount =
+                productCountsByRamo?.ramoCounts.get(group.group_name.toLowerCase()) || 0;
               return ramoCount > 0 ? (
-                <span className="text-[10px] text-primary/70 ml-0.5">· {ramoCount}</span>
+                <span className="ml-0.5 text-[10px] text-primary/70">· {ramoCount}</span>
               ) : null;
             })()}
           </div>
@@ -197,42 +204,44 @@ export function RamoAtividadeGroupAccordion({
       </div>
 
       {/* Lista de segmentos - Animada */}
-      <div className={cn(
-        "overflow-hidden transition-all duration-300",
-        isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-      )}>
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-300',
+          isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
+        )}
+      >
         {segmentos.length > 0 && (
-          <div className="px-3 pb-3 space-y-1">
-            <div className="border-t border-border/30 pt-2 ml-10 space-y-0.5">
+          <div className="space-y-1 px-3 pb-3">
+            <div className="ml-10 space-y-0.5 border-t border-border/30 pt-2">
               {/* Selecionar todos */}
               {segmentos.length > 2 && (
                 <button
                   type="button"
                   onClick={() => {
                     if (allSegmentosSelected) {
-                      segmentos.forEach(s => onSegmentoToggle(s.segmento_slug));
+                      segmentos.forEach((s) => onSegmentoToggle(s.segmento_slug));
                     } else {
-                      segmentos.filter(s => !selectedSegmentos.includes(s.segmento_slug))
-                               .forEach(s => onSegmentoToggle(s.segmento_slug));
+                      segmentos
+                        .filter((s) => !selectedSegmentos.includes(s.segmento_slug))
+                        .forEach((s) => onSegmentoToggle(s.segmento_slug));
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-2 w-full text-xs py-1.5 px-2 rounded-md transition-colors mb-1",
+                    'mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
                     allSegmentosSelected
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:bg-muted/50"
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted/50',
                   )}
                 >
-                  <Check className={cn(
-                    "w-3 h-3",
-                    allSegmentosSelected ? "opacity-100" : "opacity-30"
-                  )} />
-                  <span>{allSegmentosSelected ? "Desmarcar todos" : "Selecionar todos"}</span>
+                  <Check
+                    className={cn('h-3 w-3', allSegmentosSelected ? 'opacity-100' : 'opacity-30')}
+                  />
+                  <span>{allSegmentosSelected ? 'Desmarcar todos' : 'Selecionar todos'}</span>
                 </button>
               )}
-              
+
               {/* Lista de segmentos */}
-              {segmentos.map(segmento => (
+              {segmentos.map((segmento) => (
                 <SegmentoCheckbox
                   key={segmento.segmento_id}
                   segmento={segmento}
@@ -248,8 +257,8 @@ export function RamoAtividadeGroupAccordion({
         {/* Mensagem se não houver segmentos */}
         {segmentos.length === 0 && (
           <div className="px-3 pb-3">
-            <div className="border-t border-border/30 pt-3 ml-10">
-              <p className="text-xs text-muted-foreground italic text-center py-2">
+            <div className="ml-10 border-t border-border/30 pt-3">
+              <p className="py-2 text-center text-xs italic text-muted-foreground">
                 Nenhum segmento neste ramo
               </p>
             </div>

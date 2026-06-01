@@ -447,11 +447,33 @@ export function useQuoteBuilderState() {
   // ── Load existing quote ──
   useEffect(() => {
     if (!isEditMode || !quoteId) return;
+    /**
+     * BUG-18 FIX: isMounted guard prevents ~15 setState calls on an unmounted
+     * component when the user navigates away before fetchQuote resolves.
+     *
+     * WITHOUT THIS FIX: If the user opens a quote edit page and immediately
+     * navigates away (e.g. back button on slow network, ~200ms latency), the
+     * .then() callback fires after unmount, calling setClientId, setContactId,
+     * setNotes, etc. on a dead component — React warning + potential state
+     * corruption on remount.
+     *
+     * fetchQuote also added to deps array to prevent stale closure.
+     */
+    let isMounted = true;
     setLoadingQuote(true);
     fetchQuote(quoteId).then((quote) => {
+      if (!isMounted) return;
       if (quote) {
         setClientId(quote.client_id || '');
-        setContactId(quote.client_id || '');
+        /**
+         * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
+         *
+         * PROBLEMA ORIGINAL: setContactId recebia quote.client_id, ou seja, o ID da
+         * empresa. Isso fazia a validação do step 'client' passar (ambos clientId e
+         * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
+         * da pessoa de contato, não da empresa.
+         */
+        setContactId(((quote as Record<string, unknown>).contact_id as string) || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');
@@ -499,7 +521,10 @@ export function useQuoteBuilderState() {
       }
       setLoadingQuote(false);
     });
-  }, [isEditMode, quoteId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──
   useEffect(() => {
@@ -699,9 +724,15 @@ export function useQuoteBuilderState() {
     placeholderData: (previousData) => previousData,
   });
 
+  /**
+   * BUG-05 FIX: removida dependência fantasma `productSearch`.
+   *
+   * PROBLEMA ORIGINAL: productSearch estava na lista de deps mas nunca era usado
+   * no corpo do useMemo — causava re-computações desnecessárias a cada keystroke.
+   */
   const filteredProducts = useMemo(() => {
     return products || [];
-  }, [products, productSearch]);
+  }, [products]);
 
   // ── Calculations ──
   const formatCurrency = useCallback((value: number) => {

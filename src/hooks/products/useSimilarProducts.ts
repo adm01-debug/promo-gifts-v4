@@ -1,15 +1,15 @@
 /**
  * useSimilarProducts — Fetches similar products via the external DB.
- * 
+ *
  * Strategy:
  * 1. Query `product_relationships` (107k+ cross-supplier pairs) for direct similar matches
  * 2. Fallback: Query `product_group_members` for group-based siblings
  * 3. Last resort: Related products from same supplier/category
- * 
+ *
  * All levels use lightweight batch queries (no individual product detail fetches).
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import type { Product } from '@/types/product-catalog';
 import { logger } from '@/lib/logger';
 
@@ -27,7 +27,8 @@ export interface SimilarProductItem {
 }
 
 /** Lightweight product columns needed for similar product cards */
-const SIMILAR_PRODUCT_SELECT = 'id,name,sku,sale_price,primary_image_url,supplier_id,stock_quantity,brand,category_id';
+const SIMILAR_PRODUCT_SELECT =
+  'id,name,sku,sale_price,primary_image_url,supplier_id,stock_quantity,brand,category_id';
 
 interface LightweightProduct {
   id: string;
@@ -60,7 +61,7 @@ function mapLightweightToSimilarItem(p: LightweightProduct): SimilarProductItem 
 async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> {
   if (ids.length === 0) return [];
 
-  const { records } = await invokeExternalDb<LightweightProduct>({
+  const { records } = await dbInvoke<LightweightProduct>({
     table: 'products',
     operation: 'select',
     select: SIMILAR_PRODUCT_SELECT,
@@ -68,9 +69,7 @@ async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> 
     limit: ids.length,
   });
 
-  return (records || [])
-    .filter(p => p.sale_price > 0)
-    .map(mapLightweightToSimilarItem);
+  return (records || []).filter((p) => p.sale_price > 0).map(mapLightweightToSimilarItem);
 }
 
 export function useSimilarProducts(product: Product | null | undefined) {
@@ -85,7 +84,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
 
       // 1. Try product_relationships (direct pairs — fastest, 107k+ records)
       try {
-        const { records: relationships } = await invokeExternalDb<{
+        const { records: relationships } = await dbInvoke<{
           related_product_id: string;
         }>({
           table: 'product_relationships',
@@ -99,7 +98,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
         });
 
         if (relationships && relationships.length > 0) {
-          const relatedIds = relationships.map(r => r.related_product_id);
+          const relatedIds = relationships.map((r) => r.related_product_id);
           const items = await fetchProductsByIds(relatedIds);
           if (items.length > 0) return items;
         }
@@ -108,38 +107,39 @@ export function useSimilarProducts(product: Product | null | undefined) {
       }
 
       // 2. Try product_group_members (group-based siblings)
+      // NOTE: a coluna correta no BD externo é `product_group_id` (não `group_id`).
       try {
-        const { records: memberships } = await invokeExternalDb<{
-          group_id: string;
+        const { records: memberships } = await dbInvoke<{
+          product_group_id: string;
         }>({
           table: 'product_group_members',
           operation: 'select',
-          select: 'group_id',
+          select: 'product_group_id',
           filters: { product_id: productId },
           limit: 10,
         });
 
         if (memberships && memberships.length > 0) {
-          const groupIds = [...new Set(memberships.map(m => m.group_id))].filter(Boolean);
+          const groupIds = [...new Set(memberships.map((m) => m.product_group_id))].filter(Boolean);
           if (groupIds.length === 0) throw new Error('No valid group IDs');
-          
-          const { records: allMembers } = await invokeExternalDb<{
+
+          const { records: allMembers } = await dbInvoke<{
             product_id: string;
           }>({
             table: 'product_group_members',
             operation: 'select',
             select: 'product_id',
             filters: {
-              group_id: `in.(${groupIds.join(',')})`,
+              product_group_id: `in.(${groupIds.join(',')})`,
             },
             limit: 100,
           });
 
-          const siblingIds = [...new Set(
-            (allMembers || [])
-              .map(m => m.product_id)
-              .filter(id => id !== productId)
-          )];
+          const siblingIds = [
+            ...new Set(
+              (allMembers || []).map((m) => m.product_id).filter((id) => id !== productId),
+            ),
+          ];
 
           if (siblingIds.length > 0) {
             const items = await fetchProductsByIds(siblingIds);
@@ -147,7 +147,10 @@ export function useSimilarProducts(product: Product | null | undefined) {
           }
         }
       } catch (err) {
-        logger.warn('[useSimilarProducts] product_group_members query failed, using fallback:', err);
+        logger.warn(
+          '[useSimilarProducts] product_group_members query failed, using fallback:',
+          err,
+        );
       }
 
       // 3. Fallback: fetch related products from same supplier or category (lightweight)
@@ -159,7 +162,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           fallbackFilters.main_category_id = categoryId;
         }
 
-        const { records: fallbackProducts } = await invokeExternalDb<LightweightProduct>({
+        const { records: fallbackProducts } = await dbInvoke<LightweightProduct>({
           table: 'products',
           operation: 'select',
           select: SIMILAR_PRODUCT_SELECT,
@@ -169,7 +172,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
         });
 
         return (fallbackProducts || [])
-          .filter(p => p.id !== productId && p.sale_price > 0)
+          .filter((p) => p.id !== productId && p.sale_price > 0)
           .map(mapLightweightToSimilarItem);
       } catch (err) {
         logger.warn('[useSimilarProducts] Fallback query failed:', err);

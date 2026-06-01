@@ -1,6 +1,6 @@
 /**
  * Types: Simulation
- * 
+ *
  * @deprecated Use tipos de src/types/domain/simulation
  * Este arquivo mantém compatibilidade com código legado.
  */

@@ -6,6 +6,7 @@ import {
   SimulationOrchestratorSchemas,
 } from "../_shared/contracts/schemas/simulation-orchestrator.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -59,7 +60,8 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const n8nSecret = Deno.env.get("N8N_PRODUCT_WEBHOOK_SECRET") || "sim-secret";
+    // fix: ssot-bypass — credential vault
+    const n8nSecret = await getCredential("N8N_PRODUCT_WEBHOOK_SECRET") ?? "sim-secret";
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: run } = await supabase
@@ -177,6 +179,20 @@ Deno.serve(async (req) => {
               if (data) report.consistencyChecks.passed++;
               else report.consistencyChecks.failed++;
             }
+            
+            // Fuzzing adicional para validação de UUID e payloads malformados
+            if (mode === "fuzzing") {
+              const maliciousPayloads = [
+                { id: "not-a-uuid" },
+                { id: null },
+                { id: "" },
+                { id: "00000000-0000-0000-0000-000000000000" }
+              ];
+              for (const p of maliciousPayloads) {
+                await runScenario("webhook-inbound", p, [400, 422]);
+              }
+            }
+          })());
           })());
         }
 

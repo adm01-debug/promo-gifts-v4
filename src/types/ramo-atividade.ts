@@ -48,8 +48,14 @@ export interface ProdutoRamoAtividade {
 }
 
 // Input types para criação/edição
-export type RamoAtividadeInput = Omit<RamoAtividade, 'id' | 'created_at' | 'updated_at' | 'filhos' | '_count'>;
-export type RamoAtividadeFilhoInput = Omit<RamoAtividadeFilho, 'id' | 'created_at' | 'updated_at' | 'ramo_atividade'>;
+export type RamoAtividadeInput = Omit<
+  RamoAtividade,
+  'id' | 'created_at' | 'updated_at' | 'filhos' | '_count'
+>;
+export type RamoAtividadeFilhoInput = Omit<
+  RamoAtividadeFilho,
+  'id' | 'created_at' | 'updated_at' | 'ramo_atividade'
+>;
 
 // Filtros de busca
 export interface RamoAtividadeFilters {
@@ -59,7 +65,7 @@ export interface RamoAtividadeFilters {
 
 // Estado do filtro hierárquico (similar ao MaterialFilterState)
 export interface RamoAtividadeFilterState {
-  selectedRamos: string[];     // slugs dos ramos pai selecionados
+  selectedRamos: string[]; // slugs dos ramos pai selecionados
   selectedSegmentos: string[]; // slugs dos segmentos selecionados
   searchTerm: string;
 }

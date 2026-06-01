@@ -1,11 +1,11 @@
 /**
  * QuoteApprovalCard — card de visualização pública do orçamento para o cliente aprovar/recusar.
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { formatCurrency } from '@/lib/format';
 
 interface QuoteApprovalCardProps {
   quoteNumber: string;
@@ -29,14 +29,22 @@ export function QuoteApprovalCard({
   isResponded,
 }: QuoteApprovalCardProps) {
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="mx-auto max-w-2xl">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
             <CardTitle>Orçamento {quoteNumber}</CardTitle>
-            {clientName && <p className="text-sm text-muted-foreground mt-1">Para: {clientName}</p>}
+            {clientName && <p className="mt-1 text-sm text-muted-foreground">Para: {clientName}</p>}
           </div>
-          <Badge variant={status === "approved" ? "default" : status === "rejected" ? "destructive" : "secondary"}>
+          <Badge
+            variant={
+              status === 'approved'
+                ? 'default'
+                : status === 'rejected'
+                  ? 'destructive'
+                  : 'secondary'
+            }
+          >
             {status}
           </Badge>
         </div>
@@ -44,20 +52,27 @@ export function QuoteApprovalCard({
       <CardContent className="space-y-4">
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-xs text-muted-foreground">Valor total</p>
-          <p className="text-3xl font-semibold text-primary tabular-nums">{formatCurrency(total)}</p>
+          <p className="text-3xl font-semibold tabular-nums text-primary">
+            {formatCurrency(total)}
+          </p>
         </div>
         {validUntil && (
-          <p className="text-sm text-muted-foreground inline-flex items-center gap-1">
-            <Clock className="h-4 w-4" /> Válido até {new Date(validUntil).toLocaleDateString("pt-BR")}
+          <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" /> Válido até{' '}
+            {new Date(validUntil).toLocaleDateString('pt-BR')}
           </p>
         )}
         {!isResponded && (onApprove || onReject) && (
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <Button variant="outline" onClick={onReject} className="border-destructive/50 text-destructive hover:bg-destructive/10">
-              <XCircle className="h-4 w-4 mr-2" /> Recusar
+            <Button
+              variant="outline"
+              onClick={onReject}
+              className="border-destructive/50 text-destructive hover:bg-destructive/10"
+            >
+              <XCircle className="mr-2 h-4 w-4" /> Recusar
             </Button>
             <Button onClick={onApprove}>
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Aprovar
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
             </Button>
           </div>
         )}

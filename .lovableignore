@@ -1,0 +1,23 @@
+# .lovableignore — protege arquivos de segurança de sobrescrita pelo Lovable
+# Sintaxe igual ao .gitignore
+# Docs: https://docs.lovable.dev/tips-tricks/lovable-ignore
+
+# Edge functions com correções de segurança aplicadas manualmente
+# NÃO deve ser alterado pelo Lovable
+supabase/functions/send-transactional-email/index.ts
+supabase/functions/analyze-logo-colors/index.ts
+supabase/functions/webhook-inbound/index.ts
+supabase/functions/_shared/external-fetch.ts
+supabase/functions/_shared/ai-router/index.ts
+supabase/functions/sync-quote-bitrix/index.ts
+supabase/functions/dropbox-list/index.ts
+supabase/functions/elevenlabs-tts/index.ts
+supabase/functions/generate-mockup/index.ts
+supabase/functions/cnpj-lookup/index.ts
+supabase/functions/image-proxy/index.ts
+
+# Hooks auditados — não editar via Lovable (requer revisão manual)
+# Alterações causam regressões críticas (VOICE-01, KBD-01, CS-02, STAT-01, CS-03)
+src/hooks/intelligence/useSpeechRecognition.ts
+src/hooks/products/useCatalogState.ts
+src/hooks/__tests__/hooks-audit-regression.unit.test.ts

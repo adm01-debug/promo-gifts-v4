@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -119,9 +120,12 @@ export function useFavoriteLists() {
 
   const updateList = useMutation({
     mutationFn: async ({ id, ...patch }: Partial<FavoriteList> & { id: string }) => {
+      // item_count is a computed field, not a real column — exclude it from the update.
+      const { item_count: _itemCount, ...columns } = patch;
+      const dbPatch: TablesUpdate<'favorite_lists'> = columns;
       const { data, error } = await supabase
         .from('favorite_lists')
-        .update(patch)
+        .update(dbPatch)
         .eq('id', id)
         .select()
         .single();

@@ -13,15 +13,15 @@
  * fecha o loop visual e dá um caminho acionável imediato.
  */
 
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
-const THROTTLE_KEY_PREFIX = "dev_access_request_at:";
+const THROTTLE_KEY_PREFIX = 'dev_access_request_at:';
 const THROTTLE_MS = 5 * 60_000;
 
 /** Canal técnico de fallback (mailto). Pode ser sobrescrito via env. */
 const DEV_CONTACT_EMAIL =
-  (import.meta as { env?: { VITE_DEV_CONTACT_EMAIL?: string } }).env
-    ?.VITE_DEV_CONTACT_EMAIL || "dev@promogifts.com.br";
+  (import.meta as { env?: { VITE_DEV_CONTACT_EMAIL?: string } }).env?.VITE_DEV_CONTACT_EMAIL ||
+  'dev@promogifts.com.br';
 
 export interface RequestDevAccessInput {
   userId: string;
@@ -67,16 +67,16 @@ function buildMailto(input: RequestDevAccessInput): string {
     `Solicitante: ${input.userEmail ?? input.userId}`,
     `Rota bloqueada: ${input.blockedPath}`,
     `Quando: ${new Date().toISOString()}`,
-    "",
-    "Motivo:",
-    input.reason?.trim() || "(não informado)",
+    '',
+    'Motivo:',
+    input.reason?.trim() || '(não informado)',
   ];
-  const body = lines.join("\n");
+  const body = lines.join('\n');
   return `mailto:${DEV_CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export async function requestDevAccess(
-  input: RequestDevAccessInput
+  input: RequestDevAccessInput,
 ): Promise<RequestDevAccessResult> {
   const status = getThrottleStatus(input.userId);
   if (status.throttled) {
@@ -90,12 +90,13 @@ export async function requestDevAccess(
   const mailtoUrl = buildMailto(input);
 
   // Notificação pessoal — RLS permite (user_id = auth.uid()).
-  const { error } = await supabase.from("workspace_notifications").insert({
+  const supabase = await getSupabaseClient();
+  const { error } = await supabase.from('workspace_notifications').insert({
     user_id: input.userId,
-    title: "Solicitação de acesso a Dev enviada",
+    title: 'Solicitação de acesso a Dev enviada',
     message: `Você solicitou acesso à área técnica ${input.blockedPath}. Aguarde retorno do time responsável.`,
-    type: "info",
-    category: "access_request",
+    type: 'info',
+    category: 'access_request',
     action_url: input.blockedPath,
     metadata: {
       blocked_path: input.blockedPath,

@@ -131,7 +131,8 @@ export function ProductRiskDetail({ productId, productName }: ProductRiskDetailP
 
   const bestVelocity = velocity?.length
     ? velocity.reduce(
-        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        (best: StockVelocity, v: StockVelocity) =>
+          v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best,
         velocity[0],
       )
     : isDemo
@@ -184,7 +185,7 @@ export function ProductRiskDetail({ productId, productName }: ProductRiskDetailP
     );
   }
 
-  const daysToStockout = bestVelocity?.days_to_stockout;
+  const daysToStockout = bestVelocity?.days_to_stockout ?? null;
   const isUrgent = daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 7;
   const isWarning =
     daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 15;

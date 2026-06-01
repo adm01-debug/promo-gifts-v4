@@ -1,11 +1,11 @@
-import { useRef, useCallback } from "react";
-import { clamp } from "./logoTechniqueFilters";
+import { useRef, useCallback } from 'react';
+import { clamp } from './logoTechniqueFilters';
 
 export function useLogoDrag(
   containerRef: React.RefObject<HTMLElement | null>,
   positionX: number,
   positionY: number,
-  onPositionChange: (x: number, y: number) => void
+  onPositionChange: (x: number, y: number) => void,
 ) {
   const draggingRef = useRef<{
     startClientX: number;
@@ -35,14 +35,14 @@ export function useLogoDrag(
         onPositionChange(Math.round(clamp(nextX, 5, 95)), Math.round(clamp(nextY, 5, 95)));
       });
     },
-    [onPositionChange, containerRef]
+    [onPositionChange, containerRef],
   );
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = null;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    window.removeEventListener("pointermove", handlePointerMove);
-    window.removeEventListener("pointerup", handlePointerUp);
+    window.removeEventListener('pointermove', handlePointerMove);
+    window.removeEventListener('pointerup', handlePointerUp);
   }, [handlePointerMove]);
 
   const handlePointerDown = useCallback(
@@ -57,10 +57,10 @@ export function useLogoDrag(
         startPosY: positionY,
       };
 
-      window.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointerup", handlePointerUp, { once: true });
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp, { once: true });
     },
-    [positionX, positionY, handlePointerMove, handlePointerUp]
+    [positionX, positionY, handlePointerMove, handlePointerUp],
   );
 
   return { handlePointerDown };

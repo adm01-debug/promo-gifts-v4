@@ -191,9 +191,21 @@ export function getProductStock(product: PromobrindProduct): number {
 // Select field constants
 // NOTE: `price_updated_at` is the SSOT for price freshness — populated via
 // trigger on the external Promobrind DB whenever any price field changes.
-// `price_freshness_threshold_days` does NOT exist in the external DB and was
-// removed from all selects to eliminate "column does not exist" errors.
+// `price_freshness_threshold_days` é opcional durante a transição de schema.
+// Não selecionamos a coluna por padrão para evitar 400/tela branca quando o
+// schema do BD externo ainda não foi aplicado; consumidores usam default 60d.
 export const PRODUCT_SELECT_FIELDS_WITH_SALE =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
@@ -208,12 +220,34 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
+  'id, name, sku, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +

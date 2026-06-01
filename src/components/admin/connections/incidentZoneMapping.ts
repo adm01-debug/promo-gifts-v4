@@ -10,36 +10,42 @@
  * Usado pela Incident Strip para gerar links que rolam até a zona certa
  * e (via TargetZoneHighlight) destacam visualmente por alguns segundos.
  */
-import type { IncidentItem } from "./useRecentIncidents";
+import type { IncidentItem } from './useRecentIncidents';
 
-export type TargetZone = "health" | "operation";
+export type TargetZone = 'health' | 'operation';
 
 const ZONE_LABEL: Record<TargetZone, string> = {
-  health: "Saúde",
-  operation: "Operação",
+  health: 'Saúde',
+  operation: 'Operação',
 };
 
 const ZONE_ANCHOR: Record<TargetZone, string> = {
-  health: "zone-health",
-  operation: "zone-operation",
+  health: 'zone-health',
+  operation: 'zone-operation',
 };
 
 export function getIncidentTargetZone(incident: IncidentItem): TargetZone {
-  const kind = (incident.kind ?? "").toLowerCase();
+  const kind = (incident.kind ?? '').toLowerCase();
 
   // Operacional: rotação/cron/configuração
-  if (kind.includes("secret_stale") || kind.includes("rotation")) return "operation";
-  if (kind.includes("autotest") || kind.includes("auto_test") || kind.includes("cron")) return "operation";
-  if (kind.includes("failure_window") || kind.includes("config")) return "operation";
+  if (kind.includes('secret_stale') || kind.includes('rotation')) return 'operation';
+  if (kind.includes('autotest') || kind.includes('auto_test') || kind.includes('cron'))
+    return 'operation';
+  if (kind.includes('failure_window') || kind.includes('config')) return 'operation';
 
   // Saúde: tudo que é falha imediata da conexão/entrega
-  if (kind.includes("connection") || kind.includes("webhook") || kind.includes("delivery")) return "health";
-  if (["auth", "http_5xx", "http_4xx", "platform_error", "timeout", "network"].some((k) => kind.includes(k))) {
-    return "health";
+  if (kind.includes('connection') || kind.includes('webhook') || kind.includes('delivery'))
+    return 'health';
+  if (
+    ['auth', 'http_5xx', 'http_4xx', 'platform_error', 'timeout', 'network'].some((k) =>
+      kind.includes(k),
+    )
+  ) {
+    return 'health';
   }
 
   // Default: Saúde (incidentes brutos sem kind ⇒ falha de teste)
-  return "health";
+  return 'health';
 }
 
 export function getZoneLabel(zone: TargetZone): string {
@@ -60,5 +66,5 @@ export function getZoneAnchorId(zone: TargetZone): string {
  */
 export function navigateToZone(zone: TargetZone) {
   const detail = { zone, anchorId: getZoneAnchorId(zone) };
-  window.dispatchEvent(new CustomEvent("connections:focus-zone", { detail }));
+  window.dispatchEvent(new CustomEvent('connections:focus-zone', { detail }));
 }

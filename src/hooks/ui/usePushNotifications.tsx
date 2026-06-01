@@ -9,6 +9,12 @@ interface NotificationPermissionState {
   isEnabled: boolean;
 }
 
+// `vibrate` faz parte da Notification API em runtime, mas foi removido do
+// tipo padrão `NotificationOptions` do lib.dom. Estendemos localmente.
+interface ExtendedNotificationOptions extends NotificationOptions {
+  vibrate?: number[];
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [state, setState] = useState<NotificationPermissionState>({
@@ -57,12 +63,13 @@ export function usePushNotifications() {
       }
 
       try {
-        const notification = new Notification(title, {
+        const notificationOptions: ExtendedNotificationOptions = {
           icon: '/favicon.ico',
           badge: '/favicon.ico',
           vibrate: [200, 100, 200],
           ...options,
-        });
+        };
+        const notification = new Notification(title, notificationOptions);
 
         notification.onclick = () => {
           window.focus();

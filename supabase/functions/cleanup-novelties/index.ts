@@ -1,4 +1,5 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { getCredential } from '../_shared/credentials.ts';
 import { authorizeCron } from '../_shared/dispatcher-auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { safeErrorFields } from '../_shared/log-safety.ts';
@@ -35,8 +36,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Cliente do banco EXTERNO (Promobrind) para flags de produto
-    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // fix: ssot-bypass — credential vault
+    const externalUrl = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const externalKey = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
 
     const results: Record<string, number> = {};
     const now = new Date().toISOString();

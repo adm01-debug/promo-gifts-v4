@@ -73,14 +73,29 @@ jobs:
 
       - name: Start Supabase stack
         run: |
-          supabase start
+          start_stack() {
+            supabase start --debug > /tmp/supabase-start.log 2>&1
+          }
+          # O bring-up do stack local é ocasionalmente flaky no CI (pull de imagens
+          # Docker, drift do CLI etc.). Uma retry após `supabase stop` absorve falhas
+          # transitórias sem mascarar erro persistente — o log é preservado p/ diagnóstico.
+          if ! start_stack; then
+            echo "::warning::supabase start falhou na 1ª tentativa — limpando e tentando novamente"
+            supabase stop || true
+            start_stack
+          fi
           # captura anon key local
           echo "SUPABASE_ANON_KEY=$(supabase status --output json | jq -r '.ANON_KEY // .API.anon_key')" >> "$GITHUB_ENV"
           echo "SUPABASE_URL=$(supabase status --output json | jq -r '.API_URL // .API.url')" >> "$GITHUB_ENV"
 
       - name: Serve Edge Functions
         run: |
-          nohup supabase functions serve --no-verify-jwt > /tmp/functions.log 2>&1 &
+          {
+            echo "N8N_PRODUCT_WEBHOOK_SECRET=$N8N_PRODUCT_WEBHOOK_SECRET"
+            echo "WEBHOOK_DISPATCHER_SECRET=$WEBHOOK_DISPATCHER_SECRET"
+          } > /tmp/contract-functions.env
+
+          nohup supabase functions serve --no-verify-jwt --env-file /tmp/contract-functions.env > /tmp/functions.log 2>&1 &
           echo $! > /tmp/functions.pid
 
           for i in $(seq 1 30); do
@@ -99,17 +114,44 @@ jobs:
             exit 1
           fi
 
+          for i in $(seq 1 30); do
+            HTTP=$(curl -sS -o /tmp/product-webhook-ready.json -w "%{http_code}" \
+              -X POST "$SUPABASE_URL/functions/v1/product-webhook" \
+              -H "content-type: application/json" \
+              --data '{}' || true)
+            if [[ "$HTTP" != "000" && "$HTTP" != "502" ]]; then
+              echo "product-webhook ready (HTTP $HTTP)"
+              break
+            fi
+            sleep 1
+          done
+
+          if [[ "${HTTP:-000}" == "000" || "${HTTP:-000}" == "502" ]]; then
+            echo "::error::product-webhook did not become reachable"
+            cat /tmp/functions.log || true
+            exit 1
+          fi
+
       - name: Run contract smoke tests
         run: npm run test:contract
         env:
           SUPABASE_URL: ${{ env.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
 
-      - name: Dump functions log on failure
+      - name: Dump diagnostics on failure
         if: failure()
         run: |
+          echo "::group::supabase start log"
+          cat /tmp/supabase-start.log || true
+          echo "::endgroup::"
           echo "::group::supabase functions serve log"
           cat /tmp/functions.log || true
+          echo "::endgroup::"
+          echo "::group::docker containers"
+          docker ps -a || true
+          echo "::endgroup::"
+          echo "::group::supabase status"
+          supabase status || true
           echo "::endgroup::"
 
       - name: Cleanup

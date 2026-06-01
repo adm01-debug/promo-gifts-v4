@@ -1,5 +1,5 @@
-import { ArrowRight, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * Defense-in-depth: never render more than 4 trailing characters of any
@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
  * component would still mask it.
  */
 function safeSuffix(raw: string | null | undefined): string {
-  if (!raw) return "????";
+  if (!raw) return '????';
   const last4 = raw.slice(-4);
-  return last4.length === 4 ? last4 : last4.padStart(4, "•");
+  return last4.length === 4 ? last4 : last4.padStart(4, '•');
 }
 
 interface Props {
@@ -35,10 +35,7 @@ export function SecretMaskedDiff({
 
   return (
     <div
-      className={cn(
-        "rounded-lg border border-border bg-muted/50 p-4 space-y-2",
-        className,
-      )}
+      className={cn('space-y-2 rounded-lg border border-border bg-muted/50 p-4', className)}
       role="group"
       aria-label="Pré-visualização mascarada do valor da credencial"
     >
@@ -47,8 +44,8 @@ export function SecretMaskedDiff({
           <span className="text-muted-foreground">Novo valor:</span>
           <span className="font-mono font-medium">
             ••••{next}
-            <span className="ml-2 text-xs text-muted-foreground font-normal">
-              ({newLength} {newLength === 1 ? "char" : "chars"})
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              ({newLength} {newLength === 1 ? 'char' : 'chars'})
             </span>
           </span>
         </div>
@@ -57,22 +54,21 @@ export function SecretMaskedDiff({
           <span className="text-muted-foreground">Valor atual:</span>
           <span className="font-mono">
             ••••{cur}
-            <span className="ml-2 text-xs text-muted-foreground">
-              ({currentLength ?? 0} chars)
-            </span>
+            <span className="ml-2 text-xs text-muted-foreground">({currentLength ?? 0} chars)</span>
           </span>
           <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <span className="font-mono font-medium">
             ••••{next}
-            <span className="ml-2 text-xs text-muted-foreground font-normal">
-              ({newLength} {newLength === 1 ? "char" : "chars"})
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              ({newLength} {newLength === 1 ? 'char' : 'chars'})
             </span>
           </span>
         </div>
       )}
-      <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-t border-border/40 pt-2">
+      <p className="flex items-center gap-1.5 border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
         <Lock className="h-3 w-3" aria-hidden="true" />
-        Apenas os 4 últimos caracteres são exibidos. O valor completo nunca é mostrado nem registrado em logs.
+        Apenas os 4 últimos caracteres são exibidos. O valor completo nunca é mostrado nem
+        registrado em logs.
       </p>
     </div>
   );

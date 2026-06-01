@@ -66,8 +66,9 @@ export function useSimilarKits({
           const ratio = overlap / Math.max(skus.length, 1);
           return { template: t, overlap, ratio };
         })
-        .filter((x): x is { template: TemplateRow; overlap: number; ratio: number } =>
-          !!x && x.ratio >= minOverlapRatio,
+        .filter(
+          (x): x is { template: TemplateRow; overlap: number; ratio: number } =>
+            !!x && x.ratio >= minOverlapRatio,
         )
         .sort((a, b) => b.ratio - a.ratio || b.overlap - a.overlap)
         .slice(0, limit);

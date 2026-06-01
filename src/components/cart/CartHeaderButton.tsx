@@ -89,9 +89,9 @@ export function CartHeaderButton() {
             </PopoverTrigger>
           </span>
         </TooltipTrigger>
-        <TooltipContent className="border-border bg-card text-xs">
+        <TooltipContent className="border-border bg-card">
           Carrinho de Orçamentos{' '}
-          <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[9px]">Alt+O</kbd>
+          <kbd className="text-tooltip ml-1.5 rounded bg-muted px-1 py-0.5 font-mono">Alt+O</kbd>
         </TooltipContent>
       </Tooltip>
 
@@ -311,9 +311,7 @@ export function CartHeaderButton() {
                                         <Eraser className="h-3.5 w-3.5" />
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="text-[11px]">
-                                      Limpar itens
-                                    </TooltipContent>
+                                    <TooltipContent side="top">Limpar itens</TooltipContent>
                                   </Tooltip>
                                 )}
                                 {/* Excluir carrinho */}
@@ -330,9 +328,7 @@ export function CartHeaderButton() {
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-[11px]">
-                                    Excluir carrinho
-                                  </TooltipContent>
+                                  <TooltipContent side="top">Excluir carrinho</TooltipContent>
                                 </Tooltip>
                               </div>
                             </div>

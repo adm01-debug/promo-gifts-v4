@@ -83,11 +83,17 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  readonly root: Element | Document | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+  constructor(_callback?: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
   disconnect() {}
   observe() {}
   unobserve() {}
-};
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as unknown as typeof IntersectionObserver;
 
 // TODO: hook cresceu demais — cascata de imports (Supabase + ProductsContext +
 // favorites/comparison stores + intelligence) estoura memória do worker vitest
@@ -147,11 +153,11 @@ describe.skip('useCatalogState', () => {
       result.current.setFilters({
         ...result.current.filters,
         inStock: true,
-        categories: [123],
+        categories: ['123'],
       });
     });
 
-    // categories is an array of numbers in FilterState
+    // categories is an array of strings in FilterState
     expect(result.current.activeFiltersCount).toBe(2); // inStock + 1 category
 
     await act(async () => {

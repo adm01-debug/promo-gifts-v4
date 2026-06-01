@@ -67,7 +67,10 @@ function GroupHeaderSample({ active }: { active: boolean }) {
       )}
     >
       <ShoppingCart
-        className={cn('h-4 w-4 shrink-0', active ? 'text-brand-primary' : 'text-sidebar-foreground/40')}
+        className={cn(
+          'h-4 w-4 shrink-0',
+          active ? 'text-brand-primary' : 'text-sidebar-foreground/40',
+        )}
       />
       <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">
         Vendas
@@ -143,7 +146,7 @@ export default function SidebarQAPage() {
       <PageSEO
         title="QA — Sidebar | Promo Gifts"
         description="Validação visual do sidebar"
-        noindex
+        noIndex
       />
       <div className="mx-auto max-w-[1920px] space-y-6 p-6">
         <header className="flex flex-wrap items-start justify-between gap-4">

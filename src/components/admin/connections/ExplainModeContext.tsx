@@ -10,7 +10,7 @@
  *  - Ícones de info ficam visíveis ao lado dos valores
  *  - shortcut: pressionar "?" alterna o modo
  */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface ExplainModeContextValue {
   enabled: boolean;
@@ -18,13 +18,13 @@ interface ExplainModeContextValue {
   setEnabled: (v: boolean) => void;
 }
 
-const STORAGE_KEY = "connections.explain-mode";
+const STORAGE_KEY = 'connections.explain-mode';
 const ExplainModeContext = createContext<ExplainModeContextValue | null>(null);
 
 export function ExplainModeProvider({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabledState] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) === "1";
+      return localStorage.getItem(STORAGE_KEY) === '1';
     } catch {
       return false;
     }
@@ -33,7 +33,7 @@ export function ExplainModeProvider({ children }: { children: React.ReactNode })
   const setEnabled = useCallback((v: boolean) => {
     setEnabledState(v);
     try {
-      localStorage.setItem(STORAGE_KEY, v ? "1" : "0");
+      localStorage.setItem(STORAGE_KEY, v ? '1' : '0');
     } catch {
       /* noop */
     }
@@ -44,14 +44,18 @@ export function ExplainModeProvider({ children }: { children: React.ReactNode })
   // Atalho global: "?" alterna o modo (não dispara em inputs/textareas)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== '?' || e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      )
+        return;
       e.preventDefault();
       toggle();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [toggle]);
 
   const value = useMemo(() => ({ enabled, toggle, setEnabled }), [enabled, toggle, setEnabled]);

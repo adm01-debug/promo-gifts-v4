@@ -19,7 +19,7 @@ export function useCategories() {
     queryFn: async () => {
       const categories = await fetchPromobrindCategories();
 
-      return categories.map(c => ({
+      return categories.map((c) => ({
         id: c.id,
         name: c.name,
         slug: c.name.toLowerCase().replace(/\s+/g, '-'),

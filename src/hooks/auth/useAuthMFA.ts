@@ -10,11 +10,12 @@ export function useAuthMFA() {
   const fetchAAL = useCallback(async () => {
     try {
       const data = await authService.fetchAAL();
-      setCurrentAAL(data.currentLevel);
-      setNextAAL(data.nextLevel);
+      setCurrentAAL(data.currentAAL);
+      setNextAAL(data.nextAAL);
       setHasMFA(data.hasMFA);
     } catch (e) {
-      if (import.meta.env.DEV) logger.warn('AAL fetch failed', e instanceof Error ? e.message : String(e));
+      if (import.meta.env.DEV)
+        logger.warn('AAL fetch failed', e instanceof Error ? e.message : String(e));
     }
   }, []);
 
@@ -29,6 +30,6 @@ export function useAuthMFA() {
     nextAAL,
     hasMFA,
     fetchAAL,
-    clearMFA
+    clearMFA,
   };
 }

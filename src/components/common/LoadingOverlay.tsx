@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingOverlayProps {
   isLoading: boolean;
@@ -8,23 +8,23 @@ interface LoadingOverlayProps {
   fullScreen?: boolean;
   blur?: boolean;
   className?: string;
-  spinnerSize?: "sm" | "md" | "lg";
-  variant?: "default" | "card" | "inline";
+  spinnerSize?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'card' | 'inline';
 }
 
 const spinnerSizes = {
-  sm: "h-4 w-4",
-  md: "h-8 w-8",
-  lg: "h-12 w-12",
+  sm: 'h-4 w-4',
+  md: 'h-8 w-8',
+  lg: 'h-12 w-12',
 };
 
 /**
  * LoadingOverlay - Overlay de carregamento com diferentes variantes
- * 
+ *
  * @example
  * // Full screen loading
  * <LoadingOverlay isLoading={isLoading} fullScreen message="Carregando..." />
- * 
+ *
  * // Card overlay
  * <div className="relative">
  *   <CardContent />
@@ -37,16 +37,16 @@ export function LoadingOverlay({
   fullScreen = false,
   blur = true,
   className,
-  spinnerSize = "md",
-  variant = "default",
+  spinnerSize = 'md',
+  variant = 'default',
 }: LoadingOverlayProps) {
   const overlayVariants = {
-    card: "absolute inset-0 rounded-lg z-10",
-    inline: "inline-flex items-center gap-2",
-    default: fullScreen ? "fixed inset-0 z-50" : "absolute inset-0 z-10",
+    card: 'absolute inset-0 rounded-lg z-10',
+    inline: 'inline-flex items-center gap-2',
+    default: fullScreen ? 'fixed inset-0 z-50' : 'absolute inset-0 z-10',
   };
 
-  if (variant === "inline") {
+  if (variant === 'inline') {
     return (
       <AnimatePresence>
         {isLoading && (
@@ -54,9 +54,9 @@ export function LoadingOverlay({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={cn("inline-flex items-center gap-2 text-muted-foreground", className)}
+            className={cn('inline-flex items-center gap-2 text-muted-foreground', className)}
           >
-            <Loader2 className={cn("animate-spin", spinnerSizes[spinnerSize])} />
+            <Loader2 className={cn('animate-spin', spinnerSizes[spinnerSize])} />
             {message && <span className="text-sm">{message}</span>}
           </motion.div>
         )}
@@ -74,9 +74,9 @@ export function LoadingOverlay({
           transition={{ duration: 0.2 }}
           className={cn(
             overlayVariants[variant],
-            blur && "backdrop-blur-sm",
-            "bg-background/80 flex items-center justify-center",
-            className
+            blur && 'backdrop-blur-sm',
+            'flex items-center justify-center bg-background/80',
+            className,
           )}
         >
           <motion.div
@@ -88,17 +88,14 @@ export function LoadingOverlay({
           >
             <div className="relative">
               {/* Glow effect behind spinner */}
-              <div 
+              <div
                 className={cn(
-                  "absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse",
-                  spinnerSizes[spinnerSize]
-                )} 
+                  'absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl',
+                  spinnerSizes[spinnerSize],
+                )}
               />
-              <Loader2 
-                className={cn(
-                  "relative animate-spin text-primary",
-                  spinnerSizes[spinnerSize]
-                )} 
+              <Loader2
+                className={cn('relative animate-spin text-primary', spinnerSizes[spinnerSize])}
               />
             </div>
             {message && (
@@ -106,7 +103,7 @@ export function LoadingOverlay({
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-sm text-muted-foreground font-medium"
+                className="text-sm font-medium text-muted-foreground"
               >
                 {message}
               </motion.p>
@@ -121,21 +118,15 @@ export function LoadingOverlay({
 /**
  * InlineLoader - Loader inline para botões e textos
  */
-export function InlineLoader({ 
-  className, 
-  size = "sm" 
-}: { 
+export function InlineLoader({
+  className,
+  size = 'sm',
+}: {
   className?: string;
-  size?: "sm" | "md";
+  size?: 'sm' | 'md';
 }) {
   return (
-    <Loader2 
-      className={cn(
-        "animate-spin",
-        size === "sm" ? "h-4 w-4" : "h-5 w-5",
-        className
-      )} 
-    />
+    <Loader2 className={cn('animate-spin', size === 'sm' ? 'h-4 w-4' : 'h-5 w-5', className)} />
   );
 }
 
@@ -143,14 +134,7 @@ export function InlineLoader({
  * SkeletonPulse - Skeleton simples com animação de pulse
  */
 export function SkeletonPulse({ className }: { className?: string }) {
-  return (
-    <div 
-      className={cn(
-        "animate-pulse rounded-md bg-muted",
-        className
-      )} 
-    />
-  );
+  return <div className={cn('animate-pulse rounded-md bg-muted', className)} />;
 }
 
 export default LoadingOverlay;

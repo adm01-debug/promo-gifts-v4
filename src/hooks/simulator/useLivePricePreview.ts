@@ -1,6 +1,6 @@
 /**
  * useLivePricePreview - Debounced price estimate for StepSpecs
- * 
+ *
  * Fetches a quick price estimate from the cheapest technique
  * as the user adjusts dimensions/colors, before clicking "Compare".
  */
@@ -76,7 +76,7 @@ export function useLivePricePreview({
       setIsLoading(true);
 
       // Pick the first technique with pricing as a preview candidate
-      const tech = selectedLocation.availableTechniques.find(t => t.hasPricing !== false);
+      const tech = selectedLocation.availableTechniques.find((t) => t.hasPricing !== false);
       if (!tech) {
         setIsLoading(false);
         return;
@@ -84,7 +84,8 @@ export function useLivePricePreview({
 
       try {
         const cobraPorCor = tech.cobraPorCor !== false;
-        const effectiveColors = (!cobraPorCor || (tech.maxColors ?? 0) <= 1) ? 1 : engravingSpecs.colors;
+        const effectiveColors =
+          !cobraPorCor || (tech.maxColors ?? 0) <= 1 ? 1 : engravingSpecs.colors;
         const usaDimensao = tech.usaDimensao !== false;
 
         const rpcParams: Record<string, unknown> = {
@@ -100,7 +101,7 @@ export function useLivePricePreview({
 
         const result = await invokeExternalRpc<CustomizationPriceResponse>(
           'fn_get_customization_price',
-          rpcParams
+          rpcParams,
         );
 
         if (abortRef.current) return; // Stale response
@@ -108,7 +109,8 @@ export function useLivePricePreview({
         if (result?.success) {
           const flat = adaptPriceResponse(result);
           const usedWidth = usaDimensao && engravingSpecs.width > 0 ? engravingSpecs.width : null;
-          const usedHeight = usaDimensao && engravingSpecs.height > 0 ? engravingSpecs.height : null;
+          const usedHeight =
+            usaDimensao && engravingSpecs.height > 0 ? engravingSpecs.height : null;
           const usedArea = usedWidth && usedHeight ? +(usedWidth * usedHeight).toFixed(2) : null;
           setEstimate({
             cheapestName: flat.technique || tech.techniqueName,
@@ -154,7 +156,14 @@ export function useLivePricePreview({
       if (timerRef.current) clearTimeout(timerRef.current);
       abortRef.current = true;
     };
-  }, [selectedLocation, engravingSpecs.colors, engravingSpecs.width, engravingSpecs.height, quantity, enabled]);
+  }, [
+    selectedLocation,
+    engravingSpecs.colors,
+    engravingSpecs.width,
+    engravingSpecs.height,
+    quantity,
+    enabled,
+  ]);
 
   return { estimate, isLoading };
 }

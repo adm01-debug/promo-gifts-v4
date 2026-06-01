@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useAdvancedFilters } from "@/hooks/products/useAdvancedFilters";
-import * as useExternalDatabaseModule from "@/hooks/intelligence/useExternalDatabase";
+import { useAdvancedFilters } from '@/hooks/products/useAdvancedFilters';
+import * as useExternalDatabaseModule from '@/hooks/intelligence/useExternalDatabase';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
 // Mocking useExternalDatabase and specific hooks

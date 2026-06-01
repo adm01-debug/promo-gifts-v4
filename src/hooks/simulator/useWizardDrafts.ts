@@ -6,7 +6,12 @@ import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { SimulatorWizardState, SelectedProduct, Personalization } from '@/types/domain/simulator-wizard';
+import type {
+  SimulatorWizardState,
+  SelectedProduct,
+  Personalization,
+} from '@/types/domain/simulator-wizard';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface WizardDraft {
   id: string;
@@ -25,7 +30,9 @@ export function useWizardDrafts() {
   const { data: drafts, isLoading } = useQuery({
     queryKey: ['wizard-drafts'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -36,7 +43,7 @@ export function useWizardDrafts() {
         .limit(20);
 
       if (error) throw error;
-      return (data || []).map(d => ({
+      return (data || []).map((d) => ({
         ...d,
         product_data: d.product_data as unknown as SelectedProduct,
         personalizations: d.personalizations as unknown as Personalization[],
@@ -47,20 +54,20 @@ export function useWizardDrafts() {
 
   const saveDraftMutation = useMutation({
     mutationFn: async ({ title, state }: { title: string; state: SimulatorWizardState }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
       if (!state.selectedProduct) throw new Error('Nenhum produto selecionado');
 
-      const { error } = await supabase
-        .from('simulator_wizard_drafts')
-        .insert({
-          user_id: user.id,
-          title,
-          product_data: state.selectedProduct as unknown,
-          quantity: state.quantity,
-          personalizations: state.personalizations as unknown,
-          wizard_step: state.currentStep,
-        });
+      const { error } = await supabase.from('simulator_wizard_drafts').insert({
+        user_id: user.id,
+        title,
+        product_data: state.selectedProduct as unknown as Json,
+        quantity: state.quantity,
+        personalizations: state.personalizations as unknown as Json,
+        wizard_step: state.currentStep,
+      });
 
       if (error) throw error;
     },
@@ -75,10 +82,7 @@ export function useWizardDrafts() {
 
   const deleteDraftMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('simulator_wizard_drafts')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('simulator_wizard_drafts').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -87,9 +91,12 @@ export function useWizardDrafts() {
     },
   });
 
-  const saveDraft = useCallback((title: string, state: SimulatorWizardState) => {
-    saveDraftMutation.mutate({ title, state });
-  }, [saveDraftMutation]);
+  const saveDraft = useCallback(
+    (title: string, state: SimulatorWizardState) => {
+      saveDraftMutation.mutate({ title, state });
+    },
+    [saveDraftMutation],
+  );
 
   return {
     drafts: drafts || [],

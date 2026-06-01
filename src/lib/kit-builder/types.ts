@@ -96,9 +96,9 @@ export interface KitPersonalization {
 // ============================================
 
 export interface KitIdentity {
-  color: string;       // hex
-  icon: string;        // lucide icon name
-  tag?: string;        // free text label
+  color: string; // hex
+  icon: string; // lucide icon name
+  tag?: string; // free text label
   description?: string;
   isFavorite?: boolean;
 }
@@ -197,7 +197,16 @@ export interface ExternalProductForKit {
   image_url: string | null;
   primary_image_url: string | null;
   images?: string[] | null;
-  dimensions?: string | { width_cm?: number; height_cm?: number; length_cm?: number; diameter_cm?: number; shape_type?: string } | null;
+  dimensions?:
+    | string
+    | {
+        width_cm?: number;
+        height_cm?: number;
+        length_cm?: number;
+        diameter_cm?: number;
+        shape_type?: string;
+      }
+    | null;
   category_id?: string | null;
   colors?: ExternalColorEntry[] | null;
   materials?: (string | ExternalMaterialEntry)[] | null;
@@ -239,6 +248,6 @@ export interface ExternalProductForKit {
 // ============================================
 
 export function mmToCm(mm: number | null | undefined): number | null {
-  if (mm === null || mm <= 0) return null;
+  if (mm === null || mm === undefined || mm <= 0) return null;
   return mm / 10;
 }

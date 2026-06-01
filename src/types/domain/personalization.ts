@@ -1,6 +1,6 @@
 /**
  * Domain Types: Personalização
- * 
+ *
  * SSOT interno - Tipos de domínio puros, independentes de infraestrutura.
  * Usados pela camada de serviços e regras de negócio.
  */
@@ -20,7 +20,7 @@ export interface Technique {
   description: string | null;
   category: TechniqueCategory;
   icon: string | null;
-  
+
   // Configuração de cores
   colorConfig: {
     required: boolean;
@@ -29,7 +29,7 @@ export interface Technique {
     priceByColor: boolean;
     extraColorPrice: number;
   };
-  
+
   // Configuração de área/pontos
   areaConfig: {
     priceByArea: boolean;
@@ -38,34 +38,34 @@ export interface Technique {
     maxAreaCm2: number | null;
     maxStitches: number | null;
   };
-  
+
   // Custos base
   costs: {
     setup: number;
     handling: number;
     multiplier: number;
   };
-  
+
   // Características
   appliesToCurved: boolean;
   promptSuffix: string | null;
-  
+
   // Códigos externos (para integração)
   externalCodes: {
     supplier: string | null;
     stricker: string | null;
   };
-  
+
   // Status
   isActive: boolean;
   displayOrder: number;
-  
+
   // Metadados
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type TechniqueCategory = 
+export type TechniqueCategory =
   | 'impression'
   | 'engraving'
   | 'textile'
@@ -98,7 +98,7 @@ export interface TechniqueSummary {
  */
 export interface PriceTable {
   id: string;
-  
+
   // Identificação
   code: string;
   codeOption: string;
@@ -106,7 +106,7 @@ export interface PriceTable {
   serviceCode: string | null;
   techniqueName: string;
   techniqueId: string | null;
-  
+
   // Limites
   limits: {
     maxColors: number | null;
@@ -115,23 +115,23 @@ export interface PriceTable {
     minAreaCm2: number | null;
     maxAreaCm2: number | null;
   };
-  
+
   // Tipo de precificação
   pricing: {
     byColor: boolean;
     byArea: boolean;
     byStitches: boolean;
   };
-  
+
   // Custos fixos
   fixedCosts: {
     setup: number;
     handling: number;
   };
-  
+
   // Faixas de quantidade
   tiers: PriceTier[];
-  
+
   // Metadados
   supplierId: string | null;
   source: string | null;
@@ -144,7 +144,7 @@ export interface PriceTable {
  * Faixa de preço por quantidade
  */
 export interface PriceTier {
-  tier: number;           // 1-15
+  tier: number; // 1-15
   minQuantity: number;
   maxQuantity: number | null;
   unitPrice: number;
@@ -168,7 +168,7 @@ export interface PriceCalculationParams {
 
 /**
  * Resultado do cálculo de preço v5.1
- * 
+ *
  * LÓGICA v5.1:
  * - Setup = CUSTO do faturamento mínimo (não é somado ao total!)
  * - faturamento_minimo = custo_setup × (1 + markup%)
@@ -178,53 +178,53 @@ export interface PriceCalculationParams {
 export interface PriceCalculationResult {
   tableId: string;
   tableCode: string;
-  tableCodeShort?: string;      // Código curto (ex: FB, ST, TP)
+  tableCodeShort?: string; // Código curto (ex: FB, ST, TP)
   techniqueName: string;
-  
+
   // Código de orçamento v5.1
-  quoteCode?: string;           // Formato: {TECNICA_CURTO}01-{FAIXA}-{AREA}-{CORES}
-  
+  quoteCode?: string; // Formato: {TECNICA_CURTO}01-{FAIXA}-{AREA}-{CORES}
+
   // Quantidade e faixa
   quantity: number;
   tierUsed: number;
   tierMinQty?: number;
   tierMaxQty?: number;
-  
+
   // CUSTOS (base, sem markup)
-  costBaseUnit?: number;        // Preço unitário base da faixa
-  costUnitTotal?: number;       // Custo unitário ajustado (com cores)
-  costSetup?: number;           // Custo do setup
-  costTotal?: number;           // Custo total das peças
-  
+  costBaseUnit?: number; // Preço unitário base da faixa
+  costUnitTotal?: number; // Custo unitário ajustado (com cores)
+  costSetup?: number; // Custo do setup
+  costTotal?: number; // Custo total das peças
+
   // MARKUP
-  markupPercent?: number;       // % de markup aplicado (ex: 115)
-  minUnitPrice?: number;        // Preço mínimo por unidade
-  
+  markupPercent?: number; // % de markup aplicado (ex: 115)
+  minUnitPrice?: number; // Preço mínimo por unidade
+
   // PREÇOS FINAIS (com markup)
   unitPrice: number;
   subtotal: number;
   setupPrice: number;
   handlingPrice: number;
-  
+
   // Faturamento mínimo v5.1
-  minimumInvoice?: number;      // faturamento_minimo_gravacao
-  minimumApplied?: boolean;     // Se o mínimo foi aplicado
-  
+  minimumInvoice?: number; // faturamento_minimo_gravacao
+  minimumApplied?: boolean; // Se o mínimo foi aplicado
+
   grandTotal: number;
-  
+
   // MARGEM
-  marginPercent?: number;       // Margem de lucro em %
-  
+  marginPercent?: number; // Margem de lucro em %
+
   // Economia
   savings?: {
     perUnit: number;
     total: number;
     percentOff: number;
   };
-  
+
   // Prazo
   slaDays: number | null;
-  
+
   // Limites aplicados
   maxColors: number | null;
   maxArea: PrintArea | null;

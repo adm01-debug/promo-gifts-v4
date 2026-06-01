@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
 interface IPValidationResult {
   isAllowed: boolean;
@@ -17,6 +17,7 @@ export function useIPValidation() {
   const fetchCurrentIP = useCallback(async (): Promise<string | null> => {
     try {
       // Usar a nossa própria edge function que é mais confiável e contorna AdBlockers
+      const supabase = await getSupabaseClient();
       const { data, error } = await supabase.functions.invoke('get-visitor-info');
       if (error || !data?.ip) {
         console.warn('Fallback to secondary IP identification');
@@ -35,136 +36,151 @@ export function useIPValidation() {
   }, []);
 
   // Validar IP para um usuário específico (por email) - pré-login
-  const validateIPForUser = useCallback(async (_email: string): Promise<IPValidationResult> => {
-    try {
-      const currentIP = await fetchCurrentIP();
-      return {
-        isAllowed: true, // Validação completa acontece após login via edge function
-        currentIP,
-        hasRestrictions: false
-      };
-    } catch (error: unknown) {
-      return {
-        isAllowed: false,
-        currentIP: null,
-        hasRestrictions: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
-      };
-    }
-  }, [fetchCurrentIP]);
-
-  // Validar IP e cidade para usuário autenticado via edge function
-  const validateIPForAuthenticatedUser = useCallback(async (_userId: string): Promise<IPValidationResult> => {
-    setIsValidating(true);
-    
-    try {
-      const currentIP = await fetchCurrentIP();
-      
-      if (!currentIP) {
+  const validateIPForUser = useCallback(
+    async (_email: string): Promise<IPValidationResult> => {
+      try {
+        const currentIP = await fetchCurrentIP();
+        return {
+          isAllowed: true, // Validação completa acontece após login via edge function
+          currentIP,
+          hasRestrictions: false,
+        };
+      } catch (error: unknown) {
         return {
           isAllowed: false,
           currentIP: null,
           hasRestrictions: false,
-          error: 'Não foi possível identificar seu IP'
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
         };
       }
+    },
+    [fetchCurrentIP],
+  );
 
-      // Chamar edge function validate-access
-      const { data, error } = await supabase.functions.invoke('validate-access', {
-        body: {
-          ip: currentIP,
-          userAgent: navigator.userAgent,
-        },
-      });
+  // Validar IP e cidade para usuário autenticado via edge function
+  const validateIPForAuthenticatedUser = useCallback(
+    async (_userId: string): Promise<IPValidationResult> => {
+      setIsValidating(true);
 
-      if (error) {
-        console.error('Error calling validate-access:', error);
-        // Em caso de erro na validação, permitir acesso (fail-open)
-        return {
-          isAllowed: true,
-          currentIP,
-          hasRestrictions: false,
-          error: error.message
+      try {
+        const currentIP = await fetchCurrentIP();
+
+        if (!currentIP) {
+          return {
+            isAllowed: false,
+            currentIP: null,
+            hasRestrictions: false,
+            error: 'Não foi possível identificar seu IP',
+          };
+        }
+
+        // Chamar edge function validate-access
+        const supabase = await getSupabaseClient();
+        const { data, error } = await supabase.functions.invoke('validate-access', {
+          body: {
+            ip: currentIP,
+            userAgent: navigator.userAgent,
+          },
+        });
+
+        if (error) {
+          console.error('Error calling validate-access:', error);
+          // Em caso de erro na validação, permitir acesso (fail-open)
+          return {
+            isAllowed: true,
+            currentIP,
+            hasRestrictions: false,
+            error: error.message,
+          };
+        }
+
+        if (!data) {
+          return { isAllowed: true, currentIP, hasRestrictions: false };
+        }
+
+        const result = data as {
+          allowed: boolean;
+          reason: string;
+          details?: Record<string, unknown>;
         };
-      }
 
-      if (!data) {
-        return { isAllowed: true, currentIP, hasRestrictions: false };
-      }
+        if (!result.allowed) {
+          let errorMsg = 'Acesso negado';
+          if (result.reason === 'ip_not_whitelisted') {
+            errorMsg = `Seu IP (${currentIP}) não está autorizado para acessar o sistema.`;
+          } else if (result.reason === 'city_not_whitelisted') {
+            const details = result.details || {};
+            errorMsg = `Acesso negado: sua localização (${details.detected_city || 'desconhecida'}) não está autorizada.`;
+          } else if (result.reason === 'too_many_attempts') {
+            const details = result.details || {};
+            errorMsg = `IP bloqueado temporariamente por excesso de tentativas. Tente novamente em ${details.lockout_minutes || 15} minutos.`;
+          }
 
-      const result = data as { allowed: boolean; reason: string; details?: Record<string, unknown> };
-
-      if (!result.allowed) {
-        let errorMsg = 'Acesso negado';
-        if (result.reason === 'ip_not_whitelisted') {
-          errorMsg = `Seu IP (${currentIP}) não está autorizado para acessar o sistema.`;
-        } else if (result.reason === 'city_not_whitelisted') {
-          const details = result.details || {};
-          errorMsg = `Acesso negado: sua localização (${details.detected_city || 'desconhecida'}) não está autorizada.`;
-        } else if (result.reason === 'too_many_attempts') {
-          const details = result.details || {};
-          errorMsg = `IP bloqueado temporariamente por excesso de tentativas. Tente novamente em ${details.lockout_minutes || 15} minutos.`;
+          return {
+            isAllowed: false,
+            currentIP,
+            hasRestrictions: true,
+            error: errorMsg,
+            reason: result.reason,
+            details: result.details,
+          };
         }
 
         return {
-          isAllowed: false,
+          isAllowed: true,
           currentIP,
-          hasRestrictions: true,
-          error: errorMsg,
-          reason: result.reason,
-          details: result.details,
+          hasRestrictions: result.reason !== 'no_settings',
         };
+      } catch (error: unknown) {
+        console.error('Error in IP validation:', error);
+        // Fail-open: se não conseguir validar, permite
+        return {
+          isAllowed: true,
+          currentIP: null,
+          hasRestrictions: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      } finally {
+        setIsValidating(false);
       }
-
-      return {
-        isAllowed: true,
-        currentIP,
-        hasRestrictions: result.reason !== 'no_settings',
-      };
-    } catch (error: unknown) {
-      console.error('Error in IP validation:', error);
-      // Fail-open: se não conseguir validar, permite
-      return {
-        isAllowed: true,
-        currentIP: null,
-        hasRestrictions: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
-      };
-    } finally {
-      setIsValidating(false);
-    }
-  }, [fetchCurrentIP]);
+    },
+    [fetchCurrentIP],
+  );
 
   // Registrar tentativa de login
-  const logLoginAttempt = useCallback(async (
-    email: string,
-    userId: string | null,
-    success: boolean,
-    failureReason?: string
-  ): Promise<void> => {
-    try {
-      const currentIP = await fetchCurrentIP();
-      
-      await supabase.functions.invoke('log-login-attempt', {
-        body: {
-          email,
-          user_id: userId,
-          ip_address: currentIP || 'unknown',
-          success,
-          failure_reason: failureReason || null,
-          user_agent: navigator.userAgent,
-        },
-      });
-    } catch (error) {
-      console.error('Error logging login attempt:', error);
-    }
-  }, [fetchCurrentIP]);
+  const logLoginAttempt = useCallback(
+    async (
+      email: string,
+      userId: string | null,
+      success: boolean,
+      failureReason?: string,
+    ): Promise<void> => {
+      try {
+        const currentIP = await fetchCurrentIP();
+
+        const supabase = await getSupabaseClient();
+        await supabase.functions.invoke('log-login-attempt', {
+          body: {
+            email,
+            user_id: userId,
+            ip_address: currentIP || 'unknown',
+            success,
+            failure_reason: failureReason || null,
+            user_agent: navigator.userAgent,
+          },
+        });
+      } catch (error) {
+        console.error('Error logging login attempt:', error);
+      }
+    },
+    [fetchCurrentIP],
+  );
 
   return {
     isValidating,
     fetchCurrentIP,
     validateIPForUser,
     validateIPForAuthenticatedUser,
-    logLoginAttempt
+    logLoginAttempt,
   };
 }

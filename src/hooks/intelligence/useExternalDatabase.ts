@@ -8,6 +8,7 @@
  *
  * Este arquivo contém o hook principal e re-exporta tudo para compatibilidade.
  */
+import { dbInvoke, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -17,7 +18,8 @@ export * from '@/lib/external-db/tables';
 export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 
 import type { ExternalTable } from '@/lib/external-db/tables';
-import { invokeWithRetry, extractFunctionErrorMessage } from '@/lib/external-db/invoke';
+import { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
+import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';
 import type {
   ExternalProduct,
@@ -73,6 +75,25 @@ interface ExternalDatabaseState<T> {
   error: string | null;
 }
 
+/**
+ * Verifica se um erro é relacionado ao bridge descontinuado.
+ * Quando o kill-switch está OFF ou há falha de rede com o bridge,
+ * o erro não deve gerar toast (é esperado e silencioso).
+ */
+function isBridgeRelatedError(err: unknown, message: string): boolean {
+  // KillSwitchActiveError: bridge explicitamente desativado
+  if (err instanceof KillSwitchActiveError) return true;
+  // Mensagens típicas do bridge desativado ou erro de rede com a edge function
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('external-db-bridge') ||
+    lower.includes('kill-switch') ||
+    lower.includes('failed to send a request to the edge function') ||
+    lower.includes('foi descontinuada') ||
+    lower.includes('migre para rest nativo')
+  );
+}
+
 // ============================================
 // HOOK PRINCIPAL
 // ============================================
@@ -107,11 +128,25 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       }
 
       try {
-        const { data, error } = await invokeWithRetry({
+        // MIGRAÇÃO REST-NATIVO (2026-05-30): roteia via dbInvoke, que tenta o
+        // REST nativo (PostgREST) primeiro e, quando o kill-switch `edge_external_db_bridge`
+        // está OFF, retorna vazio em SILÊNCIO — sem emitir o evento `unavailable` que o
+        // invokeWithRetry legado disparava (banner de "catálogo indisponível") para um
+        // estado que hoje é o esperado. Ver src/lib/external-db/bridge.ts::dbInvoke.
+        //
+        // SELECT por id: o REST nativo filtra via PostgREST (.eq), então traduzimos o id
+        // em filtro. Para escritas (insert/update/delete) o id segue no campo próprio.
+        const idFilter = operation === 'select' && options?.id ? { id: options.id } : undefined;
+        const mergedFilters =
+          idFilter || options?.filters
+            ? { ...(options?.filters ?? {}), ...(idFilter ?? {}) }
+            : undefined;
+
+        const result = await dbInvoke<T>({
           table: tableName,
           operation,
-          data: options?.data,
-          filters: options?.filters,
+          data: options?.data as Record<string, unknown> | undefined,
+          filters: mergedFilters,
           id: options?.id,
           select: options?.select,
           orderBy: options?.orderBy,
@@ -119,19 +154,8 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
           offset: options?.offset,
         });
 
-        if (error) {
-          const message = await extractFunctionErrorMessage(error);
-          throw new Error(message);
-        }
-
-        const bridgeData = data as { success?: boolean; error?: string; data?: unknown } | null;
-
-        if (!bridgeData?.success) {
-          throw new Error(bridgeData?.error || 'Erro desconhecido');
-        }
-
+        // dbInvoke já devolve { records, count } desempacotado.
         if (operation === 'select') {
-          const result = (bridgeData?.data ?? null) as QueryResult<T>;
           if (isMountedRef.current) {
             setState((prev) => ({
               ...prev,
@@ -140,17 +164,24 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
               isLoading: false,
             }));
           }
-          return result;
+          return result as QueryResult<T>;
         }
         if (isMountedRef.current) {
           setState((prev) => ({ ...prev, isLoading: false }));
         }
-        return (bridgeData?.data ?? null) as T;
+        return (result.records[0] ?? null) as T;
       } catch (err) {
         const errorMessage = await extractFunctionErrorMessage(err);
         if (isMountedRef.current) {
           setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
-          toast.error(errorMessage);
+          // Não exibir toast para erros do bridge descontinuado — são esperados e silenciosos
+          // (kill-switch OFF / falha de rede com a edge function). Demais erros (auth, dados)
+          // continuam gerando toast normalmente.
+          if (!isBridgeRelatedError(err, errorMessage)) {
+            toast.error(errorMessage);
+          } else {
+            logger.warn(`[useExternalDatabase:${tableName}] bridge silenciado: ${errorMessage}`);
+          }
         }
         return null;
       }
@@ -218,14 +249,17 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
 
   const remove = useCallback(
     async (id: string) => {
-      const result = await invoke('delete', { id });
-      if (result) {
+      try {
+        await dbInvokeDelete({ table: tableName, id });
         toast.success('Registro excluído com sucesso!');
         return true;
+      } catch (err) {
+        console.error('Error deleting:', err);
+        toast.error('Erro ao excluir registro');
+        return false;
       }
-      return false;
     },
-    [invoke],
+    [tableName],
   );
 
   const refetch = useCallback(
@@ -255,10 +289,12 @@ export function useExternalProducts() {
   return useExternalDatabase<ExternalProduct>('products');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: product_images (acessível via supabase.from) */
 export function useExternalProductImages() {
   return useExternalDatabase<ExternalProductImage>('product_images');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: product_variants (acessível via supabase.from) */
 export function useExternalProductVariants() {
   return useExternalDatabase<ExternalProductVariant>('product_variants');
 }
@@ -271,22 +307,27 @@ export function useExternalSuppliers() {
   return useExternalDatabase<ExternalSupplier>('suppliers');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: supplier_colors (acessível via supabase.from) */
 export function useExternalSupplierColors() {
   return useExternalDatabase<ExternalSupplierColor>('supplier_colors');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: supplier_materials (acessível via supabase.from) */
 export function useExternalSupplierMaterials() {
   return useExternalDatabase<ExternalSupplierMaterial>('supplier_materials');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: supplier_attribute_definitions (acessível via supabase.from) */
 export function useExternalSupplierAttributeDefinitions() {
   return useExternalDatabase<ExternalSupplierAttributeDefinition>('supplier_attribute_definitions');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela `supplier_product_attributes` NÃO EXISTE no DB. */
 export function useExternalSupplierProductAttributes() {
   return useExternalDatabase<ExternalSupplierProductAttribute>('supplier_product_attributes');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela `product_suppliers` NÃO EXISTE no DB. */
 export function useExternalProductSuppliers() {
   return useExternalDatabase<ExternalProductSupplier>('product_suppliers');
 }
@@ -295,6 +336,7 @@ export function useExternalTechniques() {
   return useExternalDatabase<ExternalTechnique>('personalization_techniques');
 }
 
+/** @deprecated Dead code — 0 consumers. Use tabela_preco_gravacao_oficial via dbInvoke. */
 export function useExternalPriceTables() {
   return useExternalDatabase<ExternalPriceTable>('customization_price_tables');
 }
@@ -303,6 +345,7 @@ export function useExternalCollections() {
   return useExternalDatabase<ExternalCollection>('collections');
 }
 
+/** @deprecated Dead code — 0 consumers. Tabela real: tags (acessível via supabase.from) */
 export function useExternalTags() {
   return useExternalDatabase<ExternalTag>('tags');
 }

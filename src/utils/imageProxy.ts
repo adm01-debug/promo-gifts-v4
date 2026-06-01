@@ -3,10 +3,7 @@
  * Reescreve URLs de domínios bloqueados para passar pelo edge function proxy
  */
 
-const PROXIED_DOMAINS = [
-  'www.spotgifts.com.br',
-  'spotgifts.com.br',
-];
+const PROXIED_DOMAINS = ['www.spotgifts.com.br', 'spotgifts.com.br'];
 
 const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
@@ -15,7 +12,7 @@ const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
  */
 export function getProxiedImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  
+
   try {
     const parsed = new URL(url);
     if (PROXIED_DOMAINS.includes(parsed.hostname)) {
@@ -24,7 +21,7 @@ export function getProxiedImageUrl(url: string | null | undefined): string | nul
   } catch {
     // URL inválida, retorna como está
   }
-  
+
   return url;
 }
 

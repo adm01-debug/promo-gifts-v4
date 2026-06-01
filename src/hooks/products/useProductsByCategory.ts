@@ -31,13 +31,10 @@ export function useProductsByCategory({
   const [error, setError] = useState<string | null>(null);
   const [categoriesCount, setCategoriesCount] = useState(0);
   const [source, setSource] = useState<string | null>(null);
-  
+
   // CRITICAL: Estabilizar referência do array para evitar loops infinitos
-  const categoryIdsKey = useMemo(() => 
-    [...categoryIds].sort().join(','), 
-    [categoryIds]
-  );
-  
+  const categoryIdsKey = useMemo(() => [...categoryIds].sort().join(','), [categoryIds]);
+
   // Ref para evitar chamadas duplicadas
   const lastFetchedKey = useRef<string>('');
   const isFetchingRef = useRef(false);
@@ -51,7 +48,7 @@ export function useProductsByCategory({
     // Evitar chamadas duplicadas
     if (isFetchingRef.current) return;
     if (lastFetchedKey.current === categoryIdsKey && productIds.size > 0) return;
-    
+
     if (!hasFilter || !enabled) {
       setProductIds(new Set());
       setCategoriesCount(0);
@@ -85,7 +82,6 @@ export function useProductsByCategory({
       setCategoriesCount(data.categoriesUsed || categoryIds.length);
       setSource(data.source || null);
       lastFetchedKey.current = categoryIdsKey;
-
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       console.error('Erro ao buscar produtos por categoria:', err);

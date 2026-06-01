@@ -9,8 +9,11 @@
  * Use este hook em vez dos hooks internos para garantir compatibilidade
  * futura caso a implementação subjacente mude.
  */
-import { useWorkspaceNotifications, type WorkspaceNotification } from "@/hooks/ui/useWorkspaceNotifications";
-import { usePushNotifications } from "@/hooks/ui/usePushNotifications";
+import {
+  useWorkspaceNotifications,
+  type WorkspaceNotification,
+} from '@/hooks/ui/useWorkspaceNotifications';
+import { usePushNotifications } from '@/hooks/ui/usePushNotifications';
 
 export type { WorkspaceNotification };
 

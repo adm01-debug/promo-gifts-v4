@@ -105,7 +105,7 @@ export function MaskedSuffixBadge({
           <span className="hidden sm:inline">— {diagnosis.label}</span>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top" align="start" className="max-w-xs text-xs leading-relaxed">
+      <TooltipContent side="top" align="start" className="leading-relaxed">
         <p className="mb-1 font-medium">{diagnosis.label}</p>
         <p className="text-muted-foreground">{diagnosis.message}</p>
         {isFallback && length !== null && length !== undefined && length > 0 && (

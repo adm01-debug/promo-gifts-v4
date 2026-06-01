@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.external-db-inspect]
 verify_jwt = false
 
-[functions.external-db-bridge]
-verify_jwt = false
-
 [functions.image-proxy]
 verify_jwt = false
 
@@ -30,9 +27,14 @@ verify_jwt = false
 [functions.e2e-cleanup]
 verify_jwt = false
 
-# Cron functions — autenticadas via x-cron-secret (vault-based, ver _shared/dispatcher-auth.ts)
-# Não usam JWT do Supabase Auth porque pg_cron não tem usuário/sessão.
-# Segurança: header x-cron-secret comparado em tempo constante com vault.CRON_SECRET.
+# get-visitor-info: chamada antes do login para detectar IP/geo do visitante.
+# verify_jwt=false porque usuarios anonimos nao tem sessao JWT ativa.
+[functions.get-visitor-info]
+verify_jwt = false
+
+# Cron functions - autenticadas via x-cron-secret (vault-based, ver _shared/dispatcher-auth.ts)
+# Nao usam JWT do Supabase Auth porque pg_cron nao tem usuario/sessao.
+# Seguranca: header x-cron-secret comparado em tempo constante com vault.CRON_SECRET.
 
 [functions.cleanup-notifications]
 verify_jwt = false

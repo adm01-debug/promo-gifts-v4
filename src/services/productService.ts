@@ -7,9 +7,14 @@ const getFiniteNumber = (value: unknown): number | null =>
 
 export const productService = {
   async fetchProducts(filters?: ProductFilters) {
+    const externalFilters: Record<string, unknown> = {};
+    if (filters?.categoryId) externalFilters.main_category_id = filters.categoryId;
+    if (filters?.inStock) externalFilters.stock_quantity = { op: 'gt', value: 0 };
+
     const products = await fetchPromobrindProducts({
       search: filters?.search,
       limit: filters?.limit,
+      filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
     });
 
     let result = products.map(mapPromobrindToProduct);
@@ -40,6 +45,7 @@ export const productService = {
       });
     }
 
+    // Belt+suspenders: client-side filter kept as safety net for bridge fallback
     if (filters?.inStock) {
       result = result.filter((p) => (p.stock || 0) > 0);
     }
@@ -49,7 +55,11 @@ export const productService = {
 
   async fetchProductById(id: string) {
     const product = await fetchPromobrindProductById(id);
-    return product ? mapPromobrindToProduct(product) : null;
+    if (!product) return null;
+
+    const mapped = mapPromobrindToProduct(product);
+
+    return mapped;
   },
 
   async fetchRelatedProducts(product: Product, limit = 20) {

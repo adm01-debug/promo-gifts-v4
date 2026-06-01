@@ -11,3 +11,6 @@ bun.lock
 bun.lockb
 package-lock.json
 supabase/migrations
+
+# Bug Lovable: TSX sintaticamente inválido (brace imbalance) — aguardando fix
+src/pages/tools/VisualSearchPage.tsx

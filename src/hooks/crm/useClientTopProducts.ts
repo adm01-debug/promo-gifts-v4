@@ -24,7 +24,7 @@ export function useClientTopProducts(clientId?: string) {
 
       if (!orders?.length) return [];
 
-      const orderIds = orders.map(o => o.id);
+      const orderIds = orders.map((o) => o.id);
 
       const { data: items } = await supabase
         .from('order_items')
@@ -33,24 +33,27 @@ export function useClientTopProducts(clientId?: string) {
 
       if (!items?.length) return [];
 
-      const productStats = items.reduce((acc, item) => {
-        const key = item.product_sku || item.product_name;
-        if (!key) return acc;
-        if (!acc[key]) {
-          acc[key] = {
-            sku: item.product_sku,
-            name: item.product_name || '',
-            image: item.product_image_url,
-            totalQuantity: 0,
-            totalValue: 0,
-            orderCount: 0
-          };
-        }
-        acc[key].totalQuantity += item.quantity ?? 0;
-        acc[key].totalValue += ((item.quantity ?? 0) * (item.unit_price ?? 0));
-        acc[key].orderCount++;
-        return acc;
-      }, {} as Record<string, ProductStat>);
+      const productStats = items.reduce(
+        (acc, item) => {
+          const key = item.product_sku || item.product_name;
+          if (!key) return acc;
+          if (!acc[key]) {
+            acc[key] = {
+              sku: item.product_sku,
+              name: item.product_name || '',
+              image: item.product_image_url,
+              totalQuantity: 0,
+              totalValue: 0,
+              orderCount: 0,
+            };
+          }
+          acc[key].totalQuantity += item.quantity ?? 0;
+          acc[key].totalValue += (item.quantity ?? 0) * (item.unit_price ?? 0);
+          acc[key].orderCount++;
+          return acc;
+        },
+        {} as Record<string, ProductStat>,
+      );
 
       return Object.values(productStats)
         .sort((a, b) => b.totalValue - a.totalValue)

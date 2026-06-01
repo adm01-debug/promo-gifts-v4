@@ -12,11 +12,11 @@
  * pequenas ou registros legados.
  */
 export function normalizeMaskedSuffix(raw: string | null | undefined): string {
-  if (!raw) return "????";
+  if (!raw) return '????';
   const trimmed = raw.trim();
   if (trimmed.length === 4) return trimmed;
   if (trimmed.length > 4) return trimmed.slice(-4);
-  return trimmed.padStart(4, "•");
+  return trimmed.padStart(4, '•');
 }
 
 /** Retorna o sufixo já formatado com o prefixo "••••" pronto para exibição. */
@@ -34,7 +34,7 @@ export function formatMaskedSuffix(raw: string | null | undefined): string {
  * - `short`: sufixo presente mas com <4 chars — credencial muito curta ou
  *   truncada; recomenda-se re-salvar com um valor mais robusto.
  */
-export type MaskedSuffixStatus = "valid" | "missing" | "short";
+export type MaskedSuffixStatus = 'valid' | 'missing' | 'short';
 
 export interface MaskedSuffixDiagnosis {
   status: MaskedSuffixStatus;
@@ -50,14 +50,14 @@ export function diagnoseMaskedSuffix(
   raw: string | null | undefined,
   opts: { secretName?: string } = {},
 ): MaskedSuffixDiagnosis {
-  const trimmed = (raw ?? "").trim();
+  const trimmed = (raw ?? '').trim();
   const realLength = trimmed.length;
-  const who = opts.secretName ? ` "${opts.secretName}"` : "";
+  const who = opts.secretName ? ` "${opts.secretName}"` : '';
   if (realLength === 0) {
     return {
-      status: "missing",
+      status: 'missing',
       realLength: 0,
-      label: "Sufixo ausente",
+      label: 'Sufixo ausente',
       message:
         `O sufixo da credencial${who} não foi registrado. ` +
         `Isso costuma acontecer com credenciais antigas vindas do .env. ` +
@@ -65,9 +65,9 @@ export function diagnoseMaskedSuffix(
     };
   }
   if (realLength < 4) {
-    const noun = realLength === 1 ? "caractere" : "caracteres";
+    const noun = realLength === 1 ? 'caractere' : 'caracteres';
     return {
-      status: "short",
+      status: 'short',
       realLength,
       label: `Sufixo curto (${realLength}/4)`,
       message:
@@ -77,9 +77,9 @@ export function diagnoseMaskedSuffix(
     };
   }
   return {
-    status: "valid",
+    status: 'valid',
     realLength,
-    label: "Sufixo OK",
+    label: 'Sufixo OK',
     message: `Sufixo de 4 caracteres registrado corretamente.`,
   };
 }
@@ -103,9 +103,9 @@ export function resolveDisplaySuffix(
   raw: string | null | undefined,
   opts: { length?: number | null } = {},
 ): string {
-  const trimmed = (raw ?? "").trim();
+  const trimmed = (raw ?? '').trim();
   if (trimmed.length >= 4) return trimmed.slice(-4);
-  if (trimmed.length > 0) return trimmed.padStart(4, "•");
+  if (trimmed.length > 0) return trimmed.padStart(4, '•');
   // Fallback derivado: tenta refletir a presença da credencial via length.
   const len = opts.length ?? 0;
   if (len > 0) {
@@ -113,9 +113,9 @@ export function resolveDisplaySuffix(
     // espaço/zero-pad. Para tamanhos >=100, abrevia: "L99+".
     if (len < 10) return `L=0${len}`;
     if (len < 100) return `L=${len}`;
-    return "L99+";
+    return 'L99+';
   }
-  return "????";
+  return '????';
 }
 
 /**

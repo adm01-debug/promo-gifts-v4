@@ -14,10 +14,10 @@
  * TTL de 30 minutos: contexto mais antigo é descartado para evitar
  * "fantasmas" depois que o usuário sai e volta horas depois.
  */
-import { useCallback, useEffect, useState } from "react";
-import type { ZoneId } from "./useZoneVisibility";
+import { useCallback, useEffect, useState } from 'react';
+import type { ZoneId } from './useZoneVisibility';
 
-const STORAGE_KEY = "connections.focus-context.v1";
+const STORAGE_KEY = 'connections.focus-context.v1';
 const TTL_MS = 30 * 60 * 1000; // 30 minutos
 
 export interface FocusContext {
@@ -37,7 +37,7 @@ function loadInitial(): FocusContext {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...EMPTY };
     const parsed = JSON.parse(raw) as Partial<FocusContext>;
-    const savedAt = typeof parsed.savedAt === "number" ? parsed.savedAt : 0;
+    const savedAt = typeof parsed.savedAt === 'number' ? parsed.savedAt : 0;
     // Expira contexto antigo
     if (savedAt && Date.now() - savedAt > TTL_MS) return { ...EMPTY };
     return {

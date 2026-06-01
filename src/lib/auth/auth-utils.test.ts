@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getGreeting, getHighestRole, isSupervisorOrAbove, getRandomGreeting, FLOW_GREETINGS } from './auth-utils';
+import {
+  getGreeting,
+  getHighestRole,
+  isSupervisorOrAbove,
+  getRandomGreeting,
+  FLOW_GREETINGS,
+} from './auth-utils';
 import { type AppRole } from '@/contexts/AuthContext';
 
 describe('auth-utils', () => {
@@ -84,7 +90,7 @@ describe('auth-utils', () => {
       const name = 'John';
       // Mock Math.random to return 0.5 (should pick template 2 which has {greeting} and {name})
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
-      
+
       const result = getRandomGreeting(name);
       expect(result).toContain(name);
       vi.restoreAllMocks();
@@ -101,7 +107,7 @@ describe('auth-utils', () => {
         const result = getRandomGreeting(name);
         expect(result).toContain(name);
         vi.restoreAllMocks();
-      }
+      },
     );
 
     it('replaces greeting when present', () => {
@@ -109,7 +115,7 @@ describe('auth-utils', () => {
       const name = 'John';
       // Force first template: '{greeting}, {name}! ...'
       vi.spyOn(Math, 'random').mockReturnValue(0);
-      
+
       const result = getRandomGreeting(name);
       expect(result).toContain('Bom dia');
       expect(result).toContain(name);

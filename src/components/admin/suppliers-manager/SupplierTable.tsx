@@ -38,7 +38,7 @@ export function SupplierTable({
             <TableRow>
               <TableHead className="w-[50px]">Status</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>CÃ³digo</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead>Contato</TableHead>
               <TableHead className="text-right">Markup</TableHead>
               <TableHead className="text-center">Tipo</TableHead>
@@ -103,7 +103,7 @@ export function SupplierTable({
                       {supplier.email && <p>{supplier.email}</p>}
                       {supplier.phone && <p className="text-muted-foreground">{supplier.phone}</p>}
                       {!supplier.email && !supplier.phone && (
-                        <p className="text-muted-foreground">â€”</p>
+                        <p className="text-muted-foreground">—</p>
                       )}
                     </div>
                   </TableCell>
@@ -111,7 +111,7 @@ export function SupplierTable({
                     {supplier.default_markup_percent !== null ? (
                       <span className="font-mono text-sm">{supplier.default_markup_percent}%</span>
                     ) : (
-                      'â€”'
+                      '—'
                     )}
                   </TableCell>
                   <TableCell className="text-center">
@@ -123,13 +123,13 @@ export function SupplierTable({
                       )}
                       {supplier.is_engraving_supplier && (
                         <Badge variant="outline" className="px-1.5 text-[10px]">
-                          GravaÃ§Ã£o
+                          Gravação
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="font-mono text-sm">{supplier.priority ?? 'â€”'}</span>
+                    <span className="font-mono text-sm">{supplier.priority ?? '—'}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

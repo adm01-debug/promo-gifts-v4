@@ -162,11 +162,11 @@ export function SecretField({
               <div className="pointer-events-none absolute inset-0">
                 <JustSavedFlash
                   key={logic.flash.key}
-                  masked_suffix={logic.flash.masked_suffix}
+                  maskedSuffix={logic.flash.masked_suffix}
                   length={logic.flash.length}
                   action={logic.flash.action}
-                  was_update={logic.flash.was_update}
-                  was_env_fallback={logic.flash.was_env_fallback}
+                  wasUpdate={logic.flash.was_update}
+                  wasEnvFallback={logic.flash.was_env_fallback}
                 />
               </div>
             )}

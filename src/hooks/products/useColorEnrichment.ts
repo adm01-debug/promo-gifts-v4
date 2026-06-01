@@ -10,7 +10,6 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useMemo, useEffect } from 'react';
-import { invokeBatchBridge } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 interface ColorEnrichmentData {
@@ -37,7 +36,7 @@ let cachedColorVariations: Array<{
   name: string;
   slug: string;
   group_id: string;
-  hex_code?: string;
+  hex_code?: string | null;
 }> | null = null;
 
 /**
@@ -73,11 +72,14 @@ export function useColorEnrichment({
     return productIds.filter((id) => !enrichedIds.has(id));
   }, [productIds, hasFilter, filterKey]);
 
-  // Stable key: use count of new IDs + total count
+  // Chave por CONTEÚDO dos IDs (não só `.length`): dois conjuntos de IDs
+  // distintos com o mesmo tamanho colidiam na mesma entrada de cache e serviam
+  // enrichment do conjunto errado. `newProductIds` é memoizado em deps estáveis,
+  // então a chave não muda após o enrich (sem loop de refetch).
   const queryEnabled = hasFilter && newProductIds.length > 0;
 
   const query = useQuery({
-    queryKey: ['color-enrichment-batch', filterKey, newProductIds.length, productIds.length],
+    queryKey: ['color-enrichment-batch', filterKey, newProductIds.join(',')],
     queryFn: async (): Promise<Map<string, ColorEnrichmentData>> => {
       if (lastFilterKeyRef.current !== filterKey) {
         enrichedIdsRef.current = new Set();
@@ -89,7 +91,7 @@ export function useColorEnrichment({
 
       // Step 1: Load reference tables (cached after first call)
       if (!cachedColorGroups || !cachedColorVariations) {
-        const refResults = await invokeBatchBridge([
+        const refResults = await Promise.all([
           {
             table: 'color_groups',
             operation: 'select' as const,
@@ -165,7 +167,7 @@ export function useColorEnrichment({
 
       for (let i = 0; i < newProductIds.length; i += CHUNK) {
         const pidChunk = newProductIds.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
+        const results = await Promise.all([
           {
             table: 'product_variants',
             operation: 'select' as const,
@@ -196,7 +198,7 @@ export function useColorEnrichment({
 
       for (let i = 0; i < productIdsWithVariants.length; i += CHUNK) {
         const pidChunk = productIdsWithVariants.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
+        const results = await Promise.all([
           {
             table: 'product_images',
             operation: 'select' as const,
