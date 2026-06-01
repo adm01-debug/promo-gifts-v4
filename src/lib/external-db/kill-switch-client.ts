@@ -68,27 +68,52 @@ type KillSwitchTableClient = {
 const memoryCache = new Map<string, SwitchCheck>();
 
 /**
- * Bucket key estável por cliente. Para usuários anon, gera UUID v4 leve
- * uma única vez e persiste em localStorage. Para logged-in (futuro),
- * pode-se usar auth.uid().
+ * Gera um UUID v4 de forma segura usando crypto.randomUUID() quando disponível,
+ * com fallback para Date.now() + Math.random() (browsers antigos / Node SSR).
+ */
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof (crypto as { randomUUID?: () => string }).randomUUID === 'function') {
+    try {
+      return (crypto as { randomUUID: () => string }).randomUUID();
+    } catch {
+      // Fallback se randomUUID falhar (ex.: contexto não-seguro em HTTP)
+    }
+  }
+  // Fallback: Date.now() + entropia de Math.random() — suficiente para bucket key
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 10) +
+    Math.random().toString(36).slice(2, 10)
+  );
+}
+
+/**
+ * Bucket key estável por cliente.
+ *
+ * Browsers: gera UUID v4 uma única vez e persiste em localStorage.
+ *
+ * SSR / window undefined (BUG-02 fix): anteriormente retornava 'ssr-anon' fixo,
+ *   fazendo TODOS os usuários SSR caírem no mesmo bucket de rollout gradual
+ *   (rollout bias: 100% dos SSR users eram afetados ou 0%, nunca X%).
+ *   Agora gera key única por chamada em SSR. Não persiste, mas garante
+ *   distribuição uniforme no rollout.
+ *
+ * Para logged-in (futuro): pode-se usar auth.uid().
  */
 function getBucketKey(): string {
   if (typeof window === 'undefined' || !window.localStorage) {
-    return 'ssr-anon';
+    // SSR ou ambiente sem localStorage: key única por chamada para evitar bias.
+    return 'ssr-' + generateUUID();
   }
   try {
     let key = window.localStorage.getItem(BUCKET_KEY_STORAGE);
     if (!key) {
-      // UUID-like leve sem depender de crypto.randomUUID (compatível com browsers antigos)
-      key =
-        Date.now().toString(36) +
-        Math.random().toString(36).slice(2, 10) +
-        Math.random().toString(36).slice(2, 10);
+      key = generateUUID();
       window.localStorage.setItem(BUCKET_KEY_STORAGE, key);
     }
     return key;
   } catch {
-    return 'fallback-anon';
+    return 'fallback-' + generateUUID();
   }
 }
 
@@ -317,14 +342,22 @@ export function invalidateKillSwitchCache(switchName: string): void {
 
 /**
  * Erro lançado quando uma operação foi abortada pelo kill-switch.
+ *
+ * BUG-03 fix: removida redeclaração de `message` como propriedade própria.
+ * Error.message já é setado pelo super(message). Redeclarar conflitava com
+ * o setter herdado de Error em V8 e JavaScriptCore, causando comportamento
+ * inconsistente em `instanceof Error` checks e stack traces corrompidos.
+ *
+ * Adicionado Object.setPrototypeOf para garantir que instanceof funcione
+ * corretamente com TypeScript + transpilers (Babel, SWC, tsc --target < ES6).
  */
 export class KillSwitchActiveError extends Error {
-  switchName: string;
-  message: string;
+  readonly switchName: string;
   constructor(switchName: string, message: string) {
     super(message);
     this.name = 'KillSwitchActiveError';
     this.switchName = switchName;
-    this.message = message;
+    // Necessário para instanceof funcionar corretamente com TypeScript + transpilers
+    Object.setPrototypeOf(this, KillSwitchActiveError.prototype);
   }
 }
