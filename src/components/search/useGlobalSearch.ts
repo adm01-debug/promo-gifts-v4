@@ -2,6 +2,7 @@
  * useGlobalSearch — Hook that encapsulates all search logic for GlobalSearchPalette.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchStore } from '@/stores/useSearchStore';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import Fuse from 'fuse.js';
@@ -18,6 +19,7 @@ import {
 } from '@/hooks/intelligence';
 import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
+
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
 import type { PromobrindProduct } from '@/lib/external-db';
@@ -69,8 +71,10 @@ export interface PopularProduct {
   name: string;
   sku: string;
   category_name: string | null;
+  image_url: string | null;
   view_count: number;
 }
+
 
 export interface AppliedFilter {
   type: 'category' | 'color' | 'price' | 'material' | 'stock' | 'featured' | 'kit';
@@ -102,7 +106,7 @@ export function useGlobalSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
-  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
+  // Move popularProducts state to useQuery for better caching and performance
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
   // FIX BUG-GS-07: expose search error state so UI can show a feedback banner
   const [searchError, setSearchError] = useState(false);
@@ -224,58 +228,64 @@ export function useGlobalSearch() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ── Popular products ──
-  useEffect(() => {
-    if (!open) return;
-    (async () => {
-      try {
-        // FIX BUG-GS-10: increased limit from 100 to 1000.
-        // With 100 records ordered by created_at DESC we were sampling only the
-        // most *recently* viewed products, not the most *frequently* viewed.
-        // A product with 10 000 historical views may be absent if not recently visited.
-        // A larger sample gives the client-side count a better approximation of
-        // true popularity. A proper server-side aggregation view is tracked as
-        // a follow-up DB migration.
-        const { data: viewsData } = await supabase
-          .from('product_views')
-          .select('product_id, product_name, product_sku')
-          .order('created_at', { ascending: false })
-          .limit(1000);
-        if (!viewsData) return;
+  // ── Popular products with TanStack Query ──
+  const { data: popularProducts = [] } = useQuery({
+    queryKey: ['popular-products'],
+    queryFn: async () => {
+      // FIX BUG-GS-10: sample 1000 recent views to approximate popularity.
+      // Now joining with products to get image_url and category_name.
+      const { data: viewsData, error } = await supabase
+        .from('product_views')
+        .select(`
+          product_id,
+          product_name,
+          product_sku,
+          products!inner (
+            image_url,
+            category_name
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
-        const viewCounts = viewsData.reduce(
-          (acc: Record<string, { count: number; name: string; sku: string }>, v) => {
-            if (v.product_id) {
-              if (!acc[v.product_id])
-                acc[v.product_id] = {
-                  count: 0,
-                  name: v.product_name ?? '',
-                  sku: v.product_sku || '',
-                };
-              acc[v.product_id].count++;
+      if (error || !viewsData) return [];
+
+      const viewCounts = viewsData.reduce(
+        (acc: Record<string, { count: number; name: string; sku: string; image_url: string; category: string }>, v: any) => {
+          const id = v.product_id;
+          if (id) {
+            if (!acc[id]) {
+              acc[id] = {
+                count: 0,
+                name: v.product_name || '',
+                sku: v.product_sku || '',
+                image_url: v.products?.image_url || '',
+                category: v.products?.category_name || '',
+              };
             }
-            return acc;
-          },
-          {},
-        );
+            acc[id].count++;
+          }
+          return acc;
+        },
+        {},
+      );
 
-        setPopularProducts(
-          Object.entries(viewCounts)
-            .sort(([, a], [, b]) => b.count - a.count)
-            .slice(0, 5)
-            .map(([id, d]) => ({
-              id,
-              name: d.name,
-              sku: d.sku,
-              category_name: null,
-              view_count: d.count,
-            })),
-        );
-      } catch {
-        /* silent */
-      }
-    })();
-  }, [open]);
+      return Object.entries(viewCounts)
+        .sort(([, a], [, b]) => b.count - a.count)
+        .slice(0, 5)
+        .map(([id, d]) => ({
+          id,
+          name: d.name,
+          sku: d.sku,
+          image_url: d.image_url,
+          category_name: d.category,
+          view_count: d.count,
+        })) as PopularProduct[];
+    },
+    enabled: open,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+
 
   // ── Typing suggestions ──
   useEffect(() => {

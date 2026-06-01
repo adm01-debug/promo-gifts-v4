@@ -1,37 +1,74 @@
 /**
- * Helper components extracted from GlobalSearchPalette.
+ * Helper components and constants extracted from GlobalSearchPalette.
  */
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CommandItem } from '@/components/ui/command';
-import { Trophy, Medal, ArrowUpRight } from 'lucide-react';
+import { Trophy, Medal, ArrowUpRight, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const paletteItemStateClass =
   'border border-transparent [background-color:transparent] transition-[background-color,border-color,color] data-[selected=true]:[background-color:hsl(var(--command-accent-strong))] data-[selected=true]:[border-color:hsl(var(--command-border-strong))] data-[selected=true]:text-foreground';
 
+/**
+ * Static map for type colors to avoid Tailwind JIT interpolation issues.
+ * Tailwind purges classes like `${config.color}/10`.
+ */
+export const typeColorMap: Record<string, { bg: string; text: string; border: string }> = {
+  product: {
+    bg: 'bg-primary/10',
+    text: 'text-primary',
+    border: 'border-primary/20',
+  },
+  quote: {
+    bg: 'bg-blue-500/10',
+    text: 'text-blue-500',
+    border: 'border-blue-500/20',
+  },
+  client: {
+    bg: 'bg-green-500/10',
+    text: 'text-green-500',
+    border: 'border-green-500/20',
+  },
+  collection: {
+    bg: 'bg-purple-500/10',
+    text: 'text-purple-500',
+    border: 'border-purple-500/20',
+  },
+  command: {
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-500',
+    border: 'border-amber-500/20',
+  },
+  default: {
+    bg: 'bg-primary/10',
+    text: 'text-primary',
+    border: 'border-primary/20',
+  },
+};
+
 /* ── Rank badge with gradient ── */
 export function RankBadge({ index }: { index: number }) {
   if (index === 0)
     return (
-      <div className="flex h-10 w-10 animate-[brain-glow_3s_ease-in-out_infinite] items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary via-brand-primary/80 to-brand-primary/60 shadow-lg shadow-brand-primary/25 ring-2 ring-brand-primary/20">
-        <Trophy className="h-4.5 w-4.5 text-primary-foreground drop-shadow-sm" />
+      <div className="flex h-10 w-10 shrink-0 animate-[brain-glow_3s_ease-in-out_infinite] items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary via-brand-primary/80 to-brand-primary/60 shadow-md shadow-brand-primary/15 ring-1 ring-brand-primary/10">
+        <Trophy className="h-4 w-4 text-primary-foreground drop-shadow-sm" />
       </div>
     );
   if (index === 1)
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl border shadow-[inset_0_1px_0_hsl(var(--command-border)/0.4)] [background-color:hsl(var(--command-surface-soft))] [border-color:hsl(var(--command-border-strong))]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[inset_0_1px_0_hsl(var(--command-border)/0.4)] [background-color:hsl(var(--command-surface-soft))] [border-color:hsl(var(--command-border-strong))]">
         <Medal className="h-4 w-4 [color:hsl(var(--command-text-muted))]" />
       </div>
     );
   if (index === 2)
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl border [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
         <span className="text-xs font-bold [color:hsl(var(--command-text-muted))]">3º</span>
       </div>
     );
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-xl border [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
       <span className="text-xs font-bold [color:hsl(var(--command-text-subtle))]">
         {index + 1}º
       </span>
@@ -81,6 +118,7 @@ export function SectionHeader({
 export function staggerStyle(index: number, baseDelay = 0): React.CSSProperties {
   return {
     animationDelay: `${baseDelay + index * 50}ms`,
+    animationFillMode: 'backwards',
   };
 }
 
@@ -155,3 +193,4 @@ export function NavCard({
     </CommandItem>
   );
 }
+

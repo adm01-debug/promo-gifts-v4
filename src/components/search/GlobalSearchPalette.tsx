@@ -31,13 +31,19 @@ import {
   Calculator,
   LifeBuoy,
   AlertCircle,
+  Info,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useGlobalSearch } from './useGlobalSearch';
 import { typeConfig } from './search-types';
 import { GlobalSearchIdleState } from './GlobalSearchIdleState';
-import { paletteItemStateClass, staggerStyle, type QuickAction } from './GlobalSearchHelpers';
+import {
+  paletteItemStateClass,
+  staggerStyle,
+  type QuickAction,
+  typeColorMap,
+} from './GlobalSearchHelpers';
 import { HighlightMatch } from './HighlightMatch';
 import { EmptySearchState } from './EmptySearchState';
 
@@ -69,6 +75,7 @@ const quickActions: QuickAction[] = [
     href: '/orcamentos',
   },
 ];
+
 const commandIconMap: Record<string, any> = {
   Sun,
   Moon,
@@ -85,7 +92,6 @@ export function GlobalSearchPalette() {
   const s = useGlobalSearch();
 
   // ── Power-user keyboard shortcuts ──
-  // 1-9: jump to Nth result · Cmd/Ctrl+Enter: open in new tab
   useEffect(() => {
     if (!s.open) return;
     const handler = (e: KeyboardEvent) => {
@@ -116,7 +122,7 @@ export function GlobalSearchPalette() {
   const handleEmptyRefine = useCallback(() => s.setQuery(''), [s.setQuery]);
   const handleEmptyPickRecent = useCallback((term: string) => s.setQuery(term), [s.setQuery]);
 
-  // Guards defensivos — hooks de inteligência podem retornar undefined antes de carregar
+  // Guards defensivos
   const safeHistory = s.history ?? [];
   const safePopularProducts = s.popularProducts ?? [];
   const safeContextualSuggestions = s.contextualSuggestions ?? [];
@@ -129,7 +135,6 @@ export function GlobalSearchPalette() {
     <>
       {/* ── Trigger ── */}
       <div className="flex w-full items-center gap-2 md:w-auto">
-        {/* FIX BUG-GS-12: added aria-label and aria-haspopup for screen readers */}
         <button
           onClick={() => s.setOpen(true)}
           aria-label="Abrir busca global"
@@ -188,7 +193,7 @@ export function GlobalSearchPalette() {
         </div>
 
         <CommandList className="scrollbar-thin max-h-[520px] px-1 [background-color:hsl(var(--command-surface))]">
-          {/* FIX BUG-GS-07: Search error banner — shown when performSemanticSearch throws */}
+          {/* Search error banner */}
           {s.searchError && !s.isSearching && (
             <div className="mx-2 mt-3 flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 duration-300 animate-in fade-in-0 slide-in-from-top-2">
               <AlertCircle className="h-4 w-4 shrink-0 text-destructive/70" />
@@ -202,7 +207,7 @@ export function GlobalSearchPalette() {
           {s.isAIProcessing && (
             <div className="from-primary/12 via-primary/6 to-primary/3 mx-2 mt-3 flex items-center gap-3 rounded-2xl border border-primary/15 bg-gradient-to-r px-4 py-3.5 shadow-sm shadow-primary/5 duration-300 animate-in fade-in-0 slide-in-from-top-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 shadow-inner">
-                <Sparkles className="h-4.5 w-4.5 animate-pulse text-primary" />
+                <Sparkles className="h-4 w-4 animate-pulse text-primary" />
               </div>
               <div className="flex-1">
                 <p className="font-display text-sm font-semibold text-primary">
@@ -228,7 +233,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.type !== 'mixed' && typeConfig[s.searchIntent.type] && (
                 <Badge
                   variant="outline"
-                  className="h-5.5 rounded-lg text-[11px] font-semibold [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border-strong))]"
+                  className="h-5 rounded-lg text-[11px] font-semibold [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border-strong))]"
                 >
                   {typeConfig[s.searchIntent.type].label}s
                 </Badge>
@@ -236,7 +241,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.filters.category && (
                 <Badge
                   variant="secondary"
-                  className="h-5.5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
+                  className="h-5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
                 >
                   {s.searchIntent.filters.category}
                 </Badge>
@@ -244,7 +249,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.filters.color && (
                 <Badge
                   variant="secondary"
-                  className="h-5.5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
+                  className="h-5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
                 >
                   Cor: {s.searchIntent.filters.color}
                 </Badge>
@@ -252,7 +257,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.filters.priceRange && (
                 <Badge
                   variant="secondary"
-                  className="h-5.5 [color:hsl(var(--command-text-muted))]\ rounded-lg text-[11px] [background-color:hsl(var(--command-accent))]"
+                  className="h-5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
                 >
                   {
                     { low: 'Preço baixo', medium: 'Preço médio', high: 'Premium' }[
@@ -264,7 +269,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.filters.status && (
                 <Badge
                   variant="secondary"
-                  className="h-5.5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
+                  className="h-5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
                 >
                   Status: {s.searchIntent.filters.status}
                 </Badge>
@@ -272,7 +277,7 @@ export function GlobalSearchPalette() {
               {s.searchIntent.filters.clientName && (
                 <Badge
                   variant="secondary"
-                  className="h-5.5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
+                  className="h-5 rounded-lg text-[11px] [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
                 >
                   Cliente: {s.searchIntent.filters.clientName}
                 </Badge>
@@ -300,11 +305,7 @@ export function GlobalSearchPalette() {
             </div>
           )}
 
-          {/* Empty state — intelligent.
-              FIX BUG-GS-02: changed threshold from >= 2 to >= 3.
-              performSemanticSearch only runs for queries with >= 3 chars, so a
-              2-char query always has results.length === 0, causing EmptySearchState
-              AND the "Continue digitando" hint to render simultaneously. */}
+          {/* Empty state */}
           {!s.isSearching && s.query.length >= 3 && s.results.length === 0 && (
             <EmptySearchState
               query={s.query}
@@ -314,7 +315,7 @@ export function GlobalSearchPalette() {
             />
           )}
 
-          {/* Short query hint — shown for 1–2 chars only (mutually exclusive with EmptySearchState) */}
+          {/* Short query hint */}
           {!s.isSearching && s.query.length >= 1 && s.query.length < 3 && (
             <div className="flex items-center justify-center gap-2.5 px-4 py-8 duration-200 animate-in fade-in-0">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg [background-color:hsl(var(--command-accent))]">
@@ -326,12 +327,13 @@ export function GlobalSearchPalette() {
             </div>
           )}
 
-          {/* Search Results — safeGroupedResults previne crash se groupedResults chegar undefined */}
+          {/* Search Results */}
           {!s.isSearching &&
             Object.entries(safeGroupedResults).map(([type, items]) => {
               const config = typeConfig[type];
               if (!config) return null;
               const BaseIcon = config.icon;
+              const typeColors = typeColorMap[type] || typeColorMap.default;
 
               return (
                 <CommandGroup
@@ -342,7 +344,7 @@ export function GlobalSearchPalette() {
                   {(items ?? []).map((result, i) => (
                     <CommandItem
                       key={result.id}
-                      value={result.title}
+                      value={`${type}-${result.id}-${result.title}`}
                       onSelect={() => s.handleSelect(result.href)}
                       className={cn(
                         'mx-2 flex items-center gap-3.5 rounded-xl px-3 py-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1',
@@ -353,23 +355,17 @@ export function GlobalSearchPalette() {
                       <div
                         className={cn(
                           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm',
-                          `${config.color}/10`,
+                          typeColors.bg,
                         )}
                       >
                         {type === 'command' && result.metadata?.iconName ? (
                           (() => {
                             const CmdIcon =
                               commandIconMap[result.metadata.iconName as string] || Terminal;
-                            return (
-                              <CmdIcon
-                                className={cn('h-4.5 w-4.5', config.color.replace('bg-', 'text-'))}
-                              />
-                            );
+                            return <CmdIcon className={cn('h-4 w-4', typeColors.text)} />;
                           })()
                         ) : (
-                          <BaseIcon
-                            className={cn('h-4.5 w-4.5', config.color.replace('bg-', 'text-'))}
-                          />
+                          <BaseIcon className={cn('h-4 w-4', typeColors.text)} />
                         )}
                       </div>
 
@@ -387,6 +383,14 @@ export function GlobalSearchPalette() {
                           </p>
                         )}
                       </div>
+
+                      {/* Power-user indicator for first 9 results */}
+                      {i < 9 && !s.query.trim() && (
+                        <kbd className="hidden h-5 w-5 items-center justify-center rounded border border-border bg-muted/30 text-[10px] font-bold text-muted-foreground sm:flex">
+                          {i + 1}
+                        </kbd>
+                      )}
+
                       <Badge
                         variant="outline"
                         className="h-5 shrink-0 rounded-lg text-[10px] font-medium [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border-strong))]"
@@ -400,7 +404,7 @@ export function GlobalSearchPalette() {
               );
             })}
 
-          {/* Typing suggestions — safeTypingSuggestions previne crash se typingSuggestions for undefined */}
+          {/* Typing suggestions */}
           {safeTypingSuggestions.length > 0 &&
             s.query.length >= 2 &&
             s.query.length < 5 &&
@@ -427,7 +431,7 @@ export function GlobalSearchPalette() {
               </CommandGroup>
             )}
 
-          {/* IDLE STATE — todos os props recebem fallback seguro */}
+          {/* IDLE STATE */}
           {s.query.length < 2 && !s.isSearching && (
             <GlobalSearchIdleState
               history={safeHistory}
@@ -477,12 +481,19 @@ export function GlobalSearchPalette() {
               <span>Fechar</span>
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary/40">
-            <div className="bg-primary/8 flex h-4 w-4 items-center justify-center rounded-md">
-              <Brain className="h-2.5 w-2.5" />
-            </div>
-            <span>Busca com IA</span>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex cursor-help items-center gap-1.5 text-[10px] font-medium text-primary/40">
+                <div className="bg-primary/8 flex h-4 w-4 items-center justify-center rounded-md transition-colors hover:bg-primary/20">
+                  <Info className="h-2.5 w-2.5" />
+                </div>
+                <span>Busca com IA</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px] text-center text-xs">
+              Usa IA para entender intenções de busca, cores, categorias e filtros automáticos.
+            </TooltipContent>
+          </Tooltip>
         </div>
       </CommandDialog>
     </>
