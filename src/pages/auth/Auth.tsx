@@ -795,71 +795,8 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Backend Status Widget — apenas visível para devs (gate via useDevGate) */}
-          {isDevAllowed && (
-            <div
-              className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 opacity-0 shadow-xl backdrop-blur-md"
-              style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <Server className="h-4 w-4 text-blue-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
-                  Status da Infraestrutura
-                </span>
-              </div>
+          {/* Backend Status Widget removido a pedido do PO */}
 
-              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Principal DB */}
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Database className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Principal</span>
-                  </div>
-                  {dbStatus.principal.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.principal.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-success">
-                        {dbStatus.principal.source}
-                      </span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                  )}
-                </div>
-
-                {/* External DB (Gestão de Produtos) */}
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Produtos</span>
-                  </div>
-                  {dbStatus.external.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.external.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-success">
-                        Externo
-                      </span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-warning">
-                        Pendente
-                      </span>
-                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <p className="px-2 text-center text-[10px] italic text-white/30">
-                Verificação em tempo real das instâncias Supabase configuradas via secrets.
-              </p>
-            </div>
-          )}
 
           <LegalFooter />
         </div>
