@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auth Legal Pages', () => {
-  test('should render Terms of Use page with correct styling and back link', async ({ page }) => {
+  test('should render Terms of Use page with correct styling and back link @mobile', async ({ page }) => {
     await page.goto('/termos');
     
     // Check page title
