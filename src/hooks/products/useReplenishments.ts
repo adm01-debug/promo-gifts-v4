@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/lib/logger';
 
 /** Window in days for considering a product as "replenished" */
 const REPLENISHMENT_WINDOW_DAYS = 30;
@@ -11,7 +10,7 @@ const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 const REPLENISHMENT_SELECT =
   'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity, min_quantity' as const;
 
-// ─── Date Utilities ──────────────────────────────────────────────
+// ─── Date Utilities ───────────────────────────────────────────
 
 function getCutoffDate(days: number = REPLENISHMENT_WINDOW_DAYS): string {
   const d = new Date();
@@ -30,7 +29,7 @@ function calcDaysRemaining(updatedAt: string): number {
   return Math.max(0, REPLENISHMENT_WINDOW_DAYS - elapsed);
 }
 
-// ─── Types ───────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────
 
 export type ReplenishmentStatus = 'active' | 'expiring_soon' | 'expired';
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
@@ -89,18 +88,7 @@ interface RawProduct {
   readonly min_quantity: number | null;
 }
 
-interface CategoryRecord {
-  readonly id: string;
-  readonly name: string;
-}
-
-interface SupplierRecord {
-  readonly id: string;
-  readonly name: string;
-  readonly code?: string;
-}
-
-// ─── Data Logic ──────────────────────────────────────────────────
+// ─── Data Logic ──────────────────────────────────────────────
 
 function getStockStatus(stock: number, minQty: number): StockStatus {
   if (stock === 0) return 'out-of-stock';
@@ -159,7 +147,7 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
   };
 }
 
-// ─── Enrichment ──────────────────────────────────────────────────
+// ─── Enrichment ──────────────────────────────────────────────
 
 async function enrichReplenishments(
   items: ReplenishmentWithDetails[],
@@ -193,7 +181,7 @@ async function enrichReplenishments(
   }));
 }
 
-// ─── Hooks ───────────────────────────────────────────────────────
+// ─── Hooks ────────────────────────────────────────────────
 
 export interface UseReplenishmentsOptions {
   readonly limit?: number;

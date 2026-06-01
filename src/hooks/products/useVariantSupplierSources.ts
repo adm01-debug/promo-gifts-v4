@@ -73,7 +73,18 @@ export function useProductVariantsWithStock(productId: string | undefined) {
         throw error;
       }
 
-      const records = (data as unknown as any[]) || [];
+      const records = ((data ?? []) as unknown as Array<
+        VariantWithStock & {
+          variant_supplier_sources?: Array<{
+            next_date_1?: string | null;
+            next_quantity_1?: number | null;
+            next_date_2?: string | null;
+            next_quantity_2?: number | null;
+            next_date_3?: string | null;
+            next_quantity_3?: number | null;
+          }>;
+        }
+      >);
 
       return records.map((v) => {
         const source = v.variant_supplier_sources?.[0];
