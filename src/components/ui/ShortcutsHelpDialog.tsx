@@ -77,8 +77,13 @@ export function ShortcutsHelpDialog() {
               <ShortcutItem icon={Search} label="Buscar Produto / Comando" keys={['Ctrl', 'K']} />
               <ShortcutItem
                 icon={MessageSquare}
-                label="Assistente Oracle IA"
+                label="Fale com o Flow"
                 keys={['Ctrl', 'J']}
+              />
+              <ShortcutItem
+                icon={Search}
+                label="Busca por Voz (Flow)"
+                keys={['Ctrl', 'Shift', 'V']}
               />
               <ShortcutItem icon={Plus} label="Novo Orçamento" keys={['Ctrl', 'Shift', 'N']} />
               <ShortcutItem

@@ -35,7 +35,7 @@ interface VoiceSearchOverlayProps {
 }
 
 const PHASE_META: Record<VoiceAgentPhase, { title: string; subtitle: string; emoji: string }> = {
-  idle: { title: 'Assistente de Voz', subtitle: 'Toque no orbe para começar', emoji: '✨' },
+  idle: { title: 'Fale com o Flow', subtitle: 'Toque no orbe para começar', emoji: '✨' },
   listening: { title: 'Ouvindo…', subtitle: 'Diga o que você precisa', emoji: '🎙️' },
   processing: { title: 'Processando…', subtitle: 'IA interpretando seu comando', emoji: '⚡' },
   speaking: { title: 'Respondendo…', subtitle: 'Ouvindo a resposta', emoji: '💬' },
@@ -217,7 +217,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
             className="fixed inset-0 z-50"
             role="dialog"
             aria-modal="true"
-            aria-label="Assistente de Voz"
+            aria-label="Fale com o Flow"
           >
             {/* Glass backdrop */}
             <motion.div
