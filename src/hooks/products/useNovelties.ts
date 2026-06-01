@@ -1,5 +1,6 @@
-import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
@@ -189,23 +190,11 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
 
   const [catResult, supResult] = await Promise.all([
     !isMock && categoryIds.length > 0
-      ? dbInvoke<CategoryRecord>({
-          table: 'categories',
-          operation: 'select',
-          select: 'id, name',
-          filters: { id: `in.(${categoryIds.join(',')})` },
-          limit: 500,
-        })
-      : { records: isMock ? MOCK_CATEGORIES : ([] as CategoryRecord[]) },
+      ? supabase.from('categories').select('id, name').in('id', categoryIds).limit(500).then(r => ({ records: r.data || [], error: r.error }))
+      : Promise.resolve({ records: isMock ? MOCK_CATEGORIES : [], error: null }),
     !isMock && supplierIds.length > 0
-      ? dbInvoke<SupplierRecord>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id, name, code',
-          filters: { id: `in.(${supplierIds.join(',')})` },
-          limit: 200,
-        })
-      : { records: isMock ? MOCK_SUPPLIERS : ([] as SupplierRecord[]) },
+      ? supabase.from('v_suppliers_public').select('id, name, code').in('id', supplierIds).limit(200).then(r => ({ records: r.data || [], error: r.error }))
+      : Promise.resolve({ records: isMock ? MOCK_SUPPLIERS : [], error: null }),
   ]);
 
   const catMap = new Map(catResult.records.map((c) => [c.id, c.name]));
@@ -275,16 +264,23 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await dbInvoke<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: NOVELTY_SELECT,
-        filters: { is_active: true, created_at: `gte.${cutoff}` },
-        orderBy: { column: 'created_at', ascending: false },
-        limit,
-      });
+      const { data, error } = await supabase
+        .from('v_products_public')
+        .select(NOVELTY_SELECT)
+        .eq('is_active', true)
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .range(0, limit - 1);
 
-      let records = result.records;
+      if (error) {
+        if (error.message?.includes('410') || error.message?.includes('Gone')) {
+          logger.warn('Bridge deprecated (410) for products novelties');
+          return [];
+        }
+        throw error;
+      }
+
+      let records = (data as unknown as RawProduct[]) || [];
 
       // Fallback para MOCK se o banco estiver vazio
       if (records.length === 0) {
@@ -315,16 +311,22 @@ export function useExpiringNovelties(maxDays: number = 7) {
       // Buscar todas as novidades dos últimos 30 dias
       const cutoff = getCutoffDate();
 
-      const result = await dbInvoke<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: NOVELTY_SELECT,
-        filters: { is_active: true, created_at: `gte.${cutoff}` },
-        orderBy: { column: 'created_at', ascending: true },
-        limit: 200,
-      });
+      const { data, error } = await supabase
+        .from('v_products_public')
+        .select(NOVELTY_SELECT)
+        .eq('is_active', true)
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: true })
+        .range(0, 199);
 
-      return result.records
+      if (error) {
+        if (error.message?.includes('410') || error.message?.includes('Gone')) {
+          return [];
+        }
+        throw error;
+      }
+
+      return ((data as unknown as RawProduct[]) || [])
         .map(toNovelty)
         .filter((n) => n.is_active && n.days_remaining <= maxDays)
         .sort((a, b) => a.days_remaining - b.days_remaining);
@@ -344,22 +346,17 @@ export function useNoveltyStats() {
       const cutoff = getCutoffDate();
 
       const [noveltiesResult, totalResult] = await Promise.all([
-        dbInvoke<RawProduct & { supplier_id: string | null }>({
-          table: 'products',
-          operation: 'select',
-          select: 'id, created_at, supplier_id',
-          filters: { is_active: true, created_at: `gte.${cutoff}` },
-          limit: 500,
-          countMode: 'exact',
-        }),
-        dbInvoke<{ id: string }>({
-          table: 'products',
-          operation: 'select',
-          select: 'id',
-          filters: { is_active: true },
-          limit: 1,
-          countMode: 'exact',
-        }),
+        supabase
+          .from('v_products_public')
+          .select('id, created_at, supplier_id', { count: 'exact' })
+          .eq('is_active', true)
+          .gte('created_at', cutoff)
+          .range(0, 499),
+        supabase
+          .from('v_products_public')
+          .select('id', { count: 'exact' })
+          .eq('is_active', true)
+          .limit(1),
       ]);
 
       const now = new Date();
@@ -415,14 +412,12 @@ export function useNoveltyStats() {
           topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name || null;
         } else {
           try {
-            const supResult = await dbInvoke<{ name: string }>({
-              table: 'suppliers',
-              operation: 'select',
-              select: 'name',
-              filters: { id: topSupplierId },
-              limit: 1,
-            });
-            topSupplierName = supResult.records[0]?.name || null;
+            const supRes = await supabase
+              .from('v_suppliers_public')
+              .select('name')
+              .eq('id', topSupplierId)
+              .limit(1);
+            topSupplierName = supRes.data?.[0]?.name || null;
           } catch {
             /* fallback */
           }
@@ -463,28 +458,32 @@ export function useNovelties(
 
       if (supplierCode) {
         // Precisa buscar o supplier_id pelo code
-        const supplierResult = await dbInvoke<{ id: string }>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id',
-          filters: { code: supplierCode },
-          limit: 1,
-        });
-        if (supplierResult.records.length > 0) {
-          filters.supplier_id = supplierResult.records[0].id;
+        const supplierResult = await supabase
+          .from('v_suppliers_public')
+          .select('id')
+          .eq('code', supplierCode)
+          .limit(1);
+        if (supplierResult.data?.length) {
+          query = query.eq('supplier_id', supplierResult.data[0].id);
         }
       }
 
-      const result = await dbInvoke<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: NOVELTY_SELECT,
-        filters,
-        orderBy: { column: 'created_at', ascending: false },
-        limit,
-      });
+      let query = supabase
+        .from('v_products_public')
+        .select(NOVELTY_SELECT)
+        .eq('is_active', true)
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .range(0, limit - 1);
+      
+      const { data, error } = await query;
 
-      let novelties = result.records.map(toNovelty).filter((n) => n.is_active);
+      if (error) {
+        if (error.message?.includes('410') || error.message?.includes('Gone')) return [];
+        throw error;
+      }
+
+      let novelties = ((data as unknown as RawProduct[]) || []).map(toNovelty).filter((n) => n.is_active);
 
       if (maxDays) {
         novelties = novelties.filter((n) => n.days_remaining >= NOVELTY_WINDOW_DAYS - maxDays);
