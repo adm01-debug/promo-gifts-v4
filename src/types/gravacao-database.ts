@@ -66,21 +66,47 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 // FORMULÁRIOS
 // ============================================
 
+/**
+ * Dados de formulário para criar/editar uma técnica de gravação.
+ *
+ * Tabela alvo: tabela_preco_gravacao_oficial (doufsxqlfjyuvxuezpln)
+ *
+ * Campos com ? são legados do sistema anterior (tecnica_gravacao) e não
+ * existem em tabela_preco_gravacao_oficial. O PostgREST ignora campos
+ * extras no body do INSERT/UPDATE, mas mantê-los opcionais garante que
+ * o TypeScript não exija seu preenchimento e que formulariós antigos
+ * continuem compilando sem erros.
+ *
+ * FIX 2026-06-01: ordem_exibicao e outros campos fantasma marcados como
+ * opcionais para evitar que sejam exigidos em formulários sem efeito no DB.
+ *
+ * Campos reais de tabela_preco_gravacao_oficial cobertos por este type:
+ *   nome, descricao, cobra_por_cor, max_cores, ativo
+ *   (demais colunas: custo_setup, custo_manuseio, grupo_tecnica, etc. são
+ *    gerenciados diretamente via update partial no hook)
+ */
 export interface TecnicaGravacaoFormData {
-  codigo: string;
-  codigo_interno: string;
+  // ── Campos que EXISTEM em tabela_preco_gravacao_oficial ─────────────────
   nome: string;
   descricao: string;
-  permite_cores: boolean;
   max_cores: number;
   cobra_por_cor: boolean;
-  cobra_por_area: boolean;
-  cobra_por_pontos: boolean;
-  requer_setup: boolean;
-  tipo_setup: TipoSetup;
-  tempo_producao_dias: number;
-  ordem_exibicao: number;
   ativo: boolean;
+
+  // ── Campos legados (sistema anterior) — não existem em tpgo ──────────
+  // Mantidos como opcionais para não quebrar formulários existentes.
+  // Não são enviados ao DB (PostgREST ignora campos desconhecidos).
+  codigo?: string;               // era codigo_tabela no schema antigo
+  codigo_interno?: string;
+  permite_cores?: boolean;
+  cobra_por_area?: boolean;      // equivale a usa_faixa_dimensional em tpgo
+  cobra_por_pontos?: boolean;
+  requer_setup?: boolean;
+  tipo_setup?: TipoSetup;
+  tempo_producao_dias?: number;
+  /** @deprecated Campo não existe em tabela_preco_gravacao_oficial.
+   * Não será persistido no banco. Mantido para compatibilidade de UI. */
+  ordem_exibicao?: number;
 }
 
 export interface VarianteFormData {

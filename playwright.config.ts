@@ -46,10 +46,8 @@ const RETRIES = process.env.E2E_RETRIES
     ? 2
     : 1;
 
-const QUARANTINE_LIST = fs.existsSync(path.resolve(__dirname, 'quarantine-list.json'))
-  ? JSON.parse(fs.readFileSync(path.resolve(__dirname, 'quarantine-list.json'), 'utf-8'))
-  : [];
-
+// FIX 2026-06-01: Lovable introduziu declaração duplicada de QUARANTINE_LIST
+// (TS2451: Cannot redeclare block-scoped variable). Removido o bloco duplicado.
 const QUARANTINE_LIST = fs.existsSync(path.resolve(__dirname, 'quarantine-list.json'))
   ? JSON.parse(fs.readFileSync(path.resolve(__dirname, 'quarantine-list.json'), 'utf-8'))
   : [];

@@ -2,7 +2,6 @@
  * useGlobalSearch — Hook that encapsulates all search logic for GlobalSearchPalette.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useSearchStore } from '@/stores/useSearchStore';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import Fuse from 'fuse.js';
@@ -228,21 +227,9 @@ export function useGlobalSearch() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ── Popular products with Materialized View ──
-  const { data: popularProducts = [] } = useQuery({
-    queryKey: ['popular-products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_popularity_30d')
-        .select('*')
-        .limit(5);
-
-      if (error || !data) return [];
-      return data as PopularProduct[];
-    },
-    enabled: open,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
-  });
+  // ── Popular products ──
+  // product_popularity_30d view was removed; return empty until a replacement is created.
+  const popularProducts: PopularProduct[] = [];
 
 
 
