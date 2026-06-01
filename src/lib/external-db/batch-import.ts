@@ -99,7 +99,7 @@ export async function checkExistingSkus(skus: string[]): Promise<Set<string>> {
         table: 'products',
         operation: 'select',
         select: 'sku',
-        filters: { sku: `in.(${chunk.join(',')})` },
+        filters: { sku: chunk }, // FIX: array -> .in() (era string 'in.(...)' -> .eq() -> 400)
         limit: 100,
       });
 

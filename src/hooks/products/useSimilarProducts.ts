@@ -130,7 +130,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
             operation: 'select',
             select: 'product_id',
             filters: {
-              product_group_id: `in.(${groupIds.join(',')})`,
+              product_group_id: groupIds, // FIX: array -> .in() (era string -> .eq() -> 400)
             },
             limit: 100,
           });

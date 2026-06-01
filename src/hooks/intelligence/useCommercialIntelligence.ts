@@ -614,7 +614,7 @@ export function useCategoryRanking(
           table: 'stock_daily_summary',
           operation: 'select',
           select: 'product_id,units_depleted',
-          filters: { summary_date: `gte.${sinceDate}` },
+          filters: { summary_date: { op: 'gte', value: sinceDate } }, // FIX: objeto -> .gte() (era string -> .eq() -> 400)
           limit: 5000,
         });
         (result?.records || []).forEach((snap) => {
