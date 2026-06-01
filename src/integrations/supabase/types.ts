@@ -6369,6 +6369,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          in_app_enabled: boolean
+          push_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          in_app_enabled?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          in_app_enabled?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding: {
         Row: {
           completed_at: string | null
