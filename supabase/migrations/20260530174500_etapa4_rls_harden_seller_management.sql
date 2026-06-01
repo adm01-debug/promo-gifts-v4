@@ -47,8 +47,9 @@ DECLARE
   t text; pj jsonb; fk text; pt text; r record; remaining int;
 BEGIN
   FOREACH t IN ARRAY direct LOOP
-    -- Skip tabelas que não existem no preview snapshot
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=t) THEN
+    -- Skip tabelas que não existem ou não têm coluna organization_id no preview snapshot
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=t)
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=t AND column_name='organization_id') THEN
       CONTINUE;
     END IF;
     FOR r IN SELECT polname, polcmd, pg_get_expr(polqual,polrelid) q FROM pg_policy
@@ -71,9 +72,11 @@ BEGIN
 
   FOR pj IN SELECT * FROM jsonb_array_elements(parent) LOOP
     t := pj->>'t'; fk := pj->>'fk'; pt := pj->>'pt';
-    -- Skip tabelas (filho ou pai) que não existem no preview snapshot
+    -- Skip se tabela filho/pai ou coluna FK/organization_id estão ausentes no preview snapshot
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=t)
-       OR NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=pt) THEN
+       OR NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=pt)
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=t AND column_name=fk)
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=pt AND column_name='organization_id') THEN
       CONTINUE;
     END IF;
     FOR r IN SELECT polname FROM pg_policy WHERE polrelid=('public.'||t)::regclass AND polcmd IN ('a','w','d','*')
