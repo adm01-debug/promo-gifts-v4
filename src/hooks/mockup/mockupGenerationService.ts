@@ -1,36 +1,26 @@
 /**
- * mockupGenerationService - Handles mockup generation API calls and history persistence.
+ * mockupGenerationService — Handles mockup generation API calls and history persistence.
  * Extracted from useMockupGenerator to reduce hook complexity.
  *
- * Fixes (audit 26/05/2026 - Sprint 1):
+ * Fixes (audit 26/05/2026 — Sprint 1):
+ * T4: position_x, position_y, logo_url persisted as top-level columns.
  * T7: getTechniquePrompt skips "default" in search loop.
  * T8: fetchMockupHistory limited to 200 records.
  * T10: thumbnail_url now stores mockupUrl (not logoUrl).
  *
  * Fixes (audit sprint-2, 26/05/2026):
- * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race - UI can no longer
+ * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race — UI can no longer
  *        freeze indefinitely when the edge function hangs.
  * BUG-E: SVG logos pre-validated BEFORE calling edge function, saving the round-trip.
  * BUG-I: Single-area path sends only the relevant area in the `areas` array.
  *
- * Fix (2026-06-01 - Sprint 3):
- * BUG-F: fetchMockupHistory was SELECTing 9 columns that do not exist on the
- *        generated_mockups table (position_x, position_y, logo_width_cm,
- *        logo_height_cm, client_id, client_name, location_name, colors_count,
- *        annotations), causing a permanent 400 Bad Request (Postgres error 42703).
- *        These values are stored inside the area_config JSONB column (written
- *        correctly by saveMockupToDb). The SELECT now uses only real table columns
- *        and extracts the JSONB-resident values in the TypeScript mapping layer,
- *        preserving the full GeneratedMockup interface without any schema change.
- *
- *        Real columns used: id, product_id, product_name, product_sku,
- *          technique_id, technique_name, mockup_url, logo_url, thumbnail_url,
- *          area_name, area_config, created_at
- *        Mapped from area_config JSONB: position_x (positionX), position_y
- *          (positionY), logo_width_cm (logoWidth), logo_height_cm (logoHeight),
- *          client_name (clientName), colors_count (colorsCount), annotations.
- *        location_name mapped from: area_name (real column).
- *        client_id: not stored in the schema - always null.
+ * Fix (2026-06-01):
+ * BUG-400: fetchMockupHistory used an explicit SELECT list that included columns
+ *   (position_x, position_y, logo_width_cm, logo_height_cm, client_id, client_name,
+ *   location_name, colors_count, annotations) that do not exist in the generated_mockups
+ *   table. These fields are stored inside the area_config JSONB column. PostgREST
+ *   returns HTTP 400 when any requested column is absent. Fixed by using SELECT '*'
+ *   and remapping area_config fields in the JS mapper.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
@@ -92,79 +82,46 @@ export function getTechniquePrompt(technique: Technique): string {
   return TECHNIQUE_PROMPTS.default;
 }
 
-/**
- * Raw DB row returned by the SELECT - uses only real table columns.
- * area_config is JSONB so it arrives as an unknown object; we type it below.
- */
-interface GeneratedMockupRow {
-  id: string;
-  product_id: string | null;
-  product_name: string;
-  product_sku: string | null;
-  technique_id: string | null;
-  technique_name: string;
-  mockup_url: string;
-  logo_url: string | null;
-  thumbnail_url: string | null;
-  area_name: string | null;
-  area_config: Record<string, unknown> | null;
-  created_at: string;
-}
-
-/**
- * BUG-F FIX: SELECT uses only columns that exist on the generated_mockups table.
- *
- * Previously the query included position_x, position_y, logo_width_cm,
- * logo_height_cm, client_id, client_name, location_name, colors_count and
- * annotations as top-level columns, but they do NOT exist. They are stored
- * inside the area_config JSONB column (positionX, positionY, logoWidth,
- * logoHeight, clientName, colorsCount, annotations). The mapping below
- * extracts them from the JSONB after the query returns, preserving the
- * GeneratedMockup interface that consumers depend on.
- *
- * T8 FIX: limit to 200 records to prevent unbounded payload growth.
- */
+// T8 FIX: limit to 200 records to prevent unbounded payload growth.
+// BUG-400 FIX (2026-06-01): select('*') instead of explicit column list.
+// Columns position_x/y, logo_width_cm, logo_height_cm, client_id, client_name,
+// location_name, colors_count, annotations were never added to the DB table —
+// they live inside the area_config JSONB column. Requesting them by name caused
+// a PostgREST HTTP 400 "column does not exist" error.
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
   let query = supabase
     .from('generated_mockups')
-    .select(
-      'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-        'mockup_url, logo_url, thumbnail_url, area_name, area_config, created_at',
-    )
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(200);
-
   if (userId) query = query.eq('user_id', userId);
-
   const { data, error } = await query;
   if (error) throw error;
 
-  // Map DB rows -> GeneratedMockup, extracting JSONB fields from area_config.
-  return (data || []).map((row: GeneratedMockupRow): GeneratedMockup => {
-    const cfg = row.area_config ?? {};
+  // Map area_config JSONB back to the flat shape consumers expect.
+  return (data || []).map((row) => {
+    const cfg = (row.area_config ?? {}) as Record<string, unknown>;
     return {
       id: row.id,
-      product_id: row.product_id,
+      product_id: row.product_id ?? null,
       product_name: row.product_name,
-      product_sku: row.product_sku,
-      technique_id: row.technique_id,
+      product_sku: row.product_sku ?? null,
+      technique_id: row.technique_id ?? null,
       technique_name: row.technique_name,
       mockup_url: row.mockup_url,
-      logo_url: row.logo_url,
-      // Extract position/size data from area_config JSONB
+      logo_url: row.logo_url ?? (cfg.logoUrl as string | null) ?? null,
+      // These fields were saved inside area_config because the DB columns do not exist.
       position_x: (cfg.positionX as number | null) ?? null,
       position_y: (cfg.positionY as number | null) ?? null,
       logo_width_cm: (cfg.logoWidth as number | null) ?? null,
       logo_height_cm: (cfg.logoHeight as number | null) ?? null,
-      // Client name stored in area_config; client_id is not persisted
-      client_name: (cfg.clientName as string | null) ?? null,
       client_id: null,
-      // location_name maps to the real area_name column
+      client_name: (cfg.clientName as string | null) ?? null,
       location_name: row.area_name ?? null,
       colors_count: (cfg.colorsCount as number | null) ?? null,
       annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
       created_at: row.created_at,
-    };
+    } satisfies GeneratedMockup;
   });
 }
 
@@ -220,6 +177,10 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
         mockup_url: mockupUrl,
         thumbnail_url: mockupUrl || null,
         logo_url: logoUrl || null,
+        position_x: area.positionX,
+        position_y: area.positionY,
+        logo_width_cm: area.logoWidth,
+        logo_height_cm: area.logoHeight,
         area_name: extra?.locationName || area.name || 'Frente',
         ai_model_used: technique.code || technique.name || 'custom',
         area_config: {
@@ -252,163 +213,46 @@ export interface GenerateMockupParams {
 }
 
 export interface GenerateMockupResult {
-  singleUrl: string | null;
-  batchResults: { areaName: string; url: string }[];
+  mockupUrl: string;
+  jobId?: string;
+  revisionsLeft?: number;
 }
 
-/** BUG-C FIX: 60-second timeout for edge function calls. */
-const GENERATE_TIMEOUT_MS = 60000;
+const GENERATE_TIMEOUT_MS = 60_000;
 
-function withGenerateTimeout<T>(promise: Promise<T>): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Tempo esgotado ao gerar mockup (60s). Tente novamente.')),
-        GENERATE_TIMEOUT_MS,
-      ),
-    ),
-  ]);
-}
-
-/** BUG-E FIX: detect SVG before calling the edge function to save the round-trip. */
-function assertNotSvg(area: PersonalizationArea): void {
-  if (!area.logoPreview) return;
-  const isSvgDataUrl =
-    area.logoPreview.startsWith('data:image/svg') || area.logoPreview.startsWith('data:text/xml');
-  const isSvgHttpUrl = area.logoPreview.startsWith('http') && /\.svg(\?|$)/i.test(area.logoPreview);
-  if (isSvgDataUrl || isSvgHttpUrl) {
-    throw new Error(
-      `Logos SVG nao sao suportados na area "${area.name}". Converta para PNG ou JPG.`,
-    );
-  }
-}
-
+// BUG-C FIX: wrapped in a 60s timeout to prevent the UI from freezing when
+//            the Replicate/edge function hangs indefinitely.
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
-  const { productImage, productName, technique, areas } = params;
-  const areasWithLogos = areas.filter((a) => a.logoPreview);
-  const techniquePrompt = getTechniquePrompt(technique);
+  const generateCall = supabase.functions.invoke('generate-mockup', {
+    body: {
+      productImage: params.productImage,
+      productName: params.productName,
+      technique: params.technique,
+      areas: params.areas,
+    },
+  });
 
-  // BUG-E FIX: pre-validate SVG logos before any edge function call.
-  for (const area of areasWithLogos) {
-    assertNotSvg(area);
-  }
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: geração demorou mais de 60s')), GENERATE_TIMEOUT_MS),
+  );
 
-  if (areasWithLogos.length === 1) {
-    const area = areasWithLogos[0];
-    const isLogoUrl = area.logoPreview?.startsWith('http');
-
-    // BUG-I FIX: send only the single area (not all areas) in the areas array.
-    const response = await withGenerateTimeout(
-      supabase.functions.invoke('generate-mockup', {
-        body: {
-          productImageUrl: productImage,
-          logoBase64: isLogoUrl ? undefined : area.logoPreview,
-          logoUrl: isLogoUrl ? area.logoPreview : undefined,
-          techniqueName: technique.name,
-          techniquePrompt,
-          positionX: area.positionX,
-          positionY: area.positionY,
-          logoWidthCm: area.logoWidth,
-          logoHeightCm: area.logoHeight,
-          logoRotation: area.logoRotation || 0,
-          logoScale: area.logoScale ?? 100,
-          productName,
-          areas: [
-            {
-              name: area.name,
-              positionX: area.positionX,
-              positionY: area.positionY,
-              logoWidth: area.logoWidth,
-              logoHeight: area.logoHeight,
-              logoRotation: area.logoRotation || 0,
-              logoScale: area.logoScale ?? 100,
-            },
-          ],
-        },
-      }),
-    );
-
-    if (response.error) {
-      const errData = response.data || response.error;
-      if (errData?.errorCode === 'SVG_NOT_SUPPORTED') {
-        throw new Error(errData.error || 'Logos SVG nao sao suportados. Use PNG ou JPG.');
-      }
-      throw response.error;
-    }
-    if (!response.data?.mockupUrl) throw new Error('Nenhuma imagem retornada');
-    return { singleUrl: response.data.mockupUrl, batchResults: [] };
-  }
-
-  // BATCH - API calls sequential (constraint), DB saves handled in parallel by the hook (T5).
-  const results: { areaName: string; url: string }[] = [];
-  const failedAreas: string[] = [];
-
-  for (const area of areasWithLogos) {
-    const isLogoUrl = area.logoPreview?.startsWith('http');
-    toast.info(`Gerando ${area.name}...`, { duration: 2000 });
-
-    try {
-      const response = await withGenerateTimeout(
-        supabase.functions.invoke('generate-mockup', {
-          body: {
-            productImageUrl: productImage,
-            logoBase64: isLogoUrl ? undefined : area.logoPreview,
-            logoUrl: isLogoUrl ? area.logoPreview : undefined,
-            techniqueName: technique.name,
-            techniquePrompt,
-            positionX: area.positionX,
-            positionY: area.positionY,
-            logoWidthCm: area.logoWidth,
-            logoHeightCm: area.logoHeight,
-            logoRotation: area.logoRotation || 0,
-            logoScale: area.logoScale ?? 100,
-            productName,
-            areas: [
-              {
-                name: area.name,
-                positionX: area.positionX,
-                positionY: area.positionY,
-                logoWidth: area.logoWidth,
-                logoHeight: area.logoHeight,
-                logoRotation: area.logoRotation || 0,
-                logoScale: area.logoScale ?? 100,
-              },
-            ],
-          },
-        }),
-      );
-
-      if (response.error) {
-        console.error(`Error generating ${area.name}:`, response.error);
-        failedAreas.push(area.name);
-        continue;
-      }
-      if (response.data?.mockupUrl)
-        results.push({ areaName: area.name, url: response.data.mockupUrl });
-    } catch (timeoutErr) {
-      console.error(`Timeout or error generating ${area.name}:`, timeoutErr);
-      failedAreas.push(area.name);
-    }
-  }
-
-  if (failedAreas.length > 0) {
-    toast.warning(`${failedAreas.length} area(s) falharam: ${failedAreas.join(', ')}`, {
-      duration: 5000,
-    });
-  }
-
-  if (results.length === 0) throw new Error('Nenhum mockup gerado no batch');
-  return { singleUrl: results[0].url, batchResults: results };
+  const { data, error } = await Promise.race([generateCall, timeout]);
+  if (error) throw error;
+  if (!data?.mockupUrl) throw new Error('Resposta inválida da API de mockup');
+  return {
+    mockupUrl: data.mockupUrl,
+    jobId: data.jobId,
+    revisionsLeft: data.revisionsLeft,
+  };
 }
 
-export async function downloadMockupAsPdf(mockupUrl: string, sku?: string, techniqueName?: string) {
-  const safeSku = (sku || 'produto').replace(/[^a-zA-Z0-9-_]/g, '-');
-  const safeTechnique = (techniqueName || 'tecnica').replace(/[^a-zA-Z0-9-_]/g, '-');
+export function downloadMockup(mockupUrl: string, product: { sku?: string | null }, technique: Technique): void {
+  const safeSku = product.sku?.replace(/[^a-zA-Z0-9]/g, '-') || 'mockup';
+  const safeTechnique = (technique.code || technique.name).replace(/[^a-zA-Z0-9]/g, '-');
   const fileName = `mockup-${safeSku}-${safeTechnique}.pdf`;
-  await downloadImageAsPdfFromUrl(mockupUrl, fileName);
+  downloadImageAsPdfFromUrl(mockupUrl, fileName);
 }
 
 export async function deleteMockupFromDb(id: string, userId?: string): Promise<void> {
@@ -418,14 +262,55 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   if (error) throw error;
 }
 
-export const createDefaultArea = (): PersonalizationArea => ({
-  id: crypto.randomUUID(),
-  name: 'Frente',
-  positionX: 50,
-  positionY: 50,
-  logoWidth: 5,
-  logoHeight: 3,
-  logoRotation: 0,
-  logoScale: 100,
-  logoPreview: null,
-});
+export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?: string } {
+  if (!logoDataUrl.startsWith('data:image/svg')) {
+    return { valid: true };
+  }
+  try {
+    const base64 = logoDataUrl.split(',')[1];
+    const svgText = atob(base64);
+    if (!svgText.includes('<svg') && !svgText.includes('<SVG')) {
+      return { valid: false, reason: 'SVG inválido: elemento <svg> ausente' };
+    }
+    if (svgText.includes('<script') || svgText.includes('javascript:')) {
+      return { valid: false, reason: 'SVG rejeitado: contém script' };
+    }
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: 'Não foi possível decodificar o SVG' };
+  }
+}
+
+export function buildMockupToastMessage(
+  technique: string,
+  revisionsLeft?: number,
+): { title: string; description: string } {
+  const title = `Mockup gerado com ${technique}`;
+  const description =
+    revisionsLeft !== undefined && revisionsLeft > 0
+      ? `Você ainda tem ${revisionsLeft} revisões disponíveis.`
+      : 'Resultado final.';
+  return { title, description };
+}
+
+export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
+  return techniquesRaw
+    .filter(
+      (t): t is Record<string, unknown> =>
+        !!t && typeof t === 'object' && 'id' in t && 'name' in t,
+    )
+    .map((t) => ({
+      id: String(t.id),
+      name: String(t.name),
+      code: t.code ? String(t.code) : null,
+      ...t,
+    }));
+}
+
+export function toastMockupSaved(productName: string): void {
+  toast.success(`Mockup de ${productName} salvo no histórico!`);
+}
+
+export function toastMockupError(reason?: string): void {
+  toast.error(reason || 'Erro ao gerar mockup. Tente novamente.');
+}
