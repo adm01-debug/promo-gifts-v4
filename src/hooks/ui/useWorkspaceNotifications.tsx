@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
@@ -146,15 +146,26 @@ export function useWorkspaceNotifications() {
 
   // BUG-08 FIX: deps agora so [user] - sem notifications.length
   const fetchNotifications = useCallback(
-    async (opts: { silent?: boolean; source?: FetchSource; page?: number; search?: string; category?: string; unreadOnly?: boolean; startDate?: string; endDate?: string } = {}) => {
+    async (
+      opts: {
+        silent?: boolean;
+        source?: FetchSource;
+        page?: number;
+        search?: string;
+        category?: string;
+        unreadOnly?: boolean;
+        startDate?: string;
+        endDate?: string;
+      } = {},
+    ) => {
       if (!user) return;
-      
+
       const targetPage = opts.page ?? page;
       const targetSearch = opts.search ?? search;
       const targetCategory = opts.category ?? category;
       const targetUnreadOnly = opts.unreadOnly ?? unreadOnly;
-      const targetStartDate = opts.startDate ?? (dateRange.from?.toISOString());
-      const targetEndDate = opts.endDate ?? (dateRange.to?.toISOString());
+      const targetStartDate = opts.startDate ?? dateRange.from?.toISOString();
+      const targetEndDate = opts.endDate ?? dateRange.to?.toISOString();
       const offset = (targetPage - 1) * limit;
 
       const hasData = notificationsLengthRef.current > 0;
@@ -199,14 +210,14 @@ export function useWorkspaceNotifications() {
         const items = (data || []) as WorkspaceNotification[];
         setNotifications(items);
         setTotalCount(count ?? 0);
-        
+
         // Also fetch unread count separately to keep badge sync
         const { count: unread } = await supabase
           .from('workspace_notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('is_read', false);
-          
+
         setUnreadCount(unread ?? 0);
         lastFetchAtRef.current = Date.now();
         writeCache(user.id, items);
@@ -253,13 +264,14 @@ export function useWorkspaceNotifications() {
         else setIsLoading(false);
       }
     },
-    [user], // FIX: removido notifications.length - agora usa notificationsLengthRef
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- filters are handled by the useEffect caller; adding them here causes fetch loops
+    [user],
   );
 
   // Fetch notifications when filters or page changes
   useEffect(() => {
     if (!user) return;
-    
+
     // Use a small delay for search to avoid too many requests if not handled by caller
     // but the Drawer already has a 400ms debounce.
     fetchNotifications({ source: 'filter-change' });
@@ -290,7 +302,7 @@ export function useWorkspaceNotifications() {
         },
         (payload) => {
           debugLog('realtime-event', { event: payload.eventType, payload });
-          
+
           // Re-fetch everything to ensure consistent state (including badge)
           // Use silent fetch to avoid UI flicker
           fetchNotifications({ silent: true, source: 'mutation' });

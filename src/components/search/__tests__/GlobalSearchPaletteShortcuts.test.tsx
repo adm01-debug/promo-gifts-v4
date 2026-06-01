@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GlobalSearchPalette } from '../GlobalSearchPalette';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -22,11 +23,11 @@ vi.mock('../useGlobalSearch', () => ({
     setQuery: vi.fn(),
     handleSelect: mockHandleSelect,
     groupedResults: {
-        product: [
-            { id: 'res-1', title: 'Result 1', href: '/product/1', type: 'product' },
-            { id: 'res-2', title: 'Result 2', href: '/product/2', type: 'product' },
-        ]
-    }
+      product: [
+        { id: 'res-1', title: 'Result 1', href: '/product/1', type: 'product' },
+        { id: 'res-2', title: 'Result 2', href: '/product/2', type: 'product' },
+      ],
+    },
   }),
 }));
 
@@ -44,13 +45,15 @@ describe('GlobalSearchPalette Shortcuts', () => {
 
   it('triggers handleSelect when pressing 1', () => {
     render(
-      <ThemeContext.Provider value={mockThemeContext as any}>
+      <ThemeContext.Provider
+        value={mockThemeContext as unknown as React.ContextType<typeof ThemeContext>}
+      >
         <BrowserRouter>
           <TooltipProvider>
             <GlobalSearchPalette />
           </TooltipProvider>
         </BrowserRouter>
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     // Simulate keydown '1' on document
@@ -61,13 +64,15 @@ describe('GlobalSearchPalette Shortcuts', () => {
 
   it('triggers handleSelect when pressing 2', () => {
     render(
-      <ThemeContext.Provider value={mockThemeContext as any}>
+      <ThemeContext.Provider
+        value={mockThemeContext as unknown as React.ContextType<typeof ThemeContext>}
+      >
         <BrowserRouter>
           <TooltipProvider>
             <GlobalSearchPalette />
           </TooltipProvider>
         </BrowserRouter>
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     // Simulate keydown '2' on document

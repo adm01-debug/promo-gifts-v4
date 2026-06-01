@@ -159,7 +159,7 @@ export function useTechniquePricing(techniqueCode: string | null) {
     // Not available in tabela_preco_gravacao_oficial -- requires a JOIN query.
     // Returning empty array until a JOIN implementation is added.
     return [];
-  }, [priceOptions]);
+  }, []);
 
   const findMatchingTable = useCallback(
     (colors: number, _sizeValue: string): TechniquePriceOption | null => {

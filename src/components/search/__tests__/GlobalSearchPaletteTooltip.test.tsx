@@ -1,9 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { GlobalSearchPalette } from '../GlobalSearchPalette';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ThemeContext } from '@/contexts/ThemeContext';
-import { Mic } from 'lucide-react';
 
 // Mock useGlobalSearch
 vi.mock('../useGlobalSearch', () => ({
@@ -30,7 +29,9 @@ describe('GlobalSearchPalette Tooltip Static Check', () => {
   it('contains the correct tooltip text "Fale com o Flow"', () => {
     // Instead of fighting Radix portal in JSDOM, we check if the component renders the content
     render(
-      <ThemeContext.Provider value={mockThemeContext as any}>
+      <ThemeContext.Provider
+        value={mockThemeContext as unknown as React.ContextType<typeof ThemeContext>}
+      >
         <TooltipProvider delayDuration={0}>
           <Tooltip open={true}>
             <TooltipTrigger>Trigger</TooltipTrigger>
@@ -39,7 +40,7 @@ describe('GlobalSearchPalette Tooltip Static Check', () => {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     const matches = screen.getAllByText(/Fale com o Flow/i);
@@ -47,4 +48,3 @@ describe('GlobalSearchPalette Tooltip Static Check', () => {
     expect(screen.getAllByText(/Ctrl\+Shift\+V/i).length).toBeGreaterThan(0);
   });
 });
-

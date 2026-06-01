@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-01T13:13:35.709Z",
-  "totalErrors": 80,
+  "generatedAt": "2026-06-01T17:12:12.911Z",
+  "totalErrors": 67,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -83,6 +83,9 @@
     },
     "src/components/notifications/NotificationsBadgeStatsPanel.tsx": {
       "react-hooks/exhaustive-deps": 1
+    },
+    "src/components/notifications/__tests__/NotificationDrawer.test.tsx": {
+      "no-duplicate-imports": 1
     },
     "src/components/notifications/badge-stats/EfficiencyGrid.tsx": {
       "@typescript-eslint/no-unused-vars": 3
@@ -284,10 +287,6 @@
     "src/hooks/common/useSearch.ts": {
       "react-hooks/exhaustive-deps": 2
     },
-    "src/hooks/gravacao/useTecnicasGravacao.ts": {
-      "@typescript-eslint/no-explicit-any": 3,
-      "@typescript-eslint/no-unused-vars": 2
-    },
     "src/hooks/intelligence/useMagicUpState.ts": {
       "react-hooks/exhaustive-deps": 2
     },
@@ -315,9 +314,6 @@
     "src/hooks/products/useProductsByColor.ts": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/hooks/products/useReplenishments.ts": {
-      "@typescript-eslint/no-unused-vars": 3
-    },
     "src/hooks/products/useSupplierComparison.ts": {
       "react-hooks/exhaustive-deps": 1
     },
@@ -327,18 +323,8 @@
     "src/hooks/products/useSuppliers.ts": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/hooks/products/useVariantSupplierSources.ts": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
     "src/hooks/quotes/useQuoteBuilderState.ts": {
       "react-hooks/exhaustive-deps": 6
-    },
-    "src/hooks/simulation/useExternalSimulator.ts": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/hooks/simulation/useGravacaoV2.ts": {
-      "@typescript-eslint/no-explicit-any": 1,
-      "@typescript-eslint/no-unused-vars": 3
     },
     "src/hooks/simulation/useSimulation.ts": {
       "react-hooks/exhaustive-deps": 2

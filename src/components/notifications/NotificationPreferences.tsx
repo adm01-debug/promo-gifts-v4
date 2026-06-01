@@ -3,13 +3,31 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, Smartphone, Shield, Info, Rocket } from 'lucide-react';
-import { notificationPreferenceService, UserNotificationPreference } from '@/services/notificationPreferenceService';
+import {
+  notificationPreferenceService,
+  type UserNotificationPreference,
+} from '@/services/notificationPreferenceService';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
-  { id: 'security', label: 'Segurança', icon: Shield, description: 'Alertas de login e alterações de conta' },
-  { id: 'system', label: 'Sistema', icon: Info, description: 'Atualizações e avisos da plataforma' },
-  { id: 'marketing', label: 'Promoções', icon: Rocket, description: 'Novidades e ofertas exclusivas' },
+  {
+    id: 'security',
+    label: 'Segurança',
+    icon: Shield,
+    description: 'Alertas de login e alterações de conta',
+  },
+  {
+    id: 'system',
+    label: 'Sistema',
+    icon: Info,
+    description: 'Atualizações e avisos da plataforma',
+  },
+  {
+    id: 'marketing',
+    label: 'Promoções',
+    icon: Rocket,
+    description: 'Novidades e ofertas exclusivas',
+  },
 ];
 
 export function NotificationPreferences() {
@@ -18,11 +36,15 @@ export function NotificationPreferences() {
 
   useEffect(() => {
     loadPreferences();
-    
+
     // Subscribe to real-time changes
     const unsubscribe = notificationPreferenceService.subscribeToPreferences((updatedPref) => {
-      setPreferences(prev => {
-        const index = prev.findIndex(p => p.id === updatedPref.id || (p.category === updatedPref.category && p.user_id === updatedPref.user_id));
+      setPreferences((prev) => {
+        const index = prev.findIndex(
+          (p) =>
+            p.id === updatedPref.id ||
+            (p.category === updatedPref.category && p.user_id === updatedPref.user_id),
+        );
         if (index >= 0) {
           const next = [...prev];
           next[index] = updatedPref;
@@ -42,13 +64,19 @@ export function NotificationPreferences() {
     setIsLoading(false);
   }
 
-  async function togglePreference(category: string, type: 'in_app_enabled' | 'push_enabled', value: boolean) {
-    const success = await notificationPreferenceService.updatePreference(category, { [type]: value });
+  async function togglePreference(
+    category: string,
+    type: 'in_app_enabled' | 'push_enabled',
+    value: boolean,
+  ) {
+    const success = await notificationPreferenceService.updatePreference(category, {
+      [type]: value,
+    });
     if (success) {
-      setPreferences(prev => {
-        const existing = prev.find(p => p.category === category);
+      setPreferences((prev) => {
+        const existing = prev.find((p) => p.category === category);
         if (existing) {
-          return prev.map(p => p.category === category ? { ...p, [type]: value } : p);
+          return prev.map((p) => (p.category === category ? { ...p, [type]: value } : p));
         }
         return [...prev, { category, [type]: value } as UserNotificationPreference];
       });
@@ -66,9 +94,12 @@ export function NotificationPreferences() {
     <div className="space-y-6">
       <div className="grid gap-6">
         {CATEGORIES.map((cat) => {
-          const pref = preferences.find(p => p.category === cat.id) || { in_app_enabled: true, push_enabled: true };
+          const pref = preferences.find((p) => p.category === cat.id) || {
+            in_app_enabled: true,
+            push_enabled: true,
+          };
           const Icon = cat.icon;
-          
+
           return (
             <Card key={cat.id}>
               <CardHeader className="pb-3">
@@ -86,22 +117,26 @@ export function NotificationPreferences() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor={`${cat.id}-inapp`} className="text-sm font-normal">Na plataforma (In-app)</Label>
+                    <Label htmlFor={`${cat.id}-inapp`} className="text-sm font-normal">
+                      Na plataforma (In-app)
+                    </Label>
                   </div>
-                  <Switch 
-                    id={`${cat.id}-inapp`} 
-                    checked={pref.in_app_enabled} 
+                  <Switch
+                    id={`${cat.id}-inapp`}
+                    checked={pref.in_app_enabled}
                     onCheckedChange={(val) => togglePreference(cat.id, 'in_app_enabled', val)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Smartphone className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor={`${cat.id}-push`} className="text-sm font-normal">Notificações Push</Label>
+                    <Label htmlFor={`${cat.id}-push`} className="text-sm font-normal">
+                      Notificações Push
+                    </Label>
                   </div>
-                  <Switch 
-                    id={`${cat.id}-push`} 
-                    checked={pref.push_enabled} 
+                  <Switch
+                    id={`${cat.id}-push`}
+                    checked={pref.push_enabled}
                     onCheckedChange={(val) => togglePreference(cat.id, 'push_enabled', val)}
                   />
                 </div>

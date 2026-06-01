@@ -1,5 +1,4 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { CommandItem } from '@/components/ui/command';
 import { Clock, Flame, X, Sparkles, Eye, ChevronRight, Zap, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -139,7 +138,6 @@ export function GlobalSearchIdleState({
                   )}
                 </div>
 
-
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn('truncate text-[13px]', idx === 0 ? 'font-bold' : 'font-medium')}
@@ -163,7 +161,6 @@ export function GlobalSearchIdleState({
                 </div>
 
                 <ChevronRight className="h-3.5 w-3.5 shrink-0 [color:hsl(var(--command-text-subtle))]" />
-
               </CommandItem>
             ))}
           </div>

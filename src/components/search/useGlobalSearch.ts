@@ -19,7 +19,6 @@ import {
 import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
 
-
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
 import type { PromobrindProduct } from '@/lib/external-db';
 
@@ -73,7 +72,6 @@ export interface PopularProduct {
   image_url: string | null;
   view_count: number;
 }
-
 
 export interface AppliedFilter {
   type: 'category' | 'color' | 'price' | 'material' | 'stock' | 'featured' | 'kit';
@@ -230,8 +228,6 @@ export function useGlobalSearch() {
   // ── Popular products ──
   // product_popularity_30d view was removed; return empty until a replacement is created.
   const popularProducts: PopularProduct[] = [];
-
-
 
   // ── Typing suggestions ──
   useEffect(() => {
@@ -737,6 +733,7 @@ export function useGlobalSearch() {
     } finally {
       if (!controller.signal.aborted) setIsSearching(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commands is a stable ref defined outside the hook
   }, []);
 
   useEffect(() => {

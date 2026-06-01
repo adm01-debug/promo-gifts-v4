@@ -1,7 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NotificationBell } from '../NotificationDrawer';
 import { useNotifications } from '@/hooks/ui';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { type Mock, vi, describe, it, expect, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('@/hooks/ui', () => ({
@@ -31,7 +31,7 @@ describe('NotificationBell', () => {
   });
 
   it('renders badge when there are unread notifications', () => {
-    (useNotifications as any).mockReturnValue({
+    (useNotifications as Mock).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,
       isLoading: false,
@@ -42,14 +42,14 @@ describe('NotificationBell', () => {
     render(
       <BrowserRouter>
         <NotificationBell />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     expect(screen.getByText('1')).toBeInTheDocument();
   });
 
   it('shows empty state when there are no notifications', async () => {
-    (useNotifications as any).mockReturnValue({
+    (useNotifications as Mock).mockReturnValue({
       notifications: [],
       unreadCount: 0,
       isLoading: false,
@@ -62,7 +62,7 @@ describe('NotificationBell', () => {
     render(
       <BrowserRouter>
         <NotificationBell />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     const bellButton = screen.getByRole('button', { name: /Notificações/i });
@@ -72,8 +72,8 @@ describe('NotificationBell', () => {
   });
 
   it('allows exporting notifications to CSV', async () => {
-    const mockExport = vi.fn();
-    (useNotifications as any).mockReturnValue({
+    const _mockExport = vi.fn();
+    (useNotifications as Mock).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,
       isLoading: false,
@@ -88,18 +88,18 @@ describe('NotificationBell', () => {
     render(
       <BrowserRouter>
         <NotificationBell />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Notificações/i }));
-    
+
     const exportButton = screen.getByRole('button', { name: /Exportar CSV/i });
     expect(exportButton).toBeInTheDocument();
-    
+
     // Mock URL.createObjectURL
     global.URL.createObjectURL = vi.fn(() => 'mock-url');
     global.URL.revokeObjectURL = vi.fn();
-    
+
     fireEvent.click(exportButton);
     // Should have triggered a download link click (hard to test directly without more mocks, but presence is good)
   });
@@ -107,8 +107,8 @@ describe('NotificationBell', () => {
   it('provides undo option after marking as read', async () => {
     const undoMarkAsRead = vi.fn();
     const markAsRead = vi.fn();
-    
-    (useNotifications as any).mockReturnValue({
+
+    (useNotifications as Mock).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,
       isLoading: false,
@@ -123,14 +123,14 @@ describe('NotificationBell', () => {
     render(
       <BrowserRouter>
         <NotificationBell />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Notificações/i }));
-    
+
     const notificationItem = screen.getByText('Test Notification');
     fireEvent.click(notificationItem);
-    
+
     expect(markAsRead).toHaveBeenCalledWith('1');
     // The toast behavior is harder to test in unit tests without more setup,
     // but we can verify the function is called.
