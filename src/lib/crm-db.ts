@@ -3,6 +3,15 @@
  *
  * Acessa o banco externo CRM (pgxfvjmuubtbowutlide) via Edge Function crm-db-bridge.
  * Substitui completamente o acesso a bitrix_clients.
+ *
+ * Proteções implementadas:
+ * - Semáforo de concorrência: max MAX_CONCURRENT_REQUESTS em paralelo
+ * - Circuit breaker para 429: backoff exponencial (60s→300s)
+ * - drainQueueWith429: drena fila imediatamente ao detectar 429
+ * - NON_RETRYABLE_PATTERNS: 4xx, JWT errors nunca são retentados
+ *
+ * M-04: detectCanonicalDbHealth() — health check passivo do banco canônico
+ * para uso em sistemas de monitoramento externo (GlitchTip, n8n watchdog).
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -154,6 +163,85 @@ function drainQueueWith429(cooldownMs: number): void {
   while (item) {
     item.reject(err);
     item = _concurrentQueue.shift();
+  }
+}
+
+// ============================================
+// HEALTH CHECK PASSIVO (M-04)
+// Verifica conectividade do banco canônico sem bloquear requests de negócio.
+// Destinado a monitoramento externo: n8n watchdog, GlitchTip, dashboards.
+// ============================================
+
+export interface CanonicalDbHealthResult {
+  /** true = banco respondeu dentro do timeout; false = degradado ou down */
+  healthy: boolean;
+  /** Latência em ms até primeira resposta */
+  latencyMs?: number;
+  /** Mensagem de erro se unhealthy (mascarada de dados sensíveis) */
+  error?: string;
+  /** Timestamp Unix (ms) da verificação */
+  checkedAt: number;
+}
+
+/**
+ * Health check passivo do banco canônico (doufsxqlfjyuvxuezpln).
+ *
+ * Usa SELECT limit 1 em system_kill_switches (tabela leve, sem dados de negócio)
+ * para verificar conectividade e latência do PostgREST. A query é rápida,
+ * não consome créditos de escrita e não interfere com o circuit breaker do CRM.
+ *
+ * NÃO lança exceção — retorna resultado estruturado para uso em monitoramento.
+ * NÃO bloqueia requests de negócio — operação independente.
+ *
+ * @param timeoutMs Timeout em ms (default: 5000). Ajustar para SLA do watchdog.
+ *
+ * @example
+ *   // n8n watchdog — verificação periódica
+ *   const health = await detectCanonicalDbHealth(3000);
+ *   if (!health.healthy) {
+ *     await reportToGlitchTip({ error: health.error, latency: health.latencyMs });
+ *   }
+ */
+export async function detectCanonicalDbHealth(
+  timeoutMs = 5000,
+): Promise<CanonicalDbHealthResult> {
+  const checkedAt = Date.now();
+  const t0 = performance.now();
+  try {
+    // Race entre a query e um timeout hard-coded
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Health check timeout após ${timeoutMs}ms`)),
+        timeoutMs,
+      ),
+    );
+    // Usamos system_kill_switches: tabela sempre presente, sem dados sensíveis,
+    // query leve (LIMIT 1). Alternativa: pg_stat_activity, mas requer permissão.
+    const queryPromise = supabase
+      .from('system_kill_switches' as never)
+      .select('switch_name')
+      .limit(1);
+
+    const result = await Promise.race([queryPromise, timeoutPromise]) as Awaited<typeof queryPromise>;
+    const latencyMs = Math.round(performance.now() - t0);
+
+    if (result.error) {
+      return {
+        healthy: false,
+        latencyMs,
+        error: safeCrmLogMessage(result.error),
+        checkedAt,
+      };
+    }
+    return { healthy: true, latencyMs, checkedAt };
+  } catch (e) {
+    const latencyMs = Math.round(performance.now() - t0);
+    return {
+      healthy: false,
+      latencyMs,
+      error: safeCrmLogMessage(e),
+      checkedAt,
+    };
   }
 }
 
