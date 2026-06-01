@@ -124,12 +124,21 @@ export function GlobalSearchIdleState({
                   ) : (
                     <RankBadge index={idx} />
                   )}
-                  {product.image_url && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="text-[10px] font-bold text-white">{idx + 1}º</span>
+                  {idx === 0 ? (
+                    <div className="absolute inset-x-0 bottom-0 bg-orange-500 py-0.5 text-center shadow-lg">
+                      <span className="text-[8px] font-black uppercase tracking-tighter text-white">
+                        TOP 1
+                      </span>
                     </div>
+                  ) : (
+                    product.image_url && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="text-[10px] font-bold text-white">{idx + 1}º</span>
+                      </div>
+                    )
                   )}
                 </div>
+
 
                 <div className="min-w-0 flex-1">
                   <p
@@ -153,14 +162,8 @@ export function GlobalSearchIdleState({
                   </div>
                 </div>
 
-                {idx === 0 ? (
-                  <Badge className="h-6 shrink-0 gap-1 rounded-lg border-brand-primary/20 bg-gradient-to-r from-brand-primary/20 to-brand-primary/10 px-2 text-[10px] font-bold text-brand-primary shadow-sm shadow-brand-primary/5 hover:bg-brand-primary/25">
-                    <Flame className="h-3 w-3" />
-                    Top 1
-                  </Badge>
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5 [color:hsl(var(--command-text-subtle))]" />
-                )}
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 [color:hsl(var(--command-text-subtle))]" />
+
               </CommandItem>
             ))}
           </div>
