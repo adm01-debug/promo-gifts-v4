@@ -50,7 +50,16 @@ BEGIN;
 
 -- 1) Remove o anon da política de leitura: a base passa a ser legível apenas por
 --    authenticated (admin). O público lê somente via v_products_public.
-ALTER POLICY products_public_read ON public.products TO authenticated;
+-- Guard: policy pode não existir em preview snapshots.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'products' AND policyname = 'products_public_read'
+  ) THEN
+    ALTER POLICY products_public_read ON public.products TO authenticated;
+  END IF;
+END $$;
 
 -- 2) Higiene de privilégios: o anon nunca escreve em products (a RLS de escrita já
 --    exige is_org_owner_or_admin). Remove os grants amplos para reduzir superfície
