@@ -44,6 +44,19 @@ type SupplierRow = { id: string; name: string; code: string };
 type ColorVariationRow = { id: string; name: string; slug: string; group_id: string };
 type ColorGroupRow = { id: string; name: string; slug: string };
 
+/**
+ * Tipos de imagem técnicos — NÃO são fotos de produto.
+ * Não devem aparecer no card de produto nem na galeria do frontend.
+ *   box/pouch    = embalagens
+ *   location     = templates de posicionamento de gravação
+ *   area         = áreas de gravação (diagramas técnicos)
+ *   component    = componentes de tecido/material
+ *
+ * Alinhado com o trigger trg_sync_product_images no banco e o backfill
+ * executado em 2026-06-01.
+ */
+const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
+
 export async function fetchPromobrindProducts(options?: {
   search?: string;
   limit?: number;
@@ -255,7 +268,12 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
   const uniqueSupplierIds = [
     ...new Set(products.map((p) => p.supplier_id).filter(Boolean)),
   ] as string[];
-  const shouldRunHeavyEnrichment = products.length <= 500 || typeof options?.limit === 'number';
+
+  // Threshold aumentado de 500 → 5000:
+  // O campo products.images[] é mantido pelo trigger trg_sync_product_images no banco,
+  // então o enriquecimento em runtime serve principalmente para cores/variantes.
+  // 5000 cobre o catálogo atual (~6.086 produtos) com margem para crescimento.
+  const shouldRunHeavyEnrichment = products.length <= 5000 || typeof options?.limit === 'number';
 
   if (!shouldRunHeavyEnrichment) {
     logger.info(
@@ -514,8 +532,14 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     const productImages = imagesByProduct.get(product.id);
     if (productImages && productImages.length > 0) {
       productImages.sort((a, b) => a.order - b.order);
-      const colorImages = productImages.filter((img) => img.supplierCode && img.type !== 'box');
-      const generalImages = productImages.filter((img) => !img.supplierCode && img.type !== 'box');
+      // Excluir tipos técnicos: não são fotos de produto (ver TECHNICAL_IMAGE_TYPES).
+      // Alinhado com trigger trg_sync_product_images e backfill de 2026-06-01.
+      const colorImages = productImages.filter(
+        (img) => img.supplierCode && !TECHNICAL_IMAGE_TYPES.has(img.type),
+      );
+      const generalImages = productImages.filter(
+        (img) => !img.supplierCode && !TECHNICAL_IMAGE_TYPES.has(img.type),
+      );
       const mainImages = [...colorImages, ...generalImages];
       const primaryImage = mainImages.find((img) => img.isPrimary) || mainImages[0];
       if (primaryImage) {
