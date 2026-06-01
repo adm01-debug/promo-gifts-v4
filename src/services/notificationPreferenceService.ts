@@ -46,5 +46,28 @@ export const notificationPreferenceService = {
     }
 
     return true;
+  },
+
+  subscribeToPreferences(
+    onUpdate: (preference: UserNotificationPreference) => void
+  ): () => void {
+    const channel = supabase
+      .channel('user_notification_preferences_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_notification_preferences',
+        },
+        (payload) => {
+          onUpdate(payload.new as UserNotificationPreference);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 };
