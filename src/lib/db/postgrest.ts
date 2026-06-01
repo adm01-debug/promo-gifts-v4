@@ -191,16 +191,53 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return true;
 }
 
+const SEARCH_COLUMNS: Record<string, string> = {
+  v_products_public: 'name',
+  products: 'name',
+  categories: 'name',
+  v_suppliers_public: 'name',
+  suppliers: 'name',
+  material_types: 'name',
+  material_groups: 'name',
+  color_variations: 'name',
+  color_groups: 'name',
+  color_nuances: 'name',
+  tecnicas_gravacao: 'nome',
+  tabela_preco_gravacao_oficial: 'nome',
+  ramo_atividade: 'nome',
+  ramo_atividade_filho: 'nome',
+  tags: 'name',
+  variation_types: 'name',
+  product_groups: 'description',
+};
+
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
-  const remappedFilters = options.filters ? remapFilters(table, options.filters) : undefined;
+  const rawFilters = options.filters ? { ...options.filters } : undefined;
+  let searchTerm: string | undefined;
+  if (rawFilters && '_search' in rawFilters) {
+    const raw = rawFilters._search;
+    if (typeof raw === 'string' && raw.trim().length > 0) searchTerm = raw.trim();
+    delete rawFilters._search;
+  }
+
+  const remappedFilters = rawFilters ? remapFilters(table, rawFilters) : undefined;
   const remappedSelect = options.select ? remapSelect(table, options.select) : '*';
   const remappedOrderCol = options.orderBy
     ? remapColumnName(table, options.orderBy.column)
     : undefined;
 
   let query = supabase.from(table).select(remappedSelect);
+
+  if (searchTerm) {
+    const searchCol = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+    if (searchCol) {
+      query = query.ilike(searchCol, `%${searchTerm}%`);
+    } else {
+      logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
+    }
+  }
 
   if (remappedFilters) {
     for (const [key, value] of Object.entries(remappedFilters)) {
