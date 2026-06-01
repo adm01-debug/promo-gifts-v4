@@ -124,8 +124,8 @@ export async function fetchPromobrindProducts(options?: {
         });
       }
     }
-    products = result.records;
-    totalCount = result.count;
+    products = result?.records ?? [];
+    totalCount = result?.count ?? null;
   } else {
     const BASE_PAGE_SIZE = 200;
     let offset = 0;

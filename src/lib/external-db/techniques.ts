@@ -1,4 +1,5 @@
 import { dbInvoke } from '@/lib/db/postgrest';
+import { logger } from '@/lib/logger';
 /**
  * Techniques and Print Areas for Promobrind.
  */
@@ -114,12 +115,21 @@ export async function fetchPromobrindPrintAreas(productId: string): Promise<Prom
   const areas = await fetchPrintAreasFromProduct(productId);
   if (!areas.length) return [];
 
-  const techResult = await dbInvoke<TechniqueRawRow>({
-    table: 'tabela_preco_gravacao_oficial',
-    operation: 'select',
-    filters: { ativo: true },
-    limit: 100,
-  });
+  let techResult: { records: TechniqueRawRow[] };
+  try {
+    techResult = await dbInvoke<TechniqueRawRow>({
+      table: 'tabela_preco_gravacao_oficial',
+      operation: 'select',
+      filters: { ativo: true },
+      limit: 100,
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('410') || err.message.includes('Gone'))) {
+      logger.warn('[techniques] Bridge deprecated (410) for tabela_preco_gravacao_oficial');
+      return [];
+    }
+    throw err;
+  }
   const techById = new Map<string, TechniqueRawRow>(
     (techResult.records || []).map((t) => [t.id, t]),
   );
@@ -182,14 +192,23 @@ export async function fetchPromobrindTechniques(options?: {
   if (options?.ids?.length) filters.id = options.ids;
   if (options?.codes?.length) filters.codigo = options.codes;
 
-  const result = await dbInvoke<TechniqueRawRow>({
-    table: 'tecnica_gravacao',
-    operation: 'select',
-    filters,
-    select: TECHNIQUE_SELECT_FIELDS,
-    limit: options?.limit || 100,
-    orderBy: { column: 'ordem_exibicao', ascending: true },
-  });
+  let result: { records: TechniqueRawRow[] };
+  try {
+    result = await dbInvoke<TechniqueRawRow>({
+      table: 'tecnica_gravacao',
+      operation: 'select',
+      filters,
+      select: TECHNIQUE_SELECT_FIELDS,
+      limit: options?.limit || 100,
+      orderBy: { column: 'ordem_exibicao', ascending: true },
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('410') || err.message.includes('Gone'))) {
+      logger.warn('[techniques] Bridge deprecated (410) for tecnica_gravacao');
+      return [];
+    }
+    throw err;
+  }
   return (result.records || []).map(mapTechniqueFields);
 }
 

@@ -65,7 +65,7 @@ export async function fetchPromobrindProductById(
 ): Promise<PromobrindProduct | null> {
   const result = await fetchProductWithRetry(productId);
 
-  const product = result.records[0] || null;
+  const product = result?.records?.[0] || null;
   if (!product) return null;
 
   if (!product.description && product.meta_description) {
