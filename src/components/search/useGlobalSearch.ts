@@ -106,7 +106,7 @@ export function useGlobalSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
-  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
+  // Move popularProducts state to useQuery for better caching and performance
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
   // FIX BUG-GS-07: expose search error state so UI can show a feedback banner
   const [searchError, setSearchError] = useState(false);
