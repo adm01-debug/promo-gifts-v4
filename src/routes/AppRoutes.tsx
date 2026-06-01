@@ -3,7 +3,6 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import NProgress from 'nprogress';
 import { performanceTracker } from '@/utils/performance';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { GlobalSearchPalette } from '@/components/search/GlobalSearchPalette';
 
 import { getFallback } from '@/components/layout/SkeletonLoaders';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -96,7 +95,6 @@ export function AppRoutes() {
             /debug/images was previously inside toolsRoutes (ProtectedRoute)
             which caused E2E specs to fail with auth redirect. */}
         <Route path="/debug/images" element={<OptimizedImageDemo />} />
-        <Route path="/test-tooltip" element={<div className="p-10"><div className="flex justify-center"><GlobalSearchPalette /></div></div>} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
