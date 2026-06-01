@@ -6959,6 +6959,17 @@ export type Database = {
       }
     }
     Views: {
+      product_popularity_30d: {
+        Row: {
+          category_name: string | null
+          id: string | null
+          image_url: string | null
+          name: string | null
+          sku: string | null
+          view_count: number | null
+        }
+        Relationships: []
+      }
       v_full_scope_grants: {
         Row: {
           audit_id: string | null
@@ -7663,6 +7674,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      refresh_product_popularity: { Args: never; Returns: undefined }
       repair_ownership_orphans: {
         Args: {
           _dry_run?: boolean
