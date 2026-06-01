@@ -27,6 +27,7 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
+  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
@@ -349,9 +350,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
 
       const csvContent = [
         headers.join(','),
-        ...rows.map((r: string[]) =>
-          r.map((cell: string) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
-        ),
+        ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
       ].join('\n');
 
       const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -363,7 +362,6 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
       toast.success('Exportação concluída');
     }, [notifications]);
 
