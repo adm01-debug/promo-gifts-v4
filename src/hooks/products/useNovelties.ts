@@ -273,14 +273,21 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         .range(0, limit - 1);
 
       if (error) {
-        if (error.message?.includes('410') || error.message?.includes('Gone')) {
+        const isGone = error.message?.includes('410') || error.message?.includes('Gone');
+        if (isGone) {
           const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
-          reportSilentEmpty({ reason: 'gone_410', table: 'v_products_public', operation: 'select', message: error.message });
+          reportSilentEmpty({ 
+            reason: 'gone_410', 
+            table: 'v_products_public', 
+            operation: 'select', 
+            message: error.message 
+          });
           logger.warn('Bridge deprecated (410) for products novelties');
           return [];
         }
         throw error;
       }
+
 
       let records = (data as unknown as RawProduct[]) || [];
 

@@ -217,13 +217,20 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
         .range(0, limit - 1);
 
       if (error) {
-        if (error.message?.includes('410')) {
+        const isGone = error.message?.includes('410') || error.message?.includes('Gone');
+        if (isGone) {
           const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
-          reportSilentEmpty({ reason: 'gone_410', table: 'v_products_public', operation: 'select', message: error.message });
+          reportSilentEmpty({ 
+            reason: 'gone_410', 
+            table: 'v_products_public', 
+            operation: 'select', 
+            message: error.message 
+          });
           return [];
         }
         throw error;
       }
+
 
       let items = (data as unknown as RawProduct[] || [])
         .filter(isReplenishment)

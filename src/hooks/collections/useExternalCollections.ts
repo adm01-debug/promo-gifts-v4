@@ -50,9 +50,20 @@ export function useExternalCollections() {
         .limit(100);
       
       if (error) {
-        if (error.message?.includes('410')) return [];
+        const isGone = error.message?.includes('410') || error.message?.includes('Gone');
+        if (isGone) {
+          const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+          reportSilentEmpty({ 
+            reason: 'gone_410', 
+            table: 'collections', 
+            operation: 'select', 
+            message: error.message 
+          });
+          return [];
+        }
         throw error;
       }
+
       return (data || []).filter((c) => c.is_active !== false);
     },
     staleTime: 5 * 60 * 1000, // 5 minutos

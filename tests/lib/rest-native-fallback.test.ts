@@ -1,13 +1,31 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { supabase } from '@/integrations/supabase/client';
 
-describe('rest-native fallback', () => {
-  it('should handle empty responses gracefully', async () => {
-    vi.spyOn(supabase, 'from').mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
-    } as any);
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockResolvedValue({ data: [], error: { message: '410 Gone' } }),
+      })),
+    })),
+  },
+}));
 
-    const { data } = await supabase.from('products').select('*');
-    expect(data).toEqual([]);
+vi.mock('@/lib/external-db/silent-empty-report', () => ({
+  reportSilentEmpty: vi.fn(),
+}));
+
+describe('dbInvoke 410 handling', () => {
+  it('returns empty array on 410 Gone error', async () => {
+    const result = await dbInvoke({
+      table: 'products',
+      operation: 'select',
+    });
+    expect(result.records).toEqual([]);
+    expect(result.count).toBe(0);
   });
 });

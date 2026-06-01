@@ -39,9 +39,20 @@ export function useTecnicasGravacao() {
       ]);
 
       if (tecnicasResult.error) {
-        if (tecnicasResult.error.message?.includes('410')) return [];
+        const isGone = tecnicasResult.error.message?.includes('410') || tecnicasResult.error.message?.includes('Gone');
+        if (isGone) {
+          const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+          reportSilentEmpty({ 
+            reason: 'gone_410', 
+            table: 'tabela_preco_gravacao_oficial', 
+            operation: 'select', 
+            message: tecnicasResult.error.message 
+          });
+          return [];
+        }
         throw tecnicasResult.error;
       }
+
 
       const variantesCount: Record<string, number> = {};
       (variantesResult.data || []).forEach((v) => {
