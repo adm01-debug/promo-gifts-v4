@@ -4,7 +4,7 @@ import { Command as CommandPrimitive } from 'cmdk';
 import { Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -21,15 +21,42 @@ const Command = React.forwardRef<
 ));
 Command.displayName = CommandPrimitive.displayName;
 
-type CommandDialogProps = DialogProps;
+type CommandDialogProps = DialogProps & {
+  /** Accessible label read by screen readers for the search dialog.
+   *  Defaults to "Busca rápida". Override when context differs. */
+  dialogTitle?: string;
+};
 
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+/**
+ * CommandDialog — wraps CommandPrimitive inside a Radix Dialog.
+ *
+ * A11y notes:
+ *   - `<DialogTitle className="sr-only">` satisfies Radix's requirement
+ *     that every DialogContent has an accessible name; it is visually
+ *     hidden so it doesn't affect layout.
+ *   - `aria-describedby={undefined}` is passed explicitly so Radix
+ *     recognises the prop key and suppresses the "Missing Description"
+ *     console warning. Relying on the auto-injection in dialog.tsx is
+ *     not sufficient because Radix's check runs in a useEffect and
+ *     tests `props['aria-describedby'] !== undefined`, which evaluates
+ *     to false even when the prop is spread with value undefined.
+ */
+const CommandDialog = ({ children, dialogTitle = 'Busca rápida', ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       <DialogContent
         className="max-w-[560px] overflow-hidden !rounded-2xl bg-[hsl(var(--command-surface))] p-0 shadow-[0_24px_80px_hsl(var(--command-shadow))] [border-color:hsl(var(--command-border))] [&>div]:overflow-hidden"
         showCloseButton={false}
+        // ── A11y: explicitly opt-out of description ──────────────────────
+        // Radix checks `'aria-describedby' in props` (key presence, not
+        // value) to determine whether the omission is intentional.
+        // Passing `undefined` explicitly satisfies that check.
+        aria-describedby={undefined}
       >
+        {/* Visually-hidden title — gives screen readers an accessible
+            dialog name without affecting the visual layout. */}
+        <DialogTitle className="sr-only">{dialogTitle}</DialogTitle>
+
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>
