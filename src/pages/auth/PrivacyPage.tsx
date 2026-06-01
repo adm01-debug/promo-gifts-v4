@@ -6,8 +6,9 @@ import { cn } from '@/lib/utils';
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-8 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
+    <div className="min-h-screen w-full bg-background text-foreground">
       <PageSEO title="Política de Privacidade" path="/privacidade" />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-8 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
       <div className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-4">
           <Link
@@ -71,6 +72,7 @@ export default function PrivacyPage() {
         <footer className="border-t pt-8 text-center text-sm text-muted-foreground">
           <p>© 2026 Promo Gifts — Todos os direitos reservados.</p>
         </footer>
+      </div>
       </div>
     </div>
   );
