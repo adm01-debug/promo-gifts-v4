@@ -271,10 +271,19 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
           else if (op === 'neq')  query = query.neq(key, rest);
           else if (op === 'like') query = query.like(key, rest);
           else if (op === 'ilike') query = query.ilike(key, rest);
-          else if (op === 'is')   query = rest === 'null' ? query.is(key, null) : query.eq(key, value);
+          else if (op === 'is') {
+            if (rest === 'null') query = query.is(key, null);
+            else if (rest === 'true') query = query.is(key, true);
+            else if (rest === 'false') query = query.is(key, false);
+            else query = query.eq(key, value);
+          }
           else if (op === 'in') {
             const inner = rest.replace(/^\(/, '').replace(/\)$/, '');
             query = query.in(key, inner.split(',').map((v) => v.trim()).filter(Boolean));
+          }
+          else if (op === 'not') {
+            const [notOp, ...notRest] = rest.split('.');
+            query = query.not(key, notOp, notRest.join('.'));
           }
           else query = query.eq(key, value);
         } else {
