@@ -33,10 +33,10 @@ jobs:
         run: npm ci
 
       - name: Typecheck
-        run: npm run qa:typecheck
+        run: npm run typecheck
 
       - name: Lint
-        run: npm run qa:lint
+        run: npm run lint:baseline
 
       - name: Unit & Integration Tests (Coverage)
         run: npm run test:ci-core:coverage
