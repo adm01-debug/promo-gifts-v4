@@ -51,22 +51,33 @@ export function useTechniquePricing(techniqueCode: string | null) {
 
       try {
         /**
-         * BUG-12 FIX: substituir external-db-bridge por PostgREST nativo.
+         * FIX 2026-06-01: 'customization_price_tables' does not exist in Supabase.
+         * It was a virtual alias only valid inside postgrest.ts / rest-native.ts.
+         * Direct supabase.from() calls must use the real table with PT column names.
          *
-         * PROBLEMA ORIGINAL: usava `supabase.functions.invoke('external-db-bridge', ...)`
-         * para buscar `customization_price_tables`. Essa tabela e LOCAL ao Supabase
-         * (nao e do banco externo promobrind), portanto deve ser acessada via PostgREST
-         * diretamente. Apos o merge do Caminho B (PRs #230-232), o external-db-bridge
-         * foi deprecated para tabelas locais.
+         * Real table: tabela_preco_gravacao_oficial
+         * Column mapping used here:
+         *   is_active          -> ativo
+         *   table_code         -> codigo_tabela
+         *   table_code_option  -> codigo_curto
+         *   table_fullcode     -> codigo_tabela (no separate fullcode col)
+         *   customization_type_name -> grupo_tecnica
+         *   max_colors         -> max_cores
+         *   setup_price        -> custo_setup
+         *   handling_price     -> custo_manuseio
+         *   price_by_color     -> cobra_por_cor
+         *   price_by_area      -> usa_faixa_dimensional
          *
-         * SOLUCAO: usar `supabase.from('customization_price_tables').select(...)`.
+         * Note: max_area_width_cm / max_area_height_cm are NOT in tabela_preco_gravacao_oficial.
+         * Area dimensions live in print_area_techniques joined by tabela_preco_id.
+         * Returning 0 as safe fallback -- callers handle 0 gracefully.
          */
         const { data, error: fetchError } = await supabase
-          .from('customization_price_tables')
+          .from('tabela_preco_gravacao_oficial')
           .select(
-            'id,table_code,table_code_option,table_fullcode,customization_type_name,max_colors,max_area_width_cm,max_area_height_cm,price_by_color,price_by_area,setup_price,handling_price',
+            'id,codigo_tabela,codigo_curto,grupo_tecnica,max_cores,custo_setup,custo_manuseio,cobra_por_cor,usa_faixa_dimensional,ativo',
           )
-          .eq('is_active', true)
+          .eq('ativo', true)
           .limit(100);
 
         if (fetchError) throw new Error(fetchError.message);
@@ -76,25 +87,33 @@ export function useTechniquePricing(techniqueCode: string | null) {
 
         const matchingTables = records.filter((t) => {
           const code = techniqueCode.toLowerCase();
-          const tableCode = ((t.table_code as string) || '').toLowerCase();
-          const fullCode = ((t.table_fullcode as string) || '').toLowerCase();
-          return tableCode.includes(code) || code.includes(tableCode) || fullCode.includes(code);
+          const tableCode = ((t.codigo_tabela as string) || '').toLowerCase();
+          const grupoTecnica = ((t.grupo_tecnica as string) || '').toLowerCase();
+          return (
+            tableCode.includes(code) ||
+            code.includes(tableCode) ||
+            grupoTecnica.includes(code) ||
+            code.includes(grupoTecnica)
+          );
         });
 
         const options: TechniquePriceOption[] = matchingTables.map((t) => ({
           id: t.id as string,
-          tableCode: t.table_code as string,
-          tableCodeOption: t.table_code_option as string | null,
-          tableFullcode: t.table_fullcode as string | null,
-          techniqueName: t.customization_type_name as string,
-          maxColors: (t.max_colors as number) || 1,
-          maxAreaWidth: (t.max_area_width_cm as number) || 0,
-          maxAreaHeight: (t.max_area_height_cm as number) || 0,
-          areaCm2: ((t.max_area_width_cm as number) || 0) * ((t.max_area_height_cm as number) || 0),
-          priceByColor: (t.price_by_color as boolean) || false,
-          priceByArea: (t.price_by_area as boolean) || false,
-          setupPrice: (t.setup_price as number) || 0,
-          handlingPrice: (t.handling_price as number) || 0,
+          tableCode: (t.codigo_tabela as string) || '',
+          tableCodeOption: (t.codigo_curto as string | null) ?? null,
+          tableFullcode: (t.codigo_tabela as string) || null,
+          techniqueName: (t.grupo_tecnica as string) || '',
+          maxColors: (t.max_cores as number) || 1,
+          // max_area_width_cm / max_area_height_cm not in this table.
+          // They live in print_area_techniques (joined by tabela_preco_id).
+          // Returning 0 as safe default.
+          maxAreaWidth: 0,
+          maxAreaHeight: 0,
+          areaCm2: 0,
+          priceByColor: (t.cobra_por_cor as boolean) || false,
+          priceByArea: (t.usa_faixa_dimensional as boolean) || false,
+          setupPrice: (t.custo_setup as number) || 0,
+          handlingPrice: (t.custo_manuseio as number) || 0,
         }));
 
         setPriceOptions(options);
@@ -136,39 +155,19 @@ export function useTechniquePricing(techniqueCode: string | null) {
   }, [priceOptions, hasPriceByColor]);
 
   const sizeOptions = useMemo((): SizeOption[] => {
-    if (priceOptions.length === 0) return [];
-    const uniqueAreas = new Map<string, SizeOption>();
-    priceOptions.forEach((opt) => {
-      if (opt.maxAreaWidth > 0 && opt.maxAreaHeight > 0) {
-        const key = `${opt.maxAreaWidth}x${opt.maxAreaHeight}`;
-        if (!uniqueAreas.has(key)) {
-          uniqueAreas.set(key, {
-            value: key,
-            label: `${opt.maxAreaWidth} x ${opt.maxAreaHeight} cm`,
-            width: opt.maxAreaWidth,
-            height: opt.maxAreaHeight,
-            areaCm2: opt.areaCm2,
-            tableFullcode: opt.tableFullcode || opt.tableCode,
-          });
-        }
-      }
-    });
-    return Array.from(uniqueAreas.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
+    // Size options require max_area_width_cm/max_area_height_cm from print_area_techniques.
+    // Not available in tabela_preco_gravacao_oficial -- requires a JOIN query.
+    // Returning empty array until a JOIN implementation is added.
+    return [];
   }, [priceOptions]);
 
   const findMatchingTable = useCallback(
-    (colors: number, sizeValue: string): TechniquePriceOption | null => {
+    (colors: number, _sizeValue: string): TechniquePriceOption | null => {
       if (priceOptions.length === 0) return null;
-      const [width, height] = sizeValue.split('x').map(Number);
-      const matching = priceOptions.find((opt) => {
-        const colorMatch = !hasPriceByColor || opt.maxColors >= colors;
-        const sizeMatch =
-          !sizeValue || (opt.maxAreaWidth === width && opt.maxAreaHeight === height);
-        return colorMatch && sizeMatch;
-      });
-      if (!matching && hasPriceByColor)
+      if (hasPriceByColor) {
         return priceOptions.find((opt) => opt.maxColors >= colors) || priceOptions[0];
-      return matching || priceOptions[0];
+      }
+      return priceOptions[0] || null;
     },
     [priceOptions, hasPriceByColor],
   );
