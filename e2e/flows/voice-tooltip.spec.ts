@@ -12,7 +12,8 @@ test.describe('Global Search Voice Tooltip @smoke', () => {
   test('Tooltip shows and disappears on Desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     
-    const micButton = page.locator('button[aria-label="Microfone"]');
+    const micButton = page.locator('button[aria-label="Fale com o Flow"]');
+
     
     // Hover to trigger tooltip
     await micButton.hover();
