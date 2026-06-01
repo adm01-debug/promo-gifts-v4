@@ -48,6 +48,10 @@ describe('Auth Page', () => {
     expect(screen.getByTestId('login-email-input')).toBeInTheDocument();
     expect(screen.getByTestId('login-password-input')).toBeInTheDocument();
     expect(screen.getByTestId('login-submit')).toBeInTheDocument();
+    
+    // Ensure the status card is NOT rendered
+    expect(screen.queryByText(/status/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/infraestrutura/i)).not.toBeInTheDocument();
   });
 
   it('toggles password visibility', () => {
