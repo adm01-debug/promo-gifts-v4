@@ -124,12 +124,21 @@ export function GlobalSearchIdleState({
                   ) : (
                     <RankBadge index={idx} />
                   )}
-                  {product.image_url && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="text-[10px] font-bold text-white">{idx + 1}º</span>
+                  {idx === 0 ? (
+                    <div className="absolute inset-x-0 bottom-0 bg-orange-500 py-0.5 text-center shadow-lg">
+                      <span className="text-[8px] font-black uppercase tracking-tighter text-white">
+                        TOP 1
+                      </span>
                     </div>
+                  ) : (
+                    product.image_url && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="text-[10px] font-bold text-white">{idx + 1}º</span>
+                      </div>
+                    )
                   )}
                 </div>
+
 
                 <div className="min-w-0 flex-1">
                   <p
