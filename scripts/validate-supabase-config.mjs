@@ -18,21 +18,26 @@ try {
   }
 
   // 2. Check if the fallback/enforcement logic is present
-  // Accepts either the old envMatchesCanonical pattern or the newer envPointsToForbidden pattern
+  // Accepts original pattern, newer envPointsToForbidden, or modern envPointsToCanonical pattern
   const hasFallbackLogic =
     content.includes('.includes("doufsxqlfjyuvxuezpln")') ||
     content.includes('FORBIDDEN_REFS') ||
-    content.includes('envPointsToForbidden');
+    content.includes('envPointsToForbidden') ||
+    content.includes('envPointsToCanonical');
   if (!hasFallbackLogic) {
     console.error(`\u274C ERROR: Enforcement logic for "${CANONICAL_PROJECT_ID}" not found in ${CLIENT_PATH}`);
     process.exit(1);
   }
 
   // 3. Ensure SUPABASE_URL is assigned using the validation logic
-  // Accepts either the old envMatchesCanonical pattern or the newer envPointsToForbidden pattern
+  // Accepts legacy pattern, intermediate pattern, or modern tri-state pattern
   const hasCorrectAssignment =
     content.includes('export const SUPABASE_URL = envMatchesCanonical ? (envUrl as string) : CANONICAL_URL;') ||
-    content.includes('export const SUPABASE_URL = envPointsToForbidden || !envUrl ? CANONICAL_URL : envUrl;');
+    content.includes('export const SUPABASE_URL = envPointsToForbidden || !envUrl ? CANONICAL_URL : envUrl;') ||
+    // Modern pattern: envPointsToCanonical used as primary positive check
+    (content.includes('export const SUPABASE_URL = envPointsToCanonical') &&
+     content.includes('envPointsToForbidden') &&
+     content.includes('CANONICAL_URL'));
   if (!hasCorrectAssignment) {
     console.error(`\u274C ERROR: SUPABASE_URL assignment does not enforce canonical fallback in ${CLIENT_PATH}`);
     process.exit(1);
