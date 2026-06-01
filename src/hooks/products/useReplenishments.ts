@@ -217,7 +217,11 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
         .range(0, limit - 1);
 
       if (error) {
-        if (error.message?.includes('410')) return [];
+        if (error.message?.includes('410')) {
+          const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+          reportSilentEmpty({ reason: 'gone_410', table: 'v_products_public', operation: 'select', message: error.message });
+          return [];
+        }
         throw error;
       }
 
