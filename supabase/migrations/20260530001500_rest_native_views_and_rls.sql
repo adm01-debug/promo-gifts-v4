@@ -2,10 +2,22 @@
 -- Applied 2026-05-29/30 | Phases 2, 3, 4 + cleanup
 
 -- Phase 2: suppliers VIEW + RLS
-CREATE OR REPLACE VIEW v_suppliers_public AS
-SELECT id,name,code,trading_name,logo_url,website,active,is_product_supplier,is_engraving_supplier,state_uf FROM suppliers;
-ALTER VIEW v_suppliers_public SET (security_invoker = false);
-GRANT SELECT ON v_suppliers_public TO anon, authenticated;
+-- Guard: colunas como trading_name/is_product_supplier/etc podem não existir
+-- em preview snapshots (adicionadas out-of-band em produção).
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='suppliers'
+      AND column_name IN ('id','name','code','trading_name','logo_url','website','active','is_product_supplier','is_engraving_supplier','state_uf')
+  ) = 10 THEN
+    EXECUTE 'CREATE OR REPLACE VIEW v_suppliers_public AS SELECT id,name,code,trading_name,logo_url,website,active,is_product_supplier,is_engraving_supplier,state_uf FROM suppliers';
+    EXECUTE 'ALTER VIEW v_suppliers_public SET (security_invoker = false)';
+    EXECUTE 'GRANT SELECT ON v_suppliers_public TO anon, authenticated';
+  ELSE
+    RAISE NOTICE 'v_suppliers_public não criada: colunas ausentes em suppliers';
+  END IF;
+END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -44,10 +56,21 @@ BEGIN
 END $$;
 
 -- Phase 3: print areas VIEW + technique policies
-CREATE OR REPLACE VIEW v_print_area_techniques_public AS
-SELECT id,product_id,tabela_preco_id,location_code,location_name,max_width,max_height,is_curved,shape,technique_order,location_order,is_active,created_at,updated_at FROM print_area_techniques;
-ALTER VIEW v_print_area_techniques_public SET (security_invoker = false);
-GRANT SELECT ON v_print_area_techniques_public TO anon, authenticated;
+-- Guard: colunas podem não existir em preview snapshots.
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='print_area_techniques'
+      AND column_name IN ('id','product_id','tabela_preco_id','location_code','location_name','max_width','max_height','is_curved','shape','technique_order','location_order','is_active','created_at','updated_at')
+  ) = 14 THEN
+    EXECUTE 'CREATE OR REPLACE VIEW v_print_area_techniques_public AS SELECT id,product_id,tabela_preco_id,location_code,location_name,max_width,max_height,is_curved,shape,technique_order,location_order,is_active,created_at,updated_at FROM print_area_techniques';
+    EXECUTE 'ALTER VIEW v_print_area_techniques_public SET (security_invoker = false)';
+    EXECUTE 'GRANT SELECT ON v_print_area_techniques_public TO anon, authenticated';
+  ELSE
+    RAISE NOTICE 'v_print_area_techniques_public não criada: colunas ausentes em print_area_techniques';
+  END IF;
+END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
