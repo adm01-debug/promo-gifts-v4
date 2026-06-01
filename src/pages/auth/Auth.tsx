@@ -14,6 +14,10 @@ import {
   Lock,
   ShieldAlert,
   Globe,
+  Wifi,
+  AlertTriangle,
+  RotateCw,
+  CheckCircle2,
   Rocket,
 } from 'lucide-react';
 import { AuthBrandingPanel, SpaceScene } from '@/pages/auth/AuthBranding';
