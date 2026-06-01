@@ -3,13 +3,17 @@
 -- Bug: Client can SET LOCAL app.current_org_id = '<other-org-uuid>' to access
 --      data from other organizations in 5 tables (12 policies total)
 -- Applied: 2026-05-26
--- Guards: cada bloco verifica se a tabela existe em preview snapshots.
+-- Guards: cada bloco verifica se a tabela E a coluna organization_id existem
+-- (preview snapshots podem ter as tabelas sem a coluna).
 -- =============================================================================
 
 -- color_groups
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='color_groups') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='color_groups' AND column_name='organization_id'
+  ) THEN
     DROP POLICY IF EXISTS color_groups_isolation_delete ON public.color_groups;
     DROP POLICY IF EXISTS color_groups_isolation_insert ON public.color_groups;
     DROP POLICY IF EXISTS color_groups_isolation_update ON public.color_groups;
@@ -36,7 +40,10 @@ END $$;
 -- color_nuances
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='color_nuances') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='color_nuances' AND column_name='organization_id'
+  ) THEN
     DROP POLICY IF EXISTS color_nuances_isolation ON public.color_nuances;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='color_nuances' AND policyname='color_nuances_own_org') THEN
       CREATE POLICY color_nuances_own_org
@@ -50,7 +57,10 @@ END $$;
 -- color_variations
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='color_variations') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='color_variations' AND column_name='organization_id'
+  ) THEN
     DROP POLICY IF EXISTS color_variations_isolation ON public.color_variations;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='color_variations' AND policyname='color_variations_own_org') THEN
       CREATE POLICY color_variations_own_org
@@ -64,7 +74,10 @@ END $$;
 -- material_groups
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='material_groups') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='material_groups' AND column_name='organization_id'
+  ) THEN
     DROP POLICY IF EXISTS mg_delete ON public.material_groups;
     DROP POLICY IF EXISTS mg_insert ON public.material_groups;
     DROP POLICY IF EXISTS mg_select ON public.material_groups;
@@ -97,7 +110,10 @@ END $$;
 -- product_materials
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='product_materials') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='product_materials' AND column_name='organization_id'
+  ) THEN
     DROP POLICY IF EXISTS product_materials_isolation ON public.product_materials;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='product_materials' AND policyname='product_materials_own_org') THEN
       CREATE POLICY product_materials_own_org

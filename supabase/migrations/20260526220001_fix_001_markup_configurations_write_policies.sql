@@ -10,8 +10,8 @@
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'markup_configurations'
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'markup_configurations' AND column_name = 'organization_id'
   ) AND NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'markup_configurations' AND policyname = 'markup_configurations_insert'
@@ -29,8 +29,8 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'markup_configurations'
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'markup_configurations' AND column_name = 'organization_id'
   ) AND NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'markup_configurations' AND policyname = 'markup_configurations_update'
@@ -47,8 +47,8 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'markup_configurations'
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'markup_configurations' AND column_name = 'organization_id'
   ) AND NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'markup_configurations' AND policyname = 'markup_configurations_delete'
