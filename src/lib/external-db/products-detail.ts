@@ -435,7 +435,8 @@ export async function fetchPromobrindProductById(
     // realmente ficaram sem cobertura por supplier_code (caso atípico).
     if (fallbackVariantIds.length > 0) {
       try {
-        const inFilter = `in.(${fallbackVariantIds.join(',')})`;
+        // FIX: passar array diretamente -> dbInvoke usa .in('id', fallbackVariantIds)
+        // ANTES: const inFilter = `in.(${...})` + { id: inFilter } -> .eq('id', string) -> URL: id=eq.in.(...) -> 400 Bad Request
         const fb = await dbInvoke<{
           id: string;
           images: string[] | null;
@@ -444,7 +445,7 @@ export async function fetchPromobrindProductById(
           table: 'product_variants',
           operation: 'select',
           select: 'id, images, selected_thumbnail',
-          filters: { id: inFilter },
+          filters: { id: fallbackVariantIds },
           limit: Math.max(fallbackVariantIds.length, 10),
         });
         const byId = new Map(fb.records.map((r) => [r.id, r]));
