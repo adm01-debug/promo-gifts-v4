@@ -26,6 +26,7 @@
  *   E2E_RETRIES     número absoluto de retries (sobrescreve CI/local)
  */
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
