@@ -22,7 +22,7 @@ CREATE POLICY "order_items_select_v2" ON public.order_items
             AND (
                 o.seller_id = auth.uid() 
                 OR (o.organization_id IN (SELECT get_user_org_ids(auth.uid())))
-                OR can_view_all_sales()
+                OR can_view_all_sales(auth.uid())
             )
         )
     );
@@ -35,7 +35,7 @@ CREATE POLICY "order_items_manage_v2" ON public.order_items
             WHERE o.id = order_items.order_id 
             AND (
                 o.seller_id = auth.uid() 
-                OR can_view_all_sales()
+                OR can_view_all_sales(auth.uid())
             )
         )
     )
@@ -45,7 +45,7 @@ CREATE POLICY "order_items_manage_v2" ON public.order_items
             WHERE o.id = order_items.order_id 
             AND (
                 o.seller_id = auth.uid() 
-                OR can_view_all_sales()
+                OR can_view_all_sales(auth.uid())
             )
         )
     );

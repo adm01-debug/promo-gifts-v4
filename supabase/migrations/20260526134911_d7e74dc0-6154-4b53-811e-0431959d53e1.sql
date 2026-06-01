@@ -71,7 +71,7 @@ USING (
     AND (
       o.seller_id = auth.uid() OR 
       o.organization_id IN (SELECT get_user_org_ids(auth.uid())) OR 
-      can_view_all_sales()
+      can_view_all_sales(auth.uid())
     )
   )
 );
@@ -95,7 +95,7 @@ WITH CHECK (
     AND (
       o.seller_id = auth.uid() OR 
       o.organization_id IN (SELECT get_user_org_ids(auth.uid())) OR 
-      can_view_all_sales()
+      can_view_all_sales(auth.uid())
     )
   )
 );
@@ -119,7 +119,7 @@ USING (
     AND (
       o.seller_id = auth.uid() OR 
       o.organization_id IN (SELECT get_user_org_ids(auth.uid())) OR 
-      can_view_all_sales()
+      can_view_all_sales(auth.uid())
     )
   )
 )
@@ -130,7 +130,7 @@ WITH CHECK (
     AND (
       o.seller_id = auth.uid() OR 
       o.organization_id IN (SELECT get_user_org_ids(auth.uid())) OR 
-      can_view_all_sales()
+      can_view_all_sales(auth.uid())
     )
   )
 );
@@ -154,7 +154,7 @@ USING (
     AND (
       o.seller_id = auth.uid() OR 
       o.organization_id IN (SELECT get_user_org_ids(auth.uid())) OR 
-      can_view_all_sales()
+      can_view_all_sales(auth.uid())
     )
   )
 );
