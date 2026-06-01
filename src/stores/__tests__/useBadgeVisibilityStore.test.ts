@@ -24,19 +24,13 @@ describe('useBadgeVisibilityStore', () => {
       syncError: null,
     });
     vi.clearAllMocks();
-    
+
     // Default chain behavior
     mockSupabase.from.mockReturnThis();
     mockSupabase.select.mockReturnThis();
     mockSupabase.update.mockReturnThis();
-    
-    // We need to handle the fact that eq() is called in two different contexts:
-    // 1. Before maybeSingle() -> should return this
-    // 2. As the end of a chain (update().eq()) -> should return a promise (error: null)
-    
+
     mockSupabase.eq.mockImplementation(() => {
-      // By default return this to allow chaining
-      // But also make it thenable if it's the end of the chain
       const result = {
         ...mockSupabase,
         then: (resolve: (value: { error: null }) => void) => resolve({ error: null }),
@@ -56,9 +50,9 @@ describe('useBadgeVisibilityStore', () => {
 
   it('should toggle badges for a specific route and theme (light)', async () => {
     const { toggleBadges, isBadgeEnabled } = useBadgeVisibilityStore.getState();
-    
+
     await toggleBadges('/home', 'light');
-    
+
     expect(isBadgeEnabled('/home', 'light')).toBe(false);
     expect(isBadgeEnabled('/home', 'dark')).toBe(true);
   });
@@ -66,7 +60,7 @@ describe('useBadgeVisibilityStore', () => {
   it('should handle global fallback if route is not configured', () => {
     const { isBadgeEnabled } = useBadgeVisibilityStore.getState();
     expect(isBadgeEnabled('/anywhere', 'light')).toBe(true);
-    
+
     useBadgeVisibilityStore.setState({ badgesEnabled: false });
     expect(isBadgeEnabled('/anywhere', 'light')).toBe(false);
   });
@@ -74,21 +68,22 @@ describe('useBadgeVisibilityStore', () => {
   it('should sync with backend if userId is provided', async () => {
     const { toggleBadges } = useBadgeVisibilityStore.getState();
     const success = await toggleBadges('/home', 'light', 'user-123');
-    
+
     expect(success).toBe(true);
     expect(mockSupabase.from).toHaveBeenCalledWith('profiles');
   });
 
   it('should handle backend sync failure and set syncError', async () => {
-    // Force failure on maybeSingle
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: new Error('Network error') });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: new Error('Network error'),
+    });
 
     const { toggleBadges } = useBadgeVisibilityStore.getState();
     const success = await toggleBadges('/home', 'light', 'user-123');
-    
+
     expect(success).toBe(false);
     expect(useBadgeVisibilityStore.getState().syncError).not.toBeNull();
-    // Verify local state was still updated
     expect(useBadgeVisibilityStore.getState().isBadgeEnabled('/home', 'light')).toBe(false);
   });
 
@@ -96,12 +91,12 @@ describe('useBadgeVisibilityStore', () => {
     const { initializeFromProfile } = useBadgeVisibilityStore.getState();
     const mockPreferences = {
       badge_visibility: {
-        '/home': { light: false, dark: true }
-      }
+        '/home': { light: false, dark: true },
+      },
     };
-    
+
     initializeFromProfile(mockPreferences);
-    
+
     const state = useBadgeVisibilityStore.getState();
     expect(state.routeSettings['/home'].light).toBe(false);
     expect(state.routeSettings['/home'].dark).toBe(true);
