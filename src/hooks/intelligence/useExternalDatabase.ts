@@ -8,7 +8,7 @@
  *
  * Este arquivo contém o hook principal e re-exporta tudo para compatibilidade.
  */
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -249,14 +249,17 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
 
   const remove = useCallback(
     async (id: string) => {
-      const result = await invoke('delete', { id });
-      if (result) {
+      try {
+        await dbInvokeDelete({ table: tableName, id });
         toast.success('Registro excluído com sucesso!');
         return true;
+      } catch (err) {
+        console.error('Error deleting:', err);
+        toast.error('Erro ao excluir registro');
+        return false;
       }
-      return false;
     },
-    [invoke],
+    [tableName],
   );
 
   const refetch = useCallback(

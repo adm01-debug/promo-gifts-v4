@@ -88,7 +88,7 @@ interface ProductImageRecord {
 // FUNÇÕES AUXILIARES
 // ============================================
 
-async function dbInvoke<T>(
+async function dbInvokeLocal<T>(
   table: string,
   operation: 'select',
   options?: {
@@ -98,18 +98,12 @@ async function dbInvoke<T>(
     limit?: number;
   },
 ): Promise<{ records: T[]; count: number }> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table,
-      operation,
-      ...options,
-    },
+  const { dbInvoke } = await import('@/lib/db/postgrest');
+  return dbInvoke<T>({
+    table,
+    operation,
+    ...options,
   });
-
-  if (error) throw new Error(error.message);
-  if (!data.success) throw new Error(data.error || 'Erro desconhecido');
-
-  return data.data as { records: T[]; count: number };
 }
 
 // ============================================
@@ -131,7 +125,7 @@ export function useExternalProductSearch(searchQuery: string) {
       if (!normalizedSearch || normalizedSearch.length < 2) return [];
 
       const [prefixResult, broadResult] = await Promise.all([
-        dbInvoke<ExternalProduct>('products', 'select', {
+        dbInvokeLocal<ExternalProduct>('products', 'select', {
           filters: {
             _name_prefix: normalizedSearch,
             active: true,
@@ -140,7 +134,7 @@ export function useExternalProductSearch(searchQuery: string) {
           limit: 200,
           orderBy: { column: 'name', ascending: true },
         }),
-        dbInvoke<ExternalProduct>('products', 'select', {
+        dbInvokeLocal<ExternalProduct>('products', 'select', {
           filters: {
             _search: normalizedSearch,
             active: true,
@@ -160,7 +154,7 @@ export function useExternalProductSearch(searchQuery: string) {
         const productIds = products.map((p) => p.id);
 
         try {
-          const imagesResult = await dbInvoke<ProductImageRecord>('product_images', 'select', {
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
             filters: { product_id: productIds, is_active: true },
             select: 'product_id, url_cdn, image_type, is_primary, display_order',
             orderBy: { column: 'display_order', ascending: true },
@@ -215,7 +209,7 @@ export function useExternalProduct(productId: string | null) {
     queryFn: async () => {
       if (!productId) return null;
 
-      const result = await dbInvoke<ExternalProduct>('products', 'select', {
+      const result = await dbInvokeLocal<ExternalProduct>('products', 'select', {
         filters: { id: productId },
         select: PRODUCT_SELECT,
         limit: 1,
@@ -226,7 +220,7 @@ export function useExternalProduct(productId: string | null) {
       // Buscar imagens da nova tabela product_images
       if (product) {
         try {
-          const imagesResult = await dbInvoke<ProductImageRecord>('product_images', 'select', {
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
             filters: { product_id: productId, is_active: true },
             select: 'product_id, url_cdn, image_type, is_primary, display_order',
             orderBy: { column: 'display_order', ascending: true },
@@ -330,7 +324,7 @@ export function useExternalProductsList(options?: {
   return useQuery({
     queryKey: ['external-products-list', options],
     queryFn: async () => {
-      const result = await dbInvoke<ExternalProduct>('products', 'select', {
+      const result = await dbInvokeLocal<ExternalProduct>('products', 'select', {
         filters: {
           active: true,
         },
@@ -346,7 +340,7 @@ export function useExternalProductsList(options?: {
         const productIds = products.map((p) => p.id);
 
         try {
-          const imagesResult = await dbInvoke<ProductImageRecord>('product_images', 'select', {
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
             filters: { is_active: true },
             select: 'product_id, url_cdn, image_type, is_primary, display_order',
             orderBy: { column: 'display_order', ascending: true },
