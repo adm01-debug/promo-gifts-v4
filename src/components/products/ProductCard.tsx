@@ -325,7 +325,7 @@ export const ProductCard = memo(
         data-product-id={product.id}
         className={cn(
           'card-lift group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl card-glow',
-          'touch-manipulation transition-all duration-500 ease-out active:scale-[0.98] active:transition-transform active:duration-100',
+          'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
           hasHighlightedColor
