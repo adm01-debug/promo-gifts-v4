@@ -31,8 +31,17 @@ jobs:
         # Inspeção completa: `npm run qa:typecheck`.
         run: npm run typecheck
       
-      - name: Unit & Integration Tests
-        run: npm run test:run
+      - name: Unit & Integration Tests with Coverage
+        run: npm run test:coverage
+      
+      - name: Upload Coverage to PR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-coverage
+          path: coverage/
+          retention-days: 14
+
 
   e2e:
     name: E2E Tests
