@@ -27,7 +27,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
       )}
       aria-label="Rodapé legal"
     >
-      <p className="mx-auto max-w-md text-center text-[9px] leading-relaxed text-muted-foreground/80 opacity-90 sm:text-[10px]">
+      <p className="mx-auto max-w-md text-center text-[9px] leading-relaxed text-white/50 opacity-90 sm:text-[10px]">
         Este sistema é propriedade intelectual exclusiva da Brasil Marcas, sendo protegido pela Lei
         nº 9.609/98 e demais normas aplicáveis. É proibida sua reprodução, cópia, modificação,
         distribuição ou uso não autorizado.
@@ -39,22 +39,22 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
       >
         <Link
           to="/termos"
-          className="rounded font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded font-medium text-white/60 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#030508]"
         >
           Termos de Uso
         </Link>
-        <span aria-hidden="true" className="text-muted-foreground/40">
+        <span aria-hidden="true" className="text-white/20">
           •
         </span>
         <Link
           to="/privacidade"
-          className="rounded font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded font-medium text-white/60 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#030508]"
         >
           Política de Privacidade
         </Link>
       </nav>
 
-      <p className="text-center text-[9px] font-medium text-muted-foreground opacity-90 sm:text-[10px]">
+      <p className="text-center text-[9px] font-medium text-white/40 opacity-90 sm:text-[10px]">
         © {year} Promo Brindes — Todos os direitos reservados.
       </p>
     </footer>
