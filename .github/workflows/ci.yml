@@ -21,12 +21,10 @@ jobs:
         run: npm ci
       
       - name: Lint
-        run: npm run qa:lint
-        # qa:lint runs eslint --max-warnings=500. 
-        # Requirement: fail on warnings. I will adjust the command to fail on ANY warning.
-      
+        run: npm run lint:baseline
+
       - name: Typecheck
-        run: npm run qa:typecheck
+        run: npm run typecheck
       
       - name: Unit & Integration Tests
         run: npm run test:run
