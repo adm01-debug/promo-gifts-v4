@@ -66,11 +66,7 @@ export function useAppBootstrap() {
     return () => window.clearTimeout(timer);
   }, [authLoading, isAuthenticated, queryClient]);
 
-  // 5. Progressive scroll/breadcrumb CSS var.
   const isHome = location.pathname === '/';
-  useEffect(() => {
-    document.documentElement.style.setProperty('--breadcrumb-h', isHome ? '0px' : '40px');
-  }, [isHome]);
 
   return {
     isHome,

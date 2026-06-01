@@ -86,11 +86,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
         operation: 'select',
         select: 'product_id, summary_date, units_depleted',
         filters: {
-          // FIX: passar array diretamente -> dbInvoke usa .in(col, values)
-          // ANTES: `in.(${batch.join(',')})` -> dbInvoke.eq(col, string) -> URL: product_id=eq.in.(...) -> 400
           product_id: batch,
-          // FIX: passar objeto { op, value } -> dbInvoke usa .gte(col, value)
-          // ANTES: `gte.${cutoffStr}` -> dbInvoke.eq(col, string) -> URL: summary_date=eq.gte.date -> 400
           summary_date: { op: 'gte', value: cutoffStr },
         },
         limit: batch.length * 31,

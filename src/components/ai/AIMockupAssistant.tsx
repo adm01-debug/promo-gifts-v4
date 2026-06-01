@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
@@ -75,6 +75,13 @@ export function AIMockupAssistant({
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -91,7 +98,7 @@ export function AIMockupAssistant({
     setIsLoading(true);
 
     // Simulate AI response
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const responses = [
         `Para ${productName || 'este produto'}, recomendo posicionar a logo no centro superior, deixando margem de 2cm das bordas.`,
         `A técnica ${techniqueName || 'escolhida'} funciona melhor com logos simplificados. Considere reduzir o número de cores para melhores resultados.`,
@@ -129,7 +136,7 @@ export function AIMockupAssistant({
       tips: '3 dicas rápidas: 1) Sempre peça aprovação visual antes de produzir, 2) Considere como a peça será usada, 3) Teste o contraste logo/produto.',
     };
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

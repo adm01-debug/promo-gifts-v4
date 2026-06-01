@@ -17,7 +17,7 @@ import { logger } from '@/lib/logger';
 // We use a global symbol to detect if multiple instances of this module are loaded
 const INSTANCE_KEY = Symbol.for('lovable_products_context_instance');
 const globalObj = (typeof window !== 'undefined' ? window : {}) as Record<symbol, unknown>;
-const isDuplicateModule = globalObj[INSTANCE_KEY] && globalObj[INSTANCE_KEY] !== Math.random();
+const isDuplicateModule = !!globalObj[INSTANCE_KEY];
 globalObj[INSTANCE_KEY] = globalObj[INSTANCE_KEY] || Math.random();
 
 interface ProductsContextType {

@@ -131,9 +131,9 @@ export function createQueryClient(): QueryClient {
     defaultOptions: defaultQueryOptions,
   });
 
-  // Expose to window for edge-case prefetching (e.g. hover on cards).
+  // Expose to window for edge-case prefetching (e.g. hover on cards) — dev only.
   // Window's specific shape doesn't overlap with an index signature, so widen via unknown.
-  if (typeof window !== 'undefined') {
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
     (window as unknown as Record<string, unknown>).queryClient = client;
   }
 

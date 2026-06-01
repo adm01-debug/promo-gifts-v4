@@ -173,7 +173,8 @@ export default function Auth() {
     if (user && !authLoading && !isSubmitting && !navigatedRef.current) {
       navigatedRef.current = true;
       const target = resolveRedirectTargetCb();
-      setTimeout(() => navigate(target, { replace: true }), 100);
+      const timer = setTimeout(() => navigate(target, { replace: true }), 100);
+      return () => clearTimeout(timer);
     }
   }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 

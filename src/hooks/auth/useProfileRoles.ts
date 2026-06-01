@@ -8,6 +8,7 @@ export function useProfileRoles() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
 
   const fetchUserData = useCallback(async (userId: string) => {
@@ -65,6 +66,7 @@ export function useProfileRoles() {
       } finally {
         fetchPromiseRef.current = null;
         setIsLoading(false);
+        setRolesLoaded(true);
       }
     };
 
@@ -76,6 +78,7 @@ export function useProfileRoles() {
     setProfile(null);
     setUserRoles([]);
     setIsLoading(false);
+    setRolesLoaded(false);
   }, []);
 
   return {
@@ -85,6 +88,7 @@ export function useProfileRoles() {
     setUserRoles,
     isLoading,
     setIsLoading,
+    rolesLoaded,
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,

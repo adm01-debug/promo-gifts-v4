@@ -94,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRoles,
     isLoading,
     setIsLoading,
+    rolesLoaded,
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
@@ -331,7 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nextAAL,
       hasMFA,
       mfaRequired: isSupervisorOrAbove && currentAAL !== 'aal2',
-      rolesLoaded: userRoles.length > 0,
+      rolesLoaded,
       refreshAAL: fetchAAL,
       signIn,
       signOut,
@@ -359,6 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshSession,
       fetchUserData,
       fetchPromiseRef,
+      rolesLoaded,
     ],
   );
 
