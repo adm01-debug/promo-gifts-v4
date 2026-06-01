@@ -9,6 +9,14 @@
  *     (coluna is_active não existe na tabela)
  *   - collection_products: ORDER e INSERT corrigidos para 'display_order'
  *     (coluna 'sort_order' não existe em collection_products)
+ *
+ * FIX 2026-06-01 (CRASH FIX — name clash):
+ *   - useCollections() renomeado para useExternalCollectionsManager() para evitar
+ *     conflito com useCollections() de useCollections.ts no barrel export index.ts.
+ *     O clash fazia o bundle resolver para o shape errado ({ isLoading } em vez de
+ *     { isLoaded }) → externalCollections = undefined → .map() crash no CollectionsPage.
+ *   - Adicionado useExternalCollectionProductCounts() que estava sendo importado
+ *     em useCollectionsPageState mas não existia neste arquivo.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,6 +110,36 @@ export function useExternalCollectionProducts(collectionId: string | undefined) 
       return (data as ExternalCollectionProduct[]) || [];
     },
     enabled: !!collectionId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Retorna um mapa de { collectionId → productCount } para múltiplas coleções.
+ * Usado em useCollectionsPageState para exibir contagens nas listagem externos.
+ * Faz uma única query em collection_products e agrega no cliente para evitar
+ * N+1 queries.
+ */
+export function useExternalCollectionProductCounts(collectionIds: string[]) {
+  return useQuery({
+    queryKey: ['external-collection-product-counts', collectionIds],
+    queryFn: async () => {
+      if (!collectionIds.length) return {} as Record<string, number>;
+
+      const { data, error } = await supabase
+        .from('collection_products')
+        .select('collection_id')
+        .in('collection_id', collectionIds);
+
+      if (error) throw new Error(sanitizeError(error));
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row) => {
+        counts[row.collection_id] = (counts[row.collection_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: collectionIds.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -232,7 +270,16 @@ export function useExternalCollectionMutations() {
   };
 }
 
-export function useCollections() {
+/**
+ * Hook composto para gerenciar coleções externas — agrupa query + mutations.
+ *
+ * IMPORTANTE: este hook se chamava useCollections() antes do fix de 2026-06-01.
+ * Foi renomeado para useExternalCollectionsManager() para evitar conflito de nome
+ * com useCollections() em useCollections.ts — ambos eram exportados pelo index.ts
+ * via export*, causando um name clash que fazia o CollectionsPage crashar com
+ * TypeError: Cannot read properties of undefined (reading 'map').
+ */
+export function useExternalCollectionsManager() {
   const { data: collections = [], isLoading, error, refetch } = useExternalCollections();
   const mutations = useExternalCollectionMutations();
 
