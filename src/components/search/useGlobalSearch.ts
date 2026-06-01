@@ -228,63 +228,22 @@ export function useGlobalSearch() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ── Popular products with TanStack Query ──
+  // ── Popular products with Materialized View ──
   const { data: popularProducts = [] } = useQuery({
     queryKey: ['popular-products'],
     queryFn: async () => {
-      // FIX BUG-GS-10: sample 1000 recent views to approximate popularity.
-      // Now joining with products to get image_url and category_name.
-      const { data: viewsData, error } = await supabase
-        .from('product_views')
-        .select(`
-          product_id,
-          product_name,
-          product_sku,
-          products!inner (
-            image_url,
-            category_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(1000);
+      const { data, error } = await supabase
+        .from('product_popularity_30d')
+        .select('*')
+        .limit(5);
 
-      if (error || !viewsData) return [];
-
-      const viewCounts = viewsData.reduce(
-        (acc: Record<string, { count: number; name: string; sku: string; image_url: string; category: string }>, v: any) => {
-          const id = v.product_id;
-          if (id) {
-            if (!acc[id]) {
-              acc[id] = {
-                count: 0,
-                name: v.product_name || '',
-                sku: v.product_sku || '',
-                image_url: v.products?.image_url || '',
-                category: v.products?.category_name || '',
-              };
-            }
-            acc[id].count++;
-          }
-          return acc;
-        },
-        {},
-      );
-
-      return Object.entries(viewCounts)
-        .sort(([, a], [, b]) => b.count - a.count)
-        .slice(0, 5)
-        .map(([id, d]) => ({
-          id,
-          name: d.name,
-          sku: d.sku,
-          image_url: d.image_url,
-          category_name: d.category,
-          view_count: d.count,
-        })) as PopularProduct[];
+      if (error || !data) return [];
+      return data as PopularProduct[];
     },
     enabled: open,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
+
 
 
   // ── Typing suggestions ──
