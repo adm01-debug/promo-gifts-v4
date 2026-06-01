@@ -20,6 +20,9 @@
 --   service_role/postgres bypass RLS de qualquer forma.
 
 -- FIX 1: sem SECURITY DEFINER (pg_cron executa como postgres → bypassa RLS)
+-- Replay-safe: DROP antes do CREATE OR REPLACE para evitar 42P13 em casos
+-- onde o snapshot do preview tenha a função com tipo diferente.
+DROP FUNCTION IF EXISTS public.fn_run_and_persist_smoke_tests();
 CREATE OR REPLACE FUNCTION public.fn_run_and_persist_smoke_tests()
  RETURNS void
  LANGUAGE plpgsql
