@@ -82,11 +82,13 @@ export function SectionHeader({
   label,
   count,
   gradient,
+  iconColor = 'text-primary',
 }: {
   icon: React.ReactNode;
   label: string;
   count?: number;
   gradient?: string;
+  iconColor?: string;
 }) {
   return (
     <div className="flex items-center gap-3 px-4 pb-2.5 pt-5">
@@ -96,7 +98,7 @@ export function SectionHeader({
           gradient || 'bg-primary/10',
         )}
       >
-        <span className="text-primary [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+        <span className={cn('[&>svg]:h-3.5 [&>svg]:w-3.5', iconColor)}>{icon}</span>
       </div>
       <span className="font-display text-[11px] font-bold uppercase tracking-[0.1em] [color:hsl(var(--command-text-subtle))]">
         {label}
@@ -113,6 +115,7 @@ export function SectionHeader({
     </div>
   );
 }
+
 
 /* ── CSS stagger animation style helper ── */
 export function staggerStyle(index: number, baseDelay = 0): React.CSSProperties {
