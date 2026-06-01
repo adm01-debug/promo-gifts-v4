@@ -274,6 +274,8 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
 
       if (error) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) {
+          const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+          reportSilentEmpty({ reason: 'gone_410', table: 'v_products_public', operation: 'select', message: error.message });
           logger.warn('Bridge deprecated (410) for products novelties');
           return [];
         }
@@ -473,12 +475,6 @@ export function useNovelties(
       }
 
       query = query
-        .order('created_at', { ascending: false })
-        .range(0, limit - 1);
-        .from('v_products_public')
-        .select(NOVELTY_SELECT)
-        .eq('is_active', true)
-        .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .range(0, limit - 1);
       

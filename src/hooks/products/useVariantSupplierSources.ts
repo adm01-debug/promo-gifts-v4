@@ -65,6 +65,8 @@ export function useProductVariantsWithStock(productId: string | undefined) {
 
       if (error) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) {
+          const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+          reportSilentEmpty({ reason: 'gone_410', table: 'product_variants', operation: 'select', message: error.message });
           logger.warn('Bridge deprecated (410) for variant sources');
           return [];
         }

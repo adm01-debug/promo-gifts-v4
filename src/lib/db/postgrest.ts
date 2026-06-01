@@ -19,8 +19,8 @@
  *
  * Error semantics (honest, no silent success):
  *   - Writes always throw on PostgREST error (callers surface toast.error).
- *   - Reads throw too, EXCEPT a 410/Gone (bridge-deprecation) read is translated
- *     to an empty result — definitive, no retry.
+  *   - Reads throw too, EXCEPT a 410/Gone (bridge-deprecation) read is translated
+  *     to an empty result — reported via `reportSilentEmpty('gone_410')`.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -439,6 +439,13 @@ async function executeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>
   const { data, error, count } = await query;
   if (error) {
     if (isGoneError(error.message)) {
+      const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+      reportSilentEmpty({
+        reason: 'gone_410',
+        table: options.table,
+        operation: 'select',
+        message: error.message,
+      });
       logger.warn(
         `[postgrest] read on '${tableName}' returned 410/Gone — returning empty (no retry).`,
       );

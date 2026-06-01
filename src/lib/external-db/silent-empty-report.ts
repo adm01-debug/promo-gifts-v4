@@ -27,7 +27,9 @@ export type SilentEmptyReason =
   // (a) SELECT on a table without a REST-native path while the bridge is OFF
   | 'table_not_whitelisted'
   // (c) insert/update/delete/upsert while the bridge is OFF → silent no-op
-  | 'write_bridge_off';
+  | 'write_bridge_off'
+  // (d) call site returned 410 Gone (migration/deprecation status)
+  | 'gone_410';
 
 export interface SilentEmptyEvent {
   reason: SilentEmptyReason;
@@ -50,6 +52,7 @@ const dedup = new Set<string>();
 const ERROR_LEVEL_REASONS: ReadonlySet<SilentEmptyReason> = new Set<SilentEmptyReason>([
   'rest_error',
   'write_bridge_off',
+  'gone_410',
 ]);
 
 /**

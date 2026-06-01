@@ -110,6 +110,17 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
 
     const { data, error, count } = await query;
     if (error) {
+      if (error.message?.includes('410') || error.message?.includes('Gone')) {
+        const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+        reportSilentEmpty({
+          reason: 'gone_410',
+          table: resolvedTable,
+          operation: 'select',
+          message: error.message,
+        });
+        logger.warn(`[Stock] Bridge deprecated (410) for ${table} — stopping pagination.`);
+        break;
+      }
       const errorMsg = `Erro ao buscar ${table}: ${error.message}`;
       console.error(`[Stock] ${errorMsg}`, error);
       throw new Error(errorMsg);
