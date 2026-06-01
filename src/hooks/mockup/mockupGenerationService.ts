@@ -9,18 +9,17 @@
  * T10: thumbnail_url now stores mockupUrl (not logoUrl).
  *
  * Fixes (audit sprint-2, 26/05/2026):
- * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race — UI can no longer
- *        freeze indefinitely when the edge function hangs.
- * BUG-E: SVG logos pre-validated BEFORE calling edge function, saving the round-trip.
+ * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race.
+ * BUG-E: SVG logos pre-validated BEFORE calling edge function.
  * BUG-I: Single-area path sends only the relevant area in the `areas` array.
  *
- * Fix (2026-06-01):
- * BUG-400: fetchMockupHistory used an explicit SELECT list that included columns
- *   (position_x, position_y, logo_width_cm, logo_height_cm, client_id, client_name,
- *   location_name, colors_count, annotations) that do not exist in the generated_mockups
- *   table. These fields are stored inside the area_config JSONB column. PostgREST
- *   returns HTTP 400 when any requested column is absent. Fixed by using SELECT '*'
- *   and remapping area_config fields in the JS mapper.
+ * Fixes (2026-06-01):
+ * BUG-400a: fetchMockupHistory used explicit SELECT with non-existent columns.
+ *   Fixed: .select('*') + area_config JSONB mapper.
+ * BUG-400b: saveMockupToDb inserted position_x/y and logo_width/height_cm as
+ *   top-level columns that do not exist in generated_mockups. The values are
+ *   persisted in area_config JSONB — the top-level keys were silently rejected
+ *   by Supabase/PostgREST. Removed the 4 duplicate top-level fields.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
@@ -83,11 +82,7 @@ export function getTechniquePrompt(technique: Technique): string {
 }
 
 // T8 FIX: limit to 200 records to prevent unbounded payload growth.
-// BUG-400 FIX (2026-06-01): select('*') instead of explicit column list.
-// Columns position_x/y, logo_width_cm, logo_height_cm, client_id, client_name,
-// location_name, colors_count, annotations were never added to the DB table —
-// they live inside the area_config JSONB column. Requesting them by name caused
-// a PostgREST HTTP 400 "column does not exist" error.
+// BUG-400a FIX (2026-06-01): select('*') instead of explicit column list.
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
   let query = supabase
     .from('generated_mockups')
@@ -98,7 +93,6 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
   const { data, error } = await query;
   if (error) throw error;
 
-  // Map area_config JSONB back to the flat shape consumers expect.
   return (data || []).map((row) => {
     const cfg = (row.area_config ?? {}) as Record<string, unknown>;
     return {
@@ -110,7 +104,6 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
       technique_name: row.technique_name,
       mockup_url: row.mockup_url,
       logo_url: row.logo_url ?? (cfg.logoUrl as string | null) ?? null,
-      // These fields were saved inside area_config because the DB columns do not exist.
       position_x: (cfg.positionX as number | null) ?? null,
       position_y: (cfg.positionY as number | null) ?? null,
       logo_width_cm: (cfg.logoWidth as number | null) ?? null,
@@ -136,8 +129,11 @@ export interface SaveMockupParams {
   extra?: { layoutUrl?: string; locationName?: string; colorsCount?: number };
 }
 
-// T4 FIX: position_x, position_y, logo_url, logo_width_cm, logo_height_cm persisted top-level.
 // T10 FIX: thumbnail_url = mockupUrl (was incorrectly set to logoUrl).
+// BUG-400b FIX (2026-06-01): removed position_x/y and logo_width/height_cm from
+// top-level insert — these columns do not exist in generated_mockups. The values
+// are already persisted inside area_config JSONB (positionX, positionY, logoWidth,
+// logoHeight), so no data is lost.
 export async function saveMockupToDb(params: SaveMockupParams): Promise<string | null> {
   const { userId, product, technique, client, area, mockupUrl, annotations, extra } = params;
 
@@ -177,10 +173,6 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
         mockup_url: mockupUrl,
         thumbnail_url: mockupUrl || null,
         logo_url: logoUrl || null,
-        position_x: area.positionX,
-        position_y: area.positionY,
-        logo_width_cm: area.logoWidth,
-        logo_height_cm: area.logoHeight,
         area_name: extra?.locationName || area.name || 'Frente',
         ai_model_used: technique.code || technique.name || 'custom',
         area_config: {
@@ -220,8 +212,6 @@ export interface GenerateMockupResult {
 
 const GENERATE_TIMEOUT_MS = 60_000;
 
-// BUG-C FIX: wrapped in a 60s timeout to prevent the UI from freezing when
-//            the Replicate/edge function hangs indefinitely.
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
