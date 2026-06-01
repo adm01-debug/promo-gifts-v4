@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures/test-base';
 import { loginAs } from '../helpers/auth';
 
-test.describe('Global Search Voice Tooltip', () => {
+test.describe('Global Search Voice Tooltip @smoke', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page);
     await page.goto('/');
@@ -37,7 +37,7 @@ test.describe('Global Search Voice Tooltip', () => {
     await expect(tooltip).not.toBeVisible();
   });
 
-  test('Tooltip shows and disappears on Mobile', async ({ page }) => {
+  test('Tooltip shows and disappears on Mobile @mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     
     const micButton = page.locator('button[aria-label="Microfone"]');
