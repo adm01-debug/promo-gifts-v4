@@ -58,17 +58,30 @@ export default function MockupHistoryPage() {
         .range((page - 1) * pageSize, page * pageSize - 1);
 
       if (debouncedSearch) {
+        // BUG-400 FIX (2026-06-01): removed client_name.ilike filter — client_name is
+        // not a column on generated_mockups (it lives in area_config JSONB). Using it
+        // in an .or() filter causes PostgREST HTTP 400.
         query = query.or(
-          `product_name.ilike.%${debouncedSearch}%,client_name.ilike.%${debouncedSearch}%,product_sku.ilike.%${debouncedSearch}%`,
+          `product_name.ilike.%${debouncedSearch}%,product_sku.ilike.%${debouncedSearch}%,technique_name.ilike.%${debouncedSearch}%`,
         );
       }
 
       const { data, error, count } = await query;
       if (error) throw error;
-      // The DB row (generated_mockups) carries some fields (client_name, location_name,
-      // logo dims) inside area_config rather than as columns, so the row and the view
-      // model don't structurally overlap — bridge via unknown.
-      return { mockups: (data ?? []) as unknown as GeneratedMockup[], totalCount: count || 0 };
+      // Map area_config JSONB fields into the flat shape the component uses.
+      const mockups = (data ?? []).map((row) => {
+        const cfg = (row.area_config ?? {}) as Record<string, unknown>;
+        return {
+          ...row,
+          client_name: (cfg.clientName as string | null) ?? null,
+          location_name: row.area_name ?? null,
+          logo_width_cm: (cfg.logoWidth as number | null) ?? null,
+          logo_height_cm: (cfg.logoHeight as number | null) ?? null,
+          colors_count: (cfg.colorsCount as number | null) ?? null,
+          layout_url: null,
+        } as unknown as GeneratedMockup;
+      });
+      return { mockups, totalCount: count || 0 };
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutos
@@ -118,7 +131,7 @@ export default function MockupHistoryPage() {
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por produto, SKU ou cliente..."
+                placeholder="Buscar por produto, SKU ou técnica..."
                 value={search}
                 onChange={handleSearchChange}
                 className="pl-9"
