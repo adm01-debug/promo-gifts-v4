@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
@@ -72,6 +72,11 @@ export function useWorkspaceNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
   const [page, setPage] = useState(1);
   const limit = 20;
   const lastFetchAtRef = useRef<number>(0);
@@ -141,12 +146,15 @@ export function useWorkspaceNotifications() {
 
   // BUG-08 FIX: deps agora so [user] - sem notifications.length
   const fetchNotifications = useCallback(
-    async (opts: { silent?: boolean; source?: FetchSource; page?: number; search?: string; category?: string } = {}) => {
+    async (opts: { silent?: boolean; source?: FetchSource; page?: number; search?: string; category?: string; unreadOnly?: boolean; startDate?: string; endDate?: string } = {}) => {
       if (!user) return;
       
       const targetPage = opts.page ?? page;
       const targetSearch = opts.search ?? search;
       const targetCategory = opts.category ?? category;
+      const targetUnreadOnly = opts.unreadOnly ?? unreadOnly;
+      const targetStartDate = opts.startDate ?? (dateRange.from?.toISOString());
+      const targetEndDate = opts.endDate ?? (dateRange.to?.toISOString());
       const offset = (targetPage - 1) * limit;
 
       const hasData = notificationsLengthRef.current > 0;
@@ -167,6 +175,18 @@ export function useWorkspaceNotifications() {
 
         if (targetCategory && targetCategory !== 'all') {
           query = query.eq('category', targetCategory);
+        }
+
+        if (targetUnreadOnly) {
+          query = query.eq('is_read', false);
+        }
+
+        if (targetStartDate) {
+          query = query.gte('created_at', targetStartDate);
+        }
+
+        if (targetEndDate) {
+          query = query.lte('created_at', targetEndDate);
         }
 
         if (targetSearch) {
@@ -250,6 +270,35 @@ export function useWorkspaceNotifications() {
       fetchNotifications({ silent: true, source: 'polling' });
     }, 30_000);
     return () => clearInterval(interval);
+  }, [user, fetchNotifications]);
+
+  // Real-time synchronization
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('workspace_notifications_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'workspace_notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          debugLog('realtime-event', { event: payload.eventType, payload });
+          
+          // Re-fetch everything to ensure consistent state (including badge)
+          // Use silent fetch to avoid UI flicker
+          fetchNotifications({ silent: true, source: 'mutation' });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, fetchNotifications]);
 
   // Final summary on unmount
@@ -373,9 +422,13 @@ export function useWorkspaceNotifications() {
     page,
     search,
     category,
+    unreadOnly,
+    dateRange,
     setPage,
     setSearch,
     setCategory,
+    setUnreadOnly,
+    setDateRange,
     markAsRead,
     undoMarkAsRead,
     markAllAsRead,
