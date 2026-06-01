@@ -17,7 +17,21 @@ export type FeatureFlag =
   | 'magic_up'
   | 'e2e_tests'
   | 'advanced_analytics'
-  | 'custom_kits_v2';
+  | 'custom_kits_v2'
+  /**
+   * M-05: Controle dinâmico do crm-db-bridge (pgxfvjmuubtbowutlide).
+   *
+   * Alinhada com o pattern do kill-switch de external-db-bridge.
+   * Quando false (via setFeatureFlag ou runtime override), o CRM bridge
+   * pode operar em modo degradado (ex.: sem dados de empresas/contatos).
+   *
+   * Diferença do kill-switch real (system_kill_switches):
+   * - Esta flag é client-side, gerenciada por código/deploy
+   * - O kill-switch é server-side, gerenciado pelo banco de dados
+   * Usar esta flag para feature rollout controlado; usar o kill-switch
+   * para desligamentos de emergência (indisponibilidade, incidente).
+   */
+  | 'crm_bridge_enabled';
 
 interface FlagConfig {
   /** Default enabled state */
@@ -61,6 +75,12 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
   custom_kits_v2: {
     enabled: false,
     description: 'Nova versão do montador de kits',
+  },
+  crm_bridge_enabled: {
+    enabled: true,
+    description: 'CRM DB Bridge — acesso a empresas/contatos via crm-db-bridge ' +
+      '(pgxfvjmuubtbowutlide). Desativar via setFeatureFlag para modo degradado ' +
+      'sem CRM externo. Para desligamento de emergência, usar system_kill_switches.',
   },
 };
 
