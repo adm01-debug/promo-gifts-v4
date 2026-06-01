@@ -1,6 +1,10 @@
 /**
  * useExpertChat — Core logic extracted from ExpertChatDialog
  * Handles messages, conversations, TTS, streaming, filters.
+ *
+ * FIX 2026-06-01: Hoisted handleAutoSend to before all useEffect hooks
+ * to eliminate TDZ (Temporal Dead Zone) ReferenceError.
+ * Bug: Cannot access 'fe' before initialization (ExpertChatDialog-CkjS4q2J.js:1:27389)
  */
 import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -107,6 +111,29 @@ export function useExpertChat({
     fetchMessages,
     saveMessage,
   } = useExpertConversations(clientId);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CALLBACKS THAT ARE REFERENCED BY useEffect hooks MUST BE DECLARED FIRST
+  // to avoid Temporal Dead Zone (TDZ) ReferenceError.
+  // Bug fix: Cannot access 'fe' before initialization
+  // 'fe' = handleAutoSend in Vite/Rollup minified bundle.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * handleAutoSend: programmatically fills the input and triggers send.
+   * MUST be declared before all useEffect hooks that reference it.
+   */
+  const handleAutoSend = useCallback((text: string) => {
+    setInput(text);
+    setTimeout(() => {
+      const sendBtn = document.querySelector('[data-oracle-send]') as HTMLButtonElement;
+      sendBtn?.click();
+    }, 50);
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // EFFECTS — all can now safely reference handleAutoSend
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Rotate thinking messages
   useEffect(() => {
@@ -253,19 +280,7 @@ export function useExpertChat({
     };
   }, [isOpen]);
 
-
-  // handleAutoSend must be declared BEFORE any useEffect/useCallback that
-  // references it, otherwise the const is in the Temporal Dead Zone when
-  // React evaluates the dependency array during render.
-  const handleAutoSend = useCallback((text: string) => {
-    setInput(text);
-    setTimeout(() => {
-      const sendBtn = document.querySelector('[data-oracle-send]') as HTMLButtonElement;
-      sendBtn?.click();
-    }, 50);
-  }, []);
-
-  // Proactive filter feedback
+  // Proactive filter feedback — handleAutoSend is now safely initialized above
   const prevFilterKeyRef = useRef('');
   const filterDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -388,7 +403,7 @@ export function useExpertChat({
     prevFilterKeyRef.current = '';
   }, [clientId]);
 
-  // Auto-send initial voice message
+  // Auto-send initial voice message — handleAutoSend is initialized above
   const initialMessageSentRef = useRef(false);
   useEffect(() => {
     if (isOpen && initialMessage && !initialMessageSentRef.current && !isLoading) {
@@ -432,6 +447,7 @@ export function useExpertChat({
     [deleteConversation, currentConversationId, startNewConversation],
   );
 
+  // handleRetry declared AFTER handleAutoSend to ensure stable reference in deps
   const handleRetry = useCallback(() => {
     if (!lastUserInput) return;
     setMessages((prev) => {
