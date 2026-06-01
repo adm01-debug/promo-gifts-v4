@@ -10,6 +10,13 @@ const viewports = [
 
 test.describe('Replenishment Grid Advanced Visual & A11y @mobile', () => {
   test.beforeEach(async ({ context }) => {
+    // Regressão visual autenticada: requer login real (E2E_USER_*) e baselines
+    // commitados. Sem credenciais (full-ci / visual-tests sem secrets) pula
+    // limpo em vez de falhar — espelha requireAuth() do test-base.
+    test.skip(
+      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+      'E2E_USER_EMAIL/PASSWORD não configurados — baseline visual autenticada indisponível',
+    );
     // Hard cleaning of cache and service workers
     await context.addInitScript(() => {
       // Force default feature flags to ensure consistency
