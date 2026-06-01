@@ -364,7 +364,7 @@ export function useNoveltyStats() {
       const weekStart = todayStart - 6 * 86400000;
       const fifteenDaysStart = todayStart - 14 * 86400000;
 
-      let records = noveltiesResult.records;
+      let records = (noveltiesResult.data as unknown as RawProduct[]) || [];
       let totalProducts = totalResult.count || 0;
 
       // Fallback para MOCK se o banco estiver vazio
@@ -454,7 +454,11 @@ export function useNovelties(
     queryKey: ['novelties-rpc', supplierCode, limit, maxDays],
     queryFn: async () => {
       const cutoff = getCutoffDate();
-      const filters: Record<string, unknown> = { is_active: true, created_at: `gte.${cutoff}` };
+      let query = supabase
+        .from('v_products_public')
+        .select(NOVELTY_SELECT)
+        .eq('is_active', true)
+        .gte('created_at', cutoff);
 
       if (supplierCode) {
         // Precisa buscar o supplier_id pelo code
@@ -468,7 +472,9 @@ export function useNovelties(
         }
       }
 
-      let query = supabase
+      query = query
+        .order('created_at', { ascending: false })
+        .range(0, limit - 1);
         .from('v_products_public')
         .select(NOVELTY_SELECT)
         .eq('is_active', true)
