@@ -18,6 +18,21 @@ export function NotificationPreferences() {
 
   useEffect(() => {
     loadPreferences();
+    
+    // Subscribe to real-time changes
+    const unsubscribe = notificationPreferenceService.subscribeToPreferences((updatedPref) => {
+      setPreferences(prev => {
+        const index = prev.findIndex(p => p.id === updatedPref.id || (p.category === updatedPref.category && p.user_id === updatedPref.user_id));
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = updatedPref;
+          return next;
+        }
+        return [...prev, updatedPref];
+      });
+    });
+
+    return () => unsubscribe();
   }, []);
 
   async function loadPreferences() {
