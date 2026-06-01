@@ -30,18 +30,32 @@ END$$;
 -- FIX B02: negotiation_markup_percent não persistido
 -- 3 cotações ORC-2026-001/002/003 têm total 5% > subtotal
 -- mas o campo estava zerado — backfill do valor real.
+-- Guard: pula em snapshots de preview que não tenham as colunas
+-- shipping_cost/tax_amount/negotiation_markup_percent (adicionadas
+-- em produção fora de migration).
 -- -------------------------------------------------------
-UPDATE public.quotes
-SET negotiation_markup_percent = ROUND((total / NULLIF(subtotal, 0) - 1) * 100, 4)
-WHERE 
-  negotiation_markup_percent = 0
-  AND total IS NOT NULL 
-  AND subtotal IS NOT NULL 
-  AND subtotal > 0
-  AND total > subtotal
-  AND ABS(shipping_cost) < 0.01
-  AND ABS(tax_amount) < 0.01
-  AND ABS(COALESCE(discount_amount,0)) < 0.01;
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'quotes'
+      AND column_name IN ('shipping_cost', 'tax_amount', 'negotiation_markup_percent', 'discount_amount')
+  ) = 4 THEN
+    UPDATE public.quotes
+    SET negotiation_markup_percent = ROUND((total / NULLIF(subtotal, 0) - 1) * 100, 4)
+    WHERE
+      negotiation_markup_percent = 0
+      AND total IS NOT NULL
+      AND subtotal IS NOT NULL
+      AND subtotal > 0
+      AND total > subtotal
+      AND ABS(shipping_cost) < 0.01
+      AND ABS(tax_amount) < 0.01
+      AND ABS(COALESCE(discount_amount,0)) < 0.01;
+  ELSE
+    RAISE NOTICE 'Backfill B02 pulado: colunas (shipping_cost, tax_amount, negotiation_markup_percent, discount_amount) não totalmente presentes em public.quotes';
+  END IF;
+END $$;
 
 -- Registro de auditoria
 INSERT INTO public.admin_audit_log (
@@ -150,75 +164,99 @@ COMMENT ON COLUMN public.products.main_category_id IS
 -- -------------------------------------------------------
 -- VIEW DE MONITORAMENTO CONTÍNUO — v_db_health_audit
 -- Permite detectar regressoes futuras nas mesmas falhas
+-- Guard: view só é criada se todas as colunas referenciadas existirem
+-- (em preview snapshots antigos algumas colunas podem estar ausentes).
 -- -------------------------------------------------------
-CREATE OR REPLACE VIEW public.v_db_health_audit
-WITH (security_invoker = true)
-AS
-SELECT 
-  'B02_quote_markup_nao_persistido' as check_id,
-  count(*) as total_issues,
-  'negotiation_markup_percent=0 mas total > subtotal sem frete/imposto/desconto' as descricao,
-  'HIGH' as severidade
-FROM public.quotes
-WHERE 
-  negotiation_markup_percent = 0
-  AND total > subtotal
-  AND ABS(COALESCE(shipping_cost,0)) < 0.01
-  AND ABS(COALESCE(tax_amount,0)) < 0.01
-  AND ABS(COALESCE(discount_amount,0)) < 0.01
+DO $$
+DECLARE
+  v_quotes_cols int;
+  v_products_cols int;
+  v_quote_items_cols int;
+BEGIN
+  SELECT count(*) INTO v_quotes_cols FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='quotes'
+      AND column_name IN ('negotiation_markup_percent', 'total', 'subtotal', 'shipping_cost', 'tax_amount', 'discount_amount');
+  SELECT count(*) INTO v_products_cols FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='products'
+      AND column_name IN ('cost_price', 'sale_price', 'is_active', 'is_deleted', 'category_id', 'main_category_id');
+  SELECT count(*) INTO v_quote_items_cols FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='quote_items'
+      AND column_name IN ('subtotal', 'unit_price', 'quantity', 'discount_amount', 'personalization_cost');
 
-UNION ALL
+  IF v_quotes_cols = 6 AND v_products_cols = 6 AND v_quote_items_cols = 5 THEN
+    EXECUTE $view$
+      CREATE OR REPLACE VIEW public.v_db_health_audit
+      WITH (security_invoker = true)
+      AS
+      SELECT
+        'B02_quote_markup_nao_persistido' as check_id,
+        count(*) as total_issues,
+        'negotiation_markup_percent=0 mas total > subtotal sem frete/imposto/desconto' as descricao,
+        'HIGH' as severidade
+      FROM public.quotes
+      WHERE
+        negotiation_markup_percent = 0
+        AND total > subtotal
+        AND ABS(COALESCE(shipping_cost,0)) < 0.01
+        AND ABS(COALESCE(tax_amount,0)) < 0.01
+        AND ABS(COALESCE(discount_amount,0)) < 0.01
 
-SELECT 
-  'B04_produto_ativo_sem_preco',
-  count(*),
-  'Produto is_active=true sem cost_price nem sale_price',
-  'MEDIUM'
-FROM public.products
-WHERE 
-  cost_price IS NULL AND sale_price IS NULL 
-  AND is_active = true 
-  AND (is_deleted IS NULL OR is_deleted = false)
+      UNION ALL
 
-UNION ALL
+      SELECT
+        'B04_produto_ativo_sem_preco',
+        count(*),
+        'Produto is_active=true sem cost_price nem sale_price',
+        'MEDIUM'
+      FROM public.products
+      WHERE
+        cost_price IS NULL AND sale_price IS NULL
+        AND is_active = true
+        AND (is_deleted IS NULL OR is_deleted = false)
 
-SELECT 
-  'B05_produto_category_inconsistente',
-  count(*),
-  'category_id != main_category_id (subcategoria vs raiz — verificar se esperado)',
-  'INFO'
-FROM public.products
-WHERE 
-  category_id IS NOT NULL AND main_category_id IS NOT NULL
-  AND category_id != main_category_id
+      UNION ALL
 
-UNION ALL
+      SELECT
+        'B05_produto_category_inconsistente',
+        count(*),
+        'category_id != main_category_id (subcategoria vs raiz — verificar se esperado)',
+        'INFO'
+      FROM public.products
+      WHERE
+        category_id IS NOT NULL AND main_category_id IS NOT NULL
+        AND category_id != main_category_id
 
-SELECT
-  'B03_smoke_test_runs_vazia',
-  CASE WHEN (SELECT count(*) FROM public.smoke_test_runs) = 0 
-       AND (SELECT count(*) FROM public.smoke_tests_runs) > 0 
-       THEN 1 ELSE 0 END,
-  'smoke_test_runs esta vazia; smoke_tests_runs tem ' || 
-    (SELECT count(*)::text FROM public.smoke_tests_runs) || ' registros',
-  'HIGH'
+      UNION ALL
 
-UNION ALL
+      SELECT
+        'B03_smoke_test_runs_vazia',
+        CASE WHEN (SELECT count(*) FROM public.smoke_test_runs) = 0
+             AND (SELECT count(*) FROM public.smoke_tests_runs) > 0
+             THEN 1 ELSE 0 END,
+        'smoke_test_runs esta vazia; smoke_tests_runs tem ' ||
+          (SELECT count(*)::text FROM public.smoke_tests_runs) || ' registros',
+        'HIGH'
 
-SELECT
-  'B06_quote_item_subtotal_formula',
-  count(*),
-  'subtotal != (unit_price * qty - discount + personalization_cost)',
-  'CRITICAL'
-FROM public.quote_items
-WHERE ABS(
-  subtotal - (
-    unit_price * quantity 
-    - COALESCE(discount_amount, 0) 
-    + COALESCE(personalization_cost, 0)
-  )
-) > 0.01;
+      UNION ALL
 
--- Permissoes (revogar de anon, permitir authenticated)
-REVOKE ALL ON public.v_db_health_audit FROM anon;
-GRANT SELECT ON public.v_db_health_audit TO authenticated;
+      SELECT
+        'B06_quote_item_subtotal_formula',
+        count(*),
+        'subtotal != (unit_price * qty - discount + personalization_cost)',
+        'CRITICAL'
+      FROM public.quote_items
+      WHERE ABS(
+        subtotal - (
+          unit_price * quantity
+          - COALESCE(discount_amount, 0)
+          + COALESCE(personalization_cost, 0)
+        )
+      ) > 0.01
+    $view$;
+
+    REVOKE ALL ON public.v_db_health_audit FROM anon;
+    GRANT SELECT ON public.v_db_health_audit TO authenticated;
+  ELSE
+    RAISE NOTICE 'v_db_health_audit não criada: colunas necessárias ausentes (quotes=%, products=%, quote_items=%)', v_quotes_cols, v_products_cols, v_quote_items_cols;
+  END IF;
+END $$;
