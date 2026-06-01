@@ -3,6 +3,9 @@
 -- ("✅ PASS", "❌ FAIL", "⚠️ WARN"). Ajustar parser para usar LIKE.
 -- ================================================================
 
+-- Replay-safe: DROP antes de recriar para evitar 42P13 se o tipo de retorno diferir.
+DROP FUNCTION IF EXISTS public.fn_run_and_persist_smoke_tests();
+
 CREATE OR REPLACE FUNCTION public.fn_run_and_persist_smoke_tests()
 RETURNS TABLE(
   ran_at timestamptz,

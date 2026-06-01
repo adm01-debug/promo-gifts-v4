@@ -41,6 +41,11 @@ GRANT SELECT ON public.smoke_tests_runs TO authenticated;
 REVOKE ALL ON public.smoke_tests_runs FROM anon;
 GRANT USAGE, SELECT ON SEQUENCE public.smoke_tests_runs_id_seq TO authenticated;
 
+-- Replay-safe: em preview-branch a função pode existir como RETURNS void
+-- (snapshot de produção onde 20260525063000 já foi aplicada).
+-- DROP garante que CREATE OR REPLACE não falhe por mudança de tipo de retorno.
+DROP FUNCTION IF EXISTS public.fn_run_and_persist_smoke_tests();
+
 -- Wrapper SECURITY INVOKER (default)
 CREATE OR REPLACE FUNCTION public.fn_run_and_persist_smoke_tests()
 RETURNS TABLE(
