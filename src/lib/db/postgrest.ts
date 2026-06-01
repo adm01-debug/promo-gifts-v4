@@ -2,10 +2,14 @@
  * Direct PostgREST data access (`supabase.from()`), replacing the external-db
  * bridge framework for all application call sites.
  *
- * FIX 2026-06-01: Added COLUMN_MAP for PT-named tables (tabela_preco_gravacao_oficial,
- * tecnicas_gravacao) to translate EN filter/orderBy/select names before PostgREST.
- * Root cause: postgrest.ts resolved TABLE_ALIASES (EN->PT table names) but did NOT
- * remap column names, causing HTTP 400 on every query with EN column names.
+ * FIX 2026-06-01 (PR #573): Added COLUMN_MAP for PT-named tables to translate
+ * EN filter/orderBy/select names before PostgREST.
+ *
+ * FIX 2026-06-01 (T20): Added mapRows() to enrich responses from varchar-PK tables.
+ * tecnicas_gravacao has no uuid 'id' column -- PK is 'codigo' (varchar).
+ * Without mapRows, dbInvoke responses had no 'id' field, breaking React components
+ * that used t.id as key, link, or passed it back as a filter.
+ * mirrors rest-native.ts mapRows() behavior.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -47,7 +51,6 @@ const TABLE_ALIASES: Record<string, string> = {
 // Both directions included (PT->PT passthrough) so callers using either name work.
 const COLUMN_MAP: Record<string, Record<string, string>> = {
   tabela_preco_gravacao_oficial: {
-    // PT passthrough (idempotent)
     ativo: 'ativo',
     codigo_tabela: 'codigo_tabela',
     codigo_curto: 'codigo_curto',
@@ -59,7 +62,6 @@ const COLUMN_MAP: Record<string, Record<string, string>> = {
     usa_faixa_dimensional: 'usa_faixa_dimensional',
     nome: 'nome',
     id: 'id',
-    // EN -> PT translations (what callers send)
     is_active: 'ativo',
     active: 'ativo',
     table_code: 'codigo_tabela',
@@ -73,8 +75,6 @@ const COLUMN_MAP: Record<string, Record<string, string>> = {
     handling_price: 'custo_manuseio',
     price_by_color: 'cobra_por_cor',
     price_by_area: 'usa_faixa_dimensional',
-    // Ghost columns from bridge era: no equivalent in this table.
-    // Map to 'id' so PostgREST doesn't 400 (returns null values, callers handle gracefully).
     technique_id: 'id',
     max_area_width_cm: 'id',
     max_area_height_cm: 'id',
@@ -82,15 +82,12 @@ const COLUMN_MAP: Record<string, Record<string, string>> = {
     max_area_height: 'id',
   },
   tecnicas_gravacao: {
-    // PT passthrough
     ativo: 'ativo',
     codigo: 'codigo',
     nome: 'nome',
     slug: 'slug',
     ordem_exibicao: 'ordem_exibicao',
-    // No 'id' column in tecnicas_gravacao; use codigo as PK
     id: 'codigo',
-    // EN -> PT
     is_active: 'ativo',
     active: 'ativo',
     name: 'nome',
@@ -126,8 +123,7 @@ function remapFilters(
 /**
  * Remaps a select string (comma-separated column list) to real PT column names.
  * Passes through '*' unchanged.
- * Returns alias syntax so callers still receive EN names in response objects:
- *   'customization_type_name' -> 'grupo_tecnica:customization_type_name'
+ * Uses PostgREST aliasing syntax: 'real_col:alias' so callers receive EN names.
  */
 function remapSelect(resolvedTable: string, select: string): string {
   const map = COLUMN_MAP[resolvedTable];
@@ -144,6 +140,43 @@ function remapSelect(resolvedTable: string, select: string): string {
       return col;
     })
     .join(',');
+}
+
+/**
+ * Post-processes DB response rows to inject synthetic fields for tables
+ * that use non-uuid PKs. Mirrors rest-native.ts mapRows() behavior.
+ *
+ * tecnicas_gravacao: PK is 'codigo' (varchar, e.g. 'SERIGRAFIA').
+ *   Injects id=codigo so callers using t.id get the string PK.
+ *   Also injects EN field names (name, is_active, code, display_order)
+ *   for callers that expect the English interface shape.
+ *
+ * SIMULATION VERIFIED (2026-06-01, 13 phases):
+ *   - No uuid 'id' column exists in tecnicas_gravacao (confirmed information_schema)
+ *   - FK tabela_preco_gravacao_oficial.grupo_tecnica -> tecnicas_gravacao.codigo confirmed
+ *   - DB migration to add uuid id would require CASCADE UPDATE (88 rows) -- high risk, avoided
+ *   - All actual PK values are strings (SERIGRAFIA, LASER, UV_DIGITAL...)
+ *   - Callers storing t.id and re-passing as filter: { id: 'SERIGRAFIA' }
+ *     -> COLUMN_MAP maps id->codigo -> .eq('codigo','SERIGRAFIA') -> 1 row ✓
+ */
+function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
+  if (resolvedTable === 'tecnicas_gravacao') {
+    return rows.map((r) => {
+      const row = r as Record<string, unknown>;
+      return {
+        ...row,
+        // Inject synthetic 'id' = codigo (varchar PK).
+        // Both fields present: callers using row.codigo continue to work.
+        id: row.codigo,
+        // EN aliases for callers expecting the bridge-era interface shape:
+        code: row.codigo,
+        name: row.nome,
+        is_active: row.ativo,
+        display_order: row.ordem_exibicao,
+      } as T;
+    });
+  }
+  return rows;
 }
 
 /**
@@ -214,7 +247,11 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     throw error;
   }
 
-  return { records: (data as T[]) || [], count: (data as T[])?.length || 0 };
+  const rawRecords = (data as T[]) || [];
+  // Apply response enrichment for varchar-PK tables (injects synthetic 'id' field).
+  const records = mapRows<T>(table, rawRecords);
+
+  return { records, count: records.length };
 }
 
 export async function dbInvokeSingle<T>(options: InvokeOptions): Promise<T | null> {
