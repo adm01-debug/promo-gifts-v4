@@ -25,6 +25,10 @@ export interface GetNotificationsOptions {
   search?: string;
   /** Filtro por categoria. */
   category?: string;
+  /** Data inicial (ISO). */
+  startDate?: string;
+  /** Data final (ISO). */
+  endDate?: string;
   /** Número máximo de registros. Default: 50. */
   limit?: number;
   /** Offset para paginação. Default: 0. */
@@ -39,7 +43,7 @@ export interface GetNotificationsOptions {
 export async function getNotifications(
   options: GetNotificationsOptions = {},
 ): Promise<WorkspaceNotification[]> {
-  const { unreadOnly = false, search, category, limit = 50, offset = 0 } = options;
+  const { unreadOnly = false, search, category, startDate, endDate, limit = 50, offset = 0 } = options;
 
   let query = supabase
     .from('workspace_notifications')
@@ -58,6 +62,14 @@ export async function getNotifications(
   if (search) {
     // BUG-NOTIF-10: Usando search textual via textSearch para melhor performance
     query = query.textSearch('search_vector', search, { config: 'portuguese', type: 'plain' });
+  }
+
+  if (startDate) {
+    query = query.gte('created_at', startDate);
+  }
+
+  if (endDate) {
+    query = query.lte('created_at', endDate);
   }
 
   const { data, error, count } = await query;
