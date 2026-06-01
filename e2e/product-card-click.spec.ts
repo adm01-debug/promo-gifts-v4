@@ -36,7 +36,7 @@ test.describe('ProductCard Interaction & Accessibility @smoke', () => {
     }
   });
 
-  test('hover should still work (scale up)', async ({ page }) => {
+  test('mobile: hover should not trigger scale but click is clean @mobile', async ({ page }) => {
     const card = page.locator('[data-testid="product-card"]').first();
     const image = card.locator('img').first();
     
