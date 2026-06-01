@@ -14,14 +14,6 @@ import {
   Lock,
   ShieldAlert,
   Globe,
-  Wifi,
-  AlertTriangle,
-  RotateCw,
-  Database,
-  Server,
-  Activity,
-  CheckCircle2,
-  XCircle,
   Rocket,
 } from 'lucide-react';
 import { AuthBrandingPanel, SpaceScene } from '@/pages/auth/AuthBranding';
@@ -92,16 +84,6 @@ export default function Auth() {
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
-  // External Database Check State
-  const [dbStatus, setDbStatus] = useState<{
-    principal: { ok: boolean; url?: string; source?: string; loading: boolean };
-    external: { ok: boolean; url?: string; source?: string; loading: boolean };
-    crm: { ok: boolean; url?: string; source?: string; loading: boolean };
-  }>({
-    principal: { ok: false, loading: true },
-    external: { ok: false, loading: true },
-    crm: { ok: false, loading: true },
-  });
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
@@ -154,17 +136,12 @@ export default function Auth() {
     [toast, focusEmailFallback],
   );
 
-  // Fetch IP, geolocation and backend status
+  // Fetch visitor IP and geolocation
   useEffect(() => {
-    // Guarda de cancelamento: evita setState após o unmount do componente.
-    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
-    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
-    // (em testes, isso vaza como "ReferenceError: window is not defined").
     let cancelled = false;
     const isLighthousePlaceholder = isSupabaseLighthousePlaceholder();
 
     const loadInfo = async () => {
-      // 1. IP Info
       if (!isLighthousePlaceholder) {
         try {
           const supabase = await getSupabaseClient();
@@ -175,56 +152,6 @@ export default function Auth() {
           }
         } catch {
           // silent fail
-        }
-      }
-
-      if (cancelled) return;
-
-      // 2. Principal Backend (Directly from client SSOT)
-      const principalUrl = SUPABASE_URL;
-      const isExternal = !!import.meta.env.VITE_EXTERNAL_SUPABASE_URL || !SUPABASE_URL.includes("lovable");
-
-      setDbStatus((prev) => ({
-        ...prev,
-        principal: {
-          ok: !!principalUrl,
-          url: principalUrl,
-          source: isExternal ? 'Externo (Principal)' : 'Lovable Cloud',
-          loading: false,
-        },
-      }));
-
-      // 3. External (Gestão de Produtos) via REST nativo — a bridge foi aposentada.
-      if (isLighthousePlaceholder) {
-        setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
-        return;
-      }
-
-      try {
-        const supabase = await getSupabaseClient();
-        const { error } = await supabase
-          .from('system_kill_switches')
-          .select('enabled')
-          .eq('switch_name', 'edge_external_db_bridge')
-          .limit(1);
-
-        if (cancelled) return;
-
-        if (!error) {
-          setDbStatus((prev) => ({
-            ...prev,
-            external: {
-              ok: true,
-              source: 'Externo',
-              loading: false,
-            },
-          }));
-        } else {
-          setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
-        }
-      } catch {
-        if (!cancelled) {
-          setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
         }
       }
     };
