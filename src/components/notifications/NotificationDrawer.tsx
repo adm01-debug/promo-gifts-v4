@@ -12,6 +12,7 @@ import {
   Search,
   Settings2,
   ArrowLeft,
+  Download,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { notificationsMetrics, type TriggerSource } from '@/lib/notifications-metrics';
 import { NotificationsBadgeStatsPanel } from './NotificationsBadgeStatsPanel';
 import { NotificationPreferences } from './NotificationPreferences';
+import { toast } from 'sonner';
 
 const typeConfig = {
   info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
