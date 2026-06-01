@@ -439,6 +439,13 @@ async function executeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>
   const { data, error, count } = await query;
   if (error) {
     if (isGoneError(error.message)) {
+      const { reportSilentEmpty } = await import('@/lib/external-db/silent-empty-report');
+      reportSilentEmpty({
+        reason: 'gone_410',
+        table: options.table,
+        operation: 'select',
+        message: error.message,
+      });
       logger.warn(
         `[postgrest] read on '${tableName}' returned 410/Gone — returning empty (no retry).`,
       );
