@@ -140,17 +140,13 @@ export function ExternalCollectionTableView({
                           <div
                             className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded text-sm"
                             style={{
-                              backgroundColor: collection.color
-                                ? `${collection.color}20`
+                              backgroundColor: collection.icon_color
+                                ? `${collection.icon_color}20`
                                 : 'hsl(var(--muted))',
                             }}
                           >
-                            {collection.image_url ? (
-                              <img
-                                src={collection.image_url}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
+                            {collection.icon ? (
+                              <span className="text-base">{collection.icon}</span>
                             ) : (
                               <FolderOpen className="h-4 w-4 text-muted-foreground" />
                             )}

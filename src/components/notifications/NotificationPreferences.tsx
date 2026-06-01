@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Bell, Smartphone, Shield, Info, Rocket } from 'lucide-react';
 import {
   notificationPreferenceService,
-  UserNotificationPreference,
+  type UserNotificationPreference,
 } from '@/services/notificationPreferenceService';
 import { toast } from 'sonner';
 
@@ -78,7 +78,15 @@ export function NotificationPreferences() {
         if (existing) {
           return prev.map((p) => (p.category === category ? { ...p, [type]: value } : p));
         }
-        return [...prev, { category, [type]: value } as UserNotificationPreference];
+        return [
+          ...prev,
+          {
+            category,
+            in_app_enabled: true,
+            push_enabled: true,
+            [type]: value,
+          } as UserNotificationPreference,
+        ];
       });
       toast.success('Preferências atualizadas');
     } else {

@@ -37,15 +37,17 @@ export function ExternalCollectionCard({
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg text-lg"
           style={{
-            backgroundColor: collection.color ? `${collection.color}20` : 'hsl(var(--muted))',
+            backgroundColor: collection.icon_color
+              ? `${collection.icon_color}20`
+              : 'hsl(var(--muted))',
           }}
         >
-          {collection.image_url ? (
-            <img src={collection.image_url} alt="" className="h-full w-full object-cover" />
+          {collection.icon ? (
+            <span className="text-2xl">{collection.icon}</span>
           ) : (
             <FolderOpen
               className="h-6 w-6"
-              style={{ color: collection.color || 'hsl(var(--primary))' }}
+              style={{ color: collection.icon_color || 'hsl(var(--primary))' }}
             />
           )}
         </div>
@@ -89,21 +91,20 @@ export function ExternalCollectionCard({
       <div
         className="relative flex aspect-[3/4] items-center justify-center overflow-hidden"
         style={{
-          backgroundColor: collection.color ? `${collection.color}12` : 'hsl(var(--muted))',
+          backgroundColor: collection.icon_color
+            ? `${collection.icon_color}12`
+            : 'hsl(var(--muted))',
         }}
       >
-        {collection.image_url ? (
-          <img
-            src={collection.image_url}
-            alt={collection.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
+        {collection.icon ? (
+          <span className="text-6xl transition-transform duration-300 group-hover:scale-110">
+            {collection.icon}
+          </span>
         ) : (
           <div className="flex flex-col items-center gap-2">
             <FolderOpen
               className="h-14 w-14 transition-transform duration-300 group-hover:scale-110"
-              style={{ color: collection.color || 'hsl(var(--primary))' }}
+              style={{ color: collection.icon_color || 'hsl(var(--primary))' }}
             />
           </div>
         )}
@@ -115,7 +116,7 @@ export function ExternalCollectionCard({
           <div
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg shadow-md"
             style={{
-              backgroundColor: collection.color || 'hsl(var(--primary))',
+              backgroundColor: collection.icon_color || 'hsl(var(--primary))',
               color: '#fff',
             }}
           >

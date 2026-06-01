@@ -46,7 +46,7 @@ async function fetchProductTags(productId: string): Promise<ProductTags> {
     filters: { id: productId },
     limit: 1,
   });
-  const product = result.records?.[0];
+  const product = result.records?.[0] as Record<string, unknown> | undefined;
   const raw = product?.tags;
   const tags =
     typeof raw === 'string'
@@ -78,7 +78,7 @@ async function saveProductTags(productId: string, tags: ProductTags): Promise<vo
   // FIX-BRIDGE-01: migrated from bridge to dbInvoke (REST native write)
   const { error } = await supabase
     .from('v_products_public')
-    .update({ tags: payload })
+    .update({ tags: payload } as Record<string, unknown>)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 }

@@ -21,6 +21,7 @@ export interface UseNotificationsReturn {
   // In-app
   notifications: WorkspaceNotification[];
   unreadCount: number;
+  totalCount: number;
   isLoading: boolean;
   isRefetching: boolean;
   isMutationRehydrating: boolean;
@@ -54,6 +55,7 @@ export function useNotifications(): UseNotificationsReturn {
   return {
     notifications: workspace.notifications,
     unreadCount: workspace.unreadCount,
+    totalCount: workspace.totalCount,
     isLoading: workspace.isLoading,
     isRefetching: workspace.isRefetching,
     isMutationRehydrating: workspace.isMutationRehydrating,

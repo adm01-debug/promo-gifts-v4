@@ -72,9 +72,13 @@ export function GlobalSearch({
 
   // Load search history from localStorage
   useEffect(() => {
-    const history = localStorage.getItem('search-history');
-    if (history) {
-      setSearchHistory(JSON.parse(history).slice(0, 5));
+    try {
+      const history = localStorage.getItem('search-history');
+      if (history) {
+        setSearchHistory(JSON.parse(history).slice(0, 5));
+      }
+    } catch {
+      localStorage.removeItem('search-history');
     }
   }, []);
 

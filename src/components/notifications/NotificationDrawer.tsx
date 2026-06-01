@@ -27,7 +27,6 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
@@ -165,28 +164,6 @@ const RefetchSpinner = React.memo(function RefetchSpinner({
   );
 });
 
-/**
- * DrawerHeaderTitle — título + contador "X novas". Depende apenas de
- * `unreadCount`; o spinner de refetch é renderizado como filho independente.
- */
-const _DrawerHeaderTitle = React.memo(function DrawerHeaderTitle({
-  unreadCount,
-}: {
-  unreadCount: number;
-}) {
-  return (
-    <>
-      <Bell className="h-5 w-5 text-primary" />
-      Notificações
-      {unreadCount > 0 && (
-        <Badge variant="secondary" className="text-xs">
-          {unreadCount} nova{unreadCount > 1 ? 's' : ''}
-        </Badge>
-      )}
-    </>
-  );
-});
-
 function NotificationItem({
   notification,
   onRead,
@@ -272,8 +249,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       markAllAsRead,
       clearAll,
       prefetch,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cast for extended props
-    } = useNotifications() as any;
+    } = useNotifications();
     const navigate = useNavigate();
     const [shouldShake, setShouldShake] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -362,10 +338,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       if (notifications.length === 0) return;
 
       const headers = ['Data', 'Título', 'Mensagem', 'Tipo', 'Categoria', 'Lida'];
-      const filteredNotifications = notifications.filter(() => {
-        return true;
-      });
-      const rows = filteredNotifications.map((n) => [
+      const rows = notifications.map((n: WorkspaceNotification) => [
         new Date(n.created_at).toLocaleString('pt-BR'),
         n.title,
         n.message,
@@ -376,7 +349,9 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
 
       const csvContent = [
         headers.join(','),
-        ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+        ...rows.map((r: string[]) =>
+          r.map((cell: string) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+        ),
       ].join('\n');
 
       const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -388,6 +363,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       toast.success('Exportação concluída');
     }, [notifications]);
 
