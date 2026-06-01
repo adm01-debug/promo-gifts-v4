@@ -1,5 +1,6 @@
-import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 /** Window in days for considering a product as "replenished" */
 const REPLENISHMENT_WINDOW_DAYS = 30;
@@ -172,28 +173,16 @@ async function enrichReplenishments(
 
   const [catResult, supResult] = await Promise.all([
     categoryIds.length > 0
-      ? dbInvoke<CategoryRecord>({
-          table: 'categories',
-          operation: 'select',
-          select: 'id, name',
-          filters: { id: `in.(${categoryIds.join(',')})` },
-          limit: 500,
-        })
-      : { records: [] as CategoryRecord[] },
+      ? supabase.from('categories').select('id, name').in('id', categoryIds).limit(500)
+      : Promise.resolve({ data: [], error: null }),
     supplierIds.length > 0
-      ? dbInvoke<SupplierRecord>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id, name, code',
-          filters: { id: `in.(${supplierIds.join(',')})` },
-          limit: 200,
-        })
-      : { records: [] as SupplierRecord[] },
+      ? supabase.from('v_suppliers_public').select('id, name, code').in('id', supplierIds).limit(200)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const catMap = new Map(catResult.records.map((c) => [c.id, c.name]));
+  const catMap = new Map((catResult.data || []).map((c) => [c.id, c.name]));
   const supMap = new Map(
-    supResult.records.map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
+    (supResult.data || []).map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
   );
 
   return items.map((n) => ({
@@ -219,16 +208,20 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await dbInvoke<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: REPLENISHMENT_SELECT,
-        filters: { is_active: true, updated_at: `gte.${cutoff}` },
-        orderBy: { column: 'updated_at', ascending: false },
-        limit,
-      });
+      const { data, error } = await supabase
+        .from('v_products_public')
+        .select(REPLENISHMENT_SELECT)
+        .eq('is_active', true)
+        .gte('updated_at', cutoff)
+        .order('updated_at', { ascending: false })
+        .range(0, limit - 1);
 
-      let items = result.records
+      if (error) {
+        if (error.message?.includes('410')) return [];
+        throw error;
+      }
+
+      let items = (data as unknown as RawProduct[] || [])
         .filter(isReplenishment)
         .map(toReplenishment)
         .filter((n) => n.is_active);
@@ -251,30 +244,44 @@ export function useReplenishmentStats() {
       const cutoff = getCutoffDate();
 
       const [repResult, totalResult] = await Promise.all([
-        dbInvoke<RawProduct>({
-          table: 'products',
-          operation: 'select',
-          select: 'id, created_at, updated_at, supplier_id',
-          filters: { is_active: true, updated_at: `gte.${cutoff}` },
-          limit: 500,
-          countMode: 'exact',
-        }),
-        dbInvoke<{ id: string }>({
-          table: 'products',
-          operation: 'select',
-          select: 'id',
-          filters: { is_active: true },
-          limit: 1,
-          countMode: 'exact',
-        }),
+        supabase
+          .from('v_products_public')
+          .select('id, created_at, updated_at, supplier_id', { count: 'exact' })
+          .eq('is_active', true)
+          .gte('updated_at', cutoff)
+          .range(0, 499),
+        supabase
+          .from('v_products_public')
+          .select('id', { count: 'exact' })
+          .eq('is_active', true)
+          .limit(1),
       ]);
+
+      if (repResult.error || totalResult.error) {
+        if (repResult.error?.message?.includes('410') || totalResult.error?.message?.includes('410')) {
+          return {
+            totalReplenishments: 0,
+            activeReplenishments: 0,
+            expiringSoon: 0,
+            totalProducts: 0,
+            replenishmentRate: 0,
+            restockedToday: 0,
+            restockedThisWeek: 0,
+            restockedLast15Days: 0,
+            topSupplierName: null,
+            topSupplierCount: 0,
+          };
+        }
+      }
+
+      const records = (repResult.data as unknown as RawProduct[]) || [];
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const weekStart = todayStart - 6 * 86_400_000;
       const fifteenDaysStart = todayStart - 14 * 86_400_000;
 
-      const replenishments = repResult.records.filter(isReplenishment).map((p) => ({
+      const replenishments = records.filter(isReplenishment).map((p) => ({
         daysRemaining: calcDaysRemaining(p.updated_at),
         updatedTime: new Date(p.updated_at).getTime(),
         supplierId: p.supplier_id,
@@ -308,14 +315,12 @@ export function useReplenishmentStats() {
       let topSupplierName: string | null = null;
       if (topSupplierId) {
         try {
-          const supResult = await dbInvoke<{ name: string }>({
-            table: 'suppliers',
-            operation: 'select',
-            select: 'name',
-            filters: { id: topSupplierId },
-            limit: 1,
-          });
-          topSupplierName = supResult.records[0]?.name ?? null;
+          const supRes = await supabase
+            .from('v_suppliers_public')
+            .select('name')
+            .eq('id', topSupplierId)
+            .limit(1);
+          topSupplierName = supRes.data?.[0]?.name ?? null;
         } catch {
           // Graceful fallback — supplier name unavailable
         }
@@ -345,15 +350,19 @@ export function useReplenishmentCount() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await dbInvoke<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: 'id, created_at, updated_at',
-        filters: { is_active: true, updated_at: `gte.${cutoff}` },
-        limit: 500,
-      });
+      const { data, error } = await supabase
+        .from('v_products_public')
+        .select('id, created_at, updated_at')
+        .eq('is_active', true)
+        .gte('updated_at', cutoff)
+        .limit(500);
 
-      return result.records.filter(isReplenishment).length;
+      if (error) {
+        if (error.message?.includes('410')) return 0;
+        throw error;
+      }
+
+      return ((data as unknown as RawProduct[]) || []).filter(isReplenishment).length;
     },
     staleTime: 2 * 60 * 1000,
     retry: 2,

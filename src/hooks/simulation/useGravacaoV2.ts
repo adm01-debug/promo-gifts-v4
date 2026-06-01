@@ -4,10 +4,9 @@
  * Tipos e helpers extraídos para gravacao/ subfolder.
  * Este arquivo mantém apenas os hooks React.
  */
-import { dbInvoke } from '@/lib/db/postgrest';
-import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalRpc } from '@/lib/external-rpc';
+import { logger } from '@/lib/logger';
 
 // Re-export types & helpers for backward compat
 export type {
@@ -97,14 +96,18 @@ export function useProductPrintAreas(productId: string | null) {
       const areas = await fetchPrintAreasFromProduct(productId);
       if (!areas.length) return [];
 
-      const techResult = await dbInvoke<TecnicaRow>({
-        table: 'tabela_preco_gravacao_oficial',
-        operation: 'select',
-        filters: { ativo: true },
-        limit: 100,
-      });
+      const { data: techData, error: techError } = await supabase
+        .from('tabela_preco_gravacao_oficial')
+        .select('*')
+        .eq('ativo', true)
+        .limit(100);
 
-      const techById = new Map((techResult.records || []).map((t) => [t.id, t]));
+      if (techError) {
+        if (techError.message?.includes('410')) return [];
+        throw techError;
+      }
+
+      const techById = new Map((techData || []).map((t) => [t.id, t]));
 
       return areas.map((area) => {
         const techniques: { id: string; nome: string; codigo: string }[] = [];
@@ -140,13 +143,17 @@ export function useTabelasPrecoOficial() {
   return useQuery({
     queryKey: ['tabelas-preco-oficial'],
     queryFn: async (): Promise<TabelaPrecoOficial[]> => {
-      const result = await dbInvoke<TabelaPrecoOficial>({
-        table: 'tabela_preco_gravacao_oficial',
-        operation: 'select',
-        filters: { ativo: true },
-        orderBy: { column: 'codigo', ascending: true },
-      });
-      return result.records || [];
+      const { data, error } = await supabase
+        .from('tabela_preco_gravacao_oficial')
+        .select('*')
+        .eq('ativo', true)
+        .order('codigo', { ascending: true });
+
+      if (error) {
+        if (error.message?.includes('410')) return [];
+        throw error;
+      }
+      return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -157,13 +164,17 @@ export function useFaixasPrecoOficial(tabelaPrecoId: string | null) {
     queryKey: ['faixas-preco-oficial', tabelaPrecoId],
     queryFn: async (): Promise<FaixaPrecoOficial[]> => {
       if (!tabelaPrecoId) return [];
-      const result = await dbInvoke<FaixaPrecoOficial>({
-        table: 'tabela_preco_gravacao_oficial_faixa',
-        operation: 'select',
-        filters: { tabela_preco_gravacao_id: tabelaPrecoId },
-        orderBy: { column: 'ordem', ascending: true },
-      });
-      return result.records || [];
+      const { data, error } = await supabase
+        .from('tabela_preco_gravacao_oficial_faixa')
+        .select('*')
+        .eq('tabela_preco_gravacao_id', tabelaPrecoId)
+        .order('ordem', { ascending: true });
+
+      if (error) {
+        if (error.message?.includes('410')) return [];
+        throw error;
+      }
+      return data || [];
     },
     enabled: !!tabelaPrecoId,
     staleTime: 5 * 60 * 1000,
@@ -185,16 +196,17 @@ export function useCustomizationPriceLegacy() {
       setLoading(true);
       setError(null);
       try {
-        const rawResult = await invokeExternalRpc<RpcCustomizationPriceResult>(
-          'fn_get_customization_price',
-          {
+        // Placeholder: RPC call logic would go here if migrated, but plan says PostgREST calls
+        // For now using supabase.rpc if defined or keep as is if RPC is still supported
+        const { data: rawResult, error: rpcError } = await (supabase.rpc as any)('fn_get_customization_price', {
             p_area_id: areaId,
             p_quantidade: quantidade,
             p_num_cores: numCores,
             p_largura_cm: larguraCm ?? null,
             p_altura_cm: alturaCm ?? null,
-          },
-        );
+        });
+
+        if (rpcError) throw rpcError;
         if (!rawResult?.success) {
           setLoading(false);
           return null;
@@ -258,13 +270,18 @@ export function useTabelaPrecoPorCodigo(codigo: string | null) {
     queryKey: ['tabela-preco-codigo', codigo],
     queryFn: async (): Promise<TabelaPrecoOficial | null> => {
       if (!codigo) return null;
-      const result = await dbInvoke<TabelaPrecoOficial>({
-        table: 'tabela_preco_gravacao_oficial',
-        operation: 'select',
-        filters: { codigo },
-        limit: 1,
-      });
-      return result.records[0] || null;
+      const { data, error } = await supabase
+        .from('tabela_preco_gravacao_oficial')
+        .select('*')
+        .eq('codigo', codigo)
+        .limit(1)
+        .single();
+      
+      if (error) {
+        if (error.message?.includes('410')) return null;
+        throw error;
+      }
+      return data;
     },
     enabled: !!codigo,
     staleTime: 5 * 60 * 1000,

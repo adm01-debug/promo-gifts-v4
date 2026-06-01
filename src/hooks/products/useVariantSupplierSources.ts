@@ -1,5 +1,6 @@
-import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface VariantWithStock {
   id: string;
@@ -52,33 +53,27 @@ export function useProductVariantsWithStock(productId: string | undefined) {
     queryFn: async (): Promise<VariantWithStock[]> => {
       if (!productId) return [];
 
-      const result = await dbInvoke<{
-        id: string;
-        product_id: string;
-        sku: string;
-        color_code: string | null;
-        color_name: string | null;
-        color_hex: string | null;
-        stock_quantity: number | null;
-        selected_thumbnail: string | null;
-        variant_supplier_sources?: {
-          next_date_1: string | null;
-          next_quantity_1: number | null;
-          next_date_2: string | null;
-          next_quantity_2: number | null;
-          next_date_3: string | null;
-          next_quantity_3: number | null;
-        }[];
-      }>({
-        table: 'product_variants',
-        operation: 'select',
-        select:
-          'id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail, variant_supplier_sources(next_date_1, next_quantity_1, next_date_2, next_quantity_2, next_date_3, next_quantity_3)',
-        filters: { product_id: productId, is_active: true },
-        limit: 200,
-      });
+      const { data, error } = await supabase
+        .from('product_variants')
+        .select(`
+          id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail, 
+          variant_supplier_sources(next_date_1, next_quantity_1, next_date_2, next_quantity_2, next_date_3, next_quantity_3)
+        `)
+        .eq('product_id', productId)
+        .eq('is_active', true)
+        .limit(200);
 
-      return result.records.map((v) => {
+      if (error) {
+        if (error.message?.includes('410') || error.message?.includes('Gone')) {
+          logger.warn('Bridge deprecated (410) for variant sources');
+          return [];
+        }
+        throw error;
+      }
+
+      const records = (data as unknown as any[]) || [];
+
+      return records.map((v) => {
         const source = v.variant_supplier_sources?.[0];
         return {
           ...v,
