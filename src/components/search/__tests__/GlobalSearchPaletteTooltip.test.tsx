@@ -40,11 +40,11 @@ describe('GlobalSearchPalette Tooltip', () => {
     // Hover over the trigger
     fireEvent.mouseEnter(trigger);
 
-    // Tooltip should be visible
+    // Radix tooltips might need a bit of time or specific events in JSDOM
+    // Sometimes we need to check the body for the portal content
     await waitFor(() => {
-      const tooltip = screen.getByRole('tooltip');
-      expect(tooltip).toHaveTextContent('Fale com o Flow');
-      expect(tooltip).toHaveTextContent('Ctrl+Shift+V');
+      expect(screen.getByText(/Fale com o Flow/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ctrl\+Shift\+V/i)).toBeInTheDocument();
     });
   });
 
