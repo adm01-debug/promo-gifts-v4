@@ -57,76 +57,115 @@ BEGIN
   END IF;
 END $$;
 
--- Registro de auditoria
-INSERT INTO public.admin_audit_log (
-  action, entity_type, entity_id, new_values, user_id, created_at
-)
-SELECT 
-  'BUGFIX_MARKUP_PERCENT_BACKFILL',
-  'quotes',
-  id::text,
-  jsonb_build_object(
-    'quote_number', quote_number,
-    'subtotal', subtotal,
-    'total', total,
-    'negotiation_markup_percent_set', ROUND((total / NULLIF(subtotal, 0) - 1) * 100, 4),
-    'fixed_at', now(),
-    'fix_pr', 'fix/db-audit-20260526'
-  ),
-  NULL,
-  now()
-FROM public.quotes
-WHERE 
-  quote_number IN ('ORC-2026-001', 'ORC-2026-002', 'ORC-2026-003')
-  AND total > subtotal
-ON CONFLICT DO NOTHING;
+-- Registro de auditoria — guard contra ausência de colunas em preview
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='admin_audit_log'
+      AND column_name IN ('action', 'entity_type', 'entity_id', 'new_values', 'user_id', 'created_at')
+  ) = 6
+  AND (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='quotes'
+      AND column_name IN ('quote_number', 'subtotal', 'total')
+  ) = 3 THEN
+    INSERT INTO public.admin_audit_log (
+      action, entity_type, entity_id, new_values, user_id, created_at
+    )
+    SELECT
+      'BUGFIX_MARKUP_PERCENT_BACKFILL',
+      'quotes',
+      id::text,
+      jsonb_build_object(
+        'quote_number', quote_number,
+        'subtotal', subtotal,
+        'total', total,
+        'negotiation_markup_percent_set', ROUND((total / NULLIF(subtotal, 0) - 1) * 100, 4),
+        'fixed_at', now(),
+        'fix_pr', 'fix/db-audit-20260526'
+      ),
+      NULL,
+      now()
+    FROM public.quotes
+    WHERE
+      quote_number IN ('ORC-2026-001', 'ORC-2026-002', 'ORC-2026-003')
+      AND total > subtotal
+    ON CONFLICT DO NOTHING;
+  ELSE
+    RAISE NOTICE 'Audit INSERT B02 pulado: schema de admin_audit_log/quotes incompleto em preview';
+  END IF;
+END $$;
 
 -- -------------------------------------------------------
 -- FIX B04: Desativar 4 produtos ativos sem preço
 -- Fornecedor: Asia Import (d2734e23-d633-4819-bb15-e51aa44e2118)
+-- Guard contra colunas ausentes em preview snapshots antigos.
 -- -------------------------------------------------------
-UPDATE public.products
-SET 
-  is_active = false,
-  active = false,
-  updated_at = now()
-WHERE 
-  cost_price IS NULL 
-  AND sale_price IS NULL 
-  AND is_active = true 
-  AND (is_deleted IS NULL OR is_deleted = false)
-  AND id IN (
-    'c31e3eae-b923-4f4e-9815-88c043454fc0',  -- Mochila Compartimento Vacuo
-    'aa01c9c1-7b60-449a-a9a5-36aa57561031',  -- Mochila para notebook
-    '6dce7b4f-c536-4d7b-9d09-43b8c700e223',  -- Caneta Metalica #1
-    'e36c0717-4c69-4bcc-9c6e-f1af3cb9f77d'   -- Caneta Metalica #2
-  );
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='products'
+      AND column_name IN ('is_active', 'active', 'cost_price', 'sale_price', 'is_deleted', 'updated_at')
+  ) = 6 THEN
+    UPDATE public.products
+    SET
+      is_active = false,
+      active = false,
+      updated_at = now()
+    WHERE
+      cost_price IS NULL
+      AND sale_price IS NULL
+      AND is_active = true
+      AND (is_deleted IS NULL OR is_deleted = false)
+      AND id IN (
+        'c31e3eae-b923-4f4e-9815-88c043454fc0',  -- Mochila Compartimento Vacuo
+        'aa01c9c1-7b60-449a-a9a5-36aa57561031',  -- Mochila para notebook
+        '6dce7b4f-c536-4d7b-9d09-43b8c700e223',  -- Caneta Metalica #1
+        'e36c0717-4c69-4bcc-9c6e-f1af3cb9f77d'   -- Caneta Metalica #2
+      );
+  ELSE
+    RAISE NOTICE 'UPDATE B04 pulado: schema de products incompleto em preview';
+  END IF;
+END $$;
 
--- Registro de auditoria
-INSERT INTO public.admin_audit_log (
-  action, entity_type, entity_id, new_values, user_id, created_at
-)
-SELECT 
-  'BUGFIX_DEACTIVATE_PRODUCT_NO_PRICE',
-  'products',
-  id::text,
-  jsonb_build_object(
-    'name', name,
-    'supplier_id', supplier_id,
-    'reason', 'Produto ativo sem cost_price nem sale_price - desativado por auditoria 26/05/2026',
-    'fix_pr', 'fix/db-audit-20260526',
-    'fixed_at', now()
-  ),
-  NULL,
-  now()
-FROM public.products
-WHERE id IN (
-  'c31e3eae-b923-4f4e-9815-88c043454fc0',
-  'aa01c9c1-7b60-449a-a9a5-36aa57561031',
-  '6dce7b4f-c536-4d7b-9d09-43b8c700e223',
-  'e36c0717-4c69-4bcc-9c6e-f1af3cb9f77d'
-)
-ON CONFLICT DO NOTHING;
+-- Registro de auditoria — guard contra ausência de colunas em preview
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='admin_audit_log'
+      AND column_name IN ('action', 'entity_type', 'entity_id', 'new_values', 'user_id', 'created_at')
+  ) = 6 THEN
+    INSERT INTO public.admin_audit_log (
+      action, entity_type, entity_id, new_values, user_id, created_at
+    )
+    SELECT
+      'BUGFIX_DEACTIVATE_PRODUCT_NO_PRICE',
+      'products',
+      id::text,
+      jsonb_build_object(
+        'name', name,
+        'supplier_id', supplier_id,
+        'reason', 'Produto ativo sem cost_price nem sale_price - desativado por auditoria 26/05/2026',
+        'fix_pr', 'fix/db-audit-20260526',
+        'fixed_at', now()
+      ),
+      NULL,
+      now()
+    FROM public.products
+    WHERE id IN (
+      'c31e3eae-b923-4f4e-9815-88c043454fc0',
+      'aa01c9c1-7b60-449a-a9a5-36aa57561031',
+      '6dce7b4f-c536-4d7b-9d09-43b8c700e223',
+      'e36c0717-4c69-4bcc-9c6e-f1af3cb9f77d'
+    )
+    ON CONFLICT DO NOTHING;
+  ELSE
+    RAISE NOTICE 'Audit INSERT B04 pulado: schema de admin_audit_log incompleto em preview';
+  END IF;
+END $$;
 
 -- -------------------------------------------------------
 -- DOCUMENTACAO B03: Tabelas duplicadas — comentários COMMENTS
