@@ -191,6 +191,8 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return true;
 }
 
+const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
+
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
@@ -219,6 +221,27 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
         else if (op === 'neq') query = query.neq(key, val);
         else {
           logger.warn(`[postgrest] operador desconhecido '${op}' para coluna '${key}' -- filtro ignorado`);
+        }
+      } else if (typeof value === 'string') {
+        const match = value.match(POSTGREST_OP_REGEX);
+        if (match) {
+          const [, op, rest] = match;
+          if (op === 'gte')       query = query.gte(key, rest);
+          else if (op === 'lte')  query = query.lte(key, rest);
+          else if (op === 'gt')   query = query.gt(key, rest);
+          else if (op === 'lt')   query = query.lt(key, rest);
+          else if (op === 'eq')   query = query.eq(key, rest);
+          else if (op === 'neq')  query = query.neq(key, rest);
+          else if (op === 'like') query = query.like(key, rest);
+          else if (op === 'ilike') query = query.ilike(key, rest);
+          else if (op === 'is')   query = rest === 'null' ? query.is(key, null) : query.eq(key, value);
+          else if (op === 'in') {
+            const inner = rest.replace(/^\(/, '').replace(/\)$/, '');
+            query = query.in(key, inner.split(',').map((v) => v.trim()).filter(Boolean));
+          }
+          else query = query.eq(key, value);
+        } else {
+          query = query.eq(key, value);
         }
       } else {
         query = query.eq(key, value);
