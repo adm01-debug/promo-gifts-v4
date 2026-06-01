@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/react-router')) {
               return 'router-vendor';
             }
-            if (id.includes('node_modules/@radix-ui/')) {
+            if (id.includes('node_modules/@radix-ui/') || id.includes('node_modules/cmdk/')) {
               return 'ui-vendor';
             }
             if (id.includes('node_modules/@tanstack/')) {
@@ -103,9 +103,6 @@ export default defineConfig(({ mode }) => {
             }
             if (id.includes('node_modules/@sentry/')) {
               return 'sentry-vendor';
-            }
-            if (id.includes('node_modules/cmdk/')) {
-              return 'cmdk-vendor';
             }
             if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-')) {
               return 'markdown-vendor';

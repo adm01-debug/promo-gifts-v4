@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +42,7 @@ interface ProductCategoryBadgesProps {
  * Combina a categoria principal com grupos adicionais
  * Inclui link opcional para o simulador de personalização
  */
-export function ProductCategoryBadges({
+export const ProductCategoryBadges = memo(function ProductCategoryBadges({
   category,
   groups,
   className,
@@ -240,4 +241,4 @@ export function ProductCategoryBadges({
       )}
     </div>
   );
-}
+});

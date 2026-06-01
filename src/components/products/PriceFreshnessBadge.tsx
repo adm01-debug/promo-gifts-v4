@@ -10,6 +10,7 @@
  * In `compact` and `icon-only` variants, the badge only renders for
  * `aging`/`stale` statuses to avoid noise on freshly-updated products.
  */
+import { memo } from 'react';
 import { AlertTriangle, Clock, CheckCircle2, HelpCircle, ShieldCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -219,7 +220,7 @@ function formatRelativeDaysShort(days: number | null): string {
   return `há ${days} dias`;
 }
 
-export function PriceFreshnessBadge({
+export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
   priceUpdatedAt,
   thresholdDays,
   variant = 'inline',
@@ -490,4 +491,4 @@ export function PriceFreshnessBadge({
       </button>
     </span>
   );
-}
+});
