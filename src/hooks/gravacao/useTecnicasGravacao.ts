@@ -1,6 +1,5 @@
 // Hook CRUD para Tecnicas de Gravacao (via PostgREST nativo)
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   TecnicaGravacao,
@@ -57,13 +56,13 @@ export function useTecnicasGravacao() {
       const variantesCount: Record<string, number> = {};
       (variantesResult.data || []).forEach((v) => {
         // Mock logic or real logic
-        const vid = (v as any).tecnica_gravacao_id || v.id;
+        const vid = (v as unknown as { tecnica_gravacao_id?: string; id: string }).tecnica_gravacao_id || v.id;
         variantesCount[vid] = (variantesCount[vid] || 0) + 1;
       });
 
-      return (tecnicasResult.data || []).map((t: any) => ({
+      return ((tecnicasResult.data || []) as unknown as TecnicaGravacao[]).map((t) => ({
         ...t,
-        variantes: [],
+        variantes: [] as TecnicaGravacaoVariante[],
         variantes_count: variantesCount[t.id] || 0,
       }));
     },
@@ -205,7 +204,7 @@ export function useTecnicaGravacao(id: string | undefined) {
 
       return {
         ...tecnica,
-        variantes: (variantesResult.data || []) as any,
+        variantes: (variantesResult.data || []) as unknown as TecnicaGravacaoVariante[],
         variantes_count: (variantesResult.data || []).length,
       };
     },
