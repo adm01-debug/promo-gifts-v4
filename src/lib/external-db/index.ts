@@ -12,9 +12,31 @@
  * - types.ts          → Hook-level types (existing)
  * - tables.ts         → Table constants (existing)
  * - invoke.ts         → Hook-level invoke (existing)
+ *
+ * ARQUITETURA (2026-06):
+ * A edge function `external-db-bridge` foi desativada (kill-switch OFF).
+ * Todo o acesso ao banco de catálogo (products, categories, variants) agora
+ * usa PostgREST nativo via supabase.from() diretamente em doufsxqlfjyuvxuezpln.
+ *
+ * O único DB externo restante é pgxfvjmuubtbowutlide (CRM), acessado via
+ * crm-db-bridge — que é gerenciado por src/lib/crm-db.ts, NÃO por este módulo.
+ *
+ * ATENÇÃO AO IMPORTAR DESTE MÓDULO:
+ * As funções bridge.ts (invokeExternalDb, invokeBridge, etc.) ainda invocam
+ * a edge function 'external-db-bridge'. O kill-switch em invoke.ts intercepta
+ * essas chamadas ANTES de chegarem à edge function quando o switch está OFF.
+ *
+ * Não importe diretamente de bridge.ts, rest-native.ts ou invoke.ts para
+ * novos recursos. Use supabase.from() direto ou o padrão de hooks existentes.
  */
 
-// Bridge (core)
+/**
+ * Bridge (core) — AVISO: estas funções passam pelo kill-switch em invoke.ts.
+ * Quando `edge_external_db_bridge` está OFF em system_kill_switches, as chamadas
+ * são interceptadas antes de chegarem à edge function (short-circuit).
+ *
+ * @internal Não usar para novos recursos. Preferir supabase.from() direto.
+ */
 export {
   invokeExternalDb,
   invokeExternalDbSingle,
