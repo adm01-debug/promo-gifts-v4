@@ -1,18 +1,36 @@
 /**
- * mockupGenerationService — Handles mockup generation API calls and history persistence.
+ * mockupGenerationService - Handles mockup generation API calls and history persistence.
  * Extracted from useMockupGenerator to reduce hook complexity.
  *
- * Fixes (audit 26/05/2026 — Sprint 1):
- * T4: position_x, position_y, logo_url persisted as top-level columns.
+ * Fixes (audit 26/05/2026 - Sprint 1):
  * T7: getTechniquePrompt skips "default" in search loop.
  * T8: fetchMockupHistory limited to 200 records.
  * T10: thumbnail_url now stores mockupUrl (not logoUrl).
  *
  * Fixes (audit sprint-2, 26/05/2026):
- * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race — UI can no longer
+ * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race - UI can no longer
  *        freeze indefinitely when the edge function hangs.
  * BUG-E: SVG logos pre-validated BEFORE calling edge function, saving the round-trip.
  * BUG-I: Single-area path sends only the relevant area in the `areas` array.
+ *
+ * Fix (2026-06-01 - Sprint 3):
+ * BUG-F: fetchMockupHistory was SELECTing 9 columns that do not exist on the
+ *        generated_mockups table (position_x, position_y, logo_width_cm,
+ *        logo_height_cm, client_id, client_name, location_name, colors_count,
+ *        annotations), causing a permanent 400 Bad Request (Postgres error 42703).
+ *        These values are stored inside the area_config JSONB column (written
+ *        correctly by saveMockupToDb). The SELECT now uses only real table columns
+ *        and extracts the JSONB-resident values in the TypeScript mapping layer,
+ *        preserving the full GeneratedMockup interface without any schema change.
+ *
+ *        Real columns used: id, product_id, product_name, product_sku,
+ *          technique_id, technique_name, mockup_url, logo_url, thumbnail_url,
+ *          area_name, area_config, created_at
+ *        Mapped from area_config JSONB: position_x (positionX), position_y
+ *          (positionY), logo_width_cm (logoWidth), logo_height_cm (logoHeight),
+ *          client_name (clientName), colors_count (colorsCount), annotations.
+ *        location_name mapped from: area_name (real column).
+ *        client_id: not stored in the schema - always null.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
@@ -74,21 +92,80 @@ export function getTechniquePrompt(technique: Technique): string {
   return TECHNIQUE_PROMPTS.default;
 }
 
-// T8 FIX: limit to 200 records to prevent unbounded payload growth.
+/**
+ * Raw DB row returned by the SELECT - uses only real table columns.
+ * area_config is JSONB so it arrives as an unknown object; we type it below.
+ */
+interface GeneratedMockupRow {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  product_sku: string | null;
+  technique_id: string | null;
+  technique_name: string;
+  mockup_url: string;
+  logo_url: string | null;
+  thumbnail_url: string | null;
+  area_name: string | null;
+  area_config: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/**
+ * BUG-F FIX: SELECT uses only columns that exist on the generated_mockups table.
+ *
+ * Previously the query included position_x, position_y, logo_width_cm,
+ * logo_height_cm, client_id, client_name, location_name, colors_count and
+ * annotations as top-level columns, but they do NOT exist. They are stored
+ * inside the area_config JSONB column (positionX, positionY, logoWidth,
+ * logoHeight, clientName, colorsCount, annotations). The mapping below
+ * extracts them from the JSONB after the query returns, preserving the
+ * GeneratedMockup interface that consumers depend on.
+ *
+ * T8 FIX: limit to 200 records to prevent unbounded payload growth.
+ */
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
   let query = supabase
     .from('generated_mockups')
     .select(
       'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-        'mockup_url, logo_url, position_x, position_y, logo_width_cm, logo_height_cm, ' +
-        'client_id, client_name, location_name, colors_count, annotations, created_at',
+        'mockup_url, logo_url, thumbnail_url, area_name, area_config, created_at',
     )
     .order('created_at', { ascending: false })
     .limit(200);
+
   if (userId) query = query.eq('user_id', userId);
+
   const { data, error } = await query;
   if (error) throw error;
-  return (data || []) as unknown as GeneratedMockup[];
+
+  // Map DB rows -> GeneratedMockup, extracting JSONB fields from area_config.
+  return (data || []).map((row: GeneratedMockupRow): GeneratedMockup => {
+    const cfg = row.area_config ?? {};
+    return {
+      id: row.id,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      product_sku: row.product_sku,
+      technique_id: row.technique_id,
+      technique_name: row.technique_name,
+      mockup_url: row.mockup_url,
+      logo_url: row.logo_url,
+      // Extract position/size data from area_config JSONB
+      position_x: (cfg.positionX as number | null) ?? null,
+      position_y: (cfg.positionY as number | null) ?? null,
+      logo_width_cm: (cfg.logoWidth as number | null) ?? null,
+      logo_height_cm: (cfg.logoHeight as number | null) ?? null,
+      // Client name stored in area_config; client_id is not persisted
+      client_name: (cfg.clientName as string | null) ?? null,
+      client_id: null,
+      // location_name maps to the real area_name column
+      location_name: row.area_name ?? null,
+      colors_count: (cfg.colorsCount as number | null) ?? null,
+      annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
+      created_at: row.created_at,
+    };
+  });
 }
 
 export interface SaveMockupParams {
@@ -143,10 +220,6 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
         mockup_url: mockupUrl,
         thumbnail_url: mockupUrl || null,
         logo_url: logoUrl || null,
-        position_x: area.positionX,
-        position_y: area.positionY,
-        logo_width_cm: area.logoWidth,
-        logo_height_cm: area.logoHeight,
         area_name: extra?.locationName || area.name || 'Frente',
         ai_model_used: technique.code || technique.name || 'custom',
         area_config: {
@@ -206,7 +279,7 @@ function assertNotSvg(area: PersonalizationArea): void {
   const isSvgHttpUrl = area.logoPreview.startsWith('http') && /\.svg(\?|$)/i.test(area.logoPreview);
   if (isSvgDataUrl || isSvgHttpUrl) {
     throw new Error(
-      `Logos SVG não são suportados na área "${area.name}". Converta para PNG ou JPG.`,
+      `Logos SVG nao sao suportados na area "${area.name}". Converta para PNG ou JPG.`,
     );
   }
 }
