@@ -18,141 +18,180 @@ interface EnhancedProductCardProps {
   product: Product;
   onClick?: () => void;
   onQuickAdd?: (product: Product, quantity: number) => void;
-  onToggleFavorite?: (productId: string) => void;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
+  onFavorite?: (product: Product) => void;
+  onCompare?: (product: Product) => void;
   onShare?: (product: Product) => void;
-  onQuickView?: (product: Product) => void;
+  onStatusClick?: (type: string, urgencyType?: string) => void;
   isFavorited?: boolean;
-  isInCompare?: boolean;
-  canAddToCompare?: boolean;
-  showUrgencyBadge?: boolean;
-  urgencyType?: 'limited-stock' | 'trending' | 'ending-soon';
-  urgencyText?: string;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  isInComparison?: boolean;
+  className?: string;
 }
 
 export function EnhancedProductCard({
   product,
   onClick,
   onQuickAdd,
-  onToggleFavorite,
-  onToggleCompare,
+  onFavorite,
+  onCompare,
   onShare,
-  onQuickView,
-  isFavorited = false,
-  isInCompare = false,
-  canAddToCompare = true,
-  showUrgencyBadge = false,
-  urgencyType = 'limited-stock',
-  urgencyText,
   onStatusClick,
+  isFavorited = false,
+  isInComparison = false,
+  className,
 }: EnhancedProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [quickAddQuantity, setQuickAddQuantity] = useState(1);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [quantity, setQuantity] = useState(product.minOrder || 1);
+  const cardRef = useRef<HTMLElement>(null);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price);
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    // Mostrar preview após 500ms de hover
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowPreview(true);
-    }, 500);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setShowPreview(false);
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-  };
-
-  const getUrgencyBadge = () => {
-    if (!showUrgencyBadge) return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute left-3 top-3 z-20"
-      >
-        <ProductStatusBadge
-          type="urgency"
-          urgencyType={urgencyType}
-          value={urgencyText}
-          size="sm"
-          onClick={() => onStatusClick?.('urgency', urgencyType)}
-        />
-      </motion.div>
-    );
-  };
+  const urgencyType = product.stockStatus === 'critical' ? 'critical'
+    : product.stockStatus === 'low' ? 'low'
+    : undefined;
+  const urgencyText = urgencyType === 'critical' ? 'Crítico'
+    : urgencyType === 'low' ? 'Baixo'
+    : undefined;
 
   return (
     <article
+      ref={cardRef}
       className={cn(
         'card-glow group relative overflow-hidden rounded-2xl bg-card',
         'cursor-pointer',
         isHovered && 'ring-2 ring-primary/20',
+        className,
       )}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {/* Urgency Badge */}
-      {getUrgencyBadge()}
-
-      {/* Image Container */}
-      <div className="product-img-container relative aspect-[4/5] overflow-hidden">
-        {!imageLoaded && <div className="absolute inset-0 bg-muted/30" />}
-
-        <motion.img
-          src={product.images[0]}
-          alt={product.name}
-          className={cn(
-            'h-full w-full object-contain transition-all duration-700 ease-out',
-            imageLoaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-40 blur-md',
-          )}
-          animate={{
-            scale: isHovered ? 1.05 : 1,
-          }}
-          onLoad={() => setImageLoaded(true)}
-        />
-
-        {/* Gradient overlay on hover */}
+      {/* Urgency badge */}
+      {urgencyType && urgencyText && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-        />
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute left-3 top-3 z-20"
+        >
+          <ProductStatusBadge
+            type="urgency"
+            urgencyType={urgencyType}
+            value={urgencyText}
+            size="sm"
+            onClick={() => onStatusClick?.('urgency', urgencyType)}
+          />
+        </motion.div>
+      )}
 
-        {/* Featured badge */}
-        {product.featured && (
-          <div className="absolute right-3 top-3 z-10">
-            <ProductStatusBadge
-              type="featured"
-              size="sm"
-              onClick={() => onStatusClick?.('featured')}
-            />
-          </div>
+      <article
+        className={cn(
+          'card-glow group relative overflow-hidden rounded-2xl bg-card',
+          'cursor-pointer',
+          isHovered && 'ring-2 ring-primary/20',
         )}
+      >
+        {/* Image */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted/10">
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className={cn(
+              'h-full w-full object-contain transition-transform duration-500',
+              isHovered && 'scale-105',
+            )}
+            loading="lazy"
+          />
 
-        {/* Quick Actions - Always visible on mobile, hover on desktop */}
+          {/* Featured badge */}
+          {product.featured && (
+            <div className="absolute right-3 top-3 z-10">
+              <ProductStatusBadge
+                type="featured"
+                size="sm"
+                onClick={() => onStatusClick?.('featured')}
+              />
+            </div>
+          )}
+
+          {/* Overlay actions */}
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 to-transparent p-4"
+              >
+                <div className="flex w-full gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickAdd?.(product, quantity);
+                    }}
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5" />
+                    Adicionar
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Card content */}
+        <div className="p-3">
+          <p className="mb-0.5 line-clamp-2 text-sm font-medium leading-tight">{product.name}</p>
+          <p className="mb-2 text-xs text-muted-foreground">{product.sku}</p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              {product.salePrice ? (
+                <>
+                  <span className="text-base font-bold text-primary">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice)}
+                  </span>
+                  {product.listPrice && product.listPrice > product.salePrice && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.listPrice)}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">Preço sob consulta</span>
+              )}
+            </div>
+
+            {product.colors && product.colors.length > 0 && (
+              <div className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 backdrop-blur-sm">
+                {product.colors
+                  .slice(0, 4)
+                  .map((color: { hex: string; name?: string }, idx: number) => (
+                    <div
+                      key={`${color.hex}-${idx}`}
+                      className="h-4 w-4 rounded-full border-2 border-card shadow-sm"
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                {product.colors.length > 4 && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">
+                    +{product.colors.length - 4}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Freshness badge */}
+          <div className="mt-2">
+            <PriceFreshnessBadge product={product} size="sm" />
+          </div>
+        </div>
+
+        {/* Sidebar actions */}
         <div
           className={cn(
-            'absolute right-3 top-12 z-20 flex flex-col gap-2',
-            'transition-all duration-300',
-            'opacity-100 md:opacity-0',
-            'md:translate-x-4 md:group-hover:translate-x-0 md:group-hover:opacity-100',
+            'absolute right-0 top-12 flex flex-col gap-1 p-1 transition-all duration-300',
+            isHovered ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
           )}
         >
           <Tooltip>
@@ -160,22 +199,13 @@ export function EnhancedProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                aria-label="Favoritar"
-                data-testid="product-card-favorite"
-                aria-pressed={isFavorited}
-                className={cn(
-                  'h-10 w-10 rounded-full bg-card/95 shadow-md backdrop-blur-md',
-                  'transition-all hover:scale-110',
-                  isFavorited && 'border-destructive/30 bg-destructive/10',
-                )}
-                onClick={(e: React.MouseEvent) => {
+                className="h-7 w-7 rounded-full shadow-md"
+                onClick={(e) => {
                   e.stopPropagation();
-                  onToggleFavorite?.(product.id);
+                  onFavorite?.(product);
                 }}
               >
-                <Heart
-                  className={cn('h-4 w-4', isFavorited && 'fill-destructive text-destructive')}
-                />
+                <Heart className={cn('h-3.5 w-3.5', isFavorited && 'fill-current text-red-500')} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
@@ -188,24 +218,16 @@ export function EnhancedProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                aria-label="GitCompare"
-                className={cn(
-                  'h-10 w-10 rounded-full bg-card/95 shadow-md backdrop-blur-md',
-                  'transition-all hover:scale-110',
-                  isInCompare && 'border-primary/30 bg-primary/10',
-                )}
-                onClick={(e: React.MouseEvent) => {
+                className="h-7 w-7 rounded-full shadow-md"
+                onClick={(e) => {
                   e.stopPropagation();
-                  onToggleCompare?.(product.id);
+                  onCompare?.(product);
                 }}
-                disabled={!isInCompare && !canAddToCompare}
               >
-                <GitCompare className={cn('h-4 w-4', isInCompare && 'text-primary')} />
+                <GitCompare className={cn('h-3.5 w-3.5', isInComparison && 'text-primary')} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
-              {isInCompare ? 'Remover da comparação' : 'Comparar'}
-            </TooltipContent>
+            <TooltipContent side="left">Comparar</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -213,203 +235,80 @@ export function EnhancedProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                aria-label="Visualizar"
-                className="h-10 w-10 rounded-full bg-card/95 shadow-md backdrop-blur-md transition-all hover:scale-110"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onQuickView?.(product);
-                }}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Visualização rápida</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon"
-                aria-label="Compartilhar"
-                className="h-10 w-10 rounded-full bg-card/95 shadow-md backdrop-blur-md transition-all hover:scale-110"
-                onClick={(e: React.MouseEvent) => {
+                className="h-7 w-7 rounded-full shadow-md"
+                onClick={(e) => {
                   e.stopPropagation();
                   onShare?.(product);
                 }}
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">Compartilhar</TooltipContent>
           </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-7 w-7 rounded-full shadow-md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick?.();
+                }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Ver detalhes</TooltipContent>
+          </Tooltip>
         </div>
 
-        {/* Quick Add to Quote - Bottom overlay on hover */}
+        {/* Quantity selector */}
         <AnimatePresence>
-          {isHovered && onQuickAdd && (
+          {isHovered && (
             <motion.div
-              className="absolute bottom-0 left-0 right-0 z-20 p-4"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute bottom-16 left-3 right-3 flex items-center justify-between rounded-lg bg-background/95 px-3 py-1.5 shadow-lg backdrop-blur-sm"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-2 rounded-full border border-border/50 bg-card/95 p-2 shadow-xl backdrop-blur-md">
+              <span className="text-xs text-muted-foreground">Qtd:</span>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setQuickAddQuantity(Math.max(1, quickAddQuantity - 1))}
-                  aria-label="Diminuir quantidade"
+                  className="h-5 w-5"
+                  onClick={() => setQuantity((q) => Math.max(product.minOrder || 1, q - (product.minOrder || 1)))}
                 >
-                  -
+                  <span className="text-sm font-bold">-</span>
                 </Button>
-                <span className="w-8 text-center text-sm font-medium">{quickAddQuantity}</span>
+                <Badge variant="secondary" className="min-w-[2rem] justify-center text-xs">
+                  {quantity}
+                </Badge>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setQuickAddQuantity(quickAddQuantity + 1)}
-                  aria-label="Aumentar quantidade"
+                  className="h-5 w-5"
+                  onClick={() => setQuantity((q) => q + (product.minOrder || 1))}
                 >
-                  +
-                </Button>
-                <Button
-                  data-testid="product-card-quick-add"
-                  size="sm"
-                  className="flex-1 gap-2 rounded-full"
-                  onClick={() => onQuickAdd(product, quickAddQuantity)}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  Adicionar
+                  <span className="text-sm font-bold">+</span>
                 </Button>
               </div>
+              <Button
+                size="sm"
+                className="h-6 gap-1 text-xs"
+                onClick={() => onQuickAdd?.(product, quantity)}
+              >
+                <ChevronRight className="h-3 w-3" />
+                OK
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Color variations preview */}
-        {product.colors?.length > 0 && (
-          <motion.div
-            className={cn(
-              'absolute bottom-4 left-4 z-10',
-              'transition-all duration-300',
-              isHovered ? 'opacity-0' : 'opacity-100',
-            )}
-          >
-            <div className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 backdrop-blur-sm">
-              {product.colors
-                .slice(0, 4)
-                .map((color: { hex: string; name?: string }, idx: number) => (
-                  <div
-                    key={`${color.hex}-${idx}`}
-                    className="h-4 w-4 rounded-full border-2 border-card shadow-sm"
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              {product.colors.length > 4 && (
-                <span className="ml-1 text-[10px] text-muted-foreground">
-                  +{product.colors.length - 4}
-                </span>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="space-y-3 p-4">
-        {/* Supplier */}
-        <div className="flex items-center justify-between">
-          <Badge variant="secondary" className="text-[10px]">
-            {product.supplier?.name || 'Fornecedor'}
-          </Badge>
-        </div>
-
-        {/* Name */}
-        <h3
-          data-testid="product-card-name"
-          data-product-name={product.name}
-          className="line-clamp-2 min-h-[2.5rem] font-display text-sm font-medium transition-colors group-hover:text-primary"
-        >
-          {product.name}
-        </h3>
-
-        {/* Price */}
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] text-muted-foreground">A partir de</p>
-            <span className="inline-flex items-center gap-1.5 text-lg font-bold">
-              {formatPrice(product.price)}
-              <PriceFreshnessBadge
-                priceUpdatedAt={product.priceUpdatedAt}
-                thresholdDays={product.priceFreshnessThresholdDays}
-                variant="icon-only"
-              />
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Package className="h-3 w-3" />
-            {product.stock?.toLocaleString('pt-BR')} un
-          </div>
-        </div>
-
-        {/* View More Indicator */}
-        <motion.div
-          className="flex items-center justify-center gap-1 border-t border-border/50 pt-2 text-xs text-primary"
-          animate={{ x: isHovered ? 5 : 0 }}
-        >
-          Ver detalhes
-          <ChevronRight className="h-3 w-3" />
-        </motion.div>
-      </div>
-
-      {/* Hover Preview Popup */}
-      <AnimatePresence>
-        {showPreview && (
-          <motion.div
-            className="absolute left-full top-0 z-50 ml-4 w-72 overflow-hidden rounded-xl border bg-card shadow-xl"
-            initial={{ opacity: 0, x: -20, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="space-y-3 p-4">
-              <h4 className="text-sm font-semibold">{product.name}</h4>
-
-              <p className="line-clamp-3 text-xs text-muted-foreground">{product.description}</p>
-
-              {Array.isArray(product.materials) && product.materials.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {product.materials.slice(0, 3).map((material: string) => (
-                    <Badge key={material} variant="outline" className="text-[10px]">
-                      {material}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-muted-foreground">Mín. pedido</p>
-                  <p className="font-medium">{product.minQuantity || 1} un</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Prazo</p>
-                  <p className="font-medium">Consultar</p>
-                </div>
-              </div>
-
-              <Button className="w-full" size="sm">
-                Ver produto completo
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </article>
     </article>
   );
 }
