@@ -1,10 +1,6 @@
 // Hook CRUD para Tecnicas de Gravacao (via external-db-bridge)
+import { dbInvoke, dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  invokeExternalDb,
-  invokeExternalDbSingle,
-  invokeExternalDbDelete,
-} from '@/lib/external-db';
 import type {
   TecnicaGravacao,
   TecnicaGravacaoVariante,
@@ -32,12 +28,12 @@ export function useTecnicasGravacao() {
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<TecnicaGravacaoWithVariantes[]> => {
       const [tecnicasResult, variantesResult] = await Promise.all([
-        invokeExternalDb<TecnicaGravacao>({
+        dbInvoke<TecnicaGravacao>({
           table: 'tecnica_gravacao',
           operation: 'select',
           orderBy: { column: 'nome', ascending: true },
         }),
-        invokeExternalDb<{ tecnica_gravacao_id: string }>({
+        dbInvoke<{ tecnica_gravacao_id: string }>({
           table: 'tecnica_gravacao_variante',
           operation: 'select',
           select: 'tecnica_gravacao_id',
@@ -61,7 +57,7 @@ export function useTecnicasGravacao() {
   const createMutation = useMutation({
     mutationFn: async (formData: TecnicaGravacaoFormData): Promise<TecnicaGravacao> => {
       const slug = generateSlug(formData.nome);
-      return invokeExternalDbSingle<TecnicaGravacao>({
+      return dbInvokeSingle<TecnicaGravacao>({
         table: 'tecnica_gravacao',
         operation: 'insert',
         data: { ...formData, slug },
@@ -85,7 +81,7 @@ export function useTecnicasGravacao() {
       if (updates.nome) {
         updateData.slug = generateSlug(updates.nome);
       }
-      return invokeExternalDbSingle<TecnicaGravacao>({
+      return dbInvokeSingle<TecnicaGravacao>({
         table: 'tecnica_gravacao',
         operation: 'update',
         id,
@@ -104,7 +100,7 @@ export function useTecnicasGravacao() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string): Promise<void> => {
       // Verificar variantes vinculadas
-      const variantesResult = await invokeExternalDb<{ id: string }>({
+      const variantesResult = await dbInvoke<{ id: string }>({
         table: 'tecnica_gravacao_variante',
         operation: 'select',
         filters: { tecnica_gravacao_id: id },
@@ -119,7 +115,7 @@ export function useTecnicasGravacao() {
         throw new Error(`Nao e possivel excluir: existem ${numVariantes} variante(s) vinculada(s)`);
       }
 
-      await invokeExternalDbDelete('tecnica_gravacao', id);
+      await dbInvokeDelete('tecnica_gravacao', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -132,7 +128,7 @@ export function useTecnicasGravacao() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }): Promise<void> => {
-      await invokeExternalDbSingle({
+      await dbInvokeSingle({
         table: 'tecnica_gravacao',
         operation: 'update',
         id,
@@ -173,13 +169,13 @@ export function useTecnicaGravacao(id: string | undefined) {
       if (!id) return null;
 
       const [tecnicaResult, variantesResult] = await Promise.all([
-        invokeExternalDb<TecnicaGravacao>({
+        dbInvoke<TecnicaGravacao>({
           table: 'tecnica_gravacao',
           operation: 'select',
           filters: { id },
           limit: 1,
         }),
-        invokeExternalDb<TecnicaGravacaoVariante>({
+        dbInvoke<TecnicaGravacaoVariante>({
           table: 'tecnica_gravacao_variante',
           operation: 'select',
           filters: { tecnica_gravacao_id: id },

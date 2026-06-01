@@ -304,16 +304,16 @@ export function useMagicUpState() {
     (async () => {
       setLoadingColors(true);
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
+        const { dbInvoke } = await import('@/lib/db/postgrest');
         const [variantsResult, imagesResult] = await Promise.all([
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_variants',
             operation: 'select',
             filters: { product_id: selectedProduct.id },
             orderBy: { column: 'color_name', ascending: true },
             limit: 100,
           }),
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_images',
             operation: 'select',
             filters: { product_id: selectedProduct.id },

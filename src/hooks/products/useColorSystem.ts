@@ -1,6 +1,6 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { invokeExternalDb } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 export interface ColorGroup {
@@ -32,10 +32,10 @@ export interface ColorFilters {
   nuances: ColorNuance[];
 }
 
-// Migrated from supabase.functions.invoke('external-db-bridge') to invokeExternalDb
+// Migrated from supabase.functions.invoke('external-db-bridge') to dbInvoke
 // (2026-05-30) — uses REST native PostgREST path, zero Edge Function calls.
 async function fetchExternalColors() {
-  const groupsResult = await invokeExternalDb<Record<string, string>>({
+  const groupsResult = await dbInvoke<Record<string, string>>({
     table: 'color_groups',
     operation: 'select',
     filters: { is_active: true },
@@ -43,7 +43,7 @@ async function fetchExternalColors() {
   });
   const groups = groupsResult.records || [];
 
-  const variationsResult = await invokeExternalDb<Record<string, string>>({
+  const variationsResult = await dbInvoke<Record<string, string>>({
     table: 'color_variations',
     operation: 'select',
     filters: { is_active: true },

@@ -5,11 +5,11 @@
  * Dados da técnica vêm via lookup em 'tabela_preco_gravacao_oficial'.
  *
  * FIX (2026-05-29): substituídas as chamadas diretas a supabase.functions.invoke
- * por invokeExternalDb, que respeita o kill-switch edge_external_db_bridge e
+ * por dbInvoke, que respeita o kill-switch edge_external_db_bridge e
  * usa REST nativo quando o bridge está OFF — eliminando o toast
  * "Failed to send a request to the Edge Function" na página de produto.
  */
-import { invokeExternalDb } from '@/lib/external-db/bridge';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
@@ -52,7 +52,7 @@ export interface PrintAreaFromProduct {
  * Busca áreas de gravação da tabela print_area_techniques + resolve técnicas.
  * Retorna array vazio se o produto não tiver áreas configuradas.
  *
- * Usa invokeExternalDb (com kill-switch + REST nativo) em vez de chamar
+ * Usa dbInvoke (com kill-switch + REST nativo) em vez de chamar
  * supabase.functions.invoke diretamente, para não produzir erros quando o
  * bridge está descontinuado.
  */
@@ -61,7 +61,7 @@ export async function fetchPrintAreasFromProduct(
 ): Promise<PrintAreaFromProduct[]> {
   try {
     // 1. Buscar áreas da tabela print_area_techniques
-    const areasResult = await invokeExternalDb<Record<string, unknown>>({
+    const areasResult = await dbInvoke<Record<string, unknown>>({
       table: 'print_area_techniques',
       operation: 'select',
       filters: { product_id: productId, is_active: true },
@@ -85,7 +85,7 @@ export async function fetchPrintAreasFromProduct(
     const techById = new Map<string, TabelaPrecoCanonical>();
     if (priceTableIds.size > 0) {
       try {
-        const techResult = await invokeExternalDb<Record<string, unknown>>({
+        const techResult = await dbInvoke<Record<string, unknown>>({
           table: 'tabela_preco_gravacao_oficial',
           operation: 'select',
           filters: { ativo: true },

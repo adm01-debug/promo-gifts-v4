@@ -2,8 +2,9 @@
  * Hook para buscar nomes dos fornecedores a partir de IDs.
  * Consulta a tabela 'suppliers' no banco externo.
  */
+import { dbBatch } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeBatchBridge, type BatchQuery } from '@/lib/external-db';
+import { type BatchQuery } from '@/lib/external-db';
 
 /**
  * Busca nomes dos fornecedores para um conjunto de IDs.
@@ -28,7 +29,7 @@ export function useSupplierNames(supplierIds: string[]) {
           cacheKey: `supplier-${id}`,
         }));
 
-        const results = await invokeBatchBridge(queries);
+        const results = await dbBatch(queries);
         const map = new Map<string, string>();
 
         results.forEach((result, idx) => {

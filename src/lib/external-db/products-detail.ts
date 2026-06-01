@@ -1,8 +1,9 @@
 /**
  * Product detail fetching — fetchById, bySku, categories, colors.
  */
+import { dbInvoke, dbBatch } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { invokeExternalDb, invokeBatchBridge, type InvokeResult, type BatchQuery } from './bridge';
+import { type InvokeResult, type BatchQuery } from './bridge';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
 import {
   type PromobrindProduct,
@@ -31,7 +32,7 @@ async function fetchProductWithRetry(
   for (let selectIdx = 0; selectIdx < selectFields.length; selectIdx++) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        return await invokeExternalDb<PromobrindProduct>({
+        return await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters: { id: productId },
@@ -75,7 +76,7 @@ export async function fetchPromobrindProductById(
   // Paralelização: as 4 famílias de fetch dependem só de `productId` (e do
   // próprio `product` já carregado), então podem ir juntas em vez de em
   // série. Cada chamada continua propagando seu próprio request-id via
-  // invokeExternalDb / invokeBatchBridge — a rastreabilidade no painel de
+  // dbInvoke / dbBatch — a rastreabilidade no painel de
   // telemetria fica preservada (1 req_id por linha do timeline).
   //
   // Etapas:
@@ -109,7 +110,7 @@ export async function fetchPromobrindProductById(
   // poucas fotos) + galeria geral. Se atingir o teto, fazemos uma 2ª página
   // sob demanda (raro). Payload típico cai ~60% para produtos com muitas cores.
   const IMAGES_PAGE = 80;
-  const imagesPromise = invokeExternalDb<ProductImage>({
+  const imagesPromise = dbInvoke<ProductImage>({
     table: 'product_images',
     operation: 'select',
     select:
@@ -177,7 +178,7 @@ export async function fetchPromobrindProductById(
   const enrichmentPromise: Promise<{ materialIds: string[] }> =
     enrichmentQueries.length === 0
       ? Promise.resolve({ materialIds: [] })
-      : invokeBatchBridge(enrichmentQueries)
+      : dbBatch(enrichmentQueries)
           .then((batchResults) => {
             const materialIds: string[] = [];
             enrichmentSlots.forEach((slot, idx) => {
@@ -234,7 +235,7 @@ export async function fetchPromobrindProductById(
     sku: string | null;
     stock_quantity: number | null;
   };
-  const variantsPromise = invokeExternalDb<Variant>({
+  const variantsPromise = dbInvoke<Variant>({
     table: 'product_variants',
     operation: 'select',
     select: 'id, color_name, color_hex, color_code, sku, stock_quantity',
@@ -261,7 +262,7 @@ export async function fetchPromobrindProductById(
     title: string | null;
     cloudflare_status: string | null;
   };
-  const videosPromise = invokeExternalDb<Video>({
+  const videosPromise = dbInvoke<Video>({
     table: 'product_videos',
     operation: 'select',
     select:
@@ -298,7 +299,7 @@ export async function fetchPromobrindProductById(
     notes: string | null;
   };
   const kitPromise: Promise<KitComponent[]> = product.is_kit
-    ? invokeExternalDb<KitComponent>({
+    ? dbInvoke<KitComponent>({
         table: 'product_kit_components',
         operation: 'select',
         select:
@@ -331,7 +332,7 @@ export async function fetchPromobrindProductById(
   let imagesAll: ProductImage[] = allProductImages;
   if (allProductImages.length === IMAGES_PAGE) {
     try {
-      const more = await invokeExternalDb<ProductImage>({
+      const more = await dbInvoke<ProductImage>({
         table: 'product_images',
         operation: 'select',
         select:
@@ -435,7 +436,7 @@ export async function fetchPromobrindProductById(
     if (fallbackVariantIds.length > 0) {
       try {
         const inFilter = `in.(${fallbackVariantIds.join(',')})`;
-        const fb = await invokeExternalDb<{
+        const fb = await dbInvoke<{
           id: string;
           images: string[] | null;
           selected_thumbnail: string | null;
@@ -502,7 +503,7 @@ export async function fetchPromobrindProductBySku(sku: string): Promise<Promobri
   let lastError: unknown;
   for (const select of selectFields) {
     try {
-      const result = await invokeExternalDb<PromobrindProduct>({
+      const result = await dbInvoke<PromobrindProduct>({
         table: 'products',
         operation: 'select',
         filters: { sku },
@@ -520,7 +521,7 @@ export async function fetchPromobrindProductBySku(sku: string): Promise<Promobri
 
 export async function fetchPromobrindCategories(): Promise<{ id: string; name: string }[]> {
   try {
-    const result = await invokeExternalDb<{ id: string; name: string }>({
+    const result = await dbInvoke<{ id: string; name: string }>({
       table: 'categories',
       operation: 'select',
       select: 'id, name',
@@ -534,7 +535,7 @@ export async function fetchPromobrindCategories(): Promise<{ id: string; name: s
     }
     return result.records;
   } catch {
-    const result = await invokeExternalDb<{ category_id: string; main_category_id: string }>({
+    const result = await dbInvoke<{ category_id: string; main_category_id: string }>({
       table: 'products',
       operation: 'select',
       filters: { active: true },
@@ -554,7 +555,7 @@ export async function fetchPromobrindColors(): Promise<
   { name: string; hex: string; group?: string }[]
 > {
   try {
-    const result = await invokeExternalDb<{
+    const result = await dbInvoke<{
       color_name: string | null;
       color_hex: string | null;
       color_code: string | null;

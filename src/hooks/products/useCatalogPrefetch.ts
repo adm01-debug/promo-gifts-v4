@@ -1,7 +1,7 @@
+import { dbBatch } from '@/lib/db/postgrest';
 import { useEffect, useRef } from 'react';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { invokeBatchBridge } from '@/lib/external-db/bridge';
 import { fetchPromobrindCategories } from '@/lib/external-db/products-detail';
 import {
   CATALOG_BATCH_PAGES,
@@ -25,7 +25,7 @@ export function prefetchCatalog(queryClient: QueryClient) {
         ...(i === 0 ? { countMode: 'exact' } : {}),
       }));
       const [batchResults, categoriesRaw] = await Promise.all([
-        invokeBatchBridge(batchQueries),
+        dbBatch(batchQueries),
         fetchPromobrindCategories().catch(() => [] as { id: string; name: string }[]),
       ]);
       const categoriesById = new Map(categoriesRaw.map((c) => [String(c.id), c.name]));

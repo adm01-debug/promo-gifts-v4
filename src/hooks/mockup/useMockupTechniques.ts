@@ -8,10 +8,10 @@
  *        to prevent orphaned null-key entries.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useMemo } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
-import { invokeExternalDb } from '@/lib/external-db';
 import { adaptCustomizationOptions } from '@/lib/personalization/adapters';
 
 interface Technique {
@@ -109,7 +109,7 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
         /* ignore */
       }
 
-      const techResult = await invokeExternalDb<{ id: string; code: string; name: string }>({
+      const techResult = await dbInvoke<{ id: string; code: string; name: string }>({
         table: 'personalization_techniques',
         operation: 'select',
         limit: 200,
@@ -117,7 +117,7 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
 
       if (!techResult.records.length) return new Map();
 
-      const faixaResult = await invokeExternalDb<{
+      const faixaResult = await dbInvoke<{
         tabela_preco_gravacao_id: string;
         largura_max: number | null;
         altura_max: number | null;

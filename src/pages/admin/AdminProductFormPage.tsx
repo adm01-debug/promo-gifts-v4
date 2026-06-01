@@ -9,10 +9,10 @@
  *            sejam persistidas e apareçam em edit mode.
  */
 
+import { dbInvokeSingle } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  invokeExternalDbSingle,
   fetchPromobrindProductById,
   getProductImageUrl,
   getProductPrice,
@@ -62,7 +62,9 @@ export default function AdminProductFormPage() {
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'form' | 'history'>('form');
-  const [lastPriceUpdate, setLastPriceUpdate] = useState<{ date: string; user: string } | null>(null);
+  const [lastPriceUpdate, setLastPriceUpdate] = useState<{ date: string; user: string } | null>(
+    null,
+  );
 
   // BUG-03 FIX: ref populated by ProductEngravingSection with flushLocalAreas.
   // After product creation, we call this before navigate() so local engraving areas
@@ -77,7 +79,9 @@ export default function AdminProductFormPage() {
           const parsed = JSON.parse(stored);
           setDuplicateProduct(parsed);
           toast.info(`Duplicando produto: ${parsed.name}. Altere o SKU antes de salvar.`);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         sessionStorage.removeItem('duplicate_product');
       }
     }
@@ -92,29 +96,36 @@ export default function AdminProductFormPage() {
       setIsLoading(true);
       try {
         const fullProduct = await fetchPromobrindProductById(id);
-        if (fullProduct) { setProduct(fullProduct); }
-        else { toast.error('Produto não encontrado'); navigate('/admin/cadastros'); }
+        if (fullProduct) {
+          setProduct(fullProduct);
+        } else {
+          toast.error('Produto não encontrado');
+          navigate('/admin/cadastros');
+        }
       } catch (err) {
         console.error('Error loading product:', err);
         toast.error('Erro ao carregar produto');
         navigate('/admin/cadastros');
-      } finally { setIsLoading(false); }
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadProduct();
-    
+
     // Fetch last price freshness update from audit log
     if (isEdit && id) {
       const loadHistory = async () => {
         const logs = await fetchAuditHistory('products', id);
-        const priceLog = logs.find(log => 
-          log.action === 'UPDATE' && 
-          log.new_values && 
-          'price_freshness_threshold_days' in log.new_values
+        const priceLog = logs.find(
+          (log) =>
+            log.action === 'UPDATE' &&
+            log.new_values &&
+            'price_freshness_threshold_days' in log.new_values,
         );
         if (priceLog) {
           setLastPriceUpdate({
             date: priceLog.created_at,
-            user: priceLog.profiles?.full_name || priceLog.profiles?.email || 'Sistema'
+            user: priceLog.profiles?.full_name || priceLog.profiles?.email || 'Sistema',
           });
         }
       };
@@ -142,44 +153,75 @@ export default function AdminProductFormPage() {
       min_quantity: p.min_quantity ?? 1,
       min_order_quantity: p.min_order_quantity ?? null,
       price_freshness_threshold_days: p.price_freshness_threshold_days ?? 60,
-      height_cm: p.height_cm ?? null, width_cm: p.width_cm ?? null,
-      length_cm: p.length_cm ?? null, diameter_cm: p.diameter_cm ?? null,
-      weight_g: p.weight_g ?? null, capacity_ml: p.capacity_ml ?? null,
-      internal_height_cm: p.internal_height_cm ?? null, internal_width_cm: p.internal_width_cm ?? null,
-      internal_length_cm: p.internal_length_cm ?? null, internal_diameter_cm: p.internal_diameter_cm ?? null,
+      height_cm: p.height_cm ?? null,
+      width_cm: p.width_cm ?? null,
+      length_cm: p.length_cm ?? null,
+      diameter_cm: p.diameter_cm ?? null,
+      weight_g: p.weight_g ?? null,
+      capacity_ml: p.capacity_ml ?? null,
+      internal_height_cm: p.internal_height_cm ?? null,
+      internal_width_cm: p.internal_width_cm ?? null,
+      internal_length_cm: p.internal_length_cm ?? null,
+      internal_diameter_cm: p.internal_diameter_cm ?? null,
       packing_type: p.packing_type ?? '',
-      box_width_mm: p.box_width_mm ?? null, box_height_mm: p.box_height_mm ?? null,
-      box_length_mm: p.box_length_mm ?? null, box_weight_kg: p.box_weight_kg ?? null,
-      box_quantity: p.box_quantity ?? null, box_volume_cm3: p.box_volume_cm3 ?? null,
-      packaging_material: p.packaging_material ?? '', packaging_color: p.packaging_color ?? '',
+      box_width_mm: p.box_width_mm ?? null,
+      box_height_mm: p.box_height_mm ?? null,
+      box_length_mm: p.box_length_mm ?? null,
+      box_weight_kg: p.box_weight_kg ?? null,
+      box_quantity: p.box_quantity ?? null,
+      box_volume_cm3: p.box_volume_cm3 ?? null,
+      packaging_material: p.packaging_material ?? '',
+      packaging_color: p.packaging_color ?? '',
       packaging_finish: p.packaging_finish ?? '',
-      is_active: p.is_active ?? p.active ?? true, is_featured: p.is_featured ?? false,
-      is_bestseller: p.is_bestseller ?? false, is_new: p.is_new ?? false,
+      is_active: p.is_active ?? p.active ?? true,
+      is_featured: p.is_featured ?? false,
+      is_bestseller: p.is_bestseller ?? false,
+      is_new: p.is_new ?? false,
       is_on_sale: p.is_on_sale ?? false,
       is_featured_expires_at: p.is_featured_expires_at ?? null,
       is_bestseller_expires_at: p.is_bestseller_expires_at ?? null,
       is_new_expires_at: p.is_new_expires_at ?? p.novelty_expires_at ?? null,
       is_on_sale_expires_at: p.is_on_sale_expires_at ?? null,
-      is_kit: p.is_kit ?? false, has_commercial_packaging: p.has_commercial_packaging ?? false,
-      is_imported: p.is_imported ?? false, is_textil: p.is_textil ?? false,
-      is_thermal: p.is_thermal ?? false, allows_personalization: p.allows_personalization ?? true,
-      has_gift_box: p.has_gift_box ?? false, has_optional_packaging: p.has_optional_packaging ?? false,
-      ncm_code: p.ncm_code ?? '', ean: p.ean ?? '', gtin: p.gtin ?? '',
-      ipi_rate: p.ipi_rate ?? null, country_of_origin: p.country_of_origin ?? p.origin_country ?? '',
-      cfop: p.cfop ?? '', csosn: p.csosn ?? '', icms_rate: p.icms_rate ?? null,
-      pis_rate: p.pis_rate ?? null, cofins_rate: p.cofins_rate ?? null,
-      tax_regime: p.tax_regime ?? '', cest: p.cest ?? '',
-      freight_class: p.freight_class ?? '', default_carrier: p.default_carrier ?? '',
-      shipping_weight_kg: p.shipping_weight_kg ?? null, shipping_width_cm: p.shipping_width_cm ?? null,
-      shipping_height_cm: p.shipping_height_cm ?? null, shipping_length_cm: p.shipping_length_cm ?? null,
-      cubic_weight: p.cubic_weight ?? null, requires_special_shipping: p.requires_special_shipping ?? false,
-      shipping_notes: p.shipping_notes ?? '', lead_time_days: p.lead_time_days ?? null,
-      supply_mode: p.supply_mode ?? '', warranty_months: p.warranty_months ?? null,
-      gender: p.gender ?? '', meta_title: p.meta_title ?? '',
+      is_kit: p.is_kit ?? false,
+      has_commercial_packaging: p.has_commercial_packaging ?? false,
+      is_imported: p.is_imported ?? false,
+      is_textil: p.is_textil ?? false,
+      is_thermal: p.is_thermal ?? false,
+      allows_personalization: p.allows_personalization ?? true,
+      has_gift_box: p.has_gift_box ?? false,
+      has_optional_packaging: p.has_optional_packaging ?? false,
+      ncm_code: p.ncm_code ?? '',
+      ean: p.ean ?? '',
+      gtin: p.gtin ?? '',
+      ipi_rate: p.ipi_rate ?? null,
+      country_of_origin: p.country_of_origin ?? p.origin_country ?? '',
+      cfop: p.cfop ?? '',
+      csosn: p.csosn ?? '',
+      icms_rate: p.icms_rate ?? null,
+      pis_rate: p.pis_rate ?? null,
+      cofins_rate: p.cofins_rate ?? null,
+      tax_regime: p.tax_regime ?? '',
+      cest: p.cest ?? '',
+      freight_class: p.freight_class ?? '',
+      default_carrier: p.default_carrier ?? '',
+      shipping_weight_kg: p.shipping_weight_kg ?? null,
+      shipping_width_cm: p.shipping_width_cm ?? null,
+      shipping_height_cm: p.shipping_height_cm ?? null,
+      shipping_length_cm: p.shipping_length_cm ?? null,
+      cubic_weight: p.cubic_weight ?? null,
+      requires_special_shipping: p.requires_special_shipping ?? false,
+      shipping_notes: p.shipping_notes ?? '',
+      lead_time_days: p.lead_time_days ?? null,
+      supply_mode: p.supply_mode ?? '',
+      warranty_months: p.warranty_months ?? null,
+      gender: p.gender ?? '',
+      meta_title: p.meta_title ?? '',
       meta_keywords: Array.isArray(p.meta_keywords) ? p.meta_keywords.join(', ') : '',
-      slug: p.slug ?? '', canonical_url: p.canonical_url ?? '',
+      slug: p.slug ?? '',
+      canonical_url: p.canonical_url ?? '',
       video_url: p.videos?.[0] ?? p.video_url ?? '',
-      key_benefits: p.key_benefits ?? '', use_cases: p.use_cases ?? '',
+      key_benefits: p.key_benefits ?? '',
+      use_cases: p.use_cases ?? '',
     };
   }, []);
 
@@ -204,50 +246,83 @@ export default function AdminProductFormPage() {
       }
 
       const productData: Record<string, unknown> = {
-        sku: data.sku, name: data.name,
-        description: data.description || null, short_description: data.short_description || null,
-        meta_description: data.meta_description || null, brand: data.brand || null,
-        category_id: data.category_id || null, supplier_id: data.supplier_id || null,
+        sku: data.sku,
+        name: data.name,
+        description: data.description || null,
+        short_description: data.short_description || null,
+        meta_description: data.meta_description || null,
+        brand: data.brand || null,
+        category_id: data.category_id || null,
+        supplier_id: data.supplier_id || null,
         supplier_reference: data.supplier_reference || null,
-        sale_price: data.sale_price ?? 0, cost_price: data.cost_price ?? null,
-        suggested_price: data.suggested_price ?? null, stock_quantity: data.stock_quantity ?? 0,
-        stock_unit: data.stock_unit || 'un', product_type: data.product_type || 'product',
-        is_kit: data.product_type === 'kit', min_quantity: data.min_quantity ?? 1,
+        sale_price: data.sale_price ?? 0,
+        cost_price: data.cost_price ?? null,
+        suggested_price: data.suggested_price ?? null,
+        stock_quantity: data.stock_quantity ?? 0,
+        stock_unit: data.stock_unit || 'un',
+        product_type: data.product_type || 'product',
+        is_kit: data.product_type === 'kit',
+        min_quantity: data.min_quantity ?? 1,
         min_order_quantity: data.min_order_quantity ?? null,
         price_freshness_threshold_days: data.price_freshness_threshold_days ?? 60,
-        is_active: data.is_active, active: data.is_active,
-        is_featured: data.is_featured, is_bestseller: data.is_bestseller,
-        is_new: data.is_new, is_on_sale: data.is_on_sale,
+        is_active: data.is_active,
+        active: data.is_active,
+        is_featured: data.is_featured,
+        is_bestseller: data.is_bestseller,
+        is_new: data.is_new,
+        is_on_sale: data.is_on_sale,
         is_featured_expires_at: data.is_featured_expires_at || null,
         is_bestseller_expires_at: data.is_bestseller_expires_at || null,
         is_new_expires_at: data.is_new_expires_at || null,
         is_on_sale_expires_at: data.is_on_sale_expires_at || null,
         has_commercial_packaging: data.has_commercial_packaging,
-        is_imported: data.is_imported, is_textil: data.is_textil, is_thermal: data.is_thermal,
-        allows_personalization: data.allows_personalization, has_gift_box: data.has_gift_box,
-        has_optional_packaging: data.has_optional_packaging, packing_type: data.packing_type || null,
-        height_cm: data.height_cm ?? null, width_cm: data.width_cm ?? null,
-        length_cm: data.length_cm ?? null, diameter_cm: data.diameter_cm ?? null,
-        weight_g: data.weight_g ?? null, capacity_ml: data.capacity_ml ?? null,
-        internal_height_cm: data.internal_height_cm ?? null, internal_width_cm: data.internal_width_cm ?? null,
-        internal_length_cm: data.internal_length_cm ?? null, internal_diameter_cm: data.internal_diameter_cm ?? null,
-        box_width_mm: data.box_width_mm ?? null, box_height_mm: data.box_height_mm ?? null,
-        box_length_mm: data.box_length_mm ?? null, box_weight_kg: data.box_weight_kg ?? null,
-        box_quantity: data.box_quantity ?? null, box_volume_cm3: data.box_volume_cm3 ?? null,
-        packaging_material: data.packaging_material || null, packaging_color: data.packaging_color || null,
+        is_imported: data.is_imported,
+        is_textil: data.is_textil,
+        is_thermal: data.is_thermal,
+        allows_personalization: data.allows_personalization,
+        has_gift_box: data.has_gift_box,
+        has_optional_packaging: data.has_optional_packaging,
+        packing_type: data.packing_type || null,
+        height_cm: data.height_cm ?? null,
+        width_cm: data.width_cm ?? null,
+        length_cm: data.length_cm ?? null,
+        diameter_cm: data.diameter_cm ?? null,
+        weight_g: data.weight_g ?? null,
+        capacity_ml: data.capacity_ml ?? null,
+        internal_height_cm: data.internal_height_cm ?? null,
+        internal_width_cm: data.internal_width_cm ?? null,
+        internal_length_cm: data.internal_length_cm ?? null,
+        internal_diameter_cm: data.internal_diameter_cm ?? null,
+        box_width_mm: data.box_width_mm ?? null,
+        box_height_mm: data.box_height_mm ?? null,
+        box_length_mm: data.box_length_mm ?? null,
+        box_weight_kg: data.box_weight_kg ?? null,
+        box_quantity: data.box_quantity ?? null,
+        box_volume_cm3: data.box_volume_cm3 ?? null,
+        packaging_material: data.packaging_material || null,
+        packaging_color: data.packaging_color || null,
         packaging_finish: data.packaging_finish || null,
-        ncm_code: data.ncm_code || null, ean: data.ean || null, gtin: data.gtin || null,
+        ncm_code: data.ncm_code || null,
+        ean: data.ean || null,
+        gtin: data.gtin || null,
         country_of_origin: data.country_of_origin || null,
         supplier_product_url: data.supplier_product_url || null,
-        supply_mode: data.supply_mode || null, ipi_rate: data.ipi_rate ?? null,
-        lead_time_days: data.lead_time_days ?? null, gender: data.gender || null,
+        supply_mode: data.supply_mode || null,
+        ipi_rate: data.ipi_rate ?? null,
+        lead_time_days: data.lead_time_days ?? null,
+        gender: data.gender || null,
         meta_title: data.meta_title || null,
         meta_keywords: data.meta_keywords
-          ? data.meta_keywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+          ? data.meta_keywords
+              .split(',')
+              .map((k: string) => k.trim())
+              .filter(Boolean)
           : null,
-        slug: data.slug || null, canonical_url: data.canonical_url || null,
+        slug: data.slug || null,
+        canonical_url: data.canonical_url || null,
         videos: data.video_url ? [data.video_url] : [],
-        key_benefits: data.key_benefits || null, use_cases: data.use_cases || null,
+        key_benefits: data.key_benefits || null,
+        use_cases: data.use_cases || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -261,48 +336,55 @@ export default function AdminProductFormPage() {
 
       if (isEdit && product) {
         try {
-          await invokeExternalDbSingle<PromobrindProduct>({
-            table: 'products', operation: 'update', id: product.id, data: productData,
+          await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'update',
+            id: product.id,
+            data: productData,
           });
         } catch (error) {
           if (!isMissingPriceFreshnessThresholdColumn(error)) throw error;
           savedProductData = withoutPriceFreshnessThreshold(productData);
-          await invokeExternalDbSingle<PromobrindProduct>({
-            table: 'products', operation: 'update', id: product.id, data: savedProductData,
+          await dbInvokeSingle<PromobrindProduct>({
+            table: 'products',
+            operation: 'update',
+            id: product.id,
+            data: savedProductData,
           });
-          toast.warning('Produto salvo. A validade do preço usará 60 dias até a coluna existir no banco.');
+          toast.warning(
+            'Produto salvo. A validade do preço usará 60 dias até a coluna existir no banco.',
+          );
         }
 
         const { oldFields, newFields } = getChangedFields(
-          { 
-            sku: product.sku, 
-            name: product.name, 
-            description: product.description, 
-            sale_price: getProductPrice(product), 
-            stock_quantity: getProductStock(product), 
+          {
+            sku: product.sku,
+            name: product.name,
+            description: product.description,
+            sale_price: getProductPrice(product),
+            stock_quantity: getProductStock(product),
             is_active: product.is_active,
-            price_freshness_threshold_days: product.price_freshness_threshold_days
+            price_freshness_threshold_days: product.price_freshness_threshold_days,
           },
           savedProductData,
         );
         if (Object.keys(newFields).length > 0) {
-          await logAction({ 
-            action: 'UPDATE', 
-            entityType: 'products', 
-            entityId: product.id, 
-            oldValues: oldFields, 
-            newValues: newFields 
+          await logAction({
+            action: 'UPDATE',
+            entityType: 'products',
+            entityId: product.id,
+            oldValues: oldFields,
+            newValues: newFields,
           });
         }
 
         toast.success('Produto atualizado com sucesso');
         const refreshed = await fetchPromobrindProductById(product.id);
         if (refreshed) setProduct(refreshed);
-
       } else {
         let newProduct: PromobrindProduct;
         try {
-          newProduct = await invokeExternalDbSingle<PromobrindProduct>({
+          newProduct = await dbInvokeSingle<PromobrindProduct>({
             table: 'products',
             operation: 'insert',
             data: { ...productData, created_at: new Date().toISOString() },
@@ -310,19 +392,28 @@ export default function AdminProductFormPage() {
         } catch (error) {
           if (!isMissingPriceFreshnessThresholdColumn(error)) throw error;
           savedProductData = withoutPriceFreshnessThreshold(productData);
-          newProduct = await invokeExternalDbSingle<PromobrindProduct>({
+          newProduct = await dbInvokeSingle<PromobrindProduct>({
             table: 'products',
             operation: 'insert',
             data: { ...savedProductData, created_at: new Date().toISOString() },
           });
-          toast.warning('Produto criado. A validade do preço usará 60 dias até a coluna existir no banco.');
+          toast.warning(
+            'Produto criado. A validade do preço usará 60 dias até a coluna existir no banco.',
+          );
         }
 
         if (newProduct) {
           await logAction({
-            action: 'INSERT', entityType: 'products', entityId: newProduct.id,
+            action: 'INSERT',
+            entityType: 'products',
+            entityId: newProduct.id,
             oldValues: null,
-            newValues: { sku: savedProductData.sku, name: savedProductData.name, sale_price: savedProductData.sale_price, is_active: savedProductData.is_active },
+            newValues: {
+              sku: savedProductData.sku,
+              name: savedProductData.name,
+              sale_price: savedProductData.sale_price,
+              is_active: savedProductData.is_active,
+            },
           });
 
           // BUG-03 FIX: flush local engraving areas to DB BEFORE navigating to edit mode.
@@ -333,7 +424,9 @@ export default function AdminProductFormPage() {
             } catch (flushErr) {
               // Non-fatal: log and continue — user can re-add areas in edit mode
               console.error('[AdminProductFormPage] Failed to flush engraving areas:', flushErr);
-              toast.warning('Produto criado, mas algumas áreas de gravação não puderam ser salvas. Verifique na aba de Gravação.');
+              toast.warning(
+                'Produto criado, mas algumas áreas de gravação não puderam ser salvas. Verifique na aba de Gravação.',
+              );
             }
           }
 
@@ -356,14 +449,22 @@ export default function AdminProductFormPage() {
     if (!p) return [];
     const imgUrl = getProductImageUrl(p);
     if (imgUrl)
-      return [imgUrl, ...(Array.isArray(p.images) ? p.images.filter((i: string) => i !== imgUrl) : [])];
+      return [
+        imgUrl,
+        ...(Array.isArray(p.images) ? p.images.filter((i: string) => i !== imgUrl) : []),
+      ];
     return Array.isArray(p.images) ? p.images : [];
   }, []);
 
   if (isLoading) {
     return (
       <>
-        <PageSEO title="Carregando Produto..." description="Aguarde enquanto carregamos os dados do produto." path="/admin/cadastros/produto" noIndex />
+        <PageSEO
+          title="Carregando Produto..."
+          description="Aguarde enquanto carregamos os dados do produto."
+          path="/admin/cadastros/produto"
+          noIndex
+        />
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -378,7 +479,9 @@ export default function AdminProductFormPage() {
     <>
       <PageSEO
         title={isEdit ? `Editar: ${product?.sku || 'Produto'}` : 'Novo Produto'}
-        description={isEdit ? `Editando o produto ${product?.name}` : 'Cadastre um novo produto no catálogo.'}
+        description={
+          isEdit ? `Editando o produto ${product?.name}` : 'Cadastre um novo produto no catálogo.'
+        }
         path={`/admin/cadastros/produto/${id || 'novo'}`}
         noIndex
       />
@@ -390,12 +493,20 @@ export default function AdminProductFormPage() {
         {isEdit && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" aria-label="Voltar" onClick={() => navigate('/admin/cadastros')} className="h-9 w-9 rounded-lg">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Voltar"
+                onClick={() => navigate('/admin/cadastros')}
+                className="h-9 w-9 rounded-lg"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               {isEdit && product && (
                 <div>
-                  <p className="text-sm text-muted-foreground">{product.sku} — {product.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {product.sku} — {product.name}
+                  </p>
                 </div>
               )}
             </div>
@@ -403,17 +514,28 @@ export default function AdminProductFormPage() {
             <div className="flex items-center gap-2">
               {isEdit && product && (
                 <>
-                  <Button variant="outline" size="sm" className="gap-1.5"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
                     onClick={async () => {
                       const { exportProductPdf } = await import('@/utils/productPdfExport');
                       const formData = productToFormData(product) as ProductFormData;
-                      exportProductPdf({ formData, productImages: getProductImages(product), categoryName: product.category_name || product.category || '', supplierName: product.supplier_name || product.supplier || '' });
+                      exportProductPdf({
+                        formData,
+                        productImages: getProductImages(product),
+                        categoryName: product.category_name || product.category || '',
+                        supplierName: product.supplier_name || product.supplier || '',
+                      });
                       toast.success('PDF gerado com sucesso!');
                     }}
                   >
                     <FileDown className="h-3.5 w-3.5" /> Exportar PDF
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
                     onClick={() => {
                       const dupeData = { ...product, sku: `${product.sku}-COPIA` };
                       sessionStorage.setItem('duplicate_product', JSON.stringify(dupeData));
@@ -426,7 +548,10 @@ export default function AdminProductFormPage() {
               )}
 
               {isEdit && (
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'form' | 'history')}>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => setActiveTab(v as 'form' | 'history')}
+                >
                   <TabsList className="h-9">
                     <TabsTrigger value="form" className="gap-1.5 text-xs">
                       <Pencil className="h-3.5 w-3.5" /> Editar
@@ -441,7 +566,13 @@ export default function AdminProductFormPage() {
           </div>
         )}
 
-        <Suspense fallback={<div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          }
+        >
           {activeTab === 'form' ? (
             <ProductFormFullscreen
               initialData={
@@ -467,8 +598,14 @@ export default function AdminProductFormPage() {
               lastPriceUpdate={lastPriceUpdate}
             />
           ) : (
-            isEdit && id && (
-              <AuditHistory entityType="products" entityId={id} title="Histórico de Alterações" maxHeight="70vh" />
+            isEdit &&
+            id && (
+              <AuditHistory
+                entityType="products"
+                entityId={id}
+                title="Histórico de Alterações"
+                maxHeight="70vh"
+              />
             )
           )}
         </Suspense>

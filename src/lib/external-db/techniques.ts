@@ -1,7 +1,7 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 /**
  * Techniques and Print Areas for Promobrind.
  */
-import { invokeExternalDb } from './bridge';
 
 export interface PromobrindPrintArea {
   id: string;
@@ -114,7 +114,7 @@ export async function fetchPromobrindPrintAreas(productId: string): Promise<Prom
   const areas = await fetchPrintAreasFromProduct(productId);
   if (!areas.length) return [];
 
-  const techResult = await invokeExternalDb<TechniqueRawRow>({
+  const techResult = await dbInvoke<TechniqueRawRow>({
     table: 'tabela_preco_gravacao_oficial',
     operation: 'select',
     filters: { ativo: true },
@@ -182,7 +182,7 @@ export async function fetchPromobrindTechniques(options?: {
   if (options?.ids?.length) filters.id = options.ids;
   if (options?.codes?.length) filters.codigo = options.codes;
 
-  const result = await invokeExternalDb<TechniqueRawRow>({
+  const result = await dbInvoke<TechniqueRawRow>({
     table: 'tecnica_gravacao',
     operation: 'select',
     filters,
@@ -196,7 +196,7 @@ export async function fetchPromobrindTechniques(options?: {
 export async function fetchPromobrindTechniqueById(
   techniqueId: string,
 ): Promise<PromobrindTechnique | null> {
-  const result = await invokeExternalDb<TechniqueRawRow>({
+  const result = await dbInvoke<TechniqueRawRow>({
     table: 'tecnica_gravacao',
     operation: 'select',
     filters: { id: techniqueId },

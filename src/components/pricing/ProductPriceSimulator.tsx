@@ -1,3 +1,4 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +22,6 @@ import {
 } from './simulator';
 import { EngravingList } from './simulator/EngravingList';
 import { MultiEngravingResult } from './simulator/MultiEngravingResult';
-import { invokeExternalDb } from '@/lib/external-db';
 
 interface ProductPriceSimulatorProps {
   className?: string;
@@ -117,7 +117,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
     queryKey: ['simulator-variants', selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct) return [];
-      const result = await invokeExternalDb<{
+      const result = await dbInvoke<{
         id: string;
         color_name: string | null;
         color_hex: string | null;

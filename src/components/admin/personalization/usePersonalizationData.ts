@@ -1,7 +1,7 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
-import { invokeExternalDb } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -154,7 +154,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
   const { data: techniques } = useQuery({
     queryKey: ['techniques-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         select: 'id, code, name',

@@ -1,5 +1,5 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 
 export interface VariantWithStock {
   id: string;
@@ -52,7 +52,7 @@ export function useProductVariantsWithStock(productId: string | undefined) {
     queryFn: async (): Promise<VariantWithStock[]> => {
       if (!productId) return [];
 
-      const result = await invokeExternalDb<{
+      const result = await dbInvoke<{
         id: string;
         product_id: string;
         sku: string;

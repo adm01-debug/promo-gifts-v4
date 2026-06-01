@@ -1,3 +1,4 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useSearchParams } from 'react-router-dom';
@@ -11,7 +12,6 @@ import {
   useTemplateSnapshot,
 } from '@/hooks/kit-builder';
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
-import { invokeExternalDb } from '@/lib/external-db';
 import { calculateTotalKitPrice, type ExternalProductForKit } from '@/lib/kit-builder';
 import { logger } from '@/lib/logger';
 
@@ -115,7 +115,7 @@ export function useKitBuilderPageState() {
     if (productIdParam && !kitIdParam) {
       (async () => {
         try {
-          const result = await invokeExternalDb<ExternalProductForKit>({
+          const result = await dbInvoke<ExternalProductForKit>({
             table: 'products',
             operation: 'select',
             filters: { id: productIdParam },

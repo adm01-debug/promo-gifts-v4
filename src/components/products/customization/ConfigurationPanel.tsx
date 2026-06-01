@@ -7,12 +7,12 @@
  * Calcula preço somente quando todos os campos obrigatórios estão preenchidos.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Loader2, Palette, Clock, Ruler, AlertCircle, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { invokeExternalDb } from '@/lib/external-db';
 import { invokeExternalRpc } from '@/lib/external-rpc';
 import type {
   PrintAreaV2,
@@ -65,7 +65,7 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
 
     (async () => {
       try {
-        const result = await invokeExternalDb<FaixaDimensional>({
+        const result = await dbInvoke<FaixaDimensional>({
           table: 'tabela_preco_gravacao_oficial_faixa',
           operation: 'select',
           select: 'largura_min, largura_max, altura_min, altura_max',

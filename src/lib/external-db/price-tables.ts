@@ -1,7 +1,7 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 /**
  * Price tables for Promobrind customization.
  */
-import { invokeExternalDb } from './bridge';
 
 export interface PromobrindPriceTable {
   id: string;
@@ -36,7 +36,7 @@ export async function fetchPromobrindPriceTables(options?: {
   if (options?.techniqueName) filters.customization_type_name = options.techniqueName;
   if (options?.techniqueCode) filters.table_code = options.techniqueCode;
 
-  const result = await invokeExternalDb<Record<string, unknown>>({
+  const result = await dbInvoke<Record<string, unknown>>({
     table: 'customization_price_tables',
     operation: 'select',
     filters,

@@ -1,5 +1,5 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
@@ -189,7 +189,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
 
   const [catResult, supResult] = await Promise.all([
     !isMock && categoryIds.length > 0
-      ? invokeExternalDb<CategoryRecord>({
+      ? dbInvoke<CategoryRecord>({
           table: 'categories',
           operation: 'select',
           select: 'id, name',
@@ -198,7 +198,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
         })
       : { records: isMock ? MOCK_CATEGORIES : ([] as CategoryRecord[]) },
     !isMock && supplierIds.length > 0
-      ? invokeExternalDb<SupplierRecord>({
+      ? dbInvoke<SupplierRecord>({
           table: 'suppliers',
           operation: 'select',
           select: 'id, name, code',
@@ -275,7 +275,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: NOVELTY_SELECT,
@@ -315,7 +315,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
       // Buscar todas as novidades dos últimos 30 dias
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: NOVELTY_SELECT,
@@ -344,7 +344,7 @@ export function useNoveltyStats() {
       const cutoff = getCutoffDate();
 
       const [noveltiesResult, totalResult] = await Promise.all([
-        invokeExternalDb<RawProduct & { supplier_id: string | null }>({
+        dbInvoke<RawProduct & { supplier_id: string | null }>({
           table: 'products',
           operation: 'select',
           select: 'id, created_at, supplier_id',
@@ -352,7 +352,7 @@ export function useNoveltyStats() {
           limit: 500,
           countMode: 'exact',
         }),
-        invokeExternalDb<{ id: string }>({
+        dbInvoke<{ id: string }>({
           table: 'products',
           operation: 'select',
           select: 'id',
@@ -415,7 +415,7 @@ export function useNoveltyStats() {
           topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name || null;
         } else {
           try {
-            const supResult = await invokeExternalDb<{ name: string }>({
+            const supResult = await dbInvoke<{ name: string }>({
               table: 'suppliers',
               operation: 'select',
               select: 'name',
@@ -463,7 +463,7 @@ export function useNovelties(
 
       if (supplierCode) {
         // Precisa buscar o supplier_id pelo code
-        const supplierResult = await invokeExternalDb<{ id: string }>({
+        const supplierResult = await dbInvoke<{ id: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id',
@@ -475,7 +475,7 @@ export function useNovelties(
         }
       }
 
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: NOVELTY_SELECT,
@@ -506,7 +506,7 @@ export function useNoveltyCount() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<{ id: string }>({
+      const result = await dbInvoke<{ id: string }>({
         table: 'products',
         operation: 'select',
         select: 'id',
@@ -529,7 +529,7 @@ export function useIsProductNovelty(productId: string) {
   return useQuery<{ isNovelty: boolean; daysRemaining: number | null }>({
     queryKey: ['is-novelty', productId],
     queryFn: async () => {
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: 'id, created_at',
@@ -561,7 +561,7 @@ export function useNoveltyProductIds() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<{ id: string }>({
+      const result = await dbInvoke<{ id: string }>({
         table: 'products',
         operation: 'select',
         select: 'id',

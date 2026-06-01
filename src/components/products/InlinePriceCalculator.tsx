@@ -2,13 +2,13 @@
  * InlinePriceCalculator — Refactored orchestrator
  * Table + Calculator extracted to sub-components.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { invokeExternalDb } from '@/lib/external-db';
 import { PriceTiersTable } from './inline-price/PriceTiersTable';
 import { QuantityCalculator } from './inline-price/QuantityCalculator';
 
@@ -106,7 +106,7 @@ export function InlinePriceCalculator({
       try {
         const variantFilters: Record<string, unknown> = { product_id: productId, is_active: true };
         if (variantId) variantFilters.id = variantId;
-        const variantResponse = await invokeExternalDb<{ id: string }>({
+        const variantResponse = await dbInvoke<{ id: string }>({
           table: 'product_variants',
           operation: 'select',
           select: 'id',
@@ -119,7 +119,7 @@ export function InlinePriceCalculator({
           return;
         }
         const targetVariantId = variants[0].id as string;
-        const sourceResponse = await invokeExternalDb({
+        const sourceResponse = await dbInvoke({
           table: 'variant_supplier_sources',
           operation: 'select',
           select:

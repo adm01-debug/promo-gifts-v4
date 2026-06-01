@@ -5,8 +5,8 @@
  * to return product IDs matching selected color filters.
  * Works with lightweight products that don't have embedded color data.
  */
+import { dbBatch } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { invokeBatchBridge } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 interface UseProductsByColorOptions {
@@ -91,7 +91,7 @@ export function useProductsByColor({
         },
       ];
 
-      const refResults = await invokeBatchBridge(refQueries);
+      const refResults = await dbBatch(refQueries);
 
       const groupsData = refResults[0]?.success
         ? (refResults[0].data?.records as Record<string, unknown>[]) || []
@@ -166,7 +166,7 @@ export function useProductsByColor({
             },
           ];
 
-          const variantResults = await invokeBatchBridge(variantQueries);
+          const variantResults = await dbBatch(variantQueries);
           if (variantResults[0]?.success && variantResults[0].data?.records) {
             for (const r of variantResults[0].data.records as Array<{ product_id: string }>) {
               matchingProductIds.add(r.product_id);

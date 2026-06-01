@@ -2,7 +2,7 @@
  * Batch Import Helper — Client-side orchestrator for bulk product imports.
  * Sends products in chunks to external-db-bridge batch_insert/upsert.
  */
-import { invokeExternalDb } from './bridge';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
 
 export type ImportMode = 'insert' | 'upsert';
@@ -95,7 +95,7 @@ export async function checkExistingSkus(skus: string[]): Promise<Set<string>> {
   for (let i = 0; i < uniqueSkus.length; i += 100) {
     const chunk = uniqueSkus.slice(i, i + 100);
     try {
-      const response = await invokeExternalDb<{ sku: string }>({
+      const response = await dbInvoke<{ sku: string }>({
         table: 'products',
         operation: 'select',
         select: 'sku',
@@ -149,7 +149,7 @@ export async function executeBatchImport(
     progress.currentChunk = chunkIndex + 1;
 
     try {
-      const response = await invokeExternalDb<{ id: string; sku: string; name: string }>({
+      const response = await dbInvoke<{ id: string; sku: string; name: string }>({
         table: 'products',
         operation: 'batch_insert',
         data: chunk as unknown as Record<string, unknown>,

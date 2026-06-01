@@ -3,9 +3,9 @@
  * Consulta o banco externo para verificar disponibilidade
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 import type { KitItem, KitBox } from '@/lib/kit-builder/types';
 
 export interface StockAlert {
@@ -32,7 +32,7 @@ export function useKitStockValidation(items: KitItem[], box: KitBox | null, kitQ
     queryFn: async () => {
       if (productIds.length === 0) return [];
 
-      const result = await invokeExternalDb<VariantStock>({
+      const result = await dbInvoke<VariantStock>({
         table: 'product_variants',
         operation: 'select',
         select: 'product_id, stock_quantity, color_name',

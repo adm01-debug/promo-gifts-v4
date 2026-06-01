@@ -4,8 +4,8 @@
  * turnover_score e avg_velocity_7d de todos os produtos.
  * Cache de 10 minutos — dados de MV não mudam em tempo real.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 interface ProductIntelligenceRanking {
@@ -34,7 +34,7 @@ export function useSupplierSalesRanking() {
     queryKey: ['supplier-sales-ranking'],
     queryFn: async (): Promise<Map<string, SupplierSalesEntry>> => {
       try {
-        const result = await invokeExternalDb<ProductIntelligenceRanking>({
+        const result = await dbInvoke<ProductIntelligenceRanking>({
           table: 'mv_product_intelligence',
           operation: 'select',
           select: '*',

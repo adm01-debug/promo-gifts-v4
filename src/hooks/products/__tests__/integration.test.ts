@@ -2,13 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useProductVariantsWithStock } from '../useVariantSupplierSources';
-import { invokeExternalDb } from '@/lib/external-db';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Mock do invokeExternalDb
-vi.mock('@/lib/external-db', () => ({
-  invokeExternalDb: vi.fn(),
+// Mock do dbInvoke
+vi.mock('@/lib/db/postgrest', () => ({
+  dbInvoke: vi.fn(),
 }));
 
 let queryClient: QueryClient;
@@ -52,7 +52,7 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
       ],
     };
 
-    (invokeExternalDb as any).mockResolvedValue(mockDbResult);
+    (dbInvoke as any).mockResolvedValue(mockDbResult);
 
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
 
@@ -86,7 +86,7 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
       ],
     };
 
-    (invokeExternalDb as any).mockResolvedValue(mockDbResult);
+    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -115,7 +115,7 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
       ],
     };
 
-    (invokeExternalDb as any).mockResolvedValue(mockDbResult);
+    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -146,7 +146,7 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
       ],
     };
 
-    (invokeExternalDb as any).mockResolvedValue(mockDbResult);
+    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 

@@ -1,3 +1,4 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import {
@@ -13,7 +14,6 @@ import {
   buildPersonalizationsInsertPayload,
   round2,
 } from '@/hooks/quotes/quoteHelpers';
-import { invokeExternalDb } from '@/lib/external-db';
 import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
 export const quoteService = {
@@ -190,7 +190,7 @@ export const quoteService = {
   },
 
   async fetchTechniques(): Promise<PersonalizationTechnique[]> {
-    const result = await invokeExternalDb<PersonalizationTechnique>({
+    const result = await dbInvoke<PersonalizationTechnique>({
       table: 'personalization_techniques',
       operation: 'select',
       filters: { is_active: true },
@@ -222,7 +222,7 @@ export const quoteService = {
       console.error('[quoteService.logHistory] Failed to log history:', error);
       // We don't necessarily want to crash the whole operation if history logging fails,
       // but we should at least log it. Other service methods throw errors.
-      // throw error; 
+      // throw error;
     }
   },
 };

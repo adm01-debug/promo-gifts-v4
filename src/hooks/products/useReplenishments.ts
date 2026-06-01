@@ -1,5 +1,5 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 
 /** Window in days for considering a product as "replenished" */
 const REPLENISHMENT_WINDOW_DAYS = 30;
@@ -172,7 +172,7 @@ async function enrichReplenishments(
 
   const [catResult, supResult] = await Promise.all([
     categoryIds.length > 0
-      ? invokeExternalDb<CategoryRecord>({
+      ? dbInvoke<CategoryRecord>({
           table: 'categories',
           operation: 'select',
           select: 'id, name',
@@ -181,7 +181,7 @@ async function enrichReplenishments(
         })
       : { records: [] as CategoryRecord[] },
     supplierIds.length > 0
-      ? invokeExternalDb<SupplierRecord>({
+      ? dbInvoke<SupplierRecord>({
           table: 'suppliers',
           operation: 'select',
           select: 'id, name, code',
@@ -219,7 +219,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: REPLENISHMENT_SELECT,
@@ -251,7 +251,7 @@ export function useReplenishmentStats() {
       const cutoff = getCutoffDate();
 
       const [repResult, totalResult] = await Promise.all([
-        invokeExternalDb<RawProduct>({
+        dbInvoke<RawProduct>({
           table: 'products',
           operation: 'select',
           select: 'id, created_at, updated_at, supplier_id',
@@ -259,7 +259,7 @@ export function useReplenishmentStats() {
           limit: 500,
           countMode: 'exact',
         }),
-        invokeExternalDb<{ id: string }>({
+        dbInvoke<{ id: string }>({
           table: 'products',
           operation: 'select',
           select: 'id',
@@ -308,7 +308,7 @@ export function useReplenishmentStats() {
       let topSupplierName: string | null = null;
       if (topSupplierId) {
         try {
-          const supResult = await invokeExternalDb<{ name: string }>({
+          const supResult = await dbInvoke<{ name: string }>({
             table: 'suppliers',
             operation: 'select',
             select: 'name',
@@ -345,7 +345,7 @@ export function useReplenishmentCount() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const result = await invokeExternalDb<RawProduct>({
+      const result = await dbInvoke<RawProduct>({
         table: 'products',
         operation: 'select',
         select: 'id, created_at, updated_at',

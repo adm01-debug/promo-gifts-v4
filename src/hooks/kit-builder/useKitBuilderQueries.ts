@@ -4,9 +4,9 @@
  * caused by too many hooks in a single component/hook.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import {
   type KitBox,
   type KitItem,
@@ -116,7 +116,7 @@ export function useKitBuilderQueries() {
         const filters: Record<string, unknown> = { active: true };
         if (debouncedBoxSearch) filters._search = debouncedBoxSearch;
 
-        const result = await invokeExternalDb<ExternalProductForKit>({
+        const result = await dbInvoke<ExternalProductForKit>({
           table: 'products',
           operation: 'select',
           filters,
@@ -158,7 +158,7 @@ export function useKitBuilderQueries() {
         const filters: Record<string, unknown> = { active: true };
         if (debouncedItemSearch) filters._search = debouncedItemSearch;
 
-        const result = await invokeExternalDb<ExternalProductForKit>({
+        const result = await dbInvoke<ExternalProductForKit>({
           table: 'products',
           operation: 'select',
           filters,

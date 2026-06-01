@@ -2,8 +2,8 @@
  * useCatalogRealStats — Fetches real aggregate counts from the external DB.
  * Uses individual queries (not batch) because batch doesn't support countMode.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 
 export interface CatalogRealStats {
   totalVariants: number;
@@ -32,7 +32,7 @@ export function useCatalogRealStats() {
     queryFn: async () => {
       // Run 3 parallel queries with countMode: exact
       const [variantsResult, categoriesResult, suppliersResult] = await Promise.all([
-        invokeExternalDb<{ id: string }>({
+        dbInvoke<{ id: string }>({
           table: 'product_variants',
           operation: 'select',
           select: 'id',
@@ -41,7 +41,7 @@ export function useCatalogRealStats() {
           offset: 0,
           countMode: 'exact',
         }),
-        invokeExternalDb<{ id: string; name: string }>({
+        dbInvoke<{ id: string; name: string }>({
           table: 'categories',
           operation: 'select',
           select: 'id,name',
@@ -50,7 +50,7 @@ export function useCatalogRealStats() {
           offset: 0,
           countMode: 'exact',
         }),
-        invokeExternalDb<{ id: string }>({
+        dbInvoke<{ id: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id',

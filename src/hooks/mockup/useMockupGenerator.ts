@@ -7,6 +7,7 @@
  * BUG-J: isDraftLoading now exposed in return object.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import { needsConversion, ensureSupportedFormat } from '@/lib/image-converter';
@@ -23,7 +24,6 @@ import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
 import { showMockupSuccessToast } from '@/components/mockup/MockupSuccessToast';
 import type { TechniqueColorConfig } from '@/components/mockup/techniqueColorUtils';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 import { adaptTabelaPrecoRows } from '@/lib/personalization/adapters';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 import type { MockupProductSelection } from '@/components/mockup/MockupProductSelector';
@@ -336,11 +336,11 @@ export function useMockupGenerator() {
 
   const fetchData = useCallback(async () => {
     try {
-      // MIGRAÇÃO REST-NATIVO (2026-05-30): invokeExternalDb (REST-native-first, silencioso
+      // MIGRAÇÃO REST-NATIVO (2026-05-30): dbInvoke (REST-native-first, silencioso
       // quando o kill-switch `edge_external_db_bridge` está OFF) em vez do invokeWithRetry
       // legado, que disparava o banner de "catálogo indisponível" no estado OFF esperado.
       // `tabela_preco_gravacao_oficial` está na whitelist do REST nativo e possui coluna `ativo`.
-      const { records: rawRecords } = await invokeExternalDb<Record<string, unknown>>({
+      const { records: rawRecords } = await dbInvoke<Record<string, unknown>>({
         table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
         filters: { ativo: true },

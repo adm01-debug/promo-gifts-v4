@@ -1,5 +1,5 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 
 export interface ExternalVariantStock {
   id: string;
@@ -31,7 +31,7 @@ export function useExternalVariantStock(productId: string | undefined) {
 
       // Buscar variantes e imagens em paralelo
       const [variantsResult, imagesResult] = await Promise.all([
-        invokeExternalDb<{
+        dbInvoke<{
           id: string;
           product_id: string;
           sku: string;
@@ -52,7 +52,7 @@ export function useExternalVariantStock(productId: string | undefined) {
           filters: { product_id: productId, is_active: true },
           limit: 100,
         }),
-        invokeExternalDb<{
+        dbInvoke<{
           id: string;
           variant_id: string | null;
           supplier_code: string | null;

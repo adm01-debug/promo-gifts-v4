@@ -10,10 +10,10 @@
  * NÃO usa mais conceito de variantes (tecnica_variante_id eliminado).
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
-import { invokeExternalDb } from '@/lib/external-db';
 import { adaptPriceResponse } from '@/lib/personalization/adapters';
 
 export interface CustomizationPriceResponse {
@@ -188,7 +188,7 @@ async function buildPrintAreasFromTables(productId: string): Promise<PrintAreaV2
 
   const techById = new Map<string, TabelaOficialRaw>();
   if (priceTableIds.size > 0) {
-    const techResults = await invokeExternalDb<TabelaOficialRaw>({
+    const techResults = await dbInvoke<TabelaOficialRaw>({
       table: 'tabela_preco_gravacao_oficial',
       operation: 'select',
       filters: { ativo: true },

@@ -3,8 +3,8 @@
  * Consome stock_daily_summary via external-db-bridge.
  * Retorna dados agregados + breakdown por fornecedor para comparação.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import type { StockDailySummary } from '@/hooks/intelligence/useStockHistory';
 
 export interface MacroMarketPoint {
@@ -56,7 +56,7 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
       const filters: Record<string, unknown> = {};
       if (supplierId) filters.supplier_id = supplierId;
 
-      const result = await invokeExternalDb<StockDailySummary>({
+      const result = await dbInvoke<StockDailySummary>({
         table: 'stock_daily_summary',
         operation: 'select',
         select: 'summary_date, stock_close, units_depleted, units_restocked, supplier_id',

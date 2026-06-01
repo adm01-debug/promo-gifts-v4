@@ -1,7 +1,7 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { type ExternalTechnique } from '@/types/external-db';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -97,7 +97,7 @@ export function TechniqueSelector({
   const { data: techniques, isLoading } = useQuery({
     queryKey: ['techniques-selector-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         filters: { is_active: true },

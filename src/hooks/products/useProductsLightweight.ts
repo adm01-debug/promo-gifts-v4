@@ -3,8 +3,8 @@
  *
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
+import { dbBatch, dbInvoke } from '@/lib/db/postgrest';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { invokeBatchBridge, invokeExternalDb } from '@/lib/external-db/bridge';
 import {
   fetchPromobrindProductsLightweight,
   type LightweightProduct,
@@ -161,7 +161,7 @@ async function fetchCatalogPage(
 
   let batchResults;
   try {
-    batchResults = await invokeBatchBridge(batchQueries);
+    batchResults = await dbBatch(batchQueries);
   } catch {
     // BUG-LOAD-01 FIX: O fallback anterior usava fetchPromobrindProductsLightweight
     // com limit=500, que faz short-circuit para UMA única query REST quando `limit`
@@ -169,13 +169,13 @@ async function fetchCatalogPage(
     // Resultado: UI exibia "500 itens" mesmo com 6000+ no banco.
     //
     // Novo fallback: replicar o mesmo comportamento do batch bridge usando
-    // invokeExternalDb em paralelo (que roteia para REST nativo quando o
+    // dbInvoke em paralelo (que roteia para REST nativo quando o
     // kill-switch 'edge_external_db_bridge' está OFF). Assim:
     //   - Primeiro carregamento: 4 × 500 = 2000 produtos em paralelo
     //   - Carregamentos seguintes: 1 × 500 = 500 produtos
     //   - totalEstimate correto via countMode:'exact' na primeira página
     const restQueries = Array.from({ length: pagesToFetch }, (_, i) =>
-      invokeExternalDb<LightweightProduct>({
+      dbInvoke<LightweightProduct>({
         table: 'products',
         operation: 'select',
         select: PRODUCT_SELECT_LIGHTWEIGHT,
@@ -267,7 +267,11 @@ export function useProductsLightweight() {
  * Primeiro carregamento: 2000 produtos (4 páginas em paralelo).
  * Carregamentos seguintes: 500 produtos por vez, sob demanda.
  */
-export function useProductsCatalog(filters?: { search?: string; categories?: string[]; suppliers?: string[] }) {
+export function useProductsCatalog(filters?: {
+  search?: string;
+  categories?: string[];
+  suppliers?: string[];
+}) {
   const search = filters?.search || '';
   const categories = filters?.categories || [];
   const suppliers = filters?.suppliers || [];

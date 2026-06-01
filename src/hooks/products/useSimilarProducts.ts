@@ -8,8 +8,8 @@
  *
  * All levels use lightweight batch queries (no individual product detail fetches).
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import type { Product } from '@/types/product-catalog';
 import { logger } from '@/lib/logger';
 
@@ -61,7 +61,7 @@ function mapLightweightToSimilarItem(p: LightweightProduct): SimilarProductItem 
 async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> {
   if (ids.length === 0) return [];
 
-  const { records } = await invokeExternalDb<LightweightProduct>({
+  const { records } = await dbInvoke<LightweightProduct>({
     table: 'products',
     operation: 'select',
     select: SIMILAR_PRODUCT_SELECT,
@@ -84,7 +84,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
 
       // 1. Try product_relationships (direct pairs — fastest, 107k+ records)
       try {
-        const { records: relationships } = await invokeExternalDb<{
+        const { records: relationships } = await dbInvoke<{
           related_product_id: string;
         }>({
           table: 'product_relationships',
@@ -109,7 +109,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
       // 2. Try product_group_members (group-based siblings)
       // NOTE: a coluna correta no BD externo é `product_group_id` (não `group_id`).
       try {
-        const { records: memberships } = await invokeExternalDb<{
+        const { records: memberships } = await dbInvoke<{
           product_group_id: string;
         }>({
           table: 'product_group_members',
@@ -123,7 +123,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           const groupIds = [...new Set(memberships.map((m) => m.product_group_id))].filter(Boolean);
           if (groupIds.length === 0) throw new Error('No valid group IDs');
 
-          const { records: allMembers } = await invokeExternalDb<{
+          const { records: allMembers } = await dbInvoke<{
             product_id: string;
           }>({
             table: 'product_group_members',
@@ -162,7 +162,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           fallbackFilters.main_category_id = categoryId;
         }
 
-        const { records: fallbackProducts } = await invokeExternalDb<LightweightProduct>({
+        const { records: fallbackProducts } = await dbInvoke<LightweightProduct>({
           table: 'products',
           operation: 'select',
           select: SIMILAR_PRODUCT_SELECT,

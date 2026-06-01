@@ -5,8 +5,8 @@
  * INHERITANCE: If no VSS record exists, falls back to supplier_branches defaults.
  * OVERRIDE: saveFiscalOverride() creates/updates VSS records to override inherited data.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { useCallback } from 'react';
 import { logger } from '@/lib/logger';
 
@@ -126,7 +126,7 @@ export function useSupplierFiscalData(
       if (!productId || !supplierId) return null;
 
       // 1. First get variant IDs for this product to scope the VSS query
-      const variantsResult = await invokeExternalDb<{ id: string }>({
+      const variantsResult = await dbInvoke<{ id: string }>({
         table: 'product_variants',
         operation: 'select',
         select: 'id',
@@ -142,7 +142,7 @@ export function useSupplierFiscalData(
         const variantIds = variantsResult.records.map((v) => v.id);
 
         for (const variantId of variantIds.slice(0, 5)) {
-          const vssResult = await invokeExternalDb<VSSRecord>({
+          const vssResult = await dbInvoke<VSSRecord>({
             table: 'variant_supplier_sources',
             operation: 'select',
             select:
@@ -168,7 +168,7 @@ export function useSupplierFiscalData(
         let branchData: Partial<BranchRecord> = {};
         if (vss.supplier_branch_id) {
           try {
-            const branchResult = await invokeExternalDb<BranchRecord>({
+            const branchResult = await dbInvoke<BranchRecord>({
               table: 'supplier_branches',
               operation: 'select',
               select: BRANCH_SELECT,
@@ -207,7 +207,7 @@ export function useSupplierFiscalData(
 
       // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults
       try {
-        const branchesResult = await invokeExternalDb<BranchRecord>({
+        const branchesResult = await dbInvoke<BranchRecord>({
           table: 'supplier_branches',
           operation: 'select',
           select: BRANCH_SELECT,
@@ -253,7 +253,7 @@ export function useSupplierFiscalData(
             productId,
           );
           try {
-            const createResult = await invokeExternalDb<{ id: string }>({
+            const createResult = await dbInvoke<{ id: string }>({
               table: 'product_variants',
               operation: 'insert',
               data: {
@@ -284,7 +284,7 @@ export function useSupplierFiscalData(
         }
 
         // Check if VSS record already exists
-        const existingResult = await invokeExternalDb<{ id: string }>({
+        const existingResult = await dbInvoke<{ id: string }>({
           table: 'variant_supplier_sources',
           operation: 'select',
           select: 'id',
@@ -305,7 +305,7 @@ export function useSupplierFiscalData(
 
         if (existingResult.records.length) {
           // Update existing VSS
-          await invokeExternalDb({
+          await dbInvoke({
             table: 'variant_supplier_sources',
             operation: 'update',
             id: existingResult.records[0].id,
@@ -315,7 +315,7 @@ export function useSupplierFiscalData(
           // Fetch organization_id from an existing VSS record for this supplier
           let organizationId: string | null = null;
           try {
-            const orgResult = await invokeExternalDb<{ organization_id: string }>({
+            const orgResult = await dbInvoke<{ organization_id: string }>({
               table: 'variant_supplier_sources',
               operation: 'select',
               select: 'organization_id',
@@ -330,7 +330,7 @@ export function useSupplierFiscalData(
           }
 
           // Create new VSS with supplier_branch_id from inherited data
-          await invokeExternalDb({
+          await dbInvoke({
             table: 'variant_supplier_sources',
             operation: 'insert',
             data: {
@@ -366,7 +366,7 @@ export function useSupplierFiscalData(
       const variantId = currentData._variantId;
       if (!variantId) return false;
 
-      const vssResult = await invokeExternalDb<{ id: string }>({
+      const vssResult = await dbInvoke<{ id: string }>({
         table: 'variant_supplier_sources',
         operation: 'select',
         select: 'id',
@@ -375,7 +375,7 @@ export function useSupplierFiscalData(
       });
 
       if (vssResult.records.length) {
-        await invokeExternalDb({
+        await dbInvoke({
           table: 'variant_supplier_sources',
           operation: 'delete',
           id: vssResult.records[0].id,

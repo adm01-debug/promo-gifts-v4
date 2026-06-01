@@ -2,8 +2,8 @@
  * useKitStockForecast — calcula data ideal de fechamento do kit
  * com base nas previsões de reposição (variant_supplier_sources) dos itens.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import type { KitItem } from '@/lib/kit-builder';
 
 export interface KitStockForecast {
@@ -37,7 +37,7 @@ export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
         return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
       // Busca fontes de fornecimento
-      const result = await invokeExternalDb<{
+      const result = await dbInvoke<{
         product_id: string;
         stock_quantity: number | null;
         next_entry_date: string | null;

@@ -21,6 +21,13 @@ vi.mock("@/lib/external-db", () => ({
   fetchPromobrindProducts: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("@/lib/db/postgrest", () => ({
+  dbInvoke: vi.fn().mockResolvedValue({ records: [], count: 0 }),
+  dbInvokeSingle: vi.fn().mockResolvedValue({}),
+  dbInvokeDelete: vi.fn().mockResolvedValue(undefined),
+  dbBatch: vi.fn().mockResolvedValue([]),
+}));
+
 describe("ExpertChatDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();

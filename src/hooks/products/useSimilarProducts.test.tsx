@@ -2,13 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useSimilarProducts } from './useSimilarProducts';
-import { invokeExternalDb } from '@/lib/external-db';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Mock do invokeExternalDb
-vi.mock('@/lib/external-db', () => ({
-  invokeExternalDb: vi.fn(),
+// Mock do dbInvoke
+vi.mock('@/lib/db/postgrest', () => ({
+  dbInvoke: vi.fn(),
 }));
 
 const createWrapper = () => {
@@ -42,11 +42,11 @@ describe('useSimilarProducts', () => {
       wrapper: createWrapper(),
     });
     expect(result.current.data).toBeUndefined();
-    expect(invokeExternalDb).not.toHaveBeenCalled();
+    expect(dbInvoke).not.toHaveBeenCalled();
   });
 
   it('estratégia 1: deve retornar produtos da tabela product_relationships', async () => {
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockResolvedValueOnce({
         records: [{ related_product_id: 'rel-1' }, { related_product_id: 'rel-2' }],
       })
@@ -77,14 +77,14 @@ describe('useSimilarProducts', () => {
 
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data![0].name).toBe('Similar 1');
-    expect(invokeExternalDb).toHaveBeenCalledWith(
+    expect(dbInvoke).toHaveBeenCalledWith(
       expect.objectContaining({ table: 'product_relationships' }),
     );
   });
 
   it('estratégia 2: deve usar product_group_members se relationships falhar ou for vazio', async () => {
     // 1. Relationships vazio
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockResolvedValueOnce({ records: [] })
       // 2. Busca grupo do produto
       .mockResolvedValueOnce({ records: [{ product_group_id: 'group-99' }] })
@@ -114,7 +114,7 @@ describe('useSimilarProducts', () => {
 
   it('estratégia 3: deve usar fallback por fornecedor se outras falharem', async () => {
     // 1. Relationships erro
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockRejectedValueOnce(new Error('DB Error'))
       // 2. Group erro
       .mockRejectedValueOnce(new Error('DB Error'))
@@ -142,7 +142,7 @@ describe('useSimilarProducts', () => {
   });
 
   it('deve filtrar produtos com preço zero ou inválido', async () => {
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockResolvedValueOnce({ records: [{ related_product_id: 'rel-1' }] })
       .mockResolvedValueOnce({
         records: [{ id: 'rel-1', name: 'Grátis', sale_price: 0, primary_image_url: 'img.jpg' }],
@@ -157,7 +157,7 @@ describe('useSimilarProducts', () => {
   });
 
   it('deve aplicar fallback de imagem caso primary_image_url seja nulo', async () => {
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockResolvedValueOnce({ records: [{ related_product_id: 'rel-1' }] })
       .mockResolvedValueOnce({
         records: [{ id: 'rel-1', name: 'Sem Foto', sale_price: 10, primary_image_url: null }],
@@ -172,7 +172,7 @@ describe('useSimilarProducts', () => {
   });
 
   it('deve evitar loops infinitos ou duplicatas de IDs no grupo', async () => {
-    (invokeExternalDb as any)
+    (dbInvoke as any)
       .mockResolvedValueOnce({ records: [] })
       .mockResolvedValueOnce({ records: [{ product_group_id: 'g1' }, { product_group_id: 'g1' }] })
       .mockResolvedValueOnce({ records: [{ product_id: 'prod-123' }, { product_id: 'prod-123' }] })
@@ -184,6 +184,6 @@ describe('useSimilarProducts', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     // Se o grupo só tem o próprio produto, cai no fallback final
-    expect(invokeExternalDb).toHaveBeenCalledTimes(4); // rel, group, members, final fallback
+    expect(dbInvoke).toHaveBeenCalledTimes(4); // rel, group, members, final fallback
   });
 });

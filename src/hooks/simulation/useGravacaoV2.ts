@@ -4,9 +4,9 @@
  * Tipos e helpers extraídos para gravacao/ subfolder.
  * Este arquivo mantém apenas os hooks React.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { invokeExternalRpc } from '@/lib/external-rpc';
 
 // Re-export types & helpers for backward compat
@@ -97,7 +97,7 @@ export function useProductPrintAreas(productId: string | null) {
       const areas = await fetchPrintAreasFromProduct(productId);
       if (!areas.length) return [];
 
-      const techResult = await invokeExternalDb<TecnicaRow>({
+      const techResult = await dbInvoke<TecnicaRow>({
         table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
         filters: { ativo: true },
@@ -140,7 +140,7 @@ export function useTabelasPrecoOficial() {
   return useQuery({
     queryKey: ['tabelas-preco-oficial'],
     queryFn: async (): Promise<TabelaPrecoOficial[]> => {
-      const result = await invokeExternalDb<TabelaPrecoOficial>({
+      const result = await dbInvoke<TabelaPrecoOficial>({
         table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
         filters: { ativo: true },
@@ -157,7 +157,7 @@ export function useFaixasPrecoOficial(tabelaPrecoId: string | null) {
     queryKey: ['faixas-preco-oficial', tabelaPrecoId],
     queryFn: async (): Promise<FaixaPrecoOficial[]> => {
       if (!tabelaPrecoId) return [];
-      const result = await invokeExternalDb<FaixaPrecoOficial>({
+      const result = await dbInvoke<FaixaPrecoOficial>({
         table: 'tabela_preco_gravacao_oficial_faixa',
         operation: 'select',
         filters: { tabela_preco_gravacao_id: tabelaPrecoId },
@@ -258,7 +258,7 @@ export function useTabelaPrecoPorCodigo(codigo: string | null) {
     queryKey: ['tabela-preco-codigo', codigo],
     queryFn: async (): Promise<TabelaPrecoOficial | null> => {
       if (!codigo) return null;
-      const result = await invokeExternalDb<TabelaPrecoOficial>({
+      const result = await dbInvoke<TabelaPrecoOficial>({
         table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
         filters: { codigo },

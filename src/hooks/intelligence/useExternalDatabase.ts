@@ -8,6 +8,7 @@
  *
  * Este arquivo contém o hook principal e re-exporta tudo para compatibilidade.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -18,7 +19,6 @@ export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 
 import type { ExternalTable } from '@/lib/external-db/tables';
 import { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';
 import type {
@@ -128,11 +128,11 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       }
 
       try {
-        // MIGRAÇÃO REST-NATIVO (2026-05-30): roteia via invokeExternalDb, que tenta o
+        // MIGRAÇÃO REST-NATIVO (2026-05-30): roteia via dbInvoke, que tenta o
         // REST nativo (PostgREST) primeiro e, quando o kill-switch `edge_external_db_bridge`
         // está OFF, retorna vazio em SILÊNCIO — sem emitir o evento `unavailable` que o
         // invokeWithRetry legado disparava (banner de "catálogo indisponível") para um
-        // estado que hoje é o esperado. Ver src/lib/external-db/bridge.ts::invokeExternalDb.
+        // estado que hoje é o esperado. Ver src/lib/external-db/bridge.ts::dbInvoke.
         //
         // SELECT por id: o REST nativo filtra via PostgREST (.eq), então traduzimos o id
         // em filtro. Para escritas (insert/update/delete) o id segue no campo próprio.
@@ -142,7 +142,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
             ? { ...(options?.filters ?? {}), ...(idFilter ?? {}) }
             : undefined;
 
-        const result = await invokeExternalDb<T>({
+        const result = await dbInvoke<T>({
           table: tableName,
           operation,
           data: options?.data as Record<string, unknown> | undefined,
@@ -154,7 +154,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
           offset: options?.offset,
         });
 
-        // invokeExternalDb já devolve { records, count } desempacotado.
+        // dbInvoke já devolve { records, count } desempacotado.
         if (operation === 'select') {
           if (isMountedRef.current) {
             setState((prev) => ({
@@ -333,7 +333,7 @@ export function useExternalTechniques() {
   return useExternalDatabase<ExternalTechnique>('personalization_techniques');
 }
 
-/** @deprecated Dead code — 0 consumers. Use tabela_preco_gravacao_oficial via invokeExternalDb. */
+/** @deprecated Dead code — 0 consumers. Use tabela_preco_gravacao_oficial via dbInvoke. */
 export function useExternalPriceTables() {
   return useExternalDatabase<ExternalPriceTable>('customization_price_tables');
 }

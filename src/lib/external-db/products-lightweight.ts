@@ -2,8 +2,9 @@
  * Lightweight product fetch — minimal fields, no enrichment.
  * Used for selectors and catalog listing.
  */
+import { dbInvoke, dbBatch } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { invokeExternalDb, invokeBatchBridge, type InvokeResult } from './bridge';
+import { type InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
@@ -52,7 +53,7 @@ async function fetchPage(params: {
   offset: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
 }): Promise<InvokeResult<LightweightProduct>> {
-  return invokeExternalDb<LightweightProduct>({
+  return dbInvoke<LightweightProduct>({
     table: 'products',
     operation: 'select',
     filters: params.filters,
@@ -144,7 +145,7 @@ export async function fetchPromobrindProductsLightweight(options?: {
   let lastBurstPageSize = LIGHTWEIGHT_PAGE_SIZE;
 
   try {
-    const batchResults = await invokeBatchBridge(initialBatch);
+    const batchResults = await dbBatch(initialBatch);
     for (const result of batchResults) {
       if (result.success && result.data?.records) {
         const records = result.data.records as LightweightProduct[];

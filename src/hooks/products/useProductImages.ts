@@ -13,8 +13,8 @@
  * - is_active: Se está ativa
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 // ============================================
@@ -56,7 +56,7 @@ export interface ProductImageForDisplay {
  */
 export async function fetchProductImages(productId: string): Promise<ProductImage[]> {
   try {
-    const result = await invokeExternalDb<ProductImage>({
+    const result = await dbInvoke<ProductImage>({
       table: 'product_images',
       operation: 'select',
       select:
@@ -87,7 +87,7 @@ export async function fetchProductImagesBatch(
   try {
     // Buscar todas as imagens ativas
     // Nota: O bridge não suporta IN() diretamente, então buscamos todas e filtramos
-    const result = await invokeExternalDb<ProductImage>({
+    const result = await dbInvoke<ProductImage>({
       table: 'product_images',
       operation: 'select',
       select:
@@ -121,7 +121,7 @@ export async function fetchProductImagesBatch(
  */
 export async function fetchPrimaryImage(productId: string): Promise<string | null> {
   try {
-    const result = await invokeExternalDb<ProductImage>({
+    const result = await dbInvoke<ProductImage>({
       table: 'product_images',
       operation: 'select',
       select: 'url_cdn, alt_text',

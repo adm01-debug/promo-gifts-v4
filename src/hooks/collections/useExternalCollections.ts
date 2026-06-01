@@ -2,8 +2,8 @@
  * Hook para sincronizar coleções com o BD externo (Promobrind)
  * Tabelas: collections, collection_products
  */
+import { dbInvoke, dbInvokeSingle } from '@/lib/db/postgrest';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDb, invokeExternalDbSingle } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
@@ -44,7 +44,7 @@ export function useExternalCollections() {
     queryKey: [QUERY_KEY],
     queryFn: async () => {
       // Buscar todas as coleções sem filtrar por is_active (coluna pode não existir)
-      const result = await invokeExternalDb<ExternalCollection>({
+      const result = await dbInvoke<ExternalCollection>({
         table: 'collections',
         operation: 'select',
         select: '*', // Buscar todos os campos disponíveis
@@ -66,7 +66,7 @@ export function useExternalCollectionProducts(collectionId: string | null) {
     queryFn: async () => {
       if (!collectionId) return [];
 
-      const result = await invokeExternalDb<ExternalCollectionProduct>({
+      const result = await dbInvoke<ExternalCollectionProduct>({
         table: 'collection_products',
         operation: 'select',
         filters: { collection_id: collectionId },
@@ -89,7 +89,7 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
     queryFn: async () => {
       if (collectionIds.length === 0) return new Map<string, number>();
 
-      const result = await invokeExternalDb<ExternalCollectionProduct>({
+      const result = await dbInvoke<ExternalCollectionProduct>({
         table: 'collection_products',
         operation: 'select',
         select: 'collection_id,product_id',
@@ -121,7 +121,7 @@ export function useExternalCollectionMutations() {
           ?.toLowerCase()
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9-]/g, '') || `col-${Date.now()}`;
-      return invokeExternalDbSingle<ExternalCollection>({
+      return dbInvokeSingle<ExternalCollection>({
         table: 'collections',
         operation: 'insert',
         data: {
@@ -142,7 +142,7 @@ export function useExternalCollectionMutations() {
 
   const updateCollection = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ExternalCollection> }) => {
-      return invokeExternalDbSingle<ExternalCollection>({
+      return dbInvokeSingle<ExternalCollection>({
         table: 'collections',
         operation: 'update',
         id,
@@ -160,7 +160,7 @@ export function useExternalCollectionMutations() {
 
   const deleteCollection = useMutation({
     mutationFn: async (id: string) => {
-      return invokeExternalDb({
+      return dbInvoke({
         table: 'collections',
         operation: 'delete',
         id,
@@ -183,7 +183,7 @@ export function useExternalCollectionMutations() {
       collectionId: string;
       productId: string;
     }) => {
-      return invokeExternalDbSingle<ExternalCollectionProduct>({
+      return dbInvokeSingle<ExternalCollectionProduct>({
         table: 'collection_products',
         operation: 'insert',
         data: {
@@ -203,7 +203,7 @@ export function useExternalCollectionMutations() {
 
   const removeProductFromCollection = useMutation({
     mutationFn: async (relationId: string) => {
-      return invokeExternalDb({
+      return dbInvoke({
         table: 'collection_products',
         operation: 'delete',
         id: relationId,

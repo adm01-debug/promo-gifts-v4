@@ -15,13 +15,10 @@
  *   BUG-27: handlePageChange passa advancedFilters explicitamente (não depende de closure)
  *   BUG-29: comentário no useEffect inicial com [] documenta a intencionalidade
  */
+import { dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  invokeExternalDbSingle,
-  invokeExternalDbDelete,
-  type PromobrindProduct,
-} from '@/lib/external-db';
+import { type PromobrindProduct } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/hooks/admin';
 import type { ProductFilters } from '../products/ProductFiltersBar';
@@ -375,7 +372,7 @@ export function useProductsManager() {
   const handleDelete = async () => {
     if (!selectedProduct) return;
     try {
-      await invokeExternalDbDelete('products', selectedProduct.id);
+      await dbInvokeDelete('products', selectedProduct.id);
       await logAction({
         action: 'DELETE',
         entityType: 'products',
@@ -423,7 +420,7 @@ export function useProductsManager() {
       try {
         const results = await Promise.allSettled(
           Array.from(selectedIds).map((id) =>
-            invokeExternalDbSingle({
+            dbInvokeSingle({
               table: 'products',
               operation: 'update',
               id,

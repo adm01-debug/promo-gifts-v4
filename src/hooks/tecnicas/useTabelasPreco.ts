@@ -3,9 +3,9 @@
  *
  * Responsável por: Busca e filtragem de tabelas de preço
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { TABELAS_PRECO_QUERY_OPTIONS } from '@/lib/query-config';
-import { invokeExternalDb } from '@/lib/external-db';
 import { rawToTabelaPrecoTecnica, transformRawToTabelas } from '@/lib/personalization';
 import { TECNICAS_QUERY_KEYS } from '@/hooks/tecnicas/keys';
 import type {
@@ -37,7 +37,7 @@ export function useTabelasPreco(filtros?: TabelaPrecoFiltros) {
         filters.customization_type_name = filtros.nomeTecnica;
       }
 
-      const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+      const result = await dbInvoke<CustomizationPriceTableRaw>({
         table: 'customization_price_tables',
         operation: 'select',
         filters: Object.keys(filters).length > 0 ? filters : undefined,
@@ -67,7 +67,7 @@ export function useTabelasPorTecnica(nomeTecnica: string | undefined) {
     queryFn: async (): Promise<TabelaPrecoTecnica[]> => {
       if (!nomeTecnica) return [];
 
-      const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+      const result = await dbInvoke<CustomizationPriceTableRaw>({
         table: 'customization_price_tables',
         operation: 'select',
         filters: { customization_type_name: nomeTecnica, is_active: true },
@@ -90,7 +90,7 @@ export function useTabelaPorCodigo(codigoOpcao: string | undefined) {
     queryFn: async (): Promise<TabelaPrecoTecnica | null> => {
       if (!codigoOpcao) return null;
 
-      const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+      const result = await dbInvoke<CustomizationPriceTableRaw>({
         table: 'customization_price_tables',
         operation: 'select',
         filters: { table_code_option: codigoOpcao },
@@ -112,7 +112,7 @@ export function useNomesTecnicasPreco() {
   return useQuery({
     queryKey: TECNICAS_QUERY_KEYS.nomesTecnicas(),
     queryFn: async (): Promise<string[]> => {
-      const result = await invokeExternalDb<{ customization_type_name: string }>({
+      const result = await dbInvoke<{ customization_type_name: string }>({
         table: 'customization_price_tables',
         operation: 'select',
         select: 'customization_type_name',
@@ -135,7 +135,7 @@ export async function buscarTabelaAdequada(
   larguraCm?: number,
   alturaCm?: number,
 ): Promise<TabelaPrecoTecnica | null> {
-  const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+  const result = await dbInvoke<CustomizationPriceTableRaw>({
     table: 'customization_price_tables',
     operation: 'select',
     filters: { customization_type_name: nomeTecnica, is_active: true },

@@ -336,8 +336,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     // Duplicate checks
     if (cnpjDigits.length === 14) {
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
-        const existing = await invokeExternalDb<{ id: string; name: string; cnpj: string }>({
+        const { dbInvoke } = await import('@/lib/db/postgrest');
+        const existing = await dbInvoke<{ id: string; name: string; cnpj: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id,name,cnpj',
@@ -354,7 +354,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       }
     }
     try {
-      const { invokeExternalDb: invokeDbName } = await import('@/lib/external-db');
+      const { dbInvoke: invokeDbName } = await import('@/lib/db/postgrest');
       const existingByName = await invokeDbName<{ id: string; name: string }>({
         table: 'suppliers',
         operation: 'select',
@@ -372,7 +372,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     }
     if (tradingName.trim()) {
       try {
-        const { invokeExternalDb: invokeDbTN } = await import('@/lib/external-db');
+        const { dbInvoke: invokeDbTN } = await import('@/lib/db/postgrest');
         const existingByTN = await invokeDbTN<{ id: string; name: string; trading_name: string }>({
           table: 'suppliers',
           operation: 'select',
@@ -393,7 +393,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     }
 
     try {
-      const { invokeExternalDbSingle } = await import('@/lib/external-db');
+      const { dbInvokeSingle } = await import('@/lib/db/postgrest');
       const now = new Date().toISOString();
       const generatedCode =
         code.trim() ||
@@ -466,7 +466,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       };
       if (logoUrl) data.logo_url = logoUrl;
 
-      const result = await invokeExternalDbSingle<{ id: string }>({
+      const result = await dbInvokeSingle<{ id: string }>({
         table: 'suppliers',
         operation: 'insert',
         data,

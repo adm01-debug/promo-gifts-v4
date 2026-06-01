@@ -40,15 +40,13 @@ export function NewCategoryDialog({ onCreated }: NewCategoryDialogProps) {
     if (categories.length > 0) return;
     setLoadingCats(true);
     try {
-      const { invokeExternalDb } = await import('@/lib/external-db');
-      const result = await invokeExternalDb<{ id: string; name: string; parent_id: string | null }>(
-        {
-          table: 'categories',
-          operation: 'select',
-          filters: { is_active: true },
-          orderBy: { column: 'name', ascending: true },
-        },
-      );
+      const { dbInvoke } = await import('@/lib/db/postgrest');
+      const result = await dbInvoke<{ id: string; name: string; parent_id: string | null }>({
+        table: 'categories',
+        operation: 'select',
+        filters: { is_active: true },
+        orderBy: { column: 'name', ascending: true },
+      });
       setCategories(result.records || []);
     } catch {
       // silent
@@ -77,8 +75,8 @@ export function NewCategoryDialog({ onCreated }: NewCategoryDialogProps) {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const { invokeExternalDbSingle } = await import('@/lib/external-db');
-      const result = await invokeExternalDbSingle<{ id: string }>({
+      const { dbInvokeSingle } = await import('@/lib/db/postgrest');
+      const result = await dbInvokeSingle<{ id: string }>({
         table: 'categories',
         operation: 'insert',
         data: {

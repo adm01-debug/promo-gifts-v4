@@ -608,9 +608,9 @@ export function useCategoryRanking(
       });
 
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
+        const { dbInvoke } = await import('@/lib/db/postgrest');
         const sinceDate = since.split('T')[0];
-        const result = await invokeExternalDb<{ product_id: string; units_depleted: number }>({
+        const result = await dbInvoke<{ product_id: string; units_depleted: number }>({
           table: 'stock_daily_summary',
           operation: 'select',
           select: 'product_id,units_depleted',

@@ -4,8 +4,8 @@
  * Filtro client-side: faixa de preço (aplicado na página atual)
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { invokeExternalDb } from '@/lib/external-db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +58,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
   const loadCategories = useCallback(async () => {
     setLoadingCats(true);
     try {
-      const result = await invokeExternalDb<CategoryOption>({
+      const result = await dbInvoke<CategoryOption>({
         table: 'categories',
         operation: 'select',
         select: 'id,name',
@@ -76,7 +76,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
   const loadSuppliers = useCallback(async () => {
     setLoadingSups(true);
     try {
-      const result = await invokeExternalDb<SupplierOption>({
+      const result = await dbInvoke<SupplierOption>({
         table: 'suppliers',
         operation: 'select',
         select: 'id,name,code',

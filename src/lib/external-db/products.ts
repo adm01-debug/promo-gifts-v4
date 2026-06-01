@@ -1,14 +1,9 @@
 /**
  * Fetch products with full enrichment (colors, images, variants, suppliers).
  */
+import { dbInvoke, dbBatch } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import {
-  invokeExternalDb,
-  invokeBatchBridge,
-  type BatchQuery,
-  type BatchResult,
-  type InvokeResult,
-} from './bridge';
+import { type BatchQuery, type BatchResult, type InvokeResult } from './bridge';
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
@@ -92,7 +87,7 @@ export async function fetchPromobrindProducts(options?: {
     const fetchOffset = options?.offset ?? 0;
     let result: InvokeResult<PromobrindProduct>;
     try {
-      result = await invokeExternalDb<PromobrindProduct>({
+      result = await dbInvoke<PromobrindProduct>({
         table: 'products',
         operation: 'select',
         filters,
@@ -105,7 +100,7 @@ export async function fetchPromobrindProducts(options?: {
     } catch (err) {
       if (!shouldFallbackSelect(err)) throw err;
       try {
-        result = await invokeExternalDb<PromobrindProduct>({
+        result = await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters,
@@ -117,7 +112,7 @@ export async function fetchPromobrindProducts(options?: {
         });
       } catch (fallbackErr) {
         if (!shouldFallbackSelect(fallbackErr)) throw fallbackErr;
-        result = await invokeExternalDb<PromobrindProduct>({
+        result = await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters,
@@ -155,7 +150,7 @@ export async function fetchPromobrindProducts(options?: {
       const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
       let page: InvokeResult<PromobrindProduct>;
       try {
-        page = await invokeExternalDb<PromobrindProduct>({
+        page = await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters,
@@ -188,7 +183,7 @@ export async function fetchPromobrindProducts(options?: {
         }
         if (!shouldFallbackSelect(err)) throw err;
         try {
-          page = await invokeExternalDb<PromobrindProduct>({
+          page = await dbInvoke<PromobrindProduct>({
             table: 'products',
             operation: 'select',
             filters,
@@ -213,7 +208,7 @@ export async function fetchPromobrindProducts(options?: {
             continue;
           }
           if (shouldFallbackSelect(fallbackErr)) {
-            page = await invokeExternalDb<PromobrindProduct>({
+            page = await dbInvoke<PromobrindProduct>({
               table: 'products',
               operation: 'select',
               filters,
@@ -339,7 +334,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
   let batchResults: BatchResult[] = [];
   try {
-    batchResults = await invokeBatchBridge(batchQueries);
+    batchResults = await dbBatch(batchQueries);
   } catch (err) {
     logger.warn('[external-db] Batch enrichment failed, products will have basic data:', err);
     return;

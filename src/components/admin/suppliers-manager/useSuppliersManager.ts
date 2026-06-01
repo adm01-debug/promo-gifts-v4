@@ -1,10 +1,6 @@
+import { dbInvoke, dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
-import {
-  invokeExternalDb,
-  invokeExternalDbSingle,
-  invokeExternalDbDelete,
-} from '@/lib/external-db';
 import { searchCrm } from '@/lib/crm-db';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -153,7 +149,7 @@ export function useSuppliersManager() {
       const pageSize = 200;
       const maxPages = 10; // cap at 2000 to prevent runaway
       for (let page = 0; page < maxPages; page++) {
-        const result = await invokeExternalDb<Supplier>({
+        const result = await dbInvoke<Supplier>({
           table: 'suppliers',
           operation: 'select',
           select: '*',
@@ -350,7 +346,7 @@ export function useSuppliersManager() {
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const existing = await invokeExternalDb<{ id: string; name: string; cnpj: string }>({
+        const existing = await dbInvoke<{ id: string; name: string; cnpj: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id,name,cnpj',
@@ -370,7 +366,7 @@ export function useSuppliersManager() {
     // BUG-21 FIX: case-insensitive name dup check via __ilike_ prefix
     if (editingSupplier.name?.trim()) {
       try {
-        const existingByName = await invokeExternalDb<{ id: string; name: string }>({
+        const existingByName = await dbInvoke<{ id: string; name: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id,name',
@@ -389,7 +385,7 @@ export function useSuppliersManager() {
     }
     if (editingSupplier.trading_name?.trim()) {
       try {
-        const existingByTN = await invokeExternalDb<{
+        const existingByTN = await dbInvoke<{
           id: string;
           name: string;
           trading_name: string;
@@ -491,10 +487,10 @@ export function useSuppliersManager() {
       if (isNew) {
         payload.organization_id = ORGANIZATION_ID;
         payload.created_at = now;
-        await invokeExternalDbSingle({ table: 'suppliers', operation: 'insert', data: payload });
+        await dbInvokeSingle({ table: 'suppliers', operation: 'insert', data: payload });
         toast.success(`Fornecedor "${editingSupplier.name}" criado`);
       } else {
-        await invokeExternalDbSingle({
+        await dbInvokeSingle({
           table: 'suppliers',
           operation: 'update',
           id: editingSupplier.id,
@@ -522,7 +518,7 @@ export function useSuppliersManager() {
     setDeleteConfirmSupplier(null);
     setDeleting(supplier.id);
     try {
-      await invokeExternalDbDelete('suppliers', supplier.id);
+      await dbInvokeDelete('suppliers', supplier.id);
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {

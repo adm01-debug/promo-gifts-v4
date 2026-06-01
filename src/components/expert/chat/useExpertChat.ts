@@ -2,11 +2,11 @@
  * useExpertChat — Core logic extracted from ExpertChatDialog
  * Handles messages, conversations, TTS, streaming, filters.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
-import { invokeExternalDb } from '@/lib/external-db';
 import { useExpertChatTts } from './useExpertChatTts';
 import { useExpertConversations, type ExpertConversation } from '@/hooks/intelligence';
 import {
@@ -166,7 +166,7 @@ export function useExpertChat({
     const fetchFilters = async () => {
       try {
         const [cat, sup, tec, tag, col, mat] = await Promise.all([
-          invokeExternalDb<{ name: string }>({
+          dbInvoke<{ name: string }>({
             table: 'categories',
             operation: 'select',
             select: 'name',
@@ -174,14 +174,14 @@ export function useExpertChat({
             orderBy: { column: 'name', ascending: true },
             limit: 500,
           }),
-          invokeExternalDb<{ name: string }>({
+          dbInvoke<{ name: string }>({
             table: 'suppliers',
             operation: 'select',
             select: 'name',
             orderBy: { column: 'name', ascending: true },
             limit: 200,
           }),
-          invokeExternalDb<{ nome: string }>({
+          dbInvoke<{ nome: string }>({
             table: 'tecnicas_gravacao',
             operation: 'select',
             select: 'nome',
@@ -189,21 +189,21 @@ export function useExpertChat({
             orderBy: { column: 'nome', ascending: true },
             limit: 100,
           }),
-          invokeExternalDb<{ name: string }>({
+          dbInvoke<{ name: string }>({
             table: 'tags',
             operation: 'select',
             select: 'name',
             orderBy: { column: 'name', ascending: true },
             limit: 200,
           }),
-          invokeExternalDb<{ name: string }>({
+          dbInvoke<{ name: string }>({
             table: 'color_groups',
             operation: 'select',
             select: 'name',
             orderBy: { column: 'name', ascending: true },
             limit: 200,
           }),
-          invokeExternalDb<{ name: string }>({
+          dbInvoke<{ name: string }>({
             table: 'material_groups',
             operation: 'select',
             select: 'name',
@@ -226,7 +226,7 @@ export function useExpertChat({
         });
         try {
           const [ramos] = await Promise.all([
-            invokeExternalDb<{ nome: string }>({
+            dbInvoke<{ nome: string }>({
               table: 'ramo_atividade',
               operation: 'select',
               select: 'nome',

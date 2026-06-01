@@ -3,8 +3,8 @@
  * Consome: stock_daily_summary, mv_stock_velocity, mv_product_intelligence
  * via external-db-bridge no banco externo.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 // ---------- Types ----------
@@ -88,7 +88,7 @@ export function useStockDailySummary(productId: string | undefined, days = 90) {
     queryFn: async (): Promise<StockDailySummary[]> => {
       if (!productId) return [];
 
-      const result = await invokeExternalDb<StockDailySummary>({
+      const result = await dbInvoke<StockDailySummary>({
         table: 'stock_daily_summary',
         operation: 'select',
         filters: { product_id: productId },
@@ -113,7 +113,7 @@ export function useStockVelocity(productId: string | undefined) {
       if (!productId) return [];
 
       try {
-        const result = await invokeExternalDb<StockVelocity>({
+        const result = await dbInvoke<StockVelocity>({
           table: 'mv_stock_velocity',
           operation: 'select',
           filters: { product_id: productId },
@@ -149,7 +149,7 @@ export function useProductIntelligenceData(productId: string | undefined) {
       if (!productId) return null;
 
       try {
-        const result = await invokeExternalDb<ProductIntelligenceData>({
+        const result = await dbInvoke<ProductIntelligenceData>({
           table: 'mv_product_intelligence',
           operation: 'select',
           filters: { product_id: productId },

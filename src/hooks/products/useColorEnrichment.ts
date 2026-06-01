@@ -8,9 +8,9 @@
  * Uses incremental enrichment: keeps a growing cache of results and only
  * fetches data for NEW product IDs that haven't been enriched yet.
  */
+import { dbBatch } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useMemo, useEffect } from 'react';
-import { invokeBatchBridge } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 interface ColorEnrichmentData {
@@ -92,7 +92,7 @@ export function useColorEnrichment({
 
       // Step 1: Load reference tables (cached after first call)
       if (!cachedColorGroups || !cachedColorVariations) {
-        const refResults = await invokeBatchBridge([
+        const refResults = await dbBatch([
           {
             table: 'color_groups',
             operation: 'select' as const,
@@ -168,7 +168,7 @@ export function useColorEnrichment({
 
       for (let i = 0; i < newProductIds.length; i += CHUNK) {
         const pidChunk = newProductIds.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
+        const results = await dbBatch([
           {
             table: 'product_variants',
             operation: 'select' as const,
@@ -199,7 +199,7 @@ export function useColorEnrichment({
 
       for (let i = 0; i < productIdsWithVariants.length; i += CHUNK) {
         const pidChunk = productIdsWithVariants.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
+        const results = await dbBatch([
           {
             table: 'product_images',
             operation: 'select' as const,

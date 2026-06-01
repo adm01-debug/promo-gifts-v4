@@ -8,10 +8,10 @@
  *     limitation — fix requires AdminProductFormPage to call flushLocalAreas(productId) after
  *     successful creation. Deferred to Sprint 3. A warning badge is shown in the UI.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { invokeExternalDb } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import {
@@ -54,7 +54,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const { data: techniques = [], isLoading: loadingTechs } = useQuery({
     queryKey: ['external-techniques-catalog'],
     queryFn: async (): Promise<ExternalTechnique[]> => {
-      const result = await invokeExternalDb<ExternalTechnique>({
+      const result = await dbInvoke<ExternalTechnique>({
         table: 'tecnicas_gravacao',
         operation: 'select',
         orderBy: { column: 'nome', ascending: true },
@@ -75,7 +75,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const { data: savedAreas = [], isLoading: loadingAreas } = useQuery({
     queryKey: ['print-area-techniques', productId],
     queryFn: async (): Promise<EnrichedArea[]> => {
-      const result = await invokeExternalDb<PrintAreaTechnique>({
+      const result = await dbInvoke<PrintAreaTechnique>({
         table: 'print_area_techniques',
         operation: 'select',
         filters: { product_id: productId },
