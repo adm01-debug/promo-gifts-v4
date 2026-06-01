@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           </div>
         </section>
 
-        <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/30">
+        <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/40">
           <p>© 2026 Promo Gifts — Todos os direitos reservados.</p>
         </footer>
       </div>
