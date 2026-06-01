@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-01T17:52:24.000Z",
-  "totalErrors": 71,
+  "generatedAt": "2026-06-01T17:53:40.000Z",
+  "totalErrors": 70,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
