@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,9 +16,6 @@ interface SidePanelProps {
   footer?: React.ReactNode;
 }
 
-/**
- * Side Panel deslizante
- */
 export function SidePanel({
   children,
   isOpen,
@@ -38,69 +34,47 @@ export function SidePanel({
     xl: 'w-[32rem]',
   };
 
-  const slideAnimation = {
-    left: {
-      initial: { x: '-100%' },
-      animate: { x: 0 },
-      exit: { x: '-100%' },
-    },
-    right: {
-      initial: { x: '100%' },
-      animate: { x: 0 },
-      exit: { x: '100%' },
-    },
-  };
-
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {overlay && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50"
-              onClick={onClose}
-            />
+    <>
+      {overlay && (
+        <div
+          className={cn(
+            'fixed inset-0 z-40 bg-black/50 transition-opacity duration-200',
+            isOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
-          <motion.div
-            {...slideAnimation[side]}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className={cn(
-              'fixed top-0 z-50 h-full bg-background shadow-2xl',
-              sizeClasses[size],
-              side === 'left' ? 'left-0' : 'right-0',
-            )}
-          >
-            <div className="flex h-full flex-col">
-              {/* Header */}
-              <div className="flex items-start justify-between border-b p-4">
-                <div>
-                  {title && <h2 className="font-display text-lg font-semibold">{title}</h2>}
-                  {description && <p className="text-sm text-muted-foreground">{description}</p>}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="shrink-0"
-                  aria-label="Fechar"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Content */}
-              <ScrollArea className="flex-1 p-4">{children}</ScrollArea>
-
-              {/* Footer */}
-              {footer && <div className="border-t p-4">{footer}</div>}
-            </div>
-          </motion.div>
-        </>
+          onClick={onClose}
+        />
       )}
-    </AnimatePresence>
+      <div
+        className={cn(
+          'fixed top-0 z-50 h-full bg-background shadow-2xl transition-transform duration-200',
+          sizeClasses[size],
+          side === 'left' ? 'left-0' : 'right-0',
+          isOpen ? 'translate-x-0' : side === 'left' ? '-translate-x-full' : 'translate-x-full',
+          !isOpen && 'pointer-events-none',
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-start justify-between border-b p-4">
+            <div>
+              {title && <h2 className="font-display text-lg font-semibold">{title}</h2>}
+              {description && <p className="text-sm text-muted-foreground">{description}</p>}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="shrink-0"
+              aria-label="Fechar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <ScrollArea className="flex-1 p-4">{children}</ScrollArea>
+          {footer && <div className="border-t p-4">{footer}</div>}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -113,9 +87,6 @@ interface CollapsibleSidebarProps {
   side?: 'left' | 'right';
 }
 
-/**
- * Sidebar colapsável
- */
 export function CollapsibleSidebar({
   children,
   isCollapsed,
@@ -125,16 +96,14 @@ export function CollapsibleSidebar({
   side = 'left',
 }: CollapsibleSidebarProps) {
   return (
-    <motion.aside
-      animate={{ width: isCollapsed ? 64 : 280 }}
-      transition={{ duration: 0.2 }}
+    <aside
       className={cn(
-        'relative flex h-full flex-col border-r bg-background',
+        'relative flex h-full flex-col border-r bg-background transition-[width] duration-200',
         side === 'right' && 'border-l border-r-0',
+        isCollapsed ? 'w-16' : 'w-[280px]',
         className,
       )}
     >
-      {/* Toggle Button */}
       <Button
         variant="ghost"
         size="icon"
@@ -158,31 +127,12 @@ export function CollapsibleSidebar({
         )}
       </Button>
 
-      {/* Content */}
-      <AnimatePresence mode="wait">
-        {isCollapsed ? (
-          <motion.div
-            key="collapsed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 overflow-hidden"
-          >
-            {collapsedContent}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="expanded"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 overflow-auto"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.aside>
+      {isCollapsed ? (
+        <div className="flex-1 animate-fade-in overflow-hidden">{collapsedContent}</div>
+      ) : (
+        <div className="flex-1 animate-fade-in overflow-auto">{children}</div>
+      )}
+    </aside>
   );
 }
 
@@ -192,9 +142,6 @@ interface ResizablePanelGroupProps {
   className?: string;
 }
 
-/**
- * Wrapper simples para layouts de painéis
- */
 export function ResizablePanelGroup({
   children,
   direction = 'horizontal',
@@ -221,9 +168,6 @@ interface ExpandablePanelProps {
   className?: string;
 }
 
-/**
- * Painel expansível com animação
- */
 export function ExpandablePanel({
   children,
   title,
@@ -231,8 +175,30 @@ export function ExpandablePanel({
   onToggle,
   className,
 }: ExpandablePanelProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (isExpanded) {
+      el.style.height = `${el.scrollHeight}px`;
+      el.style.opacity = '1';
+      const onEnd = () => {
+        el.style.height = 'auto';
+      };
+      el.addEventListener('transitionend', onEnd, { once: true });
+      return () => el.removeEventListener('transitionend', onEnd);
+    }
+
+    el.style.height = `${el.scrollHeight}px`;
+    requestAnimationFrame(() => {
+      el.style.height = '0';
+      el.style.opacity = '0';
+    });
+  }, [isExpanded]);
+
   return (
-    <motion.div layout className={cn('rounded-lg border bg-card', className)}>
+    <div className={cn('rounded-lg border bg-card', className)}>
       <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
         <span className="font-medium">{title}</span>
         {isExpanded ? (
@@ -242,19 +208,13 @@ export function ExpandablePanel({
         )}
       </button>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="border-t p-4">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <div
+        ref={contentRef}
+        className="overflow-hidden transition-[height,opacity] duration-200"
+        style={{ height: isExpanded ? 'auto' : 0, opacity: isExpanded ? 1 : 0 }}
+      >
+        <div className="border-t p-4">{children}</div>
+      </div>
+    </div>
   );
 }

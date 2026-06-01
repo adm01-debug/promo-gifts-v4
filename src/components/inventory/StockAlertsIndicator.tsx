@@ -1,6 +1,5 @@
 import { useState, forwardRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle,
   TrendingDown,
@@ -87,16 +86,14 @@ const NotificationTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
     >
       <Package className="h-[17px] w-[17px]" strokeWidth={1.75} />
       {totalCount > 0 && (
-        <motion.span
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+        <span
           className={cn(
-            'absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-primary-foreground',
+            'absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] animate-scale-in items-center justify-center rounded-full px-1 text-[9px] font-bold text-primary-foreground',
             dominantColor,
           )}
         >
           {totalCount > 99 ? '99+' : totalCount}
-        </motion.span>
+        </span>
       )}
     </Button>
   ),
@@ -342,14 +339,10 @@ export function StockAlertsIndicator({
           {/* List */}
           <ScrollArea className="h-[400px]">
             <div className="space-y-1.5 p-3">
-              <AnimatePresence>
-                {filteredByTab.map((item, index) => (
-                  <motion.div
+              <div className="stagger-children">
+                {filteredByTab.map((item) => (
+                  <div
                     key={item.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: index * 0.02 }}
                     className="group flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/30 p-2.5 transition-all hover:border-border/50 hover:bg-muted/30"
                     onClick={() => {
                       setIsOpen(false);
@@ -438,9 +431,9 @@ export function StockAlertsIndicator({
                         <X className="h-3 w-3" />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
-              </AnimatePresence>
+              </div>
 
               {filteredByTab.length === 0 && (
                 <div className="py-8 text-center text-muted-foreground">

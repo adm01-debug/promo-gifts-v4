@@ -216,6 +216,16 @@
   animation: fade-in-up 0.4s ease-out;
 }
 
+/* Indeterminate progress bar */
+@keyframes indeterminate-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 /* Skeleton shimmer: see index.css .skeleton-shimmer */
 
 /* ===== BOUNCE ANIMATION ===== */

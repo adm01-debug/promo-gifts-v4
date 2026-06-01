@@ -2,7 +2,6 @@
  * IntelligenceBadges — renders market intelligence badges on product pages.
  * Data-driven from useProductIntelligenceBadges hook.
  */
-import { motion } from 'framer-motion';
 import { Flame, Zap, Rocket, AlertTriangle, Sparkles, Star, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -76,19 +75,15 @@ export function IntelligenceBadges({
   if (!badges.length) return null;
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      {badges.map((badge, i) => {
+    <div className={cn('stagger-children flex flex-wrap items-center gap-2', className)}>
+      {badges.map((badge) => {
         const config = badgeConfig[badge.type];
         const Icon = config.icon;
 
         return (
           <Tooltip key={badge.type}>
             <TooltipTrigger asChild>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1, type: 'spring', stiffness: 300 }}
-              >
+              <div>
                 <Badge
                   variant="outline"
                   className={cn(
@@ -100,7 +95,7 @@ export function IntelligenceBadges({
                   <Icon className="h-3.5 w-3.5" />
                   {badge.icon} {badge.label}
                 </Badge>
-              </motion.div>
+              </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-center">
               <p>{badge.label}</p>
@@ -112,15 +107,11 @@ export function IntelligenceBadges({
       {turnoverScore !== null && turnoverScore !== undefined && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: badges.length * 0.1 }}
-            >
+            <div>
               <Badge variant="secondary" className="cursor-default font-mono text-xs">
                 Potencial: {turnoverScore}
               </Badge>
-            </motion.div>
+            </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-center">
             <p>

@@ -1,7 +1,6 @@
 import { forwardRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -71,11 +70,7 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(functio
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <motion.div
-          initial={{ opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-        >
+        <div className="animate-fade-in">
           <Button
             ref={ref}
             variant="ghost"
@@ -92,7 +87,7 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(functio
             <span className="hidden text-sm sm:inline">Voltar para {parentLabel}</span>
             <span className="text-sm sm:hidden">Voltar</span>
           </Button>
-        </motion.div>
+        </div>
       </TooltipTrigger>
       <TooltipContent side="bottom">{ariaLabel}</TooltipContent>
     </Tooltip>

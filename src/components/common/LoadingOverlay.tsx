@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingOverlayProps {
   isLoading: boolean;
@@ -18,19 +17,6 @@ const spinnerSizes = {
   lg: 'h-12 w-12',
 };
 
-/**
- * LoadingOverlay - Overlay de carregamento com diferentes variantes
- *
- * @example
- * // Full screen loading
- * <LoadingOverlay isLoading={isLoading} fullScreen message="Carregando..." />
- *
- * // Card overlay
- * <div className="relative">
- *   <CardContent />
- *   <LoadingOverlay isLoading={isSaving} variant="card" />
- * </div>
- */
 export function LoadingOverlay({
   isLoading,
   message,
@@ -40,6 +26,8 @@ export function LoadingOverlay({
   spinnerSize = 'md',
   variant = 'default',
 }: LoadingOverlayProps) {
+  if (!isLoading) return null;
+
   const overlayVariants = {
     card: 'absolute inset-0 rounded-lg z-10',
     inline: 'inline-flex items-center gap-2',
@@ -48,70 +36,45 @@ export function LoadingOverlay({
 
   if (variant === 'inline') {
     return (
-      <AnimatePresence>
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={cn('inline-flex items-center gap-2 text-muted-foreground', className)}
-          >
-            <Loader2 className={cn('animate-spin', spinnerSizes[spinnerSize])} />
-            {message && <span className="text-sm">{message}</span>}
-          </motion.div>
+      <div
+        className={cn(
+          'inline-flex animate-fade-in items-center gap-2 text-muted-foreground',
+          className,
         )}
-      </AnimatePresence>
+      >
+        <Loader2 className={cn('animate-spin', spinnerSizes[spinnerSize])} />
+        {message && <span className="text-sm">{message}</span>}
+      </div>
     );
   }
 
   return (
-    <AnimatePresence>
-      {isLoading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className={cn(
-            overlayVariants[variant],
-            blur && 'backdrop-blur-sm',
-            'flex items-center justify-center bg-background/80',
-            className,
-          )}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ delay: 0.1, duration: 0.2 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <div className="relative">
-              {/* Glow effect behind spinner */}
-              <div
-                className={cn(
-                  'absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl',
-                  spinnerSizes[spinnerSize],
-                )}
-              />
-              <Loader2
-                className={cn('relative animate-spin text-primary', spinnerSizes[spinnerSize])}
-              />
-            </div>
-            {message && (
-              <motion.p
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-sm font-medium text-muted-foreground"
-              >
-                {message}
-              </motion.p>
-            )}
-          </motion.div>
-        </motion.div>
+    <div
+      className={cn(
+        'animate-fade-in',
+        overlayVariants[variant],
+        blur && 'backdrop-blur-sm',
+        'flex items-center justify-center bg-background/80',
+        className,
       )}
-    </AnimatePresence>
+    >
+      <div className="flex animate-scale-in flex-col items-center gap-3">
+        <div className="relative">
+          <div
+            className={cn(
+              'absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl',
+              spinnerSizes[spinnerSize],
+            )}
+          />
+          <Loader2
+            className={cn('relative animate-spin text-primary', spinnerSizes[spinnerSize])}
+          />
+        </div>
+        {message && (
+          <p className="animate-fade-in text-sm font-medium text-muted-foreground">{message}</p>
+        )}
+      </div>
+    </div>
   );
 }
 

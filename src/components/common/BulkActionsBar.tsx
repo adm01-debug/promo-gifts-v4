@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export interface BulkAction {
   id: string;
@@ -36,15 +35,9 @@ export function BulkActionsBar({
   const pluralLabel = selectedCount === 1 ? entityLabel : `${entityLabel}s`;
 
   return (
-    <AnimatePresence>
+    <>
       {selectedCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-          className="flex flex-col gap-1"
-        >
+        <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2">
             <span className="text-sm font-medium text-foreground">
               {selectedCount} {pluralLabel} selecionado{selectedCount !== 1 ? 's' : ''}
@@ -77,8 +70,8 @@ export function BulkActionsBar({
               </Button>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

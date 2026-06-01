@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 
 interface ContainerProps {
   children: React.ReactNode;
@@ -234,18 +233,15 @@ interface AnimatedContainerProps {
 }
 
 /**
- * Container com animação de entrada
+ * Container com animação de entrada (CSS-only)
  */
 export function AnimatedContainer({ children, className, delay = 0 }: AnimatedContainerProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.3, delay }}
-      className={className}
+    <div
+      className={cn('animate-fade-in-up', className)}
+      style={delay > 0 ? { animationDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

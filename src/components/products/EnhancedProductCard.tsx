@@ -4,8 +4,7 @@
  */
 
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Eye, Share2, GitCompare, ShoppingCart, Package, ChevronRight } from 'lucide-react';
+import { Heart, Eye, Share2, GitCompare, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -67,11 +66,7 @@ export function EnhancedProductCard({
     >
       {/* Urgency badge */}
       {urgencyType && urgencyText && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute left-3 top-3 z-20"
-        >
+        <div className="absolute left-3 top-3 z-20 animate-fade-in">
           <ProductStatusBadge
             type="urgency"
             urgencyType={urgencyType}
@@ -79,7 +74,7 @@ export function EnhancedProductCard({
             size="sm"
             onClick={() => onStatusClick?.('urgency', urgencyType)}
           />
-        </motion.div>
+        </div>
       )}
 
       <article
@@ -113,30 +108,26 @@ export function EnhancedProductCard({
           )}
 
           {/* Overlay actions */}
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 to-transparent p-4"
-              >
-                <div className="flex w-full gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 gap-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickAdd?.(product, quantity);
-                    }}
-                  >
-                    <ShoppingCart className="h-3.5 w-3.5" />
-                    Adicionar
-                  </Button>
-                </div>
-              </motion.div>
+          <div
+            className={cn(
+              'absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 to-transparent p-4 transition-opacity duration-200',
+              isHovered ? 'opacity-100' : 'pointer-events-none opacity-0',
             )}
-          </AnimatePresence>
+          >
+            <div className="flex w-full gap-2">
+              <Button
+                size="sm"
+                className="flex-1 gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAdd?.(product, quantity);
+                }}
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+                Adicionar
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Card content */}
@@ -273,50 +264,46 @@ export function EnhancedProductCard({
         </div>
 
         {/* Quantity selector */}
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="absolute bottom-16 left-3 right-3 flex items-center justify-between rounded-lg bg-background/95 px-3 py-1.5 shadow-lg backdrop-blur-sm"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="text-xs text-muted-foreground">Qtd:</span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() =>
-                    setQuantity((q) => Math.max(product.minOrder || 1, q - (product.minOrder || 1)))
-                  }
-                >
-                  <span className="text-sm font-bold">-</span>
-                </Button>
-                <Badge variant="secondary" className="min-w-[2rem] justify-center text-xs">
-                  {quantity}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => setQuantity((q) => q + (product.minOrder || 1))}
-                >
-                  <span className="text-sm font-bold">+</span>
-                </Button>
-              </div>
-              <Button
-                size="sm"
-                className="h-6 gap-1 text-xs"
-                onClick={() => onQuickAdd?.(product, quantity)}
-              >
-                <ChevronRight className="h-3 w-3" />
-                OK
-              </Button>
-            </motion.div>
+        <div
+          className={cn(
+            'absolute bottom-16 left-3 right-3 flex items-center justify-between rounded-lg bg-background/95 px-3 py-1.5 shadow-lg backdrop-blur-sm transition-[opacity,transform] duration-200',
+            isHovered ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0',
           )}
-        </AnimatePresence>
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-xs text-muted-foreground">Qtd:</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5"
+              onClick={() =>
+                setQuantity((q) => Math.max(product.minOrder || 1, q - (product.minOrder || 1)))
+              }
+            >
+              <span className="text-sm font-bold">-</span>
+            </Button>
+            <Badge variant="secondary" className="min-w-[2rem] justify-center text-xs">
+              {quantity}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5"
+              onClick={() => setQuantity((q) => q + (product.minOrder || 1))}
+            >
+              <span className="text-sm font-bold">+</span>
+            </Button>
+          </div>
+          <Button
+            size="sm"
+            className="h-6 gap-1 text-xs"
+            onClick={() => onQuickAdd?.(product, quantity)}
+          >
+            <ChevronRight className="h-3 w-3" />
+            OK
+          </Button>
+        </div>
       </article>
     </article>
   );

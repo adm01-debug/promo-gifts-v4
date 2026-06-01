@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Star,
@@ -55,11 +54,9 @@ export function PopularityBadge({
   const { icon: Icon, label, color } = config[variant];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
+    <div
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1',
+        'inline-flex animate-scale-in items-center gap-1.5 rounded-full px-2.5 py-1',
         'text-xs font-medium',
         color,
         className,
@@ -67,7 +64,7 @@ export function PopularityBadge({
     >
       <Icon className="h-3.5 w-3.5" />
       <span>{label}</span>
-    </motion.div>
+    </div>
   );
 }
 
@@ -390,11 +387,7 @@ export function RecentActivity({
   className,
 }: RecentActivityProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={cn('flex items-center gap-2 text-sm', className)}
-    >
+    <div className={cn('flex animate-fade-in items-center gap-2 text-sm', className)}>
       <div className="relative">
         <Users className="h-4 w-4 text-muted-foreground" />
         <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-success" />
@@ -402,7 +395,7 @@ export function RecentActivity({
       <span className="text-muted-foreground">
         <strong className="text-foreground">{count}</strong> pessoas viram nas {timeframe}
       </span>
-    </motion.div>
+    </div>
   );
 }
 
@@ -417,11 +410,9 @@ export function LowStockAlert({ quantity, threshold = 10, className }: LowStockA
   if (quantity > threshold) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
+    <div
       className={cn(
-        'flex items-center gap-2 rounded-lg px-3 py-1.5',
+        'flex animate-fade-in items-center gap-2 rounded-lg px-3 py-1.5',
         'bg-warning/10 text-warning',
         'text-sm font-medium',
         className,
@@ -429,7 +420,7 @@ export function LowStockAlert({ quantity, threshold = 10, className }: LowStockA
     >
       <Clock className="h-4 w-4" />
       <span>{quantity === 0 ? 'Esgotado' : `Restam apenas ${quantity} unidades`}</span>
-    </motion.div>
+    </div>
   );
 }
 
@@ -444,11 +435,11 @@ interface TestimonialProps {
 
 export function Testimonial({ quote, author, company, rating = 5, className }: TestimonialProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className={cn('rounded-xl border border-border bg-muted/50 p-4', className)}
+    <div
+      className={cn(
+        'animate-fade-in-up rounded-xl border border-border bg-muted/50 p-4',
+        className,
+      )}
     >
       <StarRating rating={rating} showCount={false} size="sm" className="mb-3" />
       <blockquote className="mb-3 text-sm italic text-foreground">"{quote}"</blockquote>
@@ -456,7 +447,7 @@ export function Testimonial({ quote, author, company, rating = 5, className }: T
         <span className="font-medium text-foreground">{author}</span>
         {company && <span className="text-muted-foreground"> • {company}</span>}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

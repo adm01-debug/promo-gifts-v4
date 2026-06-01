@@ -15,7 +15,6 @@ import {
   Download,
   Calendar as CalendarIcon,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,7 +26,6 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
@@ -87,52 +85,29 @@ const BellBadge = React.memo(function BellBadge({
 }) {
   return (
     <>
-      <motion.div
-        animate={
-          shouldShake
-            ? {
-                rotate: [0, -15, 15, -10, 10, -5, 5, 0],
-                transition: { duration: 0.6 },
-              }
-            : {}
-        }
-      >
+      <div className={shouldShake ? 'animate-shake' : undefined}>
         <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
-      </motion.div>
-      <AnimatePresence mode="wait">
-        {isMutationRehydrating ? (
-          <motion.div
-            key="rehydrating"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute -right-0.5 -top-0.5"
-            aria-label="Sincronizando notificações"
-            role="status"
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
-            </span>
-          </motion.div>
-        ) : unreadCount > 0 ? (
-          <motion.div
-            key="badge"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-            className="absolute -right-0.5 -top-0.5"
-          >
-            <span className="relative flex h-4 min-w-4 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-40" />
-              <Badge className="relative flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] text-destructive-foreground">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Badge>
-            </span>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      </div>
+      {isMutationRehydrating ? (
+        <div
+          className="absolute -right-0.5 -top-0.5 animate-scale-in"
+          aria-label="Sincronizando notificações"
+          role="status"
+        >
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
+          </span>
+        </div>
+      ) : unreadCount > 0 ? (
+        <div className="absolute -right-0.5 -top-0.5 animate-scale-in">
+          <span className="relative flex h-4 min-w-4 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-40" />
+            <Badge className="relative flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] text-destructive-foreground">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          </span>
+        </div>
+      ) : null}
     </>
   );
 });
@@ -146,22 +121,15 @@ const RefetchSpinner = React.memo(function RefetchSpinner({
 }: {
   isRefetching: boolean;
 }) {
+  if (!isRefetching) return null;
   return (
-    <AnimatePresence>
-      {isRefetching && (
-        <motion.span
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.15 }}
-          className="inline-flex items-center text-muted-foreground"
-          aria-label="Atualizando notificações"
-          role="status"
-        >
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-        </motion.span>
-      )}
-    </AnimatePresence>
+    <span
+      className="inline-flex animate-fade-in items-center text-muted-foreground"
+      aria-label="Atualizando notificações"
+      role="status"
+    >
+      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+    </span>
   );
 });
 
@@ -178,11 +146,9 @@ function NotificationItem({
   const Icon = config.icon;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2 }}
+    <div
       className={cn(
+        'animate-fade-in',
         'group flex cursor-pointer gap-3 rounded-lg p-3 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm',
         !notification.is_read && 'border-l-2 border-primary bg-primary/5',
       )}
@@ -222,7 +188,7 @@ function NotificationItem({
           </Badge>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

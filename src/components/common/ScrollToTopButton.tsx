@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,23 +35,21 @@ export function ScrollToTopButton({
   };
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 10 }}
-          onClick={scrollToTop}
-          className={cn(
-            'fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all hover:bg-brand-primary/90 active:scale-95 sm:bottom-8 sm:right-8',
-            className,
-          )}
-          aria-label="Voltar ao topo"
-          title="Voltar ao topo"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </motion.button>
+    <button
+      onClick={scrollToTop}
+      className={cn(
+        'fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all hover:bg-brand-primary/90 active:scale-95 sm:bottom-8 sm:right-8',
+        show
+          ? 'translate-y-0 scale-100 opacity-100'
+          : 'pointer-events-none translate-y-2 scale-90 opacity-0',
+        'transition-[opacity,transform] duration-200',
+        className,
       )}
-    </AnimatePresence>
+      aria-label="Voltar ao topo"
+      aria-hidden={!show}
+      title="Voltar ao topo"
+    >
+      <ArrowUp className="h-5 w-5" />
+    </button>
   );
 }

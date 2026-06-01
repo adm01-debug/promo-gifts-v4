@@ -2,7 +2,6 @@ import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button, type ButtonProps } from './button';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingButtonProps extends ButtonProps {
   isLoading?: boolean;
@@ -13,10 +12,6 @@ interface LoadingButtonProps extends ButtonProps {
   iconPosition?: 'left' | 'right';
 }
 
-/**
- * LoadingButton - Button with loading state and optional success state
- * Shows spinner when loading, optional success state with checkmark
- */
 export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
   (
     {
@@ -47,58 +42,32 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         )}
         {...props}
       >
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.span
-              key="loading"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-2"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {loadingText && <span>{loadingText}</span>}
-            </motion.span>
-          ) : isSuccess ? (
-            <motion.span
-              key="success"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="flex items-center gap-2"
-            >
-              <motion.svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <motion.path
-                  d="M5 13l4 4L19 7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </motion.svg>
-              {successText || children}
-            </motion.span>
-          ) : (
-            <motion.span
-              key="default"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-2"
-            >
-              {icon && iconPosition === 'left' && icon}
-              {children}
-              {icon && iconPosition === 'right' && icon}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {isLoading ? (
+          <span className="flex animate-fade-in items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {loadingText && <span>{loadingText}</span>}
+          </span>
+        ) : isSuccess ? (
+          <span className="flex animate-fade-in items-center gap-2">
+            <svg viewBox="0 0 24 24" className="h-4 w-4">
+              <path
+                d="M5 13l4 4L19 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {successText || children}
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            {icon && iconPosition === 'left' && icon}
+            {children}
+            {icon && iconPosition === 'right' && icon}
+          </span>
+        )}
       </Button>
     );
   },
@@ -106,9 +75,6 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
 
 LoadingButton.displayName = 'LoadingButton';
 
-/**
- * IconButton - Compact button for icons only
- */
 export const IconButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
   ({ children, isLoading, className, ...props }, ref) => {
     return (
@@ -120,27 +86,13 @@ export const IconButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         {...props}
         aria-label="AnimatePresence"
       >
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.span
-              key="loading"
-              initial={{ opacity: 0, rotate: -90 }}
-              animate={{ opacity: 1, rotate: 0 }}
-              exit={{ opacity: 0, rotate: 90 }}
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="icon"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-            >
-              {children}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {isLoading ? (
+          <span className="animate-fade-in">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </span>
+        ) : (
+          <span>{children}</span>
+        )}
       </Button>
     );
   },
