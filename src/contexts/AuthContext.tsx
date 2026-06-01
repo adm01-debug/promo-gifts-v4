@@ -102,6 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mountedRef = useRef(true);
 
   const refreshSession = useCallback(async () => {
+    if (fetchPromiseRef.current) {
+      await fetchPromiseRef.current;
+      return;
+    }
     const log = createClientLogger('auth.refreshSession');
     log.info('start');
     try {
@@ -114,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const uid = nextSession?.user?.id ?? user?.id;
       if (uid) {
-        fetchPromiseRef.current = null;
         await Promise.all([fetchUserData(uid), fetchAAL()]);
       }
       log.info('ok');
