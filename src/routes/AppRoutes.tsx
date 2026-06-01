@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import NProgress from 'nprogress';
 import { performanceTracker } from '@/utils/performance';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { GlobalSearchPalette } from '@/components/search/GlobalSearchPalette';
 
 import { getFallback } from '@/components/layout/SkeletonLoaders';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
