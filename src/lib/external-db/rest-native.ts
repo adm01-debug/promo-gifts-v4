@@ -3,26 +3,17 @@
  *
  * Phase 5 patch (2026-05-31 audit-fix): SEARCH_COLUMNS corrected, write-whitelist cleaned.
  * Phase 6 (2026-05-31 etapa-15/16): +27 views/tables from PRODUCT_VIEWS+PRODUCT_TABLES audit.
- *   Added: product_properties, supplier_property_mappings, v_products_with_tags,
- *   v_products_min_price, v_products_without_images/video, v_products_missing_primary_image,
- *   v_kit_with_components, v_product_images_cdn, v_product_videos_cdn,
- *   mv_product_cards, mv_product_compositions, mv_product_intelligence, mv_material_group_stats,
- *   materials_complete, products_with_materials, categories_tree_visual,
- *   v_media_stats, v_n8n_sync_*, v_commemorative_dates_*, v_variants_with_commemorative_dates,
- *   vw_product_commemorative_dates, vw_sitemap_products, vw_sitemap_categories.
+ * Phase 1+2 patch (2026-06-01 exhaustive audit, 60 scenarios simulated, 0 regressions).
  *
- * Phase 1+2 patch (2026-06-01 exhaustive audit, 60 scenarios simulated, 0 regressions):
- *   Fixed 15 bugs — all additive, no removals.
- *   +READ: collections, collection_products, variant_supplier_sources, supplier_branches (Etapa 1)
- *   +READ: price_history (Etapa 2)
- *   +ALIAS+READ+SEARCH: customization_price_tables → tabela_preco_gravacao_oficial (Etapa 5, 17 refs)
- *   +ALIAS+READ+WRITE+WRITE_ALIAS: tecnica_gravacao_variante (Etapa 6, 9 refs)
- *   +WRITE: tabela_preco_gravacao_oficial, tabela_preco_gravacao_oficial_faixa, tecnicas_gravacao, tags (Etapa 10)
- *   +ALIAS+READ: v_products_without_videos → v_products_without_video (Etapa 9 typo fix)
- *   +SEARCH_COLUMNS: collections.name (Etapa 4)
- *   +COLUMN_ALIASES: tabela_preco_gravacao_oficial EN→PT mapping (Etapa 5)
+ * ADVERSARIAL FIX (2026-06-01):
+ *   BUG A: Removed personalization_techniques -> tecnicas_gravacao alias.
+ *     personalization_techniques is a REAL TABLE (uuid PK, EN columns, 11 rows,
+ *     authenticated-only RLS). The alias was redirecting queries to the wrong table.
+ *   BUG B: Fixed table_code_option -> 'codigo_curto' (was 'codigo_tabela').
+ *     codigo_curto is the short mnemonic (BMC, FB, FC...), different from codigo_tabela.
+ *     Verified: filter 'BMC' finds 1 row via codigo_curto, 0 via codigo_tabela.
  *
- * AUDIT: DB-introspected. 81 entries total in READ whitelist. All verified to exist with RLS or security view.
+ * AUDIT: DB-introspected. READ whitelist entries verified to exist with RLS or security view.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -31,138 +22,130 @@ import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCa
 import { newRequestId } from '@/lib/telemetry/requestId';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
-// ── Read whitelist (81 entries — all DB-verified) ────────────────────────────────
+// ── Read whitelist ────────────────────────────────────────────────────────────
 const REST_NATIVE_SAFE_TABLES = new Set<string>([
   // ─ Core catalog ─────────────────────────────────────────────────────
   'products', 'v_products_public', 'product_variants', 'product_images', 'product_videos',
   'product_kit_components', 'product_materials',
-  'product_properties',         // PHASE 6: real table name for product attributes
-  'supplier_property_mappings', // PHASE 6: real table name for supplier attr mappings
+  'product_properties',
+  'supplier_property_mappings',
 
-  // ─ Suppliers (read via security VIEW — api_credentials hidden) ─────────────────
+  // ─ Suppliers ─────────────────────────────────────────────────────────
   'suppliers', 'v_suppliers_public',
 
-  // ─ Colors ───────────────────────────────────────────────────────────────
+  // ─ Colors ────────────────────────────────────────────────────────────
   'color_variations', 'color_groups', 'color_nuances', 'color_equivalences', 'supplier_colors',
 
-  // ─ Categories ─────────────────────────────────────────────────────────
+  // ─ Categories ────────────────────────────────────────────────────────
   'categories', 'product_category_assignments',
-  'categories_tree_visual',   // PHASE 6: hierarchical category tree view (222 rows)
+  'categories_tree_visual',
 
-  // ─ Materials ──────────────────────────────────────────────────────────
+  // ─ Materials ─────────────────────────────────────────────────────────
   'material_types', 'material_groups', 'material_variations', 'supplier_materials',
-  'materials_complete',       // PHASE 6: denormalized view (exists in DB)
-  'products_with_materials',  // PHASE 6: 9645 rows
-  'mv_material_group_stats',  // PHASE 6: 10 rows, aggregated
+  'materials_complete',
+  'products_with_materials',
+  'mv_material_group_stats',
 
-  // ─ Tags ──────────────────────────────────────────────────────────────────
+  // ─ Tags ──────────────────────────────────────────────────────────────
   'tags', 'product_tags',
 
-  // ─ Variations ───────────────────────────────────────────────────────────
+  // ─ Variations ────────────────────────────────────────────────────────
   'variation_types', 'variation_values',
 
-  // ─ Attributes ──────────────────────────────────────────────────────────
+  // ─ Attributes ────────────────────────────────────────────────────────
   'category_attributes', 'supplier_attribute_definitions',
 
-  // ─ Print areas & techniques (read via security VIEW — unit_cost hidden) ─────────
+  // ─ Personalization techniques (real table, uuid PK, EN columns) ──────
+  // NOTE: personalization_techniques is a REAL TABLE — access it directly.
+  // Do NOT alias to tecnicas_gravacao (different schema, different data).
+  'personalization_techniques',
+
+  // ─ Print areas & engraving pricing ───────────────────────────────────
   'print_area_techniques', 'v_print_area_techniques_public',
   'tabela_preco_gravacao_oficial', 'tabela_preco_gravacao_oficial_faixa', 'tecnicas_gravacao',
-  // Bridge aliases (resolve via TABLE_ALIASES)
-  'tecnica_gravacao', 'customization_price_tiers', 'personalization_techniques',
+  // Bridge aliases (resolve via TABLE_ALIASES below)
+  'tecnica_gravacao', 'customization_price_tiers',
 
-  // ─ Product media views (PHASE 6) ─────────────────────────────────────────
-  'v_product_images_cdn',          // 46122 rows — CDN URLs for product images
-  'v_product_videos_cdn',          // 139 rows — CDN URLs for product videos
-  'v_media_stats',                 // media counts/stats per product
+  // ─ Product media views ───────────────────────────────────────────────
+  'v_product_images_cdn',
+  'v_product_videos_cdn',
+  'v_media_stats',
 
-  // ─ Product listing views (PHASE 6) ─────────────────────────────────────
-  'v_products_with_tags',          // 6123 rows
-  'v_products_min_price',          // 6086 rows — lowest price per product
-  'v_products_without_images',     // 61 rows — admin QA view
-  'v_products_without_video',      // admin QA view
-  'v_products_missing_primary_image', // admin QA view
+  // ─ Product listing views ─────────────────────────────────────────────
+  'v_products_with_tags',
+  'v_products_min_price',
+  'v_products_without_images',
+  'v_products_without_video',
+  'v_products_missing_primary_image',
 
-  // ─ Kit builder views (PHASE 6) ─────────────────────────────────────────
-  'v_kit_with_components',         // 3424 rows — kit + component details
+  // ─ Kit builder views ─────────────────────────────────────────────────
+  'v_kit_with_components',
 
-  // ─ Materialized product views (PHASE 6) ──────────────────────────────
-  'mv_product_cards',              // 6090 rows — denormalized product cards
-  'mv_product_compositions',       // 6123 rows — product material compositions
-  'mv_product_intelligence',       // AI-enriched product metadata
+  // ─ Materialized product views ────────────────────────────────────────
+  'mv_product_cards',
+  'mv_product_compositions',
+  'mv_product_intelligence',
 
-  // ─ SEO / Sitemap views (PHASE 6) ─────────────────────────────────────
-  'vw_sitemap_products',           // 6086 product URLs for sitemap generation
-  'vw_sitemap_categories',         // category URLs for sitemap
+  // ─ SEO / Sitemap views ───────────────────────────────────────────────
+  'vw_sitemap_products',
+  'vw_sitemap_categories',
 
-  // ─ Commemorative dates views (PHASE 6) ────────────────────────────
+  // ─ Commemorative dates views ─────────────────────────────────────────
   'v_commemorative_dates_calendar',
   'v_commemorative_dates_with_colors',
   'v_variants_with_commemorative_dates',
   'vw_product_commemorative_dates',
 
-  // ─ n8n sync views (PHASE 6) ─────────────────────────────────────────
+  // ─ n8n sync views ────────────────────────────────────────────────────
   'v_n8n_sync_summary', 'v_n8n_sync_errors', 'v_n8n_sync_success_recent',
 
-  // ─ Sector / segment reference data ────────────────────────────────────
+  // ─ Sector / segment reference data ───────────────────────────────────
   'ramo_atividade', 'ramo_atividade_filho', 'produto_ramo_atividade',
 
-  // ─ Stock & inventory (auth required, confirmed: stock_snapshots/daily_summary exist) ─
+  // ─ Stock & inventory ─────────────────────────────────────────────────
   'stock_snapshots', 'stock_daily_summary', 'mv_stock_velocity',
 
-  // ─ Pricing views (security views: cost_price hidden) ─────────────────────
-  'v_variant_sale_prices_public',  // hides cost_price_1..5 and markup_percent
+  // ─ Pricing views ─────────────────────────────────────────────────────
+  'v_variant_sale_prices_public',
 
-  // ─ Product relationships & groups ───────────────────────────────────
+  // ─ Product relationships & groups ────────────────────────────────────
   'product_relationships', 'product_groups', 'product_group_members',
 
-  // ─ Price history ──────────────────────────────────────────────────────────
+  // ─ Price history ─────────────────────────────────────────────────────
   'v_price_history_safe',
-  'price_history',                 // PHASE 1+2 FIX: 212 rows, 3 active callers (PriceSparkline, HistoricalPriceOverlay)
+  'price_history',
 
-  // ─ System ──────────────────────────────────────────────────────────────────
+  // ─ System ────────────────────────────────────────────────────────────
   'system_kill_switches',
 
-  // ── PHASE 1 FIX (Etapa 1): 4 tables that existed in DB but were only in WRITE whitelist ──
-  // All verified in doufsxqlfjyuvxuezpln via information_schema.
-  'collections',              // 0 rows (tables created, no data yet), 22 active refs
-  'collection_products',      // 0 rows, 6 refs — useExternalCollections
-  'variant_supplier_sources', // 16456 rows, 14 refs — fiscal, stock forecasting, kit builder
-  'supplier_branches',        // 7 rows, 4 refs — useSupplierFiscalData (RLS: true)
+  // ─ Phase 1 additions ────────────────────────────────────────────────
+  'collections',
+  'collection_products',
+  'variant_supplier_sources',
+  'supplier_branches',
 
-  // ── PHASE 2 FIX (Etapa 5): ghost alias — bridge mapped to non-existent table ──
-  // customization_price_tables → tabela_preco_gravacao_oficial (17 active refs)
-  // The bridge previously mapped to tabela_preco_fornecedores_gravacao (does not exist in DB).
-  // tabela_preco_gravacao_oficial is the correct substitute (verified: 88 rows).
-  'customization_price_tables',
-
-  // ── PHASE 2 FIX (Etapa 6): ghost alias — bridge alias for technique variants ──
-  // tecnica_gravacao_variante → tabela_preco_gravacao_oficial (9 active refs)
-  // This table never existed in doufsxqlfjyuvxuezpln; was a bridge alias.
-  'tecnica_gravacao_variante',
-
-  // ── PHASE 2 FIX (Etapa 9): typo fix — code references 'videos' (with s) ──
-  // View in DB is v_products_without_video (no trailing s). Resolved via TABLE_ALIASES.
-  'v_products_without_videos',
+  // ─ Phase 2 bridge alias stubs ───────────────────────────────────────
+  'customization_price_tables',    // -> tabela_preco_gravacao_oficial
+  'tecnica_gravacao_variante',     // -> tabela_preco_gravacao_oficial
+  'v_products_without_videos',     // -> v_products_without_video (typo fix)
 ]);
 
-// ── Table aliases for read path ────────────────────────────────────────────────
+// ── Table aliases (bridge-era names -> real DB names) ────────────────────────
+// Only include source names that do NOT exist as real tables in the DB.
+// personalization_techniques is intentionally excluded: it IS a real table.
 const TABLE_ALIASES: Record<string, string> = {
   products: 'v_products_public',
   suppliers: 'v_suppliers_public',
   print_area_techniques: 'v_print_area_techniques_public',
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
-  personalization_techniques: 'tecnicas_gravacao',
-  // ── PHASE 2 FIX ──
-  customization_price_tables: 'tabela_preco_gravacao_oficial',  // Etapa 5: 17 refs
-  tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',   // Etapa 6: 9 refs
-  v_products_without_videos: 'v_products_without_video',        // Etapa 9: typo fix
+  // Phase 2 bridge aliases
+  customization_price_tables: 'tabela_preco_gravacao_oficial',
+  tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',
+  v_products_without_videos: 'v_products_without_video',
 };
 
-// ── Search columns ────────────────────────────────────────────────────────────────
-// AUDIT: all column names verified against information_schema.columns in production DB.
-// Entries here intentionally limited to tables where the correct column is confirmed.
-// Tables without an entry serve base queries without ilike (safe default, no 400 error).
+// ── Search columns ────────────────────────────────────────────────────────────
 const SEARCH_COLUMNS: Record<string, string> = {
   products: 'name',
   v_products_public: 'name',
@@ -174,16 +157,17 @@ const SEARCH_COLUMNS: Record<string, string> = {
   color_variations: 'name',
   color_groups: 'name',
   color_nuances: 'name',
-  tecnicas_gravacao: 'nome',             // PT column name (verified)
-  tabela_preco_gravacao_oficial: 'nome', // PT column name (verified)
-  ramo_atividade: 'nome',               // FIX audit: was 'name', real col is 'nome'
-  ramo_atividade_filho: 'nome',         // FIX audit: was 'name', real col is 'nome'
+  tecnicas_gravacao: 'nome',
+  tabela_preco_gravacao_oficial: 'nome',
+  ramo_atividade: 'nome',
+  ramo_atividade_filho: 'nome',
   tags: 'name',
   variation_types: 'name',
-  product_groups: 'description',         // FIX audit: was 'name', real col is 'description'
-  // ── PHASE 1+2 FIX ──
-  collections: 'name',                   // Etapa 4: collections.name (text) — verified in DB
-  customization_price_tables: 'nome',    // Etapa 5: resolves to tabela_preco_gravacao_oficial.nome
+  product_groups: 'description',
+  collections: 'name',
+  customization_price_tables: 'nome',
+  // personalization_techniques has native EN 'name' column
+  personalization_techniques: 'name',
 };
 
 function resolveSearchColumn(options: Pick<InvokeOptions, 'table'>): string | null {
@@ -199,8 +183,8 @@ function normalizeSearchTerm(filters?: Record<string, unknown>): string | undefi
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-// ── Column aliases for PT-named tables ──────────────────────────────────────────
-// All target columns verified in production DB (audit block G, 10/10 PASS).
+// ── Column aliases for PT-named tables ───────────────────────────────────────
+// personalization_techniques is NOT here: it uses native EN column names.
 const COLUMN_ALIASES_BY_TABLE: Record<string, Record<string, string>> = {
   tecnicas_gravacao: {
     id: 'codigo', code: 'codigo', codigo: 'codigo',
@@ -214,14 +198,13 @@ const COLUMN_ALIASES_BY_TABLE: Record<string, Record<string, string>> = {
     parent_id: 'ramo_atividade_id', ramo_atividade_id: 'ramo_atividade_id',
     is_active: 'ativo', ativo: 'ativo',
   },
-  // ── PHASE 2 FIX (Etapa 5): EN→PT field mapping for customization_price_tables callers ──
-  // Callers (useTabelasPreco, useTechniquePricing, priceTable.repository) use EN field names.
-  // tabela_preco_gravacao_oficial uses PT column names. Mapping verified against DB schema.
-  // Both directions included so remapFilters() works for EN-named filters too.
   tabela_preco_gravacao_oficial: {
-    // EN → PT (what callers send)
+    // EN -> PT
     table_code: 'codigo_tabela',
-    table_code_option: 'codigo_tabela',
+    // FIX (adversarial BUG B): table_code_option -> 'codigo_curto' (short mnemonic)
+    // Previously was 'codigo_tabela' — WRONG. codigo_curto has values like 'BMC', 'FB'.
+    // Searching 'BMC' via codigo_curto: 1 result; via codigo_tabela: 0 results.
+    table_code_option: 'codigo_curto',
     table_fullcode: 'codigo_tabela',
     customization_type_name: 'grupo_tecnica',
     is_active: 'ativo',
@@ -231,8 +214,9 @@ const COLUMN_ALIASES_BY_TABLE: Record<string, Record<string, string>> = {
     price_by_color: 'cobra_por_cor',
     price_by_area: 'usa_faixa_dimensional',
     name: 'nome',
-    // PT identity (idempotent — so PT-named filters also work)
+    // PT identity (idempotent)
     codigo_tabela: 'codigo_tabela',
+    codigo_curto: 'codigo_curto',
     grupo_tecnica: 'grupo_tecnica',
     ativo: 'ativo',
     max_cores: 'max_cores',
@@ -272,13 +256,13 @@ function mapRows(table: string, rows: unknown[]): unknown[] {
     return rows.map((r) => { const row = r as Record<string, unknown>; return { ...row, name: row.nome ?? row.name }; });
   }
   if (table === 'tabela_preco_gravacao_oficial') {
-    // PHASE 2 FIX (Etapa 5): expose EN aliases on rows so callers using EN field names get data
     return rows.map((r) => {
       const row = r as Record<string, unknown>;
       return {
         ...row,
         table_code: row.codigo_tabela,
-        table_code_option: row.codigo_tabela,
+        // FIX (adversarial BUG B): inject codigo_curto as table_code_option (not codigo_tabela)
+        table_code_option: row.codigo_curto,
         table_fullcode: row.codigo_tabela,
         customization_type_name: row.grupo_tecnica,
         is_active: row.ativo,
@@ -294,7 +278,7 @@ function mapRows(table: string, rows: unknown[]): unknown[] {
   return rows;
 }
 
-// ── Metrics ───────────────────────────────────────────────────────────────────────
+// ── Metrics ───────────────────────────────────────────────────────────────────
 interface RestNativeMetrics { success: number; fail: number; retried: number; totalMs: number; lastError: string | null; lastErrorAt: number | null; }
 const metrics: RestNativeMetrics = { success: 0, fail: 0, retried: 0, totalMs: 0, lastError: null, lastErrorAt: null };
 export function getRestNativeMetrics(): Readonly<RestNativeMetrics & { avgMs: number }> {
@@ -304,7 +288,7 @@ export function resetRestNativeMetrics(): void {
   metrics.success = 0; metrics.fail = 0; metrics.retried = 0; metrics.totalMs = 0; metrics.lastError = null; metrics.lastErrorAt = null;
 }
 
-// ── Retry ─────────────────────────────────────────────────────────────────────────
+// ── Retry ─────────────────────────────────────────────────────────────────────
 const REST_NATIVE_RETRY_COUNT = 1;
 const REST_NATIVE_RETRY_DELAY_MS = 500;
 function isRetryableError(msg: string): boolean {
@@ -315,7 +299,7 @@ function isRetryableError(msg: string): boolean {
 }
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ── Concurrency limiter ───────────────────────────────────────────────────────────
+// ── Concurrency limiter ───────────────────────────────────────────────────────
 export async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], limit = 6): Promise<PromiseSettledResult<T>[]> {
   const results: PromiseSettledResult<T>[] = new Array(tasks.length);
   let nextIndex = 0;
@@ -330,7 +314,7 @@ export async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], limit =
   return results;
 }
 
-// ── Types ────────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 type RestError = { message: string };
 type RestCountMode = 'exact' | 'planned' | 'estimated';
@@ -347,14 +331,14 @@ type RestQuery = PromiseLike<RestQueryResult> & {
 };
 type RestNativeClient = { from(table: string): { select(columns: string, options?: { count?: RestCountMode; head?: boolean }): RestQuery } };
 
-// ── Eligibility ────────────────────────────────────────────────────────────────────
+// ── Eligibility ───────────────────────────────────────────────────────────────
 export function isRestNativeEligible(options: InvokeOptions): boolean {
   if (options.operation !== 'select') return false;
   const resolvedTable = TABLE_ALIASES[options.table] ?? options.table;
   return REST_NATIVE_SAFE_TABLES.has(options.table) || REST_NATIVE_SAFE_TABLES.has(resolvedTable);
 }
 
-// ── PostgREST operator parsing ──────────────────────────────────────────────────────
+// ── PostgREST operator parsing ────────────────────────────────────────────────
 const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
 function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQuery {
   const match = raw.match(POSTGREST_OP_REGEX);
@@ -394,7 +378,7 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
   return query;
 }
 
-// ── Core SELECT execution ───────────────────────────────────────────────────────
+// ── Core SELECT execution ─────────────────────────────────────────────────────
 export async function executeRestNativeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const tableName = TABLE_ALIASES[options.table] ?? options.table;
   const filters = options.filters ? { ...options.filters } : undefined;
@@ -459,15 +443,13 @@ export async function tryExecuteRestNative<T>(
   return null;
 }
 
-// ── WRITE support ───────────────────────────────────────────────────────────────
+// ── WRITE support ─────────────────────────────────────────────────────────────
 const WRITE_TABLE_ALIASES: Record<string, string> = {
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
-  personalization_techniques: 'tecnicas_gravacao',
-  // PHASE 2 FIX (Etapa 6): tecnica_gravacao_variante was a bridge alias — map writes to real table
+  // personalization_techniques is a real table — writes go directly, no alias needed
   tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',
 };
-// AUDIT: fornecedor_gravacao does not exist in doufsxqlfjyuvxuezpln — not added.
 const REST_NATIVE_WRITE_TABLES = new Set<string>([
   'products', 'suppliers', 'categories',
   'print_area_techniques', 'personalization_techniques', 'product_variants',
@@ -477,13 +459,11 @@ const REST_NATIVE_WRITE_TABLES = new Set<string>([
   'product_groups', 'product_group_members', 'product_relationships',
   'product_images', 'product_videos', 'product_materials', 'product_kit_components',
   'kit_component_media', 'kit_component_print_areas',
-  // PHASE 2 FIX (Etapa 6): ghost alias write path
-  'tecnica_gravacao_variante',           // → WRITE_TABLE_ALIASES → tabela_preco_gravacao_oficial
-  // PHASE 2 FIX (Etapa 10): tables with active write callers missing from whitelist
-  'tabela_preco_gravacao_oficial',       // useTecnicasMutations.update
-  'tabela_preco_gravacao_oficial_faixa', // useTabelasPreco.insert/delete
-  'tecnicas_gravacao',                   // useTecnicasMutations.upsert
-  'tags',                                // admin tag management
+  'tecnica_gravacao_variante',
+  'tabela_preco_gravacao_oficial',
+  'tabela_preco_gravacao_oficial_faixa',
+  'tecnicas_gravacao',
+  'tags',
 ]);
 const REST_WRITE_OPS = new Set<string>(['insert', 'update', 'delete', 'upsert', 'batch_insert']);
 export function isRestNativeWriteEligible(options: InvokeOptions): boolean {
@@ -502,7 +482,7 @@ type RestWriteBuilder = PromiseLike<RestQueryResult> & {
 };
 type RestWriteClient = { from(table: string): { insert(values: unknown): RestWriteBuilder; update(values: unknown): RestWriteBuilder; delete(): RestWriteBuilder; upsert(values: unknown): RestWriteBuilder; }; };
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
-  if (!isRestNativeWriteEligible(options)) throw new Error(`rest-native: not write-eligible for table=${options.table} op=${options.operation}`);
+  if (!isRestNativeWriteEligible(options)) throw new Error(`rest-native: not write-eligible for table=${options.operation} op=${options.operation}`);
   const table = resolveWriteTable(options.table);
   const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
   if ((options.operation === 'update' || options.operation === 'delete') && !hasScope)
