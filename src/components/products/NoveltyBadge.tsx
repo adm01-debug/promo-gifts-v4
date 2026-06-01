@@ -43,11 +43,11 @@ export function NoveltyBadgeCompact({
   onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
-    <NoveltyBadge 
-      daysRemaining={daysRemaining} 
-      size="sm" 
-      showDays={true} 
-      className={className} 
+    <NoveltyBadge
+      daysRemaining={daysRemaining}
+      size="sm"
+      showDays={true}
+      className={className}
       onClick={onClick}
     />
   );
