@@ -169,28 +169,64 @@ END $$;
 
 -- -------------------------------------------------------
 -- DOCUMENTACAO B03: Tabelas duplicadas — comentários COMMENTS
--- COMMENT ON ... IS requer string literal único (não permite || concat).
+-- Guards via DO + EXECUTE: tabelas podem não existir em preview snapshots.
+-- COMMENT ON ... IS requer string literal único (sem || concat).
 -- -------------------------------------------------------
-COMMENT ON TABLE public.smoke_test_runs IS
-  'DEPRECADA: use smoke_tests_runs. Esta tabela esta vazia (0 registros). smoke_tests_runs tem 28 registros. Ver PR fix/db-audit-20260526.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='smoke_test_runs') THEN
+    COMMENT ON TABLE public.smoke_test_runs IS
+      'DEPRECADA: use smoke_tests_runs. Esta tabela esta vazia (0 registros). smoke_tests_runs tem 28 registros. Ver PR fix/db-audit-20260526.';
+  END IF;
+END $$;
 
-COMMENT ON TABLE public.smoke_tests_runs IS
-  'Tabela ATIVA de smoke tests. smoke_test_runs esta deprecada e vazia. Ver PR fix/db-audit-20260526.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='smoke_tests_runs') THEN
+    COMMENT ON TABLE public.smoke_tests_runs IS
+      'Tabela ATIVA de smoke tests. smoke_test_runs esta deprecada e vazia. Ver PR fix/db-audit-20260526.';
+  END IF;
+END $$;
 
-COMMENT ON TABLE public.login_attempts IS
-  'Tabela legada com 203 registros. auth_login_attempts e a versao mais nova (campo metadata adicional) mas esta vazia. Consolidacao pendente.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='login_attempts') THEN
+    COMMENT ON TABLE public.login_attempts IS
+      'Tabela legada com 203 registros. auth_login_attempts e a versao mais nova (campo metadata adicional) mas esta vazia. Consolidacao pendente.';
+  END IF;
+END $$;
 
-COMMENT ON TABLE public.auth_login_attempts IS
-  'Versao mais recente de login_attempts (com metadata). Atualmente vazia. login_attempts e a tabela populada (203 registros). Consolidacao pendente.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='auth_login_attempts') THEN
+    COMMENT ON TABLE public.auth_login_attempts IS
+      'Versao mais recente de login_attempts (com metadata). Atualmente vazia. login_attempts e a tabela populada (203 registros). Consolidacao pendente.';
+  END IF;
+END $$;
 
-COMMENT ON TABLE public.audit_log IS
-  'Tabela de auditoria legada (3 registros). admin_audit_log e a principal (18k+). audit_logs (estrutura diferente, vazia) pode ser descontinuada.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='audit_log') THEN
+    COMMENT ON TABLE public.audit_log IS
+      'Tabela de auditoria legada (3 registros). admin_audit_log e a principal (18k+). audit_logs (estrutura diferente, vazia) pode ser descontinuada.';
+  END IF;
+END $$;
 
-COMMENT ON COLUMN public.products.category_id IS
-  'Subcategoria especifica do produto (folha da arvore de categorias). Ex: "Canetas | Plastico". ATENCAO: 136 produtos divergem de main_category_id (comportamento esperado para hierarquias). Ver BUG_AUDIT_20260526.md.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='products' AND column_name='category_id') THEN
+    COMMENT ON COLUMN public.products.category_id IS
+      'Subcategoria especifica do produto (folha da arvore de categorias). Ex: "Canetas | Plastico". ATENCAO: 136 produtos divergem de main_category_id (comportamento esperado para hierarquias). Ver BUG_AUDIT_20260526.md.';
+  END IF;
+END $$;
 
-COMMENT ON COLUMN public.products.main_category_id IS
-  'Categoria raiz/principal para navegacao (ex: "Canetas"). Pode ser diferente de category_id para produtos em subcategorias. Semantica oficial: category_id=folha, main_category_id=raiz.';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='products' AND column_name='main_category_id') THEN
+    COMMENT ON COLUMN public.products.main_category_id IS
+      'Categoria raiz/principal para navegacao (ex: "Canetas"). Pode ser diferente de category_id para produtos em subcategorias. Semantica oficial: category_id=folha, main_category_id=raiz.';
+  END IF;
+END $$;
 
 -- -------------------------------------------------------
 -- VIEW DE MONITORAMENTO CONTÍNUO — v_db_health_audit
