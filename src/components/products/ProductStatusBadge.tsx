@@ -7,7 +7,13 @@ import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency';
+export type ProductStatusBadgeType =
+  | 'novelty'
+  | 'promotion'
+  | 'featured'
+  | 'kit'
+  | 'urgency'
+  | 'out-of-stock';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
@@ -76,6 +82,8 @@ export function ProductStatusBadge({
         return 'bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-lg animate-glow-pulse';
       case 'kit':
         return 'bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-md';
+      case 'out-of-stock':
+        return 'bg-destructive text-destructive-foreground shadow-md';
       case 'promotion':
         return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
@@ -91,8 +99,6 @@ export function ProductStatusBadge({
         }
         return 'bg-brand-primary/80 text-brand-primary-foreground';
       }
-      case 'out-of-stock':
-        return 'bg-destructive text-destructive-foreground shadow-sm';
       case 'urgency':
         switch (urgencyType) {
           case 'limited-stock':
@@ -119,6 +125,13 @@ export function ProductStatusBadge({
             <Sparkles className={iconSize} />
             <span className={cn(size === 'sm' && 'hidden sm:inline')}>Destaque</span>
             {size === 'sm' && <span className="sm:hidden">★</span>}
+          </>
+        );
+      case 'out-of-stock':
+        return (
+          <>
+            <Package className={iconSize} />
+            <span>{value || 'Fora de estoque'}</span>
           </>
         );
       case 'kit':
@@ -175,8 +188,6 @@ export function ProductStatusBadge({
             );
         }
         break;
-      case 'out-of-stock':
-        return <span>{value || 'Fora de estoque'}</span>;
     }
     return <span>{value}</span>;
   };

@@ -82,8 +82,9 @@ export function GlobalCommandBar({ children, showTrigger = false }: GlobalComman
   const actions = useMemo(() => {
     // buildActions types setTheme as (t: string) => void; only "light"/"dark" are passed,
     // which are valid Theme members, so narrow before calling the real setter.
-    const setThemeFromString = (t: string) => {
-      if (t === 'light' || t === 'dark' || t === 'auto') setTheme(t);
+    const setThemeFromString = (_t: string) => {
+      // Theme is fixed to dark in ThemeContext; accept any string silently.
+      setTheme('dark');
     };
     const all = buildActions({ goTo, actualTheme, setTheme: setThemeFromString, setOpen });
     // Filtra ações que apontam para rotas restritas (admin/dev) sem papel.

@@ -139,7 +139,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
 
     // Only track dates where at least one source has a real stock value;
     // price-only rows have stock_close=null and must not contribute 0.
-    if (typeof row.stock_close === 'number') {
+    if (row.stock_close !== null && row.stock_close !== undefined) {
       if (!stockCloseByDate[row.product_id]) stockCloseByDate[row.product_id] = {};
       stockCloseByDate[row.product_id][date] =
         (stockCloseByDate[row.product_id][date] || 0) + row.stock_close;

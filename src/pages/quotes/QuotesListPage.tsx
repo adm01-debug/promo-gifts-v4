@@ -11,7 +11,6 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Loader2,
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { formatCurrency } from '@/lib/format';

@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, CalendarPlus, CalendarRange, CalendarDays, Building2 } from 'lucide-react';
-import { useNoveltyStats } from '@/hooks/products';
+import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -123,7 +123,11 @@ function StatCardSkeleton() {
 }
 
 export function NoveltyStatsCards() {
-  const { data: stats, isLoading, error } = useNoveltyStats();
+  const { data: stats, isLoading, error } = useNoveltyStats() as {
+    data: NoveltyStatsDisplay | undefined;
+    isLoading: boolean;
+    error: Error | null;
+  };
 
   if (isLoading) {
     return (

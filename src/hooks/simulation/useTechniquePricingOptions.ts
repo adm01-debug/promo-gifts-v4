@@ -69,7 +69,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
           filters: { table_code: techniqueCode },
           limit: 100,
         });
-        setTables(result.records || []);
+        setTables((result.records || []) as PriceTableEntry[]);
       } catch (err) {
         console.error('Error fetching technique pricing tables:', err);
         setTables([]);

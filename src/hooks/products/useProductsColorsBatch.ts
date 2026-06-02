@@ -11,7 +11,8 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { supabase, resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface ProductColorDot {
   name: string;
@@ -84,8 +85,7 @@ export function useProductsColorsBatch(productIds: string[]) {
         const CHUNK = 100;
         for (let i = 0; i < missingIds.length; i += CHUNK) {
           const chunk = missingIds.slice(i, i + CHUNK);
-          const { data, error } = await supabase
-            .from(resolveTable('product_variants'))
+          const { data, error } = await untypedFrom(resolveTable('product_variants'))
             .select('product_id, color_name, color_hex')
             .in('product_id', chunk)
             .eq('is_active', true)

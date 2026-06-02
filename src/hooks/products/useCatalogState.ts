@@ -132,6 +132,7 @@ export function useCatalogState() {
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
+
   const setViewMode = useCallback((mode: ViewMode) => {
     setViewModeState(mode);
     try {

@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type createClient } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
-// 'security_settings' table not yet in generated schema — bypass type checking via raw client cast
-const db = supabase as unknown as ReturnType<typeof createClient>;
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 interface AllowedCountry {
   id: string;
@@ -64,12 +60,10 @@ export function useGeoBlocking() {
     if (!mountedRef.current) return; // BUG-21 FIX: guard pré-await
     try {
       const [countriesRes, settingsRes] = await Promise.all([
-        supabase
-          .from('geo_allowed_countries')
+        untypedFrom('geo_allowed_countries')
           .select('id, country_code, country_name, is_active, created_at')
           .order('country_name'),
-        db
-          .from('security_settings')
+        untypedFrom('security_settings')
           .select('id, setting_key, setting_value')
           .eq('setting_key', 'geo_blocking')
           .single(),
@@ -109,8 +103,7 @@ export function useGeoBlocking() {
     async (enabled: boolean): Promise<{ success: boolean; error?: string }> => {
       try {
         const newSettings = { ...settings, enabled };
-        const { error } = await db
-          .from('security_settings')
+        const { error } = await untypedFrom('security_settings')
           .update({
             setting_value: newSettings,
             updated_at: new Date().toISOString(),
@@ -141,7 +134,7 @@ export function useGeoBlocking() {
       }
 
       try {
-        const { error } = await supabase.from('geo_allowed_countries').insert({
+        const { error } = await untypedFrom('geo_allowed_countries').insert({
           country_code: countryCode.toUpperCase(),
           country_name: countryName,
           created_by: user.id,
@@ -169,7 +162,7 @@ export function useGeoBlocking() {
   const removeCountry = useCallback(
     async (id: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        const { error } = await supabase.from('geo_allowed_countries').delete().eq('id', id);
+        const { error } = await untypedFrom('geo_allowed_countries').delete().eq('id', id);
 
         if (error) throw error;
         await fetchData();
@@ -187,8 +180,7 @@ export function useGeoBlocking() {
   const toggleCountry = useCallback(
     async (id: string, isActive: boolean): Promise<{ success: boolean; error?: string }> => {
       try {
-        const { error } = await supabase
-          .from('geo_allowed_countries')
+        const { error } = await untypedFrom('geo_allowed_countries')
           .update({ is_active: isActive })
           .eq('id', id);
 

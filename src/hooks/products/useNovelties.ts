@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase, resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { untypedFrom } from '@/lib/supabase-untyped';
+
+const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
@@ -190,24 +193,22 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const [catRecords, supRecords] = await Promise.all([
     !isMock && categoryIds.length > 0
       ? (async () => {
-          const { data, error } = await supabase
-            .from(resolveTable('categories'))
+          const { data, error } = await fromTable('categories')
             .select('id, name')
             .in('id', categoryIds)
             .range(0, 499);
           if (error) return handleQueryError('useNovelties', 'categories', error);
-          return data ?? [];
+          return (data ?? []) as unknown as CategoryRecord[];
         })()
       : Promise.resolve(isMock ? MOCK_CATEGORIES : ([] as CategoryRecord[])),
     !isMock && supplierIds.length > 0
       ? (async () => {
-          const { data, error } = await supabase
-            .from(resolveTable('suppliers'))
+          const { data, error } = await fromTable('suppliers')
             .select('id, name, code')
             .in('id', supplierIds)
             .range(0, 199);
           if (error) return handleQueryError('useNovelties', 'suppliers', error);
-          return data ?? [];
+          return (data ?? []) as unknown as SupplierRecord[];
         })()
       : Promise.resolve(isMock ? MOCK_SUPPLIERS : ([] as SupplierRecord[])),
   ]);
@@ -279,8 +280,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { data, error } = await supabase
-        .from(resolveTable('products'))
+      const { data, error } = await fromTable('products')
         .select(NOVELTY_SELECT)
         .eq('is_active', true)
         .gte('created_at', cutoff)
@@ -288,7 +288,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         .range(0, limit - 1);
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      let records: RawProduct[] = data ?? [];
+      let records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
 
       // Fallback para MOCK se o banco estiver vazio
       if (records.length === 0) {
@@ -319,8 +319,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
       // Buscar todas as novidades dos últimos 30 dias
       const cutoff = getCutoffDate();
 
-      const { data, error } = await supabase
-        .from(resolveTable('products'))
+      const { data, error } = await fromTable('products')
         .select(NOVELTY_SELECT)
         .eq('is_active', true)
         .gte('created_at', cutoff)
@@ -328,7 +327,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
         .range(0, 199);
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      return (data ?? [])
+      return ((data ?? []) as unknown as RawProduct[])
         .map(toNovelty)
         .filter((n) => n.is_active && n.days_remaining <= maxDays)
         .sort((a, b) => a.days_remaining - b.days_remaining);
@@ -348,28 +347,42 @@ export function useNoveltyStats() {
       const cutoff = getCutoffDate();
 
       const [noveltiesRes, totalRes] = await Promise.all([
-        supabase
-          .from(resolveTable('products'))
+        fromTable('products')
           .select('id, created_at, supplier_id', { count: 'exact' })
           .eq('is_active', true)
           .gte('created_at', cutoff)
           .range(0, 499),
-        supabase
-          .from(resolveTable('products'))
-          .select('id', { count: 'exact' })
-          .eq('is_active', true)
-          .range(0, 0),
+        fromTable('products').select('id', { count: 'exact' }).eq('is_active', true).range(0, 0),
       ]);
-      if (noveltiesRes.error)
-        return handleQueryError('useNovelties', 'products', noveltiesRes.error);
-      if (totalRes.error) return handleQueryError('useNovelties', 'products', totalRes.error);
+      const emptyStats: NoveltyStatsDisplay = {
+        totalNovelties: 0,
+        activeNovelties: 0,
+        expiringSoon: 0,
+        totalProducts: 0,
+        noveltyRate: 0,
+        arrivedToday: 0,
+        arrivedThisWeek: 0,
+        arrivedLast15Days: 0,
+        topSupplierName: null,
+        topSupplierCount: 0,
+      };
+      if (noveltiesRes.error) {
+        handleQueryError('useNovelties', 'products', noveltiesRes.error);
+        return emptyStats;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyStats;
+      }
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const weekStart = todayStart - 6 * 86400000;
       const fifteenDaysStart = todayStart - 14 * 86400000;
 
-      let records = (noveltiesRes.data ?? []) as (RawProduct & { supplier_id: string | null })[];
+      let records = (noveltiesRes.data ?? []) as unknown as (RawProduct & {
+        supplier_id: string | null;
+      })[];
       let totalProducts = totalRes.count || 0;
 
       // Fallback para MOCK se o banco estiver vazio
@@ -417,13 +430,12 @@ export function useNoveltyStats() {
           topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name || null;
         } else {
           try {
-            const { data: supData, error: supError } = await supabase
-              .from(resolveTable('suppliers'))
+            const { data: supData, error: supError } = await fromTable('suppliers')
               .select('name')
               .eq('id', topSupplierId)
               .range(0, 0);
             if (!supError && supData && supData.length > 0) {
-              topSupplierName = supData[0].name || null;
+              topSupplierName = (supData[0] as unknown as { name: string }).name || null;
             }
           } catch {
             /* fallback */
@@ -465,19 +477,17 @@ export function useNovelties(
 
       if (supplierCode) {
         // Precisa buscar o supplier_id pelo code
-        const { data: supData, error: supError } = await supabase
-          .from(resolveTable('suppliers'))
+        const { data: supData, error: supError } = await fromTable('suppliers')
           .select('id')
           .eq('code', supplierCode)
           .range(0, 0);
         if (supError) return handleQueryError('useNovelties', 'suppliers', supError);
         if (supData && supData.length > 0) {
-          supplierId = supData[0].id;
+          supplierId = (supData[0] as unknown as { id: string }).id;
         }
       }
 
-      let query = supabase
-        .from(resolveTable('products'))
+      let query = fromTable('products')
         .select(NOVELTY_SELECT)
         .eq('is_active', true)
         .gte('created_at', cutoff)
@@ -491,7 +501,9 @@ export function useNovelties(
       const { data, error } = await query;
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      let novelties = (data ?? []).map(toNovelty).filter((n) => n.is_active);
+      let novelties = ((data ?? []) as unknown as RawProduct[])
+        .map(toNovelty)
+        .filter((n) => n.is_active);
 
       if (maxDays) {
         novelties = novelties.filter((n) => n.days_remaining >= NOVELTY_WINDOW_DAYS - maxDays);
@@ -513,13 +525,15 @@ export function useNoveltyCount() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { count, error } = await supabase
-        .from(resolveTable('products'))
+      const { count, error } = await fromTable('products')
         .select('id', { count: 'exact' })
         .eq('is_active', true)
         .gte('created_at', cutoff)
         .range(0, 0);
-      if (error) return handleQueryError('useNovelties', 'products', error);
+      if (error) {
+        handleQueryError('useNovelties', 'products', error);
+        return 0;
+      }
 
       return count || 0;
     },
@@ -535,19 +549,22 @@ export function useIsProductNovelty(productId: string) {
   return useQuery<{ isNovelty: boolean; daysRemaining: number | null }>({
     queryKey: ['is-novelty', productId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(resolveTable('products'))
+      const { data, error } = await fromTable('products')
         .select('id, created_at')
         .eq('id', productId)
         .eq('is_active', true)
         .range(0, 0);
-      if (error) return handleQueryError('useNovelties', 'products', error);
-
-      if (!data || data.length === 0) {
+      if (error) {
+        handleQueryError('useNovelties', 'products', error);
         return { isNovelty: false, daysRemaining: null };
       }
 
-      const daysRemaining = calcDaysRemaining(data[0].created_at);
+      const rows = (data ?? []) as unknown as { id: string; created_at: string }[];
+      if (rows.length === 0) {
+        return { isNovelty: false, daysRemaining: null };
+      }
+
+      const daysRemaining = calcDaysRemaining(rows[0].created_at);
       return {
         isNovelty: daysRemaining > 0,
         daysRemaining: daysRemaining > 0 ? daysRemaining : null,
@@ -567,15 +584,17 @@ export function useNoveltyProductIds() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { data, error } = await supabase
-        .from(resolveTable('products'))
+      const { data, error } = await fromTable('products')
         .select('id')
         .eq('is_active', true)
         .gte('created_at', cutoff)
         .range(0, 499);
-      if (error) return handleQueryError('useNovelties', 'products', error);
+      if (error) {
+        handleQueryError('useNovelties', 'products', error);
+        return new Set<string>();
+      }
 
-      return new Set((data ?? []).map((r) => r.id));
+      return new Set(((data ?? []) as unknown as { id: string }[]).map((r) => r.id));
     },
     staleTime: 2 * 60 * 1000,
   });

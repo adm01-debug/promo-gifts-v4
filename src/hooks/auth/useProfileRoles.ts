@@ -1,1 +1,93 @@
-aW1wb3J0IHsgdXNlU3RhdGUsIHVzZUNhbGxiYWNrLCB1c2VSZWYgfSBmcm9tICdyZWFjdCc7CmltcG9ydCB7IGdldFN1cGFiYXNlQ2xpZW50IH0gZnJvbSAnQC9pbnRlZ3JhdGlvbnMvc3VwYWJhc2UvbGF6eS1jbGllbnQnOwppbXBvcnQgeyBhdXRoU2VydmljZSB9IGZyb20gJ0Avc2VydmljZXMvYXV0aFNlcnZpY2UnOwppbXBvcnQgeyBhdXRoRGVidWcsIGF1dGhEZWJ1Z0Vycm9yIH0gZnJvbSAnQC9saWIvYXV0aC9hdXRoLWRlYnVnJzsKaW1wb3J0IHsgdHlwZSBBcHBSb2xlLCB0eXBlIFByb2ZpbGUgfSBmcm9tICdAL2NvbnRleHRzL0F1dGhDb250ZXh0JzsKCmV4cG9ydCBmdW5jdGlvbiB1c2VQcm9maWxlUm9sZXMoKSB7CiAgY29uc3QgW3Byb2ZpbGUsIHNldFByb2ZpbGVdID0gdXNlU3RhdGU8UHJvZmlsZSB8IG51bGw+KG51bGwpOwogIGNvbnN0IFt1c2VyUm9sZXMsIHNldFVzZXJSb2xlc10gPSB1c2VTdGF0ZTxBcHBSb2xlW10+KFtdKTsKICBjb25zdCBbaXNMb2FkaW5nLCBzZXRJc0xvYWRpbmddID0gdXNlU3RhdGUodHJ1ZSk7CiAgY29uc3QgW3JvbGVzTG9hZGVkLCBzZXRSb2xlc0xvYWRlZF0gPSB1c2VTdGF0ZShmYWxzZSk7CiAgY29uc3QgZmV0Y2hQcm9taXNlUmVmID0gdXNlUmVmPFByb21pc2U8dm9pZD4gfCBudWxsPihudWxsKTsKICBjb25zdCBmZXRjaENhbmNlbGxlZFJlZiA9IHVzZVJlZihmYWxzZSk7CgogIGNvbnN0IGZldGNoVXNlckRhdGEgPSB1c2VDYWxsYmFjayhhc3luYyAodXNlcklkOiBzdHJpbmcpID0+IHsKICAgIGlmIChmZXRjaFByb21pc2VSZWYuY3VycmVudCkgewogICAgICBhd2FpdCBmZXRjaFByb21pc2VSZWYuY3VycmVudDsKICAgICAgcmV0dXJuOwogICAgfQoKICAgIGZldGNoQ2FuY2VsbGVkUmVmLmN1cnJlbnQgPSBmYWxzZTsKCiAgICBjb25zdCBkb0ZldGNoID0gYXN5bmMgKCkgPT4gewogICAgICBhdXRoRGVidWcoJ3VzZVByb2ZpbGVSb2xlcy5mZXRjaFVzZXJEYXRhJywgJ3N0YXJ0JywgeyB1c2VySWQgfSk7CiAgICAgIHRyeSB7CiAgICAgICAgLy8gQlVHLTAxIEZJWDogYXdhaXQgdGhlIFByb21pc2UgcmV0dXJuZWQgYnkgZ2V0U3VwYWJhc2VDbGllbnQoKS4KICAgICAgICAvLyBXaXRob3V0IGF3YWl0LCBzdXBhYmFzZSB3YXMgYSBQcm9taXNlIG9iamVjdCwgY2F1c2luZwogICAgICAgIC8vIFR5cGVFcnJvcjogc3VwYWJhc2UuZnJvbSBpcyBub3QgYSBmdW5jdGlvbiBhdCBydW50aW1lLgogICAgICAgIGNvbnN0IHN1cGFiYXNlID0gYXdhaXQgZ2V0U3VwYWJhc2VDbGllbnQoKTsKCiAgICAgICAgLy8gQlVHLTAyIEZJWDogYXV0aFNlcnZpY2UuZ2V0VXNlclJvbGVzKCkgZG9lcyBub3QgZXhpc3QuCiAgICAgICAgLy8gQ29ycmVjdCBtZXRob2QgaXMgYXV0aFNlcnZpY2UucXVlcnlSb2xlcygpLgogICAgICAgIC8vIEJVRy0wMyBGSVg6IHF1ZXJ5Um9sZXMgcmV0dXJucyB7cm9sZTogc3RyaW5nfVtdLCBub3QgQXBwUm9sZVtdLgogICAgICAgIC8vIFRoZSAubWFwKCkgaXMgcmVxdWlyZWQgdG8gZXh0cmFjdCB0aGUgcm9sZSBzdHJpbmcgZnJvbSBlYWNoIHJvdy4KICAgICAgICBjb25zdCBbcHJvZmlsZVJlc3VsdCwgcm9sZXNSZXN1bHRdID0gYXdhaXQgUHJvbWlzZS5hbGwoWwogICAgICAgICAgc3VwYWJhc2UKICAgICAgICAgICAgLmZyb20oJ3Byb2ZpbGVzJykKICAgICAgICAgICAgLnNlbGVjdCgnaWQsIGZ1bGxfbmFtZSwgYXZhdGFyX3VybCwgZW1haWwsIG9yZ2FuaXphdGlvbl9pZCcpCiAgICAgICAgICAgIC5lcSgnaWQnLCB1c2VySWQpCiAgICAgICAgICAgIC5tYXliZVNpbmdsZSgpLAogICAgICAgICAgYXV0aFNlcnZpY2UucXVlcnlSb2xlcyh1c2VySWQpLAogICAgICAgIF0pOwoKICAgICAgICBpZiAocHJvZmlsZVJlc3VsdC5lcnJvcikgewogICAgICAgICAgYXV0aERlYnVnRXJyb3IoJ3VzZVByb2ZpbGVSb2xlcy5mZXRjaFVzZXJEYXRhJywgJ3Byb2ZpbGUgZXJyb3InLCBwcm9maWxlUmVzdWx0LmVycm9yKTsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgc2V0UHJvZmlsZShwcm9maWxlUmVzdWx0LmRhdGEpOwogICAgICAgIH0KCiAgICAgICAgaWYgKHJvbGVzUmVzdWx0LmVycm9yKSB7CiAgICAgICAgICBhdXRoRGVidWdFcnJvcigndXNlUHJvZmlsZVJvbGVzLmZldGNoVXNlckRhdGEnLCAncm9sZXMgZXJyb3InLCByb2xlc1Jlc3VsdC5lcnJvcik7CiAgICAgICAgICBzZXRVc2VyUm9sZXMoW10pOwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAvLyBCVUctMDMgRklYOiBtYXAge3JvbGU6IHN0cmluZ31bXSDihpIgQXBwUm9sZVtdIHNvIHRoYXQKICAgICAgICAgIC8vIHVzZXJSb2xlcy5pbmNsdWRlcygnYWRtaW4nKSBldGMuIHdvcmsgY29ycmVjdGx5LgogICAgICAgICAgc2V0VXNlclJvbGVzKChyb2xlc1Jlc3VsdC5kYXRhID8/IFtdKS5tYXAoKHIpID0+IHIucm9sZSBhcyBBcHBSb2xlKSk7CiAgICAgICAgfQoKICAgICAgICBhdXRoRGVidWcoJ3VzZVByb2ZpbGVSb2xlcy5mZXRjaFVzZXJEYXRhJywgJ2RvbmUnLCB7CiAgICAgICAgICB1c2VySWQsCiAgICAgICAgICByb2xlQ291bnQ6IHJvbGVzUmVzdWx0LmRhdGE/Lmxlbmd0aCA/PyAwLAogICAgICAgIH0pOwogICAgICB9IGNhdGNoIChlcnJvcikgewogICAgICAgIGF1dGhEZWJ1Z0Vycm9yKCd1c2VQcm9maWxlUm9sZXMuZmV0Y2hVc2VyRGF0YScsICdleGNlcHRpb24nLCBlcnJvcik7CiAgICAgIH0gZmluYWxseSB7CiAgICAgICAgZmV0Y2hQcm9taXNlUmVmLmN1cnJlbnQgPSBudWxsOwogICAgICAgIGlmICghZmV0Y2hDYW5jZWxsZWRSZWYuY3VycmVudCkgewogICAgICAgICAgc2V0SXNMb2FkaW5nKGZhbHNlKTsKICAgICAgICAgIHNldFJvbGVzTG9hZGVkKHRydWUpOwogICAgICAgIH0KICAgICAgfQogICAgfTsKCiAgICBmZXRjaFByb21pc2VSZWYuY3VycmVudCA9IGRvRmV0Y2goKTsKICAgIGF3YWl0IGZldGNoUHJvbWlzZVJlZi5jdXJyZW50OwogIH0sIFtdKTsKCiAgY29uc3QgY2xlYXJQcm9maWxlUm9sZXMgPSB1c2VDYWxsYmFjaygoKSA9PiB7CiAgICBmZXRjaENhbmNlbGxlZFJlZi5jdXJyZW50ID0gdHJ1ZTsKICAgIHNldFByb2ZpbGUobnVsbCk7CiAgICBzZXRVc2VyUm9sZXMoW10pOwogICAgc2V0SXNMb2FkaW5nKGZhbHNlKTsKICAgIHNldFJvbGVzTG9hZGVkKGZhbHNlKTsKICB9LCBbXSk7CgogIHJldHVybiB7CiAgICBwcm9maWxlLAogICAgc2V0UHJvZmlsZSwKICAgIHVzZXJSb2xlcywKICAgIHNldFVzZXJSb2xlcywKICAgIGlzTG9hZGluZywKICAgIHNldElzTG9hZGluZywKICAgIHJvbGVzTG9hZGVkLAogICAgZmV0Y2hVc2VyRGF0YSwKICAgIGNsZWFyUHJvZmlsZVJvbGVzLAogICAgZmV0Y2hQcm9taXNlUmVmLAogIH07Cn0K
+import { useState, useCallback, useRef } from 'react';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { authService } from '@/services/authService';
+import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
+import { type AppRole, type Profile } from '@/contexts/AuthContext';
+
+export function useProfileRoles() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRoles, setUserRoles] = useState<AppRole[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
+  const fetchPromiseRef = useRef<Promise<void> | null>(null);
+  const fetchCancelledRef = useRef(false);
+
+  const fetchUserData = useCallback(async (userId: string) => {
+    if (fetchPromiseRef.current) {
+      await fetchPromiseRef.current;
+      return;
+    }
+
+    fetchCancelledRef.current = false;
+
+    const doFetch = async () => {
+      authDebug('useProfileRoles.fetchUserData', 'start', { userId });
+      try {
+        const supabase = await getSupabaseClient();
+
+        // Fetch profile and roles in parallel
+        const [profileResult, rolesResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, email, organization_id')
+            .eq('id', userId)
+            .maybeSingle(),
+          authService.queryRoles(userId),
+        ]);
+
+        if (profileResult.error) {
+          authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
+        } else {
+          setProfile(profileResult.data);
+        }
+
+        if (rolesResult.error) {
+          authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
+          setUserRoles([]);
+        } else {
+          const mapped = (rolesResult.data ?? []).map(
+            (row: { role: string }) => row.role,
+          ) as AppRole[];
+          setUserRoles(mapped);
+        }
+
+        authDebug('useProfileRoles.fetchUserData', 'done', {
+          userId,
+          roleCount: rolesResult.data?.length ?? 0,
+        });
+      } catch (error) {
+        authDebugError('useProfileRoles.fetchUserData', 'exception', error);
+      } finally {
+        fetchPromiseRef.current = null;
+        if (!fetchCancelledRef.current) {
+          setIsLoading(false);
+          setRolesLoaded(true);
+        }
+      }
+    };
+
+    fetchPromiseRef.current = doFetch();
+    await fetchPromiseRef.current;
+  }, []);
+
+  const clearProfileRoles = useCallback(() => {
+    fetchCancelledRef.current = true;
+    setProfile(null);
+    setUserRoles([]);
+    setIsLoading(false);
+    setRolesLoaded(false);
+  }, []);
+
+  return {
+    profile,
+    setProfile,
+    userRoles,
+    setUserRoles,
+    isLoading,
+    setIsLoading,
+    rolesLoaded,
+    fetchUserData,
+    clearProfileRoles,
+    fetchPromiseRef,
+  };
+}

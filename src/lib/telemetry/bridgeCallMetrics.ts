@@ -16,6 +16,7 @@ export type BridgeName = 'external-db-bridge' | 'crm-db-bridge';
 /** Operações permitidas para cada bridge, garantindo consistência em compile-time. */
 export type BridgeOperation =
   | 'select'
+  | 'search'
   | 'insert'
   | 'update'
   | 'delete'
@@ -58,6 +59,7 @@ const MAX_SAMPLES = 500;
 
 let nextId = 1;
 const samples: BridgeCallSample[] = [];
+let snapshot: readonly BridgeCallSample[] = [];
 const listeners = new Set<() => void>();
 
 // Throttle de notificações: agrupa rajadas em uma janela curta para evitar
@@ -158,11 +160,12 @@ export function recordBridgeCall(
   };
   samples.push(entry);
   if (samples.length > MAX_SAMPLES) samples.splice(0, samples.length - MAX_SAMPLES);
+  snapshot = [...samples];
   emit();
 }
 
 export function getBridgeSamples(): readonly BridgeCallSample[] {
-  return samples;
+  return snapshot;
 }
 
 export function subscribeBridgeCalls(listener: () => void): () => void {
@@ -174,6 +177,7 @@ export function subscribeBridgeCalls(listener: () => void): () => void {
 
 export function clearBridgeSamples(): void {
   samples.length = 0;
+  snapshot = [];
   emit();
 }
 

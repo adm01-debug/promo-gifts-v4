@@ -1,6 +1,6 @@
 // Hook para buscar opcoes de cores e tamanhos de uma tecnica especifica
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface TechniquePriceOption {
   id: string;
@@ -72,8 +72,7 @@ export function useTechniquePricing(techniqueCode: string | null) {
          * Area dimensions live in print_area_techniques joined by tabela_preco_id.
          * Returning 0 as safe fallback -- callers handle 0 gracefully.
          */
-        const { data, error: fetchError } = await supabase
-          .from('tabela_preco_gravacao_oficial')
+        const { data, error: fetchError } = await untypedFrom('tabela_preco_gravacao_oficial')
           .select(
             'id,codigo_tabela,codigo_curto,grupo_tecnica,max_cores,custo_setup,custo_manuseio,cobra_por_cor,usa_faixa_dimensional,ativo',
           )

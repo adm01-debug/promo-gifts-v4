@@ -12,6 +12,7 @@ import { MockupApprovalTemplate } from './MockupApprovalTemplate';
 import { supabase } from '@/integrations/supabase/client';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { logger } from '@/lib/logger';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface LayoutCaptureRequest {
   data: MockupApprovalData;
@@ -116,9 +117,8 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
         const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl(storagePath);
 
         // Update DB record
-        const { error: updateError } = await supabase
-          .from('generated_mockups')
-          .update({ layout_url: urlData.publicUrl } as Record<string, unknown>)
+        const { error: updateError } = await untypedFrom('generated_mockups')
+          .update({ layout_url: urlData.publicUrl })
           .eq('id', currentRecordId);
 
         if (updateError) {

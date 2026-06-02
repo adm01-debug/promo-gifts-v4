@@ -26,7 +26,7 @@
  */
 
 export type TriggerSource = 'hover' | 'focus' | 'drawer-open';
-export type FetchSource = 'initial' | 'polling' | 'prefetch' | 'mutation';
+export type FetchSource = 'initial' | 'polling' | 'prefetch' | 'mutation' | 'filter-change';
 export type BadgeRenderSource = 'cache' | 'network';
 
 export interface BadgeRenderStat {
@@ -116,7 +116,10 @@ const state = {
   triggers: 0,
   fetches: 0,
   byTrigger: { hover: 0, focus: 0, 'drawer-open': 0 } as Record<TriggerSource, number>,
-  byFetch: { initial: 0, polling: 0, prefetch: 0, mutation: 0 } as Record<FetchSource, number>,
+  byFetch: { initial: 0, polling: 0, prefetch: 0, mutation: 0, 'filter-change': 0 } as Record<
+    FetchSource,
+    number
+  >,
   lastFetchAt: 0,
   fetchesWithinTtl: 0,
   fetchesAfterTtl: 0,

@@ -39,17 +39,21 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
   className,
 }: EnhancedProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [quantity, setQuantity] = useState(product.minOrder || 1);
+  const [quantity, setQuantity] = useState(product.minQuantity || 1);
   const cardRef = useRef<HTMLElement>(null);
 
-  const urgencyType =
-    product.stockStatus === 'critical'
-      ? 'critical'
-      : product.stockStatus === 'low'
-        ? 'low'
+  const urgencyType: 'limited-stock' | 'out-of-stock' | undefined =
+    product.stockStatus === 'out-of-stock'
+      ? 'out-of-stock'
+      : product.stockStatus === 'low-stock'
+        ? 'limited-stock'
         : undefined;
   const urgencyText =
-    urgencyType === 'critical' ? 'Crítico' : urgencyType === 'low' ? 'Baixo' : undefined;
+    urgencyType === 'out-of-stock'
+      ? 'Sem estoque'
+      : urgencyType === 'limited-stock'
+        ? 'Estoque limitado'
+        : undefined;
 
   return (
     <article
@@ -87,7 +91,7 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted/10">
           <img
-            src={product.imageUrl}
+            src={product.image_url}
             alt={product.name}
             className={cn(
               'h-full w-full object-contain transition-transform duration-500',
@@ -137,22 +141,12 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              {product.salePrice ? (
-                <>
-                  <span className="text-base font-bold text-primary">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      product.salePrice,
-                    )}
-                  </span>
-                  {product.listPrice && product.listPrice > product.salePrice && (
-                    <span className="text-xs text-muted-foreground line-through">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(product.listPrice)}
-                    </span>
+              {product.price ? (
+                <span className="text-base font-bold text-primary">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    product.price,
                   )}
-                </>
+                </span>
               ) : (
                 <span className="text-sm text-muted-foreground">Preço sob consulta</span>
               )}
@@ -181,7 +175,11 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
 
           {/* Freshness badge */}
           <div className="mt-2">
-            <PriceFreshnessBadge product={product} size="sm" />
+            <PriceFreshnessBadge
+              priceUpdatedAt={product.priceUpdatedAt}
+              thresholdDays={product.priceFreshnessThresholdDays}
+              variant="compact"
+            />
           </div>
         </div>
 
@@ -278,7 +276,9 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
               size="icon"
               className="h-5 w-5"
               onClick={() =>
-                setQuantity((q) => Math.max(product.minOrder || 1, q - (product.minOrder || 1)))
+                setQuantity((q) =>
+                  Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)),
+                )
               }
             >
               <span className="text-sm font-bold">-</span>
@@ -290,7 +290,7 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
               variant="ghost"
               size="icon"
               className="h-5 w-5"
-              onClick={() => setQuantity((q) => q + (product.minOrder || 1))}
+              onClick={() => setQuantity((q) => q + (product.minQuantity || 1))}
             >
               <span className="text-sm font-bold">+</span>
             </Button>

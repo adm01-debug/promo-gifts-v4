@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -65,8 +65,7 @@ export function useSalesGoals() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from('sales_goals')
+      const { data, error } = await untypedFrom('sales_goals')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -85,8 +84,7 @@ export function useSalesGoals() {
 
       const now = new Date().toISOString().split('T')[0];
 
-      const { data, error } = await supabase
-        .from('sales_goals')
+      const { data, error } = await untypedFrom('sales_goals')
         .select('*')
         .eq('user_id', user.id)
         .lte('start_date', now)
@@ -107,8 +105,7 @@ export function useSalesGoals() {
 
       const { start, end } = getDateRange(input.goal_type);
 
-      const { data, error } = await supabase
-        .from('sales_goals')
+      const { data, error } = await untypedFrom('sales_goals')
         .insert({
           user_id: user.id,
           goal_type: input.goal_type,
@@ -153,8 +150,7 @@ export function useSalesGoals() {
       if (!user?.id) throw new Error('Not authenticated');
 
       // Get current goal
-      const { data: currentGoal, error: fetchError } = await supabase
-        .from('sales_goals')
+      const { data: currentGoal, error: fetchError } = await untypedFrom('sales_goals')
         .select('*')
         .eq('id', goalId)
         .single();
@@ -173,8 +169,7 @@ export function useSalesGoals() {
 
       const wasNotAchieved = !currentGoal.is_achieved;
 
-      const { data, error } = await supabase
-        .from('sales_goals')
+      const { data, error } = await untypedFrom('sales_goals')
         .update({
           current_value: newValue,
           current_quotes: newQuotes,
@@ -209,7 +204,7 @@ export function useSalesGoals() {
   // Delete goal mutation
   const deleteGoalMutation = useMutation({
     mutationFn: async (goalId: string) => {
-      const { error } = await supabase.from('sales_goals').delete().eq('id', goalId);
+      const { error } = await untypedFrom('sales_goals').delete().eq('id', goalId);
       if (error) throw error;
     },
     onSuccess: () => {

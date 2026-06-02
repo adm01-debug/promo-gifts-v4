@@ -14,8 +14,8 @@
  * existe no banco interno (e view do BD externo/bridge) — ver useTechniqueStats().
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { PrintAreaWithTechniques, TecnicaGravacao } from '@/types/gravacao';
+import { untypedFrom } from '@/lib/supabase-untyped';
+import type { PrintAreaWithTechniques, TecnicaGravacao, AreaShape } from '@/types/gravacao';
 import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
@@ -31,8 +31,7 @@ import {
  */
 async function fetchProductPrintAreas(productId: string): Promise<PrintAreaTechniqueCanonical[]> {
   try {
-    const { data, error } = await supabase
-      .from('print_area_techniques')
+    const { data, error } = await untypedFrom('print_area_techniques')
       .select('*')
       .eq('product_id', productId)
       .eq('is_active', true)
@@ -69,8 +68,7 @@ export function usePrintAreas(productId: string | null) {
       }
 
       // BUG-14 FIX: PostgREST nativo para tabela_preco_gravacao_oficial
-      const { data: techRaw, error: techError } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data: techRaw, error: techError } = await untypedFrom('tabela_preco_gravacao_oficial')
         .select('*')
         .eq('ativo', true)
         .limit(100);
@@ -110,7 +108,7 @@ export function usePrintAreas(productId: string | null) {
           max_width: area.max_width ?? area.largura_max ?? 0,
           max_height: area.max_height ?? area.altura_max ?? 0,
           unit: 'cm',
-          shape: area.shape || 'rectangle',
+          shape: (area.shape || 'rectangle') as AreaShape,
           is_curved: area.is_curved ?? false,
           is_primary: idx === 0,
           display_order: area.technique_order ?? idx,
@@ -131,8 +129,7 @@ export function useTechniques() {
   return useQuery({
     queryKey: ['techniques-all'],
     queryFn: async (): Promise<TecnicaGravacao[]> => {
-      const { data, error } = await supabase
-        .from('tecnicas_gravacao')
+      const { data, error } = await untypedFrom('tecnicas_gravacao')
         .select('*')
         .eq('ativo', true)
         .order('ordem_exibicao', { ascending: true });
@@ -174,8 +171,7 @@ export function useHasPrintAreas(productId: string | null) {
     queryFn: async (): Promise<boolean> => {
       if (!productId) return false;
       try {
-        const { data, error } = await supabase
-          .from('print_area_techniques')
+        const { data, error } = await untypedFrom('print_area_techniques')
           .select('id')
           .eq('product_id', productId)
           .eq('is_active', true)
