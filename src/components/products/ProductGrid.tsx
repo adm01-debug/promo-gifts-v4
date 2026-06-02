@@ -202,6 +202,18 @@ export const ProductGrid = memo(function ProductGrid({
     return () => clearTimeout(timer);
   }, [products, isLoading]);
 
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
+
+  useEffect(() => {
+    if (colorsError) {
+      console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
+    }
+  }, [colorsError, idsNeedingColors]);
+
   if (isError) {
     return (
       <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
@@ -250,20 +262,6 @@ export const ProductGrid = memo(function ProductGrid({
           isSkeleton: true as const,
         }))
       : products;
-
-  // Hidrata cores nos cards cujo fetch principal não trouxe `colors`
-  // (fallback unificado p/ catálogo/super filtro/etc — mesmo padrão de Novidades).
-  const idsNeedingColors = useMemo(
-    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
-    [products],
-  );
-  const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
-
-  useEffect(() => {
-    if (colorsError) {
-      console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
-    }
-  }, [colorsError, idsNeedingColors]);
 
   return (
     <div

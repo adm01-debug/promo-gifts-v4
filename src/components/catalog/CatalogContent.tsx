@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback, type RefObject, useEffect } from 'react';
+import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -88,9 +88,6 @@ export const CatalogContent = memo(function CatalogContent({
   hideCategoryBadges = false,
 }: CatalogContentProps) {
   catalogRenderCount++;
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[CatalogContent] Render #${catalogRenderCount} - viewMode: ${viewMode}, gridColumns: ${gridColumns}, products: ${paginatedProducts.length}`);
-  }
 
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
