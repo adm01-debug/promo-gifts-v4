@@ -3,7 +3,7 @@
  *
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
@@ -223,7 +223,11 @@ export function useProductsLightweight() {
     staleTime: 30 * 60 * 1000,
     gcTime: 120 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 3,
+    // FIX 2026-06-02: shouldRetry para em 4xx (status < 500) imediatamente.
+    // O retry:3 anterior fazia 3 tentativas mesmo em 400 Bad Request,
+    // multiplicando chamadas falhas ao DB. shouldRetry usa .status do
+    // PostgrestError (mais confiável que regex no message).
+    retry: shouldRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
@@ -245,7 +249,8 @@ export function useProductsCatalog(filters?: {
     staleTime: 30 * 60 * 1000,
     gcTime: 120 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 3,
+    // FIX 2026-06-02: idem acima – shouldRetry para em 4xx imediatamente.
+    retry: shouldRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
