@@ -14,7 +14,10 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
+
 vi.mock('@/hooks/products/useProductsLightweight', () => ({
+
   useProductsCatalog: vi.fn(({ search, categories, suppliers, sortBy }) => ({
     data: {
       pages: [
