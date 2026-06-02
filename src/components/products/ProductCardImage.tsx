@@ -130,14 +130,6 @@ export const ProductCardImage = memo(function ProductCardImage({
         {...DEFAULT_IMAGE_CONFIG}
       />
 
-      {/* Stock badge */}
-      {stockStatus === 'unavailable' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
-          <Badge variant="destructive" className="text-[10px]">
-            Fora de estoque
-          </Badge>
-        </div>
-      )}
 
       {/* Badges - Top Left */}
       <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
@@ -177,6 +169,15 @@ export const ProductCardImage = memo(function ProductCardImage({
             size="sm"
             onClick={() => onStatusClick?.('promotion')}
           />
+        )}
+
+        {stockStatus === 'unavailable' && (
+          <Badge
+            variant="destructive"
+            className="h-auto px-1.5 py-0.5 text-[9px] font-medium leading-none shadow-sm"
+          >
+            Fora de estoque
+          </Badge>
         )}
 
         {(stockStatus === 'low' || stockStatus === 'critical') && (
