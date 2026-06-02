@@ -58,7 +58,12 @@ vi.mock('@/components/products/BulkActionBar', () => ({
   BulkActionBar: () => <div data-testid="mock-bulk-action" />,
 }));
 
+vi.mock('@/components/products/LayoutPopover', () => ({
+  LayoutPopover: () => <div data-testid="mock-layout-popover" />,
+}));
+
 const queryClient = new QueryClient();
+
 
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -113,18 +118,20 @@ describe('Product Sort Standardization', () => {
       </Wrapper>
     );
 
-    // Find the sort select (it's the third Select in the grid toolbar)
+    // Find the sort select. By index: Supplier=0, Category=1, Sort=2
     const selects = screen.getAllByRole('combobox');
-    const sortSelect = selects.find(s => s.getAttribute('aria-expanded') !== null); 
+    const sortSelect = selects[2]; 
     
     if (sortSelect) {
       fireEvent.click(sortSelect);
+      // We might need to wait for the Portal content
       SORT_OPTIONS.forEach(option => {
         const elements = screen.queryAllByText(option.label);
         expect(elements.length).toBeGreaterThan(0);
       });
     }
   });
+
 
   it('changing sort in StickyFilterBar triggers state change', () => {
     const onSortChange = vi.fn();
