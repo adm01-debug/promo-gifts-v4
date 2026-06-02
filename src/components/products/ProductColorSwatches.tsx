@@ -3,7 +3,7 @@
  * de um produto. Padrão visual usado em todas as visualizações (grid/lista/tabela)
  * de Catálogo, Super Filtro, Novidades, Reposição e Estoque.
  */
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -36,9 +36,16 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   className,
   hideWhenEmpty = true,
 }: ProductColorSwatchesProps) {
-  if (!colors) {
+  const idPrefix = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+
+  if (colors === undefined) {
     return (
-      <div className={cn('flex items-center gap-1', className)} aria-busy="true">
+      <div 
+        className={cn('flex items-center gap-1', className)} 
+        aria-busy="true" 
+        aria-label="Carregando opções de cores"
+        data-testid="colors-loading-skeleton"
+      >
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
@@ -53,10 +60,13 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   }
 
   if (colors.length === 0) {
-    return hideWhenEmpty ? null : (
+    if (hideWhenEmpty) return null;
+    return (
       <span 
         className="text-[10px] text-muted-foreground/60 italic"
-        aria-label="Cores indisponíveis"
+        role="status"
+        aria-live="polite"
+        data-testid="colors-unavailable"
       >
         Cores indisponíveis
       </span>
@@ -69,28 +79,32 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   return (
     <div
       className={cn('flex items-center gap-0.5', className)}
-      role="list"
+      role="group"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponível${colors.length === 1 ? '' : 'is'}`}
+      data-testid="product-colors-container"
     >
-      {visible.map((c, idx) => (
-        <Tooltip key={`${c.name}-${idx}`}>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              role="listitem"
-              className={cn(
-                'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
-                SIZE_CLASS[size],
-              )}
-              style={{ backgroundColor: c.hex || 'transparent' }}
-              aria-label={`Cor: ${c.name}`}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
-            {c.name}
-          </TooltipContent>
-        </Tooltip>
-      ))}
+      {visible.map((c, idx) => {
+        const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
+        return (
+          <Tooltip key={`${c.name}-${idx}`}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+                  SIZE_CLASS[size],
+                )}
+                style={{ backgroundColor: c.hex || 'transparent' }}
+                aria-label={`Opção de cor: ${c.name}`}
+                aria-describedby={tooltipId}
+              />
+            </TooltipTrigger>
+            <TooltipContent id={tooltipId} side="top" className="text-xs" role="tooltip">
+              {c.name}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
       {overflow > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -102,7 +116,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               +{overflow}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
+          <TooltipContent side="top" className="text-xs" role="tooltip">
             {colors.slice(max).map((c) => c.name).join(', ')}
           </TooltipContent>
         </Tooltip>
