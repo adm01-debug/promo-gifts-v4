@@ -1,7 +1,7 @@
-import { test, expect } from "../fixtures/test-base";
-import { gotoAndSettle, expectOnRoute } from "../helpers/nav";
-import { loginAs } from "../helpers/auth";
-import { expectVisibleByTestId } from "../helpers/waits";
+import { test, expect } from "../../fixtures/test-base";
+import { gotoAndSettle, expectOnRoute } from "../../helpers/nav";
+import { loginAs } from "../../helpers/auth";
+import { expectVisibleByTestId } from "../../helpers/waits";
 
 test.describe("Auditoria Técnica - Fluxos Críticos", () => {
   test.beforeEach(async ({ page }) => {
