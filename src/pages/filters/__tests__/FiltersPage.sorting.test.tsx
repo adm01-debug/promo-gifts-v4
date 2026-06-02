@@ -54,18 +54,34 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   </QueryClientProvider>
 );
 
+// Mock builder centralizado. Os tests são funcionais (não usam todos os campos
+// do tipo retornado por `useProductsCatalog`), então fazemos um cast estreito
+// que satisfaz tanto `vi.mocked` (sem usar `as any`) quanto o tipo nominal de
+// `CatalogPage` (que ganhou `nextOffset` obrigatório em PR #606).
+type CatalogQueryReturn = ReturnType<typeof useProductsCatalog>;
+const mockCatalog = (override: { products: unknown[]; totalEstimate: number }) =>
+  vi.mocked(useProductsCatalog).mockReturnValue({
+    data: {
+      pages: [
+        {
+          products: override.products,
+          totalEstimate: override.totalEstimate,
+          nextOffset: undefined,
+        },
+      ],
+    },
+    isLoading: false,
+    hasNextPage: false,
+    fetchNextPage: vi.fn(),
+  } as unknown as CatalogQueryReturn);
+
 describe('Catalog Sorting and Edge Cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should handle empty result set gracefully when sorting returns nothing', () => {
-    vi.mocked(useProductsCatalog).mockReturnValue({
-      data: { pages: [{ products: [], totalEstimate: 0 }] },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    });
+    mockCatalog({ products: [], totalEstimate: 0 });
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
@@ -74,12 +90,7 @@ describe('Catalog Sorting and Edge Cases', () => {
   });
 
   it('should maintain filters when switching sort', () => {
-    vi.mocked(useProductsCatalog).mockReturnValue({
-      data: { pages: [{ products: [], totalEstimate: 0 }] },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    });
+    mockCatalog({ products: [], totalEstimate: 0 });
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
@@ -105,12 +116,7 @@ describe('Catalog Sorting and Edge Cases', () => {
   });
 
   it('should validate that UI sort labels correspond to productService parameters', () => {
-    vi.mocked(useProductsCatalog).mockReturnValue({
-      data: { pages: [{ products: [], totalEstimate: 0 }] },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    });
+    mockCatalog({ products: [], totalEstimate: 0 });
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
@@ -134,12 +140,7 @@ describe('Catalog Sorting and Edge Cases', () => {
       { id: '2', name: null, price: 10, stock: 5 },
     ];
 
-    vi.mocked(useProductsCatalog).mockReturnValue({
-      data: { pages: [{ products: productsWithNulls, totalEstimate: 2 }] },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    });
+    mockCatalog({ products: productsWithNulls, totalEstimate: 2 });
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
@@ -150,12 +151,7 @@ describe('Catalog Sorting and Edge Cases', () => {
     const p1 = { id: '1', name: 'A', price: 10 };
     const p2 = { id: '2', name: 'B', price: 20 };
 
-    vi.mocked(useProductsCatalog).mockReturnValue({
-      data: { pages: [{ products: [p1, p2], totalEstimate: 2 }] },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    });
+    mockCatalog({ products: [p1, p2], totalEstimate: 2 });
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 

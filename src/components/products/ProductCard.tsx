@@ -2,7 +2,7 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { useState, useRef, useEffect, memo, forwardRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback } from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -136,16 +136,25 @@ export const ProductCard = memo(
       }
     }, [filterKey]);
 
-    // Multi-variant carousel (hoisted before useEffect that depends on it)
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
-
     // BUG-4 FIX: Sincronização de cor selecionada entre Grid e PDP via store
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
+    // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
+    // do useEffect abaixo que o referencia no array de deps — isso quebrava em
+    // runtime com "Cannot access 'allMatchingVariants' before initialization"
+    // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
+    // primeiro uso.
+    const allMatchingVariants = useMemo(
+      () => resolveAllMatchingColors(product.colors, activeColorFilter),
+      [product.colors, activeColorFilter],
+    );
+
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        const targetColor = selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+        // Prioridade: Seleção manual > Filtro ativo
+        const targetColor =
+          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
@@ -155,7 +164,7 @@ export const ProductCard = memo(
           }
         }
       }
-    }, [product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -293,8 +302,8 @@ export const ProductCard = memo(
       }
     };
 
-
-    // Multi-variant carousel
+    // Multi-variant carousel — `allMatchingVariants` é derivado acima
+    // (TDZ FIX: precisa estar antes do primeiro useEffect que o consome).
     const hasMultipleVariants = allMatchingVariants.length > 1;
     const safeVariantIdx = hasMultipleVariants
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)
