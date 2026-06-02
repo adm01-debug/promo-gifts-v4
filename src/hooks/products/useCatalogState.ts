@@ -449,8 +449,6 @@ export function useCatalogState() {
   }, [filteredProducts]);
 
   const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
-  
-
   useEffect(() => {
     if (!isTransitioning) {
       setLastNonTransitionedProducts(filteredProducts);
