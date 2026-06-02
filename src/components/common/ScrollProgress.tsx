@@ -113,15 +113,15 @@ export const ScrollToTopButton = forwardRef<
   }, [announceStatus]);
 
   return (
-    <button
+    <motion.button
       ref={ref}
+      layout
       data-testid="scroll-to-top"
       type="button"
       className={cn(
         'fixed bottom-6 right-6 z-[60] rounded-full p-3 transition-all duration-300',
         'bg-primary text-primary-foreground shadow-lg',
         'hover:scale-105 hover:shadow-xl active:scale-95',
-        'transition-[opacity,transform] duration-200',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isVisible
           ? 'translate-y-0 scale-100 opacity-100'
