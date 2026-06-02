@@ -441,6 +441,36 @@ export const McpKeysRotateSchemaV1 = z.object({
   step_up_token: z.string().min(32).max(256).nullable().optional(),
 });
 
+export const Verify2faTokenSchemaV1 = z.object({
+  action: z.enum(["verify", "disable"]),
+  token: z.string().trim().min(6).max(64).optional(),
+  target_user_id: uuidSchema.optional(),
+  is_admin_bypass: z.boolean().optional(),
+});
+
+export const BulkRandomPasswordsSchemaV1 = z.object({
+  mode: z.enum(["dry_run", "apply"]).optional(),
+  length: z.number().int().min(8).max(32).optional(),
+  includeUpper: z.boolean().optional(),
+  includeLower: z.boolean().optional(),
+  includeDigits: z.boolean().optional(),
+  includeSymbols: z.boolean().optional(),
+  excludeEmails: z.array(emailSchema).max(10_000).optional(),
+  onlyEmails: z.array(emailSchema).max(10_000).optional(),
+  maxUsers: z.number().int().min(1).max(1000).optional(),
+  pageSize: z.number().int().min(10).max(500).optional(),
+});
+
+export const LoadTestSchemaV1 = z.object({
+  concurrency: z.number().int().min(1).max(1000).optional(),
+  totalRequests: z.number().int().min(1).max(100_000).optional(),
+  targetEndpoint: z.string().min(1).max(255).optional(),
+  method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]).optional(),
+  body: z.unknown().nullable().optional(),
+  headers: z.record(z.string()).optional(),
+  useIdempotency: z.boolean().optional(),
+});
+
 export const McpKeysUpdateSchemaV1 = z.object({
   key_id: uuidSchema,
   name: z.string().trim().min(3).max(100).optional(),
@@ -834,6 +864,24 @@ export const CONTRACTS: Record<string, ContractDefinition> = {
     endpoint: "step-up-verify",
     description: "Multi-step elevated auth (password + OTP)",
     versions: { v1: StepUpVerifySchemaV1 },
+    defaultVersion: "v1",
+  },
+  "verify-2fa-token": {
+    endpoint: "verify-2fa-token",
+    description: "Server-side TOTP verification (verify/disable) — keeps totp_secret server-only",
+    versions: { v1: Verify2faTokenSchemaV1 },
+    defaultVersion: "v1",
+  },
+  "bulk-random-passwords": {
+    endpoint: "bulk-random-passwords",
+    description: "Generate and rotate random passwords for bulk users (admin, dry_run/apply)",
+    versions: { v1: BulkRandomPasswordsSchemaV1 },
+    defaultVersion: "v1",
+  },
+  "load-test": {
+    endpoint: "load-test",
+    description: "Synthetic load harness — fans out N concurrent requests to a target endpoint",
+    versions: { v1: LoadTestSchemaV1 },
     defaultVersion: "v1",
   },
   "sync-external-db": {

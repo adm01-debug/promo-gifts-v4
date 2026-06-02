@@ -1,13 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NoveltyProductGrid } from '../NoveltyProductGrid';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import * as React from 'react';
-import { SORT_OPTIONS } from '@/constants/filters';
+import type { ReactNode } from 'react';
+import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
+
+// Helper: find an input by partial placeholder text (testing-library does
+// not expose this matcher out-of-the-box; the production placeholder includes
+// the keyboard-shortcut hint and ellipsis so exact match is brittle).
+function getByPlaceholderPartial(text: string): HTMLInputElement {
+  const inputs = screen.getAllByRole('textbox');
+  const match = inputs.find((i) => (i as HTMLInputElement).placeholder.includes(text.trim()));
+  if (!match) throw new Error(`No textbox with placeholder containing "${text}"`);
+  return match as HTMLInputElement;
+}
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
@@ -26,7 +36,7 @@ vi.mock('@/hooks/products', () => ({
         stock_quantity: 100,
         min_quantity: 10,
         days_remaining: 30,
-        status: 'active'
+        status: 'active',
       },
       {
         product_id: '2',
@@ -41,18 +51,18 @@ vi.mock('@/hooks/products', () => ({
         stock_quantity: 50,
         min_quantity: 10,
         days_remaining: 30,
-        status: 'active'
-      }
+        status: 'active',
+      },
     ],
     isLoading: false,
     isFetching: false,
     error: null,
   })),
-  useNoveltiesSelectionMode: vi.fn(({ filteredProducts }) => ({
+  useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
     clearSelection: vi.fn(),
-    noveltyToProduct: (n: any) => ({
+    noveltyToProduct: (n: NoveltyWithDetails) => ({
       id: n.product_id,
       name: n.product_name || '',
       product_name: n.product_name || '',
@@ -64,11 +74,10 @@ vi.mock('@/hooks/products', () => ({
       images: [n.product_image],
       colors: [],
       materials: [],
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] }
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
     }),
   })),
 }));
-
 
 vi.mock('@/stores/useFavoritesStore', () => ({
   useFavoritesStore: vi.fn(() => ({
@@ -105,9 +114,9 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 
 // Mock Virtualized Grid to render synchronously
 vi.mock('../VirtualizedNoveltyGrid', () => ({
-  VirtualizedNoveltyGrid: ({ products, onProductClick, selectionMode, selectedIds, onToggleSelect }: any) => (
+  VirtualizedNoveltyGrid: ({ products }: { products: NoveltyWithDetails[] }) => (
     <div data-testid="mock-virtualized-grid">
-      {products.map((p: any) => (
+      {products.map((p) => (
         <div key={p.novelty_id} role="listitem">
           <h3>{p.product_name}</h3>
           <span>R$ {p.base_price}</span>
@@ -118,16 +127,13 @@ vi.mock('../VirtualizedNoveltyGrid', () => ({
 }));
 
 const queryClient = new QueryClient({
-
   defaultOptions: { queries: { retry: false } },
 });
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
+const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <TooltipProvider>
-        {children}
-      </TooltipProvider>
+      <TooltipProvider>{children}</TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );
@@ -139,11 +145,10 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
   it('renders products and shows correct count badge', () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
+
     expect(screen.getByText('Caneta A')).toBeInTheDocument();
     expect(screen.getByText('Caneta B')).toBeInTheDocument();
 
-    
     // Count badge should show 2
     const badge = screen.getByText('2');
     expect(badge).toBeDefined();
@@ -151,11 +156,11 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
   it('filters by search and updates badge', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
-    const searchInput = screen.getByPlaceholderRelative('Buscar novidades…  /');
-    
+
+    const searchInput = getByPlaceholderPartial('Buscar novidades');
+
     fireEvent.change(searchInput, { target: { value: 'Caneta A' } });
-    
+
     await waitFor(() => {
       expect(screen.queryByText('Caneta B')).toBeNull();
       expect(screen.getByText('Caneta A')).toBeInTheDocument();
@@ -166,38 +171,24 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     });
   });
 
-
   it('sorts locally by price-asc', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
-    // Default is newest (Caneta B then Caneta A)
-    const items = screen.getAllByRole('heading', { level: 3 }); // Assuming product names are h3 in cards
-    // In Virtualized grid, it might be different. Let's look for text content order if possible.
-    
+
     // Find sort select and change to price-asc
     const selects = screen.getAllByRole('combobox');
     const sortSelect = selects[2];
-    
+
     fireEvent.click(sortSelect);
     const ascOption = screen.getByText('Preço (Menor → Maior)');
     fireEvent.click(ascOption);
-    
+
     // After sorting by price asc, Caneta B (5) should be before Caneta A (10)
     // Actually, newest was B then A. So order didn't change for B, but B is cheaper.
   });
-  
+
   it('resets page to 1 when filters change', async () => {
     // This is hard to test without many products, but we can verify the useEffect dependency
     render(<NoveltyProductGrid />, { wrapper });
     // If it didn't crash and we see the products, initial state is ok
   });
 });
-
-// Helper for finding elements with partial text in placeholder/aria
-const screen = {
-  ...require('@testing-library/react').screen,
-  getByPlaceholderRelative: (text: string) => {
-    const inputs = require('@testing-library/react').screen.getAllByRole('textbox');
-    return inputs.find((i: any) => i.placeholder.includes(text.trim())) as HTMLInputElement;
-  }
-};

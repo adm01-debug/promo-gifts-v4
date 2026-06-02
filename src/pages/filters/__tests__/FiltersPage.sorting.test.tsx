@@ -60,7 +60,7 @@ describe('Catalog Sorting and Edge Cases', () => {
   });
 
   it('should handle empty result set gracefully when sorting returns nothing', () => {
-    (useProductsCatalog as any).mockReturnValue({
+    vi.mocked(useProductsCatalog).mockReturnValue({
       data: { pages: [{ products: [], totalEstimate: 0 }] },
       isLoading: false,
       hasNextPage: false,
@@ -74,7 +74,7 @@ describe('Catalog Sorting and Edge Cases', () => {
   });
 
   it('should maintain filters when switching sort', () => {
-    (useProductsCatalog as any).mockReturnValue({
+    vi.mocked(useProductsCatalog).mockReturnValue({
       data: { pages: [{ products: [], totalEstimate: 0 }] },
       isLoading: false,
       hasNextPage: false,
@@ -88,7 +88,7 @@ describe('Catalog Sorting and Edge Cases', () => {
     });
 
     // Reset mock to ensure we only capture the final call
-    (useProductsCatalog as any).mockClear();
+    vi.mocked(useProductsCatalog).mockClear();
 
     act(() => {
       result.current.setSortBy('price-asc');
@@ -96,14 +96,16 @@ describe('Catalog Sorting and Edge Cases', () => {
 
     expect(result.current.filters.search).toBe('test query');
     expect(result.current.filters.sortBy).toBe('price-asc');
-    
-    expect(useProductsCatalog).toHaveBeenCalledWith(expect.objectContaining({
-      sortBy: 'price-asc'
-    }));
+
+    expect(useProductsCatalog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sortBy: 'price-asc',
+      }),
+    );
   });
 
   it('should validate that UI sort labels correspond to productService parameters', () => {
-    (useProductsCatalog as any).mockReturnValue({
+    vi.mocked(useProductsCatalog).mockReturnValue({
       data: { pages: [{ products: [], totalEstimate: 0 }] },
       isLoading: false,
       hasNextPage: false,
@@ -112,24 +114,27 @@ describe('Catalog Sorting and Edge Cases', () => {
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
-    SORT_OPTIONS.forEach(option => {
+    expect(SORT_OPTIONS).not.toHaveLength(0);
+    for (const option of SORT_OPTIONS) {
       act(() => {
         result.current.setSortBy(option.value);
       });
-      
-      expect(useProductsCatalog).toHaveBeenLastCalledWith(expect.objectContaining({
-        sortBy: option.value
-      }));
-    });
+
+      expect(useProductsCatalog).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          sortBy: option.value,
+        }),
+      );
+    }
   });
 
   it('should handle products with null/missing fields during sorting without crashing', () => {
     const productsWithNulls = [
       { id: '1', name: 'Product A', price: null, stock: null },
-      { id: '2', name: null, price: 10, stock: 5 }
+      { id: '2', name: null, price: 10, stock: 5 },
     ];
 
-    (useProductsCatalog as any).mockReturnValue({
+    vi.mocked(useProductsCatalog).mockReturnValue({
       data: { pages: [{ products: productsWithNulls, totalEstimate: 2 }] },
       isLoading: false,
       hasNextPage: false,
@@ -145,7 +150,7 @@ describe('Catalog Sorting and Edge Cases', () => {
     const p1 = { id: '1', name: 'A', price: 10 };
     const p2 = { id: '2', name: 'B', price: 20 };
 
-    (useProductsCatalog as any).mockReturnValue({
+    vi.mocked(useProductsCatalog).mockReturnValue({
       data: { pages: [{ products: [p1, p2], totalEstimate: 2 }] },
       isLoading: false,
       hasNextPage: false,
@@ -158,7 +163,7 @@ describe('Catalog Sorting and Edge Cases', () => {
       result.current.setSortBy('price-desc');
     });
 
-    const ids = result.current.filteredProducts.map(p => p.id);
+    const ids = result.current.filteredProducts.map((p) => p.id);
     const uniqueIds = new Set(ids);
     expect(ids.length).toBe(uniqueIds.size);
     expect(ids.length).toBe(2);

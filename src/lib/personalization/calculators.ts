@@ -153,7 +153,7 @@ export function adjustPriceByArea(
 }
 
 /**
- * Calcula economia comparado Ã  primeira faixa (interno)
+ * Calcula economia comparado à primeira faixa (interno)
  */
 function calculateTierSavings(
   tiers: PriceTier[],

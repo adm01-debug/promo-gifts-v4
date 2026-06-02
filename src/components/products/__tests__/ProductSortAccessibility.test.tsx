@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { StickyFilterBar } from '@/components/filters/StickyFilterBar';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -20,9 +20,7 @@ describe('ProductSort Accessibility and UI', () => {
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter>
-      <TooltipProvider>
-        {children}
-      </TooltipProvider>
+      <TooltipProvider>{children}</TooltipProvider>
     </BrowserRouter>
   );
 
@@ -30,12 +28,12 @@ describe('ProductSort Accessibility and UI', () => {
     render(
       <Wrapper>
         <StickyFilterBar {...defaultProps} />
-      </Wrapper>
+      </Wrapper>,
     );
 
     const combobox = screen.getByRole('combobox');
     expect(combobox).toBeDefined();
-    
+
     // Radix UI Select usually provides these
     expect(combobox).toHaveAttribute('aria-expanded');
     expect(combobox).toHaveAttribute('aria-autocomplete', 'none');
@@ -45,7 +43,7 @@ describe('ProductSort Accessibility and UI', () => {
     const { rerender } = render(
       <Wrapper>
         <StickyFilterBar {...defaultProps} sortBy="name" />
-      </Wrapper>
+      </Wrapper>,
     );
 
     // Initial value check (usually displayed in the trigger)
@@ -54,7 +52,7 @@ describe('ProductSort Accessibility and UI', () => {
     rerender(
       <Wrapper>
         <StickyFilterBar {...defaultProps} sortBy="price-asc" />
-      </Wrapper>
+      </Wrapper>,
     );
 
     expect(screen.getByText(/Preço \(Menor → Maior\)/i)).toBeDefined();
@@ -64,7 +62,7 @@ describe('ProductSort Accessibility and UI', () => {
     render(
       <Wrapper>
         <StickyFilterBar {...defaultProps} activeFiltersCount={3} />
-      </Wrapper>
+      </Wrapper>,
     );
 
     // The "3" should appear in a badge
