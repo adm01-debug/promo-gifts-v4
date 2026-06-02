@@ -82,6 +82,7 @@ export function VirtualizedReplenishmentGrid({
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
+                    colors={colorsByProduct?.get(product.product_id)}
                   />
                 </div>
               ))}
