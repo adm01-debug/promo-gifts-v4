@@ -172,8 +172,11 @@ test.describe("Snapshots visuais e Overflow", () => {
       const tooltip = page.locator('[data-testid="color-overflow-tooltip"]').first();
       await expect(tooltip).toBeVisible();
 
-      // Snapshot do estado com overflow
-      await expect(tooltip).toHaveScreenshot(`color-overflow-scroll-${width}px.png`, { maxDiffPixelRatio: 0.05 });
+      // Snapshot do estado com overflow (tooltip específico e card inteiro)
+      await expect(tooltip).toHaveScreenshot(`color-overflow-tooltip-${width}px.png`, { maxDiffPixelRatio: 0.05 });
+      
+      const card = page.locator('[data-testid="product-card"]').filter({ has: overflow }).first();
+      await expect(card).toHaveScreenshot(`product-card-overflow-layout-${width}px.png`, { maxDiffPixelRatio: 0.05 });
       
       // Valida ordem (deve seguir a ordem do array)
       const firstHidden = tooltip.locator('button').first();
