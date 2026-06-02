@@ -331,6 +331,14 @@ export function ReplenishmentTableView({
                     {product.category_name ?? '—'}
                   </span>
                 </TableCell>
+                <TableCell className="hidden px-2 py-1.5 md:table-cell">
+                  <ProductColorSwatches
+                    colors={colorsByProduct?.get(product.product_id)}
+                    max={5}
+                    size="sm"
+                    hideWhenEmpty={false}
+                  />
+                </TableCell>
                 <TableCell className="px-2 py-1.5 text-center">
                   <ReplenishmentBadge daysSince={product.days_since} size="sm" />
                 </TableCell>
