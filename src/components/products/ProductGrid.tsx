@@ -251,6 +251,14 @@ export const ProductGrid = memo(function ProductGrid({
         }))
       : products;
 
+  // Hidrata cores nos cards cujo fetch principal não trouxe `colors`
+  // (fallback unificado p/ catálogo/super filtro/etc — mesmo padrão de Novidades).
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+
   return (
     <div
       ref={gridRef}
@@ -264,20 +272,28 @@ export const ProductGrid = memo(function ProductGrid({
             selectionMode={selectionMode}
             hideCategoryBadges={hideCategoryBadges}
           />
-        ) : (
+        ) : (() => {
+          const p = product as Product;
+          const batchColors = (!p.colors || p.colors.length === 0)
+            ? colorsByProduct?.get(p.id)
+            : undefined;
+          const enriched = batchColors && batchColors.length > 0
+            ? { ...p, colors: batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })) }
+            : p;
+          return (
           <ProductCardWrapper
-            key={(product as Product).id}
-            product={product as Product}
+            key={p.id}
+            product={enriched}
             index={index}
             isVisible={isGridVisible}
             priority={index < 8}
-            onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
+            onClick={onProductClick ? () => onProductClick(p.id) : undefined}
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
+            isFavorited={isFavorite ? isFavorite(p.id) : false}
             onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
+            isInCompare={isInCompare ? isInCompare(p.id) : false}
             onToggleCompare={onToggleCompare}
             canAddToCompare={canAddToCompare}
             highlightColors={highlightColors}
@@ -288,7 +304,8 @@ export const ProductGrid = memo(function ProductGrid({
             onToggleSelect={onToggleSelect}
             onStatusClick={onStatusClick}
           />
-        ),
+          );
+        })(),
       )}
     </div>
   );
