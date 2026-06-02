@@ -94,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRoles,
     isLoading,
     setIsLoading,
+    rolesLoaded,
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
@@ -207,12 +208,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const buffer = 5 * 60 * 1000;
     const refreshDelay = timeToExpiry - buffer;
 
-    // Expiração conhecida e já dentro da janela de buffer (≤5min): refaz uma
-    // única vez agora. Se `expires_at` for desconhecido (timeToExpiry≤0), NÃO
-    // força refresh — o autoRefreshToken do Supabase cuida disso (evita loop de
-    // refresh quando a sessão não traz expiry). Antes havia um refresh imediato
-    // (timeToExpiry < 10min) somado a um setTimeout com delay potencialmente
-    // negativo (dispara em 0ms) → duplo refresh redundante.
     if (timeToExpiry > 0 && refreshDelay <= 0) {
       refreshSession();
     }
@@ -242,16 +237,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSafeToastRoles(userRoles);
   }, [userRoles]);
 
-  // Watchdog (Etapa 8): se isLoading travar (network error, edge function timeout, RLS hang),
-  // força isLoading=false. Threshold aumentado de 8s → 12s porque com a remoção do
-  // getSession() redundante em fetchUserData, cold starts de Vercel + Supabase ficam
-  // dentro de ~3-4s. O threshold de 12s garante cobertura sem falsos positivos.
   useEffect(() => {
     if (!isLoading) return;
     const timer = window.setTimeout(() => {
       console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
       setIsLoading(false);
-      // BUG-FIX: Se travar, avisa o usuário que algo está errado
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
@@ -331,7 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nextAAL,
       hasMFA,
       mfaRequired: isSupervisorOrAbove && currentAAL !== 'aal2',
-      rolesLoaded: userRoles.length > 0,
+      rolesLoaded,
       refreshAAL: fetchAAL,
       signIn,
       signOut,
@@ -359,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshSession,
       fetchUserData,
       fetchPromiseRef,
+      rolesLoaded,
     ],
   );
 
