@@ -23,7 +23,7 @@ const FloatingCompareBar = lazyWithRetry(() =>
   })),
 );
 const ScrollToTopButton = lazyWithRetry(() =>
-  import('@/components/common/ScrollProgress').then((m) => ({ default: m.ScrollToTopButton })),
+  import('@/components/common/ScrollToTopButton').then((m) => ({ default: m.ScrollToTopButton })),
 );
 const ScrollProgressIndicator = lazyWithRetry(() =>
   import('@/components/common/ScrollProgress').then((m) => ({

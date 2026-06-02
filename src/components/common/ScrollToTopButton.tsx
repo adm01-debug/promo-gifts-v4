@@ -1,55 +1,99 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { useState, useEffect, forwardRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ArrowUp } from 'lucide-react';
+import { useAriaLive } from '@/components/a11y';
 
 interface ScrollToTopButtonProps {
-  /** Opcional: container que está sendo scrollado. Se omitido, usa a window. */
-  containerRef?: React.RefObject<HTMLElement>;
-  /** Threshold de scroll para mostrar o botão (default: 400). */
   threshold?: number;
   className?: string;
+  /** Offset from bottom (default 1.5rem / 24px) */
+  bottomOffset?: number | string;
+  /** Opcional: container que está sendo scrollado. Se omitido, usa a window. */
+  containerRef?: React.RefObject<HTMLElement>;
 }
 
-export function ScrollToTopButton({
-  containerRef,
-  threshold = 400,
-  className,
-}: ScrollToTopButtonProps) {
-  const [show, setShow] = useState(false);
+export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButtonProps>(
+  function ScrollToTopButton({ threshold = 300, className, bottomOffset, containerRef }, ref) {
+    const [isVisible, setIsVisible] = useState(false);
+    const { announceStatus } = useAriaLive();
 
-  const handleScroll = useCallback(() => {
-    const scrollTop = containerRef?.current ? containerRef.current.scrollTop : window.scrollY;
+    useEffect(() => {
+      const handleScroll = () => {
+        const scrollTop = containerRef?.current ? containerRef.current.scrollTop : window.scrollY;
+        setIsVisible(scrollTop > threshold);
+      };
+      handleScroll();
+      const target = containerRef?.current || window;
+      target.addEventListener('scroll', handleScroll, { passive: true });
+      return () => target.removeEventListener('scroll', handleScroll);
+    }, [threshold, containerRef]);
 
-    setShow(scrollTop > threshold);
-  }, [containerRef, threshold]);
+    const handleScrollToTop = useCallback(() => {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const target = containerRef?.current || window;
+      target.scrollTo({
+        top: 0,
+        behavior: prefersReduced ? 'auto' : 'smooth',
+      });
+      announceStatus('Voltando ao topo da página');
+      
+      const moveFocusToTop = () => {
+        const targetFocus =
+          (document.getElementById('main-content') as HTMLElement | null) ??
+          (document.querySelector('main') as HTMLElement | null) ??
+          (document.querySelector('h1') as HTMLElement | null);
+        
+        if (!targetFocus) {
+          announceStatus('Topo da página.');
+          return;
+        }
+        
+        const hadTabIndex = targetFocus.hasAttribute('tabindex');
+        if (!hadTabIndex) targetFocus.setAttribute('tabindex', '-1');
+        targetFocus.focus({ preventScroll: true });
+        
+        if (!hadTabIndex) {
+          targetFocus.addEventListener('blur', () => targetFocus.removeAttribute('tabindex'), { once: true });
+        }
+        announceStatus('Topo da página. Foco no conteúdo principal.');
+      };
 
-  useEffect(() => {
-    const target = containerRef?.current || window;
-    target.addEventListener('scroll', handleScroll, { passive: true });
-    return () => target.removeEventListener('scroll', handleScroll);
-  }, [containerRef, handleScroll]);
+      if (prefersReduced) {
+        moveFocusToTop();
+      } else {
+        window.setTimeout(moveFocusToTop, 350);
+      }
+    }, [announceStatus, containerRef]);
 
-  const scrollToTop = () => {
-    const target = containerRef?.current || window;
-    target.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  return (
-    <button
-      onClick={scrollToTop}
-      className={cn(
-        'fixed bottom-6 right-6 z-[60] flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all duration-300 hover:bg-brand-primary/90 active:scale-95',
-        show
-          ? 'translate-y-0 scale-100 opacity-100'
-          : 'pointer-events-none translate-y-2 scale-90 opacity-0',
-        'transition-[opacity,transform] duration-200',
-        className,
-      )}
-      aria-label="Voltar ao topo"
-      aria-hidden={!show}
-      title="Voltar ao topo"
-    >
-      <ArrowUp className="h-5 w-5" />
-    </button>
-  );
-}
+    return (
+      <motion.button
+        ref={ref}
+        layout
+        data-testid="scroll-to-top"
+        type="button"
+        className={cn(
+          'fixed right-6 z-[60] rounded-full p-3 transition-all duration-300',
+          'bg-primary text-primary-foreground shadow-lg',
+          'hover:scale-105 hover:shadow-xl active:scale-95',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          isVisible
+            ? 'translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-2 scale-90 opacity-0',
+          className,
+        )}
+        style={{ 
+          bottom: bottomOffset ? (typeof bottomOffset === 'number' ? `${bottomOffset}px` : bottomOffset) : '1.5rem' 
+        }}
+        onClick={handleScrollToTop}
+        aria-label="Voltar ao topo da página"
+        aria-hidden={!isVisible}
+        tabIndex={isVisible ? 0 : -1}
+        aria-keyshortcuts="Home"
+        title="Voltar ao topo (Enter ou Espaço)"
+      >
+        <ArrowUp className="h-5 w-5" aria-hidden />
+      </motion.button>
+    );
+  }
+);

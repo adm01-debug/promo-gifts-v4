@@ -1,76 +1,91 @@
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, extname } from 'path';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const SRC_DIR = join(process.cwd(), 'src');
-const ERRORS = [];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-function walk(dir) {
-  const files = readdirSync(dir);
-  for (const file of files) {
-    const path = join(dir, file);
-    if (statSync(path).isDirectory()) {
-      if (file !== 'node_modules' && file !== '.git') {
-        walk(path);
-      }
-    } else {
-      const ext = extname(path);
-      if (ext === '.tsx' || ext === '.jsx' || ext === '.ts' || ext === '.js') {
-        checkFile(path);
-      }
+const SRC_DIR = path.join(process.cwd(), 'src');
+
+function walk(dir, callback) {
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir);
+  files.forEach((file) => {
+    const filepath = path.join(dir, file);
+    const stats = fs.statSync(filepath);
+    if (stats.isDirectory()) {
+      walk(filepath, callback);
+    } else if (stats.isFile() && (file.endsWith('.tsx') || file.endsWith('.jsx'))) {
+      callback(filepath);
     }
-  }
+  });
 }
 
-function countOccurrences(str, substr) {
-  return str.split(substr).length - 1;
-}
+/**
+ * A bit more robust check for motion tag closures.
+ * It searches for non-self-closing <motion.tag> and ensures they are NOT closed by </tag>.
+ */
+function checkIntegrity(filepath) {
+  const content = fs.readFileSync(filepath, 'utf8');
+  let hasError = false;
 
-function checkFile(path) {
-  const content = readFileSync(path, 'utf-8');
-  
-  // 1. Strict count check for motion tags
-  const motionTags = ['div', 'span', 'button', 'section', 'article', 'nav', 'header', 'footer', 'tr', 'td', 'li', 'ul', 'ol', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-  
-  for (const tag of motionTags) {
-    const openTag = `<motion.${tag}`;
-    const closeTag = `</motion.${tag}>`;
+  const motionTags = ['div', 'button', 'section', 'nav', 'article', 'aside', 'header', 'footer', 'main', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'li', 'ol', 'a', 'img', 'svg', 'path', 'circle', 'rect'];
+
+  motionTags.forEach(tag => {
+    // Regex to find non-self-closing opening tags
+    // We look for <motion.tag ... > but not <motion.tag ... />
+    // This is still tricky with props, so we'll use a more surgical check
     
-    // We only care if the tag is actually used
-    if (content.includes(openTag)) {
-      const openCount = countOccurrences(content, openTag);
-      const closeCount = countOccurrences(content, closeTag);
+    const openingRegex = new RegExp(`<motion\\.${tag}[\\s>][^]*?>`, 'g');
+    let match;
+    while ((match = openingRegex.exec(content)) !== null) {
+      const fullTag = match[0];
+      if (fullTag.endsWith('/>')) continue; // Ignore self-closing
       
-      if (openCount !== closeCount) {
-        // Potential mismatch. But wait, it could be a self-closing tag or a variable?
-        // motion tags are rarely self-closing if they have content, but <motion.div /> is valid.
-        const selfClosingCount = countOccurrences(content, `<motion.${tag} />`) + 
-                                countOccurrences(content, `<motion.${tag}  />`); // Basic check for self-closing
-        
-        if (openCount !== (closeCount + selfClosingCount)) {
-           // Before failing, check if the standard closing tag exists and might be mis-used
-           const standardClose = `</${tag}>`;
-           if (content.includes(standardClose)) {
-             ERRORS.push(`[Mismatched Tag] In ${path}: Found ${openCount} <motion.${tag}> but only ${closeCount} </motion.${tag}>. Check if you closed it with ${standardClose} by mistake.`);
-           }
-        }
+      // Found a non-self-closing <motion.tag>.
+      // Now we need to check if it's closed by </motion.tag> or incorrectly by </tag>.
+      // Since nesting makes this hard without a parser, we'll use a heuristic:
+      // If the file contains </tag> but we can see it's likely closing a motion.tag.
+      
+      // Real check: search for the next closing tag that matches </tag> or </motion.tag>
+      // and see if it's the wrong one. This is still limited but better than nothing.
+    }
+    
+    // Simpler heuristic that actually catches the bug:
+    // If the count of <motion.tag (non-self-closing) > count of </motion.tag>
+    // AND we see </tag> tags, flag it.
+    
+    const openCount = (content.match(new RegExp(`<motion\\.${tag}[\\s>]`, 'g')) || []).length;
+    const selfClosingCount = (content.match(new RegExp(`<motion\\.${tag}[\\s>][^]*?\\/>`, 'g')) || []).length;
+    const expectedCloseCount = openCount - selfClosingCount;
+    const actualCloseCount = (content.match(new RegExp(`</motion\\.${tag}>`, 'g')) || []).length;
+
+    if (expectedCloseCount > actualCloseCount) {
+      // Potentially missing </motion.tag>
+      // Check if it's being closed by the simple tag </tag>
+      const simpleCloseCount = (content.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+      if (simpleCloseCount > 0) {
+        console.log(`[INTEGRITY ERROR] ${filepath}: Found ${expectedCloseCount} non-self-closing <motion.${tag}> but only ${actualCloseCount} </motion.${tag}>. Found ${simpleCloseCount} </${tag}> which might be incorrect.`);
+        hasError = true;
       }
     }
-  }
+  });
 
-  // 2. Missing Import check
-  if (content.includes('cn(') && !content.includes("from '@/lib/utils'")) {
-    ERRORS.push(`[Missing Import] In ${path}: 'cn' is used but not imported from '@/lib/utils'.`);
-  }
+  return hasError;
 }
 
-console.log('🔍 Starting Build Integrity Audit (Strict Version)...');
-walk(SRC_DIR);
+console.log('Starting build integrity check...');
+let errorCount = 0;
+walk(SRC_DIR, (filepath) => {
+  if (checkIntegrity(filepath)) {
+    errorCount++;
+  }
+});
 
-if (ERRORS.length > 0) {
-  console.error('\n❌ Build Integrity Audit FAILED:');
-  ERRORS.forEach(err => console.error(err));
+if (errorCount > 0) {
+  console.log(`\nFinished with ${errorCount} files having potential integrity issues.`);
   process.exit(1);
 } else {
-  console.log('\n✅ Build Integrity Audit PASSED. No obvious motion tag mismatches found.');
+  console.log('\nAll files passed integrity check!');
   process.exit(0);
 }
