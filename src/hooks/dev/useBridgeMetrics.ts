@@ -52,11 +52,7 @@ function samplesToEntries(samples: readonly BridgeCallSample[]): BridgeMetricsEn
 }
 
 export function useBridgeMetrics(): BridgeMetricsReturn {
-  const samples = useSyncExternalStore(
-    subscribeBridgeCalls,
-    getBridgeSamples,
-    () => [] as readonly BridgeCallSample[],
-  );
+  const samples = useSyncExternalStore(subscribeBridgeCalls, getBridgeSamples, getBridgeSamples);
   const [filter, setFilter] = useState<BridgeMetricsFilter>({});
   const [open, setOpen] = useState(false);
 

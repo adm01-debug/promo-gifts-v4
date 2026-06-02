@@ -49,7 +49,7 @@ function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnifica
     categoria: row.tipo ?? 'geral',
     icone: null,
     permiteCores: (row.max_cores ?? 0) > 0,
-    minCores: 0,
+    minCores: (row.max_cores ?? 0) > 0 ? 1 : 0,
     maxCores: row.max_cores ?? 0,
     precoPorCor: false,
     precoCorExtra: 0,
@@ -68,8 +68,8 @@ function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnifica
     ativo: true,
     ordemExibicao: 0,
     fonte: 'externo',
-    criadoEm: new Date().toISOString(),
-    atualizadoEm: new Date().toISOString(),
+    criadoEm: (row.dados_extras?.created_at as string) ?? new Date(0).toISOString(),
+    atualizadoEm: (row.dados_extras?.updated_at as string) ?? new Date(0).toISOString(),
   };
 }
 
