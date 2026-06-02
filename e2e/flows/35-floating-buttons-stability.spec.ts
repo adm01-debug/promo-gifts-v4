@@ -20,7 +20,8 @@ test.describe('Floating Buttons Overlap Test', () => {
       
       // Wait for buttons to be visible
       // ScrollToTopButton is test-id="scroll-to-top" in ScrollProgress.tsx
-      const scrollToTop = page.getByTestId('scroll-to-top');
+      // and used as className="fixed bottom-6 right-6 z-50" in CatalogContent.tsx
+      const scrollToTop = page.locator('[data-testid="scroll-to-top"], button[aria-label="Voltar ao topo"], button[aria-label="Voltar ao topo da página"]').first();
       const quickActionFAB = page.locator('button[aria-label="Ações rápidas"], button[aria-label="Fechar menu"]');
 
       // Check visibility of QuickActionFAB (always visible on most pages unless hidden)
