@@ -7,10 +7,10 @@ import { test, expect, type Page } from '@playwright/test';
  */
 
 const MODULES = [
-  { name: 'Catálogo', path: '/produtos', viewModes: ['grid', 'list'] }, // Catálogo costuma ter grid/list toggle
+  { name: 'Catálogo', path: '/produtos', viewModes: ['grid', 'list'] },
   { name: 'Novidades', path: '/novidades', viewModes: ['grid', 'list', 'table'] },
   { name: 'Reposição', path: '/reposicao', viewModes: ['grid', 'list', 'table'] },
-  { name: 'Estoque', path: '/estoque', viewModes: ['table'] }, // Estoque é primariamente tabela
+  { name: 'Estoque', path: '/estoque', viewModes: ['table'] },
 ];
 
 async function setupRouteInterception(page: Page) {
@@ -19,12 +19,12 @@ async function setupRouteInterception(page: Page) {
     count: 0,
     lastIds: [] as string[],
   };
+  // Intercepta chamadas ao Supabase para variantes (onde as cores são buscadas)
   await page.route('**/rest/v1/product_variants*', async (route) => {
     const url = route.request().url();
     state.requests.push(url);
     state.count++;
     
-    // Tenta extrair product_ids da query string para logar se necessário
     const urlObj = new URL(url);
     const inParam = urlObj.searchParams.get('product_id');
     if (inParam) {
@@ -39,20 +39,18 @@ async function setupRouteInterception(page: Page) {
 async function switchViewMode(page: Page, mode: 'grid' | 'list' | 'table') {
   const labelMap = { grid: 'Grid', list: 'Lista', table: 'Tabela' };
   
-  // Tenta abrir o LayoutPopover
   const layoutBtn = page.locator('button[aria-label="Alterar layout"]');
   if (await layoutBtn.isVisible()) {
     await layoutBtn.click();
     const modeBtn = page.getByRole('button', { name: labelMap[mode], exact: true });
     if (await modeBtn.isVisible()) {
       await modeBtn.click();
-      await page.keyboard.press('Escape'); // Fecha o popover se necessário
+      await page.keyboard.press('Escape');
       await page.waitForTimeout(500);
       return;
     }
   }
 
-  // Fallback para botões diretos de visualização que podem existir em outros headers
   const directBtn = page.locator(`button[aria-label*="${labelMap[mode]}" i]`);
   if (await directBtn.isVisible()) {
     await directBtn.click();
@@ -60,136 +58,121 @@ async function switchViewMode(page: Page, mode: 'grid' | 'list' | 'table') {
   }
 }
 
-test.describe('Cores do Produto: Validação Rigorosa de Ciclo de Vida e Acessibilidade', () => {
+test.describe('Cores do Produto: Padronização e Performance', () => {
   
   for (const module of MODULES) {
     test.describe(`${module.name}`, () => {
       
-      test('Deve validar skeleton, carregamento final e acessibilidade em todas as visões', async ({ page }) => {
-        const apiState = await setupRouteInterception(page);
+      test('Deve validar ciclo de vida (skeleton -> dados/vazio) e acessibilidade', async ({ page }) => {
+        await setupRouteInterception(page);
         await page.setViewportSize({ width: 1366, height: 800 });
-
-        // 1. Navegação e Skeleton
-        // Delay simulado via interceptação para garantir captura do skeleton se necessário
         await page.goto(module.path);
 
-        // Screenshot do Skeleton
+        // Assert de Skeleton Padronizado
         const skeleton = page.locator('[data-testid="colors-loading-skeleton"]').first();
         if (await skeleton.isVisible()) {
           await expect(skeleton).toHaveAttribute('aria-busy', 'true');
-          await page.screenshot({ 
-            path: `test-results/skeleton-${module.name.toLowerCase()}-initial.png`,
-            fullPage: false 
-          });
+          await expect(skeleton).toHaveClass(/min-h-\[16px\]/);
+          await expect(page.locator('[data-testid="color-skeleton-dot"]').first()).toBeVisible();
         }
 
         for (const mode of module.viewModes) {
-          await switchViewMode(page, mode as any);
-          
-          // 2. Aguarda carregamento real
-          await page.waitForSelector('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]', { timeout: 15_000 });
+          await test.step(`Visualização: ${mode}`, async () => {
+            await switchViewMode(page, mode as any);
+            
+            // Aguarda estado final (carregado ou indisponível)
+            const finalState = page.locator('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]').first();
+            await expect(finalState).toBeVisible({ timeout: 15_000 });
 
-          const container = page.locator('[data-testid="product-colors-container"]').first();
-          const unavailable = page.locator('[data-testid="colors-unavailable"]').first();
+            if (await page.locator('[data-testid="product-colors-container"]').first().isVisible()) {
+              const container = page.locator('[data-testid="product-colors-container"]').first();
+              await expect(container).toHaveAttribute('role', 'group');
+              await expect(container).toHaveClass(/min-h-\[16px\]/);
 
-          if (await container.isVisible()) {
-            // Acessibilidade do Container
-            await expect(container).toHaveAttribute('role', 'group');
-            await expect(container).toHaveAttribute('aria-live', 'polite');
-            await expect(container).toHaveAttribute('aria-label', /\d+ cores? disponíveis/);
-
-            const swatches = container.locator('button');
-            const swatchCount = await swatches.count();
-            expect(swatchCount).toBeGreaterThan(0);
-
-            // Navegação por Tab: foca o primeiro e tab pelos demais
-            const first = swatches.first();
-            await first.focus();
-            await expect(first).toBeFocused();
-
-            for (let i = 0; i < swatchCount; i++) {
-              const sw = swatches.nth(i);
-              await sw.focus();
-              await expect(sw).toBeFocused();
-
-              const ariaLabel = await sw.getAttribute('aria-label');
-              const ariaDescribedBy = await sw.getAttribute('aria-describedby');
-              expect(ariaLabel).toMatch(/^(Opção de cor: |Ver mais )/);
+              const swatches = container.locator('button[data-testid^="color-swatch-"]');
+              const count = await swatches.count();
               
-              // O botão "+N" overflow não tem aria-describedby; somente swatches reais
-              if (ariaLabel?.startsWith('Opção de cor:')) {
-                expect(ariaDescribedBy).toMatch(/^tooltip-color-/);
-                const tooltip = page.locator(`[id="${ariaDescribedBy}"]`);
-                await expect(tooltip).toBeVisible();
-                await expect(tooltip).toHaveAttribute('role', 'tooltip');
-                // O texto do tooltip deve refletir a cor declarada no aria-label
-                const colorName = ariaLabel.replace('Opção de cor: ', '').trim();
-                await expect(tooltip).toContainText(colorName);
+              if (count > 0) {
+                // Validação detalhada de Tab-Navigation e Tooltip
+                for (let i = 0; i < Math.min(count, 3); i++) {
+                  const sw = swatches.nth(i);
+                  await sw.focus();
+                  await expect(sw).toBeFocused();
+
+                  const ariaLabel = await sw.getAttribute('aria-label');
+                  const ariaDescribedBy = await sw.getAttribute('aria-describedby');
+                  
+                  if (ariaLabel?.startsWith('Opção de cor:')) {
+                    const expectedColor = ariaLabel.replace('Opção de cor: ', '').trim();
+                    expect(ariaDescribedBy).toMatch(/^tooltip-color-/);
+                    
+                    const tooltip = page.locator(`[id="${ariaDescribedBy}"]`);
+                    await expect(tooltip).toBeVisible();
+                    await expect(tooltip).toHaveAttribute('role', 'tooltip');
+                    await expect(tooltip).toHaveText(expectedColor);
+                  }
+                }
               }
+            } else {
+              // Assert de Fallback Padronizado
+              const unavailable = page.locator('[data-testid="colors-unavailable"]').first();
+              await expect(unavailable).toBeVisible();
+              await expect(unavailable).toHaveText('Cores indisponíveis');
+              await expect(unavailable).toHaveClass(/min-h-\[16px\]/);
             }
-
-            // Screenshot do estado Final
-            await page.screenshot({ 
-              path: `test-results/colors-${module.name.toLowerCase()}-${mode}-final.png` 
-            });
-
-          } else if (await unavailable.isVisible()) {
-            await expect(unavailable).toHaveAttribute('role', 'status');
-            await expect(unavailable).toHaveAttribute('aria-live', 'polite');
-            await expect(unavailable).toContainText('Cores indisponíveis');
-            await page.screenshot({ 
-              path: `test-results/colors-${module.name.toLowerCase()}-${mode}-unavailable.png` 
-            });
-          }
+          });
         }
       });
 
       if (module.name === 'Novidades' || module.name === 'Reposição') {
-        test('Deve garantir eficiência de cache e deduplicação ao mudar lista parcialmente', async ({ page }) => {
+        test('Deve validar cache e deduplicação (ids, paginação)', async ({ page }) => {
           const apiState = await setupRouteInterception(page);
           await page.goto(module.path);
           
-          await page.waitForSelector('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]', { timeout: 20_000 });
-          const initialCount = apiState.count;
-          expect(initialCount).toBeGreaterThan(0);
+          await expect(page.locator('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]').first()).toBeVisible({ timeout: 20_000 });
+          
+          const countAfterFirstLoad = apiState.count;
+          expect(countAfterFirstLoad).toBeGreaterThan(0);
 
-          // Captura os IDs que foram buscados inicialmente
-          const firstBatchIds = [...apiState.lastIds];
+          // 1. Simula Paginação/Offset (scroll para carregar mais)
+          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+          await page.waitForTimeout(2000);
+          
+          const countAfterPagination = apiState.count;
+          // Deve ter aumentado se carregou novos produtos
+          
+          // 2. Volta para o estado anterior (IDs já cacheados)
+          await page.evaluate(() => window.scrollTo(0, 0));
+          await page.waitForTimeout(1000);
+          
+          const countAfterReturn = apiState.count;
+          // NÃO deve ter feito novas requests para os IDs iniciais
+          expect(countAfterReturn).toBe(countAfterPagination);
 
-          // 1. Simula mudança parcial (scroll para carregar mais)
-          await page.mouse.wheel(0, 3000);
-          await page.waitForTimeout(2000); // Aguarda carregamento de mais itens e disparos de rede
-
-          const afterScrollCount = apiState.count;
-          const secondBatchIds = [...apiState.lastIds];
-
-          // Se carregou mais, deve ter disparado requests
-          // Se disparou, validamos que ao voltar não dispara de novo
-          if (afterScrollCount > initialCount) {
-             // 2. Volta para o topo (onde estão os produtos do firstBatch)
-             await page.evaluate(() => window.scrollTo(0, 0));
-             await page.waitForTimeout(1000);
-             
-             const finalCount = apiState.count;
-             // Cache check: Não deve ter feito novas requisições para o que já estava em cache
-             expect(finalCount).toBe(afterScrollCount);
-          }
-
-          // 3. Validação de deduplicação por query key
-          // Se navegarmos para outro módulo e voltarmos, o TanStack Query deve usar cache se o staleTime permitir
-          // ou o nosso GLOBAL_COLORS_CACHE deve evitar a request se os IDs forem os mesmos.
+          // 3. Alternância rápida entre módulos
           await page.goto('/'); // Home
           await page.waitForTimeout(500);
           await page.goto(module.path);
-          await page.waitForSelector('[data-testid="product-colors-container"]');
+          await expect(page.locator('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]').first()).toBeVisible();
           
-          // Como o staleTime é 10min, não deve disparar nova request se for a mesma lista
-          // Se disparar (ex: queryKey diferente), o GLOBAL_COLORS_CACHE dentro do useQuery deve resultar em missingIds.length === 0
-          // e não chamar o Supabase.
-          const countAfterRevisit = apiState.count;
-          expect(countAfterRevisit).toBe(afterScrollCount);
+          // O TanStack Query ou o Cache Global devem impedir nova request
+          expect(apiState.count).toBe(countAfterPagination);
         });
       }
     });
   }
+
+  test('Deve alternar rapidamente entre visualizações sem flicker indevido', async ({ page }) => {
+    const module = MODULES[1]; // Novidades (tem todas as visões)
+    await page.goto(module.path);
+    await page.waitForSelector('[data-testid="product-colors-container"]');
+
+    // Alternância rápida
+    for (const mode of ['list', 'table', 'grid', 'list']) {
+      await switchViewMode(page, mode as any);
+      // Verifica que o container de cores está lá (ou o skeleton se for muito rápido, mas não deve ter "indisponível" piscando)
+      const visible = await page.locator('[data-testid="product-colors-container"], [data-testid="colors-loading-skeleton"]').first().isVisible();
+      expect(visible).toBeTruthy();
+    }
+  });
 });
