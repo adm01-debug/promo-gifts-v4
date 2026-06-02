@@ -12,6 +12,7 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
