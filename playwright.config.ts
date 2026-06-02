@@ -14,7 +14,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1, // Set to 1 to avoid resource issues
   reporter: [
     ['html'],
     ['list']
@@ -25,6 +25,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     executablePath: '/bin/chromium',
+    headless: true,
   },
 
   projects: [
@@ -37,7 +38,9 @@ export default defineConfig({
     // 2. Projetos Públicos (sem storageState)
     {
       name: 'chromium-public',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        viewport: { width: 1280, height: 720 },
+      },
       testIgnore: [/auth\.setup\.ts/],
     },
 
@@ -45,7 +48,7 @@ export default defineConfig({
     {
       name: 'chromium-authed',
       use: {
-        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
         storageState: path.resolve('e2e/.auth/storageState.json'),
       },
       dependencies: ['setup'],
@@ -55,14 +58,11 @@ export default defineConfig({
     // 4. Mobile
     {
       name: 'routes-mobile',
-      use: { ...devices['Pixel 5'] },
+      use: { 
+        viewport: { width: 375, height: 667 },
+        isMobile: true,
+      },
       testIgnore: [/auth\.setup\.ts/],
-    },
-
-    // 5. Projeto legado / compatibilidade
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
     },
   ],
 
@@ -70,7 +70,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });
