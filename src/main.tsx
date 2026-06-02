@@ -16,6 +16,24 @@ initSentry();
 installGlobalErrorHandlers();
 installSafeToast();
 
+// ── Vite chunk-load recovery ─────────────────────────────────────────────────
+// When Vercel deploys a new build, old chunk hashes are invalidated.
+// Any user who has the app open will fail to lazy-load those stale chunks.
+// `vite:preloadError` fires before React can catch it — we reload here
+// so the user silently gets the latest version instead of a blank screen.
+//
+// Cooldown (10 s) prevents infinite-reload loops caused by genuine 404s.
+const _CHUNK_RELOAD_KEY = '__vite_chunk_reload';
+window.addEventListener('vite:preloadError', () => {
+  const last = sessionStorage.getItem(_CHUNK_RELOAD_KEY);
+  const now = Date.now();
+  if (!last || now - parseInt(last, 10) > 10_000) {
+    sessionStorage.setItem(_CHUNK_RELOAD_KEY, String(now));
+    window.location.reload();
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 const root = document.getElementById('root');
 
 if (!root) {
