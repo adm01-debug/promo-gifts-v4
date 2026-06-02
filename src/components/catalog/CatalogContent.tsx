@@ -93,7 +93,7 @@ export const CatalogContent = memo(function CatalogContent({
   if (shouldShowCatalogSkeleton) {
     if (viewMode === 'list') {
       return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="catalog-list-skeleton">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -107,16 +107,22 @@ export const CatalogContent = memo(function CatalogContent({
       );
     }
     if (viewMode === 'table') {
-      return <ProductTableSkeleton rows={10} selectionMode={selectionMode} />;
+      return (
+        <div data-testid="catalog-table-skeleton">
+          <ProductTableSkeleton rows={10} selectionMode={selectionMode} />
+        </div>
+      );
     }
     return (
-      <ProductGridSkeleton
-        count={12}
-        columns={gridColumns}
-        variant="default"
-        hideCategoryBadges={hideCategoryBadges}
-        selectionMode={selectionMode}
-      />
+      <div data-testid="catalog-grid-skeleton">
+        <ProductGridSkeleton
+          count={12}
+          columns={gridColumns}
+          variant="default"
+          hideCategoryBadges={hideCategoryBadges}
+          selectionMode={selectionMode}
+        />
+      </div>
     );
   }
 
@@ -143,7 +149,12 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
+    <div 
+      className={cn(
+        "relative space-y-8 pb-12 duration-500 animate-in fade-in",
+        isLoadingMore && "opacity-80 transition-opacity"
+      )}
+    >
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
           {viewMode === 'grid' && (
