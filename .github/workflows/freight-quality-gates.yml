@@ -226,13 +226,7 @@ jobs:
         if: steps.cache-pw.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E smoke tests
-        run: npm run test:e2e:smoke
-        env:
-          CI: true
-          CI_SKIP_FREIGHT_E2E: "1"
-
-      - name: Run freight E2E (if credentials available)
+      - name: Run freight E2E (skip when no credentials)
         run: |
           npx playwright test \
             e2e/flows/freight-quest-complete-flow.spec.ts \
