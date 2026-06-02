@@ -335,9 +335,6 @@
     "src/hooks/products/useCatalogFiltering.ts": {
       "react-hooks/exhaustive-deps": 3
     },
-    "src/hooks/products/useCatalogState.ts": {
-      "no-console": 3
-    },
     "src/hooks/products/useProductBounds.ts": {
       "react-hooks/exhaustive-deps": 1
     },
