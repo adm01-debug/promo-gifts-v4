@@ -64,7 +64,24 @@ interface StockDailySummaryRow {
   product_id: string;
   summary_date: string;
   units_depleted: number | null;
+  units_restocked: number | null;
+  stock_close: number | null;
   [key: string]: unknown;
+}
+
+// Rows are keyed by (variant_supplier_source_id, summary_date), so a single
+// product/day can have multiple rows (one per supplier source). We page
+// through results in chunks of 1000 to avoid silent row truncation.
+const PAGE_SIZE = 1000;
+
+// Use local calendar date to avoid UTC midnight shifting the boundary by one
+// day for users in negative-offset timezones (e.g. BRT = UTC-3).
+function toLocalDateStr(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 async function fetchSupplierSparklineBatch(productIds: string[]): Promise<SparklineMap> {
@@ -72,45 +89,64 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
-  const cutoffStr = cutoff.toISOString().substring(0, 10);
+  const cutoffStr = toLocalDateStr(cutoff);
 
-  // Fetch in batches of 50 product IDs to avoid query size limits
   const BATCH_SIZE = 50;
   const allRecords: StockDailySummaryRow[] = [];
 
   for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
     const batch = productIds.slice(i, i + BATCH_SIZE);
-    try {
-      const result = await dbInvoke<StockDailySummaryRow>({
-        table: 'stock_daily_summary',
-        operation: 'select',
-        select: 'product_id, summary_date, units_depleted',
-        filters: {
-          // FIX: passar array diretamente -> dbInvoke usa .in(col, values)
-          // ANTES: `in.(${batch.join(',')})` -> dbInvoke.eq(col, string) -> URL: product_id=eq.in.(...) -> 400
-          product_id: batch,
-          // FIX: passar objeto { op, value } -> dbInvoke usa .gte(col, value)
-          // ANTES: `gte.${cutoffStr}` -> dbInvoke.eq(col, string) -> URL: summary_date=eq.gte.date -> 400
-          summary_date: { op: 'gte', value: cutoffStr },
-        },
-        limit: batch.length * 31,
-        orderBy: { column: 'summary_date', ascending: true },
-      });
-      allRecords.push(...(result.records || []));
-    } catch (err) {
-      logger.warn('[sparkline] Failed to fetch stock_daily_summary batch:', err);
+    let offset = 0;
+
+    while (true) {
+      try {
+        const result = await dbInvoke<StockDailySummaryRow>({
+          table: 'stock_daily_summary',
+          operation: 'select',
+          select: 'product_id, summary_date, units_depleted, units_restocked, stock_close',
+          filters: {
+            product_id: batch,
+            summary_date: { op: 'gte', value: cutoffStr },
+          },
+          limit: PAGE_SIZE,
+          offset,
+          orderBy: { column: 'summary_date', ascending: true },
+        });
+        const page = result.records || [];
+        allRecords.push(...page);
+        if (page.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      } catch (err) {
+        logger.warn('[sparkline] Failed to fetch stock_daily_summary batch:', err);
+        break;
+      }
     }
   }
 
-  // Build per-product, per-date map
-  const map: Record<string, Record<string, number>> = {};
+  // Build per-product aggregation maps
+  const depletedByDate: Record<string, Record<string, number>> = {};
+  const stockCloseByDate: Record<string, Record<string, number>> = {};
+  const totalRestockedMap: Record<string, number> = {};
 
   for (const row of allRecords) {
     if (!row.product_id) continue;
     const date = row.summary_date?.substring(0, 10);
     if (!date) continue;
-    if (!map[row.product_id]) map[row.product_id] = {};
-    map[row.product_id][date] = (map[row.product_id][date] || 0) + (row.units_depleted || 0);
+
+    if (!depletedByDate[row.product_id]) depletedByDate[row.product_id] = {};
+    depletedByDate[row.product_id][date] =
+      (depletedByDate[row.product_id][date] || 0) + (row.units_depleted || 0);
+
+    // Only track dates where at least one source has a real stock value;
+    // price-only rows have stock_close=null and must not contribute 0.
+    if (row.stock_close != null) {
+      if (!stockCloseByDate[row.product_id]) stockCloseByDate[row.product_id] = {};
+      stockCloseByDate[row.product_id][date] =
+        (stockCloseByDate[row.product_id][date] || 0) + row.stock_close;
+    }
+
+    totalRestockedMap[row.product_id] =
+      (totalRestockedMap[row.product_id] || 0) + (row.units_restocked || 0);
   }
 
   // Generate contiguous 30-day arrays
@@ -120,22 +156,26 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
   for (const pid of productIds) {
     const dailyQty: number[] = [];
     let totalQty = 0;
-    const dateMap = map[pid] || {};
+    const dateMap = depletedByDate[pid] || {};
 
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().substring(0, 10);
+      const ds = toLocalDateStr(d);
       const depleted = dateMap[ds] ?? 0;
       dailyQty.push(depleted);
       totalQty += depleted;
     }
 
+    const stockByDate = stockCloseByDate[pid] || {};
+    const latestDate = Object.keys(stockByDate).sort().pop();
+    const availableStock = latestDate ? (stockByDate[latestDate] ?? 0) : 0;
+
     result[pid] = {
       dailyQty,
       totalQty,
-      totalReplenished: 0,
-      availableStock: 0,
+      totalReplenished: totalRestockedMap[pid] || 0,
+      availableStock,
     };
   }
 
