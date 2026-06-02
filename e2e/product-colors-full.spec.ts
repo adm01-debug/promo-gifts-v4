@@ -88,22 +88,35 @@ test.describe('Cores do Produto: Validação Rigorosa de Ciclo de Vida e Acessib
             await expect(container).toHaveAttribute('aria-live', 'polite');
             await expect(container).toHaveAttribute('aria-label', /\d+ cores? disponíveis/);
 
-            const swatch = container.locator('button').first();
-            await expect(swatch).toHaveAttribute('aria-label', /^Opção de cor: /);
-            
-            const ariaDescribedBy = await swatch.getAttribute('aria-describedby');
-            expect(ariaDescribedBy).toMatch(/^tooltip-color-/);
+            const swatches = container.locator('button');
+            const swatchCount = await swatches.count();
+            expect(swatchCount).toBeGreaterThan(0);
 
-            // Foco via Teclado e Tooltip
-            await page.keyboard.press('Tab');
-            // Dependendo de onde o foco caiu, podemos precisar de mais Tabs
-            // Para ser robusto, focamos diretamente via script e validamos o estado
-            await swatch.focus();
-            await expect(swatch).toBeFocused();
+            // Navegação por Tab: foca o primeiro e tab pelos demais
+            const first = swatches.first();
+            await first.focus();
+            await expect(first).toBeFocused();
 
-            const tooltip = page.locator(`[id="${ariaDescribedBy}"]`);
-            await expect(tooltip).toBeVisible();
-            await expect(tooltip).toHaveAttribute('role', 'tooltip');
+            for (let i = 0; i < swatchCount; i++) {
+              const sw = swatches.nth(i);
+              await sw.focus();
+              await expect(sw).toBeFocused();
+
+              const ariaLabel = await sw.getAttribute('aria-label');
+              const ariaDescribedBy = await sw.getAttribute('aria-describedby');
+              expect(ariaLabel).toMatch(/^(Opção de cor: |Ver mais )/);
+              
+              // O botão "+N" overflow não tem aria-describedby; somente swatches reais
+              if (ariaLabel?.startsWith('Opção de cor:')) {
+                expect(ariaDescribedBy).toMatch(/^tooltip-color-/);
+                const tooltip = page.locator(`[id="${ariaDescribedBy}"]`);
+                await expect(tooltip).toBeVisible();
+                await expect(tooltip).toHaveAttribute('role', 'tooltip');
+                // O texto do tooltip deve refletir a cor declarada no aria-label
+                const colorName = ariaLabel.replace('Opção de cor: ', '').trim();
+                await expect(tooltip).toContainText(colorName);
+              }
+            }
 
             // Screenshot do estado Final
             await page.screenshot({ 
@@ -114,6 +127,9 @@ test.describe('Cores do Produto: Validação Rigorosa de Ciclo de Vida e Acessib
             await expect(unavailable).toHaveAttribute('role', 'status');
             await expect(unavailable).toHaveAttribute('aria-live', 'polite');
             await expect(unavailable).toContainText('Cores indisponíveis');
+            await page.screenshot({ 
+              path: `test-results/colors-${module.name.toLowerCase()}-${mode}-unavailable.png` 
+            });
           }
         }
       });
