@@ -18,6 +18,7 @@ export const RestartTourButton = forwardRef<HTMLDivElement, Record<string, never
               variant="outline"
               size="sm"
               onClick={restartTour}
+              data-testid="restart-tour-button"
               className="h-8 gap-1.5 border-border text-xs hover:bg-primary/10 hover:text-primary"
             >
               <RotateCcw className="h-3.5 w-3.5" />
