@@ -155,6 +155,7 @@ describe('recoverSession', () => {
     const p1 = mod.recoverSession('a');
     const p2 = mod.recoverSession('b');
     expect(p1).toBe(p2);
+    await vi.waitFor(() => expect(resolveRefresh).toBeTypeOf('function'));
     resolveRefresh({ data: { session: { access_token: 't' } }, error: null });
     await expect(p1).resolves.toBe(true);
     expect(refreshSession).toHaveBeenCalledTimes(1);
