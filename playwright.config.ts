@@ -45,7 +45,7 @@ export default defineConfig({
       name: 'chromium-authed',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: path.resolve(__dirname, 'e2e/.auth/storageState.json'),
+        storageState: path.resolve('e2e/.auth/storageState.json'),
       },
       dependencies: ['setup'],
       testIgnore: [/auth\.setup\.ts/],
