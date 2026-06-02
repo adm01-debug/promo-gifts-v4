@@ -1,7 +1,7 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useCatalogRealStats } from '@/hooks/products/useCatalogRealStats';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
