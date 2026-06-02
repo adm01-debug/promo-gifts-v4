@@ -35,6 +35,7 @@ import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { ProductCardImage } from './ProductCardImage';
 import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
+import { ProductColorSwatches } from './ProductColorSwatches';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 
@@ -477,6 +478,14 @@ export const ProductCard = memo(
           >
             {product.name}
           </h3>
+
+          {product.colors && product.colors.length > 0 && (
+            <ProductColorSwatches
+              colors={product.colors.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
+              max={6}
+              size="sm"
+            />
+          )}
 
           {(() => {
             const colorStock = resolveColorStock(product, activeColorFilter);
