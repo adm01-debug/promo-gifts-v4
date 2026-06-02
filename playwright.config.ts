@@ -37,7 +37,7 @@ export default defineConfig({
     {
       name: 'chromium-public',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/auth\.setup\.ts/, /flows\/p0\/.*/],
+      testIgnore: [/auth\.setup\.ts/],
     },
 
     // 3. Projetos Autenticados (reaproveita login do setup)
