@@ -490,7 +490,11 @@ export function useMockupGenerator() {
     async (url?: string) => {
       const mockupUrl = url || generatedMockup;
       if (!mockupUrl) return;
-      await downloadMockupAsPdf(mockupUrl, { sku: selectedProduct?.sku ?? null }, selectedTechnique as { name: string; code?: string });
+      await downloadMockupAsPdf(
+        mockupUrl,
+        { sku: selectedProduct?.sku ?? null },
+        selectedTechnique as Technique,
+      );
     },
     [generatedMockup, selectedProduct, selectedTechnique],
   );
@@ -556,7 +560,7 @@ export function useMockupGenerator() {
           setLastSavedLayoutMode('ai');
           setLastSavedRecordId(lastFulfilled.value.recordId);
         }
-        setGeneratedMockup(result.batchResults[0]?.url || result.singleUrl);
+        setGeneratedMockup(result.batchResults[0]?.url || result.singleUrl || null);
         setGeneratedBatchMockups(result.batchResults);
         toast.success(`${result.batchResults.length} mockups gerados com sucesso!`);
       }

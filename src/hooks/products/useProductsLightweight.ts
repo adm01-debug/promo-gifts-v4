@@ -141,7 +141,7 @@ async function fetchCatalogPage(
     orderBy,
     limit: CATALOG_PAGE_SIZE,
     offset: offset + i * CATALOG_PAGE_SIZE,
-    ...(i === 0 && isFirstLoad ? { countMode: 'exact' } : {}),
+    ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
   }));
 
   const categoriesPromise = loadCategoriesMap();
@@ -159,7 +159,7 @@ async function fetchCatalogPage(
         orderBy,
         limit: CATALOG_PAGE_SIZE,
         offset: offset + i * CATALOG_PAGE_SIZE,
-        ...(i === 0 && isFirstLoad ? { countMode: 'exact' } : {}),
+        ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
       }).catch(() => ({ records: [] as LightweightProduct[], count: null as number | null })),
     );
     const [pageResults, categoriesById] = await Promise.all([

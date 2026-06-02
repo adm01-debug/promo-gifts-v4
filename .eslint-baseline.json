@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-02T20:30:51.660Z",
-  "totalErrors": 72,
+  "generatedAt": "2026-06-02T20:47:09.685Z",
+  "totalErrors": 73,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -387,6 +387,9 @@
     },
     "src/lib/auth/__tests__/session-recovery.test.ts": {
       "@typescript-eslint/no-unused-vars": 3
+    },
+    "src/lib/db/postgrest.ts": {
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/lib/error-reporter.ts": {
       "@typescript-eslint/naming-convention": 1

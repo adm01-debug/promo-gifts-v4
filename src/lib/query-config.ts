@@ -1,8 +1,4 @@
-import {
-  QueryClient,
-  type DefaultOptions,
-  type QueryClientConfig,
-} from '@tanstack/react-query';
+import { QueryClient, type DefaultOptions, type QueryClientConfig } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CACHE_TIMES — staleTime tiers (milliseconds)
@@ -218,11 +214,12 @@ export function createQueryClient(): QueryClient {
   client.getQueryCache().subscribe((event) => {
     if (event.type === 'added' || event.type === 'updated') {
       const query = event.query;
-      if (query.options.staleTime === undefined) {
-        query.options.staleTime = getStaleTimeForKey(query.queryKey);
+      const opts = query.options as Record<string, unknown>;
+      if (opts.staleTime === undefined) {
+        opts.staleTime = getStaleTimeForKey(query.queryKey);
       }
-      if (query.options.gcTime === undefined) {
-        query.options.gcTime = getGcTimeForKey(query.queryKey);
+      if (opts.gcTime === undefined) {
+        opts.gcTime = getGcTimeForKey(query.queryKey);
       }
     }
   });

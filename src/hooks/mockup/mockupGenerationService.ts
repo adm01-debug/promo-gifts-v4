@@ -252,6 +252,7 @@ export async function generateMockupApi(
     mockupUrl: data.mockupUrl,
     jobId: data.jobId,
     revisionsLeft: data.revisionsLeft,
+    batchResults: [],
   };
 }
 
