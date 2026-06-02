@@ -33,6 +33,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 
 // ============================================
 // CONFIGURAÇÕES DE STATUS
@@ -344,33 +345,12 @@ function ProductRow({
           </div>
         </TableCell>
         <TableCell className="hidden md:table-cell">
-          <div className="flex flex-wrap gap-1">
-            {product.availableColors.slice(0, 5).map((color) => (
-              <TooltipProvider key={color.colorName}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <div
-                      className={cn(
-                        'h-5 w-5 rounded-full border shadow-sm',
-                        color.status === 'out_of_stock' && 'opacity-30',
-                      )}
-                      style={{ backgroundColor: color.colorHex || '#ccc' }}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {color.colorName}: {color.totalStock} un ({STATUS_CONFIG[color.status].label})
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-            {product.availableColors.length > 5 && (
-              <span className="ml-1 text-xs text-muted-foreground">
-                +{product.availableColors.length - 5}
-              </span>
-            )}
-          </div>
+          <ProductColorSwatches
+            colors={product.availableColors.map((c) => ({ name: c.colorName, hex: c.colorHex || null }))}
+            max={5}
+            size="sm"
+            hideWhenEmpty={false}
+          />
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">

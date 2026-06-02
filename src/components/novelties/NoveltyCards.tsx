@@ -148,11 +148,9 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       <div className="flex flex-col gap-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-tight">{p?.name ?? '—'}</p>
         <p className="text-xs text-muted-foreground">{p?.sku ?? '—'}</p>
-        {colors && colors.length > 0 && (
-          <div className="mt-0.5">
-            <ProductColorSwatches colors={colors} max={5} size="sm" />
-          </div>
-        )}
+        <div className="mt-0.5">
+          <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+        </div>
         {p?.sale_price != null && (
           <p className="text-sm font-semibold text-primary">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -263,9 +261,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {p.supplier_name}
             </span>
           )}
-          {colors && colors.length > 0 && (
-            <ProductColorSwatches colors={colors} max={5} size="xs" />
-          )}
+          <ProductColorSwatches colors={colors} max={5} size="xs" hideWhenEmpty={false} />
         </div>
       </div>
 

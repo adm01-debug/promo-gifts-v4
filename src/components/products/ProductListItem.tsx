@@ -512,6 +512,7 @@ export const ProductListItem = memo(function ProductListItem({
               colors={product.colors}
               max={5}
               size="xs"
+              hideWhenEmpty={false}
               className="ml-1 hidden md:flex"
             />
           </div>

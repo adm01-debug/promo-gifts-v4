@@ -479,13 +479,12 @@ export const ProductCard = memo(
             {product.name}
           </h3>
 
-          {product.colors && product.colors.length > 0 && (
-            <ProductColorSwatches
-              colors={product.colors.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
-              max={6}
-              size="sm"
-            />
-          )}
+          <ProductColorSwatches
+            colors={(product.colors ?? []).map((c) => ({ name: c.name, hex: c.hex ?? null }))}
+            max={6}
+            size="sm"
+            hideWhenEmpty={false}
+          />
 
           {(() => {
             const colorStock = resolveColorStock(product, activeColorFilter);
