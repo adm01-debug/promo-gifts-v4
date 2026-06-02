@@ -208,6 +208,15 @@ export function NoveltyProductGrid() {
     return map;
   }, [filteredProducts, sel]);
 
+  // Batch-load cores das variantes para os produtos visíveis (visualização atual)
+  const visibleProductIds = useMemo(() => {
+    if (viewMode === 'list' || viewMode === 'table') {
+      return filteredProducts.map((n) => n.product_id);
+    }
+    return paginatedProducts.map((n) => n.product_id);
+  }, [viewMode, filteredProducts, paginatedProducts]);
+  const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
+
   const renderContent = () => {
     if (isLoading && products.length === 0) {
       return (
