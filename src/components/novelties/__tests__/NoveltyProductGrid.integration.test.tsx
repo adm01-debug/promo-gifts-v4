@@ -52,7 +52,8 @@ vi.mock('@/hooks/products', () => ({
     clearSelection: vi.fn(),
     noveltyToProduct: (n: any) => ({
       id: n.product_id,
-      name: n.product_name,
+      name: n.product_name || '',
+      product_name: n.product_name || '',
       price: n.base_price,
       sku: n.product_sku || '',
       stock: n.stock_quantity,
@@ -65,6 +66,7 @@ vi.mock('@/hooks/products', () => ({
     }),
   })),
 }));
+
 
 vi.mock('@/stores/useFavoritesStore', () => ({
   useFavoritesStore: vi.fn(() => ({
