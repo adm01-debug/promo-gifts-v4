@@ -188,7 +188,7 @@ export function subscribeToNotifications(
   onUpdate?: (notification: WorkspaceNotification) => void,
 ): () => void {
   const channel = supabase
-    .channel('workspace_notifications_realtime')
+    .channel('workspace_notifications_svc_realtime')
     .on(
       'postgres_changes',
       {
