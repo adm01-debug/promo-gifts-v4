@@ -33,6 +33,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 
 // ============================================
 // CONFIGURAÇÕES DE STATUS
