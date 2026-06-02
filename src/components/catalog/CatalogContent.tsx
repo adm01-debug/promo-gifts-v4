@@ -1,11 +1,16 @@
-import { memo, useMemo, useCallback, type RefObject } from 'react';
+import { memo, useMemo, useCallback, type RefObject, lazy, Suspense } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
-import { ProductTableView } from '@/components/products/ProductTableView';
+// FIX: lazy-load ProductTableView to break circular chunk dependency (TDZ crash)
+// Static import pulled ProductCard+ProductTableView into same chunk as index,
+// creating a cycle: index → CatalogContent → ProductTableView chunk → index
+const LazyProductTableView = lazy(() =>
+  import('@/components/products/ProductTableView').then(m => ({ default: m.ProductTableView }))
+);
 import {
   ProductCardSkeleton,
   ProductGridSkeleton,
@@ -200,21 +205,23 @@ export const CatalogContent = memo(function CatalogContent({
           )}
 
           {viewMode === 'table' && (
-            <ProductTableView
-              products={paginatedProducts}
-              isLoading={isLoadingMore}
-              onProductClick={handleProductClick}
-              onShareProduct={handleShareProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              activeColorFilter={activeColorFilter}
-              selectionMode={selectionMode}
-              selectedIds={selectedIds}
-              onToggleSelect={onToggleSelect}
-            />
+            <Suspense fallback={<ProductTableSkeleton rows={10} selectionMode={selectionMode} />}>
+              <LazyProductTableView
+                products={paginatedProducts}
+                isLoading={isLoadingMore}
+                onProductClick={handleProductClick}
+                onShareProduct={handleShareProduct}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={onToggleCompare}
+                canAddToCompare={canAddToCompare}
+                activeColorFilter={activeColorFilter}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+              />
+            </Suspense>
           )}
         </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
