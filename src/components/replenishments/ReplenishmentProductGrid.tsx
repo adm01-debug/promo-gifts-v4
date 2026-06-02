@@ -277,6 +277,7 @@ export function ReplenishmentProductGrid() {
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
+          colorsByProduct={colorsByProduct}
         />
       );
     }
@@ -285,7 +286,7 @@ export function ReplenishmentProductGrid() {
       return (
         <VirtualizedReplenishmentList
           products={filteredProducts}
-          productMap={productMap}
+          productMap={enrichedProductMap}
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
@@ -307,6 +308,7 @@ export function ReplenishmentProductGrid() {
         selectedIds={sel.selectedIds}
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
+        colorsByProduct={colorsByProduct}
       />
     );
   };
