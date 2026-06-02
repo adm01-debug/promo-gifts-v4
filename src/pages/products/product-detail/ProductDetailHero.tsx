@@ -235,11 +235,19 @@ export function ProductDetailHero({
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/60 xl:text-[11px]">
                   A partir de
                 </p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-display text-[1.40625rem] font-extrabold leading-none tracking-tight text-foreground xl:text-[1.6875rem]">
+                <div className="flex items-baseline gap-1.5" data-testid="pdp-price-row">
+                  <span
+                    data-testid="pdp-price-value"
+                    className="font-display text-[1.40625rem] font-extrabold leading-none tracking-tight text-foreground xl:text-[1.6875rem]"
+                  >
                     {formatCurrency(product.price)}
                   </span>
-                  <span className="text-xs font-medium text-muted-foreground/50">/un</span>
+                  <span
+                    data-testid="pdp-price-unit"
+                    className="text-xs font-medium text-muted-foreground/50"
+                  >
+                    /un
+                  </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <PriceFreshnessBadge
