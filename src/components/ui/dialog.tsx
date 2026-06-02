@@ -89,37 +89,32 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
 >(({ className, children, showCloseButton = true, onCloseAutoFocus, ...props }, ref) => {
-  // ── A11y: silence Radix warnings ────────────────────────────────────────
+  // -- A11y: silence Radix warnings -----------------------------------------
   //
   // Radix emits two warnings when DialogContent renders without the
   // required accessibility primitives:
   //
   //   1. "DialogContent requires a DialogTitle for screen reader users."
   //      Fix: inject a visually-hidden DialogTitle as a fallback when the
-  //      caller has not included one. This gives screen readers an accessible
-  //      name for the dialog without changing visual layout.
+  //      caller has not included one. Gives screen readers an accessible
+  //      name without changing visual layout.
   //
   //   2. "Missing Description or aria-describedby={undefined} for DialogContent"
-  //      Fix: pass aria-describedby={undefined} explicitly when no
-  //      DialogDescription is present, signalling to Radix that the omission
-  //      is intentional and suppressing the warning.
+  //      Fix: inject a visually-hidden DialogDescription when no description
+  //      is present. Radix checks document.getElementById(descriptionId) to
+  //      determine if a description exists. Passing aria-describedby={undefined}
+  //      does NOT suppress this warning: Radix's internal check is a truthy
+  //      guard — `if (descriptionAriaAttr) return;` — so undefined (falsy)
+  //      does not skip the warning. Injecting a real hidden element is the
+  //      only reliable fix.
   //
-  // Both checks walk children shallowly + one level deep, which covers the
+  // Both checks walk children shallowly + one level deep, covering the
   // common pattern of wrapping title/description inside DialogHeader.
   // Dialogs that already have DialogTitle + DialogDescription are unaffected
   // (the scan short-circuits on the first match).
 
   const hasTitle       = childrenHaveType(children, TITLE_TYPES);
   const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
-
-  // When aria-describedby is explicitly provided by the caller, respect it.
-  const callerProvidesDescribedBy = 'aria-describedby' in props;
-  const describedByProp =
-    callerProvidesDescribedBy
-      ? {} // let the caller's value pass through via {...props}
-      : { 'aria-describedby': hasDescription ? undefined : (undefined as unknown as string) };
-  // NOTE: We spread `undefined` explicitly so Radix receives the prop and knows
-  // the absence of a description is deliberate — this is what suppresses warning #2.
 
   // Radix Dialog natively handles: focus trap, escape key, scroll lock.
   // We only add a lightweight cleanup on close to prevent stale scroll locks.
@@ -146,16 +141,26 @@ const DialogContent = React.forwardRef<
         )}
         aria-modal="true"
         role="dialog"
-        {...describedByProp}
         {...props}
       >
-        {/* Fallback visually-hidden title — only rendered when no DialogTitle
-            is present in children. Gives screen readers an accessible dialog
-            name and satisfies Radix's runtime assertion. */}
+        {/* Fallback visually-hidden title -- only rendered when no DialogTitle
+            is present. Satisfies Radix's runtime assertion and gives screen
+            readers an accessible dialog name. */}
         {!hasTitle && (
           <DialogPrimitive.Title className="sr-only" aria-hidden={false}>
             Diálogo
           </DialogPrimitive.Title>
+        )}
+        {/* Fallback visually-hidden description -- only rendered when no
+            DialogDescription is present. Radix looks for the descriptionId
+            element in the DOM (document.getElementById); injecting a real
+            element is the only way to reliably pass that check.
+            Note: aria-describedby={undefined} does NOT suppress the warning
+            because Radix's guard is truthy: `if (ariaAttr) return;` */}
+        {!hasDescription && (
+          <DialogPrimitive.Description className="sr-only">
+            {/* sem descricao adicional */}
+          </DialogPrimitive.Description>
         )}
         {children}
         {showCloseButton && (
@@ -211,7 +216,7 @@ const DialogDescription = React.forwardRef<
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 /**
- * Visually hidden wrapper — use this to add an accessible title or description
+ * Visually hidden wrapper -- use this to add an accessible title or description
  * to a dialog without affecting the visible layout.
  *
  * @example
@@ -219,7 +224,7 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName;
  *   <DialogVisuallyHidden>
  *     <DialogTitle>Upload de imagens</DialogTitle>
  *   </DialogVisuallyHidden>
- *   {/* visible content *\/}
+ *   visible content here
  * </DialogContent>
  */
 const DialogVisuallyHidden = ({ children }: { children: React.ReactNode }) => (
