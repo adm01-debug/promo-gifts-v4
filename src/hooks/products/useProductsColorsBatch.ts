@@ -35,16 +35,17 @@ export function useProductsColorsBatch(productIds: string[]) {
 
   const query = useQuery({
     queryKey: ['products-colors-batch', stableIds],
-    queryFn: async (): Promise<Map<string, ProductColorDot[]>> => {
+    queryFn: async ({ queryKey }): Promise<Map<string, ProductColorDot[]>> => {
+      const [, ids] = queryKey as [string, string[]];
       const map = new Map<string, ProductColorDot[]>();
-      if (stableIds.length === 0) return map;
+      if (ids.length === 0) return map;
 
       // Quebra em chunks p/ não estourar o limite de IN do PostgREST
       const CHUNK = 100;
-      const seen = new Map<string, Set<string>>(); // dedupe por productId
+      const seen = new Map<string, Set<string>>();
 
-      for (let i = 0; i < stableIds.length; i += CHUNK) {
-        const chunk = stableIds.slice(i, i + CHUNK);
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
         const { data, error } = await supabase
           .from(resolveTable('product_variants'))
           .select('product_id, color_name, color_hex')
@@ -74,7 +75,6 @@ export function useProductsColorsBatch(productIds: string[]) {
         }
       }
 
-      // Ordena alfabeticamente por nome para apresentação consistente
       for (const arr of map.values()) {
         arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
       }
@@ -82,8 +82,8 @@ export function useProductsColorsBatch(productIds: string[]) {
       return map;
     },
     enabled,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // Aumentado para 10 min
+    gcTime: 30 * 60 * 1000,    // Mantido por 30 min em memória
   });
 
   return { data: query.data, isLoading: query.isLoading };

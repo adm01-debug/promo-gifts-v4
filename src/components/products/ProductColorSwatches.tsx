@@ -36,9 +36,30 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   className,
   hideWhenEmpty = true,
 }: ProductColorSwatchesProps) {
-  if (!colors || colors.length === 0) {
+  if (!colors) {
+    return (
+      <div className={cn('flex items-center gap-1', className)} aria-busy="true">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'animate-pulse rounded-full bg-muted',
+              SIZE_CLASS[size]
+            )}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (colors.length === 0) {
     return hideWhenEmpty ? null : (
-      <span className="text-[10px] text-muted-foreground/60">—</span>
+      <span 
+        className="text-[10px] text-muted-foreground/60 italic"
+        aria-label="Cores indisponíveis"
+      >
+        Cores indisponíveis
+      </span>
     );
   }
 
@@ -54,14 +75,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
       {visible.map((c, idx) => (
         <Tooltip key={`${c.name}-${idx}`}>
           <TooltipTrigger asChild>
-            <span
+            <button
+              type="button"
               role="listitem"
               className={cn(
-                'inline-block rounded-full border border-border/60 shadow-sm',
+                'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
                 SIZE_CLASS[size],
               )}
               style={{ backgroundColor: c.hex || 'transparent' }}
-              aria-label={c.name}
+              aria-label={`Cor: ${c.name}`}
             />
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
@@ -72,12 +94,13 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
       {overflow > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span
-              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground"
-              aria-label={`mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+            <button
+              type="button"
+              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
             >
               +{overflow}
-            </span>
+            </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
             {colors.slice(max).map((c) => c.name).join(', ')}
