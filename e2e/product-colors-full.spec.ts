@@ -27,23 +27,25 @@ async function setupRouteInterception(page: Page) {
 }
 
 async function switchViewMode(page: Page, mode: 'grid' | 'list' | 'table') {
-  // Tenta encontrar botões de visualização ou Selects
-  const layoutBtn = page.locator('button[aria-label*="Layout"], button:has-text("Layout")');
+  const labelMap = { grid: 'Grid', list: 'Lista', table: 'Tabela' };
+  
+  // Tenta abrir o LayoutPopover
+  const layoutBtn = page.locator('button[aria-label="Alterar layout"]');
   if (await layoutBtn.isVisible()) {
     await layoutBtn.click();
-    const modeBtn = page.locator(`button[aria-label*="${mode}" i], button:has-text("${mode}" i)`);
+    const modeBtn = page.getByRole('button', { name: labelMap[mode], exact: true });
     if (await modeBtn.isVisible()) {
       await modeBtn.click();
+      await page.keyboard.press('Escape'); // Fecha o popover se necessário
       await page.waitForTimeout(500);
       return;
     }
   }
 
-  // Fallback para Select de visualização
-  const viewSelect = page.locator('button[id*="view-mode"], [role="combobox"]:has-text("Visualização")');
-  if (await viewSelect.isVisible()) {
-    await viewSelect.click();
-    await page.getByRole('option', { name: new RegExp(mode, 'i') }).click();
+  // Fallback para botões diretos de visualização que podem existir em outros headers
+  const directBtn = page.locator(`button[aria-label*="${labelMap[mode]}" i]`);
+  if (await directBtn.isVisible()) {
+    await directBtn.click();
     await page.waitForTimeout(500);
   }
 }
