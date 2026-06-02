@@ -218,6 +218,7 @@ interface ReplenishmentTableViewProps {
   readonly selectionMode: boolean;
   readonly selectedIds: ReadonlySet<string>;
   readonly onToggleSelect: (id: string) => void;
+  readonly colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
 
 export function ReplenishmentTableView({
@@ -226,6 +227,7 @@ export function ReplenishmentTableView({
   selectionMode,
   selectedIds,
   onToggleSelect,
+  colorsByProduct,
 }: ReplenishmentTableViewProps) {
   return (
     <div
