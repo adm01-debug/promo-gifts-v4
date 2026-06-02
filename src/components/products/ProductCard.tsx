@@ -137,15 +137,19 @@ export const ProductCard = memo(
         prevFilterKeyRef.current = filterKey;
       }
     }, [filterKey]);
-    
+
     // BUG-4 FIX: Sincronização de cor selecionada entre Grid e PDP via store
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
+    // Declared here so the useEffect below can reference it without TS2448/TS2454
+    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
+
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
         // Prioridade: Seleção manual > Filtro ativo
-        const targetColor = selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+        const targetColor =
+          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
@@ -155,7 +159,14 @@ export const ProductCard = memo(
           }
         }
       }
-    }, [product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+      product.colors,
+      selectedColorFromStore,
+      activeColorFilter,
+      allMatchingVariants,
+      activeVariantIdx,
+    ]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -293,9 +304,7 @@ export const ProductCard = memo(
       }
     };
 
-
     // Multi-variant carousel
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
     const hasMultipleVariants = allMatchingVariants.length > 1;
     const safeVariantIdx = hasMultipleVariants
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)

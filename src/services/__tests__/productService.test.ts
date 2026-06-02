@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { productService } from '@/services/productService';
 import * as externalDb from '@/lib/external-db';
-import type { PromobrindProduct as _PromobrindProduct } from '@/lib/external-db';
 
 vi.mock('@/lib/external-db', () => ({
   fetchPromobrindProducts: vi.fn(),

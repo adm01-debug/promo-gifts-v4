@@ -23,29 +23,29 @@ export function useProfileRoles() {
     const doFetch = async () => {
       authDebug('useProfileRoles.fetchUserData', 'start', { userId });
       try {
-        const supabase = getSupabaseClient();
+        const supabase = await getSupabaseClient();
 
         // Fetch profile and roles in parallel
         const [profileResult, rolesResult] = await Promise.all([
           supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email, organization_id')
+            .select('id, full_name, avatar_url, email')
             .eq('id', userId)
             .maybeSingle(),
-          authService.getUserRoles(userId),
+          authService.queryRoles(userId),
         ]);
 
         if (profileResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
         } else {
-          setProfile(profileResult.data);
+          setProfile(profileResult.data as Profile | null);
         }
 
         if (rolesResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
           setUserRoles([]);
         } else {
-          setUserRoles(rolesResult.data ?? []);
+          setUserRoles((rolesResult.data ?? []).map((r) => r.role as AppRole));
         }
 
         authDebug('useProfileRoles.fetchUserData', 'done', {

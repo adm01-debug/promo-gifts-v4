@@ -622,7 +622,10 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                           selected={localDateRange}
                           onSelect={(range) =>
                             setLocalDateRange(
-                              range as { from: Date | undefined; to: Date | undefined },
+                              (range ?? { from: undefined, to: undefined }) as {
+                                from: Date | undefined;
+                                to: Date | undefined;
+                              },
                             )
                           }
                           numberOfMonths={1}

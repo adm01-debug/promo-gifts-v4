@@ -171,8 +171,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     render(<NoveltyProductGrid />, { wrapper });
 
     // Default is newest (Caneta B then Caneta A)
-    const items = screen.getAllByRole('heading', { level: 3 }); // Assuming product names are h3 in cards
-    // In Virtualized grid, it might be different. Let's look for text content order if possible.
+    // In Virtualized grid ordering may differ — rely on sort option change to verify
 
     // Find sort select and change to price-asc
     const selects = screen.getAllByRole('combobox');

@@ -59,7 +59,11 @@ export function useExternalCollections() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await supabase.from('collections').select('*').limit(100);
+      const { data, error } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('is_deleted', false)
+        .limit(100);
 
       if (error) {
         const isGone = error.message?.includes('410') || error.message?.includes('Gone');
@@ -76,7 +80,7 @@ export function useExternalCollections() {
         throw error;
       }
 
-      return (data || []).filter((c) => !c.is_deleted);
+      return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });

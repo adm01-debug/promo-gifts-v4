@@ -1,8 +1,4 @@
-import {
-  QueryClient,
-  type DefaultOptions,
-  type QueryClientConfig,
-} from '@tanstack/react-query';
+import { QueryClient, type DefaultOptions, type QueryClientConfig } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CACHE_TIMES — staleTime tiers (milliseconds)
@@ -217,12 +213,13 @@ export function createQueryClient(): QueryClient {
   // Runs once per query creation — cheap, deterministic, no per-render cost.
   client.getQueryCache().subscribe((event) => {
     if (event.type === 'added' || event.type === 'updated') {
-      const query = event.query;
-      if (query.options.staleTime === undefined) {
-        query.options.staleTime = getStaleTimeForKey(query.queryKey);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const opts = event.query.options as any;
+      if (opts.staleTime === undefined) {
+        opts.staleTime = getStaleTimeForKey(event.query.queryKey);
       }
-      if (query.options.gcTime === undefined) {
-        query.options.gcTime = getGcTimeForKey(query.queryKey);
+      if (opts.gcTime === undefined) {
+        opts.gcTime = getGcTimeForKey(event.query.queryKey);
       }
     }
   });

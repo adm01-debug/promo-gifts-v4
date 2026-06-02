@@ -241,9 +241,8 @@ export function useProductsCatalog(filters?: {
   const search = filters?.search || '';
   const categories = filters?.categories || [];
   const suppliers = filters?.suppliers || [];
-  const sortBy = filters?.sortBy;
   return useInfiniteQuery<CatalogPage, Error>({
-    queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],
+    queryKey: ['promobrind-products-catalog', search, categories, suppliers],
     queryFn: ({ pageParam }) =>
       fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers),
     initialPageParam: 0,

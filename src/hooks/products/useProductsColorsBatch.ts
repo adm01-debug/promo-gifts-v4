@@ -69,13 +69,14 @@ export function useProductsColorsBatch(productIds: string[]) {
       const [, ids] = queryKey as [string, string[]];
 
       // Identifica apenas o que ainda não temos no cache global
-      const missingIds = ids.filter(id => !GLOBAL_COLORS_CACHE.has(id));
+      const missingIds = ids.filter((id) => !GLOBAL_COLORS_CACHE.has(id));
 
       if (missingIds.length > 0) {
         const CHUNK = 100;
         for (let i = 0; i < missingIds.length; i += CHUNK) {
           const chunk = missingIds.slice(i, i + CHUNK);
-          const { data, error } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data, error } = await (supabase as any)
             .from(resolveTable('product_variants'))
             .select('product_id, color_name, color_hex')
             .in('product_id', chunk)
@@ -92,7 +93,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           // Agrupa resultados por ID
           const results = new Map<string, Map<string, ProductColorDot>>();
 
-          for (const row of (data ?? []) as VariantRow[]) {
+          for (const row of (data ?? []) as unknown as VariantRow[]) {
             const pid = row.product_id;
             const name = (row.color_name || '').trim();
             if (!name) continue;
@@ -100,14 +101,14 @@ export function useProductsColorsBatch(productIds: string[]) {
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
             if (!results.has(pid)) results.set(pid, new Map());
-            const dedupMap = results.get(pid)!;
+            const dedupMap = results.get(pid) as Map<string, ProductColorDot>;
             if (!dedupMap.has(key)) {
               dedupMap.set(key, { name, hex });
             }
           }
 
           // Salva no cache global; IDs sem variantes ficam marcados como array vazio
-          chunk.forEach(id => {
+          chunk.forEach((id) => {
             const productColors = results.get(id);
             const arr = productColors ? Array.from(productColors.values()) : [];
             arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -118,9 +119,9 @@ export function useProductsColorsBatch(productIds: string[]) {
 
       // Constrói o Map final apenas com os IDs solicitados nesta query
       const resultMap = new Map<string, ProductColorDot[]>();
-      ids.forEach(id => {
+      ids.forEach((id) => {
         if (GLOBAL_COLORS_CACHE.has(id)) {
-          resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
+          resultMap.set(id, GLOBAL_COLORS_CACHE.get(id) as ProductColorDot[]);
         }
       });
 
@@ -133,15 +134,15 @@ export function useProductsColorsBatch(productIds: string[]) {
 
   return useMemo(() => {
     const resultMap = new Map<string, ProductColorDot[]>();
-    stableIds.forEach(id => {
+    stableIds.forEach((id) => {
       if (GLOBAL_COLORS_CACHE.has(id)) {
-        resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
+        resultMap.set(id, GLOBAL_COLORS_CACHE.get(id) as ProductColorDot[]);
       }
     });
-    return { 
-      data: resultMap, 
+    return {
+      data: resultMap,
       isLoading: query.isLoading,
-      hasError: query.isError
+      hasError: query.isError,
     };
-  }, [stableIds, query.isLoading, query.isError, query.data]);
+  }, [stableIds, query.isLoading, query.isError]);
 }

@@ -202,7 +202,7 @@ export default function ProductDetail() {
     }
 
     const normalizedParam = corParam?.toLowerCase().trim() || '';
-    
+
     // 1. Tenta match exato por nome
     let match = product.variations.find(
       (v: ProductVariation) => v.color?.name?.toLowerCase().trim() === normalizedParam,
@@ -218,9 +218,13 @@ export default function ProductDetail() {
 
     // 3. Tenta match por hex
     if (!match && hexParam) {
-      const normalizedHex = hexParam.startsWith('#') ? hexParam.toLowerCase() : `#${hexParam.toLowerCase()}`;
+      const normalizedHex = hexParam.startsWith('#')
+        ? hexParam.toLowerCase()
+        : `#${hexParam.toLowerCase()}`;
       match = product.variations.find(
-        (v: ProductVariation) => v.color?.hex?.toLowerCase() === normalizedHex || v.color?.hex?.toLowerCase() === `#${normalizedHex}`,
+        (v: ProductVariation) =>
+          v.color?.hex?.toLowerCase() === normalizedHex ||
+          v.color?.hex?.toLowerCase() === `#${normalizedHex}`,
       );
     }
 
@@ -239,7 +243,7 @@ export default function ProductDetail() {
     if (match) {
       setSelectedVariation(match);
     }
-    
+
     setColorAutoSelected(true);
   }, [product, searchParams, colorAutoSelected]);
 
@@ -263,7 +267,7 @@ export default function ProductDetail() {
       newParams.delete('grupo');
     }
     setSearchParams(newParams, { replace: true });
-  }, [selectedVariation, colorAutoSelected, setSearchParams, searchParams]);
+  }, [selectedVariation, colorAutoSelected, setSearchParams, searchParams, product]);
 
   if (isLoading) return <ProductDetailSkeleton />;
 
