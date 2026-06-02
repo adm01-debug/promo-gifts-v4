@@ -42,6 +42,7 @@ export interface ReplenishmentCardProps {
   readonly selectionMode: boolean;
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
+  readonly colors?: readonly ColorDotLike[];
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -50,6 +51,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   selectionMode,
   isSelected,
   onToggleSelect,
+  colors,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
