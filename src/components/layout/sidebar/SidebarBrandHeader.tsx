@@ -1,6 +1,5 @@
 import { forwardRef } from 'react';
 import { AppLogo } from '../AppLogo';
-import { useOptionalOnboardingContext } from '@/contexts/OnboardingContext';
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarBrandHeaderProps {
@@ -10,14 +9,11 @@ interface SidebarBrandHeaderProps {
 export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderProps>(
   ({ isCollapsed }, ref) => {
     const navigate = useNavigate();
-    const onboarding = useOptionalOnboardingContext();
 
     const handleLogoClick = () => {
       navigate('/');
-      if (onboarding && !isCollapsed) {
-        onboarding.restartTour();
-      }
     };
+
 
     if (isCollapsed) {
       return (
