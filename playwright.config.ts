@@ -60,7 +60,6 @@ export default defineConfig({
       use: { 
         viewport: { width: 375, height: 667 },
         isMobile: true,
-        executablePath: '/bin/chromium',
       },
       testIgnore: [/auth\.setup\.ts/],
     },
