@@ -496,7 +496,7 @@ export const ProductCard = memo(
                   <p className="mb-0.5 text-[10px] font-medium text-muted-foreground opacity-70 sm:text-[11px]">
                     A partir de
                   </p>
-                  <span className="inline-flex items-center gap-2 font-display text-base font-black tracking-tight text-foreground sm:text-2xl">
+                  <span className="inline-flex items-center gap-2 font-display text-xs font-black tracking-tight text-foreground sm:text-lg">
                     {formatPrice(product.price)}
                     <PriceFreshnessBadge
                       priceUpdatedAt={product.priceUpdatedAt}
