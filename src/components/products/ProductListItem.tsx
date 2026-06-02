@@ -364,6 +364,19 @@ export const ProductListItem = memo(function ProductListItem({
               }
             }}
           />
+          {/* Out of Stock Badge */}
+          {displayStatus === 'out-of-stock' && (
+            <div className="absolute left-1 top-1 z-20">
+              <ProductStatusBadge
+                type="out-of-stock"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusClick('out-of-stock');
+                }}
+              />
+            </div>
+          )}
           {/* Multi-variant dots */}
           {hasMultipleVariants && (
             <div

@@ -172,12 +172,11 @@ export const ProductCardImage = memo(function ProductCardImage({
         )}
 
         {stockStatus === 'unavailable' && (
-          <Badge
-            variant="destructive"
-            className="h-auto px-1.5 py-0.5 text-[9px] font-medium leading-none shadow-sm"
-          >
-            Fora de estoque
-          </Badge>
+          <ProductStatusBadge
+            type="out-of-stock"
+            size="sm"
+            onClick={() => onStatusClick?.('out-of-stock')}
+          />
         )}
 
         {(stockStatus === 'low' || stockStatus === 'critical') && (

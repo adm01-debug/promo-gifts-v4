@@ -64,18 +64,29 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {/* Urgency badge */}
-      {urgencyType && urgencyText && (
-        <div className="absolute left-3 top-3 z-20 animate-fade-in">
-          <ProductStatusBadge
-            type="urgency"
-            urgencyType={urgencyType}
-            value={urgencyText}
-            size="sm"
-            onClick={() => onStatusClick?.('urgency', urgencyType)}
-          />
-        </div>
-      )}
+      {/* Status badges */}
+      <div className="absolute left-3 top-3 z-20 flex flex-col gap-1">
+        {urgencyType && urgencyText && (
+          <div className="animate-fade-in">
+            <ProductStatusBadge
+              type="urgency"
+              urgencyType={urgencyType}
+              value={urgencyText}
+              size="sm"
+              onClick={() => onStatusClick?.('urgency', urgencyType)}
+            />
+          </div>
+        )}
+        {product.stockStatus === 'out-of-stock' && (
+          <div className="animate-fade-in">
+            <ProductStatusBadge
+              type="out-of-stock"
+              size="sm"
+              onClick={() => onStatusClick?.('out-of-stock')}
+            />
+          </div>
+        )}
+      </div>
 
       <article
         className={cn(

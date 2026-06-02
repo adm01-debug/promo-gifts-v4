@@ -7,7 +7,7 @@ import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency';
+export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency' | 'out-of-stock';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
@@ -91,6 +91,8 @@ export function ProductStatusBadge({
         }
         return 'bg-brand-primary/80 text-brand-primary-foreground';
       }
+      case 'out-of-stock':
+        return 'bg-destructive text-destructive-foreground shadow-sm';
       case 'urgency':
         switch (urgencyType) {
           case 'limited-stock':
@@ -172,6 +174,13 @@ export function ProductStatusBadge({
               </>
             );
         }
+        break;
+      case 'out-of-stock':
+        return (
+          <>
+            <span>{value || 'Fora de estoque'}</span>
+          </>
+        );
     }
     return <span>{value}</span>;
   };
