@@ -1,9 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useSyncExternalStore } from 'react';
+import {
+  getBridgeSamples,
+  subscribeBridgeCalls,
+  clearBridgeSamples,
+  type BridgeCallSample,
+} from '@/lib/telemetry/bridgeCallMetrics';
 
-export interface BridgeMetricsFilter {
+export type BridgeMetricsFilter = {
   method?: string;
   minLatency?: number;
-}
+};
 
 interface BridgeMetricsEntry {
   id: string;
@@ -33,16 +39,39 @@ interface BridgeMetricsReturn {
   clear: () => void;
 }
 
+function samplesToEntries(samples: readonly BridgeCallSample[]): BridgeMetricsEntry[] {
+  return samples.map((s) => ({
+    id: String(s.id),
+    method: s.op,
+    url: `${s.bridge}/${s.target ?? ''}`,
+    latency: s.durationMs,
+    status: s.status ?? (s.ok ? 200 : 500),
+    responseSize: s.respBytes,
+    timestamp: s.ts,
+  }));
+}
+
 export function useBridgeMetrics(): BridgeMetricsReturn {
-  const [entries] = useState<BridgeMetricsEntry[]>([]);
+  const samples = useSyncExternalStore(
+    subscribeBridgeCalls,
+    getBridgeSamples,
+    () => [] as readonly BridgeCallSample[],
+  );
   const [filter, setFilter] = useState<BridgeMetricsFilter>({});
   const [open, setOpen] = useState(false);
 
-  const clear = useCallback(() => {}, []);
+  const entries = samplesToEntries(samples);
+
+  const clear = useCallback(() => {
+    clearBridgeSamples();
+  }, []);
 
   const summary: BridgeMetricsSummary = {
     total: entries.length,
-    avg: entries.length > 0 ? Math.round(entries.reduce((s, e) => s + e.latency, 0) / entries.length) : 0,
+    avg:
+      entries.length > 0
+        ? Math.round(entries.reduce((s, e) => s + e.latency, 0) / entries.length)
+        : 0,
     totalResp: entries.reduce((s, e) => s + e.responseSize, 0),
     errors: entries.filter((e) => e.status >= 400).length,
     last20: Math.min(entries.length, 20),

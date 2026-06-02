@@ -45,7 +45,10 @@ export function useProfileRoles() {
           authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
           setUserRoles([]);
         } else {
-          setUserRoles(rolesResult.data ?? []);
+          const mapped = (rolesResult.data ?? []).map(
+            (row: { role: string }) => row.role,
+          ) as AppRole[];
+          setUserRoles(mapped);
         }
 
         authDebug('useProfileRoles.fetchUserData', 'done', {

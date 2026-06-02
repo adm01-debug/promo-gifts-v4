@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase, resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fromTable = (table: string) => supabase.from(resolveTable(table) as any);
+const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
@@ -352,18 +352,27 @@ export function useNoveltyStats() {
           .eq('is_active', true)
           .gte('created_at', cutoff)
           .range(0, 499),
-        fromTable('products')
-          .select('id', { count: 'exact' })
-          .eq('is_active', true)
-          .range(0, 0),
+        fromTable('products').select('id', { count: 'exact' }).eq('is_active', true).range(0, 0),
       ]);
+      const emptyStats: NoveltyStatsDisplay = {
+        totalNovelties: 0,
+        activeNovelties: 0,
+        expiringSoon: 0,
+        totalProducts: 0,
+        noveltyRate: 0,
+        arrivedToday: 0,
+        arrivedThisWeek: 0,
+        arrivedLast15Days: 0,
+        topSupplierName: null,
+        topSupplierCount: 0,
+      };
       if (noveltiesRes.error) {
         handleQueryError('useNovelties', 'products', noveltiesRes.error);
-        throw new Error('unreachable');
+        return emptyStats;
       }
       if (totalRes.error) {
         handleQueryError('useNovelties', 'products', totalRes.error);
-        throw new Error('unreachable');
+        return emptyStats;
       }
 
       const now = new Date();
@@ -371,7 +380,9 @@ export function useNoveltyStats() {
       const weekStart = todayStart - 6 * 86400000;
       const fifteenDaysStart = todayStart - 14 * 86400000;
 
-      let records = (noveltiesRes.data ?? []) as unknown as (RawProduct & { supplier_id: string | null })[];
+      let records = (noveltiesRes.data ?? []) as unknown as (RawProduct & {
+        supplier_id: string | null;
+      })[];
       let totalProducts = totalRes.count || 0;
 
       // Fallback para MOCK se o banco estiver vazio
@@ -490,7 +501,9 @@ export function useNovelties(
       const { data, error } = await query;
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      let novelties = ((data ?? []) as unknown as RawProduct[]).map(toNovelty).filter((n) => n.is_active);
+      let novelties = ((data ?? []) as unknown as RawProduct[])
+        .map(toNovelty)
+        .filter((n) => n.is_active);
 
       if (maxDays) {
         novelties = novelties.filter((n) => n.days_remaining >= NOVELTY_WINDOW_DAYS - maxDays);
@@ -519,7 +532,7 @@ export function useNoveltyCount() {
         .range(0, 0);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
-        throw new Error('unreachable');
+        return 0;
       }
 
       return count || 0;
@@ -543,7 +556,7 @@ export function useIsProductNovelty(productId: string) {
         .range(0, 0);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
-        throw new Error('unreachable');
+        return { isNovelty: false, daysRemaining: null };
       }
 
       const rows = (data ?? []) as unknown as { id: string; created_at: string }[];
@@ -578,7 +591,7 @@ export function useNoveltyProductIds() {
         .range(0, 499);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
-        throw new Error('unreachable');
+        return new Set<string>();
       }
 
       return new Set(((data ?? []) as unknown as { id: string }[]).map((r) => r.id));

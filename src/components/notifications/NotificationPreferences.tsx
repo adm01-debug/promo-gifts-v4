@@ -73,25 +73,7 @@ export function NotificationPreferences() {
       [type]: value,
     });
     if (success) {
-      setPreferences((prev) => {
-        const existing = prev.find((p) => p.category === category);
-        if (existing) {
-          return prev.map((p) => (p.category === category ? { ...p, [type]: value } : p));
-        }
-        return [
-          ...prev,
-          {
-            id: '',
-            user_id: '',
-            category,
-            in_app_enabled: true,
-            push_enabled: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            [type]: value,
-          } satisfies UserNotificationPreference,
-        ];
-      });
+      await loadPreferences();
       toast.success('Preferências atualizadas');
     } else {
       toast.error('Erro ao atualizar preferências');

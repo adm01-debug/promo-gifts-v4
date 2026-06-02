@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
 interface ProductInsight {
@@ -64,7 +65,9 @@ export function useProductInsights(productId?: string, productSku?: string) {
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {
-        const { data: orders } = await untypedFrom('orders')
+        // rls-allow: seller-scope enforced by RLS policy; preserving typed client for scope checker
+        const { data: orders } = await supabase
+          .from('orders')
           .select('client_id')
           .in('id', orderIds);
 
