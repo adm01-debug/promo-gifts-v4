@@ -48,6 +48,16 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
     const [isFocused, setIsFocused] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [isSearching, setIsSearching] = useState(false);
+    // ── Tooltip state ──────────────────────────────────────────────────────────
+    // Always controlled (always boolean) so Radix never sees `undefined`.
+    // The previous pattern  open={!isFocused ? undefined : false}  toggled
+    // between controlled↔uncontrolled on every focus/blur, generating:
+    //   "Tooltip is changing from uncontrolled to controlled (or vice versa)"
+    // Fix: keep a dedicated boolean state; `open` is ALWAYS a boolean:
+    //   • focused   → !isFocused=false → open = false  (suppress while typing)
+    //   • unfocused → !isFocused=true  → open = tooltipVisible (hover as usual)
+    const [tooltipVisible, setTooltipVisible] = useState(false);
+    // ──────────────────────────────────────────────────────────────────────────
 
     const { query, setQuery, suggestions, quickSuggestions, clearHistory } = useSearch();
 
@@ -170,7 +180,15 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
 
     return (
       <div ref={containerRef} className={cn('relative w-full', className)}>
-        <Tooltip open={!isFocused ? undefined : false}>
+        {/*
+         * Tooltip always controlled — open is always boolean, never undefined.
+         *   open={!isFocused && tooltipVisible}
+         *   onOpenChange={setTooltipVisible}
+         */}
+        <Tooltip
+          open={!isFocused && tooltipVisible}
+          onOpenChange={setTooltipVisible}
+        >
           <TooltipTrigger asChild>
             <div className="group relative">
               <button
