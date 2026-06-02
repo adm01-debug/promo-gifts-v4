@@ -10,12 +10,15 @@ export function useProfileRoles() {
   const [isLoading, setIsLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
+  const fetchCancelledRef = useRef(false);
 
   const fetchUserData = useCallback(async (userId: string) => {
     if (fetchPromiseRef.current) {
       await fetchPromiseRef.current;
       return;
     }
+
+    fetchCancelledRef.current = false;
 
     const doFetch = async () => {
       authDebug('useProfileRoles.fetchUserData', 'start', { userId });
@@ -65,8 +68,10 @@ export function useProfileRoles() {
         authDebugError('useProfileRoles.fetchUserData', 'exception', error);
       } finally {
         fetchPromiseRef.current = null;
-        setIsLoading(false);
-        setRolesLoaded(true);
+        if (!fetchCancelledRef.current) {
+          setIsLoading(false);
+          setRolesLoaded(true);
+        }
       }
     };
 
@@ -75,6 +80,7 @@ export function useProfileRoles() {
   }, []);
 
   const clearProfileRoles = useCallback(() => {
+    fetchCancelledRef.current = true;
     setProfile(null);
     setUserRoles([]);
     setIsLoading(false);

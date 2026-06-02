@@ -121,6 +121,8 @@ export function AIMockupAssistant({
   };
 
   const handleQuickAction = (action: QuickAction) => {
+    if (isLoading) return;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -264,6 +266,7 @@ export function AIMockupAssistant({
                               variant="secondary"
                               size="sm"
                               className="h-7 gap-1 px-2 text-xs"
+                              disabled={isLoading}
                               onClick={() => handleQuickAction(action)}
                             >
                               <action.icon className="h-3 w-3" />

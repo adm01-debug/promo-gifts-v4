@@ -74,12 +74,22 @@ interface StockDailySummaryRow {
 // through results in chunks of 1000 to avoid silent row truncation.
 const PAGE_SIZE = 1000;
 
+// Use local calendar date to avoid UTC midnight shifting the boundary by one
+// day for users in negative-offset timezones (e.g. BRT = UTC-3).
+function toLocalDateStr(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 async function fetchSupplierSparklineBatch(productIds: string[]): Promise<SparklineMap> {
   if (!productIds.length) return {};
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
-  const cutoffStr = cutoff.toISOString().substring(0, 10);
+  const cutoffStr = toLocalDateStr(cutoff);
 
   const BATCH_SIZE = 50;
   const allRecords: StockDailySummaryRow[] = [];
@@ -127,9 +137,13 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
     depletedByDate[row.product_id][date] =
       (depletedByDate[row.product_id][date] || 0) + (row.units_depleted || 0);
 
-    if (!stockCloseByDate[row.product_id]) stockCloseByDate[row.product_id] = {};
-    stockCloseByDate[row.product_id][date] =
-      (stockCloseByDate[row.product_id][date] || 0) + (row.stock_close || 0);
+    // Only track dates where at least one source has a real stock value;
+    // price-only rows have stock_close=null and must not contribute 0.
+    if (row.stock_close != null) {
+      if (!stockCloseByDate[row.product_id]) stockCloseByDate[row.product_id] = {};
+      stockCloseByDate[row.product_id][date] =
+        (stockCloseByDate[row.product_id][date] || 0) + row.stock_close;
+    }
 
     totalRestockedMap[row.product_id] =
       (totalRestockedMap[row.product_id] || 0) + (row.units_restocked || 0);
@@ -147,7 +161,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().substring(0, 10);
+      const ds = toLocalDateStr(d);
       const depleted = dateMap[ds] ?? 0;
       dailyQty.push(depleted);
       totalQty += depleted;
