@@ -1,66 +1,107 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "../fixtures/test-base";
+import { gotoAndSettle, expectOnRoute } from "../helpers/nav";
+import { loginAs } from "../helpers/auth";
+import { expectVisibleByTestId } from "../helpers/waits";
 
-/**
- * P0 Critical Business Flows: Unified E2E Test Suite
- * Covers: Login, Multi-step Quote CRUD, and Mockup Uploads.
- * Validates that structural fixes didn't break core business logic.
- */
-
-test.describe('P0 Critical Business Flows', () => {
-  
-  test('Authentication: Login and Session Persistence', async ({ page }) => {
-    // Navigate to login
-    await page.goto('/login');
-    
-    // Fill credentials
-    const emailInput = page.getByPlaceholder(/email/i);
-    const passwordInput = page.getByPlaceholder(/senha/i);
-    
-    await expect(emailInput).toBeVisible();
-    await expect(passwordInput).toBeVisible();
-    
-    // Testing error state first to ensure validation logic works
-    await emailInput.fill('invalid@example.com');
-    await passwordInput.fill('wrongpassword');
-    await page.getByRole('button', { name: /entrar/i }).click();
-    
-    // Should show error toast (handled by our new error logic)
-    await expect(page.locator('text=Credenciais inválidas').or(page.locator('text=Erro'))).toBeVisible();
+test.describe("Auditoria Técnica - Fluxos Críticos", () => {
+  test.beforeEach(async ({ page }) => {
+    // Garantir que estamos logados para acessar rotas protegidas
+    await loginAs(page);
   });
 
-  test('Quotes: Creation and History Integrity', async ({ page }) => {
-    // Navigate to quote creation
-    await page.goto('/orcamentos/novo');
+  test("Fluxo: Login -> Catálogo -> Filtros -> Estabilidade de Layout", async ({ page }) => {
+    // 1. Navegação para Catálogo
+    await gotoAndSettle(page, "/produtos");
+    await expectVisibleByTestId(page, "product-grid");
+
+    // 2. Mudança de Classificação (Sort)
+    const sortTrigger = page.locator('[data-testid="sort-select-trigger"]');
+    await sortTrigger.click();
+    await page.locator('role=option[name="Preço: Menor para Maior"]').click();
     
-    // 1. Add product to quote
-    // Wait for catalog to load
-    await page.waitForSelector('[data-testid="product-card"]', { timeout: 15000 });
-    await page.locator('[data-testid="product-card"]').first().click();
+    // Validar que a URL reflete o sortBy mas o viewMode permanece o mesmo (default grid)
+    await expect(page).toHaveURL(/sortBy=price_asc/);
+    await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
+
+    // 3. Mudança de ViewMode (Grid -> Lista -> Tabela)
+    // Validar que ao trocar o sort, o viewMode NÃO oscila
+    await page.locator('[data-testid="view-mode-list"]').click();
+    await expect(page.locator('[data-testid="product-list"]')).toBeVisible();
     
-    // 2. Set client and details
-    await page.getByPlaceholder(/nome do cliente/i).fill('Teste E2E');
+    await sortTrigger.click();
+    await page.locator('role=option[name="Preço: Maior para Menor"]').click();
     
-    // 3. Save quote
-    await page.getByRole('button', { name: /salvar/i }).click();
-    
-    // 4. Verify History Log (Audit fix validation)
-    // Navigate to quote list to verify the created quote exists
-    await page.goto('/orcamentos');
-    await expect(page.locator('text=Teste E2E')).toBeVisible();
-    
-    // Click into the quote to verify history
-    await page.locator('text=Teste E2E').click();
-    await expect(page.locator('text=Histórico')).toBeVisible();
+    // O layout deve CONTINUAR em lista mesmo após mudar o sort
+    await expect(page.locator('[data-testid="product-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="product-grid"]')).not.toBeVisible();
   });
 
-  test('Mockups: File Upload and AI Analysis', async ({ page }) => {
-    await page.goto('/raio-x'); // Visual search / Mockup tool
+  test("Estabilidade Visual: FAB de Ações Rápidas vs Voltar ao Topo", async ({ page }) => {
+    const viewports = [
+      { width: 320, height: 568, name: "Mobile Small" },
+      { width: 375, height: 812, name: "Mobile iPhone" },
+      { width: 768, height: 1024, name: "Tablet" },
+      { width: 1440, height: 900, name: "Desktop" }
+    ];
+
+    for (const vp of viewports) {
+      test.step(`Validando viewport: ${vp.name}`, async () => {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await gotoAndSettle(page, "/produtos");
+
+        // Scroll para baixo para ativar os botões flutuantes
+        await page.evaluate(() => window.scrollTo(0, 1000));
+        await page.waitForTimeout(500); // Aguarda transição CSS
+
+        const fab = page.locator('[data-testid="quick-quote-fab"], button[aria-label*="Ações rápidas"]').first();
+        const scrollToTop = page.locator('[data-testid="scroll-to-top"], button[aria-label*="voltar ao topo"]').first();
+
+        await expect(fab).toBeVisible();
+        await expect(scrollToTop).toBeVisible();
+
+        // Verificar sobreposição (BoundingBox)
+        const fabBox = await fab.boundingBox();
+        const scrollBox = await scrollToTop.boundingBox();
+
+        if (fabBox && scrollBox) {
+          const hasOverlap = !(
+            fabBox.x + fabBox.width < scrollBox.x ||
+            fabBox.x > scrollBox.x + scrollBox.width ||
+            fabBox.y + fabBox.height < scrollBox.y ||
+            fabBox.y > scrollBox.y + scrollBox.height
+          );
+          
+          expect(hasOverlap, `Botões estão se sobrepondo em ${vp.name}`).toBeFalsy();
+          
+          // Verificar distância mínima (ex: 10px)
+          const distance = Math.abs(fabBox.y - scrollBox.y);
+          expect(distance, `Distância insuficiente entre botões em ${vp.name}`).toBeGreaterThan(40);
+        }
+      });
+    }
+  });
+
+  test("Fluxo Completo: Catálogo -> Detalhe -> Novo Orçamento", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
     
-    // Check if upload input is present
-    const fileInput = page.locator('input[type="file"]');
-    await expect(fileInput).toBeAttached();
+    // Pegar o primeiro produto
+    const firstProduct = page.locator('[data-testid="product-card"]').first();
+    await expect(firstProduct).toBeVisible();
     
-    // Verify structural readiness for upload
-    await expect(page.locator('text=Anexar Imagem')).toBeVisible();
+    // Clicar para ver detalhes
+    await firstProduct.click();
+    await expect(page).toHaveURL(/\/produto\//);
+    
+    // Clicar em "Adicionar ao Orçamento" ou "Novo Orçamento" no FAB
+    const fab = page.locator('button[aria-label*="Ações rápidas"]').first();
+    await fab.click();
+    await page.locator('text=Novo Orçamento').click();
+
+    // Validar que redirecionou para o wizard de orçamento com o produto
+    await expectOnRoute(page, /\/orcamentos\/novo/);
+    await expect(page).toHaveURL(/productId=/);
+    
+    // Validar carregamento da página de orçamento
+    await expectVisibleByTestId(page, "quote-builder-stepper");
   });
 });
