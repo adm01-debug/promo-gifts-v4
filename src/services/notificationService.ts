@@ -42,7 +42,7 @@ export interface GetNotificationsOptions {
  */
 export async function getNotifications(
   options: GetNotificationsOptions = {},
-): Promise<WorkspaceNotification[]> {
+): Promise<{ data: WorkspaceNotification[]; total: number }> {
   const {
     unreadOnly = false,
     search,
