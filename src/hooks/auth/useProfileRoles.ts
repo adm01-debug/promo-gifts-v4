@@ -8,7 +8,9 @@ export function useProfileRoles() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
+  const fetchCancelledRef = useRef(false);
 
   const fetchUserData = useCallback(async (userId: string) => {
     if (fetchPromiseRef.current) {
@@ -16,55 +18,48 @@ export function useProfileRoles() {
       return;
     }
 
+    fetchCancelledRef.current = false;
+
     const doFetch = async () => {
       authDebug('useProfileRoles.fetchUserData', 'start', { userId });
       try {
-        // PERF: getSession() removido — AuthContext já valida a sessão antes de chamar
-        // fetchUserData(session.user.id), então o round-trip extra ao Supabase Auth é
-        // desnecessário. Economia: ~200–500ms por login (1 HTTP call a menos).
-        const [profileResult, firstRoles] = await Promise.all([
-          authService.fetchProfile(userId),
-          authService.queryRoles(userId),
+        const supabase = getSupabaseClient();
+
+        // Fetch profile and roles in parallel
+        const [profileResult, rolesResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, email, organization_id')
+            .eq('id', userId)
+            .maybeSingle(),
+          authService.getUserRoles(userId),
         ]);
 
-        let rolesResult = firstRoles;
-        if (!rolesResult.error && (!rolesResult.data || rolesResult.data.length === 0)) {
-          authDebug('useProfileRoles.fetchUserData', 'user_roles empty — retrying', { userId });
-          // PERF: reduced from 250ms → 100ms
-          await new Promise((r) => setTimeout(r, 100));
-          rolesResult = await authService.queryRoles(userId);
+        if (profileResult.error) {
+          authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
+        } else {
+          setProfile(profileResult.data);
         }
 
-        if (profileResult.data) {
-          const profileData = profileResult.data as Profile;
-          setProfile(profileData);
-
-          // background update — fire and forget, com proteção de mount.
-          // `.catch` evita unhandled rejection se conexão/escrita falhar (rede/RLS).
-          getSupabaseClient()
-            .then((supabase) => {
-              if (!userId) return;
-              return supabase
-                .from('profiles')
-                .update({ last_login_at: new Date().toISOString() })
-                .eq('user_id', userId)
-                .then(({ error }) => {
-                  if (error) authDebugError('useProfileRoles.updateLastLogin', 'failed', error);
-                });
-            })
-            .catch(() => {
-              /* atualização de last_login_at é best-effort */
-            });
+        if (rolesResult.error) {
+          authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
+          setUserRoles([]);
+        } else {
+          setUserRoles(rolesResult.data ?? []);
         }
 
-        if (rolesResult.data && rolesResult.data.length > 0) {
-          setUserRoles(rolesResult.data.map((r) => r.role as AppRole));
-        }
+        authDebug('useProfileRoles.fetchUserData', 'done', {
+          userId,
+          roleCount: rolesResult.data?.length ?? 0,
+        });
       } catch (error) {
         authDebugError('useProfileRoles.fetchUserData', 'exception', error);
       } finally {
         fetchPromiseRef.current = null;
-        setIsLoading(false);
+        if (!fetchCancelledRef.current) {
+          setIsLoading(false);
+          setRolesLoaded(true);
+        }
       }
     };
 
@@ -73,9 +68,11 @@ export function useProfileRoles() {
   }, []);
 
   const clearProfileRoles = useCallback(() => {
+    fetchCancelledRef.current = true;
     setProfile(null);
     setUserRoles([]);
     setIsLoading(false);
+    setRolesLoaded(false);
   }, []);
 
   return {
@@ -85,6 +82,7 @@ export function useProfileRoles() {
     setUserRoles,
     isLoading,
     setIsLoading,
+    rolesLoaded,
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
