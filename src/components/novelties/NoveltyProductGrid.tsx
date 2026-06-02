@@ -281,6 +281,7 @@ export function NoveltyProductGrid() {
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
+          colorsByProduct={colorsByProduct}
           onStatusClick={(type) => {
             if (type === 'novelty') return; // already on novelty page
             if (type === 'promotion') navigate('/filtros?onSale=1');
