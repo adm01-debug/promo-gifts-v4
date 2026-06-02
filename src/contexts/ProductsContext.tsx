@@ -27,6 +27,12 @@ interface ProductsContextType {
   error: string | null;
   fetchProducts: (ids: string[]) => Promise<void>;
   getProduct: (id: string) => Product | undefined;
+  /**
+   * Batch lookup — returns cached products matching the given ids (in any order).
+   * Missing ids are silently skipped. Consumers should call fetchProducts() first
+   * if they need to ensure data is loaded.
+   */
+  getProductsByIds: (ids: string[]) => Product[];
   invalidateCache: () => void;
 }
 
@@ -91,6 +97,15 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
     [products],
   );
 
+  const getProductsByIds = useCallback(
+    (ids: string[]) => {
+      if (!ids.length) return [];
+      const idSet = new Set(ids);
+      return products.filter((p) => idSet.has(p.id));
+    },
+    [products],
+  );
+
   const invalidateCache = useCallback(() => {
     fetchedIdsRef.current.clear();
     pendingRef.current.clear();
@@ -99,15 +114,40 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
   }, []);
 
   const value = useMemo(
-    () => ({ products, isLoading, error, fetchProducts, getProduct, invalidateCache }),
-    [products, isLoading, error, fetchProducts, getProduct, invalidateCache],
+    () => ({
+      products,
+      isLoading,
+      error,
+      fetchProducts,
+      getProduct,
+      getProductsByIds,
+      invalidateCache,
+    }),
+    [products, isLoading, error, fetchProducts, getProduct, getProductsByIds, invalidateCache],
   );
 
   return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>;
 }
 
+/**
+ * Strict consumer — throws if used outside ProductsProvider.
+ * Use this when the component is *always* mounted inside the provider tree.
+ */
 export function useProducts() {
   const ctx = useContext(ProductsContext);
   if (!ctx) throw new Error('useProducts must be used within ProductsProvider');
   return ctx;
+}
+
+/**
+ * Safe consumer — returns null if used outside ProductsProvider, instead of throwing.
+ * Use this for components that may render in trees without the provider (e.g. global
+ * floating bars rendered above route boundaries, or modal portals).
+ *
+ * Consumers must guard against the null case:
+ *   const ctx = useProductsContextSafe();
+ *   const data = ctx?.getProductsByIds(ids) ?? [];
+ */
+export function useProductsContextSafe(): ProductsContextType | null {
+  return useContext(ProductsContext);
 }
