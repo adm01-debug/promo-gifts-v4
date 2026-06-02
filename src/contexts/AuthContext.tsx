@@ -23,6 +23,11 @@ import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
+import {
+  attachSessionRevalidation,
+  isBadJwtError,
+  recoverSession,
+} from '@/lib/auth/session-recovery';
 
 // Tipos de role conforme app_role enum no banco.
 export type AppRole =
@@ -111,7 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     log.info('start');
     try {
       const supabase = await getSupabaseClient();
-      const { data, error: _error } = await supabase.auth.refreshSession();
+      const { data, error } = await supabase.auth.refreshSession();
+
+      // BUG-CRÍTICO FIX: kid rotacionado / bad_jwt → recovery agressiva.
+      // Antes, o erro era descartado silenciosamente e o usuário ficava
+      // logado no client mas deslogado no server até reabrir a aba.
+      if (error && isBadJwtError(error)) {
+        log.warn('bad_jwt_detected', { err: error.message });
+        await recoverSession('refreshSession:bad_jwt');
+        return;
+      }
+
       const nextSession = data?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
         setSession(nextSession);
@@ -124,6 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       log.info('ok');
     } catch (err) {
       log.error('failed', { err: String(err) });
+      if (isBadJwtError(err)) {
+        await recoverSession('refreshSession:exception');
+      }
     }
   }, [user, fetchUserData, fetchAAL, fetchPromiseRef]);
 
