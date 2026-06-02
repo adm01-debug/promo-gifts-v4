@@ -207,8 +207,8 @@ export function QuickQuoteFAB({ productId, productName }: QuickQuoteFABProps) {
           </TooltipTrigger>
           <TooltipContent side="left">Ações Rápidas</TooltipContent>
         </Tooltip>
-      </div>
-    </div>
+        </div>
+      </motion.div>
 
       {/* Expert Chat Dialog */}
       <Suspense fallback={null}>
