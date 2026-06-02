@@ -73,7 +73,9 @@ export function NotificationPreferences() {
       [type]: value,
     });
     if (success) {
-      await loadPreferences();
+      setPreferences((prev) =>
+        prev.map((p) => (p.category === category ? { ...p, [type]: value } : p)),
+      );
       toast.success('Preferências atualizadas');
     } else {
       toast.error('Erro ao atualizar preferências');
