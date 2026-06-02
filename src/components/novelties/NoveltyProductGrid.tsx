@@ -277,10 +277,9 @@ export function NoveltyProductGrid() {
       return (
         <NoveltyTableView
           products={filteredProducts}
-          onProductClick={handleProductClick}
           selectionMode={selectionMode}
-          selectedIds={sel.selectedIds}
-          onToggleSelect={sel.toggleSelect}
+          selectedIds={[...sel.selectedIds]}
+          onSelect={sel.toggleSelect}
           colorsByProduct={colorsByProduct}
           onStatusClick={(type) => {
             if (type === 'novelty') return; // already on novelty page

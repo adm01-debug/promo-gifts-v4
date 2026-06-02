@@ -285,10 +285,10 @@ export const ProductGrid = memo(function ProductGrid({
             ? colorsByProduct?.get(p.id)
             : undefined;
           
-          const enriched = { 
-            ...p, 
-            colors: isHydrating 
-              ? undefined 
+          const enriched: Product = {
+            ...p,
+            colors: isHydrating
+              ? []
               : (batchColors && batchColors.length > 0
                   ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
                   : p.colors)

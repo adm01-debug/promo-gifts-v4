@@ -23,9 +23,21 @@ interface ProductAnalysis {
   description: string;
 }
 
+/** Shape emitted by VisualSearchButton's internal SearchResult */
+interface VisualSearchProduct {
+  id: string;
+  name: string;
+  sku: string;
+  category_name: string;
+  description: string;
+  price: number;
+  colors: string[] | null | undefined;
+  relevance: number;
+}
+
 interface AdvancedSearchProps {
   onSearch?: (query: string) => void;
-  onVisualSearchResults?: (products: SearchResult[], analysis: ProductAnalysis) => void;
+  onVisualSearchResults?: (products: VisualSearchProduct[], analysis: ProductAnalysis) => void;
   className?: string;
 }
 

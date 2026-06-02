@@ -22,6 +22,7 @@
  *   by Supabase/PostgREST. Removed the 4 duplicate top-level fields.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
 import { toast } from 'sonner';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
@@ -173,8 +174,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     const safeTechniqueId: string | null = technique.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
-    const { data: insertedRow, error } = await supabase
-      .from('generated_mockups')
+    const { data: insertedRow, error } = await untypedFrom('generated_mockups')
       .insert({
         user_id: userId,
         product_id: safeProductId,
@@ -218,6 +218,8 @@ export interface GenerateMockupParams {
 
 export interface GenerateMockupResult {
   mockupUrl: string;
+  singleUrl?: string | null;
+  batchResults: { url: string; areaName: string }[];
   jobId?: string;
   revisionsLeft?: number;
 }

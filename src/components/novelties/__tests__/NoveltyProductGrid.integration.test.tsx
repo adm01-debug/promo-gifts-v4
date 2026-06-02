@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen as rtlScreen, fireEvent, act, waitFor } from '@testing-library/react';
 import { NoveltyProductGrid } from '../NoveltyProductGrid';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -195,9 +195,9 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
 // Helper for finding elements with partial text in placeholder/aria
 const screen = {
-  ...require('@testing-library/react').screen,
+  ...rtlScreen,
   getByPlaceholderRelative: (text: string) => {
-    const inputs = require('@testing-library/react').screen.getAllByRole('textbox');
+    const inputs = rtlScreen.getAllByRole('textbox');
     return inputs.find((i: any) => i.placeholder.includes(text.trim())) as HTMLInputElement;
   }
 };

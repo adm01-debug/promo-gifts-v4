@@ -518,7 +518,7 @@ export function useSuppliersManager() {
     setDeleteConfirmSupplier(null);
     setDeleting(supplier.id);
     try {
-      await dbInvokeDelete('suppliers', supplier.id);
+      await dbInvokeDelete({ table: 'suppliers', id: supplier.id });
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {

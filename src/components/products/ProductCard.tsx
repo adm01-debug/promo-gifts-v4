@@ -138,6 +138,9 @@ export const ProductCard = memo(
       }
     }, [filterKey]);
     
+    // Multi-variant carousel (hoisted before useEffect that depends on it)
+    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
+
     // BUG-4 FIX: Sincronização de cor selecionada entre Grid e PDP via store
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
@@ -294,8 +297,6 @@ export const ProductCard = memo(
     };
 
 
-    // Multi-variant carousel
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
     const hasMultipleVariants = allMatchingVariants.length > 1;
     const safeVariantIdx = hasMultipleVariants
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)

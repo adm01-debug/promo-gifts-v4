@@ -69,11 +69,11 @@ function buildShortcutHandler(navigate: (href: string) => void) {
 }
 
 describe('Sidebar shortcut: Alt+R → /carrinhos', () => {
-  let navigate: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn<(href: string) => void>>;
   let handler: (e: KeyboardEvent) => void;
 
   beforeEach(() => {
-    navigate = vi.fn();
+    navigate = vi.fn<(href: string) => void>();
     handler = buildShortcutHandler(navigate);
     window.addEventListener('keydown', handler);
   });

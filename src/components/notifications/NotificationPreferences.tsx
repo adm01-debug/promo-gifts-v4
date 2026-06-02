@@ -81,11 +81,15 @@ export function NotificationPreferences() {
         return [
           ...prev,
           {
+            id: '',
+            user_id: '',
             category,
             in_app_enabled: true,
             push_enabled: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
             [type]: value,
-          } as UserNotificationPreference,
+          } satisfies UserNotificationPreference,
         ];
       });
       toast.success('Preferências atualizadas');

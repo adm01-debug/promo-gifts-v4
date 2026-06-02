@@ -86,10 +86,12 @@ export function VirtualizedNoveltyGrid({
                 <div key={product.novelty_id} role="listitem">
                   <NoveltyGridCard
                     product={product}
-                    onClick={() => onProductClick(product.product_id)}
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(product.product_id)}
-                    onToggleSelect={() => onToggleSelect(product.product_id)}
+                    onSelect={selectionMode
+                      ? () => onToggleSelect(product.product_id)
+                      : () => onProductClick(product.product_id)
+                    }
                     onStatusClick={onStatusClick}
                     colors={colorsByProduct?.get(product.product_id)}
                   />

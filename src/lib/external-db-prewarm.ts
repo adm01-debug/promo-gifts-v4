@@ -11,7 +11,7 @@
  *  - oncePerSession via sessionStorage
  *  - Promise.allSettled para paralelismo
  */
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 
 type PrewarmTable =
@@ -46,7 +46,7 @@ async function warmAllTables(
   const t0 = performance.now();
 
   const results = await Promise.allSettled(
-    tables.map((table) => supabase.from(table).select('id').limit(1)),
+    tables.map((table) => untypedFrom(table).select('id').limit(1)),
   );
 
   const totalMs = Math.round(performance.now() - t0);

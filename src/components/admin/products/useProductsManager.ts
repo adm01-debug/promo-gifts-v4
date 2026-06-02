@@ -372,7 +372,7 @@ export function useProductsManager() {
   const handleDelete = async () => {
     if (!selectedProduct) return;
     try {
-      await dbInvokeDelete('products', selectedProduct.id);
+      await dbInvokeDelete({ table: 'products', id: selectedProduct.id });
       await logAction({
         action: 'DELETE',
         entityType: 'products',

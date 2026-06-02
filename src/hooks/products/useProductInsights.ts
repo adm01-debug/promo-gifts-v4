@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 interface ProductInsight {
   totalViews: number;
@@ -34,18 +34,15 @@ export function useProductInsights(productId?: string, productSku?: string) {
         };
       }
 
-      const { count: viewsCount } = await supabase
-        .from('product_views')
+      const { count: viewsCount } = await untypedFrom('product_views')
         .select('*', { count: 'exact', head: true })
         .eq('product_sku', productSku);
 
-      const { data: quoteItems, count: quotesCount } = await supabase
-        .from('quote_items')
+      const { data: quoteItems, count: quotesCount } = await untypedFrom('quote_items')
         .select('quantity, quote_id', { count: 'exact' })
         .eq('product_sku', productSku);
 
-      const { data: orderItems, count: ordersCount } = await supabase
-        .from('order_items')
+      const { data: orderItems, count: ordersCount } = await untypedFrom('order_items')
         .select('quantity, order_id', { count: 'exact' })
         .eq('product_sku', productSku);
 
@@ -67,9 +64,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {
-        const { data: orders } = await supabase
-          // rls-allow: agregação respeita escopo via RLS
-          .from('orders')
+        const { data: orders } = await untypedFrom('orders')
           .select('client_id')
           .in('id', orderIds);
 
@@ -104,8 +99,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
       const recentActivity: ProductInsight['recentActivity'] = [];
 
-      const { data: recentViews } = await supabase
-        .from('product_views')
+      const { data: recentViews } = await untypedFrom('product_views')
         .select('created_at, seller_id')
         .eq('product_sku', productSku)
         .order('created_at', { ascending: false })
@@ -119,8 +113,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
         });
       });
 
-      const { data: recentQuotes } = await supabase
-        .from('quote_items')
+      const { data: recentQuotes } = await untypedFrom('quote_items')
         .select('created_at, quantity')
         .eq('product_sku', productSku)
         .order('created_at', { ascending: false })

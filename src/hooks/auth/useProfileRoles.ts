@@ -23,7 +23,7 @@ export function useProfileRoles() {
     const doFetch = async () => {
       authDebug('useProfileRoles.fetchUserData', 'start', { userId });
       try {
-        const supabase = getSupabaseClient();
+        const supabase = await getSupabaseClient();
 
         // Fetch profile and roles in parallel
         const [profileResult, rolesResult] = await Promise.all([
@@ -32,7 +32,7 @@ export function useProfileRoles() {
             .select('id, full_name, avatar_url, email, organization_id')
             .eq('id', userId)
             .maybeSingle(),
-          authService.getUserRoles(userId),
+          authService.queryRoles(userId),
         ]);
 
         if (profileResult.error) {

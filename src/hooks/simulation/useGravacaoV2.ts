@@ -6,6 +6,8 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 // Re-export types & helpers for backward compat
 export type {
@@ -48,8 +50,7 @@ export function useProductPrintAreas(productId: string | null) {
       const areas = await fetchPrintAreasFromProduct(productId);
       if (!areas.length) return [];
 
-      const { data: techData, error: techError } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data: techData, error: techError } = await untypedFrom('tabela_preco_gravacao_oficial')
         .select('*')
         .eq('ativo', true)
         .limit(100);
@@ -95,8 +96,7 @@ export function useTabelasPrecoOficial() {
   return useQuery({
     queryKey: ['tabelas-preco-oficial'],
     queryFn: async (): Promise<TabelaPrecoOficial[]> => {
-      const { data, error } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data, error } = await untypedFrom('tabela_preco_gravacao_oficial')
         .select('*')
         .eq('ativo', true)
         .order('codigo', { ascending: true });
@@ -116,8 +116,7 @@ export function useFaixasPrecoOficial(tabelaPrecoId: string | null) {
     queryKey: ['faixas-preco-oficial', tabelaPrecoId],
     queryFn: async (): Promise<FaixaPrecoOficial[]> => {
       if (!tabelaPrecoId) return [];
-      const { data, error } = await supabase
-        .from('tabela_preco_gravacao_oficial_faixa')
+      const { data, error } = await untypedFrom('tabela_preco_gravacao_oficial_faixa')
         .select('*')
         .eq('tabela_preco_gravacao_id', tabelaPrecoId)
         .order('ordem', { ascending: true });
@@ -260,8 +259,7 @@ export function useTabelaPrecoPorCodigo(codigo: string | null) {
     queryKey: ['tabela-preco-codigo', codigo],
     queryFn: async (): Promise<TabelaPrecoOficial | null> => {
       if (!codigo) return null;
-      const { data, error } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data, error } = await untypedFrom('tabela_preco_gravacao_oficial')
         .select('*')
         .eq('codigo', codigo)
         .limit(1)
