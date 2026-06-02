@@ -23,7 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ExternalVariantStock, type Product } from '@/hooks/products';
+// FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
