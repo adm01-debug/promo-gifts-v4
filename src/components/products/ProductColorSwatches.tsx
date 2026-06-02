@@ -80,6 +80,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     <div
       className={cn('flex items-center gap-0.5', className)}
       role="group"
+      aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponível${colors.length === 1 ? '' : 'is'}`}
       data-testid="product-colors-container"
     >
