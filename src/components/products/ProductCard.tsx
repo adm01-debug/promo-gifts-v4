@@ -480,7 +480,7 @@ export const ProductCard = memo(
           </h3>
 
           <ProductColorSwatches
-            colors={(product.colors ?? []).map((c) => ({ name: c.name, hex: c.hex ?? null }))}
+            colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
             max={6}
             size="sm"
             hideWhenEmpty={false}

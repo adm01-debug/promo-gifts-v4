@@ -84,6 +84,7 @@ export function useProductsColorsBatch(productIds: string[]) {
             .range(0, 4999);
 
           if (error) {
+            console.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
             handleQueryError('useProductsColorsBatch', 'product_variants', error);
             continue;
           }
