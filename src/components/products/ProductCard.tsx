@@ -38,6 +38,7 @@ import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
+import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
@@ -136,6 +137,25 @@ export const ProductCard = memo(
         prevFilterKeyRef.current = filterKey;
       }
     }, [filterKey]);
+    
+    // BUG-4 FIX: Sincronização de cor selecionada entre Grid e PDP via store
+    const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
+    const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
+
+    useEffect(() => {
+      if (product.colors && product.colors.length > 0) {
+        // Prioridade: Seleção manual > Filtro ativo
+        const targetColor = selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+        if (targetColor) {
+          const idx = allMatchingVariants.findIndex(
+            (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
+          );
+          if (idx >= 0 && idx !== activeVariantIdx) {
+            setActiveVariantIdx(idx);
+          }
+        }
+      }
+    }, [product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -480,7 +500,7 @@ export const ProductCard = memo(
           </h3>
 
           <ProductColorSwatches
-            colors={(product.colors ?? []).map((c) => ({ name: c.name, hex: c.hex ?? null }))}
+            colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
             max={6}
             size="sm"
             hideWhenEmpty={false}
@@ -493,6 +513,7 @@ export const ProductCard = memo(
               );
               if (idx >= 0) {
                 setActiveVariantIdx(idx);
+                setSelectedColor(product.id, c.name); // Persiste seleção p/ quando voltar do PDP
                 setImageLoaded(false);
               }
               const params = new URLSearchParams();

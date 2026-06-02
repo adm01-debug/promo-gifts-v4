@@ -84,6 +84,7 @@ export function useProductsColorsBatch(productIds: string[]) {
             .range(0, 4999);
 
           if (error) {
+            console.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
             handleQueryError('useProductsColorsBatch', 'product_variants', error);
             continue;
           }
@@ -130,5 +131,17 @@ export function useProductsColorsBatch(productIds: string[]) {
     gcTime: 30 * 60 * 1000,
   });
 
-  return { data: query.data, isLoading: query.isLoading };
+  return useMemo(() => {
+    const resultMap = new Map<string, ProductColorDot[]>();
+    stableIds.forEach(id => {
+      if (GLOBAL_COLORS_CACHE.has(id)) {
+        resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
+      }
+    });
+    return { 
+      data: resultMap, 
+      isLoading: query.isLoading,
+      hasError: query.isError
+    };
+  }, [stableIds, query.isLoading, query.isError, query.data]);
 }

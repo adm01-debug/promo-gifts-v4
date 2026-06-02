@@ -257,7 +257,13 @@ export const ProductGrid = memo(function ProductGrid({
     () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
     [products],
   );
-  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+  const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
+
+  useEffect(() => {
+    if (colorsError) {
+      console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
+    }
+  }, [colorsError, idsNeedingColors]);
 
   return (
     <div
@@ -274,12 +280,19 @@ export const ProductGrid = memo(function ProductGrid({
           />
         ) : (() => {
           const p = product as Product;
+          const isHydrating = idsNeedingColors.includes(p.id) && !colorsByProduct?.has(p.id) && !colorsError;
           const batchColors = (!p.colors || p.colors.length === 0)
             ? colorsByProduct?.get(p.id)
             : undefined;
-          const enriched = batchColors && batchColors.length > 0
-            ? { ...p, colors: batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })) }
-            : p;
+          
+          const enriched = { 
+            ...p, 
+            colors: isHydrating 
+              ? undefined 
+              : (batchColors && batchColors.length > 0
+                  ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
+                  : p.colors)
+          };
           return (
           <ProductCardWrapper
             key={p.id}
