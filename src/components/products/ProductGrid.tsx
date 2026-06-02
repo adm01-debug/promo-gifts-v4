@@ -257,7 +257,7 @@ export const ProductGrid = memo(function ProductGrid({
     () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
     [products],
   );
-  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+  const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
 
   return (
     <div
@@ -274,7 +274,7 @@ export const ProductGrid = memo(function ProductGrid({
           />
         ) : (() => {
           const p = product as Product;
-          const isHydrating = idsNeedingColors.includes(p.id) && !colorsByProduct?.has(p.id);
+          const isHydrating = idsNeedingColors.includes(p.id) && !colorsByProduct?.has(p.id) && !colorsError;
           const batchColors = (!p.colors || p.colors.length === 0)
             ? colorsByProduct?.get(p.id)
             : undefined;
