@@ -42,10 +42,10 @@ export const STOCK_FILTER_OPTIONS: StockFilterOption[] = [
 
 export const SORT_OPTIONS = [
   { value: 'name', label: 'Nome (A-Z)' },
-  { value: 'price-asc', label: 'Menor Preço' },
-  { value: 'price-desc', label: 'Maior Preço' },
-  { value: 'newest', label: 'Lançamentos' },
+  { value: 'price-asc', label: 'Preço (Menor → Maior)' },
+  { value: 'price-desc', label: 'Preço (Maior → Menor)' },
+  { value: 'newest', label: 'Mais Recentes' },
   { value: 'stock', label: 'Maior Estoque' },
-  { value: 'best-seller-supplier', label: '+ Vendidos (Indústria)' },
-  { value: 'best-seller-promo', label: '+ Vendidos (Promo)' },
+  { value: 'best-seller-supplier', label: '+ Vendidos Fornecedores' },
+  { value: 'best-seller-promo', label: '+ Vendidos Promo Brindes' },
 ];
