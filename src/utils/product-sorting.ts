@@ -17,8 +17,9 @@ export function sortProducts(
 
   switch (sortBy) {
     case 'name':
-      products.sort((a, b) => a.name.localeCompare(b.name));
+      products.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       break;
+
     case 'price-asc':
       products.sort((a, b) => a.price - b.price);
       break;
@@ -35,7 +36,8 @@ export function sortProducts(
         if (bTime !== aTime) return bTime - aTime;
         // Se datas iguais, prioriza os que têm flag newArrival
         if (b.newArrival !== a.newArrival) return b.newArrival ? 1 : -1;
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
+
       });
       break;
     case 'best-seller-supplier': {
@@ -52,7 +54,8 @@ export function sortProducts(
           const aVel = aEntry?.velocity7d ?? 0;
           const bVel = bEntry?.velocity7d ?? 0;
           if (bVel !== aVel) return bVel - aVel;
-          return a.name.localeCompare(b.name);
+          return (a.name || '').localeCompare(b.name || '');
+
         });
       } else {
         // Fallback: flags do produto (quando MV nao populada)
@@ -64,7 +67,8 @@ export function sortProducts(
           const aStock = a.stock || 0;
           const bStock = b.stock || 0;
           if (bStock !== aStock) return bStock - aStock;
-          return a.name.localeCompare(b.name);
+          return (a.name || '').localeCompare(b.name || '');
+
         });
       }
       break;
@@ -85,7 +89,7 @@ export function sortProducts(
         const aCount = map?.get(a.id) || 0;
         const bCount = map?.get(b.id) || 0;
         if (bCount !== aCount) return bCount - aCount;
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       });
       break;
     default:
