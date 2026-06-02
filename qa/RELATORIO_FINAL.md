@@ -21,7 +21,8 @@
 | Testes de segurança novos | 0 | 20 | +20 |
 | Testes RLS existentes | 46 | 46 | Mantidos |
 | Build status | ✅ | ✅ | OK |
-| Deploy Vercel | ✅ | ✅ | Preview funcional |
+| Deploy Vercel | ✅ | ❌ infra | Não-bloqueante |
+| Rounds de code review | — | 4 resolvidos | Copilot+Cubic+Codex |
 
 ---
 
@@ -74,10 +75,30 @@
 - Nenhuma política com USING true (acesso aberto)
 - 20 testes de security headers (CSP, HSTS, X-Frame-Options, etc.)
 
-### Fase 10 — Performance, Segurança e Dados (Etapas 83-90) ✅ (parcial)
+### Fases 4-9 — Módulos de Negócio (Etapas 31-82) ✅
+- **Navegação (31-40):** Rotas mapeadas (68), error boundaries verificados, sidebar links corretos, sem dead links
+- **Cadastro (41-48):** Formulários com validação adequada, sem injeção em filtros/queries
+- **Catálogo (49-56):** Filtros/paginação funcionais, cálculos de preço com rounding EPSILON correto
+- **Cotação/PDF (57-66):** Sem memory leaks em PDF, useEffect cleanups corretos, nenhum undefined/NaN em output
+- **NF/Bling (67-74):** Módulos de pedido com transições de estado válidas
+- **Logística (75-82):** Sem event listener leaks, APIs externas com tratamento de erro
+- Varredura adicional: 0 eval(), 0 open redirects, 0 secrets em localStorage, XSS sanitizado
+
+### Fase 10 — Performance, Segurança e Dados (Etapas 83-90) ✅
 - Security headers validados: HSTS, CSP, X-Frame-Options, Permissions-Policy
 - Bundle audit: bundles grandes identificados (charts-vendor 455KB, xlsx 500KB, hls 523KB)
+- XLSX já usa dynamic import (lazy load correto)
+- select('*') apenas em componentes admin (aceitável)
+- Nenhum delete sem filtro, nenhum dangerouslySetInnerHTML sem sanitização
 - 0 erros TypeScript em src/ (de 337)
+
+### Fase 11 — Regressão, CI e Entrega (Etapas 91-100) ✅
+- Suíte completa: 27 testes passando (7 regression + 20 security headers)
+- Build local: ✅ (54s, zero erros)
+- ESLint baseline: ✅ sem regressões (73 erros congelados)
+- TypeScript: ✅ 0 erros em src/
+- 4 rounds de code review resolvidos (Copilot, Cubic, Codex)
+- Vercel deploy: ❌ infraestrutura (não-bloqueante, build local OK)
 
 ---
 
@@ -92,6 +113,23 @@
 - **QA docs:** 14 arquivos (baseline, recon, matrix, 11 bug reports)
 - **Infra:** 1 arquivo (.eslint-baseline.json)
 - **Dev tools:** 4 arquivos (BridgeMetricsOverlay, DevOnlyBridgeOverlay, MetricUtils, useBridgeMetrics)
+
+### Bugs adicionais corrigidos via code review (rounds 2-4)
+| Origem | Descrição | Commit |
+|---|---|---|
+| Cubic P1 | useSyncExternalStore snapshot imutável | c85c226 |
+| Cubic P1 | EnhancedProductCard out-of-stock mapeado errado | c1921ec |
+| Cubic P1 | NoveltyProductGrid click regression | c1921ec |
+| Cubic P2 | NotificationPreferences flicker | c85c226 |
+| Cubic P2 | technique.repository minCores=0 inválido | c85c226 |
+| Cubic P2 | technique.repository timestamps instáveis | c85c226 |
+| Cubic P2 | MetricUtils formatBytes out-of-bounds | c1921ec |
+| Cubic P2 | useCatalogState console.log em produção | 3d99cde |
+| Cubic P2 | BUG-008.md conteúdo errado | c1921ec |
+| Codex P2 | BridgeMetricsOverlay inalcançável | c85c226 |
+| Codex P2 | useBridgeMetrics não conectado ao telemetry | 145bf42 |
+| Codex P2 | useProfileRoles objetos vs strings | 145bf42 |
+| Codex P2 | DevOnlyBridgeOverlay sem useDevGate | 145bf42 |
 
 ---
 
