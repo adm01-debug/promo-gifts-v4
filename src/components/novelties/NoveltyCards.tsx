@@ -148,6 +148,11 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       <div className="flex flex-col gap-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-tight">{p?.name ?? '—'}</p>
         <p className="text-xs text-muted-foreground">{p?.sku ?? '—'}</p>
+        {colors && colors.length > 0 && (
+          <div className="mt-0.5">
+            <ProductColorSwatches colors={colors} max={5} size="sm" />
+          </div>
+        )}
         {p?.sale_price != null && (
           <p className="text-sm font-semibold text-primary">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
