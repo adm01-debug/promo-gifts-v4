@@ -102,8 +102,6 @@ export const ProductCard = memo(
   ) {
     const navigate = useNavigate();
     const { prefetchProduct } = usePrefetchProduct();
-    // Categoria-FOLHA (mais específica) resolvida em lote pelo ProductLeafCategoryProvider.
-    // Quando disponível, sobrepõe a categoria "rasa" (raiz/intermediária) no badge.
     const leafCategory = useLeafCategory(product.id);
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -137,7 +135,7 @@ export const ProductCard = memo(
         prevFilterKeyRef.current = filterKey;
       }
     }, [filterKey]);
-    
+
     // Multi-variant carousel (hoisted before useEffect that depends on it)
     const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
 
@@ -145,11 +143,8 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
-    // Multi-variant carousel — moved above useEffect to avoid TDZ
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        // Prioridade: Seleção manual > Filtro ativo
         const targetColor = selectedColorFromStore || getActiveColorName(product, activeColorFilter);
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
@@ -353,13 +348,10 @@ export const ProductCard = memo(
         }
         onMouseEnter={() => {
           setIsHovered(true);
-          // Telemetry for analytics (popular products)
           telemetryService.logUXAction('product_hover', {
             productId: product.id,
             name: product.name,
           });
-
-          // Prefetch product details when hovering to make "click to open" instant
           prefetchProduct(product.id);
         }}
         onMouseLeave={() => {
@@ -389,13 +381,11 @@ export const ProductCard = memo(
             return;
           }
 
-          // Use provided onClick if available, otherwise default to navigation
           if (onClick) {
             onClick();
             return;
           }
 
-          // Default navigation
           if (currentVariant?.name) {
             const params = new URLSearchParams();
             params.set('cor', currentVariant.name);
@@ -510,14 +500,12 @@ export const ProductCard = memo(
             hideWhenEmpty={false}
             selectedName={activeColorName ?? null}
             onSelect={(c) => {
-              // Reflete a escolha no estado local (índice do carrossel multi-variante)
-              // E na URL navegando ao PDP com ?cor=&hex=&grupo=.
               const idx = allMatchingVariants.findIndex(
                 (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
               );
               if (idx >= 0) {
                 setActiveVariantIdx(idx);
-                setSelectedColor(product.id, c.name); // Persiste seleção p/ quando voltar do PDP
+                setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
               }
               const params = new URLSearchParams();
