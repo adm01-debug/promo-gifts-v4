@@ -7,8 +7,10 @@ import { useAriaLive } from '@/components/a11y';
 interface ScrollToTopButtonProps {
   threshold?: number;
   className?: string;
-  /** Offset from bottom (default 6) */
+  /** Offset from bottom (default 1.5rem / 24px) */
   bottomOffset?: number | string;
+  /** Opcional: container que está sendo scrollado. Se omitido, usa a window. */
+  containerRef?: React.RefObject<HTMLElement>;
 }
 
 export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButtonProps>(
