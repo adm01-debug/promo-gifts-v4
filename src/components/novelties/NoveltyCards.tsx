@@ -17,6 +17,7 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
+import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 
 interface NoveltyCardProps {
@@ -25,6 +26,7 @@ interface NoveltyCardProps {
   isSelected?: boolean;
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
+  colors?: readonly ColorDotLike[];
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
