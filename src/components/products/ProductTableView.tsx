@@ -23,7 +23,11 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ExternalVariantStock, type Product } from '@/hooks/products';
+// FIX: TDZ crash — barrel import '@/hooks/products' created circular dependency
+// causing 'Cannot access L before initialization' at runtime.
+// Direct imports break the cycle.
+import type { Product } from '@/types/product-catalog';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
