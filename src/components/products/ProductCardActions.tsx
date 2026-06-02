@@ -124,7 +124,7 @@ export const ProductCardActions = memo(function ProductCardActions({
         {/* Collection */}
         <ActionButton
           icon={FolderPlus}
-          label="Adicionar à coleção"
+          label="Coleção"
           className={btnClass}
           testId="product-card-collection"
           onClick={(e) => {
@@ -179,7 +179,7 @@ export const ProductCardActions = memo(function ProductCardActions({
         {/* Quick View */}
         <ActionButton
           icon={Eye}
-          label="Visualização Rápida"
+          label="Quick View"
           shortcut="Q"
           className={btnClass}
           testId="product-card-quickview"
