@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 interface DeviceInfo {
   fingerprint: string;
@@ -121,8 +122,7 @@ export function useDeviceDetection(targetUserId?: string) {
   const getKnownDevices = useCallback(async () => {
     if (!effectiveUserId) return [];
 
-    const { data, error } = await supabase
-      .from('user_known_devices')
+    const { data, error } = await untypedFrom('user_known_devices')
       .select('*')
       .eq('user_id', effectiveUserId)
       .order('last_seen_at', { ascending: false });
@@ -139,8 +139,7 @@ export function useDeviceDetection(targetUserId?: string) {
     async (deviceId: string): Promise<boolean> => {
       if (!effectiveUserId) return false;
 
-      const { error } = await supabase
-        .from('user_known_devices')
+      const { error } = await untypedFrom('user_known_devices')
         .delete()
         .eq('id', deviceId)
         .eq('user_id', effectiveUserId);
@@ -159,8 +158,7 @@ export function useDeviceDetection(targetUserId?: string) {
     async (deviceId: string): Promise<boolean> => {
       if (!effectiveUserId) return false;
 
-      const { error } = await supabase
-        .from('user_known_devices')
+      const { error } = await untypedFrom('user_known_devices')
         .update({ is_trusted: true })
         .eq('id', deviceId)
         .eq('user_id', effectiveUserId);

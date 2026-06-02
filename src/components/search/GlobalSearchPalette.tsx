@@ -124,7 +124,14 @@ export function GlobalSearchPalette() {
 
   // Guards defensivos
   const safeHistory = s.history ?? [];
-  const safePopularProducts = s.popularProducts ?? [];
+  const safePopularProducts = (s.popularProducts ?? []) as Array<{
+    id: string;
+    name: string;
+    sku: string;
+    view_count: number;
+    image_url?: string;
+    category_name?: string;
+  }>;
   const safeContextualSuggestions = s.contextualSuggestions ?? [];
   const safeQuickSuggestions = s.quickSuggestions ?? [];
   const safeRouteContext = s.routeContext ?? { section: '' };

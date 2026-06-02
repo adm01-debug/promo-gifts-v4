@@ -13,6 +13,7 @@
  *   3. (rest-native.ts) table_code_option fixed to 'codigo_curto' (was 'codigo_tabela')
  */
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
 
@@ -248,8 +249,8 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
   const countOpt =
     options.countMode && options.countMode !== 'none' ? options.countMode : undefined;
   let query = countOpt
-    ? supabase.from(table).select(remappedSelect, { count: countOpt, head: false })
-    : supabase.from(table).select(remappedSelect);
+    ? untypedFrom(table).select(remappedSelect, { count: countOpt, head: false })
+    : untypedFrom(table).select(remappedSelect);
 
   if (searchTerm) {
     const searchCol = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];

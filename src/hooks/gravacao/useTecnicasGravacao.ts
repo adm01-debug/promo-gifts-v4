@@ -26,8 +26,8 @@
 //          → PostgREST 400 Bad Request
 //   DEPOIS: slug removido do insert (campo não existe na tabela)
 
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import type {
   TecnicaGravacao,
   TecnicaGravacaoFormData,
@@ -47,11 +47,10 @@ export function useTecnicasGravacao() {
       // FIX BUG-TEC-01: buscar faixas em paralelo com técnicas
       // antes buscava tpgo duas vezes (sem utilidade)
       const [tecnicasResult, faixasResult] = await Promise.all([
-        supabase
-          .from('tabela_preco_gravacao_oficial')
+        untypedFrom('tabela_preco_gravacao_oficial')
           .select('*')
           .order('nome', { ascending: true }),
-        supabase.from('tabela_preco_gravacao_oficial_faixa').select('tabela_preco_gravacao_id'), // só o FK — evita baixar 884 rows completos
+        untypedFrom('tabela_preco_gravacao_oficial_faixa').select('tabela_preco_gravacao_id'), // só o FK — evita baixar 884 rows completos
       ]);
 
       if (tecnicasResult.error) {
@@ -98,8 +97,7 @@ export function useTecnicasGravacao() {
       // FIX BUG-TEC-05: removido {slug} do insert
       // tabela_preco_gravacao_oficial NÃO tem coluna 'slug'
       // (inserir campo inexistente → PostgREST 400)
-      const { data, error } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data, error } = await untypedFrom('tabela_preco_gravacao_oficial')
         .insert(formData)
         .select()
         .single();
@@ -120,8 +118,7 @@ export function useTecnicasGravacao() {
       id,
       ...updates
     }: Partial<TecnicaGravacaoFormData> & { id: string }): Promise<TecnicaGravacao> => {
-      const { data, error } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { data, error } = await untypedFrom('tabela_preco_gravacao_oficial')
         .update(updates)
         .eq('id', id)
         .select()
@@ -142,8 +139,7 @@ export function useTecnicasGravacao() {
     mutationFn: async (id: string): Promise<void> => {
       // FIX BUG-TEC-04: verificar FAIXAS vinculadas antes de deletar
       // antes verificava count da própria tabela (dead code — sempre ≥ 1)
-      const { count: faixasCount, error: faixasError } = await supabase
-        .from('tabela_preco_gravacao_oficial_faixa')
+      const { count: faixasCount, error: faixasError } = await untypedFrom('tabela_preco_gravacao_oficial_faixa')
         .select('id', { count: 'exact', head: true })
         .eq('tabela_preco_gravacao_id', id);
 
@@ -156,7 +152,7 @@ export function useTecnicasGravacao() {
         );
       }
 
-      const { error } = await supabase.from('tabela_preco_gravacao_oficial').delete().eq('id', id);
+      const { error } = await untypedFrom('tabela_preco_gravacao_oficial').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -170,8 +166,7 @@ export function useTecnicasGravacao() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }): Promise<void> => {
-      const { error } = await supabase
-        .from('tabela_preco_gravacao_oficial')
+      const { error } = await untypedFrom('tabela_preco_gravacao_oficial')
         .update({ ativo })
         .eq('id', id);
       if (error) throw error;
@@ -211,9 +206,8 @@ export function useTecnicaGravacao(id: string | undefined) {
       // antes: .from('tpgo').eq('id',id).order('ordem_exibicao') — coluna inexistente → 400
       // depois: .from('tpgo_faixa').eq('tabela_preco_gravacao_id',id).order('ordem')
       const [tecnicaResult, faixasResult] = await Promise.all([
-        supabase.from('tabela_preco_gravacao_oficial').select('*').eq('id', id).single(),
-        supabase
-          .from('tabela_preco_gravacao_oficial_faixa')
+        untypedFrom('tabela_preco_gravacao_oficial').select('*').eq('id', id).single(),
+        untypedFrom('tabela_preco_gravacao_oficial_faixa')
           .select('*')
           .eq('tabela_preco_gravacao_id', id)
           .order('ordem', { ascending: true }),

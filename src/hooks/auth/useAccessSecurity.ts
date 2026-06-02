@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface IpWhitelistEntry {
   id: string;
@@ -60,24 +60,20 @@ export function useAccessSecurity() {
     setIsLoading(true);
     try {
       const [settingsRes, ipsRes, countriesRes, logsRes] = await Promise.all([
-        supabase
-          .from('access_security_settings')
+        untypedFrom('access_security_settings')
           .select(
             'id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes',
           )
           .limit(1)
           .single(),
-        supabase
-          .from('ip_access_control')
+        untypedFrom('ip_access_control')
           .select('id, ip_address, list_type, reason, expires_at, created_at')
           .eq('list_type', 'allowlist')
           .order('created_at', { ascending: false }),
-        supabase
-          .from('geo_allowed_countries')
+        untypedFrom('geo_allowed_countries')
           .select('id, country_code, country_name, is_active, created_at')
           .order('country_name', { ascending: true }),
-        supabase
-          .from('rls_denial_log')
+        untypedFrom('rls_denial_log')
           .select(
             'id, user_email, ip_address, error_message, operation, table_name, user_agent, created_at',
           )
@@ -125,8 +121,7 @@ export function useAccessSecurity() {
 
   const updateSettings = async (updates: Partial<AccessSecuritySettings>) => {
     if (!settings) return;
-    const { error } = await supabase
-      .from('access_security_settings')
+    const { error } = await untypedFrom('access_security_settings')
       .update(updates)
       .eq('id', settings.id);
     if (error) {
@@ -138,8 +133,7 @@ export function useAccessSecurity() {
   };
 
   const addIp = async (ipAddress: string, reason?: string) => {
-    const { data, error } = await supabase
-      .from('ip_access_control')
+    const { data, error } = await untypedFrom('ip_access_control')
       .insert({ ip_address: ipAddress, list_type: 'allowlist', reason: reason || null })
       .select('id, ip_address, list_type, reason, expires_at, created_at')
       .single();
@@ -166,7 +160,7 @@ export function useAccessSecurity() {
   };
 
   const removeIp = async (id: string) => {
-    const { error } = await supabase.from('ip_access_control').delete().eq('id', id);
+    const { error } = await untypedFrom('ip_access_control').delete().eq('id', id);
     if (error) {
       toast.error('Erro ao remover IP');
       return;
@@ -177,7 +171,7 @@ export function useAccessSecurity() {
 
   const toggleIp = async (id: string, isActive: boolean) => {
     const expires_at = isActive ? null : new Date(0).toISOString();
-    const { error } = await supabase.from('ip_access_control').update({ expires_at }).eq('id', id);
+    const { error } = await untypedFrom('ip_access_control').update({ expires_at }).eq('id', id);
     if (error) {
       toast.error('Erro ao atualizar IP');
       return;
@@ -188,8 +182,7 @@ export function useAccessSecurity() {
   };
 
   const addCountry = async (countryCode: string, countryName: string) => {
-    const { data, error } = await supabase
-      .from('geo_allowed_countries')
+    const { data, error } = await untypedFrom('geo_allowed_countries')
       .insert({ country_code: countryCode, country_name: countryName })
       .select()
       .single();
@@ -204,7 +197,7 @@ export function useAccessSecurity() {
   };
 
   const removeCountry = async (id: string) => {
-    const { error } = await supabase.from('geo_allowed_countries').delete().eq('id', id);
+    const { error } = await untypedFrom('geo_allowed_countries').delete().eq('id', id);
     if (error) {
       toast.error('Erro ao remover país');
       return;
@@ -214,8 +207,7 @@ export function useAccessSecurity() {
   };
 
   const toggleCountry = async (id: string, isActive: boolean) => {
-    const { error } = await supabase
-      .from('geo_allowed_countries')
+    const { error } = await untypedFrom('geo_allowed_countries')
       .update({ is_active: isActive })
       .eq('id', id);
     if (error) {

@@ -490,7 +490,7 @@ export function useMockupGenerator() {
     async (url?: string) => {
       const mockupUrl = url || generatedMockup;
       if (!mockupUrl) return;
-      await downloadMockupAsPdf(mockupUrl, selectedProduct?.sku, selectedTechnique?.name);
+      await downloadMockupAsPdf(mockupUrl, { sku: selectedProduct?.sku ?? null }, selectedTechnique as { name: string; code?: string });
     },
     [generatedMockup, selectedProduct, selectedTechnique],
   );

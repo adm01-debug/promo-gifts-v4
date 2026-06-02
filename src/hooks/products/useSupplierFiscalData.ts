@@ -5,8 +5,8 @@
  * INHERITANCE: If no VSS record exists, falls back to supplier_branches defaults.
  * OVERRIDE: saveFiscalOverride() creates/updates VSS records to override inherited data.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useCallback } from 'react';
 import { logger } from '@/lib/logger';
 
@@ -126,8 +126,7 @@ export function useSupplierFiscalData(
       if (!productId || !supplierId) return null;
 
       // 1. First get variant IDs for this product to scope the VSS query
-      const variantsResult = await supabase
-        .from('product_variants')
+      const variantsResult = await untypedFrom('product_variants')
         .select('id')
         .eq('product_id', productId)
         .limit(200);
@@ -142,8 +141,7 @@ export function useSupplierFiscalData(
         const variantIds = variantsResult.data.map((v) => v.id);
 
         for (const variantId of variantIds.slice(0, 5)) {
-          const vssResult = await supabase
-            .from('variant_supplier_sources')
+          const vssResult = await untypedFrom('variant_supplier_sources')
             .select(
               'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
             )
@@ -169,8 +167,7 @@ export function useSupplierFiscalData(
         let branchData: Partial<BranchRecord> = {};
         if (vss.supplier_branch_id) {
           try {
-            const branchResult = await supabase
-              .from('supplier_branches')
+            const branchResult = await untypedFrom('supplier_branches')
               .select(BRANCH_SELECT)
               .eq('id', vss.supplier_branch_id)
               .limit(1);
@@ -206,8 +203,7 @@ export function useSupplierFiscalData(
 
       // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults
       try {
-        const branchesResult = await supabase
-          .from('supplier_branches')
+        const branchesResult = await untypedFrom('supplier_branches')
           .select(BRANCH_SELECT)
           .eq('supplier_id', supplierId)
           .eq('is_active', true)
@@ -251,8 +247,7 @@ export function useSupplierFiscalData(
             productId,
           );
           try {
-            const createResult = await supabase
-              .from('product_variants')
+            const createResult = await untypedFrom('product_variants')
               .insert({
                 product_id: productId,
                 sku: `DEFAULT-${productId.substring(0, 8)}`,
@@ -274,8 +269,7 @@ export function useSupplierFiscalData(
         }
 
         // Check if VSS record already exists
-        const existingResult = await supabase
-          .from('variant_supplier_sources')
+        const existingResult = await untypedFrom('variant_supplier_sources')
           .select('id')
           .eq('supplier_id', supplierId)
           .eq('variant_id', variantId)
@@ -294,16 +288,14 @@ export function useSupplierFiscalData(
 
         if (existingResult.data?.length) {
           // Update existing VSS
-          await supabase
-            .from('variant_supplier_sources')
+          await untypedFrom('variant_supplier_sources')
             .update(payload)
             .eq('id', existingResult.data[0].id);
         } else {
           // Fetch organization_id from an existing VSS record for this supplier
           let organizationId: string | null = null;
           try {
-            const orgResult = await supabase
-              .from('variant_supplier_sources')
+            const orgResult = await untypedFrom('variant_supplier_sources')
               .select('organization_id')
               .eq('supplier_id', supplierId)
               .limit(1);
@@ -315,7 +307,7 @@ export function useSupplierFiscalData(
           }
 
           // Create new VSS with supplier_branch_id from inherited data
-          await supabase.from('variant_supplier_sources').insert({
+          await untypedFrom('variant_supplier_sources').insert({
             ...payload,
             supplier_id: supplierId,
             variant_id: variantId,
@@ -347,15 +339,14 @@ export function useSupplierFiscalData(
       const variantId = currentData._variantId;
       if (!variantId) return false;
 
-      const vssResult = await supabase
-        .from('variant_supplier_sources')
+      const vssResult = await untypedFrom('variant_supplier_sources')
         .select('id')
         .eq('supplier_id', supplierId)
         .eq('variant_id', variantId)
         .limit(1);
 
       if (vssResult.data?.length) {
-        await supabase.from('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
+        await untypedFrom('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
       }
 
       await queryClient.invalidateQueries({ queryKey });

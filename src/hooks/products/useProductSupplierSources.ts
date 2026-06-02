@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { dbInvoke } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 
 export interface SupplierSource {
@@ -44,18 +45,14 @@ async function bridgeInvoke(body: Record<string, unknown>) {
   }
   const table = body.table as string;
   if (op === 'insert') {
-    const { data, error } = await (
-      await import('@/integrations/supabase/client')
-    ).supabase
-      .from(table)
+    const { data, error } = await untypedFrom(table)
       .insert(body.data as Record<string, unknown>)
       .select();
     if (error) throw new Error(error.message);
     return { success: true, data: { records: data ?? [], count: (data ?? []).length } };
   }
   if (op === 'update') {
-    const client = (await import('@/integrations/supabase/client')).supabase;
-    let q = client.from(table).update(body.data as Record<string, unknown>);
+    let q = untypedFrom(table).update(body.data as Record<string, unknown>);
     if (body.id)
       q = (q as unknown as { eq: (c: string, v: unknown) => typeof q }).eq(
         'id',
@@ -70,9 +67,7 @@ async function bridgeInvoke(body: Record<string, unknown>) {
     return { success: true, data: { records: data ?? [], count: (data ?? []).length } };
   }
   if (op === 'delete') {
-    const client = (await import('@/integrations/supabase/client')).supabase;
-    const { error } = await client
-      .from(table)
+    const { error } = await untypedFrom(table)
       .delete()
       .eq('id', body.id as string);
     if (error) throw new Error(error.message);

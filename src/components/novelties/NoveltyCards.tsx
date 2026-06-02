@@ -69,7 +69,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   onStatusClick,
   colors,
 }: NoveltyCardProps) {
-  const p = product.product;
   const fresh = product.days_remaining >= 25;
 
   return (
@@ -107,10 +106,10 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
-        {p?.primary_image_url ? (
+        {product.product_image ? (
           <img
-            src={p.primary_image_url}
-            alt={p.name}
+            src={product.product_image}
+            alt={product.product_name}
             className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
           />
@@ -146,15 +145,15 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Info */}
       <div className="flex flex-col gap-0.5">
-        <p className="line-clamp-2 text-sm font-medium leading-tight">{p?.name ?? '—'}</p>
-        <p className="text-xs text-muted-foreground">{p?.sku ?? '—'}</p>
+        <p className="line-clamp-2 text-sm font-medium leading-tight">{product.product_name ?? '—'}</p>
+        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
         <div className="mt-0.5">
           <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
         </div>
-        {p?.sale_price != null && (
+        {product.base_price != null && (
           <p className="text-sm font-semibold text-primary">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              p.sale_price,
+              product.base_price,
             )}
           </p>
         )}
@@ -172,7 +171,6 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   onStatusClick,
   colors,
 }: NoveltyCardProps) {
-  const p = product.product;
   const fresh = product.days_remaining >= 25;
 
   return (
@@ -209,10 +207,10 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {p?.primary_image_url ? (
+        {product.product_image ? (
           <img
-            src={p.primary_image_url}
-            alt={p.name}
+            src={product.product_image}
+            alt={product.product_name}
             className="h-full w-full object-contain"
             loading="lazy"
           />
@@ -246,19 +244,19 @@ export const NoveltyListCard = memo(function NoveltyListCard({
             />
           )}
         </div>
-        <p className="truncate text-sm font-medium">{p?.name ?? '—'}</p>
-        <p className="text-xs text-muted-foreground">{p?.sku ?? '—'}</p>
+        <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
+        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          {p?.category_name && (
+          {product.category_name && (
             <span className="flex items-center gap-0.5">
               <FolderTree className="h-3 w-3" />
-              {p.category_name}
+              {product.category_name}
             </span>
           )}
-          {p?.supplier_name && (
+          {product.supplier_name && (
             <span className="flex items-center gap-0.5">
               <Building2 className="h-3 w-3" />
-              {p.supplier_name}
+              {product.supplier_name}
             </span>
           )}
           <ProductColorSwatches colors={colors} max={5} size="xs" hideWhenEmpty={false} />
@@ -266,10 +264,10 @@ export const NoveltyListCard = memo(function NoveltyListCard({
       </div>
 
       {/* Price */}
-      {p?.sale_price != null && (
+      {product.base_price != null && (
         <span className="flex-shrink-0 text-sm font-semibold text-primary">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-            p.sale_price,
+            product.base_price,
           )}
         </span>
       )}
@@ -311,11 +309,10 @@ export function NoveltyTableView({
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const p = product.product;
             const isSelected = selectedIds.includes(product.product_id);
             return (
               <TableRow
-                key={product.id}
+                key={product.novelty_id}
                 className={cn(
                   'cursor-pointer transition-colors hover:bg-muted/50',
                   isSelected && 'bg-primary/5',
@@ -347,10 +344,10 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-muted/20">
-                      {p?.primary_image_url ? (
+                      {product.product_image ? (
                         <img
-                          src={p.primary_image_url}
-                          alt={p.name}
+                          src={product.product_image}
+                          alt={product.product_name}
                           className="h-full w-full object-contain"
                           loading="lazy"
                         />
@@ -360,11 +357,11 @@ export function NoveltyTableView({
                         </div>
                       )}
                     </div>
-                    <span className="line-clamp-1 text-sm font-medium">{p?.name ?? '—'}</span>
+                    <span className="line-clamp-1 text-sm font-medium">{product.product_name ?? '—'}</span>
                   </div>
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {p?.sku ?? '—'}
+                  {product.product_sku ?? '—'}
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-center">
                   <NoveltyBadge
@@ -374,9 +371,9 @@ export function NoveltyTableView({
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-sm font-medium">
-                  {p?.sale_price != null
+                  {product.base_price != null
                     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        p.sale_price,
+                        product.base_price,
                       )
                     : '—'}
                 </TableCell>
@@ -389,19 +386,19 @@ export function NoveltyTableView({
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {p?.category_name ?? '—'}
+                  {product.category_name ?? '—'}
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {p?.supplier_name ?? '—'}
+                  {product.supplier_name ?? '—'}
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-right text-sm">
                   <span
                     className={cn(
                       'font-medium',
-                      (p?.stock_quantity ?? 1) === 0 ? 'text-destructive' : 'text-foreground',
+                      product.stock_quantity === 0 ? 'text-destructive' : 'text-foreground',
                     )}
                   >
-                    {p?.stock_quantity ?? 0}
+                    {product.stock_quantity ?? 0}
                   </span>
                 </TableCell>
               </TableRow>

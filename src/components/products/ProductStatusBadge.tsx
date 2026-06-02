@@ -91,8 +91,6 @@ export function ProductStatusBadge({
         }
         return 'bg-brand-primary/80 text-brand-primary-foreground';
       }
-      case 'out-of-stock':
-        return 'bg-destructive text-destructive-foreground shadow-sm';
       case 'urgency':
         switch (urgencyType) {
           case 'limited-stock':
@@ -175,8 +173,6 @@ export function ProductStatusBadge({
             );
         }
         break;
-      case 'out-of-stock':
-        return <span>{value || 'Fora de estoque'}</span>;
     }
     return <span>{value}</span>;
   };

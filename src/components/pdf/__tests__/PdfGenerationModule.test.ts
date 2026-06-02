@@ -490,8 +490,8 @@ describe('downloadPDF', () => {
     } as unknown as HTMLAnchorElement;
 
     vi.spyOn(document, 'createElement').mockReturnValue(fakeLink as unknown as HTMLElement);
-    vi.spyOn(document.body, 'appendChild').mockImplementation(appendChildMock);
-    vi.spyOn(document.body, 'removeChild').mockImplementation(removeChildMock);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(appendChildMock as unknown as typeof document.body.appendChild);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(removeChildMock as unknown as typeof document.body.removeChild);
   });
 
   afterEach(() => {

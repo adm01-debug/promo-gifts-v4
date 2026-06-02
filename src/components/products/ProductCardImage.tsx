@@ -115,7 +115,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   const newArrival = product.newArrival;
   const isKit = product.isKit;
   const onSale = product.onSale;
-  const stockStatus: 'ok' | 'low' | 'critical' | 'unavailable' =
+  const stockStatus: 'ok' | 'low' | 'unavailable' =
     product.stockStatus === 'out-of-stock'
       ? 'unavailable'
       : product.stockStatus === 'low-stock'
@@ -227,11 +227,11 @@ export const ProductCardImage = memo(function ProductCardImage({
           </Badge>
         )}
 
-        {(stockStatus === 'low' || stockStatus === 'critical') && (
+        {stockStatus === 'low' && (
           <ProductStatusBadge
             type="urgency"
-            urgencyType={stockStatus}
-            value={stockStatus === 'critical' ? 'Crítico' : 'Baixo'}
+            urgencyType="limited-stock"
+            value="Baixo"
             size="sm"
             onClick={() => onStatusClick?.('urgency')}
           />
