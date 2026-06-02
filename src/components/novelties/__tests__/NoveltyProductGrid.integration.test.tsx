@@ -158,12 +158,14 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     
     await waitFor(() => {
       expect(screen.queryByText('Caneta B')).toBeNull();
-      expect(screen.getByText('Caneta A')).toBeDefined();
-      // Badge should show 1/2
-      expect(screen.getByText('1')).toBeDefined();
-      expect(screen.getByText('/2')).toBeDefined();
+      expect(screen.getByText('Caneta A')).toBeInTheDocument();
+      // Use data-testid or specific role/class if possible.
+      // The badge has "tabular-nums" and contains "1/2" as text nodes
+      const badge = document.querySelector('.tabular-nums');
+      expect(badge?.textContent).toMatch(/1\/2/);
     });
   });
+
 
   it('sorts locally by price-asc', async () => {
     render(<NoveltyProductGrid />, { wrapper });
