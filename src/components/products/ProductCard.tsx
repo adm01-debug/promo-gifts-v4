@@ -484,6 +484,24 @@ export const ProductCard = memo(
             max={6}
             size="sm"
             hideWhenEmpty={false}
+            selectedName={activeColorName ?? null}
+            onSelect={(c) => {
+              // Reflete a escolha no estado local (índice do carrossel multi-variante)
+              // E na URL navegando ao PDP com ?cor=&hex=&grupo=.
+              const idx = allMatchingVariants.findIndex(
+                (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
+              );
+              if (idx >= 0) {
+                setActiveVariantIdx(idx);
+                setImageLoaded(false);
+              }
+              const params = new URLSearchParams();
+              params.set('cor', c.name);
+              if (c.hex) params.set('hex', c.hex);
+              const matched = idx >= 0 ? allMatchingVariants[idx] : null;
+              if (matched?.groupSlug) params.set('grupo', matched.groupSlug);
+              navigate(`/produto/${product.id}?${params.toString()}`);
+            }}
           />
 
           {(() => {
