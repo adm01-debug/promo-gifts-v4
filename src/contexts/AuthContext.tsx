@@ -201,11 +201,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (cancelled) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
+          // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
+          // recovery antes de hidratar dados/papéis com um token quebrado.
+          try {
+            const { error: getUserError } = await supabase.auth.getUser();
+            if (isBadJwtError(getUserError)) {
+              await recoverSession('boot:getUser');
+              return;
+            }
+          } catch {
+            /* getUser falhou por rede — segue fluxo normal */
+          }
           fetchUserData(session.user.id);
           fetchAAL();
         } else {
