@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
@@ -75,6 +75,13 @@ export function AIMockupAssistant({
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -90,8 +97,10 @@ export function AIMockupAssistant({
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    // Simulate AI response — cancel any previously pending timer first
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
       const responses = [
         `Para ${productName || 'este produto'}, recomendo posicionar a logo no centro superior, deixando margem de 2cm das bordas.`,
         `A técnica ${techniqueName || 'escolhida'} funciona melhor com logos simplificados. Considere reduzir o número de cores para melhores resultados.`,
@@ -112,6 +121,8 @@ export function AIMockupAssistant({
   };
 
   const handleQuickAction = (action: QuickAction) => {
+    if (isLoading) return;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -129,7 +140,9 @@ export function AIMockupAssistant({
       tips: '3 dicas rápidas: 1) Sempre peça aprovação visual antes de produzir, 2) Considere como a peça será usada, 3) Teste o contraste logo/produto.',
     };
 
-    setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -253,6 +266,7 @@ export function AIMockupAssistant({
                               variant="secondary"
                               size="sm"
                               className="h-7 gap-1 px-2 text-xs"
+                              disabled={isLoading}
                               onClick={() => handleQuickAction(action)}
                             >
                               <action.icon className="h-3 w-3" />

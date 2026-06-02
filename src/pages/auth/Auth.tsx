@@ -171,9 +171,12 @@ export default function Auth() {
   const navigatedRef = useRef(false);
   useEffect(() => {
     if (user && !authLoading && !isSubmitting && !navigatedRef.current) {
-      navigatedRef.current = true;
       const target = resolveRedirectTargetCb();
-      setTimeout(() => navigate(target, { replace: true }), 100);
+      const timer = setTimeout(() => {
+        navigatedRef.current = true;
+        navigate(target, { replace: true });
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
