@@ -39,7 +39,6 @@ export default defineConfig({
       name: 'chromium-public',
       use: { 
         viewport: { width: 1280, height: 720 },
-        executablePath: '/bin/chromium',
       },
       testIgnore: [/auth\.setup\.ts/],
     },
