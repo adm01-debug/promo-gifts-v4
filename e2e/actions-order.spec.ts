@@ -25,23 +25,14 @@ test.describe('Product Actions Order and Tooltips', () => {
     // Select the first product action container
     const actionContainer = page.locator('.group .flex.shrink-0.items-center.gap-0.5').first();
     
-    // Check tooltips/aria-labels in order
-    // Since some are inside sm:flex wrappers, we target all buttons/tooltips within that container
-    const actionButtons = actionContainer.locator('button, .h-8.w-8');
+    // Check aria-labels in order
+    // We expect the direct buttons or the buttons inside div.hidden.sm:flex
+    // Using a more robust selector that finds all buttons within the container, regardless of nesting
+    const buttons = actionContainer.locator('button');
     
-    // Verification of labels (this might need adjustments based on how Tooltip triggers render)
-    // We'll check the aria-label of the buttons
     for (let i = 0; i < expectedOrder.length; i++) {
-      const btn = actionButtons.nth(i);
-      // Skip if button is not visible (mobile hidden)
-      if (await btn.isVisible()) {
-        const ariaLabel = await btn.getAttribute('aria-label');
-        if (ariaLabel) {
-          // Some might be "Adicionar à coleção" but we standardized to "Coleção"
-          // Let's check if it contains or matches
-          // Note: Carrinho (QuickAddToQuote) might not have aria-label yet if not updated
-        }
-      }
+      const btn = buttons.nth(i);
+      await expect(btn).toHaveAttribute('aria-label', expectedOrder[i].label);
     }
   });
 
