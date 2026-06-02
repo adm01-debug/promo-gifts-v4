@@ -256,7 +256,7 @@ export const CatalogContent = memo(function CatalogContent({
         totalCount={totalEstimate || filteredProducts.length}
       />
 
-      <ScrollToTopButton className="fixed bottom-6 right-6 z-50" />
+      <ScrollToTopButton className="fixed bottom-6 right-6 z-[60]" />
     </div>
   );
 });

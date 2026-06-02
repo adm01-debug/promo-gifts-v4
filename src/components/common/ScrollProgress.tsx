@@ -118,7 +118,7 @@ export const ScrollToTopButton = forwardRef<
       data-testid="scroll-to-top"
       type="button"
       className={cn(
-        'fixed bottom-20 right-4 z-30 rounded-full p-3 lg:bottom-6 lg:right-6',
+        'fixed bottom-6 right-6 z-[60] rounded-full p-3 transition-all duration-300',
         'bg-primary text-primary-foreground shadow-lg',
         'hover:scale-105 hover:shadow-xl active:scale-95',
         'transition-[opacity,transform] duration-200',
