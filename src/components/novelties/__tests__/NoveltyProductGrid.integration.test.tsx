@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
+
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { NoveltyProductGrid } from '../NoveltyProductGrid';
 import { BrowserRouter } from 'react-router-dom';
@@ -101,7 +103,22 @@ vi.mock('@/components/products/LayoutPopover', () => ({
   LayoutPopover: () => null,
 }));
 
+// Mock Virtualized Grid to render synchronously
+vi.mock('../VirtualizedNoveltyGrid', () => ({
+  VirtualizedNoveltyGrid: ({ products, onProductClick, selectionMode, selectedIds, onToggleSelect }: any) => (
+    <div data-testid="mock-virtualized-grid">
+      {products.map((p: any) => (
+        <div key={p.novelty_id} role="listitem">
+          <h3>{p.product_name}</h3>
+          <span>R$ {p.base_price}</span>
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
 const queryClient = new QueryClient({
+
   defaultOptions: { queries: { retry: false } },
 });
 
@@ -123,8 +140,9 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
   it('renders products and shows correct count badge', () => {
     render(<NoveltyProductGrid />, { wrapper });
     
-    expect(screen.getByText('Caneta A')).toBeDefined();
-    expect(screen.getByText('Caneta B')).toBeDefined();
+    expect(screen.getByText('Caneta A')).toBeInTheDocument();
+    expect(screen.getByText('Caneta B')).toBeInTheDocument();
+
     
     // Count badge should show 2
     const badge = screen.getByText('2');
