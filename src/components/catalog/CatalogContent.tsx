@@ -1,23 +1,11 @@
-import { memo, useMemo, useCallback, type RefObject, lazy, Suspense } from 'react';
+import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-// FIX: lazy-load ALL catalog view components to break circular chunk dependency.
-// The cycle was: index chunk → CatalogContent → ProductGrid/ProductCard chunk → index chunk.
-// ProductCard imports utilities (cn, Tooltip, Skeleton, query config) from the index chunk,
-// while the index chunk imports CatalogContent which statically imported ProductGrid.
-// Making all three views lazy forces Vite to create separate async chunks,
-// completely breaking the circular module evaluation order.
-const LazyProductGrid = lazy(() =>
-  import('@/components/products/ProductGrid').then(m => ({ default: m.ProductGrid }))
-);
-const LazyProductList = lazy(() =>
-  import('@/components/products/ProductList').then(m => ({ default: m.ProductList }))
-);
-const LazyProductTableView = lazy(() =>
-  import('@/components/products/ProductTableView').then(m => ({ default: m.ProductTableView }))
-);
+import { ProductGrid } from '@/components/products/ProductGrid';
+import { ProductList } from '@/components/products/ProductList';
+import { ProductTableView } from '@/components/products/ProductTableView';
 import {
   ProductCardSkeleton,
   ProductGridSkeleton,
@@ -32,6 +20,9 @@ import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
 import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
+
+// Diagnostic counter
+let catalogRenderCount = 0;
 
 interface CatalogContentProps {
   viewMode: ViewMode;
@@ -96,6 +87,8 @@ export const CatalogContent = memo(function CatalogContent({
   setActiveProductId: _setActiveProductId,
   hideCategoryBadges = false,
 }: CatalogContentProps) {
+  catalogRenderCount++;
+
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
@@ -162,91 +155,71 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div
+    <div 
       className={cn(
-        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
-        isLoadingMore && 'opacity-80 transition-opacity',
+        "relative space-y-8 pb-12 duration-500 animate-in fade-in",
+        isLoadingMore && "opacity-80 transition-opacity"
       )}
     >
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
           {viewMode === 'grid' && (
-            <Suspense fallback={
-              <ProductGridSkeleton
-                count={12}
-                columns={gridColumns}
-                variant="default"
-                hideCategoryBadges={hideCategoryBadges}
-                selectionMode={selectionMode}
-              />
-            }>
-              <LazyProductGrid
-                products={paginatedProducts}
-                isLoading={isLoadingMore}
-                onProductClick={handleProductClick}
-                onViewProduct={handleViewProduct}
-                onShareProduct={handleShareProduct}
-                onFavoriteProduct={handleFavoriteProduct}
-                isFavorite={isFavorite}
-                onToggleFavorite={toggleFavorite}
-                isInCompare={isInCompare}
-                onToggleCompare={onToggleCompare}
-                canAddToCompare={canAddToCompare}
-                columns={gridColumns}
-                activeColorFilter={activeColorFilter}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={onToggleSelect}
-              />
-            </Suspense>
+            <ProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={handleProductClick}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              columns={gridColumns}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
           )}
 
           {viewMode === 'list' && (
-            <Suspense fallback={
-              <div className="space-y-2">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <ProductCardSkeleton key={i} variant="compact" selectionMode={selectionMode} />
-                ))}
-              </div>
-            }>
-              <LazyProductList
-                products={paginatedProducts}
-                isLoading={isLoadingMore}
-                onProductClick={handleProductClick}
-                onViewProduct={handleViewProduct}
-                onShareProduct={handleShareProduct}
-                onFavoriteProduct={handleFavoriteProduct}
-                isFavorite={isFavorite}
-                onToggleFavorite={toggleFavorite}
-                isInCompare={isInCompare}
-                onToggleCompare={onToggleCompare}
-                canAddToCompare={canAddToCompare}
-                activeColorFilter={activeColorFilter}
-                selectionMode={selectionMode}
-                externalSelectedIds={selectedIds}
-                onToggleSelect={onToggleSelect}
-              />
-            </Suspense>
+            <ProductList
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={handleProductClick}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              externalSelectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
           )}
 
           {viewMode === 'table' && (
-            <Suspense fallback={<ProductTableSkeleton rows={10} selectionMode={selectionMode} />}>
-              <LazyProductTableView
-                products={paginatedProducts}
-                isLoading={isLoadingMore}
-                onProductClick={handleProductClick}
-                onShareProduct={handleShareProduct}
-                isFavorite={isFavorite}
-                onToggleFavorite={toggleFavorite}
-                isInCompare={isInCompare}
-                onToggleCompare={onToggleCompare}
-                canAddToCompare={canAddToCompare}
-                activeColorFilter={activeColorFilter}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={onToggleSelect}
-              />
-            </Suspense>
+            <ProductTableView
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={handleProductClick}
+              onShareProduct={handleShareProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
           )}
         </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
