@@ -23,6 +23,11 @@ import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
+import {
+  attachSessionRevalidation,
+  isBadJwtError,
+  recoverSession,
+} from '@/lib/auth/session-recovery';
 
 // Tipos de role conforme app_role enum no banco.
 export type AppRole =
@@ -111,7 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     log.info('start');
     try {
       const supabase = await getSupabaseClient();
-      const { data, error: _error } = await supabase.auth.refreshSession();
+      const { data, error } = await supabase.auth.refreshSession();
+
+      // BUG-CRÍTICO FIX: kid rotacionado / bad_jwt → recovery agressiva.
+      // Antes, o erro era descartado silenciosamente e o usuário ficava
+      // logado no client mas deslogado no server até reabrir a aba.
+      if (error && isBadJwtError(error)) {
+        log.warn('bad_jwt_detected', { err: error.message });
+        await recoverSession('refreshSession:bad_jwt');
+        return;
+      }
+
       const nextSession = data?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
         setSession(nextSession);
@@ -124,6 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       log.info('ok');
     } catch (err) {
       log.error('failed', { err: String(err) });
+      if (isBadJwtError(err)) {
+        await recoverSession('refreshSession:exception');
+      }
     }
   }, [user, fetchUserData, fetchAAL, fetchPromiseRef]);
 
@@ -142,6 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
+
+    // BUG-CRÍTICO FIX: listeners de revalidação para casos de rotação de
+    // signing keys (kid antigo no token persistido). Re-checa contra o servidor
+    // em focus/online/visibility e dispara recovery se detectar bad_jwt.
+    const detachRevalidation = attachSessionRevalidation();
 
     void getSupabaseClient().then((supabase) => {
       const {
@@ -178,11 +201,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (cancelled) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
+          // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
+          // recovery antes de hidratar dados/papéis com um token quebrado.
+          try {
+            const { error: getUserError } = await supabase.auth.getUser();
+            if (isBadJwtError(getUserError)) {
+              await recoverSession('boot:getUser');
+              return;
+            }
+          } catch {
+            /* getUser falhou por rede — segue fluxo normal */
+          }
           fetchUserData(session.user.id);
           fetchAAL();
         } else {
@@ -195,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       cancelled = true;
       unsubscribe?.();
+      detachRevalidation();
     };
   }, [fetchUserData, fetchAAL, clearProfileRoles, clearMFA, setIsLoading]);
 
