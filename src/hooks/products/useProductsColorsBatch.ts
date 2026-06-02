@@ -35,12 +35,15 @@ type VariantRow = {
 const GLOBAL_COLORS_CACHE = new Map<string, ProductColorDot[]>();
 
 export function useProductsColorsBatch(productIds: string[]) {
-  // Chave estável: ids ordenados (evita refetch quando a ordem do array muda)
+  // Chave estável: ids únicos ordenados
   const stableIds = useMemo(() => [...new Set(productIds)].sort(), [productIds]);
+  // Query key que inclui os IDs específicos solicitados
+  const queryKey = useMemo(() => ['products-colors-batch', stableIds], [stableIds]);
+  
   const enabled = stableIds.length > 0;
 
   const query = useQuery({
-    queryKey: ['products-colors-batch', stableIds],
+    queryKey,
     queryFn: async ({ queryKey }): Promise<Map<string, ProductColorDot[]>> => {
       const [, ids] = queryKey as [string, string[]];
       

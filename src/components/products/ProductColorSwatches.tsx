@@ -36,12 +36,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   className,
   hideWhenEmpty = true,
 }: ProductColorSwatchesProps) {
-  const idPrefix = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
 
   if (colors === undefined) {
     return (
       <div 
-        className={cn('flex items-center gap-1', className)} 
+        className={cn('flex items-center gap-1 min-h-[16px]', className)} 
         aria-busy="true" 
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
@@ -63,7 +63,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     if (hideWhenEmpty) return null;
     return (
       <span 
-        className="text-[10px] text-muted-foreground/60 italic"
+        className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
