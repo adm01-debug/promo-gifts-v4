@@ -1,13 +1,14 @@
 import { ProductCard } from './ProductCard';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { useEffect, useState, useRef, memo } from 'react';
+import { useEffect, useState, useRef, useMemo, memo } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { cn } from '@/lib/utils';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 
 export interface ProductGridProps {
   products: Product[];
