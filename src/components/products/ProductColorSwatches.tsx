@@ -38,6 +38,9 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 }: ProductColorSwatchesProps) {
   const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
 
+  // Container principal com data-testid constante para asserts de skeleton vs conteúdo
+  const containerTestId = "product-colors-wrapper";
+
   if (colors === undefined) {
     return (
       <div 
@@ -53,6 +56,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               'animate-pulse rounded-full bg-muted',
               SIZE_CLASS[size]
             )}
+            data-testid="color-skeleton-dot"
           />
         ))}
       </div>
@@ -60,7 +64,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   }
 
   if (colors.length === 0) {
-    if (hideWhenEmpty) return null;
+    if (hideWhenEmpty) return <div className="min-h-[16px]" data-testid="colors-empty-hidden" />;
     return (
       <span 
         className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
@@ -78,7 +82,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex items-center gap-0.5', className)}
+      className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponível${colors.length === 1 ? '' : 'is'}`}
@@ -98,9 +102,16 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 style={{ backgroundColor: c.hex || 'transparent' }}
                 aria-label={`Opção de cor: ${c.name}`}
                 aria-describedby={tooltipId}
+                data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
               />
             </TooltipTrigger>
-            <TooltipContent id={tooltipId} side="top" className="text-xs" role="tooltip">
+            <TooltipContent 
+              id={tooltipId} 
+              side="top" 
+              className="text-xs" 
+              role="tooltip"
+              data-testid="color-tooltip-content"
+            >
               {c.name}
             </TooltipContent>
           </Tooltip>
@@ -113,11 +124,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               type="button"
               className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+              data-testid="color-swatch-overflow"
             >
               +{overflow}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs" role="tooltip">
+          <TooltipContent side="top" className="text-xs" role="tooltip" data-testid="color-overflow-tooltip">
             {colors.slice(max).map((c) => c.name).join(', ')}
           </TooltipContent>
         </Tooltip>
