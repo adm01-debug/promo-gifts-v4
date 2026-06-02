@@ -50,9 +50,7 @@ import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 
-
 type ViewMode = 'grid' | 'list' | 'table';
-
 
 function getGridColsClass(cols: ColumnCount): string {
   switch (cols) {
@@ -156,7 +154,6 @@ export function NoveltyProductGrid() {
       filtered = filtered.filter((p) => p.category_id === selectedCategory);
     sortProducts(filtered as unknown as any[], sortMode);
     return filtered;
-
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
   // Reset to first page when filters change
@@ -279,7 +276,13 @@ export function NoveltyProductGrid() {
           products={filteredProducts}
           selectionMode={selectionMode}
           selectedIds={[...sel.selectedIds]}
-          onSelect={sel.toggleSelect}
+          onSelect={(id) => {
+            if (selectionMode) {
+              sel.toggleSelect(id);
+              return;
+            }
+            handleProductClick(id);
+          }}
           colorsByProduct={colorsByProduct}
           onStatusClick={(type) => {
             if (type === 'novelty') return; // already on novelty page
