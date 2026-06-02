@@ -137,8 +137,8 @@ export async function syncQuoteToBitrix({
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   try {
-    // rls-allow: update por id; RLS valida ownership
     const { error: updateError } = await supabase
+      // rls-allow: update por id; RLS valida ownership
       .from('quotes')
       .update(crmUpdates)
       .eq('id', quoteId);

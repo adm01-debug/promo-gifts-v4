@@ -69,7 +69,7 @@ export function useProductsColorsBatch(productIds: string[]) {
       const [, ids] = queryKey as [string, string[]];
 
       // Identifica apenas o que ainda não temos no cache global
-      const missingIds = ids.filter(id => !GLOBAL_COLORS_CACHE.has(id));
+      const missingIds = ids.filter((id) => !GLOBAL_COLORS_CACHE.has(id));
 
       if (missingIds.length > 0) {
         const CHUNK = 100;
@@ -98,15 +98,18 @@ export function useProductsColorsBatch(productIds: string[]) {
             const hex = row.color_hex?.trim() || null;
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
-            if (!results.has(pid)) results.set(pid, new Map());
-            const dedupMap = results.get(pid)!;
+            let dedupMap = results.get(pid);
+            if (!dedupMap) {
+              dedupMap = new Map();
+              results.set(pid, dedupMap);
+            }
             if (!dedupMap.has(key)) {
               dedupMap.set(key, { name, hex });
             }
           }
 
           // Salva no cache global; IDs sem variantes ficam marcados como array vazio
-          chunk.forEach(id => {
+          chunk.forEach((id) => {
             const productColors = results.get(id);
             const arr = productColors ? Array.from(productColors.values()) : [];
             arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -117,9 +120,10 @@ export function useProductsColorsBatch(productIds: string[]) {
 
       // Constrói o Map final apenas com os IDs solicitados nesta query
       const resultMap = new Map<string, ProductColorDot[]>();
-      ids.forEach(id => {
-        if (GLOBAL_COLORS_CACHE.has(id)) {
-          resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
+      ids.forEach((id) => {
+        const cached = GLOBAL_COLORS_CACHE.get(id);
+        if (cached) {
+          resultMap.set(id, cached);
         }
       });
 

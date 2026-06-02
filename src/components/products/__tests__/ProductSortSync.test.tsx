@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from 'sonner';
 
-
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
   useNoveltiesWithDetails: vi.fn(() => ({
@@ -64,8 +63,6 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 
 const queryClient = new QueryClient();
 
-
-
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
@@ -76,7 +73,6 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
     </QueryClientProvider>
   </BrowserRouter>
 );
-
 
 describe('Product Sort Standardization', () => {
   it('StickyFilterBar should use labels from SORT_OPTIONS', () => {
@@ -95,7 +91,7 @@ describe('Product Sort Standardization', () => {
           viewMode="grid"
           onViewModeChange={vi.fn()}
         />
-      </Wrapper>
+      </Wrapper>,
     );
 
     // Click trigger to open select
@@ -103,35 +99,36 @@ describe('Product Sort Standardization', () => {
     fireEvent.click(trigger);
 
     // Verify all labels from SORT_OPTIONS are present
-    SORT_OPTIONS.forEach(option => {
+    expect(SORT_OPTIONS).not.toHaveLength(0);
+    for (const option of SORT_OPTIONS) {
       // Radix Select renders options in a Portal, but testing-library usually finds them
       // if they are in the document.
       const elements = screen.queryAllByText(option.label);
-      expect(elements.length).toBeGreaterThan(0);
-    });
+      expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
+    }
   });
 
   it('NoveltyProductGrid should use the same SORT_OPTIONS as StickyFilterBar', () => {
     render(
       <Wrapper>
         <NoveltyProductGrid />
-      </Wrapper>
+      </Wrapper>,
     );
 
     // Find the sort select. By index: Supplier=0, Category=1, Sort=2
     const selects = screen.getAllByRole('combobox');
-    const sortSelect = selects[2]; 
-    
+    const sortSelect = selects[2];
+
     if (sortSelect) {
       fireEvent.click(sortSelect);
       // We might need to wait for the Portal content
-      SORT_OPTIONS.forEach(option => {
+      expect(SORT_OPTIONS).not.toHaveLength(0);
+      for (const option of SORT_OPTIONS) {
         const elements = screen.queryAllByText(option.label);
-        expect(elements.length).toBeGreaterThan(0);
-      });
+        expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
+      }
     }
   });
-
 
   it('changing sort in StickyFilterBar triggers state change', () => {
     const onSortChange = vi.fn();
@@ -149,13 +146,13 @@ describe('Product Sort Standardization', () => {
           viewMode="grid"
           onViewModeChange={vi.fn()}
         />
-      </Wrapper>
+      </Wrapper>,
     );
 
     const trigger = screen.getByRole('combobox');
     fireEvent.click(trigger);
 
-    const targetOption = SORT_OPTIONS.find(o => o.value === 'price-asc');
+    const targetOption = SORT_OPTIONS.find((o) => o.value === 'price-asc');
     if (targetOption) {
       const optionElement = screen.getByText(targetOption.label);
       fireEvent.click(optionElement);

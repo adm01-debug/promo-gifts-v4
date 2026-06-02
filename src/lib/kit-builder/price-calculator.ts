@@ -88,7 +88,7 @@ export function calculateTotalKitPrice(
 }
 
 /**
- * Calcula economia em relação Ã  compra individual
+ * Calcula economia em relação à compra individual
  */
 export function calculateSavings(
   kitPrice: number,

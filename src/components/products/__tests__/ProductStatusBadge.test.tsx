@@ -15,7 +15,7 @@ describe('ProductStatusBadge — consistency across contexts', () => {
     render(
       <Wrapper>
         <ProductStatusBadge type="out-of-stock" size="sm" />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe('ProductStatusBadge — consistency across contexts', () => {
     const { container } = render(
       <Wrapper>
         <ProductStatusBadge type="out-of-stock" size="sm" />
-      </Wrapper>
+      </Wrapper>,
     );
     const badge = container.querySelector('[class*="text-[9px]"]');
     expect(badge).not.toBeNull();
@@ -36,7 +36,7 @@ describe('ProductStatusBadge — consistency across contexts', () => {
     const { container } = render(
       <Wrapper>
         <ProductStatusBadge type="out-of-stock" size="sm" />
-      </Wrapper>
+      </Wrapper>,
     );
     const badge = container.querySelector('[class*="bg-destructive"]');
     expect(badge).not.toBeNull();
@@ -47,11 +47,12 @@ describe('ProductStatusBadge — consistency across contexts', () => {
 
   it('all sizes share the same typography/padding scale family', () => {
     const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg'];
-    sizes.forEach((size) => {
+    expect(sizes).not.toHaveLength(0);
+    for (const size of sizes) {
       const { container, unmount } = render(
         <Wrapper>
           <ProductStatusBadge type="out-of-stock" size={size} />
-        </Wrapper>
+        </Wrapper>,
       );
       const badge = container.querySelector('[class*="rounded-full"]');
       expect(badge).not.toBeNull();
@@ -59,19 +60,19 @@ describe('ProductStatusBadge — consistency across contexts', () => {
       expect(badge?.className).toMatch(/px-/);
       expect(badge?.className).toContain('inline-flex');
       unmount();
-    });
+    }
   });
 
   it('shares the same base classes as novelty/featured badges (consistency)', () => {
     const { container: oosCt } = render(
       <Wrapper>
         <ProductStatusBadge type="out-of-stock" size="sm" />
-      </Wrapper>
+      </Wrapper>,
     );
     const { container: novCt } = render(
       <Wrapper>
         <ProductStatusBadge type="novelty" value="Novo" size="sm" />
-      </Wrapper>
+      </Wrapper>,
     );
 
     const oos = oosCt.querySelector('[class*="rounded-full"]');
@@ -97,7 +98,7 @@ describe('ProductStatusBadge — consistency across contexts', () => {
             clicked = true;
           }}
         />
-      </Wrapper>
+      </Wrapper>,
     );
     const badge = container.querySelector('[class*="cursor-pointer"]');
     expect(badge).not.toBeNull();
