@@ -28,6 +28,12 @@ type VariantRow = {
  * Retorna um Map<productId, ProductColorDot[]> para os productIds informados.
  * Ordena por nome e deduplica por (name|hex) lower-case.
  */
+/**
+ * Cache persistente fora do hook para evitar re-fetch de produtos individuais
+ * mesmo quando a lista do lote muda parcialmente (e altera a queryKey).
+ */
+const GLOBAL_COLORS_CACHE = new Map<string, ProductColorDot[]>();
+
 export function useProductsColorsBatch(productIds: string[]) {
   // Chave estável: ids ordenados (evita refetch quando a ordem do array muda)
   const stableIds = useMemo(() => [...new Set(productIds)].sort(), [productIds]);
@@ -37,53 +43,67 @@ export function useProductsColorsBatch(productIds: string[]) {
     queryKey: ['products-colors-batch', stableIds],
     queryFn: async ({ queryKey }): Promise<Map<string, ProductColorDot[]>> => {
       const [, ids] = queryKey as [string, string[]];
-      const map = new Map<string, ProductColorDot[]>();
-      if (ids.length === 0) return map;
+      
+      // Identifica apenas o que ainda não temos no cache global
+      const missingIds = ids.filter(id => !GLOBAL_COLORS_CACHE.has(id));
+      
+      if (missingIds.length > 0) {
+        const CHUNK = 100;
+        for (let i = 0; i < missingIds.length; i += CHUNK) {
+          const chunk = missingIds.slice(i, i + CHUNK);
+          const { data, error } = await supabase
+            .from(resolveTable('product_variants'))
+            .select('product_id, color_name, color_hex')
+            .in('product_id', chunk)
+            .eq('is_active', true)
+            .not('color_name', 'is', null)
+            .range(0, 4999);
 
-      // Quebra em chunks p/ não estourar o limite de IN do PostgREST
-      const CHUNK = 100;
-      const seen = new Map<string, Set<string>>();
+          if (error) {
+            handleQueryError('useProductsColorsBatch', 'product_variants', error);
+            continue;
+          }
 
-      for (let i = 0; i < ids.length; i += CHUNK) {
-        const chunk = ids.slice(i, i + CHUNK);
-        const { data, error } = await supabase
-          .from(resolveTable('product_variants'))
-          .select('product_id, color_name, color_hex')
-          .in('product_id', chunk)
-          .eq('is_active', true)
-          .not('color_name', 'is', null)
-          .range(0, 4999);
+          // Agrupa resultados por ID
+          const results = new Map<string, Map<string, ProductColorDot>>();
+          
+          for (const row of (data ?? []) as VariantRow[]) {
+            const pid = row.product_id;
+            const name = (row.color_name || '').trim();
+            if (!name) continue;
+            const hex = row.color_hex?.trim() || null;
+            const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
+            
+            if (!results.has(pid)) results.set(pid, new Map());
+            const dedupMap = results.get(pid)!;
+            if (!dedupMap.has(key)) {
+              dedupMap.set(key, { name, hex });
+            }
+          }
 
-        if (error) {
-          handleQueryError('useProductsColorsBatch', 'product_variants', error);
-          continue;
-        }
-
-        for (const row of (data ?? []) as VariantRow[]) {
-          const pid = row.product_id;
-          const name = (row.color_name || '').trim();
-          if (!name) continue;
-          const hex = row.color_hex?.trim() || null;
-          const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
-          if (!seen.has(pid)) seen.set(pid, new Set());
-          const dedup = seen.get(pid)!;
-          if (dedup.has(key)) continue;
-          dedup.add(key);
-          const arr = map.get(pid) ?? [];
-          arr.push({ name, hex });
-          map.set(pid, arr);
+          // Salva no cache global garantindo que IDs sem variantes também fiquem marcados (como array vazio)
+          chunk.forEach(id => {
+            const productColors = results.get(id);
+            const arr = productColors ? Array.from(productColors.values()) : [];
+            arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+            GLOBAL_COLORS_CACHE.set(id, arr);
+          });
         }
       }
 
-      for (const arr of map.values()) {
-        arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-      }
+      // Constrói o Map final apenas com os IDs solicitados nesta query
+      const resultMap = new Map<string, ProductColorDot[]>();
+      ids.forEach(id => {
+        if (GLOBAL_COLORS_CACHE.has(id)) {
+          resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
+        }
+      });
 
-      return map;
+      return resultMap;
     },
     enabled,
-    staleTime: 10 * 60 * 1000, // Aumentado para 10 min
-    gcTime: 30 * 60 * 1000,    // Mantido por 30 min em memória
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   return { data: query.data, isLoading: query.isLoading };
