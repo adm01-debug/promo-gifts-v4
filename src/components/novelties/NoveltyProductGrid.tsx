@@ -507,21 +507,20 @@ export function NoveltyProductGrid() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
+          <Select value={sortMode} onValueChange={(v) => setSortMode(v)}>
             <SelectTrigger className="h-7 w-[180px] gap-1 text-[11px]">
               <ArrowUpDown className="h-3 w-3" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Nome (A-Z)</SelectItem>
-              <SelectItem value="price-asc">Preço (Menor → Maior)</SelectItem>
-              <SelectItem value="price-desc">Preço (Maior → Menor)</SelectItem>
-              <SelectItem value="newest">Mais Recentes</SelectItem>
-              <SelectItem value="stock">Maior Estoque</SelectItem>
-              <SelectItem value="best-seller-supplier">+ Vendidos Fornecedores</SelectItem>
-              <SelectItem value="best-seller-promo">+ Vendidos Promo Brindes</SelectItem>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
           {hasActiveFilters && (
             <Button
               variant="ghost"
