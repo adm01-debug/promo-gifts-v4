@@ -161,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
 
+    // BUG-CRÍTICO FIX: listeners de revalidação para casos de rotação de
+    // signing keys (kid antigo no token persistido). Re-checa contra o servidor
+    // em focus/online/visibility e dispara recovery se detectar bad_jwt.
+    const detachRevalidation = attachSessionRevalidation();
+
     void getSupabaseClient().then((supabase) => {
       const {
         data: { subscription },
@@ -213,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       cancelled = true;
       unsubscribe?.();
+      detachRevalidation();
     };
   }, [fetchUserData, fetchAAL, clearProfileRoles, clearMFA, setIsLoading]);
 
