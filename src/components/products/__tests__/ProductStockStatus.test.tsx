@@ -6,6 +6,32 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Product } from '@/types/product-catalog';
+import { vi } from 'vitest';
+
+// Mock problematic components
+vi.mock('../ProductCardActions', () => ({
+  ProductCardActions: () => <div data-testid="product-card-actions" />
+}));
+
+vi.mock('../list-item/ListItemActions', () => ({
+  ListItemActions: () => <div data-testid="list-item-actions" />
+}));
+
+vi.mock('../../collections/AddToCollectionModal', () => ({
+  AddToCollectionModal: () => <div data-testid="add-to-collection-modal" />
+}));
+
+vi.mock('../ProductQuickView', () => ({
+  ProductQuickView: () => <div data-testid="product-quick-view" />
+}));
+
+vi.mock('../share/SharePreviewDialog', () => ({
+  SharePreviewDialog: () => <div data-testid="share-preview-dialog" />
+}));
+
+vi.mock('../VariantPickerDialog', () => ({
+  VariantPickerDialog: () => <div data-testid="variant-picker-dialog" />
+}));
 
 const mockProduct: Product = {
   id: '1',
@@ -47,7 +73,7 @@ describe('Product Stock Status Visuals', () => {
   test('ProductCard shows "Fora de estoque" badge and is not grayed out', () => {
     const { container } = render(
       <Wrapper>
-        <ProductCard product={mockProduct} onVariantChange={() => {}} />
+        <ProductCard product={mockProduct} onStatusClick={() => {}} />
       </Wrapper>
     );
 
