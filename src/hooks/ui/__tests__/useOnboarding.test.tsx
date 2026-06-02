@@ -61,9 +61,11 @@ describe('useOnboarding — controle de estado do tour', () => {
       await result.current.restartTour();
     });
 
-    expect(result.current.showTour).toBe(true);
-    expect(result.current.hasCompletedTour).toBe(false);
-    expect(result.current.currentStep).toBe(0);
+    await waitFor(() => {
+      expect(result.current.showTour).toBe(true);
+      expect(result.current.hasCompletedTour).toBe(false);
+      expect(result.current.currentStep).toBe(0);
+    });
 
     expect(updateMock).toHaveBeenCalledWith({
       has_completed_tour: false,
@@ -73,6 +75,7 @@ describe('useOnboarding — controle de estado do tour', () => {
     });
     expect(updateEq).toHaveBeenCalledWith('id', 'onb-1');
   });
+
 
   it('expõe apenas restartTour como gatilho público de reabertura', () => {
     const { result } = renderHook(() => useOnboarding());
