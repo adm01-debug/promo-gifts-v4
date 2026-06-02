@@ -112,11 +112,15 @@ test.describe("Session Recovery — JWT inválido", () => {
       .poll(() => refreshAttempts, { timeout: 10_000, intervals: [200, 500, 1000] })
       .toBeGreaterThan(0);
 
-    // Dá mais um beat ao event loop para garantir que, se fosse deslogar, já teria.
-    await page.waitForTimeout(1_500); // eslint-disable-line playwright/no-wait-for-timeout
+    // Dá tempo ao event loop: se a recovery FOSSE deslogar, redirecionaria
+    // para /login dentro deste janela. Esperamos o redirect e exigimos que ele
+    // NÃO aconteça (timeout esperado).
+    const redirected = await page
+      .waitForURL(/\/login(\?|#|$)/, { timeout: 3_000 })
+      .then(() => true)
+      .catch(() => false);
 
-    // NÃO deve ter ido para /login
-    expect(page.url()).not.toMatch(/\/login(\?|#|$)/);
+    expect(redirected, "não deve redirecionar em erro transitório").toBe(false);
     expect(page.url()).toBe(initialUrl);
   });
 });
