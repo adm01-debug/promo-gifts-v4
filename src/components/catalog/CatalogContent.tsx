@@ -91,9 +91,10 @@ export const CatalogContent = memo(function CatalogContent({
   const productIds = useMemo(() => paginatedProducts.map((p) => p.id), [paginatedProducts]);
 
   if (shouldShowCatalogSkeleton) {
+    console.log(`[CatalogContent] Rendering skeleton in viewMode: ${viewMode}, columns: ${gridColumns}`);
     if (viewMode === 'list') {
       return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="catalog-list-skeleton">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -107,16 +108,22 @@ export const CatalogContent = memo(function CatalogContent({
       );
     }
     if (viewMode === 'table') {
-      return <ProductTableSkeleton rows={10} selectionMode={selectionMode} />;
+      return (
+        <div data-testid="catalog-table-skeleton">
+          <ProductTableSkeleton rows={10} selectionMode={selectionMode} />
+        </div>
+      );
     }
     return (
-      <ProductGridSkeleton
-        count={12}
-        columns={gridColumns}
-        variant="default"
-        hideCategoryBadges={hideCategoryBadges}
-        selectionMode={selectionMode}
-      />
+      <div data-testid="catalog-grid-skeleton">
+        <ProductGridSkeleton
+          count={12}
+          columns={gridColumns}
+          variant="default"
+          hideCategoryBadges={hideCategoryBadges}
+          selectionMode={selectionMode}
+        />
+      </div>
     );
   }
 
