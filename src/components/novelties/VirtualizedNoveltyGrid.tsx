@@ -34,6 +34,7 @@ export function VirtualizedNoveltyGrid({
   onToggleSelect,
   onProductClick,
   onStatusClick,
+  colorsByProduct,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
