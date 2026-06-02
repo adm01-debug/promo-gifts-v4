@@ -3,6 +3,8 @@ import { ProductCard } from '../ProductCard';
 import { ProductListItem } from '../ProductListItem';
 import { EnhancedProductCard } from '../EnhancedProductCard';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Product } from '@/types/product-catalog';
 
 const mockProduct: Product = {
@@ -25,8 +27,20 @@ const mockProduct: Product = {
   isKit: false,
 };
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>{children}</BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>{children}</BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 describe('Product Stock Status Visuals', () => {
