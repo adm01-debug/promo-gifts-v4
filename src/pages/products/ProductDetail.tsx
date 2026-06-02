@@ -220,7 +220,7 @@ export default function ProductDetail() {
     if (!match && hexParam) {
       const normalizedHex = hexParam.startsWith('#') ? hexParam.toLowerCase() : `#${hexParam.toLowerCase()}`;
       match = product.variations.find(
-        (v: ProductVariation) => v.color?.hex?.toLowerCase() === normalizedHex,
+        (v: ProductVariation) => v.color?.hex?.toLowerCase() === normalizedHex || v.color?.hex?.toLowerCase() === `#${normalizedHex}`,
       );
     }
 
@@ -263,8 +263,7 @@ export default function ProductDetail() {
       newParams.delete('grupo');
     }
     setSearchParams(newParams, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVariation, colorAutoSelected]);
+  }, [selectedVariation, colorAutoSelected, setSearchParams, searchParams]);
 
   if (isLoading) return <ProductDetailSkeleton />;
 

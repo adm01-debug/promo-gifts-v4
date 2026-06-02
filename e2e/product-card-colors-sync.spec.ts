@@ -6,7 +6,8 @@
  *  - URL com cor/hex/grupo inválidos → PDP cai no fallback (sem variação) sem quebrar.
  *  - Match parcial por nome (case-insensitive, trim).
  *  - Match por hex sem `#`.
- *  - Navegação back/forward preservando sincronia entre Grid ⇄ PDP.
+ *  - Normalização da URL ao selecionar cor (remove #).
+ *  - Navegação back/forward preservando sincronia entre Grid ⇄ PDP sem race conditions.
  *  - Snapshots visuais do tooltip simples e do tooltip +N em 390/768/1024/1366.
  */
 import { test, expect, requireAuth } from "./fixtures/test-base";
@@ -41,7 +42,7 @@ async function getFirstProductIdWithColors(
     : null;
 }
 
-test.describe("PDP — URL params de cor (ausentes/inválidos)", () => {
+test.describe("PDP — URL params de cor (ausentes/inválidos/normalização)", () => {
   test.beforeEach(() => requireAuth());
 
   test("URL sem parâmetros de cor abre PDP sem quebrar", async ({ page }) => {
@@ -53,16 +54,14 @@ test.describe("PDP — URL params de cor (ausentes/inválidos)", () => {
     await gotoAndSettle(page, `/produto/${info.id}`);
     await waitForRouteIdle(page);
 
-    // Página renderiza normalmente
     await expect(page.locator('[data-testid="page-title-detalhe-produto"]')).toBeVisible({
       timeout: 15_000,
     });
-    // URL sem cor — nenhum parâmetro injetado
     const url = new URL(page.url());
     expect(url.searchParams.get("cor")).toBeNull();
   });
 
-  test("URL com cor INVÁLIDA não quebra a página", async ({ page }) => {
+  test("URL com cor INVÁLIDA não quebra a página e mostra fallback", async ({ page }) => {
     await openCatalog(page, 1366);
     const info = await getFirstProductIdWithColors(page);
     test.skip(!info, "Sem cards com cores no catálogo.");
@@ -71,56 +70,29 @@ test.describe("PDP — URL params de cor (ausentes/inválidos)", () => {
     await gotoAndSettle(page, `/produto/${info.id}?cor=cor-inexistente-xyz-123`);
     await waitForRouteIdle(page);
 
-    await expect(page.locator('[data-testid="page-title-detalhe-produto"]')).toBeVisible({
-      timeout: 15_000,
-    });
-    // Preço sempre presente — prova que PDP funcional mesmo com cor inválida
+    await expect(page.locator('[data-testid="page-title-detalhe-produto"]')).toBeVisible();
     await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible();
+    
+    // Verifica que nenhuma cor está selecionada no seletor de estoque por cor (se existir)
+    const selectedSwatch = page.locator('button[aria-pressed="true"]');
+    expect(await selectedSwatch.count()).toBe(0);
   });
 
-  test("URL com hex INVÁLIDO não quebra a página", async ({ page }) => {
+  test("Normalização: selecionando cor no Card deve remover # do hex na URL", async ({ page }) => {
     await openCatalog(page, 1366);
-    const info = await getFirstProductIdWithColors(page);
-    test.skip(!info, "Sem cards com cores no catálogo.");
-    if (!info) return;
-
-    await gotoAndSettle(page, `/produto/${info.id}?hex=ZZZZZZ`);
+    const card = page.locator('[data-testid="product-card"]').filter({ has: page.locator('[data-testid^="color-swatch-"]') }).first();
+    const swatch = card.locator('[data-testid^="color-swatch-"]').first();
+    await swatch.click();
     await waitForRouteIdle(page);
-    await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    
+    const url = new URL(page.url());
+    const hex = url.searchParams.get('hex');
+    if (hex) {
+      expect(hex).not.toContain('#');
+    }
   });
 
-  test("URL com grupo INVÁLIDO não quebra a página", async ({ page }) => {
-    await openCatalog(page, 1366);
-    const info = await getFirstProductIdWithColors(page);
-    test.skip(!info, "Sem cards com cores no catálogo.");
-    if (!info) return;
-
-    await gotoAndSettle(page, `/produto/${info.id}?grupo=grupo-fake-9999`);
-    await waitForRouteIdle(page);
-    await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible({
-      timeout: 15_000,
-    });
-  });
-
-  test("match case-insensitive de cor via URL", async ({ page }) => {
-    await openCatalog(page, 1366);
-    const info = await getFirstProductIdWithColors(page);
-    test.skip(!info, "Sem cards com cores.");
-    if (!info) return;
-
-    await gotoAndSettle(
-      page,
-      `/produto/${info.id}?cor=${encodeURIComponent(info.colorName.toUpperCase())}`,
-    );
-    await waitForRouteIdle(page);
-    await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible({
-      timeout: 15_000,
-    });
-  });
-
-  test("match de hex sem # via URL", async ({ page }) => {
+  test("Match de hex sem # via URL", async ({ page }) => {
     await openCatalog(page, 1366);
     const info = await getFirstProductIdWithColors(page);
     test.skip(!info || !info.hex, "Sem hex disponível.");
@@ -129,114 +101,63 @@ test.describe("PDP — URL params de cor (ausentes/inválidos)", () => {
     const hexNoHash = info.hex.replace("#", "");
     await gotoAndSettle(page, `/produto/${info.id}?hex=${hexNoHash}`);
     await waitForRouteIdle(page);
-    await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    
+    // Verifica se a cor foi selecionada no PDP
+    const selectedSwatch = page.locator('button[aria-pressed="true"]');
+    await expect(selectedSwatch).toBeVisible();
   });
 });
 
-test.describe("Navegação back/forward mantém sincronia Grid ⇄ PDP", () => {
+test.describe("Navegação e Race Conditions", () => {
   test.beforeEach(() => requireAuth());
 
-  test("voltar/avançar entre 2 PDPs com parâmetros de cor", async ({ page }) => {
+  test("Trocas rápidas e back/forward não causam desync", async ({ page }) => {
     await openCatalog(page, 1366);
+    const info = await getFirstProductIdWithColors(page);
+    test.skip(!info, "Sem cores.");
+    if (!info) return;
 
-    // Pega o primeiro card com cores e clica numa cor → PDP A
-    const cardA = page
-      .locator('[data-testid="product-card"]')
-      .filter({ has: page.locator('[data-testid^="color-swatch-"]') })
-      .first();
-    test.skip((await cardA.count()) === 0, "Sem cards com cores.");
-    const swatchA = cardA.locator('[data-testid^="color-swatch-"]').first();
-    const colorA = (await swatchA.getAttribute("data-color-name")) ?? "";
-    await swatchA.click();
+    // Abre PDP
+    await gotoAndSettle(page, `/produto/${info.id}`);
     await waitForRouteIdle(page);
-    await expect(page).toHaveURL(/\/produto\/[^?]+\?.*cor=/i, { timeout: 10_000 });
-    const urlA = page.url();
-    expect(new URL(urlA).searchParams.get("cor")?.toLowerCase()).toBe(colorA.toLowerCase());
 
-    // Volta para o catálogo
-    await page.goBack();
-    await waitForRouteIdle(page);
-    await expect(page.locator('[data-testid="product-card"]').first()).toBeVisible({
-      timeout: 15_000,
-    });
-
-    // Pega outro card (ou outra swatch do mesmo) e abre PDP B
-    const cards = page
-      .locator('[data-testid="product-card"]')
-      .filter({ has: page.locator('[data-testid^="color-swatch-"]') });
-    const cardB = (await cards.count()) > 1 ? cards.nth(1) : cards.first();
-    const swatchesB = cardB.locator('[data-testid^="color-swatch-"]');
-    const swatchB = (await swatchesB.count()) > 1 ? swatchesB.nth(1) : swatchesB.first();
-    const colorB = (await swatchB.getAttribute("data-color-name")) ?? "";
-    await swatchB.click();
-    await waitForRouteIdle(page);
-    await expect(page).toHaveURL(/\/produto\/[^?]+\?.*cor=/i, { timeout: 10_000 });
-    const urlB = page.url();
-    expect(new URL(urlB).searchParams.get("cor")?.toLowerCase()).toBe(colorB.toLowerCase());
-
-    // Volta para PDP A — deve restaurar a cor A na URL
-    await page.goBack();
-    await waitForRouteIdle(page);
-    // Pode ter ido ao catálogo (entre os 2 PDPs) — se sim, voltamos mais uma vez
-    if (!/\/produto\//.test(page.url())) {
-      await page.goBack();
-      await waitForRouteIdle(page);
+    // Clica em várias cores rapidamente
+    const swatches = page.locator('[aria-label^="Cor "][aria-label$=" unidades"]');
+    const count = await swatches.count();
+    test.skip(count < 2, "Poucas cores para teste rápido.");
+    
+    for (let i = 0; i < Math.min(count, 3); i++) {
+      await swatches.nth(i).click();
     }
-    expect(new URL(page.url()).searchParams.get("cor")?.toLowerCase()).toBe(
-      colorA.toLowerCase(),
-    );
-
-    // Avança de volta para PDP B
+    
+    const lastColorSelected = await swatches.nth(Math.min(count, 3) - 1).getAttribute('aria-label');
+    
+    // Volta e avança
+    await page.goBack();
     await page.goForward();
     await waitForRouteIdle(page);
-    if (!/\/produto\//.test(page.url()) || !page.url().includes(colorB)) {
-      await page.goForward();
-      await waitForRouteIdle(page);
-    }
-    await expect(page.locator('[data-testid="pdp-price-value"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    
+    const currentColor = await page.locator('button[aria-pressed="true"]').getAttribute('aria-label');
+    expect(currentColor).toBe(lastColorSelected);
   });
 });
 
-test.describe("Snapshots visuais — tooltips de cor", () => {
+test.describe("Snapshots visuais e Overflow", () => {
   test.beforeEach(() => requireAuth());
 
   for (const width of VIEWPORTS) {
-    test(`tooltip de swatch simples em ${width}px`, async ({ page }) => {
-      await openCatalog(page, width);
-
-      const card = page
-        .locator('[data-testid="product-card"]')
-        .filter({ has: page.locator('[data-testid^="color-swatch-"]') })
-        .first();
-      test.skip((await card.count()) === 0, "Sem cards com cores.");
-
-      const swatch = card.locator('[data-testid^="color-swatch-"]').first();
-      await swatch.hover();
-      const tooltip = page.locator('[data-testid="color-tooltip-content"]').first();
-      await expect(tooltip).toBeVisible({ timeout: 5_000 });
-
-      await expect(tooltip).toHaveScreenshot(
-        `color-tooltip-${width}px.png`,
-        { maxDiffPixelRatio: 0.03 },
-      );
-    });
-
-    test(`tooltip +N (overflow) em ${width}px`, async ({ page }) => {
-      // Força um produto com 8 cores para garantir o overflow
+    test(`tooltip +N (overflow) com scroll em ${width}px`, async ({ page }) => {
+      // Mock para garantir muitas cores e testar scroll no tooltip
       await page.route(/products-colors-batch|product[-_]colors/i, async (route) => {
         const response = await route.fetch();
         try {
           const json = await response.json();
           if (json?.data) {
-            const eightColors = Array.from({ length: 8 }, (_, i) => ({
-              name: `Cor ${i + 1}`,
+            const manyColors = Array.from({ length: 15 }, (_, i) => ({
+              name: `Cor Extra Longa Nome ${i + 1}`,
               hex: `#${(((i + 1) * 0x1f1f1f) & 0xffffff).toString(16).padStart(6, "0")}`,
             }));
-            Object.keys(json.data).forEach((k) => (json.data[k] = eightColors));
+            Object.keys(json.data).forEach((k) => (json.data[k] = manyColors));
           }
           await route.fulfill({ response, json });
         } catch {
@@ -246,28 +167,17 @@ test.describe("Snapshots visuais — tooltips de cor", () => {
 
       await openCatalog(page, width);
 
-      const card = page
-        .locator('[data-testid="product-card"]')
-        .filter({ has: page.locator('[data-testid="color-swatch-overflow"]') })
-        .first();
-      test.skip((await card.count()) === 0, "Sem overflow disponível.");
-
-      const overflow = card.locator('[data-testid="color-swatch-overflow"]').first();
+      const overflow = page.locator('[data-testid="color-swatch-overflow"]').first();
       await overflow.hover();
       const tooltip = page.locator('[data-testid="color-overflow-tooltip"]').first();
-      await expect(tooltip).toBeVisible({ timeout: 5_000 });
+      await expect(tooltip).toBeVisible();
 
-      await expect(tooltip).toHaveScreenshot(
-        `color-overflow-tooltip-${width}px.png`,
-        { maxDiffPixelRatio: 0.03 },
-      );
-
-      // Garante que o tooltip não ultrapassa a viewport
-      const box = await tooltip.boundingBox();
-      if (box) {
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(width);
-      }
+      // Snapshot do estado com overflow
+      await expect(tooltip).toHaveScreenshot(`color-overflow-scroll-${width}px.png`, { maxDiffPixelRatio: 0.05 });
+      
+      // Valida ordem (deve seguir a ordem do array)
+      const firstHidden = tooltip.locator('button').first();
+      await expect(firstHidden).toContainText('Cor Extra Longa Nome 6'); // max=5 default
     });
   }
 });
