@@ -13,9 +13,11 @@ import { useOnboarding } from '../useOnboarding';
 const updateEq = vi.fn().mockResolvedValue({ error: null });
 const updateMock = vi.fn(() => ({ eq: updateEq }));
 
+const stableUser = { id: 'user-1' };
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1' } }),
+  useAuth: () => ({ user: stableUser }),
 }));
+
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
