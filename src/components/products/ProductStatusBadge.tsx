@@ -7,7 +7,7 @@ import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency' | 'out-of-stock';
+export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
@@ -51,11 +51,11 @@ export function ProductStatusBadge({
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
-        return 'text-[9px] px-1.5 py-0.5 gap-0.5 h-4.5';
+        return 'text-[9px] px-1.5 py-0.5 gap-0.5';
       case 'lg':
-        return 'text-sm px-3 py-1.5 gap-1.5 h-8';
+        return 'text-sm px-3 py-1.5 gap-1.5';
       default:
-        return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1 h-5 sm:h-6';
+        return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1';
     }
   };
 
@@ -176,11 +176,7 @@ export function ProductStatusBadge({
         }
         break;
       case 'out-of-stock':
-        return (
-          <>
-            <span>{value || 'Fora de estoque'}</span>
-          </>
-        );
+        return <span>{value || 'Fora de estoque'}</span>;
     }
     return <span>{value}</span>;
   };

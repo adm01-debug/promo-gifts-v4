@@ -132,7 +132,7 @@ export const ProductCardImage = memo(function ProductCardImage({
 
 
       {/* Badges - Top Left */}
-      <div className="absolute left-2 top-2 z-20 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
+      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
         {featured && (
           <ProductStatusBadge
             type="featured"
@@ -172,11 +172,12 @@ export const ProductCardImage = memo(function ProductCardImage({
         )}
 
         {stockStatus === 'unavailable' && (
-          <ProductStatusBadge
-            type="out-of-stock"
-            size="sm"
-            onClick={() => onStatusClick?.('out-of-stock')}
-          />
+          <Badge
+            variant="destructive"
+            className="h-auto px-1.5 py-0.5 text-[9px] font-medium leading-none shadow-sm"
+          >
+            Fora de estoque
+          </Badge>
         )}
 
         {(stockStatus === 'low' || stockStatus === 'critical') && (

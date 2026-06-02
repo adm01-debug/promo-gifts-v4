@@ -100,21 +100,12 @@ function MiniCard({ product, score, reason, isBestChoice, badgeLabel, onClick }:
 
       <div className="relative aspect-video w-full overflow-hidden bg-muted/30">
         {product.imageUrl ? (
-          <>
-            <img
-              src={getCdnUrl(product.imageUrl, 'card')}
-              alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-110"
-              loading="lazy"
-            />
-            {product.stockStatus === 'out-of-stock' && (
-              <div className="absolute left-2 top-2 z-10">
-                <div className="rounded-full bg-destructive px-2 py-0.5 text-[9px] font-bold text-destructive-foreground shadow-sm">
-                  FORA DE ESTOQUE
-                </div>
-              </div>
-            )}
-          </>
+          <img
+            src={getCdnUrl(product.imageUrl, 'card')}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+            loading="lazy"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted/10">
             <Sparkles className="h-6 w-6 text-muted-foreground/20" />
