@@ -215,7 +215,7 @@ describe('useFiltersPageState Logic - Extended Validation', () => {
 
   it('should apply sorting correctly (contract validation)', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
-    const { useProductsCatalog } = require('@/hooks/products/useProductsLightweight');
+
 
     // 1. Sort by price-asc
     act(() => {
@@ -247,7 +247,7 @@ describe('useFiltersPageState Logic - Extended Validation', () => {
 
   it('should reset pagination when filters or sort change', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
-    const { useProductsCatalog } = require('@/hooks/products/useProductsLightweight');
+
     
     // Changing sort should trigger useProductsCatalog with new sortBy
     // which in turn causes the queryKey to change in useInfiniteQuery, effectively resetting pagination
