@@ -47,15 +47,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { NoveltyTableView } from './NoveltyCards';
 import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
 
+import { SORT_OPTIONS } from '@/constants/filters';
+
 type ViewMode = 'grid' | 'list' | 'table';
-type SortMode =
-  | 'name'
-  | 'price-asc'
-  | 'price-desc'
-  | 'newest'
-  | 'stock'
-  | 'best-seller-supplier'
-  | 'best-seller-promo';
+
 
 function getGridColsClass(cols: ColumnCount): string {
   switch (cols) {
@@ -84,7 +79,7 @@ export function NoveltyProductGrid() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
-  const [sortMode, setSortMode] = useState<SortMode>('newest');
+  const [sortMode, setSortMode] = useState<string>('newest');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
