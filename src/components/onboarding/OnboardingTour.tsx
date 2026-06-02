@@ -135,7 +135,7 @@ export function OnboardingTour() {
 
   return (
     <AnimatePresence>
-      <div className="pointer-events-none fixed inset-0 z-[100]">
+      <div data-testid="onboarding-tour" className="pointer-events-none fixed inset-0 z-[100]">
         {/* Overlay with spotlight effect */}
         <motion.div
           initial={{ opacity: 0 }}
