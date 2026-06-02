@@ -14,44 +14,47 @@ interface ScrollToTopButtonProps {
 }
 
 export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButtonProps>(
-  function ScrollToTopButton({ threshold = 300, className, bottomOffset }, ref) {
+  function ScrollToTopButton({ threshold = 300, className, bottomOffset, containerRef }, ref) {
     const [isVisible, setIsVisible] = useState(false);
     const { announceStatus } = useAriaLive();
 
     useEffect(() => {
       const handleScroll = () => {
-        setIsVisible(window.scrollY > threshold);
+        const scrollTop = containerRef?.current ? containerRef.current.scrollTop : window.scrollY;
+        setIsVisible(scrollTop > threshold);
       };
       handleScroll();
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      return () => window.removeEventListener('scroll', handleScroll);
-    }, [threshold]);
+      const target = containerRef?.current || window;
+      target.addEventListener('scroll', handleScroll, { passive: true });
+      return () => target.removeEventListener('scroll', handleScroll);
+    }, [threshold, containerRef]);
 
     const handleScrollToTop = useCallback(() => {
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({
+      const target = containerRef?.current || window;
+      target.scrollTo({
         top: 0,
         behavior: prefersReduced ? 'auto' : 'smooth',
       });
       announceStatus('Voltando ao topo da página');
       
       const moveFocusToTop = () => {
-        const target =
+        const targetFocus =
           (document.getElementById('main-content') as HTMLElement | null) ??
           (document.querySelector('main') as HTMLElement | null) ??
           (document.querySelector('h1') as HTMLElement | null);
         
-        if (!target) {
+        if (!targetFocus) {
           announceStatus('Topo da página.');
           return;
         }
         
-        const hadTabIndex = target.hasAttribute('tabindex');
-        if (!hadTabIndex) target.setAttribute('tabindex', '-1');
-        target.focus({ preventScroll: true });
+        const hadTabIndex = targetFocus.hasAttribute('tabindex');
+        if (!hadTabIndex) targetFocus.setAttribute('tabindex', '-1');
+        targetFocus.focus({ preventScroll: true });
         
         if (!hadTabIndex) {
-          target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
+          targetFocus.addEventListener('blur', () => targetFocus.removeAttribute('tabindex'), { once: true });
         }
         announceStatus('Topo da página. Foco no conteúdo principal.');
       };
@@ -61,7 +64,7 @@ export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButton
       } else {
         window.setTimeout(moveFocusToTop, 350);
       }
-    }, [announceStatus]);
+    }, [announceStatus, containerRef]);
 
     return (
       <motion.button
