@@ -38,6 +38,7 @@ import {
 import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
+import { ProductColorSwatches } from './ProductColorSwatches';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
@@ -507,34 +508,12 @@ export const ProductListItem = memo(function ProductListItem({
               </span>
             )}
             {/* Inline color dots */}
-            {product.colors.length > 0 && (
-              <div className="ml-1 hidden items-center gap-1 md:flex">
-                {product.colors.slice(0, 5).map((color, idx) => {
-                  const isHighlighted =
-                    highlightColors.includes(color.group) ||
-                    (activeColorFilter?.groups?.includes(color.groupSlug || '') ?? false) ||
-                    (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
-                  return (
-                    <div
-                      key={`${color.name}-${idx}`}
-                      className={cn(
-                        'h-3 w-3 rounded-full border',
-                        isHighlighted
-                          ? 'scale-110 border-success ring-1 ring-success/30'
-                          : 'border-border/50',
-                      )}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  );
-                })}
-                {product.colors.length > 5 && (
-                  <span className="text-[9px] text-muted-foreground">
-                    +{product.colors.length - 5}
-                  </span>
-                )}
-              </div>
-            )}
+            <ProductColorSwatches
+              colors={product.colors}
+              max={5}
+              size="xs"
+              className="ml-1 hidden md:flex"
+            />
           </div>
         </div>
 
