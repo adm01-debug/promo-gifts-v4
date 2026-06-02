@@ -41,7 +41,25 @@ vi.mock('@/stores/useComparisonStore', () => ({
   })),
 }));
 
+// Mock internal components to simplify rendering
+vi.mock('@/components/catalog/BulkVariantWizard', () => ({
+  BulkVariantWizard: () => <div data-testid="mock-wizard" />,
+}));
+
+vi.mock('@/components/catalog/BulkAddToCartModal', () => ({
+  BulkAddToCartModal: () => <div data-testid="mock-add-to-cart" />,
+}));
+
+vi.mock('@/components/collections/AddToCollectionModal', () => ({
+  AddToCollectionModal: () => <div data-testid="mock-collection-modal" />,
+}));
+
+vi.mock('@/components/products/BulkActionBar', () => ({
+  BulkActionBar: () => <div data-testid="mock-bulk-action" />,
+}));
+
 const queryClient = new QueryClient();
+
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
   <BrowserRouter>
