@@ -366,7 +366,7 @@ export const ProductListItem = memo(function ProductListItem({
           />
           {/* Out of Stock Badge */}
           {displayStatus === 'out-of-stock' && (
-            <div className="absolute left-1 top-1 z-20">
+            <div className="absolute left-1 top-1 z-30">
               <ProductStatusBadge
                 type="out-of-stock"
                 size="sm"
