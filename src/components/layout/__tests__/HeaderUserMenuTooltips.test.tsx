@@ -87,6 +87,83 @@ describe('User menu tooltips — Skins & Guia Rápido', () => {
         });
       });
 
+      it('fecha o tooltip ao pressionar Esc', async () => {
+        renderItem(item);
+        const trigger = screen.getByTestId(item.testid);
+        trigger.focus();
+        fireEvent.focus(trigger);
+        await screen.findByTestId(`${item.testid}-tooltip`);
+        fireEvent.keyDown(document.activeElement || trigger, {
+          key: 'Escape',
+          code: 'Escape',
+        });
+        await waitFor(() => {
+          expect(
+            document.querySelector(`[data-testid="${item.testid}-tooltip"]`),
+          ).toBeNull();
+        });
+      });
+
+      it('fecha o tooltip ao perder o foco (clicar fora)', async () => {
+        renderItem(item);
+        const trigger = screen.getByTestId(item.testid);
+        trigger.focus();
+        fireEvent.focus(trigger);
+        await screen.findByTestId(`${item.testid}-tooltip`);
+        fireEvent.blur(trigger);
+        trigger.blur();
+        await waitFor(() => {
+          expect(
+            document.querySelector(`[data-testid="${item.testid}-tooltip"]`),
+          ).toBeNull();
+        });
+      });
+
+      it('alternar hover/foco não duplica nem deixa tooltip persistente', async () => {
+        renderItem(item);
+        const trigger = screen.getByTestId(item.testid);
+        // ciclo: focus -> blur -> focus novamente
+        trigger.focus();
+        fireEvent.focus(trigger);
+        await screen.findByTestId(`${item.testid}-tooltip`);
+        fireEvent.blur(trigger);
+        trigger.blur();
+        await waitFor(() => {
+          expect(
+            document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length,
+          ).toBe(0);
+        });
+        trigger.focus();
+        fireEvent.focus(trigger);
+        await waitFor(() => {
+          // exatamente 1 instância, nunca duplicada
+          expect(
+            document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length,
+          ).toBe(1);
+        });
+      });
+
+      it.each([320, 768, 1280, 1920])(
+        'mantém data-side="left" em viewport %ipx',
+        async (width) => {
+          Object.defineProperty(window, 'innerWidth', {
+            configurable: true,
+            value: width,
+          });
+          window.dispatchEvent(new Event('resize'));
+          renderItem(item);
+          const trigger = screen.getByTestId(item.testid);
+          trigger.focus();
+          fireEvent.focus(trigger);
+          await waitFor(() => {
+            const content = document.querySelector(
+              `[data-testid="${item.testid}-tooltip"]`,
+            ) as HTMLElement | null;
+            expect(content).not.toBeNull();
+            expect(content!.getAttribute('data-side')).toBe('left');
+          });
+        },
+      );
     });
   }
 });

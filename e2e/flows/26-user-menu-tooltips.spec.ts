@@ -24,6 +24,12 @@ const ITEMS = [
   },
 ] as const;
 
+const VIEWPORTS = [
+  { name: "mobile", width: 390, height: 844 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "desktop", width: 1440, height: 900 },
+] as const;
+
 test.describe("Fluxo: tooltips do menu do usuário", () => {
   test.beforeEach(() => requireAuth());
 
@@ -47,5 +53,45 @@ test.describe("Fluxo: tooltips do menu do usuário", () => {
       await page.mouse.move(0, 0);
       await expect(tooltip).toBeHidden({ timeout: 4000 });
     });
+
+    test(`tooltip de "${item}" fecha ao pressionar Esc`, async ({ page }) => {
+      await gotoAndSettle(page, "/");
+      await page.getByTestId("user-menu-trigger").click();
+      const menuItem = page.getByTestId(item);
+      await menuItem.hover();
+      const tooltip = page.getByTestId(tip);
+      await expect(tooltip).toBeVisible({ timeout: 4000 });
+      await page.keyboard.press("Escape");
+      await expect(tooltip).toBeHidden({ timeout: 4000 });
+    });
+
+    test(`tooltip de "${item}" fecha ao clicar fora do item`, async ({ page }) => {
+      await gotoAndSettle(page, "/");
+      await page.getByTestId("user-menu-trigger").click();
+      const menuItem = page.getByTestId(item);
+      await menuItem.hover();
+      const tooltip = page.getByTestId(tip);
+      await expect(tooltip).toBeVisible({ timeout: 4000 });
+      // clica em uma região fora do item (canto da tela)
+      await page.mouse.click(5, 5);
+      await expect(tooltip).toBeHidden({ timeout: 4000 });
+    });
+
+    for (const vp of VIEWPORTS) {
+      test(`tooltip de "${item}" mantém data-side="left" em ${vp.name} (${vp.width}px)`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await gotoAndSettle(page, "/");
+        await page.getByTestId("user-menu-trigger").click();
+        const menuItem = page.getByTestId(item);
+        await menuItem.hover();
+        const tooltip = page.getByTestId(tip);
+        await expect(tooltip).toBeVisible({ timeout: 4000 });
+        await expect(tooltip).toHaveAttribute("data-side", "left");
+        // garante que não há tooltip duplicado para o mesmo item
+        await expect(page.getByTestId(tip)).toHaveCount(1);
+      });
+    }
   }
 });
