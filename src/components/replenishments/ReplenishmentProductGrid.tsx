@@ -8,6 +8,7 @@ import {
   useReplenishmentsSelectionMode,
   useReplenishmentsWithDetails,
 } from '@/hooks/products';
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
@@ -171,6 +172,29 @@ export function ReplenishmentProductGrid() {
     return map;
   }, [filteredProducts]);
 
+  // Batch-load cores das variantes para os produtos visíveis
+  const visibleProductIds = useMemo(
+    () => filteredProducts.map((p) => p.product_id),
+    [filteredProducts],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
+
+  // Enriquece o productMap (usado pelo list-view via ProductListItem) com as cores carregadas
+  const enrichedProductMap = useMemo(() => {
+    if (!colorsByProduct || colorsByProduct.size === 0) return productMap;
+    const next = new Map(productMap);
+    for (const [id, prod] of next) {
+      const c = colorsByProduct.get(id);
+      if (c && c.length > 0) {
+        next.set(id, {
+          ...prod,
+          colors: c.map((x) => ({ name: x.name, hex: x.hex || '', group: '' })),
+        });
+      }
+    }
+    return next;
+  }, [productMap, colorsByProduct]);
+
   const renderContent = () => {
     if (isLoading && products.length === 0) {
       return (
@@ -253,6 +277,7 @@ export function ReplenishmentProductGrid() {
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
+          colorsByProduct={colorsByProduct}
         />
       );
     }
@@ -261,7 +286,7 @@ export function ReplenishmentProductGrid() {
       return (
         <VirtualizedReplenishmentList
           products={filteredProducts}
-          productMap={productMap}
+          productMap={enrichedProductMap}
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
@@ -283,6 +308,7 @@ export function ReplenishmentProductGrid() {
         selectedIds={sel.selectedIds}
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
+        colorsByProduct={colorsByProduct}
       />
     );
   };

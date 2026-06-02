@@ -8,6 +8,7 @@ import {
   getGridGapClass,
 } from '@/components/replenishments/grid-layout';
 import { NoveltyGridCard } from './NoveltyCards';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 
 interface VirtualizedNoveltyGridProps {
   products: NoveltyWithDetails[];
@@ -17,6 +18,7 @@ interface VirtualizedNoveltyGridProps {
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
   onStatusClick?: (type: string, value?: string | number) => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
 
 /**
@@ -32,6 +34,7 @@ export function VirtualizedNoveltyGrid({
   onToggleSelect,
   onProductClick,
   onStatusClick,
+  colorsByProduct,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +91,7 @@ export function VirtualizedNoveltyGrid({
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
                     onStatusClick={onStatusClick}
+                    colors={colorsByProduct?.get(product.product_id)}
                   />
                 </div>
               ))}

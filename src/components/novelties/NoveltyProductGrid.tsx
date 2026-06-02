@@ -31,6 +31,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
@@ -207,6 +208,15 @@ export function NoveltyProductGrid() {
     return map;
   }, [filteredProducts, sel]);
 
+  // Batch-load cores das variantes para os produtos visíveis (visualização atual)
+  const visibleProductIds = useMemo(() => {
+    if (viewMode === 'list' || viewMode === 'table') {
+      return filteredProducts.map((n) => n.product_id);
+    }
+    return paginatedProducts.map((n) => n.product_id);
+  }, [viewMode, filteredProducts, paginatedProducts]);
+  const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
+
   const renderContent = () => {
     if (isLoading && products.length === 0) {
       return (
@@ -271,6 +281,7 @@ export function NoveltyProductGrid() {
           selectionMode={selectionMode}
           selectedIds={sel.selectedIds}
           onToggleSelect={sel.toggleSelect}
+          colorsByProduct={colorsByProduct}
           onStatusClick={(type) => {
             if (type === 'novelty') return; // already on novelty page
             if (type === 'promotion') navigate('/filtros?onSale=1');
@@ -285,8 +296,20 @@ export function NoveltyProductGrid() {
       return (
         <div className="space-y-2">
           {filteredProducts.map((novelty, index) => {
-            const prod = productMap.get(novelty.product_id);
-            if (!prod) return null;
+            const prodBase = productMap.get(novelty.product_id);
+            if (!prodBase) return null;
+            const batchColors = colorsByProduct?.get(novelty.product_id);
+            const prod =
+              batchColors && batchColors.length > 0
+                ? {
+                    ...prodBase,
+                    colors: batchColors.map((c) => ({
+                      name: c.name,
+                      hex: c.hex || '',
+                      group: '',
+                    })),
+                  }
+                : prodBase;
             const isSelected = sel.selectedIds.has(novelty.product_id);
             return (
               <div
@@ -342,6 +365,7 @@ export function NoveltyProductGrid() {
         selectedIds={sel.selectedIds}
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
+        colorsByProduct={colorsByProduct}
         onStatusClick={(type) => {
           if (type === 'novelty') return;
           if (type === 'promotion') navigate('/filtros?onSale=1');

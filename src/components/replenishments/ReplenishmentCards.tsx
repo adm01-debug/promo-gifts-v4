@@ -12,6 +12,7 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
@@ -41,6 +42,7 @@ export interface ReplenishmentCardProps {
   readonly selectionMode: boolean;
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
+  readonly colors?: readonly ColorDotLike[];
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -49,6 +51,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   selectionMode,
   isSelected,
   onToggleSelect,
+  colors,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
@@ -185,6 +188,13 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
+          {/* Cores disponíveis */}
+          {colors && colors.length > 0 && (
+            <div className="flex items-center gap-1">
+              <ProductColorSwatches colors={colors} max={6} size="sm" />
+            </div>
+          )}
+
           {/* Sparkline */}
           <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
@@ -208,6 +218,7 @@ interface ReplenishmentTableViewProps {
   readonly selectionMode: boolean;
   readonly selectedIds: ReadonlySet<string>;
   readonly onToggleSelect: (id: string) => void;
+  readonly colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
 
 export function ReplenishmentTableView({
@@ -216,6 +227,7 @@ export function ReplenishmentTableView({
   selectionMode,
   selectedIds,
   onToggleSelect,
+  colorsByProduct,
 }: ReplenishmentTableViewProps) {
   return (
     <div
@@ -232,6 +244,7 @@ export function ReplenishmentTableView({
             <TableHead className="hidden px-2 sm:table-cell">SKU</TableHead>
             <TableHead className="hidden px-2 md:table-cell">Fornecedor</TableHead>
             <TableHead className="hidden px-2 lg:table-cell">Categoria</TableHead>
+            <TableHead className="hidden px-2 md:table-cell">Cores</TableHead>
             <TableHead className="px-2 text-center">Status</TableHead>
             <TableHead className="px-2 text-center">Estoque</TableHead>
             <TableHead className="px-2 text-right">Preço</TableHead>
@@ -317,6 +330,14 @@ export function ReplenishmentTableView({
                   <span className="text-[11px] text-muted-foreground">
                     {product.category_name ?? '—'}
                   </span>
+                </TableCell>
+                <TableCell className="hidden px-2 py-1.5 md:table-cell">
+                  <ProductColorSwatches
+                    colors={colorsByProduct?.get(product.product_id)}
+                    max={5}
+                    size="sm"
+                    hideWhenEmpty={false}
+                  />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-center">
                   <ReplenishmentBadge daysSince={product.days_since} size="sm" />

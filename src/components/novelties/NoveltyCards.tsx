@@ -17,6 +17,7 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
+import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 
 interface NoveltyCardProps {
@@ -25,6 +26,7 @@ interface NoveltyCardProps {
   isSelected?: boolean;
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
+  colors?: readonly ColorDotLike[];
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   isSelected = false,
   onSelect,
   onStatusClick,
+  colors,
 }: NoveltyCardProps) {
   const p = product.product;
   const fresh = product.days_remaining >= 25;
@@ -145,6 +148,11 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       <div className="flex flex-col gap-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-tight">{p?.name ?? '—'}</p>
         <p className="text-xs text-muted-foreground">{p?.sku ?? '—'}</p>
+        {colors && colors.length > 0 && (
+          <div className="mt-0.5">
+            <ProductColorSwatches colors={colors} max={5} size="sm" />
+          </div>
+        )}
         {p?.sale_price != null && (
           <p className="text-sm font-semibold text-primary">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -164,6 +172,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   isSelected = false,
   onSelect,
   onStatusClick,
+  colors,
 }: NoveltyCardProps) {
   const p = product.product;
   const fresh = product.days_remaining >= 25;
@@ -254,6 +263,9 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {p.supplier_name}
             </span>
           )}
+          {colors && colors.length > 0 && (
+            <ProductColorSwatches colors={colors} max={5} size="xs" />
+          )}
         </div>
       </div>
 
@@ -276,12 +288,14 @@ export function NoveltyTableView({
   selectedIds = [],
   onSelect,
   onStatusClick,
+  colorsByProduct,
 }: {
   products: NoveltyWithDetails[];
   selectionMode?: boolean;
   selectedIds?: string[];
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -293,6 +307,7 @@ export function NoveltyTableView({
             <TableHead>SKU</TableHead>
             <TableHead>Novidade</TableHead>
             <TableHead>Pre\u00e7o</TableHead>
+            <TableHead>Cores</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Fornecedor</TableHead>
             <TableHead className="text-right">Estoque</TableHead>
@@ -368,6 +383,14 @@ export function NoveltyTableView({
                         p.sale_price,
                       )
                     : '—'}
+                </TableCell>
+                <TableCell className="px-2 py-1.5">
+                  <ProductColorSwatches
+                    colors={colorsByProduct?.get(product.product_id)}
+                    max={5}
+                    size="sm"
+                    hideWhenEmpty={false}
+                  />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                   {p?.category_name ?? '—'}
