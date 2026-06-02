@@ -98,8 +98,6 @@ describe('Catalog Sorting and Edge Cases', () => {
     expect(result.current.filters.sortBy).toBe('price-asc');
     
     // Note: useFiltersPageState uses a debounced serverSearchTerm for the hook
-    // In this test environment without timers manipulation, the hook might still see the old value
-    // or an empty value if initial mount logic hasn't settled.
     // We check that sortBy is correctly propagated.
     expect(useProductsCatalog).toHaveBeenCalledWith(expect.objectContaining({
       sortBy: 'price-asc'
@@ -107,9 +105,6 @@ describe('Catalog Sorting and Edge Cases', () => {
   });
 
   it('should validate that UI sort labels correspond to productService parameters', () => {
-    // This is a contract test ensuring SORT_OPTIONS values match what switch/case expects
-    // in productService (we can't directly test productService's private logic here but we can check the hook call)
-    
     (useProductsCatalog as any).mockReturnValue({
       data: { pages: [{ products: [], totalEstimate: 0 }] },
       isLoading: false,
@@ -147,5 +142,29 @@ describe('Catalog Sorting and Edge Cases', () => {
 
     // Should not crash even with null fields
     expect(result.current.filteredProducts.length).toBe(2);
+  });
+
+  it('should not duplicate items when sort changes with existing results', () => {
+    const p1 = { id: '1', name: 'A', price: 10 };
+    const p2 = { id: '2', name: 'B', price: 20 };
+
+    (useProductsCatalog as any).mockReturnValue({
+      data: { pages: [{ products: [p1, p2], totalEstimate: 2 }] },
+      isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useFiltersPageState(), { wrapper });
+
+    act(() => {
+      result.current.setSortBy('price-desc');
+    });
+
+    // filteredProducts should still be unique
+    const ids = result.current.filteredProducts.map(p => p.id);
+    const uniqueIds = new Set(ids);
+    expect(ids.length).toBe(uniqueIds.size);
+    expect(ids.length).toBe(2);
   });
 });
