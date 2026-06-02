@@ -188,6 +188,13 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
+          {/* Cores disponíveis */}
+          {colors && colors.length > 0 && (
+            <div className="flex items-center gap-1">
+              <ProductColorSwatches colors={colors} max={6} size="sm" />
+            </div>
+          )}
+
           {/* Sparkline */}
           <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
