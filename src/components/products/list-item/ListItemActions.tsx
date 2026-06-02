@@ -36,19 +36,27 @@ export function ListItemActions({
         'flex shrink-0 items-center gap-0.5',
         'opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
         'transition-opacity duration-200',
+        'overflow-x-auto no-scrollbar max-w-full'
       )}
     >
       {/* 1 - Carrinho */}
-      <QuickAddToQuote
-        productId={product.id}
-        productName={product.name}
-        productSku={product.sku}
-        productImageUrl={product.og_image_url || product.images[0]}
-        productPrice={product.price}
-        minQuantity={product.minQuantity || 1}
-        variant="icon"
-        className="h-8 w-8"
-      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <QuickAddToQuote
+              productId={product.id}
+              productName={product.name}
+              productSku={product.sku}
+              productImageUrl={product.og_image_url || product.images[0]}
+              productPrice={product.price}
+              minQuantity={product.minQuantity || 1}
+              variant="icon"
+              className="h-8 w-8"
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
+      </Tooltip>
 
       {/* 2 - Orçamento (desktop) */}
       <div className="hidden items-center gap-0.5 sm:flex">
@@ -75,7 +83,7 @@ export function ListItemActions({
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
               onClick={(e) => onVariantAction('collection', e)}
-              aria-label="Adicionar à coleção"
+              aria-label="Coleção"
             >
               <FolderPlus className="h-3.5 w-3.5" />
             </Button>
@@ -91,7 +99,7 @@ export function ListItemActions({
             variant="ghost"
             size="icon"
             className={cn(
-              'h-8 w-8 rounded-full',
+              'h-8 w-8 rounded-full shrink-0',
               isFavorited
                 ? 'bg-destructive/10 text-destructive'
                 : 'text-muted-foreground hover:text-destructive',
@@ -116,7 +124,7 @@ export function ListItemActions({
             variant="ghost"
             size="icon"
             className={cn(
-              'h-8 w-8 rounded-full',
+              'h-8 w-8 rounded-full shrink-0',
               isInCompare
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:text-primary',
@@ -140,7 +148,7 @@ export function ListItemActions({
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
               onClick={onQuickView}
-              aria-label="Visualização rápida"
+              aria-label="Quick View"
             >
               <Eye className="h-3.5 w-3.5" />
             </Button>

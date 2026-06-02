@@ -32,18 +32,25 @@ export function TableRowActions({
   onOpenQuickView,
 }: TableRowActionsProps) {
   return (
-    <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+    <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 overflow-x-auto no-scrollbar max-w-full">
       {/* 1 - Carrinho */}
-      <QuickAddToQuote
-        productId={product.id}
-        productName={product.name}
-        productSku={product.sku}
-        productImageUrl={product.og_image_url || product.images[0]}
-        productPrice={product.price}
-        minQuantity={product.minQuantity || 1}
-        variant="icon"
-        className="h-7 w-7"
-      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div onClick={(e) => e.stopPropagation()}>
+            <QuickAddToQuote
+              productId={product.id}
+              productName={product.name}
+              productSku={product.sku}
+              productImageUrl={product.og_image_url || product.images[0]}
+              productPrice={product.price}
+              minQuantity={product.minQuantity || 1}
+              variant="icon"
+              className="h-7 w-7"
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top">Adicionar ao Carrinho</TooltipContent>
+      </Tooltip>
 
       {/* 2 - Orçamento */}
       <Tooltip>
@@ -51,7 +58,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'quote');
@@ -70,12 +77,12 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'collection');
             }}
-            aria-label="Adicionar à coleção"
+            aria-label="Coleção"
           >
             <FolderPlus className="h-3 w-3" />
           </Button>
@@ -89,7 +96,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('h-7 w-7 rounded-full', fav && 'bg-destructive/10 text-destructive')}
+            className={cn('h-7 w-7 rounded-full shrink-0', fav && 'bg-destructive/10 text-destructive')}
             onClick={(e) => {
               e.stopPropagation();
               if (fav) {
@@ -118,7 +125,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('h-7 w-7 rounded-full', inComp && 'bg-primary/10 text-primary')}
+            className={cn('h-7 w-7 rounded-full shrink-0', inComp && 'bg-primary/10 text-primary')}
             disabled={!inComp && !canAddToCompare}
             onClick={(e) => {
               e.stopPropagation();
@@ -146,12 +153,12 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onOpenQuickView(product);
             }}
-            aria-label="Visualização rápida"
+            aria-label="Quick View"
           >
             <Eye className="h-3 w-3" />
           </Button>
@@ -165,7 +172,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'share');
