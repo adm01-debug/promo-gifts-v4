@@ -43,7 +43,7 @@ export function NotificationPreferences() {
         const index = prev.findIndex(
           (p) =>
             p.id === updatedPref.id ||
-            (p.category === updatedPref.category && p.user_id === updatedPref.user_id),
+            (p.category === updatedPref.category && (p.user_id === updatedPref.user_id || !p.id)),
         );
         if (index >= 0) {
           const next = [...prev];
