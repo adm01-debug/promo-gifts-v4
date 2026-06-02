@@ -392,10 +392,8 @@ export function useCatalogState() {
   // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
-    React.startTransition(() => {
-      setDisplayCount(ITEMS_PER_PAGE);
-    });
-  }, [filters, sortBy, searchQuery]);
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filters, sortBy, debouncedSearch]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -454,10 +452,10 @@ export function useCatalogState() {
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   useEffect(() => {
-    if (!deferredIsTransitioning) {
+    if (!isTransitioning) {
       setLastNonTransitionedProducts(filteredProducts);
     }
-  }, [filteredProducts, deferredIsTransitioning]);
+  }, [filteredProducts, isTransitioning]);
 
   const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
