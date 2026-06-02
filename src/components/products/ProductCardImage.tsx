@@ -21,7 +21,7 @@ import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { getCdnUrl } from '@/lib/cdn';
+import { getCdnUrl } from '@/utils/image-utils';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
