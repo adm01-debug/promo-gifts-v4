@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 vi.mock('@/hooks/products/useProductsLightweight', () => ({
-  useProductsCatalog: vi.fn(() => ({
+  useProductsCatalog: vi.fn(({ search, categories, suppliers, sortBy }) => ({
     data: {
       pages: [
         {
@@ -31,6 +31,8 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               featured: true,
               newArrival: false,
               gender: 'Unissex',
+              is_bestseller: true,
+              created_at: '2026-06-01T10:00:00Z'
             },
             {
               id: '2',
@@ -43,6 +45,8 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               featured: false,
               newArrival: true,
               gender: 'Masculino',
+              is_bestseller: false,
+              created_at: '2026-06-02T10:00:00Z'
             },
             {
               id: '3',
@@ -55,6 +59,8 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               featured: false,
               newArrival: false,
               gender: 'Feminino',
+              is_bestseller: false,
+              created_at: '2026-05-30T10:00:00Z'
             },
           ],
           totalEstimate: 3,
@@ -67,6 +73,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
     isFetchingNextPage: false,
   })),
 }));
+
 
 vi.mock('@/hooks/products/useProductsByCategory', () => ({
   useProductsByCategory: vi.fn(({ categoryIds }) => ({
