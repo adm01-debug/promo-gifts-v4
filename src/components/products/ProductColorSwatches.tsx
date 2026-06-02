@@ -171,13 +171,41 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                // Ao clicar no +N sem uma cor específica, navegamos para o PDP padrão
+                // O evento de clique do card pai cuidará da navegação se não pararmos aqui.
+                // Mas queremos permitir que o usuário veja a lista primeiro.
+                e.stopPropagation();
+              }}
             >
               +{overflow}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs" role="tooltip" data-testid="color-overflow-tooltip">
-            {colors.slice(max).map((c) => c.name).join(', ')}
+          <TooltipContent side="top" className="flex flex-col gap-1.5 p-2" role="tooltip" data-testid="color-overflow-tooltip">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1 border-b border-border/40 pb-1">
+              Mais {overflow} cor{overflow === 1 ? '' : 'es'}
+            </p>
+            <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto">
+              {colors.slice(max).map((c, idx) => (
+                <button
+                  key={`${c.name}-${idx}`}
+                  type="button"
+                  className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted text-[11px] transition-colors text-left"
+                  data-testid={`color-swatch-hidden-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  onClick={(e) => {
+                    if (!onSelect) return;
+                    e.stopPropagation();
+                    onSelect(c, max + idx);
+                  }}
+                >
+                  <div 
+                    className="h-2.5 w-2.5 rounded-full border border-border/40" 
+                    style={{ backgroundColor: c.hex || 'transparent' }}
+                  />
+                  <span>{c.name}</span>
+                </button>
+              ))}
+            </div>
           </TooltipContent>
         </Tooltip>
       )}

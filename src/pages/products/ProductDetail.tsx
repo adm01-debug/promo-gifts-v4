@@ -185,33 +185,61 @@ export default function ProductDetail() {
   // Auto-select color from URL
   useEffect(() => {
     if (!product || colorAutoSelected) return;
+
     const corParam = searchParams.get('cor');
     const grupoParam = searchParams.get('grupo');
     const hexParam = searchParams.get('hex');
-    if ((!corParam && !grupoParam && !hexParam) || !product.variations?.length) return;
+
+    // Se não há parâmetros de cor, não fazemos seleção automática
+    if (!corParam && !grupoParam && !hexParam) {
+      setColorAutoSelected(true);
+      return;
+    }
+
+    if (!product.variations?.length) {
+      setColorAutoSelected(true);
+      return;
+    }
+
     const normalizedParam = corParam?.toLowerCase().trim() || '';
+    
+    // 1. Tenta match exato por nome
     let match = product.variations.find(
       (v: ProductVariation) => v.color?.name?.toLowerCase().trim() === normalizedParam,
     );
-    if (!match && normalizedParam)
+
+    // 2. Tenta match parcial por nome
+    if (!match && normalizedParam) {
       match = product.variations.find((v: ProductVariation) => {
         const name = v.color?.name?.toLowerCase().trim() || '';
         return name.includes(normalizedParam) || normalizedParam.includes(name);
       });
-    if (!match && hexParam)
+    }
+
+    // 3. Tenta match por hex
+    if (!match && hexParam) {
+      const normalizedHex = hexParam.startsWith('#') ? hexParam.toLowerCase() : `#${hexParam.toLowerCase()}`;
       match = product.variations.find(
-        (v: ProductVariation) => v.color?.hex?.toLowerCase() === hexParam.toLowerCase(),
+        (v: ProductVariation) => v.color?.hex?.toLowerCase() === normalizedHex,
       );
+    }
+
+    // 4. Tenta match por grupo
     if (!match && grupoParam && product.colors?.length) {
       const c = product.colors.find(
         (c: { groupSlug?: string; name?: string }) => c.groupSlug === grupoParam,
       );
-      if (c)
+      if (c) {
         match = product.variations.find(
           (v: ProductVariation) => v.color?.name?.toLowerCase() === c.name?.toLowerCase(),
         );
+      }
     }
-    if (match) setSelectedVariation(match);
+
+    if (match) {
+      setSelectedVariation(match);
+    }
+    
     setColorAutoSelected(true);
   }, [product, searchParams, colorAutoSelected]);
 
