@@ -263,6 +263,9 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {p.supplier_name}
             </span>
           )}
+          {colors && colors.length > 0 && (
+            <ProductColorSwatches colors={colors} max={5} size="xs" />
+          )}
         </div>
       </div>
 
