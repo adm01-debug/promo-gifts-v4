@@ -172,6 +172,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   isSelected = false,
   onSelect,
   onStatusClick,
+  colors,
 }: NoveltyCardProps) {
   const p = product.product;
   const fresh = product.days_remaining >= 25;
