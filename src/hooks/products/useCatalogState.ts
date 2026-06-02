@@ -132,6 +132,10 @@ export function useCatalogState() {
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
+  
+  useEffect(() => {
+    console.log(`[useCatalogState] viewMode is now: ${viewMode}`);
+  }, [viewMode]);
   const setViewMode = useCallback((mode: ViewMode) => {
     setViewModeState(mode);
     try {
@@ -171,6 +175,7 @@ export function useCatalogState() {
   const setSortBy = useCallback(
     (s: SortOption) => {
       if (s === sortBy) return;
+      console.log(`[useCatalogState] Changing sortBy from ${sortBy} to ${s}`);
       setIsTransitioning(true);
       setSortByState(s);
     },
@@ -212,6 +217,7 @@ export function useCatalogState() {
     });
 
     setIsTransitioning(false);
+    console.log('[useCatalogState] Transition finished (sortBy applied)');
   }, [sortBy, updatePreferences, navigate, trackSort]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
@@ -515,9 +521,15 @@ export function useCatalogState() {
   ]);
 
   const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+  
+  // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
+  // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
+  // visível até o novo sort processar.
   const shouldShowCatalogSkeleton =
-    isInitialCatalogLoad ||
-    (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints);
+    !isTransitioning && (
+      isInitialCatalogLoad ||
+      (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints)
+    );
   const shouldShowEmptyState =
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
@@ -850,7 +862,7 @@ export function useCatalogState() {
     clearHistory,
     // Navigation & pagination
     navigate,
-    isTransitioning: deferredIsTransitioning,
+    isTransitioning: isTransitioning,
     hasMoreProducts,
     ITEMS_PER_PAGE,
     loadMore,

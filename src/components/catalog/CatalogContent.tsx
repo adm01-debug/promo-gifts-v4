@@ -149,7 +149,12 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
+    <div 
+      className={cn(
+        "relative space-y-8 pb-12 duration-500 animate-in fade-in",
+        isLoadingMore && "opacity-80 transition-opacity"
+      )}
+    >
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
           {viewMode === 'grid' && (
