@@ -1,6 +1,12 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 1.4.0
+// Versão: 1.5.0
+//
+// CHANGELOG v1.5.0 (2026-06-02):
+//   FIX: TypeError "Response body is already used" on res.clone()
+//   CAUSA raiz: res.clone() dentro de caches.open().then() executa DEPOIS
+//   que o browser já consumiu o body do Response retornado por respondWith().
+//   FIX: clonar sincronamente ANTES do return.
 //
 // CHANGELOG v1.4.0 (2026-06-02):
 //   FIX: TypeError "Failed to convert value to 'Response'" em navigation requests
@@ -15,8 +21,8 @@
 //          cache (URL diverge do "/" cacheado); precisam de tratamento separado.
 //   BUG-C: Image fallback caches.match('/placeholder.svg') também podia ser undefined.
 
-const CACHE_NAME = 'app-cache-v4';        // Bump v3→v4: invalida cache com bugs
-const IMAGE_CACHE_NAME = 'images-cache-v4';
+const CACHE_NAME = 'app-cache-v5';        // Bump v4→v5: fix res.clone() body-already-used
+const IMAGE_CACHE_NAME = 'images-cache-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -116,7 +122,10 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((res) => {
           if (res && res.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, res.clone()));
+            // v1.5.0 FIX: clone SINCRONO antes do return — se clonar dentro de
+            // caches.open().then(), o body já foi consumido pelo browser.
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
           }
           return res;
         })
@@ -137,7 +146,9 @@ self.addEventListener('fetch', (event) => {
         if (!res || res.status !== 200 || res.type !== 'basic') {
           return res;
         }
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, res.clone()));
+        // v1.5.0 FIX: clone SINCRONO antes do return
+        const resClone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
         return res;
       })
       .catch(() =>
