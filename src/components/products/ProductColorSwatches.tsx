@@ -36,16 +36,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   className,
   hideWhenEmpty = true,
 }: ProductColorSwatchesProps) {
+  // BUG-1 FIX: variável containerTestId removida — era dead code (nunca referenciada).
+  // O data-testid real do container é "product-colors-container" (linha abaixo no JSX).
   const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
-
-  // Container principal com data-testid constante para asserts de skeleton vs conteúdo
-  const containerTestId = "product-colors-wrapper";
 
   if (colors === undefined) {
     return (
-      <div 
-        className={cn('flex items-center gap-1 min-h-[16px]', className)} 
-        aria-busy="true" 
+      <div
+        className={cn('flex items-center gap-1 min-h-[16px]', className)}
+        aria-busy="true"
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
       >
@@ -64,9 +63,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   }
 
   if (colors.length === 0) {
-    if (hideWhenEmpty) return <div className="min-h-[16px]" data-testid="colors-empty-hidden" />;
+    // BUG-2 FIX: forward className para que callers como ProductListItem
+    // (className="ml-1 hidden md:flex") funcionem corretamente no estado vazio.
+    // Antes: <div className="min-h-[16px]"> — className ignorado, div visível no mobile.
+    if (hideWhenEmpty) return <div className={cn('min-h-[16px]', className)} data-testid="colors-empty-hidden" />;
     return (
-      <span 
+      <span
         className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
         role="status"
         aria-live="polite"
@@ -85,7 +87,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
       className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
       role="group"
       aria-live="polite"
-      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponível${colors.length === 1 ? '' : 'is'}`}
+      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${colors.length === 1 ? 'el' : 'eis'}`}
       data-testid="product-colors-container"
     >
       {visible.map((c, idx) => {
@@ -105,10 +107,10 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
               />
             </TooltipTrigger>
-            <TooltipContent 
-              id={tooltipId} 
-              side="top" 
-              className="text-xs" 
+            <TooltipContent
+              id={tooltipId}
+              side="top"
+              className="text-xs"
               role="tooltip"
               data-testid="color-tooltip-content"
             >

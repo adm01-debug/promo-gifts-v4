@@ -25,31 +25,52 @@ type VariantRow = {
 };
 
 /**
- * Retorna um Map<productId, ProductColorDot[]> para os productIds informados.
- * Ordena por nome e deduplica por (name|hex) lower-case.
- */
-/**
- * Cache persistente fora do hook para evitar re-fetch de produtos individuais
- * mesmo quando a lista do lote muda parcialmente (e altera a queryKey).
+ * BUG-4 FIX: Cache de módulo para evitar re-fetch quando a queryKey muda
+ * parcialmente (novos produtos entram na lista sem invalidar os já carregados).
+ *
+ * ⚠️  ATENÇÃO — Invalidação de cache:
+ * queryClient.invalidateQueries(['products-colors-batch']) re-executa o queryFn,
+ * mas o queryFn vê missingIds.length === 0 e retorna do cache sem tocar o Supabase.
+ * Para forçar re-fetch real (ex: após logout, refresh de catálogo), chame:
+ *   clearColorsCache()
+ * antes de invalidar a query.
  */
 const GLOBAL_COLORS_CACHE = new Map<string, ProductColorDot[]>();
 
+/**
+ * Limpa o cache de módulo de cores. Deve ser chamado em:
+ * - Logout do usuário
+ * - Refresh forçado de catálogo
+ * - Qualquer fluxo que precise de dados frescos do Supabase
+ *
+ * @example
+ * clearColorsCache();
+ * queryClient.invalidateQueries(['products-colors-batch']);
+ */
+export function clearColorsCache(): void {
+  GLOBAL_COLORS_CACHE.clear();
+}
+
+/**
+ * Retorna um Map<productId, ProductColorDot[]> para os productIds informados.
+ * Ordena por nome e deduplica por (name|hex) lower-case.
+ */
 export function useProductsColorsBatch(productIds: string[]) {
-  // Chave estável: ids únicos ordenados
+  // Chave estável: ids únicos ordenados (evita refetch quando a ordem do array muda)
   const stableIds = useMemo(() => [...new Set(productIds)].sort(), [productIds]);
   // Query key que inclui os IDs específicos solicitados
   const queryKey = useMemo(() => ['products-colors-batch', stableIds], [stableIds]);
-  
+
   const enabled = stableIds.length > 0;
 
   const query = useQuery({
     queryKey,
     queryFn: async ({ queryKey }): Promise<Map<string, ProductColorDot[]>> => {
       const [, ids] = queryKey as [string, string[]];
-      
+
       // Identifica apenas o que ainda não temos no cache global
       const missingIds = ids.filter(id => !GLOBAL_COLORS_CACHE.has(id));
-      
+
       if (missingIds.length > 0) {
         const CHUNK = 100;
         for (let i = 0; i < missingIds.length; i += CHUNK) {
@@ -69,14 +90,14 @@ export function useProductsColorsBatch(productIds: string[]) {
 
           // Agrupa resultados por ID
           const results = new Map<string, Map<string, ProductColorDot>>();
-          
+
           for (const row of (data ?? []) as VariantRow[]) {
             const pid = row.product_id;
             const name = (row.color_name || '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
-            
+
             if (!results.has(pid)) results.set(pid, new Map());
             const dedupMap = results.get(pid)!;
             if (!dedupMap.has(key)) {
@@ -84,7 +105,7 @@ export function useProductsColorsBatch(productIds: string[]) {
             }
           }
 
-          // Salva no cache global garantindo que IDs sem variantes também fiquem marcados (como array vazio)
+          // Salva no cache global; IDs sem variantes ficam marcados como array vazio
           chunk.forEach(id => {
             const productColors = results.get(id);
             const arr = productColors ? Array.from(productColors.values()) : [];
