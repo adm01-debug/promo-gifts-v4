@@ -68,7 +68,15 @@ interface QuickQuoteFABProps {
   productName?: string;
 }
 
+// Diagnostic counter
+let renderCount = 0;
+
 export function QuickQuoteFAB({ productId, productName }: QuickQuoteFABProps) {
+  renderCount++;
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[QuickQuoteFAB] Render #${renderCount} - productId: ${productId}, path: ${window.location.pathname}`);
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [expertOpen, setExpertOpen] = useState(false);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>();
