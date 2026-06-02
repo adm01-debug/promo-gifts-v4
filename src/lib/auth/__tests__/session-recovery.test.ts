@@ -9,14 +9,22 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
 }));
 
-const refreshSession = vi.fn();
-const signOut = vi.fn().mockResolvedValue({ error: null });
-const getSession = vi.fn();
-const getUser = vi.fn();
+const mocks = vi.hoisted(() => ({
+  refreshSession: vi.fn(),
+  signOut: vi.fn().mockResolvedValue({ error: null }),
+  getSession: vi.fn(),
+  getUser: vi.fn(),
+}));
+const { refreshSession, signOut, getSession, getUser } = mocks;
 
 vi.mock('@/integrations/supabase/lazy-client', () => ({
   getSupabaseClient: vi.fn().mockResolvedValue({
-    auth: { refreshSession, signOut, getSession, getUser },
+    auth: {
+      refreshSession: mocks.refreshSession,
+      signOut: mocks.signOut,
+      getSession: mocks.getSession,
+      getUser: mocks.getUser,
+    },
   }),
 }));
 
