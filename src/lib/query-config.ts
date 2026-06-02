@@ -27,6 +27,39 @@ const STALE_DEFAULT = STALE_SEMI;
 // GC-time constants
 // ─────────────────────────────────────────────────────────────────────────────
 const GC_DEFAULT = 15 * 60 * 1000; // 15 min (keeps rendered UI snappy on back-nav)
+const GC_LONG = 30 * 60 * 1000; // 30 min for slowly-changing taxonomies
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC named cache/GC time buckets — used by hooks that prefer explicit
+// per-query overrides instead of the automatic prefix→tier routing below.
+//
+// CACHE_TIMES = staleTime tiers. Picked by feature, not by query-key prefix.
+// GC_TIMES    = gcTime tiers. Mostly mirror staleTime, but allow keeping data
+//               around longer than it is "fresh" so back-navigation stays snappy.
+//
+// These exports are kept stable even when the internal STALE_* constants
+// are tuned — consumers reference them by name. Added 2026-06-02 because
+// useExternalCategoriesQuery (and likely future hooks) need named tiers.
+// ─────────────────────────────────────────────────────────────────────────────
+export const CACHE_TIMES = {
+  /** Stable reference data — categories, suppliers, materials, techniques */
+  STABLE: STALE_STATIC,
+  /** Semi-static — product catalog, taxonomy lookups */
+  SEMI: STALE_SEMI,
+  /** Live — quotes, notifications */
+  LIVE: STALE_LIVE,
+  /** Real-time — connection status, health checks */
+  REALTIME: STALE_REALTIME,
+} as const;
+
+export const GC_TIMES = {
+  /** Default GC window — most queries */
+  DEFAULT: GC_DEFAULT,
+  /** Long retention for reference data that's expensive to refetch */
+  LONG: GC_LONG,
+  /** Categorias técnicas — keep cached across navigations */
+  TECNICAS: GC_LONG,
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query-key prefix → stale-time routing
