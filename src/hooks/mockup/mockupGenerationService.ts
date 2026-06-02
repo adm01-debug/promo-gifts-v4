@@ -250,6 +250,7 @@ export async function generateMockupApi(
   if (!data?.mockupUrl) throw new Error('Resposta inválida da API de mockup');
   return {
     mockupUrl: data.mockupUrl,
+    singleUrl: data.mockupUrl,
     jobId: data.jobId,
     revisionsLeft: data.revisionsLeft,
     batchResults: [],

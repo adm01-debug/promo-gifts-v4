@@ -16,8 +16,8 @@
 | Arquivos com erros TS | 79 | 0 | **-79** |
 | ESLint baseline | 301 problemas | 73 congelados | **-228 (76%)** |
 | Bugs documentados | 0 | 11 | +11 |
-| Bugs corrigidos (P0-P1) | — | 11/11 | **100%** |
-| Testes de regressão novos | 0 | 27 | +27 |
+| Bugs corrigidos (total) | — | 11/11 | **100%** |
+| Testes de regressão novos | 0 | 7 | +7 |
 | Testes de segurança novos | 0 | 20 | +20 |
 | Testes RLS existentes | 46 | 46 | Mantidos |
 | Build status | ✅ | ✅ | OK |
