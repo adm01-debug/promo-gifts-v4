@@ -165,7 +165,9 @@ async function checkRest(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
   try {
     const { error } = await withTimeout(
-      supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').limit(1),
+      Promise.resolve(
+        supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').limit(1),
+      ) as Promise<{ error: unknown }>,
       PROBE_TIMEOUT_MS,
     );
     return { ok: !error, ms: Math.round(performance.now() - t0) };

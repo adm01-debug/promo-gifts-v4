@@ -15,7 +15,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { untypedFrom } from '@/lib/supabase-untyped';
-import type { PrintAreaWithTechniques, TecnicaGravacao } from '@/types/gravacao';
+import type { PrintAreaWithTechniques, TecnicaGravacao, AreaShape } from '@/types/gravacao';
 import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
@@ -108,7 +108,7 @@ export function usePrintAreas(productId: string | null) {
           max_width: area.max_width ?? area.largura_max ?? 0,
           max_height: area.max_height ?? area.altura_max ?? 0,
           unit: 'cm',
-          shape: area.shape || 'rectangle',
+          shape: (area.shape || 'rectangle') as AreaShape,
           is_curved: area.is_curved ?? false,
           is_primary: idx === 0,
           display_order: area.technique_order ?? idx,
@@ -171,8 +171,7 @@ export function useHasPrintAreas(productId: string | null) {
     queryFn: async (): Promise<boolean> => {
       if (!productId) return false;
       try {
-        const { data, error } = await supabase
-          .from('print_area_techniques')
+        const { data, error } = await untypedFrom('print_area_techniques')
           .select('id')
           .eq('product_id', productId)
           .eq('is_active', true)

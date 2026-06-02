@@ -473,7 +473,7 @@ export function useQuoteBuilderState() {
          * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
          * da pessoa de contato, não da empresa.
          */
-        setContactId(((quote as Record<string, unknown>).contact_id as string) || '');
+        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');

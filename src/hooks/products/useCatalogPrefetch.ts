@@ -22,7 +22,7 @@ export function prefetchCatalog(queryClient: QueryClient) {
         orderBy: { column: 'name', ascending: true },
         limit: CATALOG_PAGE_SIZE,
         offset: i * CATALOG_PAGE_SIZE,
-        ...(i === 0 ? { countMode: 'exact' } : {}),
+        ...(i === 0 ? { countMode: 'exact' as const } : {}),
       }));
       const [batchResults, categoriesRaw] = await Promise.all([
         Promise.all(batchQueries.map((q) => dbInvoke(q))),

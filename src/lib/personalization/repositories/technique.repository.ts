@@ -43,8 +43,7 @@ function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnifica
     id: row.id,
     nome: row.nome,
     codigo: row.codigo,
-    tipo: row.tipo as TecnicaUnificada['tipo'],
-    descricao: row.descricao,
+    descricao: row.descricao ?? null,
     fornecedor_id: row.fornecedor,
     areas_aplicacao: row.areas_aplicacao,
     quantidade_cores: row.quantidade_cores,
@@ -54,7 +53,7 @@ function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnifica
     max_cores: row.max_cores,
     tempo_producao_dias: row.tempo_producao_dias,
     dados_extras: row.dados_extras,
-  };
+  } as unknown as TecnicaUnificada;
 }
 
 export async function findAll(options: TechniqueQueryOptions = {}): Promise<TecnicaUnificada[]> {

@@ -265,8 +265,8 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
       } else if (value === null) {
         query = query.is(key, null);
       } else if (typeof value === 'object' && value !== null && 'op' in value) {
-        const op = (value as { op: string }).op;
-        const val = (value as { value: unknown }).value;
+        const op = (value as unknown as { op: string }).op;
+        const val = (value as unknown as { value: unknown }).value;
         if (op === 'lt') query = query.lt(key, val);
         else if (op === 'lte') query = query.lte(key, val);
         else if (op === 'gt') query = query.gt(key, val);
@@ -325,6 +325,6 @@ export async function dbInvokeSingle<T>(options: InvokeOptions): Promise<T | nul
 export async function dbInvokeDelete(options: { table: string; id: string }): Promise<void> {
   // Resolve alias so delete targets the real table (not a bridge-era virtual name)
   const table = TABLE_ALIASES[options.table] ?? options.table;
-  const { error } = await supabase.from(table).delete().eq('id', options.id);
+  const { error } = await untypedFrom(table).delete().eq('id', options.id);
   if (error) throw error;
 }

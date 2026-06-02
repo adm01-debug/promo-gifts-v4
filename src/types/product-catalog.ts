@@ -180,6 +180,7 @@ export interface ProductFilters {
   maxPrice?: number;
   inStock?: boolean;
   limit?: number;
+  sortBy?: 'price-asc' | 'price-desc' | 'newest' | 'stock' | 'name-asc' | 'name-desc' | string;
 }
 
 export interface ProductLightweight {

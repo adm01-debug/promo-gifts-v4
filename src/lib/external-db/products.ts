@@ -1,9 +1,8 @@
 /**
  * Fetch products with full enrichment (colors, images, variants, suppliers).
  */
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { type BatchQuery, type BatchResult, type InvokeResult } from './bridge';
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
@@ -287,7 +286,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     idChunks.push(productIds.slice(i, i + CHUNK_SIZE));
   }
 
-  const batchQueries: BatchQuery[] = [];
+  const batchQueries: InvokeOptions[] = [];
   const queryMap: Record<string, number[]> = {
     variants: [],
     images: [],
@@ -301,6 +300,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       queryMap.variants.push(batchQueries.length);
       batchQueries.push({
         table: 'product_variants',
+        operation: 'select',
         select:
           'product_id, color_name, color_hex, color_code, color_id, sku, stock_quantity, images, selected_thumbnail',
         filters: { is_active: true, product_id: chunk },
@@ -312,6 +312,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       queryMap.images.push(batchQueries.length);
       batchQueries.push({
         table: 'product_images',
+        operation: 'select',
         select:
           'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id',
         filters: { is_active: true, product_id: chunk },
@@ -322,20 +323,20 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     queryMap.colorVariations.push(batchQueries.length);
     batchQueries.push({
       table: 'color_variations',
+      operation: 'select',
       select: 'id, name, slug, group_id',
       filters: { is_active: true },
       limit: 500,
       offset: 0,
-      cacheKey: 'ref:color_variations',
     });
     queryMap.colorGroups.push(batchQueries.length);
     batchQueries.push({
       table: 'color_groups',
+      operation: 'select',
       select: 'id, name, slug',
       filters: { is_active: true },
       limit: 100,
       offset: 0,
-      cacheKey: 'ref:color_groups',
     });
   }
 
@@ -343,6 +344,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     queryMap.suppliers.push(batchQueries.length);
     batchQueries.push({
       table: 'suppliers',
+      operation: 'select',
       select: 'id, name, code',
       filters: { id: uniqueSupplierIds },
       limit: Math.max(uniqueSupplierIds.length, 1),
@@ -350,7 +352,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   }
 
-  let batchResults: BatchResult[] = [];
+  let batchResults: InvokeResult<unknown>[] = [];
   try {
     batchResults = await Promise.all(batchQueries.map((q) => dbInvoke(q)));
   } catch (err) {
@@ -362,29 +364,28 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
   const variantsRecords: VariantRow[] = [];
   for (const idx of queryMap.variants) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) variantsRecords.push(...(r.data.records as VariantRow[]));
+    if (r?.records) variantsRecords.push(...(r.records as VariantRow[]));
   }
   const imagesRecords: ImageRow[] = [];
   for (const idx of queryMap.images) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) imagesRecords.push(...(r.data.records as ImageRow[]));
+    if (r?.records) imagesRecords.push(...(r.records as ImageRow[]));
   }
   const suppliersRecords: SupplierRow[] = [];
   for (const idx of queryMap.suppliers) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) suppliersRecords.push(...(r.data.records as SupplierRow[]));
+    if (r?.records) suppliersRecords.push(...(r.records as SupplierRow[]));
   }
 
   let colorVariationsRecords: ColorVariationRow[] = [];
   for (const idx of queryMap.colorVariations) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records)
-      colorVariationsRecords = r.data.records as ColorVariationRow[];
+    if (r?.records) colorVariationsRecords = r.records as ColorVariationRow[];
   }
   let colorGroupsRecords: ColorGroupRow[] = [];
   for (const idx of queryMap.colorGroups) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) colorGroupsRecords = r.data.records as ColorGroupRow[];
+    if (r?.records) colorGroupsRecords = r.records as ColorGroupRow[];
   }
 
   const suppliersMap = new Map(suppliersRecords.map((s) => [s.id, s.name]));

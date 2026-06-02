@@ -16,6 +16,7 @@ export type BridgeName = 'external-db-bridge' | 'crm-db-bridge';
 /** Operações permitidas para cada bridge, garantindo consistência em compile-time. */
 export type BridgeOperation =
   | 'select'
+  | 'search'
   | 'insert'
   | 'update'
   | 'delete'
