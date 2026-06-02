@@ -244,6 +244,7 @@ export function ReplenishmentTableView({
             <TableHead className="hidden px-2 sm:table-cell">SKU</TableHead>
             <TableHead className="hidden px-2 md:table-cell">Fornecedor</TableHead>
             <TableHead className="hidden px-2 lg:table-cell">Categoria</TableHead>
+            <TableHead className="hidden px-2 md:table-cell">Cores</TableHead>
             <TableHead className="px-2 text-center">Status</TableHead>
             <TableHead className="px-2 text-center">Estoque</TableHead>
             <TableHead className="px-2 text-right">Preço</TableHead>
