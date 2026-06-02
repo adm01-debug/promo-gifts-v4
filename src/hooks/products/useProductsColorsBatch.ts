@@ -25,6 +25,12 @@ type VariantRow = {
 };
 
 /**
+ * UUID v4 regex — filtra IDs mock/placeholder (ex: "mock-1") que causam
+ * erro 400 no Supabase quando enviados em queries `.in()`.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
  * BUG-4 FIX: Cache de módulo para evitar re-fetch quando a queryKey muda
  * parcialmente (novos produtos entram na lista sem invalidar os já carregados).
  *
@@ -56,8 +62,11 @@ export function clearColorsCache(): void {
  * Ordena por nome e deduplica por (name|hex) lower-case.
  */
 export function useProductsColorsBatch(productIds: string[]) {
-  // Chave estável: ids únicos ordenados (evita refetch quando a ordem do array muda)
-  const stableIds = useMemo(() => [...new Set(productIds)].sort(), [productIds]);
+  // Chave estável: ids únicos ordenados, filtrando mock/placeholder IDs
+  const stableIds = useMemo(
+    () => [...new Set(productIds)].filter((id) => UUID_RE.test(id)).sort(),
+    [productIds],
+  );
   // Query key que inclui os IDs específicos solicitados
   const queryKey = useMemo(() => ['products-colors-batch', stableIds], [stableIds]);
 
