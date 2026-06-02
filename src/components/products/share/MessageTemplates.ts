@@ -18,7 +18,7 @@ export const MESSAGE_TEMPLATES: MessageTemplate[] = [
     label: 'Formal',
     description: 'Linguagem profissional para clientes corporativos',
     generate: (product) => {
-      const colors = product.colors.map((c) => c.name).join(', ');
+      const colors = (product.colors ?? []).map((c) => c.name).join(', ');
       return `Prezado(a),
 
 Segue informações sobre o produto solicitado:
@@ -28,7 +28,7 @@ SKU: ${product.sku}
 
 ${product.description || ''}
 
-Cores disponíveis: ${colors}
+Cores disponíveis: ${colors || 'Sob consulta'}
 Valor unitário: a partir de ${formatPrice(product.price)}
 Quantidade mínima: ${product.minQuantity} unidades
 ${product.stockStatus === 'in-stock' ? 'Disponibilidade: Em estoque' : 'Disponibilidade: Sob consulta'}
@@ -44,7 +44,7 @@ Promo Brindes`;
     label: 'Informal',
     description: 'Tom descontraído e direto',
     generate: (product) => {
-      const colors = product.colors.map((c) => c.name).join(', ');
+      const colors = (product.colors ?? []).map((c) => c.name).join(', ');
       return `Oi! 😊
 
 Olha esse produto que separei pra você:
@@ -53,7 +53,7 @@ Olha esse produto que separei pra você:
 
 ${product.description || ''}
 
-🎨 Cores: ${colors}
+🎨 Cores: ${colors || 'Consulte'}
 💰 A partir de ${formatPrice(product.price)}/un
 📦 Qtd mínima: ${product.minQuantity} un
 ${product.stockStatus === 'in-stock' ? '✅ Em estoque' : '⚠️ Consultar disponibilidade'}
@@ -66,14 +66,15 @@ Promo Brindes - Brindes com Excelência!`;
     label: 'Promoção',
     description: 'Destaque urgência e benefícios',
     generate: (product) => {
-      const colors = product.colors.map((c) => c.name).join(', ');
+      const colors = (product.colors ?? []).map((c) => c.name).join(', ');
+      const colorCount = colors ? colors.split(', ').length : 0;
       return `🔥 *OPORTUNIDADE ESPECIAL* 🔥
 
 *${product.name}*
 
 ${product.description || ''}
 
-✨ ${colors.split(', ').length} cores disponíveis: ${colors}
+${colorCount > 0 ? `✨ ${colorCount} cores disponíveis: ${colors}` : '✨ Cores sob consulta'}
 💰 A partir de apenas ${formatPrice(product.price)}/un
 📦 Pedido mínimo: ${product.minQuantity} un
 ${product.stockStatus === 'in-stock' ? '🚀 PRONTA ENTREGA!' : '⏰ Consulte prazos'}
