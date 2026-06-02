@@ -33,7 +33,57 @@ export function TableRowActions({
 }: TableRowActionsProps) {
   return (
     <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-      {/* Favoritar */}
+      {/* 1 - Carrinho */}
+      <QuickAddToQuote
+        productId={product.id}
+        productName={product.name}
+        productSku={product.sku}
+        productImageUrl={product.og_image_url || product.images[0]}
+        productPrice={product.price}
+        minQuantity={product.minQuantity || 1}
+        variant="icon"
+        className="h-7 w-7"
+      />
+
+      {/* 2 - Orçamento */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenVariantPicker(product, 'quote');
+            }}
+            aria-label="Orçamento"
+          >
+            <FileText className="h-3 w-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Orçamento</TooltipContent>
+      </Tooltip>
+
+      {/* 3 - Coleção */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenVariantPicker(product, 'collection');
+            }}
+            aria-label="Adicionar à coleção"
+          >
+            <FolderPlus className="h-3 w-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Coleção</TooltipContent>
+      </Tooltip>
+
+      {/* 4 - Favoritar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -62,7 +112,7 @@ export function TableRowActions({
         <TooltipContent side="top">{fav ? 'Remover favorito' : 'Favoritar'}</TooltipContent>
       </Tooltip>
 
-      {/* Comparar */}
+      {/* 5 - Comparar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -90,76 +140,7 @@ export function TableRowActions({
         <TooltipContent side="top">Comparar</TooltipContent>
       </Tooltip>
 
-      {/* Coleção */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenVariantPicker(product, 'collection');
-            }}
-            aria-label="Adicionar à coleção"
-          >
-            <FolderPlus className="h-3 w-3" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Coleção</TooltipContent>
-      </Tooltip>
-
-      {/* Compartilhar */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenVariantPicker(product, 'share');
-            }}
-            aria-label="Compartilhar"
-          >
-            <Share2 className="h-3 w-3" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Compartilhar</TooltipContent>
-      </Tooltip>
-
-      {/* Orçamento */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenVariantPicker(product, 'quote');
-            }}
-            aria-label="Orçamento"
-          >
-            <FileText className="h-3 w-3" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Orçamento</TooltipContent>
-      </Tooltip>
-
-      {/* Carrinho */}
-      <QuickAddToQuote
-        productId={product.id}
-        productName={product.name}
-        productSku={product.sku}
-        productImageUrl={product.og_image_url || product.images[0]}
-        productPrice={product.price}
-        minQuantity={product.minQuantity || 1}
-        variant="icon"
-        className="h-7 w-7"
-      />
-
-      {/* Quick View */}
+      {/* 6 - Quick View */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -176,6 +157,25 @@ export function TableRowActions({
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Quick View</TooltipContent>
+      </Tooltip>
+
+      {/* 7 - Compartilhar */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenVariantPicker(product, 'share');
+            }}
+            aria-label="Compartilhar"
+          >
+            <Share2 className="h-3 w-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Compartilhar</TooltipContent>
       </Tooltip>
     </div>
   );
