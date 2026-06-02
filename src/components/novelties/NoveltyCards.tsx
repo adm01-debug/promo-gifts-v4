@@ -288,12 +288,14 @@ export function NoveltyTableView({
   selectedIds = [],
   onSelect,
   onStatusClick,
+  colorsByProduct,
 }: {
   products: NoveltyWithDetails[];
   selectionMode?: boolean;
   selectedIds?: string[];
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -305,6 +307,7 @@ export function NoveltyTableView({
             <TableHead>SKU</TableHead>
             <TableHead>Novidade</TableHead>
             <TableHead>Pre\u00e7o</TableHead>
+            <TableHead>Cores</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Fornecedor</TableHead>
             <TableHead className="text-right">Estoque</TableHead>
