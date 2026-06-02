@@ -6,6 +6,13 @@
  * product, allMatchingVariants, etc. but this component still expected
  * the old imageUrl, name, sku, colorVariants interface). Result: imageUrl
  * was undefined → activeSrc undefined → OptimizedImage rendered blank.
+ *
+ * FEAT 2026-06-02: Hover crossfade to set_image_url (image with all color
+ * variations grouped together). When the user hovers a product card that
+ * has a set_image_url, the main image fades out and the "todas as cores"
+ * image fades in. The effect is suppressed when the user is actively
+ * navigating color variants in the mini-carousel (showing the selected
+ * variant's image takes priority over the set image).
  */
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +21,7 @@ import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
@@ -72,7 +80,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   activeColorName: _activeColorName,
   colorSpecificImage: _colorSpecificImage,
   imageLoaded: _imageLoaded,
-  isHovered: _isHovered,
+  isHovered,
   computedImageScale,
   isNovelty,
   noveltyDaysRemaining,
@@ -90,6 +98,17 @@ export const ProductCardImage = memo(function ProductCardImage({
   // selected in the carousel), otherwise fall back to the card image URL.
   const activeVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
   const activeSrc = activeVariant?.image || cardImageUrl;
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Hover image: set_image_url (todas as cores juntas)
+  // Only show it when the user is NOT actively browsing variants — in that
+  // case showing the variant-specific image takes priority. When the
+  // product has only one variant (or no variants), hover swaps to the
+  // grouped "all colors" shot so the user sees the full palette at a glance.
+  // ───────────────────────────────────────────────────────────────────────
+  const setImageRaw = product.set_image_url ?? null;
+  const setImageSrc = setImageRaw ? getCdnUrl(setImageRaw, 'card') : null;
+  const hasSetHover = Boolean(setImageSrc) && !hasMultipleVariants;
 
   // Derive badge flags from the product object
   const featured = product.featured;
@@ -114,21 +133,49 @@ export const ProductCardImage = memo(function ProductCardImage({
 
   return (
     <div className="relative aspect-square overflow-hidden">
+      {/* Main image — fades out on hover when set image is available */}
       <OptimizedImage
         src={activeSrc}
         alt={product.name}
         srcSet={cardSrcSet}
-        className={cn('h-full w-full object-contain')}
+        className={cn(
+          'h-full w-full object-contain',
+          'transition-opacity duration-300 ease-in-out',
+          hasSetHover && isHovered && 'opacity-0',
+        )}
         style={{
           transform: `scale(${computedImageScale})`,
           willChange: 'transform',
-          transition: 'transform 0.3s ease-out',
+          transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
         }}
         containerClassName="h-full w-full"
         priority={priority}
         onLoad={onImageLoad}
         {...DEFAULT_IMAGE_CONFIG}
       />
+
+      {/* Set image (todas as cores) — fades in on hover, only when no variant is active */}
+      {hasSetHover && setImageSrc && (
+        <img
+          src={setImageSrc}
+          alt={`${product.name} — todas as cores`}
+          loading="lazy"
+          decoding="async"
+          className={cn(
+            'pointer-events-none absolute inset-0 h-full w-full object-contain',
+            'opacity-0 transition-opacity duration-300 ease-in-out',
+            isHovered && 'opacity-100',
+          )}
+          style={{
+            transform: `scale(${computedImageScale})`,
+            willChange: 'transform, opacity',
+          }}
+          onError={(e) => {
+            // Hide broken set image gracefully — main image will remain visible
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      )}
 
 
       {/* Badges - Top Left */}
