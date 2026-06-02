@@ -1,0 +1,131 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { SORT_OPTIONS } from '@/constants/filters';
+import { StickyFilterBar } from '@/components/filters/StickyFilterBar';
+import { NoveltyProductGrid } from '@/components/novelties/NoveltyProductGrid';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Mock dependencies
+vi.mock('@/hooks/products', () => ({
+  useNoveltiesWithDetails: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+    isFetching: false,
+    error: null,
+  })),
+  useNoveltiesSelectionMode: vi.fn(() => ({
+    selectedIds: new Set(),
+    toggleSelect: vi.fn(),
+    clearSelection: vi.fn(),
+    noveltyToProduct: vi.fn(),
+  })),
+}));
+
+vi.mock('@/stores/useFavoritesStore', () => ({
+  useFavoritesStore: vi.fn(() => ({
+    isFavorite: vi.fn(),
+    toggleFavorite: vi.fn(),
+  })),
+}));
+
+vi.mock('@/stores/useComparisonStore', () => ({
+  useComparisonStore: vi.fn(() => ({
+    isInCompare: vi.fn(),
+    addToCompare: vi.fn(),
+    removeFromCompare: vi.fn(),
+    canAddMore: true,
+  })),
+}));
+
+const queryClient = new QueryClient();
+
+const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  </BrowserRouter>
+);
+
+describe('Product Sort Standardization', () => {
+  it('StickyFilterBar should use labels from SORT_OPTIONS', () => {
+    const onSortChange = vi.fn();
+    render(
+      <Wrapper>
+        <StickyFilterBar
+          isVisible={true}
+          activeFiltersCount={0}
+          totalProducts={100}
+          sortBy="name"
+          onSortChange={onSortChange}
+          onOpenFilters={vi.fn()}
+          onClearFilters={vi.fn()}
+          onScrollToTop={vi.fn()}
+          viewMode="grid"
+          onViewModeChange={vi.fn()}
+        />
+      </Wrapper>
+    );
+
+    // Click trigger to open select
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    // Verify all labels from SORT_OPTIONS are present
+    SORT_OPTIONS.forEach(option => {
+      // Radix Select renders options in a Portal, but testing-library usually finds them
+      // if they are in the document.
+      const elements = screen.queryAllByText(option.label);
+      expect(elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('NoveltyProductGrid should use the same SORT_OPTIONS as StickyFilterBar', () => {
+    render(
+      <Wrapper>
+        <NoveltyProductGrid />
+      </Wrapper>
+    );
+
+    // Find the sort select (it's the third Select in the grid toolbar)
+    const selects = screen.getAllByRole('combobox');
+    const sortSelect = selects.find(s => s.getAttribute('aria-expanded') !== null); 
+    
+    if (sortSelect) {
+      fireEvent.click(sortSelect);
+      SORT_OPTIONS.forEach(option => {
+        const elements = screen.queryAllByText(option.label);
+        expect(elements.length).toBeGreaterThan(0);
+      });
+    }
+  });
+
+  it('changing sort in StickyFilterBar triggers state change', () => {
+    const onSortChange = vi.fn();
+    render(
+      <Wrapper>
+        <StickyFilterBar
+          isVisible={true}
+          activeFiltersCount={0}
+          totalProducts={100}
+          sortBy="name"
+          onSortChange={onSortChange}
+          onOpenFilters={vi.fn()}
+          onClearFilters={vi.fn()}
+          onScrollToTop={vi.fn()}
+          viewMode="grid"
+          onViewModeChange={vi.fn()}
+        />
+      </Wrapper>
+    );
+
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    const targetOption = SORT_OPTIONS.find(o => o.value === 'price-asc');
+    if (targetOption) {
+      const optionElement = screen.getByText(targetOption.label);
+      fireEvent.click(optionElement);
+      expect(onSortChange).toHaveBeenCalledWith('price-asc');
+    }
+  });
+});
