@@ -259,6 +259,12 @@ export const ProductGrid = memo(function ProductGrid({
   );
   const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
 
+  useEffect(() => {
+    if (colorsError) {
+      console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
+    }
+  }, [colorsError, idsNeedingColors]);
+
   return (
     <div
       ref={gridRef}
