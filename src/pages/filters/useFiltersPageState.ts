@@ -105,7 +105,9 @@ export function useFiltersPageState() {
     search: serverSearchTerm,
     categories: filters.categories,
     suppliers: filters.suppliers,
+    sortBy: filters.sortBy,
   });
+
 
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
