@@ -384,6 +384,14 @@ export function NoveltyTableView({
                       )
                     : '—'}
                 </TableCell>
+                <TableCell className="px-2 py-1.5">
+                  <ProductColorSwatches
+                    colors={colorsByProduct?.get(product.product_id)}
+                    max={5}
+                    size="sm"
+                    hideWhenEmpty={false}
+                  />
+                </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                   {p?.category_name ?? '—'}
                 </TableCell>
