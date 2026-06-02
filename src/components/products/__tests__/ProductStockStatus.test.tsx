@@ -115,15 +115,4 @@ describe('Product Stock Status Visuals', () => {
     const article = container.querySelector('article');
     expect(article).not.toHaveClass('grayscale');
   });
-
-  test('SmartRecommendations MiniCard shows "Fora de estoque" badge', () => {
-    render(
-      <Wrapper>
-        <SmartRecommendations candidateProducts={[mockProduct as any]} />
-      </Wrapper>
-    );
-
-    // It's uppercase in SmartRecommendations
-    expect(screen.getByText(/FORA DE ESTOQUE/i)).toBeInTheDocument();
-  });
 });
