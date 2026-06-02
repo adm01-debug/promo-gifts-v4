@@ -1,0 +1,77 @@
+import { render, screen } from '@testing-library/react';
+import { ProductCard } from '../ProductCard';
+import { ProductListItem } from '../ProductListItem';
+import { EnhancedProductCard } from '../EnhancedProductCard';
+import { BrowserRouter } from 'react-router-dom';
+import type { Product } from '@/types/product-catalog';
+
+const mockProduct: Product = {
+  id: '1',
+  name: 'Test Product',
+  sku: 'SKU-123',
+  price: 100,
+  images: ['test-image.jpg'],
+  og_image_url: 'test-image.jpg',
+  stock: 0,
+  stockStatus: 'out-of-stock',
+  category: { id: 'cat1', name: 'Category 1' },
+  supplier: { id: 'sup1', name: 'Supplier 1' },
+  colors: [],
+  groups: [],
+  gender: 'unisex',
+  featured: false,
+  newArrival: false,
+  onSale: false,
+  isKit: false,
+};
+
+const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter>{children}</BrowserRouter>
+);
+
+describe('Product Stock Status Visuals', () => {
+  test('ProductCard shows "Fora de estoque" badge and is not grayed out', () => {
+    const { container } = render(
+      <Wrapper>
+        <ProductCard product={mockProduct} onVariantChange={() => {}} />
+      </Wrapper>
+    );
+
+    // Verify badge exists
+    expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
+
+    // Verify no grayscale or major opacity applied to the card or image
+    const article = container.querySelector('article');
+    expect(article).not.toHaveClass('grayscale');
+    expect(article).not.toHaveClass('opacity-50');
+    
+    const img = container.querySelector('img');
+    expect(img).not.toHaveClass('grayscale');
+    expect(img).not.toHaveClass('opacity-50');
+  });
+
+  test('ProductListItem shows "Fora de estoque" badge in thumbnail', () => {
+    render(
+      <Wrapper>
+        <ProductListItem product={mockProduct} />
+      </Wrapper>
+    );
+
+    // Should find the badge in the list item
+    expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
+  });
+
+  test('EnhancedProductCard shows "Fora de estoque" badge', () => {
+    const { container } = render(
+      <Wrapper>
+        <EnhancedProductCard product={mockProduct as any} />
+      </Wrapper>
+    );
+
+    expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
+    
+    // Check it's not grayed out
+    const article = container.querySelector('article');
+    expect(article).not.toHaveClass('grayscale');
+  });
+});
