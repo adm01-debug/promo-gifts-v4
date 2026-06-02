@@ -425,6 +425,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
               <Button
                 variant="ghost"
                 aria-label={`Menu de usuário: ${displayName}`}
+                data-testid="user-menu-trigger"
                 className="flex h-10 items-center gap-3 rounded-xl px-2 transition-all duration-300 hover:bg-muted/40 sm:px-2.5"
               >
                 <div className="group/avatar relative">
