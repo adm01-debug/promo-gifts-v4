@@ -91,6 +91,7 @@ export function VirtualizedNoveltyGrid({
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
                     onStatusClick={onStatusClick}
+                    colors={colorsByProduct?.get(product.product_id)}
                   />
                 </div>
               ))}
