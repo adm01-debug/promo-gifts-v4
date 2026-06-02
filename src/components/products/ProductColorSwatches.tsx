@@ -2,6 +2,26 @@
  * ProductColorSwatches — Renderiza bolinhas inline com as cores disponíveis
  * de um produto. Padrão visual usado em todas as visualizações (grid/lista/tabela)
  * de Catálogo, Super Filtro, Novidades, Reposição e Estoque.
+ *
+ * ──────────────────────────────────────────────────────────────────────────────
+ *  HIERARQUIA VISUAL & TAMANHOS RESPONSIVOS (SSOT)
+ * ──────────────────────────────────────────────────────────────────────────────
+ *  Os swatches ficam SEMPRE abaixo do `<h3 product-card-name>` e ACIMA do bloco
+ *  de preço/estoque. A linha tem `min-h-[16px]` reservado mesmo no estado vazio,
+ *  garantindo que o preço nunca "salte" verticalmente entre cards.
+ *
+ *  Tamanho dos dots por preset (use `size`):
+ *    - `xs`  → h-2.5 w-2.5 (10×10px) — densidades muito apertadas (Novidades cards-2)
+ *    - `sm`  → h-3   w-3   (12×12px) — DEFAULT, usado no grid de Catálogo
+ *    - `md`  → h-4   w-4   (16×16px) — listas e tabelas
+ *
+ *  Espaçamento horizontal: `gap-0.5` (2px) entre dots — mantém alinhamento óptico
+ *  com o `+N` overflow (`text-[10px]`) sem competir com o nome (sm:text-base) e
+ *  o preço (text-xs / sm:text-lg).
+ *
+ *  Limite default `max=5`; no ProductCard do grid usamos `max=6` (cabe sem
+ *  quebrar a linha mesmo no mobile mais estreito 320px).
+ * ──────────────────────────────────────────────────────────────────────────────
  */
 import { memo, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,11 +36,19 @@ interface ProductColorSwatchesProps {
   colors: readonly ColorDotLike[] | undefined;
   /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5. */
   max?: number;
-  /** Tamanho do dot. */
+  /** Tamanho do dot. Ver tabela na JSDoc do arquivo. */
   size?: 'xs' | 'sm' | 'md';
   className?: string;
   /** Esconde quando vazio. Default true. */
   hideWhenEmpty?: boolean;
+  /**
+   * Handler disparado ao clicar/teclar Enter numa bolinha.
+   * Recebe a cor selecionada. Sempre chamado com `event.stopPropagation()`
+   * já aplicado (evita ativar o onClick do card pai).
+   */
+  onSelect?: (color: ColorDotLike, index: number) => void;
+  /** Nome da cor atualmente selecionada — recebe ring de destaque. */
+  selectedName?: string | null;
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
@@ -35,9 +63,9 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   size = 'sm',
   className,
   hideWhenEmpty = true,
+  onSelect,
+  selectedName,
 }: ProductColorSwatchesProps) {
-  // BUG-1 FIX: variável containerTestId removida — era dead code (nunca referenciada).
-  // O data-testid real do container é "product-colors-container" (linha abaixo no JSX).
   const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
 
   if (colors === undefined) {
@@ -51,10 +79,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className={cn(
-              'animate-pulse rounded-full bg-muted',
-              SIZE_CLASS[size]
-            )}
+            className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
             data-testid="color-skeleton-dot"
           />
         ))}
@@ -63,10 +88,9 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   }
 
   if (colors.length === 0) {
-    // BUG-2 FIX: forward className para que callers como ProductListItem
-    // (className="ml-1 hidden md:flex") funcionem corretamente no estado vazio.
-    // Antes: <div className="min-h-[16px]"> — className ignorado, div visível no mobile.
-    if (hideWhenEmpty) return <div className={cn('min-h-[16px]', className)} data-testid="colors-empty-hidden" />;
+    if (hideWhenEmpty) {
+      return <div className={cn('min-h-[16px]', className)} data-testid="colors-empty-hidden" />;
+    }
     return (
       <span
         className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
@@ -81,17 +105,21 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   const visible = colors.slice(0, max);
   const overflow = colors.length - visible.length;
+  const normalizedSelected = selectedName?.toLowerCase() ?? null;
 
   return (
     <div
       className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
       role="group"
       aria-live="polite"
-      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${colors.length === 1 ? 'el' : 'eis'}`}
+      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
+        colors.length === 1 ? 'el' : 'eis'
+      }`}
       data-testid="product-colors-container"
     >
       {visible.map((c, idx) => {
         const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
+        const isSelected = normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
         return (
           <Tooltip key={`${c.name}-${idx}`}>
             <TooltipTrigger asChild>
@@ -99,12 +127,28 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 type="button"
                 className={cn(
                   'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+                  isSelected && 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-110',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
                 aria-label={`Opção de cor: ${c.name}`}
                 aria-describedby={tooltipId}
+                aria-pressed={isSelected || undefined}
                 data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
+                data-color-name={c.name}
+                onClick={(e) => {
+                  if (!onSelect) return;
+                  e.stopPropagation();
+                  onSelect(c, idx);
+                }}
+                onKeyDown={(e) => {
+                  if (!onSelect) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelect(c, idx);
+                  }
+                }}
               />
             </TooltipTrigger>
             <TooltipContent
@@ -127,6 +171,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
+              onClick={(e) => e.stopPropagation()}
             >
               +{overflow}
             </button>
