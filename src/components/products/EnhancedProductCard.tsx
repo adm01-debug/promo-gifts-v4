@@ -42,12 +42,18 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
   const [quantity, setQuantity] = useState(product.minQuantity || 1);
   const cardRef = useRef<HTMLElement>(null);
 
-  const urgencyType: 'limited-stock' | undefined =
-    product.stockStatus === 'out-of-stock' || product.stockStatus === 'low-stock'
-      ? 'limited-stock'
-      : undefined;
+  const urgencyType: 'limited-stock' | 'out-of-stock' | undefined =
+    product.stockStatus === 'out-of-stock'
+      ? 'out-of-stock'
+      : product.stockStatus === 'low-stock'
+        ? 'limited-stock'
+        : undefined;
   const urgencyText =
-    urgencyType === 'limited-stock' ? 'Estoque limitado' : undefined;
+    urgencyType === 'out-of-stock'
+      ? 'Sem estoque'
+      : urgencyType === 'limited-stock'
+        ? 'Estoque limitado'
+        : undefined;
 
   return (
     <article
@@ -270,7 +276,9 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
               size="icon"
               className="h-5 w-5"
               onClick={() =>
-                setQuantity((q) => Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)))
+                setQuantity((q) =>
+                  Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)),
+                )
               }
             >
               <span className="text-sm font-bold">-</span>

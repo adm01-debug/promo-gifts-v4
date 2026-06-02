@@ -276,7 +276,13 @@ export function NoveltyProductGrid() {
           products={filteredProducts}
           selectionMode={selectionMode}
           selectedIds={[...sel.selectedIds]}
-          onSelect={sel.toggleSelect}
+          onSelect={(id) => {
+            if (selectionMode) {
+              sel.toggleSelect(id);
+              return;
+            }
+            handleProductClick(id);
+          }}
           colorsByProduct={colorsByProduct}
           onStatusClick={(type) => {
             if (type === 'novelty') return; // already on novelty page
