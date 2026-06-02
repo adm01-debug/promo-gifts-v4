@@ -4,6 +4,7 @@ import type { ReplenishmentWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { useResponsiveColumns, getGridColsClass, getGridGapClass } from './grid-layout';
 import { ReplenishmentGridCard } from './ReplenishmentCards';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 
 interface VirtualizedGridProps {
   products: ReplenishmentWithDetails[];
@@ -12,6 +13,7 @@ interface VirtualizedGridProps {
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
 
 export function VirtualizedReplenishmentGrid({
@@ -21,6 +23,7 @@ export function VirtualizedReplenishmentGrid({
   selectedIds,
   onToggleSelect,
   onProductClick,
+  colorsByProduct,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
