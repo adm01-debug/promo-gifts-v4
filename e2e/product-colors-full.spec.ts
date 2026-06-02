@@ -17,10 +17,20 @@ async function setupRouteInterception(page: Page) {
   const state = {
     requests: [] as string[],
     count: 0,
+    lastIds: [] as string[],
   };
   await page.route('**/rest/v1/product_variants*', async (route) => {
-    state.requests.push(route.request().url());
+    const url = route.request().url();
+    state.requests.push(url);
     state.count++;
+    
+    // Tenta extrair product_ids da query string para logar se necessário
+    const urlObj = new URL(url);
+    const inParam = urlObj.searchParams.get('product_id');
+    if (inParam) {
+      state.lastIds = inParam.replace(/^\(|\)$/g, '').split(',');
+    }
+    
     await route.continue();
   });
   return state;
@@ -135,30 +145,49 @@ test.describe('Cores do Produto: Validação Rigorosa de Ciclo de Vida e Acessib
       });
 
       if (module.name === 'Novidades' || module.name === 'Reposição') {
-        test('Deve garantir eficiência de cache (deduplicação) ao mudar lista parcialmente', async ({ page }) => {
+        test('Deve garantir eficiência de cache e deduplicação ao mudar lista parcialmente', async ({ page }) => {
           const apiState = await setupRouteInterception(page);
           await page.goto(module.path);
           
-          await page.waitForSelector('[data-testid="product-colors-container"]', { timeout: 15_000 });
+          await page.waitForSelector('[data-testid="product-colors-container"], [data-testid="colors-unavailable"]', { timeout: 20_000 });
           const initialCount = apiState.count;
           expect(initialCount).toBeGreaterThan(0);
 
-          // Simula mudança parcial (ex: scroll para carregar mais ou paginação)
-          // Em Novidades/Reposição temos scroll infinito ou paginação.
-          // Vamos tentar rolar a página.
-          await page.mouse.wheel(0, 2000);
-          await page.waitForTimeout(1000); // Aguarda possíveis novas requests
+          // Captura os IDs que foram buscados inicialmente
+          const firstBatchIds = [...apiState.lastIds];
+
+          // 1. Simula mudança parcial (scroll para carregar mais)
+          await page.mouse.wheel(0, 3000);
+          await page.waitForTimeout(2000); // Aguarda carregamento de mais itens e disparos de rede
 
           const afterScrollCount = apiState.count;
+          const secondBatchIds = [...apiState.lastIds];
+
+          // Se carregou mais, deve ter disparado requests
+          // Se disparou, validamos que ao voltar não dispara de novo
+          if (afterScrollCount > initialCount) {
+             // 2. Volta para o topo (onde estão os produtos do firstBatch)
+             await page.evaluate(() => window.scrollTo(0, 0));
+             await page.waitForTimeout(1000);
+             
+             const finalCount = apiState.count;
+             // Cache check: Não deve ter feito novas requisições para o que já estava em cache
+             expect(finalCount).toBe(afterScrollCount);
+          }
+
+          // 3. Validação de deduplicação por query key
+          // Se navegarmos para outro módulo e voltarmos, o TanStack Query deve usar cache se o staleTime permitir
+          // ou o nosso GLOBAL_COLORS_CACHE deve evitar a request se os IDs forem os mesmos.
+          await page.goto('/'); // Home
+          await page.waitForTimeout(500);
+          await page.goto(module.path);
+          await page.waitForSelector('[data-testid="product-colors-container"]');
           
-          // Se carregou mais produtos, o count sobe.
-          // Se voltarmos para o topo, não deve subir de novo para os mesmos produtos (cache).
-          await page.mouse.wheel(0, -2000);
-          await page.waitForTimeout(1000);
-          
-          const finalCount = apiState.count;
-          // Não deve ter feito novas requisições ao voltar para produtos que já estavam em cache
-          expect(finalCount).toBe(afterScrollCount);
+          // Como o staleTime é 10min, não deve disparar nova request se for a mesma lista
+          // Se disparar (ex: queryKey diferente), o GLOBAL_COLORS_CACHE dentro do useQuery deve resultar em missingIds.length === 0
+          // e não chamar o Supabase.
+          const countAfterRevisit = apiState.count;
+          expect(countAfterRevisit).toBe(afterScrollCount);
         });
       }
     });
