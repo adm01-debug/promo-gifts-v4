@@ -236,10 +236,10 @@ export function ProductDetailHero({
                   A partir de
                 </p>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="font-display text-3xl font-extrabold leading-none tracking-tight text-foreground xl:text-4xl">
+                  <span className="font-display text-[1.40625rem] font-extrabold leading-none tracking-tight text-foreground xl:text-[1.6875rem]">
                     {formatCurrency(product.price)}
                   </span>
-                  <span className="text-sm font-medium text-muted-foreground/50">/un</span>
+                  <span className="text-xs font-medium text-muted-foreground/50">/un</span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <PriceFreshnessBadge
