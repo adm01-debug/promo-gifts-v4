@@ -11,11 +11,43 @@ export const productService = {
     if (filters?.categoryId) externalFilters.main_category_id = filters.categoryId;
     if (filters?.inStock) externalFilters.stock_quantity = { op: 'gt', value: 0 };
 
+    // Mapeamento de ordenação para o backend
+    let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
+
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case 'price-asc':
+          orderBy = { column: 'sale_price', ascending: true };
+          break;
+        case 'price-desc':
+          orderBy = { column: 'sale_price', ascending: false };
+          break;
+        case 'newest':
+          orderBy = { column: 'created_at', ascending: false };
+          break;
+        case 'stock':
+          orderBy = { column: 'stock_quantity', ascending: false };
+          break;
+        case 'best-seller-supplier':
+          orderBy = { column: 'is_bestseller', ascending: false };
+          break;
+        case 'best-seller-promo':
+          orderBy = { column: 'is_featured', ascending: false };
+          break;
+        case 'name':
+        default:
+          orderBy = { column: 'name', ascending: true };
+          break;
+      }
+    }
+
     const products = await fetchPromobrindProducts({
       search: filters?.search,
       limit: filters?.limit,
+      orderBy,
       filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
     });
+
 
     let result = products.map(mapPromobrindToProduct);
 
