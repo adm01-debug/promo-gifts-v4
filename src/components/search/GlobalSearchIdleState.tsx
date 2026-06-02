@@ -21,8 +21,8 @@ interface GlobalSearchIdleStateProps {
     name: string;
     sku: string;
     view_count: number;
-    image_url?: string;
-    category_name?: string;
+    image_url?: string | null;
+    category_name?: string | null;
   }>;
   contextualSuggestions: Array<{ id: string; text: string; icon?: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;

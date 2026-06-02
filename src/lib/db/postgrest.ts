@@ -324,6 +324,7 @@ export async function dbInvokeSingle<T>(options: InvokeOptions): Promise<T | nul
 export async function dbInvokeDelete(options: { table: string; id: string }): Promise<void> {
   // Resolve alias so delete targets the real table (not a bridge-era virtual name)
   const table = TABLE_ALIASES[options.table] ?? options.table;
-  const { error } = await supabase.from(table).delete().eq('id', options.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from(table).delete().eq('id', options.id);
   if (error) throw error;
 }

@@ -7,7 +7,13 @@ import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export type ProductStatusBadgeType = 'novelty' | 'promotion' | 'featured' | 'kit' | 'urgency';
+export type ProductStatusBadgeType =
+  | 'novelty'
+  | 'promotion'
+  | 'featured'
+  | 'kit'
+  | 'urgency'
+  | 'out-of-stock';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 

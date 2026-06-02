@@ -436,7 +436,7 @@ export default function CollectionsPage() {
                   createCollection(
                     col.name,
                     col.description || undefined,
-                    col.color || defaultColors[0],
+                    col.icon_color || defaultColors[0],
                     col.icon || defaultIcons[0],
                   );
                 }}
@@ -454,7 +454,7 @@ export default function CollectionsPage() {
                       createCollection(
                         collection.name,
                         collection.description || undefined,
-                        collection.color || defaultColors[0],
+                        collection.icon_color || defaultColors[0],
                         collection.icon || defaultIcons[0],
                       );
                     }}

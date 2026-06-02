@@ -620,7 +620,11 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                           mode="range"
                           defaultMonth={localDateRange?.from}
                           selected={localDateRange}
-                          onSelect={setLocalDateRange}
+                          onSelect={(range) =>
+                            setLocalDateRange(
+                              range as { from: Date | undefined; to: Date | undefined },
+                            )
+                          }
                           numberOfMonths={1}
                         />
                       </PopoverContent>

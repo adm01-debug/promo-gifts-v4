@@ -42,7 +42,7 @@ export interface GetNotificationsOptions {
  */
 export async function getNotifications(
   options: GetNotificationsOptions = {},
-): Promise<WorkspaceNotification[]> {
+): Promise<{ data: WorkspaceNotification[]; total: number }> {
   const {
     unreadOnly = false,
     search,
@@ -92,8 +92,6 @@ export async function getNotifications(
     total: count ?? 0,
   };
 }
-
-// Add return type to getNotifications above (implicitly handled by JS/TS but good to note)
 
 /**
  * Conta notificações não lidas do usuário autenticado.

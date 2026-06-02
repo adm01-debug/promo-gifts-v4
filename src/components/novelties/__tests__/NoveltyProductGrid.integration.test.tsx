@@ -26,7 +26,7 @@ vi.mock('@/hooks/products', () => ({
         stock_quantity: 100,
         min_quantity: 10,
         days_remaining: 30,
-        status: 'active'
+        status: 'active',
       },
       {
         product_id: '2',
@@ -41,8 +41,8 @@ vi.mock('@/hooks/products', () => ({
         stock_quantity: 50,
         min_quantity: 10,
         days_remaining: 30,
-        status: 'active'
-      }
+        status: 'active',
+      },
     ],
     isLoading: false,
     isFetching: false,
@@ -64,11 +64,10 @@ vi.mock('@/hooks/products', () => ({
       images: [n.product_image],
       colors: [],
       materials: [],
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] }
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
     }),
   })),
 }));
-
 
 vi.mock('@/stores/useFavoritesStore', () => ({
   useFavoritesStore: vi.fn(() => ({
@@ -105,7 +104,13 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 
 // Mock Virtualized Grid to render synchronously
 vi.mock('../VirtualizedNoveltyGrid', () => ({
-  VirtualizedNoveltyGrid: ({ products, onProductClick, selectionMode, selectedIds, onToggleSelect }: any) => (
+  VirtualizedNoveltyGrid: ({
+    products,
+    onProductClick,
+    selectionMode,
+    selectedIds,
+    onToggleSelect,
+  }: any) => (
     <div data-testid="mock-virtualized-grid">
       {products.map((p: any) => (
         <div key={p.novelty_id} role="listitem">
@@ -118,16 +123,13 @@ vi.mock('../VirtualizedNoveltyGrid', () => ({
 }));
 
 const queryClient = new QueryClient({
-
   defaultOptions: { queries: { retry: false } },
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <TooltipProvider>
-        {children}
-      </TooltipProvider>
+      <TooltipProvider>{children}</TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );
@@ -139,11 +141,10 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
   it('renders products and shows correct count badge', () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
+
     expect(screen.getByText('Caneta A')).toBeInTheDocument();
     expect(screen.getByText('Caneta B')).toBeInTheDocument();
 
-    
     // Count badge should show 2
     const badge = screen.getByText('2');
     expect(badge).toBeDefined();
@@ -151,11 +152,11 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
   it('filters by search and updates badge', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
-    const searchInput = screen.getByPlaceholderRelative('Buscar novidades…  /');
-    
+
+    const searchInput = extendedScreen.getByPlaceholderRelative('Buscar novidades…  /');
+
     fireEvent.change(searchInput, { target: { value: 'Caneta A' } });
-    
+
     await waitFor(() => {
       expect(screen.queryByText('Caneta B')).toBeNull();
       expect(screen.getByText('Caneta A')).toBeInTheDocument();
@@ -166,26 +167,25 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     });
   });
 
-
   it('sorts locally by price-asc', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-    
+
     // Default is newest (Caneta B then Caneta A)
     const items = screen.getAllByRole('heading', { level: 3 }); // Assuming product names are h3 in cards
     // In Virtualized grid, it might be different. Let's look for text content order if possible.
-    
+
     // Find sort select and change to price-asc
     const selects = screen.getAllByRole('combobox');
     const sortSelect = selects[2];
-    
+
     fireEvent.click(sortSelect);
     const ascOption = screen.getByText('Preço (Menor → Maior)');
     fireEvent.click(ascOption);
-    
+
     // After sorting by price asc, Caneta B (5) should be before Caneta A (10)
     // Actually, newest was B then A. So order didn't change for B, but B is cheaper.
   });
-  
+
   it('resets page to 1 when filters change', async () => {
     // This is hard to test without many products, but we can verify the useEffect dependency
     render(<NoveltyProductGrid />, { wrapper });
@@ -194,10 +194,10 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 });
 
 // Helper for finding elements with partial text in placeholder/aria
-const screen = {
-  ...require('@testing-library/react').screen,
+const extendedScreen = {
   getByPlaceholderRelative: (text: string) => {
-    const inputs = require('@testing-library/react').screen.getAllByRole('textbox');
+    const inputs = screen.getAllByRole('textbox');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return inputs.find((i: any) => i.placeholder.includes(text.trim())) as HTMLInputElement;
-  }
+  },
 };

@@ -96,10 +96,12 @@ describe('Catalog Sorting and Edge Cases', () => {
 
     expect(result.current.filters.search).toBe('test query');
     expect(result.current.filters.sortBy).toBe('price-asc');
-    
-    expect(useProductsCatalog).toHaveBeenCalledWith(expect.objectContaining({
-      sortBy: 'price-asc'
-    }));
+
+    expect(useProductsCatalog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sortBy: 'price-asc',
+      }),
+    );
   });
 
   it('should validate that UI sort labels correspond to productService parameters', () => {
@@ -112,21 +114,24 @@ describe('Catalog Sorting and Edge Cases', () => {
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
-    SORT_OPTIONS.forEach(option => {
+    expect(SORT_OPTIONS).not.toHaveLength(0);
+    SORT_OPTIONS.forEach((option) => {
       act(() => {
         result.current.setSortBy(option.value);
       });
-      
-      expect(useProductsCatalog).toHaveBeenLastCalledWith(expect.objectContaining({
-        sortBy: option.value
-      }));
+
+      expect(useProductsCatalog).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          sortBy: option.value,
+        }),
+      );
     });
   });
 
   it('should handle products with null/missing fields during sorting without crashing', () => {
     const productsWithNulls = [
       { id: '1', name: 'Product A', price: null, stock: null },
-      { id: '2', name: null, price: 10, stock: 5 }
+      { id: '2', name: null, price: 10, stock: 5 },
     ];
 
     (useProductsCatalog as any).mockReturnValue({
@@ -158,7 +163,7 @@ describe('Catalog Sorting and Edge Cases', () => {
       result.current.setSortBy('price-desc');
     });
 
-    const ids = result.current.filteredProducts.map(p => p.id);
+    const ids = result.current.filteredProducts.map((p) => p.id);
     const uniqueIds = new Set(ids);
     expect(ids.length).toBe(uniqueIds.size);
     expect(ids.length).toBe(2);

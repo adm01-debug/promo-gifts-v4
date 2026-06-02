@@ -28,17 +28,16 @@ export interface ExternalCollection {
   id: string;
   user_id: string;
   name: string;
-  slug?: string;
   description?: string | null;
-  image_url?: string | null;
-  banner_url?: string | null;
-  color?: string | null;
   icon?: string | null;
-  is_active?: boolean;
+  icon_color?: string | null;
+  is_deleted?: boolean;
   is_featured?: boolean;
-  display_order?: number;
-  starts_at?: string | null;
-  ends_at?: string | null;
+  is_public?: boolean;
+  client_id?: string | null;
+  client_name?: string | null;
+  share_token?: string | null;
+  share_expires_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -77,7 +76,7 @@ export function useExternalCollections() {
         throw error;
       }
 
-      return (data || []).filter((c) => c.is_active !== false);
+      return (data || []).filter((c) => !c.is_deleted);
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -131,7 +130,7 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
       }
 
       const counts = new Map<string, number>();
-      for (const r of data || []) {
+      for (const r of (data || []) as unknown as { collection_id: string; product_id: string }[]) {
         counts.set(r.collection_id, (counts.get(r.collection_id) || 0) + 1);
       }
       return counts;
@@ -149,17 +148,11 @@ export function useExternalCollectionMutations() {
 
   const createCollection = useMutation({
     mutationFn: async (data: Partial<ExternalCollection>) => {
-      const slug =
-        data.name
-          ?.toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '') || `col-${Date.now()}`;
       const { data: inserted, error } = await supabase
         .from('collections')
         .insert({
           ...data,
-          slug,
-          is_active: true,
+          is_deleted: false,
         })
         .select()
         .single();
@@ -217,7 +210,8 @@ export function useExternalCollectionMutations() {
       collectionId: string;
       productId: string;
     }) => {
-      const { data: inserted, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: inserted, error } = await (supabase as any)
         .from('collection_products')
         .insert({
           collection_id: collectionId,

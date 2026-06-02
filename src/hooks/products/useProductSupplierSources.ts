@@ -43,38 +43,25 @@ async function bridgeInvoke(body: Record<string, unknown>) {
     return { success: true, data: { records: result.records, count: result.count } };
   }
   const table = body.table as string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getClient = async () => (await import('@/integrations/supabase/client')).supabase as any;
   if (op === 'insert') {
-    const { data, error } = await (
-      await import('@/integrations/supabase/client')
-    ).supabase
-      .from(table)
-      .insert(body.data as Record<string, unknown>)
-      .select();
+    const client = await getClient();
+    const { data, error } = await client.from(table).insert(body.data).select();
     if (error) throw new Error(error.message);
     return { success: true, data: { records: data ?? [], count: (data ?? []).length } };
   }
   if (op === 'update') {
-    const client = (await import('@/integrations/supabase/client')).supabase;
-    let q = client.from(table).update(body.data as Record<string, unknown>);
-    if (body.id)
-      q = (q as unknown as { eq: (c: string, v: unknown) => typeof q }).eq(
-        'id',
-        body.id,
-      ) as unknown as typeof q;
-    const { data, error } = await (
-      q as unknown as {
-        select: () => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-      }
-    ).select();
+    const client = await getClient();
+    let q = client.from(table).update(body.data);
+    if (body.id) q = q.eq('id', body.id);
+    const { data, error } = await q.select();
     if (error) throw new Error(error.message);
     return { success: true, data: { records: data ?? [], count: (data ?? []).length } };
   }
   if (op === 'delete') {
-    const client = (await import('@/integrations/supabase/client')).supabase;
-    const { error } = await client
-      .from(table)
-      .delete()
-      .eq('id', body.id as string);
+    const client = await getClient();
+    const { error } = await client.from(table).delete().eq('id', body.id);
     if (error) throw new Error(error.message);
     return { success: true, data: { records: [], count: 0 } };
   }
@@ -99,7 +86,7 @@ export function useProductSupplierSources(productId?: string) {
         limit: 100,
         orderBy: { column: 'is_preferred', ascending: false },
       });
-      const records = (result.data?.records || result.records || []) as SupplierSource[];
+      const records = (result.data?.records || []) as SupplierSource[];
       records.sort((a, b) => {
         if (a.is_preferred !== b.is_preferred) return a.is_preferred ? -1 : 1;
         return (a.sale_price ?? 0) - (b.sale_price ?? 0);

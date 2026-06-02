@@ -126,10 +126,17 @@ export const ProductCardImage = memo(function ProductCardImage({
   // otherwise show the product colors (for products with multiple colors).
   const colorDots = hasMultipleVariants
     ? allMatchingVariants.map((v) => ({ hex: v.hex, name: v.name }))
-    : product.colors
+    : (product.colors
         ?.slice(0, 6)
-        .map((c) => (typeof c === 'object' ? { hex: (c as { hex: string; name?: string }).hex, name: (c as { hex: string; name?: string }).name } : { hex: '#CCCCCC' }))
-        .filter((c) => c.hex) ?? [];
+        .map((c) =>
+          typeof c === 'object'
+            ? {
+                hex: (c as { hex: string; name?: string }).hex,
+                name: (c as { hex: string; name?: string }).name,
+              }
+            : { hex: '#CCCCCC' },
+        )
+        .filter((c) => c.hex) ?? []);
 
   return (
     <div className="relative aspect-square overflow-hidden">
@@ -176,7 +183,6 @@ export const ProductCardImage = memo(function ProductCardImage({
           }}
         />
       )}
-
 
       {/* Badges - Top Left */}
       <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
@@ -227,11 +233,11 @@ export const ProductCardImage = memo(function ProductCardImage({
           </Badge>
         )}
 
-        {(stockStatus === 'low' || stockStatus === 'critical') && (
+        {stockStatus === 'low' && (
           <ProductStatusBadge
             type="urgency"
-            urgencyType={stockStatus}
-            value={stockStatus === 'critical' ? 'Crítico' : 'Baixo'}
+            urgencyType="limited-stock"
+            value="Baixo"
             size="sm"
             onClick={() => onStatusClick?.('urgency')}
           />
@@ -270,9 +276,7 @@ export const ProductCardImage = memo(function ProductCardImage({
                   aria-label={color.name || color.hex}
                 >
                   {(hasMultipleVariants ? safeVariantIdx : 0) === idx &&
-                    isLightColor(color.hex) && (
-                      <span className="sr-only">Cor selecionada</span>
-                    )}
+                    isLightColor(color.hex) && <span className="sr-only">Cor selecionada</span>}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">

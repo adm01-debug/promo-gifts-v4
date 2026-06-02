@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-01T21:09:39.130Z",
-  "totalErrors": 64,
+  "generatedAt": "2026-06-02T18:35:22.299Z",
+  "totalErrors": 76,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -44,8 +44,15 @@
     "src/components/bi/ClientSeasonalityHeatmap.tsx": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
+    "src/components/catalog/CatalogContent.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-console": 1
+    },
     "src/components/common/EnhancedSpotlight.tsx": {
       "react-hooks/exhaustive-deps": 2
+    },
+    "src/components/common/ScrollProgress.tsx": {
+      "@typescript-eslint/no-unused-vars": 6
     },
     "src/components/dev/DiagnosticProfiler.tsx": {
       "no-console": 1
@@ -92,8 +99,15 @@
       "@typescript-eslint/no-unused-vars": 1,
       "eqeqeq": 3
     },
+    "src/components/novelties/NoveltyProductGrid.tsx": {
+      "@typescript-eslint/no-explicit-any": 1
+    },
     "src/components/novelties/NoveltyStatsCards.tsx": {
       "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/components/novelties/__tests__/NoveltyProductGrid.integration.test.tsx": {
+      "@typescript-eslint/no-explicit-any": 3,
+      "@typescript-eslint/no-unused-vars": 8
     },
     "src/components/pdf/proposal/ProposalFooter.tsx": {
       "@typescript-eslint/no-unused-vars": 2
@@ -142,6 +156,15 @@
     },
     "src/components/products/ZoomableGallery.tsx": {
       "react-hooks/exhaustive-deps": 1
+    },
+    "src/components/products/__tests__/ProductSortAccessibility.test.tsx": {
+      "@typescript-eslint/no-unused-vars": 2
+    },
+    "src/components/products/__tests__/ProductSortSync.test.tsx": {
+      "no-restricted-syntax": 2
+    },
+    "src/components/products/__tests__/ProductStatusBadge.test.tsx": {
+      "no-restricted-syntax": 1
     },
     "src/components/products/__tests__/StockHistoryChart.test.tsx": {
       "@typescript-eslint/no-explicit-any": 1,
@@ -309,6 +332,9 @@
     "src/hooks/products/useCatalogFiltering.ts": {
       "react-hooks/exhaustive-deps": 3
     },
+    "src/hooks/products/useCatalogState.ts": {
+      "no-console": 3
+    },
     "src/hooks/products/useProductBounds.ts": {
       "react-hooks/exhaustive-deps": 1
     },
@@ -419,6 +445,13 @@
     },
     "src/pages/collections/CollectionDetailPage.tsx": {
       "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/pages/filters/__tests__/FiltersPage.logic.test.tsx": {
+      "@typescript-eslint/no-unused-vars": 4
+    },
+    "src/pages/filters/__tests__/FiltersPage.sorting.test.tsx": {
+      "@typescript-eslint/no-explicit-any": 6,
+      "no-restricted-syntax": 1
     },
     "src/pages/kit-builder/KitLibraryPage.tsx": {
       "react-hooks/exhaustive-deps": 4

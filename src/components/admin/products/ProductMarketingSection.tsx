@@ -76,9 +76,10 @@ async function saveProductTags(productId: string, tags: ProductTags): Promise<vo
   };
 
   // FIX-BRIDGE-01: migrated from bridge to dbInvoke (REST native write)
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('v_products_public')
-    .update({ tags: payload } as Record<string, unknown>)
+    .update({ tags: payload })
     .eq('id', productId);
   if (error) throw new Error(error.message);
 }

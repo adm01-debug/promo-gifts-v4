@@ -74,7 +74,9 @@ let renderCount = 0;
 export function QuickQuoteFAB({ productId, productName }: QuickQuoteFABProps) {
   renderCount++;
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[QuickQuoteFAB] Render #${renderCount} - productId: ${productId}, path: ${window.location.pathname}`);
+    console.warn(
+      `[QuickQuoteFAB] Render #${renderCount} - productId: ${productId}, path: ${window.location.pathname}`,
+    );
   }
 
   const [isOpen, setIsOpen] = useState(false);
@@ -125,96 +127,96 @@ export function QuickQuoteFAB({ productId, productName }: QuickQuoteFABProps) {
 
   return (
     <>
-      <motion.div 
+      <motion.div
         layout
-        className="fixed bottom-[140px] right-6 z-40 sm:bottom-[160px] lg:bottom-[140px] transition-all duration-300 pointer-events-none"
+        className="pointer-events-none fixed bottom-[140px] right-6 z-40 transition-all duration-300 sm:bottom-[160px] lg:bottom-[140px]"
       >
         <div className="pointer-events-auto">
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              key="fab-menu"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {/* Backdrop */}
+          <AnimatePresence>
+            {isOpen && (
               <motion.div
-                className="fixed inset-0 bg-background/40"
-                onClick={() => setIsOpen(false)}
-              />
-
-              {/* Quick Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-16 right-0 flex flex-col items-end gap-3"
+                key="fab-menu"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
+                {/* Backdrop */}
+                <motion.div
+                  className="fixed inset-0 bg-background/40"
+                  onClick={() => setIsOpen(false)}
+                />
 
-                  return (
-                    <motion.div
-                      key={action.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
-                        <div className="whitespace-nowrap text-sm font-medium text-foreground">
-                          {action.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{action.description}</div>
-                      </div>
+                {/* Quick Actions */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute bottom-16 right-0 flex flex-col items-end gap-3"
+                >
+                  {quickActions.map((action, index) => {
+                    const Icon = action.icon;
 
-                      <button
-                        onClick={() => handleAction(action.href)}
-                        className={cn(
-                          'flex h-12 w-12 items-center justify-center rounded-full shadow-lg',
-                          'transition-all duration-200 active:scale-95',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                          action.color,
-                        )}
-                        aria-label={action.label}
+                    return (
+                      <motion.div
+                        key={action.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center gap-3"
                       >
-                        <Icon className="h-5 w-5" />
-                      </button>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                        <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+                          <div className="whitespace-nowrap text-sm font-medium text-foreground">
+                            {action.label}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{action.description}</div>
+                        </div>
 
-        {/* Main FAB */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsOpen(!isOpen)}
-              className={cn(
-                'relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl',
-                'transition-all duration-200',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                isOpen
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90',
-              )}
-              aria-label={isOpen ? 'Fechar menu' : 'Ações rápidas'}
-              aria-expanded={isOpen}
-            >
-              <motion.div animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
-                <Plus className="h-6 w-6" />
+                        <button
+                          onClick={() => handleAction(action.href)}
+                          className={cn(
+                            'flex h-12 w-12 items-center justify-center rounded-full shadow-lg',
+                            'transition-all duration-200 active:scale-95',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                            action.color,
+                          )}
+                          aria-label={action.label}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
               </motion.div>
-            </motion.button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Ações Rápidas</TooltipContent>
-        </Tooltip>
+            )}
+          </AnimatePresence>
+
+          {/* Main FAB */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsOpen(!isOpen)}
+                className={cn(
+                  'relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl',
+                  'transition-all duration-200',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  isOpen
+                    ? 'bg-muted text-muted-foreground'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90',
+                )}
+                aria-label={isOpen ? 'Fechar menu' : 'Ações rápidas'}
+                aria-expanded={isOpen}
+              >
+                <motion.div animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
+                  <Plus className="h-6 w-6" />
+                </motion.div>
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Ações Rápidas</TooltipContent>
+          </Tooltip>
         </div>
       </motion.div>
 
