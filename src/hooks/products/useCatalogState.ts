@@ -132,10 +132,6 @@ export function useCatalogState() {
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
-  
-  useEffect(() => {
-    console.log(`[useCatalogState] viewMode changed to: ${viewMode}`);
-  }, [viewMode]);
   const setViewMode = useCallback((mode: ViewMode) => {
     setViewModeState(mode);
     try {
@@ -175,7 +171,6 @@ export function useCatalogState() {
   const setSortBy = useCallback(
     (s: SortOption) => {
       if (s === sortBy) return;
-      console.log(`[useCatalogState] Changing sortBy from ${sortBy} to ${s}`);
       setIsTransitioning(true);
       setSortByState(s);
     },
@@ -255,14 +250,6 @@ export function useCatalogState() {
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
-  useEffect(() => {
-    if (isTransitioning) {
-      console.log('[useCatalogState] Transition started (sortBy changed)');
-    } else {
-      console.log('[useCatalogState] Transition finished');
-    }
-  }, [isTransitioning]);
 
   // Mantém searchQueryRef sincronizado (consumido por setSortBy via ref).
   useEffect(() => {

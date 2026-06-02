@@ -91,7 +91,6 @@ export const CatalogContent = memo(function CatalogContent({
   const productIds = useMemo(() => paginatedProducts.map((p) => p.id), [paginatedProducts]);
 
   if (shouldShowCatalogSkeleton) {
-    console.log(`[CatalogContent] Rendering skeleton in viewMode: ${viewMode}, columns: ${gridColumns}`);
     if (viewMode === 'list') {
       return (
         <div className="space-y-2" data-testid="catalog-list-skeleton">
