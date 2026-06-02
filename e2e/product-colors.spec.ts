@@ -1,1 +1,24 @@
-LyoqCiAqIEBkZXByZWNhdGVkIEJVRy01IEZJWCAoMjAyNi0wNi0wMik6IEVzdGUgYXJxdWl2byBmb2kgY3JpYWRvIHBlbG8gTG92YWJsZQogKiBlbSBlZHQtY2YwYzZlM2YgKDE2OjE4KSBlIGltZWRpYXRhbWVudGUgaW52YWxpZGFkbyBwZWxhcyBtdWRhbsOnYXMgZGUKICogZWR0LTVmMThiOGMzICgxNjoyOSkgbmEgbWVzbWEgc2Vzc8OjbyBkZSBlZGnDp8Ojby4KICoKICogUFJPQkxFTUE6IE9zIHNlbGV0b3JlcyBhcXVpIG51bmNhIGNvcnJlc3BvbmRlbSBhbyBjb21wb25lbnRlIHJlYWw6CiAqCiAqICAgU2VsZXRvciBubyBzcGVjICAgICAgICAgfCBSZWFsaWRhZGUgZG8gY29tcG9uZW50ZQogKiAgIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogKiAgIFtyb2xlPSJsaXN0Il0gICAgICAgICAgIHwgQ29tcG9uZW50ZSB1c2Egcm9sZT0iZ3JvdXAiCiAqICAgYnV0dG9uW3JvbGU9Imxpc3RpdGVtIl0gfCBCdXR0b25zIG7Do28gdMOqbSByb2xlICJsaXN0aXRlbSIKICogICBhcmlhLWxhYmVsIC9eQ29yOiAvICAgICB8IENvbXBvbmVudGUgdXNhICJPcMOnw6NvIGRlIGNvcjogIgogKgogKiBPcyB0ZXN0ZXMgbsOjbyBmYWxoYXZhbSDigJQgZWxlcyBzaW1wbGVzbWVudGUgbsOjbyBlbmNvbnRyYXZhbSBvcyBlbGVtZW50b3MKICogZSBwdWxhdmFtIG9zIGFzc2VydHMgc2lsZW5jaW9zYW1lbnRlLCBjcmlhbmRvIGZhbHNhIGNvbmZpYW7Dp2Egbm8gQ0kuCiAqCiAqIFNVQlNUSVRVVE86IGUyZS9wcm9kdWN0LWNvbG9ycy1mdWxsLnNwZWMudHMgKHNlbGV0b3JlcyBjb3JyZXRvcyBlIGF0dWFsaXphZG9zKS4KICoKICogRXN0ZSBhcnF1aXZvIHBvZGUgc2VyIGRlbGV0YWRvIGNvbSBzZWd1cmFuw6dhIGFww7NzIGNvbmZpcm1hciBxdWUKICogcHJvZHVjdC1jb2xvcnMtZnVsbC5zcGVjLnRzIGVzdMOhIHBhc3NhbmRvIGVtIHRvZG9zIG9zIG3Ds2R1bG9zLgogKi8KCi8vIEFycXVpdm8gaW50ZW5jaW9uYWxtZW50ZSB2YXppbyDigJQgdG9kb3Mgb3MgdGVzdGVzIGZvcmFtIG1vdmlkb3MgcGFyYQovLyBlMmUvcHJvZHVjdC1jb2xvcnMtZnVsbC5zcGVjLnRzCg==
+/**
+ * @deprecated BUG-5 FIX (2026-06-02): Este arquivo foi criado pelo Lovable
+ * em edt-cf0c6e3f (16:18) e imediatamente invalidado pelas mudanças de
+ * edt-5f18b8c3 (16:29) na mesma sessão de edição.
+ *
+ * PROBLEMA: Os seletores aqui nunca correspondem ao componente real:
+ *
+ *   Seletor no spec         | Realidade do componente
+ *   ----------------------- | ----------------------------------
+ *   [role="list"]           | Componente usa role="group"
+ *   button[role="listitem"] | Buttons não têm role "listitem"
+ *   aria-label /^Cor: /     | Componente usa "Opção de cor: "
+ *
+ * Os testes não falhavam — eles simplesmente não encontravam os elementos
+ * e pulavam os asserts silenciosamente, criando falsa confiança no CI.
+ *
+ * SUBSTITUTO: e2e/product-colors-full.spec.ts (seletores corretos e atualizados).
+ *
+ * Este arquivo pode ser deletado com segurança após confirmar que
+ * product-colors-full.spec.ts está passando em todos os módulos.
+ */
+
+// Arquivo intencionalmente vazio — todos os testes foram movidos para
+// e2e/product-colors-full.spec.ts

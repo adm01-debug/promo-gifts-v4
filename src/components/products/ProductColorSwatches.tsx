@@ -1,1 +1,141 @@
-LyoqCiAqIFByb2R1Y3RDb2xvclN3YXRjaGVzIOKAlCBSZW5kZXJpemEgYm9saW5oYXMgaW5saW5lIGNvbSBhcyBjb3JlcyBkaXNwb27DrXZlaXMKICogZGUgdW0gcHJvZHV0by4gUGFkcsOjbyB2aXN1YWwgdXNhZG8gZW0gdG9kYXMgYXMgdmlzdWFsaXphw6fDtWVzIChncmlkL2xpc3RhL3RhYmVsYSkKICogZGUgQ2F0w6Fsb2dvLCBTdXBlciBGaWx0cm8sIE5vdmlkYWRlcywgUmVwb3Npw6fDo28gZSBFc3RvcXVlLgogKi8KaW1wb3J0IHsgbWVtbywgdXNlTWVtbyB9IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHsgVG9vbHRpcCwgVG9vbHRpcENvbnRlbnQsIFRvb2x0aXBUcmlnZ2VyIH0gZnJvbSAnQC9jb21wb25lbnRzL3VpL3Rvb2x0aXAnOwppbXBvcnQgeyBjbiB9IGZyb20gJ0AvbGliL3V0aWxzJzsKCmV4cG9ydCBpbnRlcmZhY2UgQ29sb3JEb3RMaWtlIHsKICBuYW1lOiBzdHJpbmc7CiAgaGV4OiBzdHJpbmcgfCBudWxsOwp9CgppbnRlcmZhY2UgUHJvZHVjdENvbG9yU3dhdGNoZXNQcm9wcyB7CiAgY29sb3JzOiByZWFkb25seSBDb2xvckRvdExpa2VbXSB8IHVuZGVmaW5lZDsKICAvKiogTcOheGltbyBkZSBib2xpbmhhcyB2aXPDrXZlaXMgYW50ZXMgZGUgbW9zdHJhciBgK05gLiBEZWZhdWx0IDUuICovCiAgbWF4PzogbnVtYmVyOwogIC8qKiBUYW1hbmhvIGRvIGRvdC4gKi8KICBzaXplPzogJ3hzJyB8ICdzbScgfCAnbWQnOwogIGNsYXNzTmFtZT86IHN0cmluZzsKICAvKiogRXNjb25kZSBxdWFuZG8gdmF6aW8uIERlZmF1bHQgdHJ1ZS4gKi8KICBoaWRlV2hlbkVtcHR5PzogYm9vbGVhbjsKfQoKY29uc3QgU0laRV9DTEFTUzogUmVjb3JkPE5vbk51bGxhYmxlPFByb2R1Y3RDb2xvclN3YXRjaGVzUHJvcHNbJ3NpemUnXT4sIHN0cmluZz4gPSB7CiAgeHM6ICdoLTIuNSB3LTIuNScsCiAgc206ICdoLTMgdy0zJywKICBtZDogJ2gtNCB3LTQnLAp9OwoKZXhwb3J0IGNvbnN0IFByb2R1Y3RDb2xvclN3YXRjaGVzID0gbWVtbyhmdW5jdGlvbiBQcm9kdWN0Q29sb3JTd2F0Y2hlcyh7CiAgY29sb3JzLAogIG1heCA9IDUsCiAgc2l6ZSA9ICdzbScsCiAgY2xhc3NOYW1lLAogIGhpZGVXaGVuRW1wdHkgPSB0cnVlLAp9OiBQcm9kdWN0Q29sb3JTd2F0Y2hlc1Byb3BzKSB7CiAgLy8gQlVHLTEgRklYOiB2YXJpw6F2ZWwgY29udGFpbmVyVGVzdElkIHJlbW92aWRhIOKAlCBlcmEgZGVhZCBjb2RlIChudW5jYSByZWZlcmVuY2lhZGEpLgogIC8vIE8gZGF0YS10ZXN0aWQgcmVhbCBkbyBjb250YWluZXIgw6kgInByb2R1Y3QtY29sb3JzLWNvbnRhaW5lciIgKGxpbmhhIGFiYWl4byBubyBKU1gpLgogIGNvbnN0IGlkUHJlZml4ID0gdXNlTWVtbygoKSA9PiBNYXRoLnJhbmRvbSgpLnRvU3RyaW5nKDM2KS5zdWJzdHJpbmcoMiwgMTEpLCBbXSk7CgogIGlmIChjb2xvcnMgPT09IHVuZGVmaW5lZCkgewogICAgcmV0dXJuICgKICAgICAgPGRpdgogICAgICAgIGNsYXNzTmFtZT17Y24oJ2ZsZXggaXRlbXMtY2VudGVyIGdhcC0xIG1pbi1oLVsxNnB4XScsIGNsYXNzTmFtZSl9CiAgICAgICAgYXJpYS1idXN5PSJ0cnVlIgogICAgICAgIGFyaWEtbGFiZWw9IkNhcnJlZ2FuZG8gb3DDp8O1ZXMgZGUgY29yZXMiCiAgICAgICAgZGF0YS10ZXN0aWQ9ImNvbG9ycy1sb2FkaW5nLXNrZWxldG9uIgogICAgICA+CiAgICAgICAge1suLi5BcnJheSgzKV0ubWFwKChfLCBpKSA9PiAoCiAgICAgICAgICA8ZGl2CiAgICAgICAgICAgIGtleT17aX0KICAgICAgICAgICAgY2xhc3NOYW1lPXtjbigKICAgICAgICAgICAgICAnYW5pbWF0ZS1wdWxzZSByb3VuZGVkLWZ1bGwgYmctbXV0ZWQnLAogICAgICAgICAgICAgIFNJWkVfQ0xBU1Nbc2l6ZV0KICAgICAgICAgICAgKX0KICAgICAgICAgICAgZGF0YS10ZXN0aWQ9ImNvbG9yLXNrZWxldG9uLWRvdCIKICAgICAgICAgIC8+CiAgICAgICAgKSl9CiAgICAgIDwvZGl2PgogICAgKTsKICB9CgogIGlmIChjb2xvcnMubGVuZ3RoID09PSAwKSB7CiAgICAvLyBCVUctMiBGSVg6IGZvcndhcmQgY2xhc3NOYW1lIHBhcmEgcXVlIGNhbGxlcnMgY29tbyBQcm9kdWN0TGlzdEl0ZW0KICAgIC8vIChjbGFzc05hbWU9Im1sLTEgaGlkZGVuIG1kOmZsZXgiKSBmdW5jaW9uZW0gY29ycmV0YW1lbnRlIG5vIGVzdGFkbyB2YXppby4KICAgIC8vIEFudGVzOiA8ZGl2IGNsYXNzTmFtZT0ibWluLWgtWzE2cHhdIj4g4oCUIGNsYXNzTmFtZSBpZ25vcmFkbywgZGl2IHZpc8OtdmVsIG5vIG1vYmlsZS4KICAgIGlmIChoaWRlV2hlbkVtcHR5KSByZXR1cm4gPGRpdiBjbGFzc05hbWU9e2NuKCdtaW4taC1bMTZweF0nLCBjbGFzc05hbWUpfSBkYXRhLXRlc3RpZD0iY29sb3JzLWVtcHR5LWhpZGRlbiIgLz47CiAgICByZXR1cm4gKAogICAgICA8c3BhbgogICAgICAgIGNsYXNzTmFtZT0idGV4dC1bMTBweF0gdGV4dC1tdXRlZC1mb3JlZ3JvdW5kLzYwIGl0YWxpYyBtaW4taC1bMTZweF0gZmxleCBpdGVtcy1jZW50ZXIiCiAgICAgICAgcm9sZT0ic3RhdHVzIgogICAgICAgIGFyaWEtbGl2ZT0icG9saXRlIgogICAgICAgIGRhdGEtdGVzdGlkPSJjb2xvcnMtdW5hdmFpbGFibGUiCiAgICAgID4KICAgICAgICBDb3JlcyBpbmRpc3BvbsOtdmVpcwogICAgICA8L3NwYW4+CiAgICApOwogIH0KCiAgY29uc3QgdmlzaWJsZSA9IGNvbG9ycy5zbGljZSgwLCBtYXgpOwogIGNvbnN0IG92ZXJmbG93ID0gY29sb3JzLmxlbmd0aCAtIHZpc2libGUubGVuZ3RoOwoKICByZXR1cm4gKAogICAgPGRpdgogICAgICBjbGFzc05hbWU9e2NuKCdmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMC41IG1pbi1oLVsxNnB4XScsIGNsYXNzTmFtZSl9CiAgICAgIHJvbGU9Imdyb3VwIgogICAgICBhcmlhLWxpdmU9InBvbGl0ZSIKICAgICAgYXJpYS1sYWJlbD17YCR7Y29sb3JzLmxlbmd0aH0gY29yJHtjb2xvcnMubGVuZ3RoID09PSAxID8gJycgOiAnZXMnfSBkaXNwb27DrXYke2NvbG9ycy5sZW5ndGggPT09IDEgPyAnZWwnIDogJ2Vpcyd9YH0KICAgICAgZGF0YS10ZXN0aWQ9InByb2R1Y3QtY29sb3JzLWNvbnRhaW5lciIKICAgID4KICAgICAge3Zpc2libGUubWFwKChjLCBpZHgpID0+IHsKICAgICAgICBjb25zdCB0b29sdGlwSWQgPSBgdG9vbHRpcC1jb2xvci0ke2lkUHJlZml4fS0ke2lkeH1gOwogICAgICAgIHJldHVybiAoCiAgICAgICAgICA8VG9vbHRpcCBrZXk9e2Ake2MubmFtZX0tJHtpZHh9YH0+CiAgICAgICAgICAgIDxUb29sdGlwVHJpZ2dlciBhc0NoaWxkPgogICAgICAgICAgICAgIDxidXR0b24KICAgICAgICAgICAgICAgIHR5cGU9ImJ1dHRvbiIKICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17Y24oCiAgICAgICAgICAgICAgICAgICdpbmxpbmUtYmxvY2sgcm91bmRlZC1mdWxsIGJvcmRlciBib3JkZXItYm9yZGVyLzYwIHNoYWRvdy1zbSB0cmFuc2l0aW9uLXRyYW5zZm9ybSBob3ZlcjpzY2FsZS0xMTAgZm9jdXMtdmlzaWJsZTpyaW5nLTEgZm9jdXMtdmlzaWJsZTpyaW5nLXJpbmcgZm9jdXMtdmlzaWJsZTpvdXRsaW5lLW5vbmUnLAogICAgICAgICAgICAgICAgICBTSVpFX0NMQVNTW3NpemVdLAogICAgICAgICAgICAgICAgKX0KICAgICAgICAgICAgICAgIHN0eWxlPXt7IGJhY2tncm91bmRDb2xvcjogYy5oZXggfHwgJ3RyYW5zcGFyZW50JyB9fQogICAgICAgICAgICAgICAgYXJpYS1sYWJlbD17YE9ww6fDo28gZGUgY29yOiAke2MubmFtZX1gfQogICAgICAgICAgICAgICAgYXJpYS1kZXNjcmliZWRieT17dG9vbHRpcElkfQogICAgICAgICAgICAgICAgZGF0YS10ZXN0aWQ9e2Bjb2xvci1zd2F0Y2gtJHtjLm5hbWUudG9Mb3dlckNhc2UoKS5yZXBsYWNlKC9ccysvZywgJy0nKX1gfQogICAgICAgICAgICAgIC8+CiAgICAgICAgICAgIDwvVG9vbHRpcFRyaWdnZXI+CiAgICAgICAgICAgIDxUb29sdGlwQ29udGVudAogICAgICAgICAgICAgIGlkPXt0b29sdGlwSWR9CiAgICAgICAgICAgICAgc2lkZT0idG9wIgogICAgICAgICAgICAgIGNsYXNzTmFtZT0idGV4dC14cyIKICAgICAgICAgICAgICByb2xlPSJ0b29sdGlwIgogICAgICAgICAgICAgIGRhdGEtdGVzdGlkPSJjb2xvci10b29sdGlwLWNvbnRlbnQiCiAgICAgICAgICAgID4KICAgICAgICAgICAgICB7Yy5uYW1lfQogICAgICAgICAgICA8L1Rvb2x0aXBDb250ZW50PgogICAgICAgICAgPC9Ub29sdGlwPgogICAgICAgICk7CiAgICAgIH0pfQogICAgICB7b3ZlcmZsb3cgPiAwICYmICgKICAgICAgICA8VG9vbHRpcD4KICAgICAgICAgIDxUb29sdGlwVHJpZ2dlciBhc0NoaWxkPgogICAgICAgICAgICA8YnV0dG9uCiAgICAgICAgICAgICAgdHlwZT0iYnV0dG9uIgogICAgICAgICAgICAgIGNsYXNzTmFtZT0ibWwtMC41IHRleHQtWzEwcHhdIGZvbnQtbWVkaXVtIHRhYnVsYXItbnVtcyB0ZXh0LW11dGVkLWZvcmVncm91bmQgaG92ZXI6dGV4dC1mb3JlZ3JvdW5kIGZvY3VzLXZpc2libGU6cmluZy0xIGZvY3VzLXZpc2libGU6cmluZy1yaW5nIGZvY3VzLXZpc2libGU6b3V0bGluZS1ub25lIHJvdW5kZWQtc20gcHgtMC41IgogICAgICAgICAgICAgIGFyaWEtbGFiZWw9e2BWZXIgbWFpcyAke292ZXJmbG93fSBjb3Ike292ZXJmbG93ID09PSAxID8gJycgOiAnZXMnfWB9CiAgICAgICAgICAgICAgZGF0YS10ZXN0aWQ9ImNvbG9yLXN3YXRjaC1vdmVyZmxvdyIKICAgICAgICAgICAgPgogICAgICAgICAgICAgICt7b3ZlcmZsb3d9CiAgICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICAgPC9Ub29sdGlwVHJpZ2dlcj4KICAgICAgICAgIDxUb29sdGlwQ29udGVudCBzaWRlPSJ0b3AiIGNsYXNzTmFtZT0idGV4dC14cyIgcm9sZT0idG9vbHRpcCIgZGF0YS10ZXN0aWQ9ImNvbG9yLW92ZXJmbG93LXRvb2x0aXAiPgogICAgICAgICAgICB7Y29sb3JzLnNsaWNlKG1heCkubWFwKChjKSA9PiBjLm5hbWUpLmpvaW4oJywgJyl9CiAgICAgICAgICA8L1Rvb2x0aXBDb250ZW50PgogICAgICAgIDwvVG9vbHRpcD4KICAgICAgKX0KICAgIDwvZGl2PgogICk7Cn0pOwo=
+/**
+ * ProductColorSwatches — Renderiza bolinhas inline com as cores disponíveis
+ * de um produto. Padrão visual usado em todas as visualizações (grid/lista/tabela)
+ * de Catálogo, Super Filtro, Novidades, Reposição e Estoque.
+ */
+import { memo, useMemo } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
+export interface ColorDotLike {
+  name: string;
+  hex: string | null;
+}
+
+interface ProductColorSwatchesProps {
+  colors: readonly ColorDotLike[] | undefined;
+  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5. */
+  max?: number;
+  /** Tamanho do dot. */
+  size?: 'xs' | 'sm' | 'md';
+  className?: string;
+  /** Esconde quando vazio. Default true. */
+  hideWhenEmpty?: boolean;
+}
+
+const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
+  xs: 'h-2.5 w-2.5',
+  sm: 'h-3 w-3',
+  md: 'h-4 w-4',
+};
+
+export const ProductColorSwatches = memo(function ProductColorSwatches({
+  colors,
+  max = 5,
+  size = 'sm',
+  className,
+  hideWhenEmpty = true,
+}: ProductColorSwatchesProps) {
+  // BUG-1 FIX: variável containerTestId removida — era dead code (nunca referenciada).
+  // O data-testid real do container é "product-colors-container" (linha abaixo no JSX).
+  const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
+
+  if (colors === undefined) {
+    return (
+      <div
+        className={cn('flex items-center gap-1 min-h-[16px]', className)}
+        aria-busy="true"
+        aria-label="Carregando opções de cores"
+        data-testid="colors-loading-skeleton"
+      >
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'animate-pulse rounded-full bg-muted',
+              SIZE_CLASS[size]
+            )}
+            data-testid="color-skeleton-dot"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (colors.length === 0) {
+    // BUG-2 FIX: forward className para que callers como ProductListItem
+    // (className="ml-1 hidden md:flex") funcionem corretamente no estado vazio.
+    // Antes: <div className="min-h-[16px]"> — className ignorado, div visível no mobile.
+    if (hideWhenEmpty) return <div className={cn('min-h-[16px]', className)} data-testid="colors-empty-hidden" />;
+    return (
+      <span
+        className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
+        role="status"
+        aria-live="polite"
+        data-testid="colors-unavailable"
+      >
+        Cores indisponíveis
+      </span>
+    );
+  }
+
+  const visible = colors.slice(0, max);
+  const overflow = colors.length - visible.length;
+
+  return (
+    <div
+      className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
+      role="group"
+      aria-live="polite"
+      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${colors.length === 1 ? 'el' : 'eis'}`}
+      data-testid="product-colors-container"
+    >
+      {visible.map((c, idx) => {
+        const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
+        return (
+          <Tooltip key={`${c.name}-${idx}`}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+                  SIZE_CLASS[size],
+                )}
+                style={{ backgroundColor: c.hex || 'transparent' }}
+                aria-label={`Opção de cor: ${c.name}`}
+                aria-describedby={tooltipId}
+                data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
+              />
+            </TooltipTrigger>
+            <TooltipContent
+              id={tooltipId}
+              side="top"
+              className="text-xs"
+              role="tooltip"
+              data-testid="color-tooltip-content"
+            >
+              {c.name}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+      {overflow > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+              data-testid="color-swatch-overflow"
+            >
+              +{overflow}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs" role="tooltip" data-testid="color-overflow-tooltip">
+            {colors.slice(max).map((c) => c.name).join(', ')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+});
