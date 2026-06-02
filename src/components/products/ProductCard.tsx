@@ -142,6 +142,8 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
+    // Multi-variant carousel — moved above useEffect to avoid TDZ
+    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
         // Prioridade: Seleção manual > Filtro ativo
@@ -295,7 +297,6 @@ export const ProductCard = memo(
 
 
     // Multi-variant carousel
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
     const hasMultipleVariants = allMatchingVariants.length > 1;
     const safeVariantIdx = hasMultipleVariants
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)
