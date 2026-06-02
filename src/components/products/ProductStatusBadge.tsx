@@ -51,11 +51,11 @@ export function ProductStatusBadge({
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
-        return 'text-[9px] px-1.5 py-0.5 gap-0.5';
+        return 'text-[9px] px-1.5 py-0.5 gap-0.5 h-4.5';
       case 'lg':
-        return 'text-sm px-3 py-1.5 gap-1.5';
+        return 'text-sm px-3 py-1.5 gap-1.5 h-8';
       default:
-        return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1';
+        return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1 h-5 sm:h-6';
     }
   };
 

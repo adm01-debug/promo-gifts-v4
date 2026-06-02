@@ -65,7 +65,7 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
       onClick={onClick}
     >
       {/* Status badges */}
-      <div className="absolute left-3 top-3 z-20 flex flex-col gap-1">
+      <div className="absolute left-3 top-3 z-30 flex flex-col gap-1">
         {urgencyType && urgencyText && (
           <div className="animate-fade-in">
             <ProductStatusBadge
