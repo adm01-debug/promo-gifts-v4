@@ -137,7 +137,7 @@ export const ScrollToTopButton = forwardRef<
       title="Voltar ao topo (Enter ou Espaço)"
     >
       <ArrowUp className="h-5 w-5" aria-hidden />
-    </button>
+    </motion.button>
   );
 });
 export default ScrollProgressIndicator;
