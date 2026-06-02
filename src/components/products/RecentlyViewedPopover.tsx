@@ -26,27 +26,37 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Horário"
-          className={cn(
-            'relative h-10 w-10 rounded-full border-border/50 transition-colors',
-            itemCount > 0 ? 'hover:border-primary/50' : 'opacity-60 hover:opacity-100',
-          )}
-        >
-          <Clock className="h-4 w-4" />
-          {itemCount > 0 && (
-            <Badge
-              variant="secondary"
-              className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground"
-            >
-              {itemCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Vistos recentemente"
+                className={cn(
+                  'relative h-10 w-10 rounded-full border-border/50 transition-colors',
+                  itemCount > 0 ? 'hover:border-primary/50' : 'opacity-60 hover:opacity-100',
+                )}
+              >
+                <Clock className="h-4 w-4" />
+                {itemCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm"
+                  >
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          Vistos recentemente{itemCount > 0 ? ` (${itemCount})` : ''}
+        </TooltipContent>
+      </Tooltip>
+
       <PopoverContent align="end" className="w-80 p-3" sideOffset={8}>
         <div className="space-y-3">
           {/* Header */}
