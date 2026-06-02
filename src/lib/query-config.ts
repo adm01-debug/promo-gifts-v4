@@ -29,6 +29,61 @@ const STALE_DEFAULT = STALE_SEMI;
 const GC_DEFAULT = 15 * 60 * 1000; // 15 min (keeps rendered UI snappy on back-nav)
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Named-tier re-exports for consumers that import by tier name
+// ─────────────────────────────────────────────────────────────────────────────
+export const CACHE_TIMES = {
+  /** Categories, suppliers, técnicas — almost never change */
+  STABLE: STALE_STATIC,
+  /** Product catalog, supplier batches */
+  SEMI: STALE_SEMI,
+  /** Quotes, notifications */
+  LIVE: STALE_LIVE,
+  /** Connection health, bridge status */
+  REALTIME: STALE_REALTIME,
+} as const;
+
+export const GC_TIMES = {
+  /** Default GC time */
+  DEFAULT: GC_DEFAULT,
+  /** Same as DEFAULT — used for técnicas/categories */
+  TECNICAS: GC_DEFAULT,
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Query-key prefixes for manual queryKey construction
+// ─────────────────────────────────────────────────────────────────────────────
+export const QUERY_KEY_PREFIXES = {
+  PRODUTO_PERSONALIZACAO: 'products',
+  TECNICAS: 'techniques',
+  TABELAS_PRECO: 'price-tables',
+  CATEGORIES: 'categories',
+  SUPPLIERS: 'suppliers',
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-domain query option presets (spread into useQuery calls)
+// ─────────────────────────────────────────────────────────────────────────────
+export const PRODUTOS_QUERY_OPTIONS = {
+  staleTime: STALE_SEMI,
+  gcTime: GC_DEFAULT,
+  refetchOnWindowFocus: false,
+} as const;
+
+export const TECNICAS_QUERY_OPTIONS = {
+  staleTime: STALE_STATIC,
+  gcTime: GC_DEFAULT,
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+} as const;
+
+export const TABELAS_PRECO_QUERY_OPTIONS = {
+  staleTime: STALE_STATIC,
+  gcTime: GC_DEFAULT,
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Query-key prefix → stale-time routing
 // ─────────────────────────────────────────────────────────────────────────────
 type StaleTimeTier = 'static' | 'semi' | 'live' | 'realtime' | 'default';
