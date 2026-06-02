@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { ProductCard } from '../ProductCard';
 import { ProductListItem } from '../ProductListItem';
 import { EnhancedProductCard } from '../EnhancedProductCard';
+import { SmartRecommendations } from '../SmartRecommendations';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -113,5 +114,16 @@ describe('Product Stock Status Visuals', () => {
     // Check it's not grayed out
     const article = container.querySelector('article');
     expect(article).not.toHaveClass('grayscale');
+  });
+
+  test('SmartRecommendations MiniCard shows "Fora de estoque" badge', () => {
+    render(
+      <Wrapper>
+        <SmartRecommendations candidateProducts={[mockProduct as any]} />
+      </Wrapper>
+    );
+
+    // It's uppercase in SmartRecommendations
+    expect(screen.getByText(/FORA DE ESTOQUE/i)).toBeInTheDocument();
   });
 });
