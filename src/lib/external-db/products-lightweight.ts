@@ -7,12 +7,12 @@ import { logger } from '@/lib/logger';
 import { type InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
-const LIGHTWEIGHT_PAGE_SIZE = 500; // antes 100 — reduz round-trips em 5x
-const LIGHTWEIGHT_MAX_CONCURRENCY = 3; // antes 2 — bridge tem singleton + warmup
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
+const LIGHTWEIGHT_PAGE_SIZE = 500;
+const LIGHTWEIGHT_MAX_CONCURRENCY = 3;
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
 const LIGHTWEIGHT_MAX_TOTAL = 15000;
-const LIGHTWEIGHT_INITIAL_BURST = 4; // 1ª onda paralela; depois sequencial até esvaziar
+const LIGHTWEIGHT_INITIAL_BURST = 4;
 
 export interface LightweightProduct {
   id: string;
@@ -23,6 +23,13 @@ export interface LightweightProduct {
   cost_price?: number | null;
   image_url: string | null;
   primary_image_url: string | null;
+  /**
+   * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.
+   * Sem sufixo de variante — concatenar /public para exibição.
+   * null = produto não tem imagem set (hover não acontece no card).
+   * Adicionado em 2026-06-02: SPOT original + XBZ d1 reclassificado.
+   */
+  set_image_url: string | null;
   supplier_id: string | null;
   category_id: string | null;
   main_category_id: string | null;
@@ -33,9 +40,7 @@ export interface LightweightProduct {
   min_quantity?: number | null;
   is_kit?: boolean | null;
   gender?: string | null;
-  /** SSOT da idade do preço — trigger no BD externo. */
   price_updated_at?: string | null;
-  /** Não existe ainda no BD externo; reservado para quando for criada. */
   price_freshness_threshold_days?: number | null;
 }
 
@@ -130,15 +135,6 @@ export async function fetchPromobrindProductsLightweight(options?: {
 
   const maxTotal = LIGHTWEIGHT_MAX_TOTAL;
 
-  // Estratégia em 2 fases (substitui o batch fixo de 150 queries × 100 records):
-  //   Fase 1 — burst inicial paralelo de LIGHTWEIGHT_INITIAL_BURST páginas × 500 records.
-  //            Cobre 2k registros (suficiente para 1ª tela em todas as UIs hoje).
-  //   Fase 2 — paginação sequencial até esgotar, com early-exit assim que uma
-  //            página retornar < LIGHTWEIGHT_PAGE_SIZE.
-  //
-  // Ganhos: 4 round-trips iniciais em vez de 150, mantendo concurrency segura;
-  // sem novo protocolo entre client e bridge; sem mudança de ordenação.
-
   const initialBatch = Array.from({ length: LIGHTWEIGHT_INITIAL_BURST }, (_, i) => ({
     table: 'products',
     operation: 'select' as const,
@@ -166,11 +162,9 @@ export async function fetchPromobrindProductsLightweight(options?: {
     return fetchSequential(filters, orderBy, baseOffset, maxTotal);
   }
 
-  // Early-exit: se a última página do burst veio incompleta, não há mais dados.
   if (lastBurstPageSize < LIGHTWEIGHT_PAGE_SIZE) return products;
   if (products.length >= maxTotal) return products.slice(0, maxTotal);
 
-  // Fase 2: continuar sequencialmente a partir do último offset coberto.
   let nextOffset = baseOffset + LIGHTWEIGHT_INITIAL_BURST * LIGHTWEIGHT_PAGE_SIZE;
   while (products.length < maxTotal) {
     let page: InvokeResult<LightweightProduct>;

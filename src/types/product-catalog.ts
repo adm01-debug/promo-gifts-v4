@@ -24,6 +24,14 @@ export interface Product {
   category_name?: string | null;
   price: number;
   image_url?: string;
+  /**
+   * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.
+   * Sem sufixo de variante — concatenar "/public" para exibição.
+   * Quando presente, usada como imagem de hover no catálogo (crossfade CSS).
+   * null/undefined = produto não tem set → card mostra imagem estática.
+   * Fontes: SPOT (image_type=set original) + XBZ (d1 reclassificado, 2026-06-02).
+   */
+  set_image_url?: string | null;
   og_image_url?: string;
   images: string[];
   sku: string;
@@ -83,19 +91,11 @@ export interface Product {
   variations?: ProductVariation[];
   kitItems?: KitComponent[];
 
-  /** ISO timestamp of the last price update at the supplier (SSOT: external DB). */
   priceUpdatedAt?: string | null;
-  /** Per-product override (in days) for the "stale price" alert threshold. Default = 60. */
   priceFreshnessThresholdDays?: number | null;
-
-  /** Raw metadata blob (legacy fields like height_mm, width_mm, etc — JSONB on DB). */
   metadata?: { height_mm?: number | null; width_mm?: number | null; [key: string]: unknown } | null;
-
-  /** Lead time in days (from supplier). */
   leadTimeDays?: number | null;
-  /** Legacy video URL field. */
   video?: string | null;
-  /** Video assets from supplier. */
   productVideos?: Array<{
     id: string;
     url_stream: string | null;
@@ -180,9 +180,7 @@ export interface ProductFilters {
   maxPrice?: number;
   inStock?: boolean;
   limit?: number;
-  sortBy?: string;
 }
-
 
 export interface ProductLightweight {
   id: string;

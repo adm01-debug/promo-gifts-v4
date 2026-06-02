@@ -49,6 +49,12 @@ export function mapLightweightToProduct(
   const resolvedCategoryName = resolvedCategoryId
     ? (categoriesById?.get(resolvedCategoryId) ?? null)
     : null;
+
+  // set_image_url: URL da imagem "set" (todas as cores juntas).
+  // null = produto não tem set → card mostra imagem estática sem hover.
+  // Fontes: SPOT (original) + XBZ d1 reclassificado (2026-06-02).
+  const setImageUrl = p.set_image_url ?? null;
+
   return {
     id: String(p.id),
     name: p.name,
@@ -57,6 +63,7 @@ export function mapLightweightToProduct(
     category_name: resolvedCategoryName,
     price: typeof price === 'number' ? price : 0,
     image_url: imageUrl,
+    set_image_url: setImageUrl,
     images: [imageUrl],
     sku: p.sku,
     stock,
@@ -83,8 +90,18 @@ export function mapLightweightToProduct(
 
 export const CATALOG_PAGE_SIZE = 500;
 export const CATALOG_BATCH_PAGES = 4;
+
+/**
+ * SELECT do catálogo.
+ *
+ * ALTERAÇÃO (2026-06-02): adicionado set_image_url para suporte ao efeito de
+ * hover na imagem do card (mostra foto com todas as cores ao passar o mouse).
+ * Custo: +1 campo text por linha — impacto negligenciável (~8 bytes/produto).
+ */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender, price_updated_at';
+  'id, name, sku, sale_price, cost_price, primary_image_url, set_image_url, ' +
+  'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
+  'stock_quantity, min_quantity, is_kit, gender, price_updated_at';
 
 interface CatalogPage {
   products: Product[];
@@ -92,19 +109,13 @@ interface CatalogPage {
   totalEstimate: number | null;
 }
 
-// Module-level singleton: fetched once per session, shared across all catalog pages.
-let categoriesMapPromise: Promise<ReadonlyMap<string, string>> | null = null;
-
 async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
-  if (!categoriesMapPromise) {
-    categoriesMapPromise = fetchPromobrindCategories()
-      .then((categories) => new Map(categories.map((c) => [String(c.id), c.name])) as ReadonlyMap<string, string>)
-      .catch(() => {
-        categoriesMapPromise = null; // allow retry on next request
-        return new Map() as ReadonlyMap<string, string>;
-      });
+  try {
+    const categories = await fetchPromobrindCategories();
+    return new Map(categories.map((c) => [String(c.id), c.name]));
+  } catch {
+    return new Map();
   }
-  return categoriesMapPromise;
 }
 
 async function fetchCatalogPage(
@@ -112,43 +123,13 @@ async function fetchCatalogPage(
   search?: string,
   categories?: string[],
   suppliers?: string[],
-  sortBy?: string,
 ): Promise<CatalogPage> {
-
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
   if (categories && categories.length > 0) filters.category_id = categories;
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
-  let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
-
-  if (sortBy) {
-    switch (sortBy) {
-      case 'price-asc':
-        orderBy = { column: 'sale_price', ascending: true };
-        break;
-      case 'price-desc':
-        orderBy = { column: 'sale_price', ascending: false };
-        break;
-      case 'newest':
-        orderBy = { column: 'created_at', ascending: false };
-        break;
-      case 'stock':
-        orderBy = { column: 'stock_quantity', ascending: false };
-        break;
-      case 'best-seller-supplier':
-        orderBy = { column: 'is_bestseller', ascending: false };
-        break;
-      case 'best-seller-promo':
-        orderBy = { column: 'is_featured', ascending: false };
-        break;
-      case 'name':
-      default:
-        orderBy = { column: 'name', ascending: true };
-        break;
-    }
-  }
-
+  const orderBy = { column: 'name', ascending: true };
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
 
@@ -209,10 +190,6 @@ async function fetchCatalogPage(
   let totalEstimate: number | null = null;
   let lastPageSize = 0;
 
-  // FIX-CATALOG-01 (2026-06-01): batchResults is now InvokeResult<T>[] from dbInvoke,
-  // NOT BatchResult[] from invokeBatchBridge. InvokeResult shape is { records, count },
-  // not { success, data: { records, count } }. The old check (result.success && result.data?.records)
-  // was always falsy → products array stayed empty → "0 itens" in catalog.
   for (const result of batchResults) {
     if (result.records && result.records.length > 0) {
       const mapped = (result.records as LightweightProduct[]).map((p) =>
@@ -255,17 +232,14 @@ export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];
   suppliers?: string[];
-  sortBy?: string;
 }) {
   const search = filters?.search || '';
   const categories = filters?.categories || [];
   const suppliers = filters?.suppliers || [];
-  const sortBy = filters?.sortBy || 'name';
   return useInfiniteQuery<CatalogPage, Error>({
-    queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],
+    queryKey: ['promobrind-products-catalog', search, categories, suppliers],
     queryFn: ({ pageParam }) =>
-      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers, sortBy),
-
+      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     staleTime: 30 * 60 * 1000,
