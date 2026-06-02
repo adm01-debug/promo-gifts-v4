@@ -38,7 +38,53 @@ export function ListItemActions({
         'transition-opacity duration-200',
       )}
     >
-      {/* Favoritar */}
+      {/* 1 - Carrinho */}
+      <QuickAddToQuote
+        productId={product.id}
+        productName={product.name}
+        productSku={product.sku}
+        productImageUrl={product.og_image_url || product.images[0]}
+        productPrice={product.price}
+        minQuantity={product.minQuantity || 1}
+        variant="icon"
+        className="h-8 w-8"
+      />
+
+      {/* 2 - Orçamento (desktop) */}
+      <div className="hidden items-center gap-0.5 sm:flex">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => onVariantAction('quote', e)}
+              aria-label="Orçamento"
+            >
+              <FileText className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Orçamento</TooltipContent>
+        </Tooltip>
+
+        {/* 3 - Coleção */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => onVariantAction('collection', e)}
+              aria-label="Adicionar à coleção"
+            >
+              <FolderPlus className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Coleção</TooltipContent>
+        </Tooltip>
+      </div>
+
+      {/* 4 - Favoritar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -63,7 +109,7 @@ export function ListItemActions({
         </TooltipContent>
       </Tooltip>
 
-      {/* Comparar */}
+      {/* 5 - Comparar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -85,8 +131,23 @@ export function ListItemActions({
         <TooltipContent side="bottom">Comparar</TooltipContent>
       </Tooltip>
 
-      {/* Desktop-only actions */}
+      {/* 6 - Quick View + 7 - Compartilhar (desktop) */}
       <div className="hidden items-center gap-0.5 sm:flex">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={onQuickView}
+              aria-label="Visualização rápida"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Quick View</TooltipContent>
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -101,65 +162,7 @@ export function ListItemActions({
           </TooltipTrigger>
           <TooltipContent side="bottom">Compartilhar</TooltipContent>
         </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => onVariantAction('collection', e)}
-              aria-label="Adicionar à coleção"
-            >
-              <FolderPlus className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Coleção</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => onVariantAction('quote', e)}
-              aria-label="Orçamento"
-            >
-              <FileText className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Orçamento</TooltipContent>
-        </Tooltip>
       </div>
-
-      {/* Carrinho */}
-      <QuickAddToQuote
-        productId={product.id}
-        productName={product.name}
-        productSku={product.sku}
-        productImageUrl={product.og_image_url || product.images[0]}
-        productPrice={product.price}
-        minQuantity={product.minQuantity || 1}
-        variant="icon"
-        className="h-8 w-8"
-      />
-
-      {/* Quick View */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex"
-            onClick={onQuickView}
-            aria-label="Visualização rápida"
-          >
-            <Eye className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Quick View</TooltipContent>
-      </Tooltip>
     </div>
   );
 }
