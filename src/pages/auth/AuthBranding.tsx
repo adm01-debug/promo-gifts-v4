@@ -225,7 +225,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
 
       <div
-        className="absolute inset-0 opacity-[0.03] blur-[120px]"
+        className="fixed inset-0 opacity-[0.03] blur-[120px]"
         style={{
           background: 'radial-gradient(circle at 60% 40%, #1e40af 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse',
