@@ -45,6 +45,7 @@ import { GlobalSearchPalette } from '@/components/search/GlobalSearchPalette';
 import { CartHeaderButton } from '@/components/cart/CartHeaderButton';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from '@/components/RoleBadge';
+import { AppLogo } from '@/components/layout/AppLogo';
 
 interface HeaderProps {
   onMenuToggle: () => void;
