@@ -132,26 +132,30 @@ describe('rest-native WRITE (Plano A)', () => {
     expect(r.count).toBe(1);
   });
 
-  it('A3: alias de rename personalization_techniques → tecnicas_gravacao', async () => {
-    nextResult = { data: [{ codigo: 'c1', nome: 'T' }], error: null };
+  it('A3: personalization_techniques escreve direto na própria tabela (NÃO aliasada)', async () => {
+    // personalization_techniques é uma tabela real (uuid PK, colunas EN) no banco
+    // canônico. Não deve ser aliasada para tecnicas_gravacao (que tem colunas PT).
+    // Ver rest-native.ts "BUG A".
+    nextResult = { data: [{ id: 'u1', name: 'T', is_active: true }], error: null };
     await executeRestNativeWrite({
       table: 'personalization_techniques',
       operation: 'insert',
       data: { name: 'T', is_active: true },
     } as InvokeOptions);
-    expect(cap.table).toBe('tecnicas_gravacao');
+    expect(cap.table).toBe('personalization_techniques');
   });
 
-  // ── A5: remap EN→PT no payload ────────────────────────────
-  it('A5: payload de tecnicas_gravacao remapeia name→nome, is_active→ativo', async () => {
-    nextResult = { data: [{ codigo: 'c1' }], error: null };
+  // ── A5: payload preservado em EN (tabela real, sem remap PT) ──
+  it('A5: payload de personalization_techniques preserva colunas EN (name/is_active)', async () => {
+    nextResult = { data: [{ id: 'u1' }], error: null };
     await executeRestNativeWrite({
       table: 'personalization_techniques',
       operation: 'insert',
       data: { name: 'Tampografia', is_active: true },
     } as InvokeOptions);
-    expect(cap.payload).toMatchObject({ nome: 'Tampografia', ativo: true });
-    expect(cap.payload).not.toHaveProperty('name');
+    // Colunas EN nativas — sem remap para nome/ativo.
+    expect(cap.payload).toMatchObject({ name: 'Tampografia', is_active: true });
+    expect(cap.payload).not.toHaveProperty('nome');
   });
 
   // ── A2: proteção contra mutação em massa ──────────────────────
@@ -162,13 +166,13 @@ describe('rest-native WRITE (Plano A)', () => {
         operation: 'update',
         data: { is_active: false },
       } as InvokeOptions),
-    ).rejects.toThrow(/mutação em massa/);
+    ).rejects.toThrow(/mass mutation guard/i);
   });
 
   it('A2: delete SEM filtro/id é proibido', async () => {
     await expect(
       executeRestNativeWrite({ table: 'products', operation: 'delete' } as InvokeOptions),
-    ).rejects.toThrow(/mutação em massa/);
+    ).rejects.toThrow(/mass mutation guard/i);
   });
 
   it('A2: update COM id é permitido e aplica eq(id)', async () => {
@@ -228,14 +232,15 @@ describe('rest-native WRITE (Plano A)', () => {
   });
 
   // ── batch_insert (array) ──────────────────────────────────
-  it('batch_insert envia array e remapeia cada linha', async () => {
-    nextResult = { data: [{ codigo: 'a' }, { codigo: 'b' }], error: null };
+  it('batch_insert envia array preservando colunas EN de personalization_techniques', async () => {
+    nextResult = { data: [{ id: 'a' }, { id: 'b' }], error: null };
     await executeRestNativeWrite({
       table: 'personalization_techniques',
       operation: 'batch_insert',
       data: [{ name: 'A' }, { name: 'B' }],
     } as unknown as InvokeOptions);
     expect(Array.isArray(cap.payload)).toBe(true);
-    expect((cap.payload as Array<Record<string, unknown>>)[0]).toMatchObject({ nome: 'A' });
+    // personalization_techniques usa colunas EN nativas — sem remap para 'nome'.
+    expect((cap.payload as Array<Record<string, unknown>>)[0]).toMatchObject({ name: 'A' });
   });
 });

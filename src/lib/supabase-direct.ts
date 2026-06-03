@@ -7,7 +7,10 @@ const TABLE_ALIASES: Record<string, string> = {
   print_area_techniques: 'v_print_area_techniques_public',
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
-  personalization_techniques: 'tecnicas_gravacao',
+  // NOTE: 'personalization_techniques' is intentionally NOT aliased.
+  // It is a real table in doufsxqlfjyuvxuezpln (uuid PK, EN columns, own RLS).
+  // Redirecting it to tecnicas_gravacao (PT columns) returned wrong data — see
+  // rest-native.ts "BUG A" / postgrest.ts "BUG 1". Queries go directly to it.
   customization_price_tables: 'tabela_preco_gravacao_oficial',
   tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',
   v_products_without_videos: 'v_products_without_video',

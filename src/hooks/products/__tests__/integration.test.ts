@@ -1,15 +1,30 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useProductVariantsWithStock } from '../useVariantSupplierSources';
-import { dbInvoke } from '@/lib/db/postgrest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Mock do dbInvoke
-vi.mock('@/lib/db/postgrest', () => ({
-  dbInvoke: vi.fn(),
-}));
+// useProductVariantsWithStock queries via supabase.from('product_variants')
+// directly (PostgREST embed of variant_supplier_sources), awaiting the chain
+// which resolves to { data, error }. Mock that client layer.
+let nextResult: { data: unknown[] | null; error: { message: string } | null };
+
+vi.mock('@/integrations/supabase/client', () => {
+  const CHAIN_METHODS = ['select', 'eq', 'in', 'is', 'order', 'range', 'limit'];
+  return {
+    supabase: {
+      from: vi.fn(() => {
+        const builder: Record<string, unknown> = {};
+        for (const m of CHAIN_METHODS) {
+          builder[m] = vi.fn(() => builder);
+        }
+        (builder as { then: unknown }).then = (resolve: (v: typeof nextResult) => unknown) =>
+          resolve(nextResult);
+        return builder;
+      }),
+    },
+  };
+});
 
 let queryClient: QueryClient;
 
@@ -27,12 +42,13 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
         },
       },
     });
+    nextResult = { data: [], error: null };
     vi.clearAllMocks();
   });
 
   it('deve formatar corretamente os dados vindo do JOIN com variant_supplier_sources', async () => {
-    const mockDbResult = {
-      records: [
+    nextResult = {
+      data: [
         {
           id: 'v1',
           product_id: 'p1',
@@ -50,12 +66,10 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           ],
         },
       ],
+      error: null,
     };
 
-    (dbInvoke as any).mockResolvedValue(mockDbResult);
-
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
-
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const variant = result.current.data![0];
@@ -75,8 +89,8 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
   });
 
   it('deve lidar com variant_supplier_sources vazio sem quebrar', async () => {
-    const mockDbResult = {
-      records: [
+    nextResult = {
+      data: [
         {
           id: 'v2',
           product_id: 'p1',
@@ -84,20 +98,20 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           variant_supplier_sources: [],
         },
       ],
+      error: null,
     };
 
-    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const variant = result.current.data![0];
-    expect(variant.next_date_1).toBeUndefined();
+    expect(variant.next_date_1).toBeNull();
     expect(variant.next_entry_date).toBeNull();
   });
 
   it('deve agrupar corretamente múltiplas variantes da mesma cor', async () => {
-    const mockDbResult = {
-      records: [
+    nextResult = {
+      data: [
         {
           id: 'v1',
           product_id: 'p1',
@@ -113,9 +127,9 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           variant_supplier_sources: [{ next_date_1: '2026-06-15', next_quantity_1: 30 }],
         },
       ],
+      error: null,
     };
 
-    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -125,8 +139,8 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
   });
 
   it('deve mapear corretamente combinações parciais (alguns campos nulos)', async () => {
-    const mockDbResult = {
-      records: [
+    nextResult = {
+      data: [
         {
           id: 'v3',
           product_id: 'p1',
@@ -144,9 +158,9 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           ],
         },
       ],
+      error: null,
     };
 
-    (dbInvoke as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
