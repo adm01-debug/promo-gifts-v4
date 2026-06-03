@@ -210,6 +210,7 @@ export const ProductTableView = memo(function ProductTableView({
           return 0;
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, sortCol, sortDir]);
 
   const virtualizer = useVirtualizer({

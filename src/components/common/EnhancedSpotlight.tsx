@@ -49,6 +49,7 @@ export function EnhancedSpotlight() {
     const all = buildSpotlightItems(navigate, handleRestartTour);
     // Esconde itens cujas rotas exigem papel que o usuário não tem.
     return filterByRoutePermission(all, (i) => i.path, { isDev, isAdmin });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, isDev, isAdmin]);
 
   // Fuse.js para busca fuzzy
@@ -160,6 +161,7 @@ export function EnhancedSpotlight() {
         handleSelect(flatItems[selectedIndex]);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isOpen, flatItems, selectedIndex],
   );
 

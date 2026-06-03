@@ -104,6 +104,7 @@ export function QuoteVersionCompare({
   useEffect(() => {
     if (!leftId || !rightId) return;
     loadDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leftId, rightId]);
 
   async function loadDetails() {

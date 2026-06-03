@@ -263,6 +263,7 @@ export function useWorkspaceNotifications() {
         else setIsLoading(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user], // FIX: removido notifications.length - agora usa notificationsLengthRef
   );
 

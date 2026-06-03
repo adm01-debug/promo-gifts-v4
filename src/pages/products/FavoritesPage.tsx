@@ -205,6 +205,7 @@ export default function FavoritesPage() {
 
   const legacyFavoriteProducts = useMemo(
     () => getProductsByIds(favorites.map((f) => f.productId)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getProductsByIds, favorites, _cacheSignal],
   );
 

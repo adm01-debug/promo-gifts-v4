@@ -106,6 +106,7 @@ function StatCard({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StatCardSkeleton() {
   return (
     <Card className="border-border/50">
@@ -123,7 +124,11 @@ function StatCardSkeleton() {
 }
 
 export function NoveltyStatsCards() {
-  const { data: stats, isLoading, error } = useNoveltyStats() as {
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useNoveltyStats() as {
     data: NoveltyStatsDisplay | undefined;
     isLoading: boolean;
     error: Error | null;

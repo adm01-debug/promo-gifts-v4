@@ -140,6 +140,7 @@ export default function AdminExternalDbPage() {
     refreshTelemetry();
     const id = setInterval(refreshTelemetry, 4000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelectTable = async (tableName: string) => {

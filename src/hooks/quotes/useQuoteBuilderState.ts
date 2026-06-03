@@ -532,6 +532,7 @@ export function useQuoteBuilderState() {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──
@@ -579,6 +580,7 @@ export function useQuoteBuilderState() {
       `Produto "${product.name}" importado do simulador com ${quotePersonalizations.length} gravação(ões)`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from cart ──
@@ -622,6 +624,7 @@ export function useQuoteBuilderState() {
       description: companyLabel || undefined,
     });
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from collection ──
@@ -656,6 +659,7 @@ export function useQuoteBuilderState() {
       `${collectionItems.length} produto(s) importado(s) da coleção "${state.fromCollection}"`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from URL params (single product or bulk items[]) ──
@@ -722,6 +726,7 @@ export function useQuoteBuilderState() {
     }
     // Clean URL params without triggering React Router re-render
     window.history.replaceState({}, document.title, location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data: products } = useQuery({
@@ -853,6 +858,7 @@ export function useQuoteBuilderState() {
       setValidUntil(format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd'));
     setTemplateApplied(template.name);
     toast.success(`Template "${template.name}" aplicado!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getTemplateItems = useCallback((): QuoteTemplateItem[] => {
@@ -990,8 +996,11 @@ export function useQuoteBuilderState() {
           const remoteTs = remoteQuote?.updated_at;
           if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
             const label = new Date(remoteTs).toLocaleString('pt-BR', {
-              day: '2-digit', month: '2-digit', year: 'numeric',
-              hour: '2-digit', minute: '2-digit',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
               timeZone: 'America/Sao_Paulo',
             });
             setConflictInfo({ modifiedAt: remoteTs, label });

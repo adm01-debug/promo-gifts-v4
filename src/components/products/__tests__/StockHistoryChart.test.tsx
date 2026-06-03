@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StockHistoryChart } from '../StockHistoryChart';
 import { useStockChartData } from '../useStockChartData';
@@ -47,6 +47,7 @@ const mockData = {
 
 describe('StockHistoryChart Tooltips', () => {
   beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useStockChartData).mockReturnValue(mockData as any);
   });
 

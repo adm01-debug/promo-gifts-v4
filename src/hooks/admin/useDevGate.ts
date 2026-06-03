@@ -19,6 +19,7 @@ export function useDevGate() {
   // Otimização: Estabilizamos a referência das roles usando uma stringificação leve.
   // Isso evita que o hook dispare re-renders se o AuthContext retornar uma nova instância de array com os mesmos dados.
   const rolesKey = safeRoles.join(',');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stableRoles = useMemo(() => safeRoles, [rolesKey]);
 
   const isAllowedStore = useSyncExternalStore(

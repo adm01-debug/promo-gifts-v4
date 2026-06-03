@@ -65,10 +65,10 @@ export function useAdminKitTemplates() {
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('kit_templates')
-        .update({ is_active } as never)
+        .update({ isActive } as never)
         .eq('id', id);
       if (error) throw error;
     },

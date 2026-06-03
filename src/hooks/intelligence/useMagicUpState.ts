@@ -355,6 +355,7 @@ export function useMagicUpState() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct?.id]);
 
   // ─── Print Areas from customization data ───────────────────────
@@ -873,6 +874,7 @@ CENÁRIO: ${effectivePrompt}`;
       generation.setVariations([]);
       generation.setActiveVariation(0);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [generation.setActiveVariation, generation.setVariations],
   );
 

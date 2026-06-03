@@ -232,7 +232,7 @@ export function ProductVideoGallery({ productId }: ProductVideoGalleryProps) {
                 )}
                 {g.previewVideo.video_type && (
                   <Badge variant="secondary" className="text-[10px]">
-                    {VIDEO_TYPES.find((t) => t.value === g.previewVideo!.video_type)?.label ||
+                    {VIDEO_TYPES.find((t) => t.value === g.previewVideo?.video_type)?.label ||
                       g.previewVideo.video_type}
                   </Badge>
                 )}

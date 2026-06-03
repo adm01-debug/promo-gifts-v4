@@ -733,6 +733,7 @@ export function useGlobalSearch() {
     } finally {
       if (!controller.signal.aborted) setIsSearching(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

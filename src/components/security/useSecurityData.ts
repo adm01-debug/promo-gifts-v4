@@ -61,7 +61,7 @@ export function useSecurityData(
   selectedUserId: string | null,
 ) {
   const { is2FAEnabled, isLoading: is2FALoading } = use2FA(
-    isManagingOther ? selectedUserId! : undefined,
+    isManagingOther ? selectedUserId : undefined,
   );
   const { allowedIPs } = useAllowedIPs();
   const [metrics, setMetrics] = useState<SecurityMetrics>(defaultMetrics);

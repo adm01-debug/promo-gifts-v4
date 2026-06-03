@@ -4,6 +4,7 @@ import { useLoginAttempts } from '@/hooks/auth/useLoginAttempts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock implementation that actually returns itself
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockQuery: any = {
   select: vi.fn().mockImplementation(() => mockQuery),
   order: vi.fn().mockImplementation(() => mockQuery),

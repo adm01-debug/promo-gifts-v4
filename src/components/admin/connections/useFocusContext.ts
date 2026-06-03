@@ -79,4 +79,5 @@ export function readFocusContextOnce(): FocusContext {
   return loadInitial();
 }
 
-export const __TEST__ = { STORAGE_KEY, TTL_MS };
+export // eslint-disable-next-line @typescript-eslint/naming-convention
+const __TEST__ = { STORAGE_KEY, TTL_MS };

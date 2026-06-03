@@ -70,7 +70,7 @@ export function VariantGridMatrix({
     for (const v of variants) {
       const sk = v.size_code || '__none__';
       if (!matrix.has(v.color_name)) matrix.set(v.color_name, new Map());
-      matrix.get(v.color_name)!.set(sk, v);
+      matrix.get(v.color_name)?.set(sk, v);
     }
     return { colors, sizes, matrix, hasSizes: sizes.length > 0, allVariantIds: allIds };
   }, [variants]);

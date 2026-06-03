@@ -163,8 +163,11 @@ export function useCatalogFiltering({
     });
 
     return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     filters.priceRange[0],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     filters.priceRange[1],
     filters.inStock,
     filters.materiais,

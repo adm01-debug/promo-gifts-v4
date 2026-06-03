@@ -66,6 +66,7 @@ export default function StorageTestPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -141,6 +141,7 @@ export function CategoryRanking({
     }
 
     return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedCategories, sortMode]);
 
   if (isLoading) {

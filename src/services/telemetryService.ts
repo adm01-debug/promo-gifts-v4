@@ -6,7 +6,7 @@ export type TelemetryEventType = 'error' | 'performance' | 'ux_action' | 'api_fa
 export interface TelemetryPayload {
   event_type: TelemetryEventType;
   name: string;
-  duration_ms?: number;
+  durationMs?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -113,7 +113,7 @@ class TelemetryService {
       this.buffer.push({
         event_type: payload.event_type,
         name: payload.name,
-        duration_ms: payload.duration_ms,
+        durationMs: payload.durationMs,
         metadata: (payload.metadata || {}) as Json,
         url: typeof window !== 'undefined' ? window.location.href : '',
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
@@ -154,15 +154,15 @@ class TelemetryService {
 
   async logPerformance(
     name: string,
-    duration_ms: number,
+    durationMs: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     // Mantém o threshold (só >= 100ms importa) ANTES do sampling
-    if (duration_ms < 100) return;
+    if (durationMs < 100) return;
     return this.log({
       event_type: 'performance',
       name,
-      duration_ms,
+      durationMs,
       metadata,
     });
   }

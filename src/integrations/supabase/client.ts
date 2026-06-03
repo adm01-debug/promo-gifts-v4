@@ -40,7 +40,7 @@ const envPointsToForbidden = !!envUrl && !envPointsToCanonical &&
 // 2. Se .env aponta para proibido OU .env está vazio → usa canônico hardcoded.
 // 3. Se .env aponta para outro desconhecido → usa .env (operador configurou outro projeto).
 export const SUPABASE_URL = envPointsToCanonical
-  ? envUrl!
+  ? envUrl
   : (envPointsToForbidden || !envUrl ? CANONICAL_URL : envUrl);
 export const SUPABASE_PUBLISHABLE_KEY = envPointsToCanonical
   ? (envKey ?? CANONICAL_ANON_KEY)

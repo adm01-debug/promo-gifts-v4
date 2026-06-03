@@ -22,11 +22,11 @@ vi.mock('../useGlobalSearch', () => ({
     setQuery: vi.fn(),
     handleSelect: mockHandleSelect,
     groupedResults: {
-        product: [
-            { id: 'res-1', title: 'Result 1', href: '/product/1', type: 'product' },
-            { id: 'res-2', title: 'Result 2', href: '/product/2', type: 'product' },
-        ]
-    }
+      product: [
+        { id: 'res-1', title: 'Result 1', href: '/product/1', type: 'product' },
+        { id: 'res-2', title: 'Result 2', href: '/product/2', type: 'product' },
+      ],
+    },
   }),
 }));
 
@@ -44,13 +44,14 @@ describe('GlobalSearchPalette Shortcuts', () => {
 
   it('triggers handleSelect when pressing 1', () => {
     render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={mockThemeContext as any}>
         <BrowserRouter>
           <TooltipProvider>
             <GlobalSearchPalette />
           </TooltipProvider>
         </BrowserRouter>
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     // Simulate keydown '1' on document
@@ -61,13 +62,14 @@ describe('GlobalSearchPalette Shortcuts', () => {
 
   it('triggers handleSelect when pressing 2', () => {
     render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={mockThemeContext as any}>
         <BrowserRouter>
           <TooltipProvider>
             <GlobalSearchPalette />
           </TooltipProvider>
         </BrowserRouter>
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     // Simulate keydown '2' on document

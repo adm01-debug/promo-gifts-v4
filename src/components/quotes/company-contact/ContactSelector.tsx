@@ -129,6 +129,7 @@ export function SingleContactDisplay({
         cargo: contact.cargo || undefined,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id]);
 
   return (

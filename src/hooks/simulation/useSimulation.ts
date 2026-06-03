@@ -70,6 +70,7 @@ export function useSimulation() {
         setTechniqueSettingsState(preferences.lastTechniqueSettings);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferencesLoaded]);
 
   // Wrapped setters with persistence
@@ -370,6 +371,7 @@ export function useSimulation() {
       }
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedProduct?.id,
     selectedTechniques,

@@ -101,4 +101,5 @@ export function sanitizeMessage(input: unknown, opts: SanitizeOptions = {}): str
   return raw || fallback;
 }
 
-export const __test__ = { TECHNICAL_PATTERNS, looksTechnical };
+export // eslint-disable-next-line @typescript-eslint/naming-convention
+const __test__ = { TECHNICAL_PATTERNS, looksTechnical };

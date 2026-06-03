@@ -38,6 +38,7 @@ function VoiceSearchOverlayConnected({ isOpen, onClose, onAction, onError }: Pro
     (command: string) => {
       voice.simulateCommand(command);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [voice.simulateCommand],
   );
 

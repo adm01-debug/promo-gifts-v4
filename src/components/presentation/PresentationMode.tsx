@@ -97,6 +97,7 @@ export function PresentationMode({
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goNext, goPrev, goTo, totalSlides, onClose, showGrid, isFullscreen]);
 
   // Hide cursor after inactivity

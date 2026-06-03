@@ -154,7 +154,8 @@ export function QuoteBuilderProductSearch({
                                 onLoad={(e) => e.currentTarget.classList.add('opacity-100')}
                                 onError={(e) => {
                                   const t = e.currentTarget;
-                                  if (t.src.includes('/thumbnail')) t.src = product.images![0];
+                                  if (t.src.includes('/thumbnail'))
+                                    t.src = product.images?.[0] ?? '';
                                   else t.style.display = 'none';
                                 }}
                               />
