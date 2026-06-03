@@ -58,11 +58,11 @@ describe('CatalogToolbar Regression', () => {
     // 3. Confirm the menu is open
     await waitFor(() => {
       // Find one of the options to confirm the menu is open
-      expect(screen.getByText(/Menor Preço/i)).toBeInTheDocument();
+      expect(screen.getByText(/Preço \(Menor/i)).toBeInTheDocument();
     });
 
     // 4. Select an option to ensure the event reaches the handler
-    const option = screen.getByText(/Menor Preço/i);
+    const option = screen.getByText(/Preço \(Menor/i);
     await user.click(option);
 
     expect(setSortBy).toHaveBeenCalledWith('price-asc');

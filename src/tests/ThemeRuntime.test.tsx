@@ -20,37 +20,29 @@ describe('Theme Runtime Safety', () => {
     expect(screen.getByTestId('theme-value').textContent).toBe('dark');
   });
 
-  it('should show console warning only in development when context is missing', () => {
+  it('should return isFallback: true when context is missing', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    // Test development environment
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
-
     render(<ThemeConsumer />);
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('useTheme must be used within a ThemeProvider'),
-    );
-
-    warnSpy.mockClear();
-
-    // Test production environment
-    process.env.NODE_ENV = 'production';
-    render(<ThemeConsumer />);
-    expect(warnSpy).not.toHaveBeenCalled();
-
-    // Restore
-    process.env.NODE_ENV = originalEnv;
+    // ThemeContext agora retorna fallback silencioso (sem console.warn)
+    // para não poluir o console em produção — isFallback indica o estado
+    const el = screen.getByTestId('theme-value');
+    expect(el.textContent).toBe('dark');
     warnSpy.mockRestore();
   });
 
-  it('should return isFallback: true when context is missing', () => {
-    const FallbackChecker = () => {
-      const { isFallback } = useTheme() as unknown as Record<string, unknown>;
-      return <div data-testid="fallback-status">{isFallback ? 'true' : 'false'}</div>;
+  it('should return correct fallback shape when context is missing', () => {
+    // Garante que o fallback tem todos os campos necessários
+    let capturedTheme: ReturnType<typeof useTheme> | null = null;
+    const ThemeCapture = () => {
+      capturedTheme = useTheme();
+      return null;
     };
-
-    render(<FallbackChecker />);
-    expect(screen.getByTestId('fallback-status').textContent).toBe('true');
+    render(<ThemeCapture />);
+    expect(capturedTheme).not.toBeNull();
+    expect(capturedTheme!.theme).toBe('dark');
+    expect(capturedTheme!.actualTheme).toBe('dark');
+    expect(capturedTheme!.isFallback).toBe(true);
+    expect(typeof capturedTheme!.setTheme).toBe('function');
+    expect(typeof capturedTheme!.toggleTheme).toBe('function');
   });
 });
