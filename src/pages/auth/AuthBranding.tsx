@@ -207,7 +207,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-0 overflow-visible"
       aria-hidden="true"
       data-testid="space-scene"
     >
