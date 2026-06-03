@@ -70,7 +70,7 @@ export function AppLogo({
               'mt-0.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-primary/80',
             )}
           >
-            Plataforma
+            Plataforma de Produtos
             <span className="inline-block h-1 w-1 rounded-full bg-primary" />
           </span>
         </div>
