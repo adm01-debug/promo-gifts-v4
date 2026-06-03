@@ -7,12 +7,19 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -274,10 +281,18 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
+    // Mouse / stylus: ativa após arrastar 8px (evita cliques acidentais)
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
+    }),
+    // Touch (mobile): ativa após 250ms pressionado + tolerância de 5px de movimento
+    // O delay diferencia scroll vertical de drag intencional no iOS/Android
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
+    // Teclado: acessibilidade — move cards com setas + Enter/Espaço
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
