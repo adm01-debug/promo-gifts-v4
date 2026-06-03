@@ -207,16 +207,16 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-0 overflow-visible"
       aria-hidden="true"
       data-testid="space-scene"
     >
       {/* Background Deep Space Glow & Nebula */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
 
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div
-        className="absolute inset-0 opacity-10 blur-[80px]"
+        className="fixed inset-0 opacity-10 blur-[80px]"
         style={{
           background:
             'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
@@ -225,7 +225,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
 
       <div
-        className="absolute inset-0 opacity-[0.03] blur-[120px]"
+        className="fixed inset-0 opacity-[0.03] blur-[120px]"
         style={{
           background: 'radial-gradient(circle at 60% 40%, #1e40af 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse',
@@ -233,7 +233,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
 
       {/* Space Dust Layer - Profundidade Extra */}
-      <div className="absolute inset-0 opacity-30">
+      <div className="fixed inset-0 opacity-30">
         {[...Array(20)].map((_, i) => (
           <div
             key={`dust-${i}`}
@@ -255,7 +255,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
       {/* Dynamic Stars - Etapa 12: canvas único por padrão; DOM legacy via flag */}
       {useCanvasStarfield ? (
-        <StarfieldCanvas density={isFull ? 150 : 50} />
+        <StarfieldCanvas density={isFull ? 300 : 50} className="pointer-events-none fixed inset-0 z-0 h-screen w-screen" />
       ) : (
         activeStars.map((star) => (
           <div
