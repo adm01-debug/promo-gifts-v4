@@ -90,8 +90,8 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
     // Setup do canvas com DPR para nitidez
     const dpr = window.devicePixelRatio || 1;
     const setSize = () => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       ctx.scale(dpr, dpr);
