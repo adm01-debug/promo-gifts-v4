@@ -44,6 +44,8 @@ interface Star {
   breathDuration: number;
   /** cor base (rgba) */
   color: string;
+  /** profundidade para parallax (0.1 a 1) */
+  depth: number;
 }
 
 interface StarfieldCanvasProps {
@@ -51,6 +53,10 @@ interface StarfieldCanvasProps {
   density?: number;
   /** className passado ao canvas wrapper */
   className?: string;
+  /** Posição do mouse para parallax */
+  mousePos?: { x: number; y: number };
+  /** Scroll para parallax */
+  scrollY?: number;
 }
 
 const COLORS = [
@@ -63,15 +69,16 @@ function createStars(count: number, width: number, height: number): Star[] {
   return Array.from({ length: count }, (_, i) => ({
     x: Math.random() * width,
     y: Math.random() * height,
-    size: 0.8 + Math.random() * 1.4, // 0.8 a 2.2 px
-    driftSpeed: 2 + Math.random() * 6, // 2 a 8 px/s
+    size: 0.6 + Math.random() * 1.0, // Reduzi levemente o tamanho para não poluir
+    driftSpeed: 1 + Math.random() * 4,
     breathPhase: Math.random() * Math.PI * 2,
-    breathDuration: 3000 + Math.random() * 3000, // 3-6 segundos
+    breathDuration: 4000 + Math.random() * 4000,
     color: COLORS[i % COLORS.length],
+    depth: 0.1 + Math.random() * 0.9,
   }));
 }
 
-export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasProps) {
+export function StarfieldCanvas({ density = 150, className, mousePos = { x: 0, y: 0 }, scrollY = 0 }: StarfieldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -109,24 +116,32 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
       // Black bg ja eh herdado do body parent
 
       for (const star of starsRef.current) {
-        // Drift horizontal (loop infinito wrapping)
+        // Drift horizontal + Parallax
         const driftX = reducedMotion ? 0 : (elapsed / 1000) * star.driftSpeed;
-        const x = ((star.x + driftX) % (width + 50)) - 25;
+        const parallaxX = mousePos.x * star.depth;
+        const parallaxY = (mousePos.y + scrollY) * star.depth;
 
-        // Breathing: opacidade modulada por seno
+        // Wrapping logic com margem para não piscar
+        let x = (star.x + driftX + parallaxX) % width;
+        if (x < 0) x += width;
+        
+        let y = (star.y + parallaxY) % height;
+        if (y < 0) y += height;
+
+        // Breathing: opacidade modulada por seno (mais sutil: 0.2 a 0.8)
         const breathT = reducedMotion
-          ? 1
-          : 0.4 +
+          ? 0.6
+          : 0.2 +
             0.6 *
               (0.5 +
                 0.5 * Math.sin((elapsed / star.breathDuration) * Math.PI * 2 + star.breathPhase));
 
         // Glow: usa shadow para criar brilho
         ctx.beginPath();
-        ctx.arc(x, star.y, star.size, 0, Math.PI * 2);
+        ctx.arc(x, y, star.size, 0, Math.PI * 2);
         ctx.fillStyle = star.color.replace('0.9', String(breathT.toFixed(2)));
         ctx.shadowColor = star.color;
-        ctx.shadowBlur = star.size * 3 * breathT;
+        ctx.shadowBlur = star.size * 2 * breathT;
         ctx.fill();
       }
 
@@ -156,7 +171,7 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [density]);
+  }, [density, mousePos.x, mousePos.y, scrollY]);
 
   return (
     <canvas
