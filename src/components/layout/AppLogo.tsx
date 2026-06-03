@@ -67,7 +67,7 @@ export function AppLogo({
           </span>
           <span
             className={cn(
-              'mt-0.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/80',
+              'mt-0.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-primary/80',
             )}
           >
             Plataforma de Produtos
