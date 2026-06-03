@@ -128,6 +128,7 @@ export default function SSOCallbackPage() {
     let timeoutId: number | null = null;
     let confirmedHoldId: number | null = null;
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
     const goHome = async (session?: import('@supabase/supabase-js').Session | null) => {
       if (cancelled) return;
       if (session) tracer.captureSession(session);

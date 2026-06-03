@@ -105,7 +105,7 @@ class TelemetryService {
   async log(payload: TelemetryPayload): Promise<void> {
     try {
       if (import.meta.env.DEV) {
-        console.log(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
+        console.warn(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
       }
 
       if (!this.shouldSample(payload.event_type)) return;

@@ -12,7 +12,8 @@ import { useIndustryTrends } from '@/hooks/bi/useIndustryTrends';
 import { useClientCategoryAffinity } from '@/hooks/bi/useClientCategoryAffinity';
 import { useIndustryCategoryTrends } from '@/hooks/bi/useIndustryCategoryTrends';
 import { resolveIndustryRecommendation } from '@/lib/bi/industryRecommendations';
-import { generateBIDossierPDF, buildDossierFileName } from '@/lib/bi/dossierPdfGenerator';
+// 🔥 Lazy: jsPDF só carrega quando usuário clica em exportar (evita +619KB no bundle inicial)
+// import { generateBIDossierPDF, buildDossierFileName } from '@/lib/bi/dossierPdfGenerator';
 import { buildCategorySection } from '@/lib/bi/executive-summary';
 import { getCompanyDisplayName } from '@/types/crm';
 
@@ -60,6 +61,8 @@ export function useBIDossierExport(clientId: string | null): UseBIDossierExport 
     if (!clientId || !company || !isReady) return;
     setIsExporting(true);
     try {
+      const { generateBIDossierPDF, buildDossierFileName } =
+        await import('@/lib/bi/dossierPdfGenerator');
       const blob = generateBIDossierPDF({
         client: {
           name: getCompanyDisplayName(company),

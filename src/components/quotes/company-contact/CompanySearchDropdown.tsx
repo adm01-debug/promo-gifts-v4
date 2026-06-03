@@ -116,15 +116,15 @@ export function CompanySearchDropdown({
         ? history.filter(
             (h) =>
               h.label.toLowerCase().includes(term) ||
-              ((h.metadata as any)?.cnpj || '').includes(term) ||
-              ((h.metadata as any)?.razao_social || '').toLowerCase().includes(term),
+              ((h.metadata as unknown)?.cnpj || '').includes(term) ||
+              ((h.metadata as unknown)?.razao_social || '').toLowerCase().includes(term),
           )
         : history;
 
       for (const h of historyItems) {
         if (!seen.has(h.id)) {
           if (term) {
-            const meta = (h.metadata || {}) as any;
+            const meta = (h.metadata || {}) as unknown;
             merged.push({
               id: h.id,
               name: h.label,

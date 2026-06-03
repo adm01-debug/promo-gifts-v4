@@ -149,7 +149,7 @@ export async function fetchPromobrindProductsLightweight(options?: {
   let lastBurstPageSize = LIGHTWEIGHT_PAGE_SIZE;
 
   try {
-    const batchResults = await Promise.all(initialBatch.map((q) => dbInvoke<any>(q)));
+    const batchResults = await Promise.all(initialBatch.map((q) => dbInvoke<unknown>(q)));
     for (const result of batchResults) {
       if (result.records) {
         const records = result.records as LightweightProduct[];

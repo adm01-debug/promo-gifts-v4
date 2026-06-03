@@ -96,7 +96,7 @@ export function QuoteBuilderSummaryColumn({
   isEditMode,
   formatCurrency,
   calculateItemPersonalizationTotal,
-  calculateItemTotal,
+  _calculateItemTotal,
   onSave,
   maxDiscountPercent,
   isDiscountExceeded,

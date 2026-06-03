@@ -86,7 +86,7 @@ export function QuoteVersionCompare({
   open,
   onOpenChange,
   versions,
-  currentQuoteId,
+  _currentQuoteId,
 }: QuoteVersionCompareProps) {
   const [leftId, setLeftId] = useState<string>('');
   const [rightId, setRightId] = useState<string>('');

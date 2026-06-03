@@ -4,7 +4,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CommandItem } from '@/components/ui/command';
-import { Trophy, Medal, ArrowUpRight, ChevronRight } from 'lucide-react';
+import { Trophy, Medal, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const paletteItemStateClass =

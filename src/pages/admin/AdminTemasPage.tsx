@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Save, Palette, Sparkles, Check, Gamepad2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -31,7 +30,7 @@ const fadeUp = {
 };
 
 export default function AdminTemasPage() {
-  const { actualTheme } = useTheme();
+  const { actualTheme: _actualTheme } = useTheme();
   const [config, setConfig] = useState<ThemeConfig>(loadThemeConfig);
   const [savedConfig, setSavedConfig] = useState<ThemeConfig>(loadThemeConfig);
 
@@ -65,7 +64,7 @@ export default function AdminTemasPage() {
   };
 
   // Mode changes are no longer supported
-  const handleModeChange = (_mode: any) => {};
+  const _handleModeChange = (_mode: unknown) => {};
 
   const handleSave = () => {
     saveThemeConfig(config);
@@ -93,7 +92,7 @@ export default function AdminTemasPage() {
     // setAppTheme removed as theme is fixed
   };
 
-  const currentMode = config.mode === 'auto' ? 'system' : config.mode;
+  const _currentMode = config.mode === 'auto' ? 'system' : config.mode;
 
   return (
     <>

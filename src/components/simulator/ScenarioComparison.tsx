@@ -50,7 +50,7 @@ export function ScenarioComparison({
   onSaveAsScenario,
   onClearScenario,
 }: ScenarioComparisonProps) {
-  const [selectedView, setSelectedView] = useState<'compare' | 'details'>('compare');
+  const [_selectedView, _setSelectedView] = useState<'compare' | 'details'>('compare');
 
   const canSave = currentSimulation.options.length > 0;
 
