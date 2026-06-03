@@ -76,7 +76,7 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-const commandIconMap: Record<string, any> = {
+const commandIconMap: Record<string, unknown> = {
   Sun,
   Moon,
   LogOut,

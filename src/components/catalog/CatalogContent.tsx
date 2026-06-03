@@ -22,8 +22,6 @@ import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCate
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 // Diagnostic counter
-let catalogRenderCount = 0;
-
 interface CatalogContentProps {
   viewMode: ViewMode;
   shouldShowCatalogSkeleton: boolean;
@@ -87,8 +85,6 @@ export const CatalogContent = memo(function CatalogContent({
   setActiveProductId: _setActiveProductId,
   hideCategoryBadges = false,
 }: CatalogContentProps) {
-  catalogRenderCount++;
-
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
@@ -155,10 +151,10 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div 
+    <div
       className={cn(
-        "relative space-y-8 pb-12 duration-500 animate-in fade-in",
-        isLoadingMore && "opacity-80 transition-opacity"
+        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
+        isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >
       <SparklineSalesProvider productIds={productIds}>

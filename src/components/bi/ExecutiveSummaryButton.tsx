@@ -22,7 +22,8 @@ import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
 import { useClientVsIndustry } from '@/hooks/bi/useClientVsIndustry';
 import { useClientCategoryAffinity } from '@/hooks/bi/useClientCategoryAffinity';
 import { useIndustryCategoryTrends } from '@/hooks/bi/useIndustryCategoryTrends';
-import { generateBIPptx } from '@/lib/bi/pptxGenerator';
+// Lazy: pptxgenjs carrega só ao exportar (evita +369KB no bundle inicial)
+// import { generateBIPptx } from '@/lib/bi/pptxGenerator';
 import { buildCategorySection } from '@/lib/bi/executive-summary';
 
 interface Props {
@@ -87,6 +88,7 @@ export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: 
   const handlePptx = async () => {
     setBusy('pptx');
     try {
+      const { generateBIPptx } = await import('@/lib/bi/pptxGenerator');
       await generateBIPptx({
         clientName,
         ramoAtividade,

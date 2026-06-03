@@ -12,7 +12,10 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
-import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
+import {
+  ProductColorSwatches,
+  type ColorDotLike,
+} from '@/components/products/ProductColorSwatches';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
@@ -272,9 +275,11 @@ export function ReplenishmentTableView({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    selectionMode
-                      ? onToggleSelect(product.product_id)
-                      : onProductClick(product.product_id);
+                    if (selectionMode) {
+                      onToggleSelect(product.product_id);
+                    } else {
+                      onProductClick(product.product_id);
+                    }
                   }
                 }}
                 aria-selected={selectionMode ? isSelected : undefined}

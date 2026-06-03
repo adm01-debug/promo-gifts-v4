@@ -12,7 +12,7 @@
  *   2. mapRows now handles tabela_preco_gravacao_oficial (mirrors rest-native.ts)
  *   3. (rest-native.ts) table_code_option fixed to 'codigo_curto' (was 'codigo_tabela')
  */
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client'; // unused
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';

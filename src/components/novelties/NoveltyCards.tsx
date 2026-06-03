@@ -17,7 +17,10 @@ import { Package, Building2, FolderTree } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
-import { ProductColorSwatches, type ColorDotLike } from '@/components/products/ProductColorSwatches';
+import {
+  ProductColorSwatches,
+  type ColorDotLike,
+} from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 
 interface NoveltyCardProps {
@@ -145,12 +148,14 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Info */}
       <div className="flex flex-col gap-0.5">
-        <p className="line-clamp-2 text-sm font-medium leading-tight">{product.product_name ?? '—'}</p>
+        <p className="line-clamp-2 text-sm font-medium leading-tight">
+          {product.product_name ?? '—'}
+        </p>
         <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
         <div className="mt-0.5">
           <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
         </div>
-        {product.base_price != null && (
+        {product.base_price !== null && (
           <p className="text-sm font-semibold text-primary">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
               product.base_price,
@@ -264,7 +269,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
       </div>
 
       {/* Price */}
-      {product.base_price != null && (
+      {product.base_price !== null && (
         <span className="flex-shrink-0 text-sm font-semibold text-primary">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
             product.base_price,
@@ -281,7 +286,7 @@ export function NoveltyTableView({
   selectionMode = false,
   selectedIds = [],
   onSelect,
-  onStatusClick,
+  _onStatusClick,
   colorsByProduct,
 }: {
   products: NoveltyWithDetails[];
@@ -357,7 +362,9 @@ export function NoveltyTableView({
                         </div>
                       )}
                     </div>
-                    <span className="line-clamp-1 text-sm font-medium">{product.product_name ?? '—'}</span>
+                    <span className="line-clamp-1 text-sm font-medium">
+                      {product.product_name ?? '—'}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -371,7 +378,7 @@ export function NoveltyTableView({
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-sm font-medium">
-                  {product.base_price != null
+                  {product.base_price !== null
                     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                         product.base_price,
                       )

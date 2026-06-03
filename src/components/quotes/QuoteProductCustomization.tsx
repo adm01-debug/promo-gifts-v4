@@ -130,7 +130,7 @@ export function QuoteProductCustomization({
             quantidade: quantity,
             num_cores: p.colors_count || 1,
             faixa: { qtd_min: 0, qtd_max: 9999 }, // Placeholder
-          } as any,
+          } as unknown,
         }))}
         onSelectionChange={handleSelectionChange}
       />

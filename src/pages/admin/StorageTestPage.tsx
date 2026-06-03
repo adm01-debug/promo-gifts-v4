@@ -24,7 +24,7 @@ export default function StorageTestPage() {
   const [uploading, setUploading] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [files, setFiles] = useState<any[]>([]);
+  const [files, setFiles] = useState<unknown[]>([]);
   const { toast } = useToast();
 
   const bucketName = 'test-external-storage';
@@ -46,7 +46,7 @@ export default function StorageTestPage() {
         }
       }
       setFiles(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancelled()) return;
       console.error('Error fetching files:', error);
       toast({
@@ -87,7 +87,7 @@ export default function StorageTestPage() {
         description: `Arquivo ${file.name} enviado com sucesso para o Supabase externo.`,
       });
       fetchFiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro no upload',
         description: error.message,
@@ -110,7 +110,7 @@ export default function StorageTestPage() {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro no download',
         description: error.message,
@@ -130,7 +130,7 @@ export default function StorageTestPage() {
         description: 'Arquivo excluído do bucket externo.',
       });
       fetchFiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao remover',
         description: error.message,
@@ -152,7 +152,7 @@ export default function StorageTestPage() {
       });
       if (error) throw error;
       toast({ title: 'Sucesso', description: data.message });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     } finally {
       setSyncing(false);

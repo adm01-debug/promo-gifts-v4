@@ -413,7 +413,7 @@ export function TechniqueCard({
 
 // Formulário de configuração inline
 function InlineConfigForm({
-  technique,
+  _technique,
   settings,
   showColors,
   showSize,
