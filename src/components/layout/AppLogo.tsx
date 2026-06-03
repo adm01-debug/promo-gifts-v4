@@ -59,7 +59,7 @@ export function AppLogo({
         <div className="flex flex-col">
           <span
             className={cn(
-              'font-display text-lg font-black leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-xl',
+              'font-display text-[21.5px] font-black uppercase leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-[24px]',
               textClassName,
             )}
           >
@@ -67,7 +67,7 @@ export function AppLogo({
           </span>
           <span
             className={cn(
-              'mt-1 flex items-center gap-1.5 text-[10px] font-bold uppercase leading-tight tracking-[0.25em] text-primary/80 sm:text-[11px]',
+              'mt-1 flex items-center gap-1.5 text-[10px] font-bold leading-tight tracking-[0.25em] text-primary/80 sm:text-[11px]',
             )}
           >
             Plataforma de Produtos
