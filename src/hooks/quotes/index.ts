@@ -11,3 +11,4 @@ export * from '@/hooks/quotes/useQuoteTemplates';
 export * from '@/hooks/quotes/useQuoteVersions';
 export * from '@/hooks/quotes/useQuotes';
 export * from '@/hooks/quotes/useSellerDiscountLimits';
+export * from '@/hooks/quotes/useQuoteConcurrencyGuard';
