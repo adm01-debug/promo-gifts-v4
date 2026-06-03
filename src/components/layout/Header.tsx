@@ -189,17 +189,21 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
     >
       <div className="flex h-full items-center justify-between px-2 sm:px-4 lg:px-6">
         {/* ══════ Left section — Menu + Âncora contextual (#1) ══════ */}
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary sm:h-9 sm:w-9 lg:hidden"
+            className="h-8 w-8 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
             onClick={onMenuToggle}
             aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={sidebarOpen}
           >
             <Menu className="h-5 w-5" />
           </Button>
+
+          <div className="lg:hidden">
+            <AppLogo showText={true} textClassName="text-[16px] sm:text-[18px]" iconClassName="h-8 w-8 sm:h-9 sm:w-9" />
+          </div>
 
           {/* #1 — Seção atual como âncora */}
           <div className="hidden items-center gap-4 lg:flex">

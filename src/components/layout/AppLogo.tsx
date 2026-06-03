@@ -34,7 +34,7 @@ export function AppLogo({
       <div
         className={cn(
           'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[12px] border border-white/5 shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-500',
-          !iconClassName?.includes('h-') && (variant === 'sidebar' ? 'h-10 w-10' : 'h-11 w-11'),
+          !iconClassName?.includes('h-') && (variant === 'sidebar' ? 'h-9 w-9 sm:h-10 sm:w-10' : 'h-10 w-10 sm:h-11 sm:w-11'),
           iconBg,
           iconClassName,
         )}
@@ -47,19 +47,19 @@ export function AppLogo({
               : iconClassName?.includes('h-14')
                 ? 'h-7 w-7'
                 : variant === 'sidebar'
-                  ? 'h-5 w-5'
-                  : 'h-6 w-6',
+                  ? 'h-4.5 w-4.5 sm:h-5 sm:w-5'
+                  : 'h-5 w-5 sm:h-6 sm:w-6',
             iconColor,
           )}
         />
         <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
-        <Sparkles className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse text-white/50" />
+        <Sparkles className="absolute -right-0.5 -top-0.5 h-2 w-2 sm:h-2.5 sm:w-2.5 animate-pulse text-white/50" />
       </div>
       {showText && (
         <div className="flex flex-col">
           <span
             className={cn(
-              'font-display text-[21.5px] font-black uppercase leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-[24px]',
+              'font-display text-[18px] font-black uppercase leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-[24px]',
               textClassName,
             )}
           >
@@ -67,7 +67,7 @@ export function AppLogo({
           </span>
           <span
             className={cn(
-              'mt-1 flex items-center gap-1.5 text-[10px] font-bold leading-tight tracking-[0.25em] text-primary/80 sm:text-[11px]',
+              'mt-1 flex items-center gap-1 text-[9px] font-bold leading-tight tracking-[0.2em] text-primary/90 drop-shadow-sm sm:gap-1.5 sm:text-[11px] sm:tracking-[0.25em]',
             )}
           >
             Plataforma de Produtos
