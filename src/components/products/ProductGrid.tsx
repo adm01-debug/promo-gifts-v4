@@ -204,6 +204,10 @@ export const ProductGrid = memo(function ProductGrid({
 
   // Hidrata cores nos cards cujo fetch principal não trouxe `colors`
   // (fallback unificado p/ catálogo/super filtro/etc — mesmo padrão de Novidades).
+  // RULES-OF-HOOKS FIX: hooks DEVEM rodar antes dos early returns (isError/empty)
+  // abaixo — senão a contagem de hooks muda quando o componente alterna entre
+  // estado de erro/vazio e estado normal, e o React crasha com "Rendered fewer
+  // hooks than expected".
   const idsNeedingColors = useMemo(
     () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
     [products],
@@ -286,10 +290,10 @@ export const ProductGrid = memo(function ProductGrid({
             const batchColors =
               !p.colors || p.colors.length === 0 ? colorsByProduct?.get(p.id) : undefined;
 
-            const enriched: Product = {
+            const enriched = {
               ...p,
               colors: isHydrating
-                ? []
+                ? undefined
                 : batchColors && batchColors.length > 0
                   ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
                   : p.colors,

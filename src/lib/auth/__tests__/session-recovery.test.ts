@@ -37,12 +37,7 @@ vi.mock('@/lib/telemetry/structuredLogger', () => ({
   }),
 }));
 
-import {
-  isBadJwtError,
-  recoverSession,
-  maybeRecoverFromError,
-  attachSessionRevalidation,
-} from '../session-recovery';
+import { isBadJwtError } from '../session-recovery';
 import { toast } from 'sonner';
 
 // Reset module-level state between tests by re-importing fresh
@@ -119,12 +114,8 @@ describe('recoverSession', () => {
     expect(ok).toBe(false);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith(
-      expect.stringContaining('/login?next='),
-    );
-    expect(replace.mock.calls[0][0]).toContain(
-      encodeURIComponent('/catalogo?x=1'),
-    );
+    expect(replace).toHaveBeenCalledWith(expect.stringContaining('/login?next='));
+    expect(replace.mock.calls[0][0]).toContain(encodeURIComponent('/catalogo?x=1'));
   });
 
   it('não redireciona quando já está em /login', async () => {

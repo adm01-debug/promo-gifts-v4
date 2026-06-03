@@ -146,15 +146,17 @@ export function useProductsColorsBatch(productIds: string[]) {
 
   return useMemo(() => {
     const resultMap = new Map<string, ProductColorDot[]>();
-    stableIds.forEach(id => {
-      if (GLOBAL_COLORS_CACHE.has(id)) {
-        resultMap.set(id, GLOBAL_COLORS_CACHE.get(id)!);
-      }
-    });
-    return { 
-      data: resultMap, 
+    for (const id of stableIds) {
+      const cached = GLOBAL_COLORS_CACHE.get(id);
+      if (cached) resultMap.set(id, cached);
+    }
+    return {
+      data: resultMap,
       isLoading: query.isLoading,
-      hasError: query.isError
+      hasError: query.isError,
     };
+    // query.data is intentionally included: it changes when the query completes,
+    // which is what populates GLOBAL_COLORS_CACHE — we need to recompute then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stableIds, query.isLoading, query.isError, query.data]);
 }
