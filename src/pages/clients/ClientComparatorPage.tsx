@@ -93,7 +93,23 @@ export default function ClientComparatorPage() {
           </Card>
         )}
 
-        <ClientComparator clientIds={clientIds} onRemove={removeClient} />
+        {clientIds.length === 0 ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/5 p-12 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600/20 to-fuchsia-700/20">
+              <GitCompare className="h-7 w-7 text-violet-400" />
+            </div>
+            <h3 className="mb-2 font-display text-lg font-semibold">Nenhum cliente selecionado</h3>
+            <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+              Selecione acima pelo menos um cliente da sua carteira para iniciar a comparação lado
+              a lado.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Você pode comparar até {MAX_CLIENTS} clientes simultaneamente.
+            </p>
+          </div>
+        ) : (
+          <ClientComparator clientIds={clientIds} onRemove={removeClient} />
+        )}
       </div>
     </>
   );
