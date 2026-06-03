@@ -116,16 +116,14 @@ export function StarfieldCanvas({ density = 150, className, mousePos = { x: 0, y
       // Black bg ja eh herdado do body parent
 
       for (const star of starsRef.current) {
-        // Drift horizontal + Parallax
+        // Drift horizontal
         const driftX = reducedMotion ? 0 : (elapsed / 1000) * star.driftSpeed;
-        const parallaxX = mousePos.x * star.depth;
-        const parallaxY = (mousePos.y + scrollY) * star.depth;
 
         // Wrapping logic com margem para não piscar
-        let x = (star.x + driftX + parallaxX) % width;
+        let x = (star.x + driftX) % width;
         if (x < 0) x += width;
         
-        let y = (star.y + parallaxY) % height;
+        let y = star.y % height;
         if (y < 0) y += height;
 
         // Breathing: opacidade modulada por seno (mais sutil: 0.2 a 0.8)
