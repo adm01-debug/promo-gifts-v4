@@ -119,7 +119,7 @@ export const CatalogHeader = memo(function CatalogHeader({
                         aria-label="Histórico de buscas recentes"
                       >
                         <Clock className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                        <Badge className="pointer-events-none absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center border-2 border-background bg-primary px-1 text-[8px] shadow-sm">
+                        <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm">
                           {searchHistory.length}
                         </Badge>
                       </Button>
