@@ -19,13 +19,20 @@ import React from "react";
 
 // ── Module mocks ──────────────────────────────────────────────────
 
-vi.mock("framer-motion", () => ({
-  motion: {
+vi.mock("framer-motion", () => {
+  const motionStub = {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) =>
       React.createElement("div", props, children),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  return {
+    motion: motionStub,
+    m: motionStub,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
 
 const mockFetchRecommendations = vi.fn();
 const mockReset = vi.fn();

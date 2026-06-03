@@ -8,6 +8,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AppBootstrap } from '@/components/providers/AppBootstrap';
+import { MotionProvider } from '@/components/providers/MotionProvider';
 import { AccessibilityProvider, AriaLiveProvider } from '@/components/a11y';
 import { RootInteractivityGuard } from '@/components/system/RootInteractivityGuard';
 import { RouteScrollReset } from '@/components/common/RouteScrollReset';
@@ -91,16 +92,18 @@ const App = () => {
                 <AuthProvider>
                   <AppBootstrapContainer>
                     <AppBootstrap>
-                      <EnhancedErrorBoundary>
-                        <RootInteractivityGuard />
-                        <Sonner />
-                        <OptionalCloudStatusBanner />
-                        <OptionalCloudStatusDot />
-                        <OptionalGlobalOfflineAlert />
-                        <RouteScrollReset />
-                        <RoutePrefetcher />
-                        <AppRoutes />
-                      </EnhancedErrorBoundary>
+                      <MotionProvider>
+                        <EnhancedErrorBoundary>
+                          <RootInteractivityGuard />
+                          <Sonner />
+                          <OptionalCloudStatusBanner />
+                          <OptionalCloudStatusDot />
+                          <OptionalGlobalOfflineAlert />
+                          <RouteScrollReset />
+                          <RoutePrefetcher />
+                          <AppRoutes />
+                        </EnhancedErrorBoundary>
+                      </MotionProvider>
                     </AppBootstrap>
                   </AppBootstrapContainer>
                 </AuthProvider>

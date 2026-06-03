@@ -3,7 +3,7 @@
  */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ArrowRight, ChevronUp } from 'lucide-react';
 import type { SellerCart } from '@/hooks/products';

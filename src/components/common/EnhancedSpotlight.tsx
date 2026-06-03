@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useOptionalOnboardingContext } from '@/contexts/OnboardingContext';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import Fuse from 'fuse.js';
 import { Search, ArrowRight, Command, Clock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';

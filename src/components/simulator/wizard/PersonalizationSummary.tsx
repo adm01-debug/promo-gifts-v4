@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import type { UseSimulatorWizardReturn } from '@/hooks/simulator/useSimulatorWizard';
 import { formatCurrency } from '@/lib/format';
 import { RemovePersonalizationDialog } from './RemovePersonalizationDialog';

@@ -29,7 +29,7 @@ import { CartHealthChecklist } from '@/components/cart/CartHealthChecklist';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Weight, Box, Building2, Sparkles, Trash2, Package } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartSidebarProps {

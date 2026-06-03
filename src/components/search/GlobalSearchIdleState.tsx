@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CommandItem } from '@/components/ui/command';
 import { Clock, Flame, X, Sparkles, Eye, ChevronRight, Zap, Compass } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
   paletteItemStateClass,

@@ -38,7 +38,7 @@ import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
 import { useFiltersSelectionMode } from '@/pages/filters/useFiltersSelectionMode';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverlayConnected'));
 

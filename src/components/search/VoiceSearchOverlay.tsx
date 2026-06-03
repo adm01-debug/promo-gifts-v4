@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/intelligence';
 import { usePhaseColors } from './voice/usePhaseColors';
 import {

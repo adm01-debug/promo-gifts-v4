@@ -1,7 +1,7 @@
 /**
  * VoiceTranscriptPanel — Displays live transcript and agent response in the voice overlay.
  */
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { MicOff, Search, Filter, Navigation, ArrowUpDown, Trash2, HelpCircle } from 'lucide-react';
 import type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/intelligence';
 import type { ReactElement } from 'react';

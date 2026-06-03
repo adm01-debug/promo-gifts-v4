@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, SkipForward, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';

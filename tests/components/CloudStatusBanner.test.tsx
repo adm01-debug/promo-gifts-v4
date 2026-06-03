@@ -24,8 +24,13 @@ vi.mock('framer-motion', () => {
       }
       return React.createElement(Tag, { ref, ...clean }, children);
     });
+  const motionProxy = new Proxy({}, { get: (_t, p: any) => passthrough(p) });
   return {
-    motion: new Proxy({}, { get: (_t, p: any) => passthrough(p) }),
+    motion: motionProxy,
+    m: motionProxy,
+    LazyMotion: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
   };
 });

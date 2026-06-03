@@ -3,7 +3,7 @@
  * Hook + sub-components extracted.
  */
 import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
+import { m as motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';

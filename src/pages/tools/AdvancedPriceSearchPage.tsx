@@ -33,7 +33,7 @@ import {
   Sparkles,
   AlertCircle,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useAdvancedPriceSearch } from '@/pages/advanced-price-search/useAdvancedPriceSearch';

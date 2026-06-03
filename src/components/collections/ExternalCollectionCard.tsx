@@ -2,7 +2,7 @@
  * ExternalCollectionCard — Grid/List card for catalog (external) collections.
  * Extracted from CollectionsPage for modularity.
  */
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { FolderOpen, Package, Star, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -7,7 +7,7 @@ import { ChevronRight, FolderTree, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useCategoriesTree, type CategoryNode } from '@/hooks/products';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 
 interface StockCategoryTreeSelectProps {
   value: string | undefined;
