@@ -31,11 +31,15 @@ const SAMPLE_RATE: Record<TelemetryEventType, number> = {
   ux_action: 0.2, // 20% — ações de UX são frequentes mas amostradas
 };
 
-interface BufferedEvent extends Omit<TelemetryPayload, 'metadata'> {
+/** Formato snake_case que o PostgREST/Supabase espera */
+interface BufferedEvent {
+  event_type: TelemetryEventType;
+  name: string;
+  duration_ms?: number;
+  metadata?: Json;
   url: string;
   user_agent: string;
   session_id: string;
-  metadata?: Json;
 }
 
 class TelemetryService {
@@ -113,7 +117,7 @@ class TelemetryService {
       this.buffer.push({
         event_type: payload.event_type,
         name: payload.name,
-        durationMs: payload.durationMs,
+        duration_ms: payload.durationMs,
         metadata: (payload.metadata || {}) as Json,
         url: typeof window !== 'undefined' ? window.location.href : '',
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
