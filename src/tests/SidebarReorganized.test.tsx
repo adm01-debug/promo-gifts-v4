@@ -46,8 +46,11 @@ const renderSidebar = (props = { isOpen: true, onToggle: vi.fn() }) => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          <AuthContext.Provider value={mockAuthContext as any}>
+          <AuthContext.Provider
+            value={
+              mockAuthContext as unknown as Parameters<typeof AuthContext.Provider>[0]['value']
+            }
+          >
             <SidebarReorganized {...props} />
           </AuthContext.Provider>
         </TooltipProvider>

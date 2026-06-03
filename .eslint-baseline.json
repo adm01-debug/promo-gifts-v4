@@ -1,46 +1,5 @@
 {
-  "generatedAt": "2026-06-03T01:26:42.049Z",
-  "totalErrors": 4,
-  "counts": {
-    "src/components/notifications/__tests__/NotificationDrawer.test.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/novelties/NoveltyStatsCards.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/products/__tests__/StockHistoryChart.test.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/products/share/usePhotoDownload.ts": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/replenishments/ReplenishmentProductGrid.tsx": {
-      "<no-rule>": 1
-    },
-    "src/components/simulator/wizard/StepSpecs.tsx": {
-      "<no-rule>": 1
-    },
-    "src/hooks/common/useSearch.ts": {
-      "<no-rule>": 1
-    },
-    "src/hooks/products/useSupplierFiscalData.ts": {
-      "<no-rule>": 1
-    },
-    "src/lib/error-reporter.ts": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/lib/personalization/adapters/raw-row.adapter.ts": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/pages/products/seller-carts/useSellerCartsPage.ts": {
-      "<no-rule>": 1
-    },
-    "src/tests/SidebarReorganized.test.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
-    "src/types/jspdf-autotable.d.ts": {
-      "<no-rule>": 1,
-      "@typescript-eslint/naming-convention": 1
-    }
-  }
+  "generatedAt": "2026-06-03T01:42:23.331Z",
+  "totalErrors": 0,
+  "counts": {}
 }

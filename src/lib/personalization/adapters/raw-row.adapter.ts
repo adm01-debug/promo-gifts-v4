@@ -22,7 +22,8 @@ import type {
 
 type Raw = Record<string, unknown>;
 
-function pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+function _pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
   for (const k of keys) {
     const v = obj[k];
     if (v !== undefined && v !== null) return v as T;
