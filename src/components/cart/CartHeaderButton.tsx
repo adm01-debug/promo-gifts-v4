@@ -80,7 +80,7 @@ export function CartHeaderButton() {
               >
                 <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
                 {totalItems > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground shadow-sm animate-in zoom-in-50">
+                  <span className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm animate-in zoom-in-50">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 )}
