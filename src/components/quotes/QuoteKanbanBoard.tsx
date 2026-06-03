@@ -43,6 +43,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatBRL, formatBRLShort } from '@/utils/currency';
 
 type QuoteStatus = Quote['status'];
 
@@ -116,13 +117,6 @@ interface QuoteCardProps {
 function QuoteCard({ quote, isDragging, isSaving }: QuoteCardProps) {
   const navigate = useNavigate();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
-
   return (
     <Card
       className={cn(
@@ -163,7 +157,7 @@ function QuoteCard({ quote, isDragging, isSaving }: QuoteCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
             <DollarSign className="h-3.5 w-3.5 text-success" />
-            {formatCurrency(quote.total || 0)}
+            {formatBRL(quote.total || 0)}
           </div>
           {quote.created_at && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -222,15 +216,6 @@ function KanbanColumn({ column, quotes, totalValue, savingIds }: KanbanColumnPro
   const Icon = column.icon;
   const sortableQuoteIds = quotes.map(getSortableQuoteId);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   return (
     <div className="flex min-w-[280px] max-w-[320px] flex-col">
       <Card className={cn('mb-3', column.bgColor, 'border-border/30')}>
@@ -244,7 +229,7 @@ function KanbanColumn({ column, quotes, totalValue, savingIds }: KanbanColumnPro
               {quotes.length}
             </Badge>
           </div>
-          <div className="text-xs text-muted-foreground">{formatCurrency(totalValue)}</div>
+          <div className="text-xs text-muted-foreground">{formatBRLShort(totalValue)}</div>
         </CardHeader>
       </Card>
 
