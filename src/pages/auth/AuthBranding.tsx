@@ -233,7 +233,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
 
       {/* Space Dust Layer - Profundidade Extra */}
-      <div className="absolute inset-0 opacity-30">
+      <div className="fixed inset-0 opacity-30">
         {[...Array(20)].map((_, i) => (
           <div
             key={`dust-${i}`}
