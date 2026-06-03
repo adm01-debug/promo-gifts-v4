@@ -307,7 +307,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 >
                   <GitCompare className="h-[17px] w-[17px]" strokeWidth={1.75} />
                   {compareCount > 0 && (
-                    <Badge className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center border-0 bg-brand-primary px-1 text-[9px] text-brand-primary-foreground">
+                    <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border-0 bg-brand-primary p-0 text-[10px] font-bold text-brand-primary-foreground shadow-sm">
                       {compareCount > 4 ? '4' : compareCount}
                     </Badge>
                   )}
