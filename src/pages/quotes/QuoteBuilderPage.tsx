@@ -41,6 +41,7 @@ import { SaveAsTemplateButton } from '@/components/quotes/SaveAsTemplateButton';
 import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCustomization';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
+import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
@@ -52,6 +53,7 @@ import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
+  const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
