@@ -103,8 +103,8 @@ export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasPro
     window.addEventListener('resize', setSize);
 
     const drawStars = (elapsed: number) => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       ctx.clearRect(0, 0, width, height);
       // Black bg ja eh herdado do body parent
 
