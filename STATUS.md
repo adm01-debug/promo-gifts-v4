@@ -8,7 +8,18 @@
 
 ## 🎯 Onde estamos hoje
 
-**Última sessão**: 2026-06-02 / 2026-06-03 — **Auditoria QA exaustiva** (`claude/optimistic-shannon-aceSF`). 2 PRs entregues:
+**Última sessão**: 2026-06-03 — **QA exaustivo: P0 de build + gates vermelhos restaurados** (`claude/system-testing-qa-M1wKn`). Rodei os gates reais (typecheck/eslint/build/test:ci-core) para medir a saúde da branch e encontrei **1 P0 que quebra produção** + **gates de CI vermelhos**:
+
+- 🚨 **P0 — `index.html` inteiro em base64**: o arquivo da branch não era HTML, era o HTML real codificado em base64 (`PCFkb2N0eXBlIGh0bWw+` = `<!doctype html>`). O Vite lia como entry, não achava `<script src="/src/main.tsx">` e o `npm run build` emitia o blob base64 como `dist/index.html` **sem nenhum `assets/*.js`** — o deploy serviria uma página de lixo sem JavaScript. Origem: PR #618 base64-encodou vários arquivos; o hotfix #622 corrigiu `robots.txt`/`sitemap.xml`/`cors.ts`/`.tsc-baseline.json` mas **esqueceu o `index.html`**. **Fix**: decode in-place (roundtrip exato, 136 linhas, HTML válido). Build agora gera **358 chunks JS** e `index.html` referencia o bundle. Varredura confirmou que era o único arquivo restante corrompido.
+- ❌ **Gate ESLint vermelho** (exit 1): `src/utils/currency.ts:39/48/57` (`eqeqeq` — `== null` → `=== null || === undefined`) e `src/pages/NotFound.tsx` (import morto `Search` + diretiva `eslint-disable` inútil). **Fix**: corrigidos → gate verde.
+- ❌ **Gate TSC vermelho** (exit 1, drift pré-existente dos PRs #624-628): `src/lib/notifications-metrics.ts:371` (`reset()` esquecia a chave `'filter-change'` do `Record<FetchSource,number>` — bug real) e `src/hooks/auth/useProfileRoles.ts:32` (select pedia `organization_id` **inexistente** em `profiles` → 400 PostgREST silencioso impedindo o profile de carregar; além disso só buscava 4 de 13 campos, deixando `preferences`/`user_id`/`is_active`/`created_at` `undefined` em runtime mesmo no caminho feliz). **Fix**: `reset()` completo; select corrigido para todas as colunas reais de `Profile` + cast pontual do `preferences` (Json→Record). Gate verde.
+- 🧪 **Teste obsoleto** `tests/pages/NotFound.test.tsx`: espiava `console.error` mas o PR #625 trocou para `console.warn`. **Fix**: atualizado para `console.warn`. 5/5 ✅.
+
+**Gates verificados nesta sessão**: typecheck baseline ✅ (0 regressão), eslint baseline ✅ (0 regressão), `npm run build` ✅ (358 JS chunks), `test:ci-core` ✅ 317/317.
+
+---
+
+**Sessão anterior**: 2026-06-02 / 2026-06-03 — **Auditoria QA exaustiva** (`claude/optimistic-shannon-aceSF`). 2 PRs entregues:
 
 - **[#608](https://github.com/adm01-debug/promo-gifts-v4/pull/608)** mergeado (commit `ce0384b`): destrava `test:ci-core` (deploy gate) com plugin Vite `rewriteDenoUrlImports` em `vitest.config.ts` — Vitest 4.1.8 deixou de aplicar `resolve.alias` regex para schemes `https:` (regressão vs 3.x), quebrando TODOS os contract tests que importam schemas Deno-style das edges. Antes: 1 suíte FAIL / 254 testes passing. Depois: **317/317 + 574/574 em `tests/contracts/`**. Mesmo PR também fechou: 47 regressões ESLint (incluindo `NoveltyProductGrid.integration.test.tsx` com redeclaração ilegal de `screen` + `require()` em ES module; 3 testes com anti-padrão T-FIX-5b `forEach(expect)`); `check:seller-scope` (comentário `rls-allow` realinhado em `QuoteBitrixSync.ts`); `check:contract-coverage` (3 schemas Zod para `verify-2fa-token`/`bulk-random-passwords`/`load-test`); `check:mojibake` (2 ocorrências `Ã ` em comentários PT-BR); 6 console.log de diagnóstico vazando em prod (`useCatalogState`/`CatalogContent`/`QuickQuoteFAB`).
 

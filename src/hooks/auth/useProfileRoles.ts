@@ -29,7 +29,9 @@ export function useProfileRoles() {
         const [profileResult, rolesResult] = await Promise.all([
           supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email, organization_id')
+            .select(
+              'id, user_id, email, full_name, role, avatar_url, phone, department, is_active, last_login_at, preferences, created_at, updated_at',
+            )
             .eq('id', userId)
             .maybeSingle(),
           authService.queryRoles(userId),
@@ -38,7 +40,9 @@ export function useProfileRoles() {
         if (profileResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
         } else {
-          setProfile(profileResult.data);
+          // `preferences` chega como `Json` do client tipado; o shape em runtime
+          // corresponde a `Profile` (Record<string, unknown> | null).
+          setProfile(profileResult.data as Profile | null);
         }
 
         if (rolesResult.error) {

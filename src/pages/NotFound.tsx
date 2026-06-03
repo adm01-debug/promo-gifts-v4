@@ -1,7 +1,7 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { Home, ArrowLeft, Gift, Search, FileText, Package } from 'lucide-react';
+import { Home, ArrowLeft, Gift, FileText, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -17,7 +17,6 @@ const NotFound = () => {
   useEffect(() => {
     // Log apenas em desenvolvimento para não poluir produção
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.warn('[404] Rota não encontrada:', location.pathname);
     }
   }, [location.pathname]);
@@ -97,7 +96,13 @@ const NotFound = () => {
             </p>
             <div className="flex flex-col gap-2">
               {suggestions.map((s) => (
-                <Button key={s.to} asChild variant="ghost" size="sm" className="justify-start gap-2">
+                <Button
+                  key={s.to}
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start gap-2"
+                >
                   <Link to={s.to}>
                     <s.icon className="h-4 w-4 text-primary" />
                     {s.label}
