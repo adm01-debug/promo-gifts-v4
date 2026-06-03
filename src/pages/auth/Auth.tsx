@@ -85,6 +85,11 @@ export default function Auth() {
   const [blockedIP, setBlockedIP] = useState<string | null>(null);
   const [currentIP, setCurrentIP] = useState<string | null>(null);
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
+
+  /** Segundos restantes para rate limit. 0 = sem bloqueio. */
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
@@ -256,7 +261,23 @@ export default function Auth() {
           title = 'Acesso Temporariamente Suspenso';
           description =
             'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
-          hint = 'Tome um café e tente novamente em instantes.';
+          // Extrai o tempo de espera da mensagem do Supabase (ex: "after 47 seconds")
+          const secondsMatch = error.message.match(/after (\d+) seconds?/i);
+          const waitSeconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 60;
+          hint = `Aguarde ${waitSeconds} segundos antes de tentar novamente.`;
+
+          // Iniciar countdown visual
+          if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+          setRateLimitCountdown(waitSeconds);
+          rateLimitTimerRef.current = setInterval(() => {
+            setRateLimitCountdown((prev) => {
+              if (prev <= 1) {
+                if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         } else if (
           error.status === 0 ||
           error.message.includes('network') ||
@@ -746,12 +767,17 @@ export default function Auth() {
                       className={authButtonClass(
                         'h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]',
                       )}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || rateLimitCountdown > 0}
                     >
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Iniciando Sistemas...
+                        </>
+                      ) : rateLimitCountdown > 0 ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Aguarde {rateLimitCountdown}s...
                         </>
                       ) : (
                         'Entrar na Plataforma'
