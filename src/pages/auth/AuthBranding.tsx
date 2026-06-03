@@ -212,7 +212,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       data-testid="space-scene"
     >
       {/* Background Deep Space Glow & Nebula */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
 
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div
