@@ -216,7 +216,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div
-        className="absolute inset-0 opacity-10 blur-[80px]"
+        className="fixed inset-0 opacity-10 blur-[80px]"
         style={{
           background:
             'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
