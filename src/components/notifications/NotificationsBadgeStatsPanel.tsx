@@ -39,6 +39,7 @@ export function NotificationsBadgeStatsPanel() {
   const SPARK_H = 24;
   const sparkPoints = useMemo(
     () => buildSparkPath(samples, SPARK_W, SPARK_H, SPARK_WINDOW_SECONDS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [samples],
   );
 

@@ -33,7 +33,7 @@ export default function AdminCadastrosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const activeTab = (VALID_TABS as readonly string[]).includes(tabParam ?? '')
-    ? tabParam!
+    ? tabParam
     : 'products';
 
   const handleTabChange = (value: string) => {

@@ -53,6 +53,7 @@ export function QuoteAutoSave({
   // Salvar estado inicial para comparação
   useEffect(() => {
     initialDataRef.current = JSON.stringify(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   // Detectar mudanças
@@ -82,6 +83,7 @@ export function QuoteAutoSave({
         clearTimeout(timeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, debounceMs, onChange]);
 
   // Verificar conectividade

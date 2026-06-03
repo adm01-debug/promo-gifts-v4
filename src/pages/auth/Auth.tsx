@@ -33,7 +33,6 @@ import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
@@ -58,7 +57,7 @@ export default function Auth() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt } = useIPValidation();
-  const { isAllowed: isDevAllowed } = useDevGate();
+  const { isAllowed: _isDevAllowed } = useDevGate();
 
   /**
    * Destino pós-login. Precedência:

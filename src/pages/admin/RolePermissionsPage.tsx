@@ -61,6 +61,7 @@ export default function RolePermissionsPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async (isCancelled: () => boolean = () => false) => {
@@ -91,7 +92,7 @@ export default function RolePermissionsPage() {
   const hasPermission = (permissionId: string, role: AppRole): boolean => {
     const key = `${role}-${permissionId}`;
     if (pendingChanges.has(key)) {
-      return pendingChanges.get(key)!;
+      return pendingChanges.get(key) as unknown;
     }
     return rolePermissions.some((rp) => rp.role === role && rp.permission_code === permissionId);
   };

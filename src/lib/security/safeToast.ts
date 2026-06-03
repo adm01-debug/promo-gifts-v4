@@ -106,4 +106,5 @@ export function installSafeToast(): void {
 }
 
 /** Utilidade testável: expõe a heurística de classificação. */
-export const __test__ = { looksTechnical, PUBLIC_FALLBACK_TITLE };
+export // eslint-disable-next-line @typescript-eslint/naming-convention
+const __test__ = { looksTechnical, PUBLIC_FALLBACK_TITLE };

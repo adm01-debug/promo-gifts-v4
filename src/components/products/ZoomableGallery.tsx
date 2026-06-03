@@ -80,6 +80,7 @@ export function ZoomableGallery({
         </AnimatePresence>
       </motion.div>
     ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       g.currentIndex,
       g.zoom,

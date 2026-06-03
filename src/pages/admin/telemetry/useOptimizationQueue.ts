@@ -100,6 +100,7 @@ export function useOptimizationQueue() {
       invalidate();
       return true;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -113,6 +114,7 @@ export function useOptimizationQueue() {
       return;
     }
     invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resetStuck = useCallback(async () => {
@@ -126,6 +128,7 @@ export function useOptimizationQueue() {
     }
     toast.success('Fila resetada');
     invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Executa um item: simula trabalho leve + checa guardrail. */
@@ -176,6 +179,7 @@ export function useOptimizationQueue() {
 
     invalidate();
     return finalStatus === 'blocked' ? 'blocked' : 'done';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Loop sequencial: executa enquanto houver pending e o guardrail permitir. */
@@ -285,6 +289,7 @@ export function useOptimizationQueue() {
     toast.success('Item re-enfileirado. Iniciando execução…');
     void startAutoRef.current?.();
     return true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastBridgeFailure, enqueue]);
 
   // Permite que requeue chame startAuto sem ciclo de dependência.

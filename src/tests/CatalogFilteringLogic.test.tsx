@@ -26,6 +26,7 @@ const mockProducts: Product[] = [
     materials: ['Plástico'],
     category_id: 'cat-1',
     featured: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   {
     id: '2',
@@ -38,6 +39,7 @@ const mockProducts: Product[] = [
     brand: 'Fornecedor B',
     materials: ['Poliéster', 'Nylon'],
     category_id: 'cat-2',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   {
     id: '3',
@@ -50,6 +52,7 @@ const mockProducts: Product[] = [
     brand: 'Fornecedor A',
     materials: ['Metal'],
     category_id: 'cat-3',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
 ];
 
@@ -165,7 +168,9 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
   it('should apply gender filters correctly', () => {
     const productsWithGender = [
       ...mockProducts,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { ...mockProducts[0], id: '4', name: 'Camiseta Masc', gender: 'masculino' } as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { ...mockProducts[1], id: '5', name: 'Camiseta Fem', gender: 'feminino' } as any,
     ];
     const filters = { ...defaultFilters, gender: ['masculino'] };

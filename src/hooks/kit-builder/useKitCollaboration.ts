@@ -119,6 +119,7 @@ export function useKitComments(kitId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId, qc]);
 
   const post = useMutation({

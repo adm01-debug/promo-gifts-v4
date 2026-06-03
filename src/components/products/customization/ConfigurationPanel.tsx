@@ -69,7 +69,7 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
           table: 'tabela_preco_gravacao_oficial_faixa',
           operation: 'select',
           select: 'largura_min, largura_max, altura_min, altura_max',
-          filters: { tabela_preco_gravacao_id: area.customization_price_table_id! },
+          filters: { tabela_preco_gravacao_id: area.customization_price_table_id ?? '' },
           limit: 1,
         });
         if (cancelled) return;

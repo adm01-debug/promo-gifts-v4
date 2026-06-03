@@ -193,7 +193,7 @@ export function MockupLayoutButtons({
       const canvas = document.createElement('canvas');
       canvas.width = CANVAS_SIZE;
       canvas.height = CANVAS_SIZE;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -295,6 +295,7 @@ export function MockupLayoutButtons({
     } finally {
       setIsGeneratingStatic(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, activeArea, technique, productHeightCm, productWidthCm, buildApprovalData]);
 
   // Don't show if no product/technique selected

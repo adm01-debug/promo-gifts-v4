@@ -41,6 +41,7 @@ import { SaveAsTemplateButton } from '@/components/quotes/SaveAsTemplateButton';
 import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCustomization';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
+import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
@@ -52,6 +53,7 @@ import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
+  const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
@@ -94,6 +96,23 @@ export default function QuoteBuilderPage() {
         onChange={setHasUnsavedChanges}
         className="fixed right-4 top-20 z-40"
       />
+
+      {/* ── Banner de conflito de edição simultânea ──
+          Aparece quando outro usuário/sessão modificou o orçamento enquanto estava aberto.
+          onReload: descarta alterações locais e busca versão mais recente
+          onOverwrite: ignora conflito e salva (overwrite consciente) */}
+      {conflictInfo && (
+        <div className="px-4 pt-4 lg:px-6 xl:px-8">
+          <QuoteConcurrencyAlert
+            conflict={conflictInfo}
+            onReload={() => {
+              dismissConflict();
+              window.location.reload();
+            }}
+            onOverwrite={() => overwriteAndSave('draft')}
+          />
+        </div>
+      )}
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-6 pt-3 sm:space-y-4 sm:px-4 sm:pt-4 lg:px-6 xl:px-8">
         <div

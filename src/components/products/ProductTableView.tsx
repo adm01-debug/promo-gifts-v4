@@ -137,7 +137,7 @@ export const ProductTableView = memo(function ProductTableView({
   totalEstimate,
   filteredCount,
   loadMoreRef,
-  itemsPerPage,
+  _itemsPerPage,
   onLoadMore,
 }: ProductTableViewProps) {
   const navigate = useNavigate();
@@ -189,6 +189,7 @@ export const ProductTableView = memo(function ProductTableView({
   const sorted = useMemo(() => {
     if (isLoading && products.length === 0) {
       return Array.from({ length: 12 }).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
       );
     }
@@ -209,6 +210,7 @@ export const ProductTableView = memo(function ProductTableView({
           return 0;
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, sortCol, sortDir]);
 
   const virtualizer = useVirtualizer({

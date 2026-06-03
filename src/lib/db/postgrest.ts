@@ -12,7 +12,7 @@
  *   2. mapRows now handles tabela_preco_gravacao_oficial (mirrors rest-native.ts)
  *   3. (rest-native.ts) table_code_option fixed to 'codigo_curto' (was 'codigo_tabela')
  */
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client'; // unused
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
@@ -154,7 +154,7 @@ function remapSelect(resolvedTable: string, select: string): string {
  * tabela_preco_gravacao_oficial: Inject EN aliases so callers using
  *   bridge-era EN field names (table_code, is_active, max_colors...) get data.
  *   BUG 3 FIX: was missing this case, causing callers via dbInvoke to receive
- *   raw PT field names while callers via invokeExternalDb received EN aliases.
+ *   raw PT field names while callers via the legacy bridge received EN aliases.
  */
 function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
   if (resolvedTable === 'tecnicas_gravacao') {
@@ -245,6 +245,17 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
   const remappedOrderCol = options.orderBy
     ? remapColumnName(table, options.orderBy.column)
     : undefined;
+
+  // Empty IN() short-circuit: a filter constrained to an empty array can never
+  // match any row. Skip the network round-trip entirely (and avoid PostgREST
+  // `col=in.()` edge cases) by returning an empty result immediately.
+  if (remappedFilters) {
+    for (const value of Object.values(remappedFilters)) {
+      if (Array.isArray(value) && value.length === 0) {
+        return { records: [], count: 0 };
+      }
+    }
+  }
 
   const countOpt =
     options.countMode && options.countMode !== 'none' ? options.countMode : undefined;

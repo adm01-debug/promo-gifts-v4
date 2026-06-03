@@ -125,7 +125,7 @@ export const ProductList = memo(function ProductList({
   const toggleSelect = useCallback(
     (id: string) => {
       if (isExternallyControlled) {
-        externalToggleSelect!(id);
+        externalToggleSelect?.(id);
       } else {
         setInternalSelectedIds((prev) => {
           const next = new Set(prev);

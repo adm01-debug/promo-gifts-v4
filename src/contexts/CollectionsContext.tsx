@@ -57,6 +57,7 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
   const getCollectionProducts = useCallback(
     (collectionId: string): Product[] =>
       collectionsHook.getCollectionProductsFromMap(collectionId, getProductsByIds),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [collectionsHook.getCollectionProductsFromMap, getProductsByIds],
   );
 

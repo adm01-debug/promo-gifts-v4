@@ -56,6 +56,7 @@ export function isTransientEdgeRuntimeError(input: string | Error | null | undef
   return isColdStartSignal(haystack) || TRANSIENT_RE.test(haystack);
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function _isColdStartReport(report: ErrorReport): boolean {
   const haystack = `${report.message} ${report.stack ?? ''}`;
   return isTransientEdgeRuntimeError(haystack);

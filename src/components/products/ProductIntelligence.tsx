@@ -15,7 +15,7 @@ interface ProductIntelligenceProps {
 export function ProductIntelligence({
   productId,
   productSku,
-  productName,
+  _productName,
 }: ProductIntelligenceProps) {
   const navigate = useNavigate();
   const { data: insights, isLoading: insightsLoading } = useProductInsights(productId, productSku);

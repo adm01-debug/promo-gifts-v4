@@ -19,6 +19,7 @@ vi.mock('../ConfigurationPanelV6', () => ({
     initialWidth?: number;
     initialHeight?: number;
     initialColors?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onPriceCalculated?: (tid: string, p: CustomizationPriceResponseV6 | null, dims?: any) => void;
     onDimensionsChange?: (d: { width?: number; height?: number; colors?: number }) => void;
   }) => {
@@ -45,6 +46,7 @@ vi.mock('../ConfigurationPanelV6', () => ({
         width: props.initialWidth,
         height: props.initialHeight,
       });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
       props.technique.technique_id,
       props.initialWidth,

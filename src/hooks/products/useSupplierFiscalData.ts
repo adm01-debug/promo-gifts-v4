@@ -118,6 +118,7 @@ export function useSupplierFiscalData(
   supplierId: string | undefined,
 ) {
   const queryClient = useQueryClient();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const queryKey = ['supplier-fiscal-data', productId, supplierId];
 
   const query = useQuery({

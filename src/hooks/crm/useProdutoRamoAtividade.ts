@@ -20,7 +20,7 @@ export function useProdutoRamoAtividade(productId: string | null | undefined) {
       const result = await dbInvoke<ProdutoRamo>({
         operation: 'select',
         table: 'produto_ramo_atividade',
-        filters: { product_id: productId! },
+        filters: { product_id: productId ?? '' },
       });
       return result.records || [];
     },

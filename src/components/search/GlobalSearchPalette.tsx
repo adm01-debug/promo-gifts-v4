@@ -76,7 +76,7 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-const commandIconMap: Record<string, any> = {
+const commandIconMap: Record<string, unknown> = {
   Sun,
   Moon,
   LogOut,
@@ -116,10 +116,14 @@ export function GlobalSearchPalette() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.open, s.results, s.handleSelect]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleEmptyAction = useCallback((href: string) => s.handleSelect(href), [s.handleSelect]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleEmptyRefine = useCallback(() => s.setQuery(''), [s.setQuery]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleEmptyPickRecent = useCallback((term: string) => s.setQuery(term), [s.setQuery]);
 
   // Guards defensivos

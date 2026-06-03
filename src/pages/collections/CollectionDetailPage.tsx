@@ -98,7 +98,7 @@ export default function CollectionDetailPage() {
   const isExternal = !!externalCollection;
 
   const { data: externalProductLinks = [], isLoading: isLoadingExternalProducts } =
-    useExternalCollectionProducts(isExternal ? id! : null);
+    useExternalCollectionProducts(isExternal ? id : null);
 
   const externalProductIds = useMemo(
     () => externalProductLinks.map((link) => link.product_id),

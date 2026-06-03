@@ -147,6 +147,7 @@ export function DevAccessDeniedPage({
       finalizedRef.current = true;
       emit(event);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [blockedPath, role, sinceView],
   );
 

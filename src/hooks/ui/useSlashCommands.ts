@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 
 export interface CommandDefinition {
   id: string;
@@ -15,7 +14,7 @@ export interface CommandDefinition {
 
 export function useSlashCommands(onClose: () => void) {
   const navigate = useNavigate();
-  const { setTheme } = useTheme();
+  const { setTheme: _setTheme } = useTheme();
   const { signOut } = useAuth();
 
   const commands: CommandDefinition[] = [

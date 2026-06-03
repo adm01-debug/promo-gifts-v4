@@ -91,7 +91,7 @@ const SimilarProductCard = forwardRef<
 
 SimilarProductCard.displayName = 'SimilarProductCard';
 
-export function SimilarProducts({ currentProduct, maxItems = 12 }: SimilarProductsProps) {
+export function SimilarProducts({ currentProduct, _maxItems = 12 }: SimilarProductsProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);

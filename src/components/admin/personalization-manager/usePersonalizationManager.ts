@@ -189,10 +189,10 @@ export function usePersonalizationManager() {
 
   // ── Mutations ──
   const toggleGroupRulesMutation = useMutation({
-    mutationFn: async ({ id, use_group_rules }: { id: string; use_group_rules: boolean }) => {
+    mutationFn: async ({ id, useGroupRules }: { id: string; useGroupRules: boolean }) => {
       const { error } = await supabase
         .from('product_group_members')
-        .update({ use_group_rules })
+        .update({ useGroupRules })
         .eq('id', id);
       if (error) throw error;
     },
@@ -496,7 +496,7 @@ export function usePersonalizationManager() {
       }
       await supabase
         .from('product_group_members')
-        .update({ use_group_rules: false })
+        .update({ useGroupRules: false })
         .eq('id', productMembership.id);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
@@ -511,7 +511,7 @@ export function usePersonalizationManager() {
     }
   };
 
-  const isUsingGroupRules = productMembership?.use_group_rules ?? false;
+  const isUsingGroupRules = productMembership?.useGroupRules ?? false;
   const hasGroup = !!productMembership;
 
   return {

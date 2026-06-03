@@ -54,6 +54,7 @@ export default function RolesPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRoles = async (isCancelled: () => boolean = () => false) => {

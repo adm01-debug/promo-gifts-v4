@@ -180,7 +180,7 @@ export async function fetchPromobrindProductById(
   const enrichmentPromise: Promise<{ materialIds: string[] }> =
     enrichmentQueries.length === 0
       ? Promise.resolve({ materialIds: [] })
-      : Promise.all(enrichmentQueries.map((q) => dbInvoke<any>(q)))
+      : Promise.all(enrichmentQueries.map((q) => dbInvoke<unknown>(q)))
           .then((batchResults) => {
             const materialIds: string[] = [];
             enrichmentSlots.forEach((slot, idx) => {

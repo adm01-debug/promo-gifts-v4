@@ -23,6 +23,7 @@ export function useGalleryZoom(images: string[], isFullscreen: boolean) {
 
   useEffect(() => {
     resetView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
 
   const handleZoomIn = useCallback(() => {

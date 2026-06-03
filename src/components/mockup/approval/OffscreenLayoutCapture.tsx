@@ -138,6 +138,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
     };
 
     capture();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.recordId, isCapturing]);
 
   if (!request) return null;

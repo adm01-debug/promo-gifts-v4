@@ -19,7 +19,7 @@ export function EfficiencyGrid({
   byTrigger,
   byFetch,
   fetchesByTtlWindow,
-  coalescingByTrigger,
+  _coalescingByTrigger,
 }: EfficiencyGridProps) {
   const ttlWithinPct =
     fetches === 0 ? 0 : Math.round((fetchesByTtlWindow.withinTtl / fetches) * 100);
@@ -54,7 +54,7 @@ export function EfficiencyGrid({
           triggers
         </span>
         <span className="text-right tabular-nums text-foreground">{triggers}</span>
-        {Object.entries(byTrigger).map(([source, count]) => (
+        {Object.entries(byTrigger).map(([source, _count]) => (
           <span key={source} className="pl-3.5">
             · {source}
           </span>
@@ -70,7 +70,7 @@ export function EfficiencyGrid({
           fetches
         </span>
         <span className="mt-0.5 text-right tabular-nums text-foreground">{fetches}</span>
-        {Object.entries(byFetch).map(([type, count]) => (
+        {Object.entries(byFetch).map(([type, _count]) => (
           <span key={type} className="pl-3.5">
             · {type}
           </span>

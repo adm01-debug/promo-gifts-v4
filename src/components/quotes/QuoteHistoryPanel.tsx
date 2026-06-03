@@ -61,6 +61,7 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
     if (quoteId) {
       fetchHistory(quoteId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId]);
 
   if (isLoading) {

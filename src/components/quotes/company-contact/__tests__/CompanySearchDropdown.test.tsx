@@ -45,11 +45,13 @@ describe('CompanySearchDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useQuery as any).mockReturnValue({
       data: mockCompanies,
       isLoading: false,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useSearchHistory as any).mockReturnValue({
       history: mockHistory,
       addToHistory: vi.fn(),
@@ -212,6 +214,7 @@ describe('CompanySearchDropdown', () => {
 
   it('should maintain highlighted state and show history while loading new results', async () => {
     // 1. Setup mock to simulate slow search
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useQuery as any).mockImplementation((options: any) => {
       if (options.queryKey[0] === 'quote-companies-search') {
         return { data: [], isLoading: true }; // Always loading

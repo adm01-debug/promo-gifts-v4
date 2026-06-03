@@ -207,6 +207,7 @@ export default function KitLibraryPage() {
 
   const pinnedKit = useMemo(
     () => myKits.find((k) => k.is_pinned && matchKit(k)) || null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor],
   );
 
@@ -216,6 +217,7 @@ export default function KitLibraryPage() {
         myKits.filter((k) => !k.is_pinned && matchKit(k)),
         sort,
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor, sort],
   );
   const filteredFavs = useMemo(
@@ -224,10 +226,12 @@ export default function KitLibraryPage() {
         myKits.filter((k) => k.is_favorite && matchKit(k)),
         sort,
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor, sort],
   );
   const filteredTpls = useMemo(
     () => applySort(templates.filter(matchTpl), sort),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [templates, q, selectedTag, selectedCategory, sort],
   );
 

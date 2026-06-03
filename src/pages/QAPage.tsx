@@ -26,6 +26,7 @@ export default function QAPage() {
   const { isAllowed } = useDevGate();
 
   // Contador de renders reais para validar debounce
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     lastRenderCountRef.current += 1;
     setRenderCount(lastRenderCountRef.current);

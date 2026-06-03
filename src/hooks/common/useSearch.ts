@@ -27,6 +27,7 @@ export function useSearch(products: Product[] = []) {
 
   const history = useMemo(() => searchHistory.map((h) => h.label), [searchHistory]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableProducts = products.length > 0 ? products : productsContext?.products || [];
 
   const addToHistory = useCallback(

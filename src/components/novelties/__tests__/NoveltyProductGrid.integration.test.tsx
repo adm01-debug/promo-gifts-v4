@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NoveltyProductGrid } from '../NoveltyProductGrid';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -192,4 +192,3 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     // If it didn't crash and we see the products, initial state is ok
   });
 });
-

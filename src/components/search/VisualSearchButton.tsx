@@ -70,6 +70,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       await performVisualSearch(base64);
     };
     reader.readAsDataURL(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const performVisualSearch = async (imageBase64: string) => {

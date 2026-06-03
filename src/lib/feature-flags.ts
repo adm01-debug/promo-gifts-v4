@@ -78,7 +78,8 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
   },
   crm_bridge_enabled: {
     enabled: true,
-    description: 'CRM DB Bridge — acesso a empresas/contatos via crm-db-bridge ' +
+    description:
+      'CRM DB Bridge — acesso a empresas/contatos via crm-db-bridge ' +
       '(pgxfvjmuubtbowutlide). Desativar via setFeatureFlag para modo degradado ' +
       'sem CRM externo. Para desligamento de emergência, usar system_kill_switches.',
   },
@@ -93,7 +94,7 @@ const runtimeOverrides = new Map<FeatureFlag, boolean>();
 export function isFeatureEnabled(flag: FeatureFlag, userRole?: string): boolean {
   // Runtime override takes precedence
   if (runtimeOverrides.has(flag)) {
-    return runtimeOverrides.get(flag)!;
+    return runtimeOverrides.get(flag) as string;
   }
 
   const config = FLAG_REGISTRY[flag];

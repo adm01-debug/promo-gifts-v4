@@ -21,7 +21,7 @@ export interface ProductGroupMember {
   id: string;
   product_id: string;
   product_group_id: string;
-  use_group_rules: boolean;
+  useGroupRules: boolean;
   product_group?: ProductGroup;
 }
 
@@ -189,10 +189,10 @@ export function usePersonalizationData(selectedProduct: string | null) {
 
   // ── Mutations ──
   const toggleGroupRulesMutation = useMutation({
-    mutationFn: async ({ id, use_group_rules }: { id: string; use_group_rules: boolean }) => {
+    mutationFn: async ({ id, useGroupRules }: { id: string; useGroupRules: boolean }) => {
       const { error } = await supabase
         .from('product_group_members')
-        .update({ use_group_rules })
+        .update({ useGroupRules })
         .eq('id', id);
       if (error) throw error;
     },

@@ -130,6 +130,7 @@ export function useKitBuilderPageState() {
         }
       })();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productIdParam, kitIdParam]);
 
   // Effects (Confetti, Title, etc.)
@@ -137,6 +138,7 @@ export function useKitBuilderPageState() {
     if (kitState.isValid && kitState.items.length > 0) {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.85, x: 0.5 }, colors: ['#f97316'] });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitState.isValid]);
 
   const pricing = calculateTotalKitPrice(

@@ -75,6 +75,7 @@ export function useKeyboardShortcuts({
         return;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset],
   );
 

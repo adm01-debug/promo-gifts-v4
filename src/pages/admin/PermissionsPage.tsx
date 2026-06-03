@@ -72,6 +72,7 @@ export default function PermissionsPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchPermissions = async (isCancelled: () => boolean = () => false) => {

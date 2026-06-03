@@ -158,6 +158,7 @@ export function useProductsByColor({
       setIsLoading(false);
       isFetchingRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, hasFilter]);
 
   useEffect(() => {

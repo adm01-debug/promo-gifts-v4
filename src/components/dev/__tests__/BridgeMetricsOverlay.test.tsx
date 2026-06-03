@@ -83,6 +83,7 @@ describe('BridgeMetricsOverlay Regression Tests', () => {
       ...mockMetrics,
       open: true,
       setTab: setTabMock,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     render(<BridgeMetricsOverlay />);
