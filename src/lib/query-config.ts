@@ -100,6 +100,26 @@ const PREFIX_STALE_MAP: Record<string, number> = {
   // REALTIME — near real-time signals
   'connection-status': CACHE_TIMES.REALTIME,
   'bridge-health': CACHE_TIMES.REALTIME,
+
+  // BI / INTELLIGENCE — dashboards analíticos (5min = DYNAMIC para dados operacionais)
+  // Evita refetch completo a cada navegação para a página de BI.
+  'market-intelligence': CACHE_TIMES.DYNAMIC,
+  'bi-kpis': CACHE_TIMES.DYNAMIC,
+  'commercial-intelligence': CACHE_TIMES.DYNAMIC,
+  'intelligence-kpis': CACHE_TIMES.DYNAMIC,
+  'intelligence-chart': CACHE_TIMES.DYNAMIC,
+  'trending-products': CACHE_TIMES.DYNAMIC,
+  'category-ranking': CACHE_TIMES.DYNAMIC,
+  'supplier-sales': CACHE_TIMES.DYNAMIC,
+  'sales-overview': CACHE_TIMES.DYNAMIC,
+  'unmet-demand': CACHE_TIMES.DYNAMIC,
+  'hot-searches': CACHE_TIMES.DYNAMIC,
+  'conversion-funnel': CACHE_TIMES.DYNAMIC,
+  'trends-heatmap': CACHE_TIMES.DYNAMIC,
+  'trends-forecast': CACHE_TIMES.DYNAMIC,
+  'trends-insights': CACHE_TIMES.DYNAMIC,
+  'top-categories': CACHE_TIMES.DYNAMIC,
+  'mockup-history': CACHE_TIMES.DYNAMIC,
 };
 
 const PREFIX_GC_MAP: Record<string, number> = {
@@ -174,6 +194,19 @@ export const TABELAS_PRECO_QUERY_OPTIONS = {
 export const STABLE_DATA_QUERY_OPTIONS = {
   staleTime: CACHE_TIMES.STABLE,
   gcTime: GC_TIMES.LONG,
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+} as const;
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BI / Intelligence query options — dashboards analíticos
+// Cache de 5 min evita refetch completo a cada navegação para páginas de BI.
+// ─────────────────────────────────────────────────────────────────────────────
+export const BI_QUERY_OPTIONS = {
+  staleTime: CACHE_TIMES.DYNAMIC,
+  gcTime: GC_TIMES.DEFAULT,
   refetchOnWindowFocus: false,
   refetchOnMount: false,
 } as const;
