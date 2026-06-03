@@ -1,1 +1,255 @@
-Ly8gc3VwYWJhc2UvZnVuY3Rpb25zL19zaGFyZWQvY29ycy50cwovKioKICogQ2VudHJhbGl6ZWQgQ09SUyBjb25maWd1cmF0aW9uIOKAlCByZXN0cmljdCB0byBrbm93biBvcmlnaW5zLgogKgogKiBCVUctMDcgRklYICgyMDI2LTA2LTAyKTogZ2V0QmVzdEFsbG93ZWRPcmlnaW4oKSBmYWxsYmFjayB3YXMgcmV0dXJuaW5nCiAqICAgdGhlIExvdmFibGUgZGV2IFVSTCAoY3JpYXItdG9nZXRoZXItbm93LmxvdmFibGUuYXBwKSBmb3IgdW5rbm93biBvcmlnaW5zLgogKiAgIENoYW5nZWQgdG8gcHJvZHVjdGlvbiBVUkwgKHd3dy5wcm9tb2dpZnRzLmNvbS5icikuCiAqCiAqIEJVRy0wOCBGSVggKDIwMjYtMDYtMDIpOiBwcXBkb2xrYWVxbHl6cGRwYml6by5zdXBhYmFzZS5jbyByZW1vdmVkIGZyb20KICogICBFWEFDVF9BTExPV0VEX09SSUdJTlMuIFRoYXQgcHJvamVjdCBpcyBpbiBGT1JCSURERU5fUkVGUyBpbiBjbGllbnQudHMKICogICBhbmQgbXVzdCBub3QgYmUgZ3JhbnRlZCBDT1JTIGFjY2VzcyB0byBlZGdlIGZ1bmN0aW9ucy4KICovCgovLyAtLS0gQ29uZmlndXJhdGlvbiAtLS0KCmNvbnN0IEVYQUNUX0FMTE9XRURfT1JJR0lOUyA9IG5ldyBTZXQoWwogIC8vIEJVRy0wOCBGSVg6IHBxcGRvbGthZXFseXpwZHBiaXpvLnN1cGFiYXNlLmNvIHJlbW92ZWQgKEZPUkJJRERFTiBwcm9qZWN0KS4KICAvLyBDYW5vbmljYWwgcHJvamVjdCBpcyBkb3Vmc3hxbGZqeXV2eHVlenBsbiDigJQgaXQgbmV2ZXIgbmVlZHMgdG8gY2FsbCBpdHMgb3duCiAgLy8gZWRnZSBmdW5jdGlvbnMgZnJvbSBhIGJyb3dzZXIgY29udGV4dDsgU3VwYWJhc2UgU0RLIGhhbmRsZXMgdGhhdCBpbnRlcm5hbGx5LgogICdodHRwczovL2NyaWFyLXRvZ2V0aGVyLW5vdy5sb3ZhYmxlLmFwcCcsCiAgJ2h0dHBzOi8vaWQtcHJldmlldy0tMWJlMzVhNjUtMWY2NS00YzJiLTlhNzktN2Q1NjM5MzBhYWNkLmxvdmFibGUuYXBwJywKICAnaHR0cHM6Ly8xYmUzNWE2NS0xZjY1LTRjMmItOWE3OS03ZDU2MzkzMGFhY2QubG92YWJsZXByb2plY3QuY29tJywKICAnaHR0cHM6Ly9wcm9tb2dpZnRzLmNvbS5icicsCiAgJ2h0dHBzOi8vd3d3LnByb21vZ2lmdHMuY29tLmJyJywKICAnaHR0cHM6Ly9wcm9tb2dpZnRzLmF0b21pY2Fici5jb20uYnInLAogICdodHRwOi8vbG9jYWxob3N0OjUxNzMnLAogICdodHRwOi8vbG9jYWxob3N0OjgwODAnLAogICdodHRwOi8vbG9jYWxob3N0OjMwMDAnLAogICdodHRwOi8vMTI3LjAuMC4xOjUxNzMnLAogICdodHRwOi8vMTI3LjAuMC4xOjgwODAnLAogICdodHRwOi8vMTI3LjAuMC4xOjMwMDAnLApdKTsKCmNvbnN0IEFMTE9XRURfT1JJR0lOX1BBVFRFUk5TID0gWwogIC9eaHR0cHM6XC9cL1thLXowLTktXStcLmxvdmFibGVcLmFwcCQvaSwKICAvXmh0dHBzOlwvXC9bYS16MC05LV0rXC5sb3ZhYmxlcHJvamVjdFwuY29tJC9pLAogIC9eaHR0cHM6XC9cL1thLXowLTktXStcLmF0b21pY2FiclwuY29tXC5iciQvaSwKICAvXmh0dHBzOlwvXC9bYS16MC05LV0rXC52ZXJjZWxcLmFwcCQvaSwKICAvXmh0dHA6XC9cL2xvY2FsaG9zdCg/OjpcZCspPyQvaSwKICAvXmh0dHA6XC9cLzEyN1wuMFwuMFwuMSg/OjpcZCspPyQvaSwKXTsKCmNvbnN0IEFMTE9XRURfSEVBREVSU19MSVNUID0gWwogICdhdXRob3JpemF0aW9uJywKICAneC1jbGllbnQtaW5mbycsCiAgJ2FwaWtleScsCiAgJ2NvbnRlbnQtdHlwZScsCiAgJ3gtcmVxdWVzdC1pZCcsCiAgJ3gtc3RlcC11cC10b2tlbicsCiAgJ3gtc3VwYWJhc2UtY2xpZW50LXBsYXRmb3JtJywKICAneC1zdXBhYmFzZS1jbGllbnQtcGxhdGZvcm0tdmVyc2lvbicsCiAgJ3gtc3VwYWJhc2UtY2xpZW50LXJ1bnRpbWUnLAogICd4LXN1cGFiYXNlLWNsaWVudC1ydW50aW1lLXZlcnNpb24nLApdOwoKY29uc3QgQUxMT1dFRF9IRUFERVJTX1NFVCA9IG5ldyBTZXQoQUxMT1dFRF9IRUFERVJTX0xJU1QubWFwKChoKSA9PiBoLnRvTG93ZXJDYXNlKCkpKTsKY29uc3QgQUxMT1dFRF9IRUFERVJTX1ZBTFVFID0gQUxMT1dFRF9IRUFERVJTX0xJU1Quam9pbignLCAnKTsKCmNvbnN0IFNFQ1VSSVRZX0hFQURFUlMgPSB7CiAgJ1gtQ29udGVudC1UeXBlLU9wdGlvbnMnOiAnbm9zbmlmZicsCiAgJ1gtRnJhbWUtT3B0aW9ucyc6ICdERU5ZJywKICAnU3RyaWN0LVRyYW5zcG9ydC1TZWN1cml0eSc6ICdtYXgtYWdlPTMxNTM2MDAwOyBpbmNsdWRlU3ViRG9tYWluczsgcHJlbG9hZCcsCiAgJ0NvbnRlbnQtU2VjdXJpdHktUG9saWN5JzogImRlZmF1bHQtc3JjICdzZWxmJzsgc2NyaXB0LXNyYyAnc2VsZicgJ3N0cmljdC1keW5hbWljJzsgb2JqZWN0LXNyYyAnbm9uZSc7IGZyYW1lLWFuY2VzdG9ycyAnbm9uZSc7IGJhc2UtdXJpICdzZWxmJzsgZm9ybS1hY3Rpb24gJ3NlbGYnOyB1cGdyYWRlLWluc2VjdXJlLXJlcXVlc3RzOyIsCn0gYXMgY29uc3Q7Cgpjb25zdCBDT1JTX0hFQURFUlNfQkFTRSA9IHsKICAnQWNjZXNzLUNvbnRyb2wtQWxsb3ctSGVhZGVycyc6IEFMTE9XRURfSEVBREVSU19WQUxVRSwKICAnQWNjZXNzLUNvbnRyb2wtQWxsb3ctTWV0aG9kcyc6ICdHRVQsIFBPU1QsIFBVVCwgREVMRVRFLCBPUFRJT05TJywKICAnQWNjZXNzLUNvbnRyb2wtRXhwb3NlLUhlYWRlcnMnOiAneC1yZXF1ZXN0LWlkJywKICAuLi5TRUNVUklUWV9IRUFERVJTLAp9IGFzIGNvbnN0OwoKLy8gLS0tIEludGVybmFsIFV0aWxpdGllcyAtLS0KCmZ1bmN0aW9uIHBhcnNlSGVhZGVyTGlzdChoZWFkZXJTdHJpbmc6IHN0cmluZyB8IG51bGwpOiBzdHJpbmdbXSB7CiAgaWYgKCFoZWFkZXJTdHJpbmcpIHJldHVybiBbXTsKICByZXR1cm4gaGVhZGVyU3RyaW5nCiAgICAuc3BsaXQoJywnKQogICAgLm1hcCgoaCkgPT4gaC50cmltKCkudG9Mb3dlckNhc2UoKSkKICAgIC5maWx0ZXIoQm9vbGVhbik7Cn0KCmZ1bmN0aW9uIGlzQWxsb3dlZE9yaWdpbihvcmlnaW46IHN0cmluZyk6IGJvb2xlYW4gewogIHJldHVybiAoCiAgICBFWEFDVF9BTExPV0VEX09SSUdJTlMuaGFzKG9yaWdpbikgfHwKICAgIEFMTE9XRURfT1JJR0lOX1BBVFRFUk5TLnNvbWUoKHBhdHRlcm4pID0+IHBhdHRlcm4udGVzdChvcmlnaW4pKQogICk7Cn0KCmZ1bmN0aW9uIGdldEJlc3RBbGxvd2VkT3JpZ2luKG9yaWdpbjogc3RyaW5nIHwgbnVsbCk6IHN0cmluZyB7CiAgaWYgKG9yaWdpbiAmJiBpc0FsbG93ZWRPcmlnaW4ob3JpZ2luKSkgcmV0dXJuIG9yaWdpbjsKICAvLyBCVUctMDcgRklYOiBVbmtub3duIG9yaWdpbiBub3cgZmFsbHMgYmFjayB0byB0aGUgUFJPRFVDVElPTiBVUkwgaW5zdGVhZAogIC8vIG9mIHRoZSBMb3ZhYmxlIGRldmVsb3BtZW50IFVSTCAoY3JpYXItdG9nZXRoZXItbm93LmxvdmFibGUuYXBwKS4KICAvLyBUaGUgYnJvd3NlciBzdGlsbCBibG9ja3MgdGhlIHJlc3BvbnNlIGlmIHRoZSBvcmlnaW4gZG9lc24ndCBtYXRjaCBhbnl3YXksCiAgLy8gc28gdGhpcyBvbmx5IG1hdHRlcnMgZm9yIHNhbWUtb3JpZ2luIHJlcXVlc3RzIGFuZCBzZXJ2ZXItc2lkZSBjYWxsZXJzLgogIHJldHVybiAnaHR0cHM6Ly93d3cucHJvbW9naWZ0cy5jb20uYnInOwp9CgovLyAtLS0gU3RydWN0dXJlZCBMb2dnaW5nIC0tLQoKZnVuY3Rpb24gbG9nQ29yc0V2ZW50KGV2ZW50OiBzdHJpbmcsIGZpZWxkczogUmVjb3JkPHN0cmluZywgdW5rbm93bj4pOiB2b2lkIHsKICBjb25zdCBwYXlsb2FkID0gewogICAgc291cmNlOiAnY29ycycsCiAgICBldmVudCwKICAgIHRzOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksCiAgICAuLi5maWVsZHMsCiAgfTsKICBjb25zdCBsaW5lID0gYFtjb3JzXSAke0pTT04uc3RyaW5naWZ5KHBheWxvYWQpfWA7CiAgCiAgaWYgKGV2ZW50LmVuZHNXaXRoKCdfd2FybicpIHx8IGV2ZW50LmVuZHNXaXRoKCdfYmxvY2tlZCcpKSB7CiAgICBjb25zb2xlLndhcm4obGluZSk7CiAgfSBlbHNlIHsKICAgIGNvbnNvbGUubG9nKGxpbmUpOwogIH0KfQoKbGV0IGJvb3RMb2dnZWQgPSBmYWxzZTsKZnVuY3Rpb24gbG9nQm9vdElmTmVlZGVkKCk6IHZvaWQgewogIGlmIChib290TG9nZ2VkKSByZXR1cm47CiAgYm9vdExvZ2dlZCA9IHRydWU7CiAgbG9nQ29yc0V2ZW50KCdjb3JzX2Jvb3QnLCB7CiAgICBhbGxvd19oZWFkZXJzOiBBTExPV0VEX0hFQURFUlNfVkFMVUUsCiAgICBhbGxvd19oZWFkZXJzX2NvdW50OiBBTExPV0VEX0hFQURFUlNfTElTVC5sZW5ndGgsCiAgICBhbGxvd19tZXRob2RzOiBDT1JTX0hFQURFUlNfQkFTRVsnQWNjZXNzLUNvbnRyb2wtQWxsb3ctTWV0aG9kcyddLAogICAgZXhwb3NlX2hlYWRlcnM6IENPUlNfSEVBREVSU19CQVNFWydBY2Nlc3MtQ29udHJvbC1FeHBvc2UtSGVhZGVycyddLAogICAgZXhhY3Rfb3JpZ2luc19jb3VudDogRVhBQ1RfQUxMT1dFRF9PUklHSU5TLnNpemUsCiAgICBwYXR0ZXJuX29yaWdpbnNfY291bnQ6IEFMTE9XRURfT1JJR0lOX1BBVFRFUk5TLmxlbmd0aCwKICB9KTsKfQoKLy8gSW5pdGlhbGl6ZSBib290IGxvZyBvbiBtb2R1bGUgbG9hZApsb2dCb290SWZOZWVkZWQoKTsKCmZ1bmN0aW9uIGxvZ1ByZWZsaWdodEZyb21SZXF1ZXN0KHJlcTogUmVxdWVzdCwgb3JpZ2luOiBzdHJpbmcpOiB2b2lkIHsKICBjb25zdCByZXF1ZXN0ZWRIZWFkZXJzUmF3ID0gcmVxLmhlYWRlcnMuZ2V0KCdBY2Nlc3MtQ29udHJvbC1SZXF1ZXN0LUhlYWRlcnMnKSB8fCByZXEuaGVhZGVycy5nZXQoJ2FjY2Vzcy1jb250cm9sLXJlcXVlc3QtaGVhZGVycycpOwogIGNvbnN0IHJlcXVlc3RlZE1ldGhvZCA9IHJlcS5oZWFkZXJzLmdldCgnQWNjZXNzLUNvbnRyb2wtUmVxdWVzdC1NZXRob2QnKSB8fCByZXEuaGVhZGVycy5nZXQoJ2FjY2Vzcy1jb250cm9sLXJlcXVlc3QtbWV0aG9kJyk7CiAgY29uc3QgcmVxdWVzdGVkSGVhZGVycyA9IHBhcnNlSGVhZGVyTGlzdChyZXF1ZXN0ZWRIZWFkZXJzUmF3KTsKICAKICBjb25zdCBtaXNzaW5nSGVhZGVycyA9IHJlcXVlc3RlZEhlYWRlcnMuZmlsdGVyKChoKSA9PiAhQUxMT1dFRF9IRUFERVJTX1NFVC5oYXMoaCkpOwogIGNvbnN0IG9yaWdpbkFsbG93ZWQgPSAhb3JpZ2luIHx8IGlzQWxsb3dlZE9yaWdpbihvcmlnaW4pOwogIGNvbnN0IHJlcXVlc3RJZCA9IHJlcS5oZWFkZXJzLmdldCgneC1yZXF1ZXN0LWlkJykgfHwgcmVxLmhlYWRlcnMuZ2V0KCdYLVJlcXVlc3QtSWQnKTsKCiAgY29uc3QgYmFzZUZpZWxkcyA9IHsKICAgIHJlcXVlc3RfaWQ6IHJlcXVlc3RJZCwKICAgIG9yaWdpbjogb3JpZ2luIHx8IG51bGwsCiAgICBvcmlnaW5fYWxsb3dlZDogb3JpZ2luQWxsb3dlZCwKICAgIHJlcXVlc3RlZF9tZXRob2Q6IHJlcXVlc3RlZE1ldGhvZCwKICAgIHJlcXVlc3RlZF9oZWFkZXJzOiByZXF1ZXN0ZWRIZWFkZXJzLAogICAgbWlzc2luZ19oZWFkZXJzOiBtaXNzaW5nSGVhZGVycywKICB9OwoKICBpZiAoIW9yaWdpbkFsbG93ZWQgfHwgbWlzc2luZ0hlYWRlcnMubGVuZ3RoID4gMCkgewogICAgbG9nQ29yc0V2ZW50KCdjb3JzX3ByZWZsaWdodF93YXJuJywgewogICAgICAuLi5iYXNlRmllbGRzLAogICAgICByZWFzb246ICFvcmlnaW5BbGxvd2VkID8gJ29yaWdpbl9ub3RfYWxsb3dlZCcgOiAnaGVhZGVyX25vdF9hbGxvd2VkJywKICAgICAgaGludDogbWlzc2luZ0hlYWRlcnMubGVuZ3RoID4gMAogICAgICAgID8gYEFkZCB0byBBTExPV0VEX0hFQURFUlNfTElTVCBpbiBfc2hhcmVkL2NvcnMudHM6ICR7bWlzc2luZ0hlYWRlcnMuam9pbignLCAnKX1gCiAgICAgICAgOiAnQWRkIG9yaWdpbiB0byBFWEFDVF9BTExPV0VEX09SSUdJTlMgb3IgQUxMT1dFRF9PUklHSU5fUEFUVEVSTlMnLAogICAgfSk7CiAgfSBlbHNlIHsKICAgIGxvZ0NvcnNFdmVudCgnY29yc19wcmVmbGlnaHRfb2snLCBiYXNlRmllbGRzKTsKICB9Cn0KCi8vIC0tLSBQdWJsaWMgQVBJIC0tLQoKLyoqCiAqIFJldHVybnMgQ09SUyBoZWFkZXJzIHdpdGggb3JpZ2luIHZhbGlkYXRpb24uCiAqIElmIHRoZSByZXF1ZXN0IG9yaWdpbiBpcyBpbiB0aGUgYWxsb3dsaXN0LCBpdCBpcyByZWZsZWN0ZWQgYmFjay4KICovCmV4cG9ydCBmdW5jdGlvbiBnZXRDb3JzSGVhZGVycyhyZXE/OiBSZXF1ZXN0KTogUmVjb3JkPHN0cmluZywgc3RyaW5nPiB7CiAgY29uc3Qgb3JpZ2luID0gcmVxPy5oZWFkZXJzLmdldCgnb3JpZ2luJykgfHwgcmVxPy5oZWFkZXJzLmdldCgnT3JpZ2luJykgfHwgJyc7CiAgCiAgaWYgKHJlcT8ubWV0aG9kID09PSAnT1BUSU9OUycpIHsKICAgIGxvZ1ByZWZsaWdodEZyb21SZXF1ZXN0KHJlcSwgb3JpZ2luKTsKICB9CgogIHJldHVybiB7CiAgICAuLi5DT1JTX0hFQURFUlNfQkFTRSwKICAgIC4uLlNFQ1VSSVRZX0hFQURFUlMsCiAgICAnQWNjZXNzLUNvbnRyb2wtQWxsb3ctT3JpZ2luJzogZ2V0QmVzdEFsbG93ZWRPcmlnaW4ob3JpZ2luKSwKICB9Owp9CgovKioKICogSGFuZGxlIENPUlMgcHJlZmxpZ2h0IChPUFRJT05TKSByZXF1ZXN0LgogKiBSZXR1cm5zIGEgUmVzcG9uc2UgaWYgaXQncyBhbiBPUFRJT05TIHJlcXVlc3QsIG51bGwgb3RoZXJ3aXNlLgogKi8KZXhwb3J0IGZ1bmN0aW9uIGhhbmRsZUNvcnNQcmVmbGlnaHRJZk5lZWRlZChyZXE6IFJlcXVlc3QpOiBSZXNwb25zZSB8IG51bGwgewogIGlmIChyZXEubWV0aG9kICE9PSAnT1BUSU9OUycpIHJldHVybiBudWxsOwogIHJldHVybiBuZXcgUmVzcG9uc2UobnVsbCwgeyBoZWFkZXJzOiBnZXRDb3JzSGVhZGVycyhyZXEpIH0pOwp9CgpleHBvcnQgaW50ZXJmYWNlIFB1YmxpY0NvcnNPcHRpb25zIHsKICAvKioKICAgKiBFeHRyYSBoZWFkZXIgdG9rZW5zIHRvIGFwcGVuZCB0byBBY2Nlc3MtQ29udHJvbC1BbGxvdy1IZWFkZXJzLgogICAqLwogIGV4dHJhQWxsb3dIZWFkZXJzPzogc3RyaW5nW107CiAgLyoqCiAgICogT3ZlcnJpZGUgQWNjZXNzLUNvbnRyb2wtQWxsb3ctTWV0aG9kcyAoZGVmYXVsdDogc2FtZSBhcyByZXN0cmljdGVkIGhlbHBlcikuCiAgICovCiAgYWxsb3dNZXRob2RzPzogc3RyaW5nOwp9CgovKioKICogQnVpbGQgQ09SUyBoZWFkZXJzIGZvciBwdWJsaWMvd2lsZGNhcmQgZW5kcG9pbnRzLgogKi8KZXhwb3J0IGZ1bmN0aW9uIGJ1aWxkUHVibGljQ29yc0hlYWRlcnMob3B0czogUHVibGljQ29yc09wdGlvbnMgPSB7fSk6IFJlY29yZDxzdHJpbmcsIHN0cmluZz4gewogIGNvbnN0IG1lcmdlZCA9IG5ldyBTZXQoQUxMT1dFRF9IRUFERVJTX0xJU1QubWFwKChoKSA9PiBoLnRvTG93ZXJDYXNlKCkpKTsKICBmb3IgKGNvbnN0IGggb2Ygb3B0cy5leHRyYUFsbG93SGVhZGVycyA/PyBbXSkgewogICAgY29uc3QgdCA9IGgudHJpbSgpLnRvTG93ZXJDYXNlKCk7CiAgICBpZiAodCkgbWVyZ2VkLmFkZCh0KTsKICB9CiAgCiAgcmV0dXJuIHsKICAgICdBY2Nlc3MtQ29udHJvbC1BbGxvdy1PcmlnaW4nOiAnKicsCiAgICAnQWNjZXNzLUNvbnRyb2wtQWxsb3ctSGVhZGVycyc6IEFycmF5LmZyb20obWVyZ2VkKS5qb2luKCcsICcpLAogICAgJ0FjY2Vzcy1Db250cm9sLUFsbG93LU1ldGhvZHMnOiBvcHRzLmFsbG93TWV0aG9kcyA/PyBDT1JTX0hFQURFUlNfQkFTRVsnQWNjZXNzLUNvbnRyb2wtQWxsb3ctTWV0aG9kcyddLAogICAgJ0FjY2Vzcy1Db250cm9sLUV4cG9zZS1IZWFkZXJzJzogJ3gtcmVxdWVzdC1pZCcsCiAgICAuLi5TRUNVUklUWV9IRUFERVJTLAogIH07Cn0KCi8qKgogKiBVbmlmaWVkIHByZWZsaWdodCBoYW5kbGVyIOKAlCB3b3JrcyBmb3IgQk9USCBwdWJsaWMtd2lsZGNhcmQgYW5kIG9yaWdpbi1yZXN0cmljdGVkIGVuZHBvaW50cy4KICovCmV4cG9ydCBmdW5jdGlvbiBoYW5kbGVDb3JzUHJlZmxpZ2h0KAogIHJlcTogUmVxdWVzdCwKICBvcHRzOiB7IHB1YmxpYz86IGJvb2xlYW4gfSAmIFB1YmxpY0NvcnNPcHRpb25zID0ge30sCik6IFJlc3BvbnNlIHwgbnVsbCB7CiAgaWYgKHJlcS5tZXRob2QgIT09ICdPUFRJT05TJykgcmV0dXJuIG51bGw7CiAgCiAgaWYgKG9wdHMucHVibGljKSB7CiAgICBjb25zdCBvcmlnaW4gPSByZXEuaGVhZGVycy5nZXQoJ29yaWdpbicpIHx8IHJlcS5oZWFkZXJzLmdldCgnT3JpZ2luJykgfHwgJyc7CiAgICBsb2dQcmVmbGlnaHRGcm9tUmVxdWVzdChyZXEsIG9yaWdpbik7CiAgICByZXR1cm4gbmV3IFJlc3BvbnNlKG51bGwsIHsgaGVhZGVyczogYnVpbGRQdWJsaWNDb3JzSGVhZGVycyhvcHRzKSB9KTsKICB9CiAgCiAgcmV0dXJuIG5ldyBSZXNwb25zZShudWxsLCB7IGhlYWRlcnM6IGdldENvcnNIZWFkZXJzKHJlcSkgfSk7Cn0KCi8qKgogKiBAZGVwcmVjYXRlZCBVc2UgYGJ1aWxkUHVibGljQ29yc0hlYWRlcnMoKWAgb3IgYGhhbmRsZUNvcnNQcmVmbGlnaHQocmVxLCB7IHB1YmxpYzogdHJ1ZSB9KWAuCiAqLwpleHBvcnQgY29uc3QgcHVibGljQ29yc0hlYWRlcnMgPSBPYmplY3QuZnJlZXplKGJ1aWxkUHVibGljQ29yc0hlYWRlcnMoKSk7CgovKioKICogRXhwb3J0ZWQgZm9yIHRlc3RzIC8gaW50cm9zcGVjdGlvbi4KICovCmV4cG9ydCBjb25zdCBDT1JTX0lOVFJPU1BFQ1RJT04gPSBPYmplY3QuZnJlZXplKHsKICBhbGxvd0hlYWRlcnM6IEFMTE9XRURfSEVBREVSU19WQUxVRSwKICBhbGxvd0hlYWRlcnNMaXN0OiBPYmplY3QuZnJlZXplKFsuLi5BTExPV0VEX0hFQURFUlNfTElTVF0pLAogIGFsbG93TWV0aG9kczogQ09SU19IRUFERVJTX0JBU0VbJ0FjY2Vzcy1Db250cm9sLUFsbG93LU1ldGhvZHMnXSwKICBleHBvc2VIZWFkZXJzOiBDT1JTX0hFQURFUlNfQkFTRVsnQWNjZXNzLUNvbnRyb2wtRXhwb3NlLUhlYWRlcnMnXSwKfSk7Cg==
+// supabase/functions/_shared/cors.ts
+/**
+ * Centralized CORS configuration — restrict to known origins.
+ *
+ * BUG-07 FIX (2026-06-02): getBestAllowedOrigin() fallback was returning
+ *   the Lovable dev URL (criar-together-now.lovable.app) for unknown origins.
+ *   Changed to production URL (www.promogifts.com.br).
+ *
+ * BUG-08 FIX (2026-06-02): pqpdolkaeqlyzpdpbizo.supabase.co removed from
+ *   EXACT_ALLOWED_ORIGINS. That project is in FORBIDDEN_REFS in client.ts
+ *   and must not be granted CORS access to edge functions.
+ */
+
+// --- Configuration ---
+
+const EXACT_ALLOWED_ORIGINS = new Set([
+  // BUG-08 FIX: pqpdolkaeqlyzpdpbizo.supabase.co removed (FORBIDDEN project).
+  // Canonical project is doufsxqlfjyuvxuezpln — it never needs to call its own
+  // edge functions from a browser context; Supabase SDK handles that internally.
+  'https://criar-together-now.lovable.app',
+  'https://id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
+  'https://1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
+  'https://promogifts.com.br',
+  'https://www.promogifts.com.br',
+  'https://promogifts.atomicabr.com.br',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:3000',
+]);
+
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/[a-z0-9-]+\.lovable\.app$/i,
+  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/i,
+  /^https:\/\/[a-z0-9-]+\.atomicabr\.com\.br$/i,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/i,
+  /^http:\/\/localhost(?::\d+)?$/i,
+  /^http:\/\/127\.0\.0\.1(?::\d+)?$/i,
+];
+
+const ALLOWED_HEADERS_LIST = [
+  'authorization',
+  'x-client-info',
+  'apikey',
+  'content-type',
+  'x-request-id',
+  'x-step-up-token',
+  'x-supabase-client-platform',
+  'x-supabase-client-platform-version',
+  'x-supabase-client-runtime',
+  'x-supabase-client-runtime-version',
+];
+
+const ALLOWED_HEADERS_SET = new Set(ALLOWED_HEADERS_LIST.map((h) => h.toLowerCase()));
+const ALLOWED_HEADERS_VALUE = ALLOWED_HEADERS_LIST.join(', ');
+
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;",
+} as const;
+
+const CORS_HEADERS_BASE = {
+  'Access-Control-Allow-Headers': ALLOWED_HEADERS_VALUE,
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Expose-Headers': 'x-request-id',
+  ...SECURITY_HEADERS,
+} as const;
+
+// --- Internal Utilities ---
+
+function parseHeaderList(headerString: string | null): string[] {
+  if (!headerString) return [];
+  return headerString
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  return (
+    EXACT_ALLOWED_ORIGINS.has(origin) ||
+    ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin))
+  );
+}
+
+function getBestAllowedOrigin(origin: string | null): string {
+  if (origin && isAllowedOrigin(origin)) return origin;
+  // BUG-07 FIX: Unknown origin now falls back to the PRODUCTION URL instead
+  // of the Lovable development URL (criar-together-now.lovable.app).
+  // The browser still blocks the response if the origin doesn't match anyway,
+  // so this only matters for same-origin requests and server-side callers.
+  return 'https://www.promogifts.com.br';
+}
+
+// --- Structured Logging ---
+
+function logCorsEvent(event: string, fields: Record<string, unknown>): void {
+  const payload = {
+    source: 'cors',
+    event,
+    ts: new Date().toISOString(),
+    ...fields,
+  };
+  const line = `[cors] ${JSON.stringify(payload)}`;
+  
+  if (event.endsWith('_warn') || event.endsWith('_blocked')) {
+    console.warn(line);
+  } else {
+    console.log(line);
+  }
+}
+
+let bootLogged = false;
+function logBootIfNeeded(): void {
+  if (bootLogged) return;
+  bootLogged = true;
+  logCorsEvent('cors_boot', {
+    allow_headers: ALLOWED_HEADERS_VALUE,
+    allow_headers_count: ALLOWED_HEADERS_LIST.length,
+    allow_methods: CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
+    expose_headers: CORS_HEADERS_BASE['Access-Control-Expose-Headers'],
+    exact_origins_count: EXACT_ALLOWED_ORIGINS.size,
+    pattern_origins_count: ALLOWED_ORIGIN_PATTERNS.length,
+  });
+}
+
+// Initialize boot log on module load
+logBootIfNeeded();
+
+function logPreflightFromRequest(req: Request, origin: string): void {
+  const requestedHeadersRaw = req.headers.get('Access-Control-Request-Headers') || req.headers.get('access-control-request-headers');
+  const requestedMethod = req.headers.get('Access-Control-Request-Method') || req.headers.get('access-control-request-method');
+  const requestedHeaders = parseHeaderList(requestedHeadersRaw);
+  
+  const missingHeaders = requestedHeaders.filter((h) => !ALLOWED_HEADERS_SET.has(h));
+  const originAllowed = !origin || isAllowedOrigin(origin);
+  const requestId = req.headers.get('x-request-id') || req.headers.get('X-Request-Id');
+
+  const baseFields = {
+    request_id: requestId,
+    origin: origin || null,
+    origin_allowed: originAllowed,
+    requested_method: requestedMethod,
+    requested_headers: requestedHeaders,
+    missing_headers: missingHeaders,
+  };
+
+  if (!originAllowed || missingHeaders.length > 0) {
+    logCorsEvent('cors_preflight_warn', {
+      ...baseFields,
+      reason: !originAllowed ? 'origin_not_allowed' : 'header_not_allowed',
+      hint: missingHeaders.length > 0
+        ? `Add to ALLOWED_HEADERS_LIST in _shared/cors.ts: ${missingHeaders.join(', ')}`
+        : 'Add origin to EXACT_ALLOWED_ORIGINS or ALLOWED_ORIGIN_PATTERNS',
+    });
+  } else {
+    logCorsEvent('cors_preflight_ok', baseFields);
+  }
+}
+
+// --- Public API ---
+
+/**
+ * Returns CORS headers with origin validation.
+ * If the request origin is in the allowlist, it is reflected back.
+ */
+export function getCorsHeaders(req?: Request): Record<string, string> {
+  const origin = req?.headers.get('origin') || req?.headers.get('Origin') || '';
+  
+  if (req?.method === 'OPTIONS') {
+    logPreflightFromRequest(req, origin);
+  }
+
+  return {
+    ...CORS_HEADERS_BASE,
+    ...SECURITY_HEADERS,
+    'Access-Control-Allow-Origin': getBestAllowedOrigin(origin),
+  };
+}
+
+/**
+ * Handle CORS preflight (OPTIONS) request.
+ * Returns a Response if it's an OPTIONS request, null otherwise.
+ */
+export function handleCorsPreflightIfNeeded(req: Request): Response | null {
+  if (req.method !== 'OPTIONS') return null;
+  return new Response(null, { headers: getCorsHeaders(req) });
+}
+
+export interface PublicCorsOptions {
+  /**
+   * Extra header tokens to append to Access-Control-Allow-Headers.
+   */
+  extraAllowHeaders?: string[];
+  /**
+   * Override Access-Control-Allow-Methods (default: same as restricted helper).
+   */
+  allowMethods?: string;
+}
+
+/**
+ * Build CORS headers for public/wildcard endpoints.
+ */
+export function buildPublicCorsHeaders(opts: PublicCorsOptions = {}): Record<string, string> {
+  const merged = new Set(ALLOWED_HEADERS_LIST.map((h) => h.toLowerCase()));
+  for (const h of opts.extraAllowHeaders ?? []) {
+    const t = h.trim().toLowerCase();
+    if (t) merged.add(t);
+  }
+  
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': Array.from(merged).join(', '),
+    'Access-Control-Allow-Methods': opts.allowMethods ?? CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
+    'Access-Control-Expose-Headers': 'x-request-id',
+    ...SECURITY_HEADERS,
+  };
+}
+
+/**
+ * Unified preflight handler — works for BOTH public-wildcard and origin-restricted endpoints.
+ */
+export function handleCorsPreflight(
+  req: Request,
+  opts: { public?: boolean } & PublicCorsOptions = {},
+): Response | null {
+  if (req.method !== 'OPTIONS') return null;
+  
+  if (opts.public) {
+    const origin = req.headers.get('origin') || req.headers.get('Origin') || '';
+    logPreflightFromRequest(req, origin);
+    return new Response(null, { headers: buildPublicCorsHeaders(opts) });
+  }
+  
+  return new Response(null, { headers: getCorsHeaders(req) });
+}
+
+/**
+ * @deprecated Use `buildPublicCorsHeaders()` or `handleCorsPreflight(req, { public: true })`.
+ */
+export const publicCorsHeaders = Object.freeze(buildPublicCorsHeaders());
+
+/**
+ * Exported for tests / introspection.
+ */
+export const CORS_INTROSPECTION = Object.freeze({
+  allowHeaders: ALLOWED_HEADERS_VALUE,
+  allowHeadersList: Object.freeze([...ALLOWED_HEADERS_LIST]),
+  allowMethods: CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
+  exposeHeaders: CORS_HEADERS_BASE['Access-Control-Expose-Headers'],
+});
