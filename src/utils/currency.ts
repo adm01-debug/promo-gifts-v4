@@ -6,7 +6,7 @@
  *
  * @example
  *   formatBRL(1234.5)   // "R$ 1.234,50"
- *   formatBRLShort(1234.5) // "R$ 1.234"
+ *   formatBRLShort(1234.5) // "R$ 1.235"  (Math.round usa half-up em JS)
  *   parseBRL("R$ 1.234,50") // 1234.5
  */
 
