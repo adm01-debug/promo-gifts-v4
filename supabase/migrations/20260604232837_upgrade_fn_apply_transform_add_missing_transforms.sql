@@ -1,0 +1,18 @@
+-- ============================================================
+-- MARKER NO-OP — preserva a versão remota 20260604232837.
+-- ============================================================
+-- Esta migration foi aplicada DIRETAMENTE no banco (out-of-band) e estava
+-- AUSENTE do repo, gerando drift. Ela recriou `fn_apply_transform` (6-arg)
+-- adicionando transforms do legado (divide, suffix, uppercase, lowercase, trim,
+-- replace, regex_extract) PORÉM removeu o branch custom `fn_clean_spot_name`,
+-- revertendo a correção de limpeza de nome (GAP-1 da paridade Spot).
+--
+-- A definição CORRETA e COMPLETA de `fn_apply_transform` (com TODAS as transforms
+-- da 232837 + o branch `fn_clean_spot_name` restaurado) vive em:
+--   20260604234647_restore_fn_clean_spot_name_branch_in_apply_transform.sql
+--
+-- Por isso este arquivo é um marcador no-op: preserva a versão remota para o CLI
+-- do Supabase sem reaplicar a DDL (que é superada pela 234647). Não remover.
+-- Detalhes: docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md (§7).
+-- ============================================================
+SELECT 1;
