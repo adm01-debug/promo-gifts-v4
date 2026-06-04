@@ -42,7 +42,7 @@ describe('ProductColorSwatches', () => {
       </TooltipProvider>
     );
     
-    fireEvent.click(screen.getByLabelText('Opção de color: Azul'));
+    fireEvent.click(screen.getByLabelText('Opção de cor: Azul'));
     expect(onSelect).toHaveBeenCalledWith(mockColors[1], 1);
   });
 
@@ -58,7 +58,7 @@ describe('ProductColorSwatches', () => {
       </TooltipProvider>
     );
     
-    const selectedSwatch = screen.getByLabelText('Opção de color: Azul');
+    const selectedSwatch = screen.getByLabelText('Opção de cor: Azul');
     expect(selectedSwatch.className).toContain('ring-primary');
     
     window.location = originalLocation;
