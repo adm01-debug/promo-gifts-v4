@@ -174,8 +174,9 @@ export const ProductCard = memo(
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlColor = urlParams.get('cor');
+        // Resolve URL param de forma estável
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const urlColor = urlParams?.get('cor');
         
         // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
@@ -186,11 +187,12 @@ export const ProductCard = memo(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
           );
           if (idx >= 0 && idx !== activeVariantIdx) {
+            // Sincroniza sem transição forçada se for o carregamento inicial
             setActiveVariantIdx(idx);
           }
         }
       }
-    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
