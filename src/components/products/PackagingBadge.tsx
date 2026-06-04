@@ -27,6 +27,8 @@ const contextLabels: Record<string, string> = {
   without_customization: 'Sem personalização',
 };
 
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 export function PackagingBadge({
   hasCommercialPackaging,
   packingType,
@@ -34,6 +36,9 @@ export function PackagingBadge({
   packagingContext,
   onClick,
   className,
+  boxWidthMm,
+  boxHeightMm,
+  boxLengthMm,
 }: PackagingBadgeProps) {
   // Só exibir se has_commercial_packaging === true
   if (!hasCommercialPackaging) {
@@ -49,16 +54,28 @@ export function PackagingBadge({
   // Texto do contexto
   const contextText = packagingContext ? contextLabels[packagingContext] : null;
 
-  return (
+  const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
+
+  const badge = (
     <Badge
       variant="outline"
       onClick={onClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`Embalagem especial: ${displayType}. ${contextText ? `Regra: ${contextText}.` : ''} Clique para ver mais detalhes.`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
         'group/packaging cursor-pointer transition-all duration-200',
         'bg-gradient-to-r from-warning/10 to-warning/5',
         'border-warning/30 hover:border-warning/60',
         'hover:from-warning/20 hover:to-warning/10',
         'hover:scale-[1.02] hover:shadow-md',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2',
         'flex-col items-start gap-0.5 px-3 py-1.5',
         className,
       )}
@@ -70,5 +87,33 @@ export function PackagingBadge({
       </div>
       {contextText && <span className="pl-5 text-[10px] text-muted-foreground">{contextText}</span>}
     </Badge>
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[200px]">
+        <div className="space-y-1.5 text-xs">
+          <p className="font-semibold text-foreground">Embalagem {displayType}</p>
+          <div className="grid gap-1 text-[10px] text-muted-foreground">
+            {packingType && (
+              <p>
+                <span className="font-medium text-foreground">Tipo:</span> {packingType}
+              </p>
+            )}
+            {dimensions && (
+              <p>
+                <span className="font-medium text-foreground">Medidas:</span> {dimensions} mm
+              </p>
+            )}
+            {contextText && (
+              <p>
+                <span className="font-medium text-foreground">Contexto:</span> {contextText}
+              </p>
+            )}
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
