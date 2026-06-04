@@ -13,6 +13,7 @@ export interface PromobrindProduct {
   image_url?: string | null;
   images: string[] | null;
   primary_image_url: string | null;
+  set_image_url?: string | null;
   og_image_url?: string | null;
   category_id: string | null;
   main_category_id: string | null;
