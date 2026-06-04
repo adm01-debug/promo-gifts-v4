@@ -124,6 +124,14 @@ export const ProductCard = memo(
     const [imageLoaded, setImageLoaded] = useState(false);
     const [actionsOpen, setActionsOpen] = useState(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+    const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+
+    // Efeito para simular loading ao trocar de cor
+    useEffect(() => {
+      setIsUpdatingColor(true);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 300);
+      return () => clearTimeout(timer);
+    }, [activeVariantIdx]);
 
     const filterKey = activeColorFilter
       ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
@@ -162,9 +170,13 @@ export const ProductCard = memo(
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        // Prioridade: Seleção manual > Filtro ativo
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlColor = urlParams.get('cor');
+
+        // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
-          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
@@ -325,7 +337,7 @@ export const ProductCard = memo(
     const matchedHighlightColor =
       currentVariant?.hex ||
       resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
-    const hasHighlightedColor = !!matchedHighlightColor;
+    const _hasHighlightedColor = !!matchedHighlightColor;
 
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
     const _activeColorHex = currentVariant?.hex || null;
@@ -352,13 +364,22 @@ export const ProductCard = memo(
       return product.og_image_url || product.images[0] || null;
     }, [product, activeColorFilter, currentVariant, activeColorName]);
 
-    const cardImageUrl = currentImageUrl ? getCdnUrl(currentImageUrl, 'card') : '/placeholder.svg';
+    // Caso de fallback para quando a imagem da cor não existe
+    const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
+
+    const cardImageUrl =
+      effectiveImageUrl !== '/placeholder.svg'
+        ? getCdnUrl(effectiveImageUrl, 'card')
+        : '/placeholder.svg';
+    const _hasNoImage = effectiveImageUrl === '/placeholder.svg';
+
     const cardSrcSet =
-      currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
-        ? getSrcSet(currentImageUrl)
+      effectiveImageUrl !== '/placeholder.svg' &&
+      (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
+        ? getSrcSet(effectiveImageUrl)
         : undefined;
 
-    const colorSpecificImage = currentImageUrl;
+    const colorSpecificImage = effectiveImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
@@ -380,16 +401,7 @@ export const ProductCard = memo(
           'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
-          hasHighlightedColor ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]' : '',
         )}
-        style={
-          hasHighlightedColor && matchedHighlightColor
-            ? ({
-                borderColor: `${matchedHighlightColor}70`,
-                boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
-              } as React.CSSProperties)
-            : undefined
-        }
         onMouseEnter={() => {
           setIsHovered(true);
           telemetryService.logUXAction('product_hover', {
@@ -465,6 +477,7 @@ export const ProductCard = memo(
           }}
           priority={priority}
           onStatusClick={handleStatusClick}
+          isUpdatingColor={isUpdatingColor}
         />
 
         {/* Quick Actions FAB */}
@@ -551,6 +564,11 @@ export const ProductCard = memo(
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
+
+                // Persiste a cor na URL sem forçar navegação completa
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('cor', c.name);
+                window.history.replaceState({}, '', currentUrl.toString());
               }
               // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
               // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
@@ -562,11 +580,18 @@ export const ProductCard = memo(
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
             const displayStock = colorStock?.stock ?? product.stock;
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
+
             return (
-              <div className="flex items-end justify-between pt-0.5 sm:pt-1">
+              <div
+                key={activeColorName || 'default'}
+                className={cn(
+                  'flex items-end justify-between pt-0.5 transition-opacity duration-500 animate-in fade-in slide-in-from-bottom-1 sm:pt-1',
+                  isUpdatingColor ? 'opacity-40' : 'opacity-100',
+                )}
+              >
                 <div>
                   <p className="mb-0.5 text-[10px] font-medium text-muted-foreground opacity-70 sm:text-[11px]">
-                    A partir de
+                    {activeColorName ? `Estoque ${activeColorName}` : 'A partir de'}
                   </p>
                   <span className="inline-flex items-center gap-2 font-display text-xs font-black tracking-tight text-foreground sm:text-lg">
                     {formatPrice(product.price)}
