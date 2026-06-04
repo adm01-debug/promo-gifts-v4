@@ -113,7 +113,11 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   }
 
   const visible = colors;
-  const normalizedSelected = selectedName?.toLowerCase() ?? null;
+  // Resolve o estado selecionado o mais cedo possível
+  const queryParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
+  const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
   return (
     <div
