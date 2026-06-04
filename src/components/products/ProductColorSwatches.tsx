@@ -71,12 +71,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   if (colors === undefined) {
     return (
       <div
-        className={cn('flex items-center gap-1 min-h-[16px]', className)}
+        className={cn('flex flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] min-h-[var(--swatch-size-sm)]', className)}
         aria-busy="true"
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
       >
-        {[...Array(3)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
             className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
