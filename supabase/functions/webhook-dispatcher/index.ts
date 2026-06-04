@@ -241,20 +241,21 @@ Deno.serve(async (req) => {
       let success = false;
       let attempt = 0;
 
-      // Dedup check: skip this hook if an identical payload was successfully
-      // delivered within the last 5 minutes (idempotency window).
-      // check_webhook_dedup returns TRUE when delivery should proceed.
-      if (phash) {
-        const { data: canProceed, error: dedupErr } = await supabase.rpc('check_webhook_dedup', {
-          p_webhook_id: hook.id,
-          p_payload_hash: phash,
-        });
-        if (dedupErr) {
-          console.warn('[webhook-dispatcher] check_webhook_dedup error (continuing):', dedupErr);
-        } else if (!canProceed) {
-          results.push({ webhook_id: hook.id, status: 'skipped_duplicate' });
-          continue;
-        }
+      // Atomic delivery claim: claim_webhook_delivery inserts a lock row within
+      // its own transaction via INSERT ... ON CONFLICT DO NOTHING. The unique
+      // constraint on (webhook_id, payload_hash) ensures only one concurrent
+      // invocation acquires the lock — the other receives FALSE and skips.
+      // This closes the race that existed with check_webhook_dedup, where the
+      // advisory lock was released before the delivery INSERT happened.
+      const { data: claimed, error: claimErr } = await supabase.rpc('claim_webhook_delivery', {
+        p_webhook_id: hook.id,
+        p_payload_hash: phash ?? null,
+      });
+      if (claimErr) {
+        console.warn('[webhook-dispatcher] claim_webhook_delivery error (continuing):', claimErr);
+      } else if (!claimed) {
+        results.push({ webhook_id: hook.id, status: 'skipped_duplicate' });
+        continue;
       }
 
       while (attempt < max && !success) {
@@ -310,6 +311,17 @@ Deno.serve(async (req) => {
             await new Promise((r) => setTimeout(r, delay));
           }
         }
+      }
+
+      // Release delivery lock so failed deliveries can be retried by the next
+      // dispatcher invocation. On success the delivery row acts as the dedup;
+      // on failure releasing the lock allows a future retry cycle to proceed.
+      if (phash && !claimErr) {
+        const { error: releaseErr } = await supabase.rpc('release_webhook_delivery_lock', {
+          p_webhook_id: hook.id,
+          p_payload_hash: phash,
+        });
+        if (releaseErr) console.warn('[webhook-dispatcher] release_webhook_delivery_lock error:', releaseErr);
       }
 
       if (!success) {
