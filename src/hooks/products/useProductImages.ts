@@ -77,37 +77,55 @@ export async function fetchProductImages(productId: string): Promise<ProductImag
 }
 
 /**
- * Busca imagens de múltiplos produtos de uma vez (batch)
+ * Tamanho do chunk de product_ids por query IN(). Alinhado com o enriquecimento
+ * em src/lib/external-db/products.ts (CHUNK_SIZE=80) para manter a URL do
+ * PostgREST dentro de limites seguros.
+ */
+const IMAGE_BATCH_CHUNK_SIZE = 80;
+
+/**
+ * Busca imagens de múltiplos produtos de uma vez (batch).
+ *
+ * Usa filtro `IN(product_id)` (suportado pelo PostgREST via array — ver
+ * postgrest.ts `query.in(key, value)`), em chunks, em vez de baixar a tabela
+ * inteira e filtrar em memória. Isso evita transferir milhares de linhas e o
+ * truncamento silencioso pelo teto de `limit`.
  */
 export async function fetchProductImagesBatch(
   productIds: string[],
 ): Promise<Map<string, ProductImage[]>> {
   if (productIds.length === 0) return new Map();
 
+  const uniqueIds = [...new Set(productIds)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < uniqueIds.length; i += IMAGE_BATCH_CHUNK_SIZE) {
+    chunks.push(uniqueIds.slice(i, i + IMAGE_BATCH_CHUNK_SIZE));
+  }
+
   try {
-    // Buscar todas as imagens ativas
-    // Nota: O bridge não suporta IN() diretamente, então buscamos todas e filtramos
-    const result = await dbInvoke<ProductImage>({
-      table: 'product_images',
-      operation: 'select',
-      select:
-        'id, product_id, variant_id, color_id, supplier_code, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
-      filters: { is_active: true },
-      orderBy: { column: 'display_order', ascending: true },
-      limit: 5000,
-    });
+    const results = await Promise.all(
+      chunks.map((chunk) =>
+        dbInvoke<ProductImage>({
+          table: 'product_images',
+          operation: 'select',
+          select:
+            'id, product_id, variant_id, color_id, supplier_code, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
+          filters: { is_active: true, product_id: chunk },
+          orderBy: { column: 'display_order', ascending: true },
+          limit: 1000,
+        }),
+      ),
+    );
 
     // Agrupar por product_id
     const imagesByProduct = new Map<string, ProductImage[]>();
-    const productIdSet = new Set(productIds);
-
-    result.records.forEach((image) => {
-      if (!productIdSet.has(image.product_id)) return;
-
-      const productImages = imagesByProduct.get(image.product_id) ?? [];
-      imagesByProduct.set(image.product_id, productImages);
-      productImages.push(image);
-    });
+    for (const result of results) {
+      result.records.forEach((image) => {
+        const productImages = imagesByProduct.get(image.product_id) ?? [];
+        imagesByProduct.set(image.product_id, productImages);
+        productImages.push(image);
+      });
+    }
 
     return imagesByProduct;
   } catch (err) {
