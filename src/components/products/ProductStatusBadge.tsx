@@ -245,10 +245,38 @@ export function ProductStatusBadge({
           </div>
         );
       case 'packaging':
+        const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } = packagingMetadata || {};
+        const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
+        
+        const contextLabels: Record<string, string> = {
+          always: 'Sempre disponível',
+          with_customization: 'Com personalização',
+          without_customization: 'Sem personalização',
+        };
+
         return (
-          <div className="text-sm">
-            <p className="font-semibold">🎁 Embalagem Especial</p>
-            <p className="text-muted-foreground">Este produto possui opções de embalagem configuradas.</p>
+          <div className="space-y-1.5 p-1 text-sm">
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-warning" />
+              <p className="font-semibold text-foreground">Embalagem Especial</p>
+            </div>
+            <div className="grid gap-1 text-[11px] text-muted-foreground">
+              {packingType && (
+                <p>
+                  <span className="font-medium text-foreground">Tipo:</span> {packingType}
+                </p>
+              )}
+              {dimensions && (
+                <p>
+                  <span className="font-medium text-foreground">Dimensões:</span> {dimensions} mm
+                </p>
+              )}
+              {packagingContext && contextLabels[packagingContext] && (
+                <p>
+                  <span className="font-medium text-foreground">Regra:</span> {contextLabels[packagingContext]}
+                </p>
+              )}
+            </div>
           </div>
         );
       default:
