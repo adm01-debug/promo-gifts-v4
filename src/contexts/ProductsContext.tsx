@@ -103,6 +103,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
           setCache((prev) => {
             const next = new Map(prev);
             mapped.forEach((p) => next.set(p.id, p));
+            // Sync ref immediately so queueFetch sees fresh data before useEffect runs
+            cacheRef.current = next;
             return next;
           });
         }

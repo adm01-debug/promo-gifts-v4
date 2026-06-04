@@ -24,26 +24,34 @@ const ALLOWED_DOMAINS = [
 
 // BUG-A05 FIX (26/05/2026): Added staging/beta domains to ALLOWED_REFERER_HOSTS.
 // promo-gifts-beta.vercel.app was missing — staging environment was rejected.
-const ALLOWED_REFERER_HOSTS = [
+const ALLOWED_REFERER_EXACT = new Set([
   'criar-together-now.lovable.app',
   'promogifts.com.br',
   'www.promogifts.com.br',
-  'promo-gifts-beta.vercel.app',  // Staging/beta Vercel deployment
-  'lovable.app',                  // any *.lovable.app subdomain
-  'lovableproject.com',
-  'vercel.app',                   // Generic Vercel preview deployments
-];
+  'promogifts.atomicabr.com.br',
+  'promo-gifts-beta.vercel.app',
+]);
 
-// Localhost/127.0.0.1 conditional (Hardening 6.3)
-if (Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true') {
-  ALLOWED_REFERER_HOSTS.push('localhost', '127.0.0.1');
-}
+// Lovable subdomain pattern (Lovable controls all *.lovable.app and *.lovableproject.com)
+const LOVABLE_PATTERN = /^[a-z0-9-]+\.lovableproject\.com$/i;
+const LOVABLE_APP_PATTERN = /^[a-z0-9-]+\.lovable\.app$/i;
+
+// Vercel preview pattern: only this team's deployments (suffix -juca1.vercel.app)
+const VERCEL_TEAM_PATTERN = /^[\w-]+-juca1\.vercel\.app$/i;
+
+const ALLOW_LOCALHOST = Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true';
 
 function isAllowedReferer(referer: string | null): boolean {
   if (!referer) return false;
   try {
     const host = new URL(referer).hostname.toLowerCase();
-    return ALLOWED_REFERER_HOSTS.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+    return (
+      ALLOWED_REFERER_EXACT.has(host) ||
+      LOVABLE_PATTERN.test(host) ||
+      LOVABLE_APP_PATTERN.test(host) ||
+      VERCEL_TEAM_PATTERN.test(host) ||
+      (ALLOW_LOCALHOST && (host === 'localhost' || host === '127.0.0.1'))
+    );
   } catch {
     return false;
   }
