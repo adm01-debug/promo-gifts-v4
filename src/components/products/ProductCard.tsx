@@ -541,7 +541,7 @@ export const ProductCard = memo(
           />
 
           {(() => {
-            const colorStock = resolveColorStock(product, activeColorFilter);
+            const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
             const displayStock = colorStock?.stock ?? product.stock;
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             return (
