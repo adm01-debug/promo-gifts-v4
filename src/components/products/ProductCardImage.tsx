@@ -126,6 +126,13 @@ export const ProductCardImage = memo(function ProductCardImage({
 
   return (
     <div className="relative aspect-square overflow-hidden bg-muted/20">
+      {/* Loading overlay for color change */}
+      {isUpdatingColor && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/20 backdrop-blur-[2px] animate-in fade-in duration-200">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      )}
+
       {/* Main image — fades out on hover when set image is available */}
       <div 
         key={activeSrc}
