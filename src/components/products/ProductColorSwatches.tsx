@@ -52,9 +52,9 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-[16px] w-[16px]',
-  sm: 'h-[20px] w-[20px]',
-  md: 'h-[25px] w-[25px]',
+  xs: 'h-[var(--swatch-size-xs)] w-[var(--swatch-size-xs)]',
+  sm: 'h-[var(--swatch-size-sm)] w-[var(--swatch-size-sm)]',
+  md: 'h-[var(--swatch-size-md)] w-[var(--swatch-size-md)]',
 };
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
@@ -109,7 +109,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-1.5 min-h-[25px]', className)}
+      className={cn('flex flex-wrap items-center gap-[var(--swatch-gap)] min-h-[var(--swatch-size-md)]', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -168,7 +168,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="ml-0.5 text-[12px] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              className="ml-0.5 text-[calc(var(--swatch-size-sm)*0.6)] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
               onClick={(e) => {
