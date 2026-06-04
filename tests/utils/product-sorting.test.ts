@@ -3,7 +3,7 @@
  * Validates all 7 sort modes, edge cases, and parity between Catalog & Super Filter.
  */
 import { describe, it, expect } from "vitest";
-import { sortProducts } from "@/utils/product-sorting";
+import { sortProducts, compareNamePtBR } from "@/utils/product-sorting";
 
 // Minimal product factory
 function makeProduct(overrides: Record<string, unknown> = {}) {
@@ -260,6 +260,79 @@ describe("sortProducts", () => {
       const products = [makeProduct()];
       const result = sortProducts(products, "name");
       expect(result).toBe(products);
+    });
+  });
+
+  // ===== PT-BR COLLATOR + NAME ALIASES + DETERMINISM =====
+  describe("pt-BR collation and name aliases", () => {
+    it("orders numbers naturally (Caneta 2 before Caneta 10)", () => {
+      const products = [
+        makeProduct({ id: "a", name: "Caneta 10" }),
+        makeProduct({ id: "b", name: "Caneta 2" }),
+        makeProduct({ id: "c", name: "Caneta 1" }),
+      ];
+      sortProducts(products, "name");
+      expect(products.map((p) => p.name)).toEqual(["Caneta 1", "Caneta 2", "Caneta 10"]);
+    });
+
+    it("orders accented pt-BR names base-insensitively", () => {
+      const products = [
+        makeProduct({ id: "a", name: "Água" }),
+        makeProduct({ id: "b", name: "Abacaxi" }),
+        makeProduct({ id: "c", name: "Açaí" }),
+      ];
+      sortProducts(products, "name");
+      // base sensitivity: Abacaxi < Açaí < Água
+      expect(products.map((p) => p.name)).toEqual(["Abacaxi", "Açaí", "Água"]);
+    });
+
+    it("treats 'name-asc' as ascending name sort", () => {
+      const products = [makeProduct({ name: "Zebra" }), makeProduct({ name: "Alpha" })];
+      sortProducts(products, "name-asc");
+      expect(products.map((p) => p.name)).toEqual(["Alpha", "Zebra"]);
+    });
+
+    it("treats 'name-desc' as descending name sort", () => {
+      const products = [makeProduct({ name: "Alpha" }), makeProduct({ name: "Zebra" })];
+      sortProducts(products, "name-desc");
+      expect(products.map((p) => p.name)).toEqual(["Zebra", "Alpha"]);
+    });
+
+    it("compareNamePtBR is null/undefined safe", () => {
+      expect(compareNamePtBR(null, "a")).toBeLessThan(0);
+      expect(compareNamePtBR("a", undefined)).toBeGreaterThan(0);
+      expect(compareNamePtBR(null, null)).toBe(0);
+    });
+  });
+
+  describe("deterministic id tiebreak", () => {
+    it("breaks equal names by id (stable, page-safe order)", () => {
+      const products = [
+        makeProduct({ id: "p3", name: "Same" }),
+        makeProduct({ id: "p1", name: "Same" }),
+        makeProduct({ id: "p2", name: "Same" }),
+      ];
+      sortProducts(products, "name");
+      expect(products.map((p) => p.id)).toEqual(["p1", "p2", "p3"]);
+    });
+
+    it("breaks equal prices by id deterministically", () => {
+      const products = [
+        makeProduct({ id: "p3", price: 5 }),
+        makeProduct({ id: "p1", price: 5 }),
+        makeProduct({ id: "p2", price: 5 }),
+      ];
+      sortProducts(products, "price-asc");
+      expect(products.map((p) => p.id)).toEqual(["p1", "p2", "p3"]);
+    });
+
+    it("breaks equal stock by id deterministically", () => {
+      const products = [
+        makeProduct({ id: "b", stock: 7 }),
+        makeProduct({ id: "a", stock: 7 }),
+      ];
+      sortProducts(products, "stock");
+      expect(products.map((p) => p.id)).toEqual(["a", "b"]);
     });
   });
 

@@ -1,6 +1,48 @@
 import { type Product, type SupplierSalesEntry } from '@/hooks/products';
 
 /**
+ * Collator pt-BR único e reutilizável para ordenação alfabética de nomes.
+ *
+ * - `numeric: true`  → "Caneta 2" antes de "Caneta 10" (ordenação natural).
+ * - `sensitivity: 'base'` → ignora caixa e acento na comparação principal
+ *   ("Água"/"agua" tratados de forma consistente), evitando ordem fora de
+ *   lugar para acentuação típica do português.
+ *
+ * Sem isso, `String.localeCompare` sem locale usa o locale default do
+ * ambiente (Node/SSR/test/browser) → ordem não-determinística.
+ */
+const PT_BR_COLLATOR = new Intl.Collator('pt-BR', {
+  numeric: true,
+  sensitivity: 'base',
+});
+
+/** Compara dois nomes usando o collator pt-BR (null/undefined viram ''). */
+export function compareNamePtBR(a?: string | null, b?: string | null): number {
+  return PT_BR_COLLATOR.compare(a || '', b || '');
+}
+
+/**
+ * Comparador estável: ordena por nome (pt-BR) e desempata por `id`.
+ * Garante ordem determinística entre páginas no infinite scroll.
+ */
+function byNameThenId(a: Product, b: Product): number {
+  const byName = compareNamePtBR(a.name, b.name);
+  if (byName !== 0) return byName;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** Desempate final por id, preservando o comparador primário fornecido. */
+function withIdTiebreak(
+  primary: (a: Product, b: Product) => number,
+): (a: Product, b: Product) => number {
+  return (a, b) => {
+    const result = primary(a, b);
+    if (result !== 0) return result;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  };
+}
+
+/**
  * Centralized product sorting logic.
  * Used by both the Catalog (Index) and Super Filter (FiltersPage).
  */
@@ -16,18 +58,25 @@ export function sortProducts(
   if (options?.skipSort) return products;
 
   switch (sortBy) {
+    // BUG-SORT FIX: 'name-asc'/'name-desc' caíam no default (no-op) apesar de
+    // serem valores válidos de ProductFilters.sortBy. Tratados aqui explicitamente.
+    // ('name' e 'name-asc' compartilham o mesmo corpo via fall-through de case vazio.)
     case 'name':
-      products.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    case 'name-asc':
+      products.sort(byNameThenId);
+      break;
+    case 'name-desc':
+      products.sort((a, b) => byNameThenId(b, a));
       break;
 
     case 'price-asc':
-      products.sort((a, b) => a.price - b.price);
+      products.sort(withIdTiebreak((a, b) => a.price - b.price));
       break;
     case 'price-desc':
-      products.sort((a, b) => b.price - a.price);
+      products.sort(withIdTiebreak((a, b) => b.price - a.price));
       break;
     case 'stock':
-      products.sort((a, b) => (b.stock || 0) - (a.stock || 0));
+      products.sort(withIdTiebreak((a, b) => (b.stock || 0) - (a.stock || 0)));
       break;
     case 'newest':
       products.sort((a, b) => {
@@ -36,8 +85,7 @@ export function sortProducts(
         if (bTime !== aTime) return bTime - aTime;
         // Se datas iguais, prioriza os que têm flag newArrival
         if (b.newArrival !== a.newArrival) return b.newArrival ? 1 : -1;
-        return (a.name || '').localeCompare(b.name || '');
-
+        return byNameThenId(a, b);
       });
       break;
     case 'best-seller-supplier': {
@@ -54,8 +102,7 @@ export function sortProducts(
           const aVel = aEntry?.velocity7d ?? 0;
           const bVel = bEntry?.velocity7d ?? 0;
           if (bVel !== aVel) return bVel - aVel;
-          return (a.name || '').localeCompare(b.name || '');
-
+          return byNameThenId(a, b);
         });
       } else {
         // Fallback: flags do produto (quando MV nao populada)
@@ -67,8 +114,7 @@ export function sortProducts(
           const aStock = a.stock || 0;
           const bStock = b.stock || 0;
           if (bStock !== aStock) return bStock - aStock;
-          return (a.name || '').localeCompare(b.name || '');
-
+          return byNameThenId(a, b);
         });
       }
       break;
@@ -89,7 +135,7 @@ export function sortProducts(
         const aCount = map?.get(a.id) || 0;
         const bCount = map?.get(b.id) || 0;
         if (bCount !== aCount) return bCount - aCount;
-        return (a.name || '').localeCompare(b.name || '');
+        return byNameThenId(a, b);
       });
       break;
     default:
