@@ -352,19 +352,24 @@ export const ProductListItem = memo(function ProductListItem({
       >
         {/* Thumbnail — compact square */}
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]">
-          <img
-            src={thumbUrl}
-            alt={product.name}
-            className="h-full w-full object-contain"
-            loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!img.dataset.fallback) {
-                img.dataset.fallback = '1';
-                img.src = product.images[0] || '/placeholder.svg';
-              }
-            }}
-          />
+          <div 
+            key={thumbUrl}
+            className="h-full w-full animate-in fade-in duration-500"
+          >
+            <img
+              src={thumbUrl}
+              alt={product.name}
+              className="h-full w-full object-contain"
+              loading="lazy"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = '1';
+                  img.src = product.images[0] || '/placeholder.svg';
+                }
+              }}
+            />
+          </div>
           {/* Multi-variant dots */}
           {hasMultipleVariants && (
             <div
