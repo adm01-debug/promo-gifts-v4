@@ -63,8 +63,11 @@ BEGIN
 
   -- Purge confirmed-delivered notifications older than 90 days.
   -- Rows with dispatched_at IS NULL are never deleted here.
+  -- Guard is_read = true so unread notifications (inactive users, etc.)
+  -- are never silently discarded before the user has seen them.
   DELETE FROM public.workspace_notifications
   WHERE dispatched_at IS NOT NULL
+    AND is_read = true
     AND created_at < NOW() - INTERVAL '90 days';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
