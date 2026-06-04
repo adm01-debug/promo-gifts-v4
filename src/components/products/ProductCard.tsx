@@ -534,12 +534,9 @@ export const ProductCard = memo(
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
               }
-              const params = new URLSearchParams();
-              params.set('cor', c.name);
-              if (c.hex) params.set('hex', c.hex);
-              const matched = idx >= 0 ? allMatchingVariants[idx] : null;
-              if (matched?.groupSlug) params.set('grupo', matched.groupSlug);
-              navigate(`/produto/${product.id}?${params.toString()}`);
+              // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
+              // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
+              // a exploração de várias cores rapidamente no grid.
             }}
           />
 
