@@ -165,9 +165,13 @@ export const ProductCard = memo(
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        // Prioridade: Seleção manual > Filtro ativo
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlColor = urlParams.get('cor');
+        
+        // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
-          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
