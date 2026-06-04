@@ -119,10 +119,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     price: getProductPrice(p),
     image_url: images[0],
     og_image_url: p.og_image_url || undefined,
-    // `set_image_url` foi removido do tipo PromobrindProduct, mas o BD externo
-    // ainda pode retorná-lo — leitura defensiva sem `any` para preservar o dado.
-    set_image_url:
-      (p as PromobrindProduct & { set_image_url?: string | null }).set_image_url || null,
+    set_image_url: null,
     images,
     sku: p.sku,
     stock,

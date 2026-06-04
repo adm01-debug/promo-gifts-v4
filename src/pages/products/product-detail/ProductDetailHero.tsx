@@ -147,13 +147,7 @@ export function ProductDetailHero({
               hasCommercialPackaging={product.hasCommercialPackaging ?? null}
               packingType={product.packingType ?? null}
               repackingType={product.repackingType ?? null}
-              packagingContext={
-                (product.packagingContext ?? null) as
-                  | 'always'
-                  | 'with_customization'
-                  | 'without_customization'
-                  | null
-              }
+              packagingContext={product.packagingContext ?? null}
               boxWidthMm={product.boxWidthMm}
               boxHeightMm={product.boxHeightMm}
               boxLengthMm={product.boxLengthMm}

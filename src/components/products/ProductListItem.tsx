@@ -467,11 +467,7 @@ export const ProductListItem = memo(function ProductListItem({
                   boxWidthMm: product.boxWidthMm,
                   boxHeightMm: product.boxHeightMm,
                   boxLengthMm: product.boxLengthMm,
-                  packagingContext: product.packagingContext as
-                    | 'always'
-                    | 'with_customization'
-                    | 'without_customization'
-                    | null,
+                  packagingContext: product.packagingContext,
                 }}
                 onClick={() => handleStatusClick('packaging')}
               />

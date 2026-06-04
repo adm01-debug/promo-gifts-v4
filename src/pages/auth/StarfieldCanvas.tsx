@@ -78,9 +78,12 @@ function createStars(count: number, width: number, height: number): Star[] {
   }));
 }
 
-// `mousePos`/`scrollY` permanecem na interface (API pública) mas não são
-// consumidos aqui — não desestruturados para evitar no-unused-vars.
-export function StarfieldCanvas({ density = 150, className }: StarfieldCanvasProps) {
+export function StarfieldCanvas({
+  density = 150,
+  className,
+  mousePos: _mousePos = { x: 0, y: 0 },
+  scrollY: _scrollY = 0,
+}: StarfieldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const starsRef = useRef<Star[]>([]);

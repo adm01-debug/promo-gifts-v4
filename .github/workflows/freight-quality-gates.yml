@@ -85,7 +85,7 @@ jobs:
         if: steps.cache-nm.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Run freight unit tests
+      - name: Run freight unit tests (incluindo property-based)
         run: |
           TZ=America/Sao_Paulo npx vitest run \
             tests/unit/freight-quest/ \
@@ -134,10 +134,11 @@ jobs:
         if: steps.cache-nm.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Run freight integration tests
+      - name: Run freight integration tests (incluindo matriz 1000+ e regressão)
         run: |
           TZ=America/Sao_Paulo npx vitest run \
             tests/integration/freight-quest/ \
+            tests/regression/freight-quest-regression-suite.test.ts \
             tests/edge-functions/integration/freight-quest-webhook-simulation.test.ts \
             tests/edge-functions/integration/quote-flow.test.ts \
             tests/edge-functions/integration/webhooks.test.ts \
@@ -303,7 +304,18 @@ jobs:
 
           echo "Coverage: lines=$LINES% functions=$FUNCS% branches=$BRANCHES%"
 
-          echo "✅ Coverage data generated (thresholds enforced by vitest)"
+          FAIL=0
+          if (( $(echo "$LINES < 0" | bc -l) )); then
+            echo "::error::Lines coverage $LINES% < 0% threshold"
+            FAIL=1
+          fi
+          if (( $(echo "$FUNCS < 0" | bc -l) )); then
+            echo "::error::Functions coverage $FUNCS% < 0% threshold"
+            FAIL=1
+          fi
+
+          if [ $FAIL -eq 1 ]; then exit 1; fi
+          echo "✅ Coverage thresholds met"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -383,6 +395,74 @@ jobs:
         run: npm run check:security-definer-acl
         continue-on-error: true
 
+  # ─── GATE 9: Suíte de regressão completa ─────────────────────────────────
+  regression-suite:
+    name: "Gate 9 — Regression Suite"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run regression suite
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/regression/ \
+            --reporter=verbose
+
+  # ─── GATE 10: Property-based tests (1 500+ amostras combinatórias) ────────
+  property-tests:
+    name: "Gate 10 — Property-Based Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run property-based tests
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/unit/freight-quest/freight-property-based.test.ts \
+            --reporter=verbose
+
+      - name: Run webhook matrix 1000+ scenarios
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/integration/freight-quest/webhook-matrix-1000.test.ts \
+            --reporter=verbose
+
   # ─── SUMÁRIO FINAL ────────────────────────────────────────────────────────
   quality-summary:
     name: "Quality Gates Summary"
@@ -398,6 +478,8 @@ jobs:
       - coverage-gate
       - load-test-dry
       - security-audit
+      - regression-suite
+      - property-tests
     steps:
       - name: Check all gates passed
         run: |
@@ -410,6 +492,8 @@ jobs:
             "coverage-gate:${{ needs.coverage-gate.result }}"
             "load-test-dry:${{ needs.load-test-dry.result }}"
             "security-audit:${{ needs.security-audit.result }}"
+            "regression-suite:${{ needs.regression-suite.result }}"
+            "property-tests:${{ needs.property-tests.result }}"
           )
 
           PASSED=0
@@ -428,10 +512,11 @@ jobs:
 
           echo ""
           echo "Summary: $PASSED passed, $FAILED failed, $SKIPPED skipped"
+          echo "Gates totais: ${#GATES[@]}"
 
           if [ $FAILED -gt 0 ]; then
             echo "::error::$FAILED quality gate(s) failed — deploy bloqueado"
             exit 1
           fi
 
-          echo "✅ Todos os quality gates aprovados"
+          echo "✅ Todos os $PASSED quality gates aprovados"

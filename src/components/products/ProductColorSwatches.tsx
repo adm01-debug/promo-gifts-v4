@@ -52,14 +52,15 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-[16px] w-[16px]',
-  sm: 'h-[20px] w-[20px]',
-  md: 'h-[25px] w-[25px]',
+  xs: 'h-[var(--swatch-size-xs)] w-[var(--swatch-size-xs)]',
+  sm: 'h-[var(--swatch-size-sm)] w-[var(--swatch-size-sm)]',
+  md: 'h-[var(--swatch-size-md)] w-[var(--swatch-size-md)]',
 };
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
   colors,
-  max = 5,
+  // `max` permanece na interface (API pública) mas não é mais consumido —
+  // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
   size = 'sm',
   className,
   hideWhenEmpty = true,
@@ -71,12 +72,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   if (colors === undefined) {
     return (
       <div
-        className={cn('flex min-h-[16px] items-center gap-1', className)}
+        className={cn(
+          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+          className,
+        )}
         aria-busy="true"
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
       >
-        {[...Array(3)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
             className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
@@ -103,13 +107,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     );
   }
 
-  const visible = colors.slice(0, max);
-  const overflow = colors.length - visible.length;
+  const visible = colors;
   const normalizedSelected = selectedName?.toLowerCase() ?? null;
 
   return (
     <div
-      className={cn('flex min-h-[25px] flex-wrap items-center gap-1.5', className)}
+      className={cn(
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+        className,
+      )}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -156,66 +162,16 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
             <TooltipContent
               id={tooltipId}
               side="top"
-              className="text-xs"
+              className="flex flex-col gap-0.5 p-2 text-xs"
               role="tooltip"
               data-testid="color-tooltip-content"
             >
-              {c.name}
+              <span className="font-bold">{c.name}</span>
+              {c.hex && <span className="text-[10px] uppercase opacity-70">{c.hex}</span>}
             </TooltipContent>
           </Tooltip>
         );
       })}
-      {overflow > 0 && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="ml-0.5 rounded-sm px-0.5 text-[12px] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
-              data-testid="color-swatch-overflow"
-              onClick={(e) => {
-                // Ao clicar no +N sem uma cor específica, navegamos para o PDP padrão
-                // O evento de clique do card pai cuidará da navegação se não pararmos aqui.
-                // Mas queremos permitir que o usuário veja a lista primeiro.
-                e.stopPropagation();
-              }}
-            >
-              +{overflow}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent
-            side="top"
-            className="flex flex-col gap-1.5 p-2"
-            role="tooltip"
-            data-testid="color-overflow-tooltip"
-          >
-            <p className="mb-1 border-b border-border/40 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Mais {overflow} cor{overflow === 1 ? '' : 'es'}
-            </p>
-            <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto">
-              {colors.slice(max).map((c, idx) => (
-                <button
-                  key={`${c.name}-${idx}`}
-                  type="button"
-                  className="flex items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] transition-colors hover:bg-muted"
-                  data-testid={`color-swatch-hidden-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  onClick={(e) => {
-                    if (!onSelect) return;
-                    e.stopPropagation();
-                    onSelect(c, max + idx);
-                  }}
-                >
-                  <div
-                    className="h-2.5 w-2.5 rounded-full border border-border/40"
-                    style={{ backgroundColor: c.hex || 'transparent' }}
-                  />
-                  <span>{c.name}</span>
-                </button>
-              ))}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      )}
     </div>
   );
 });
