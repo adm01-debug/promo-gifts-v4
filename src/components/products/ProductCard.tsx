@@ -509,7 +509,7 @@ export const ProductCard = memo(
         {/* Info section */}
         <div
           className={cn(
-            'relative space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
+            'relative flex flex-1 flex-col space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
             isHovered ? 'translate-y-[-2px] bg-background' : 'bg-background',
           )}
           style={{ zIndex: 10 }}
