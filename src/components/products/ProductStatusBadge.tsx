@@ -18,6 +18,14 @@ export type ProductStatusBadgeType =
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
+interface PackagingMetadata {
+  packingType?: string | null;
+  boxWidthMm?: number | null;
+  boxHeightMm?: number | null;
+  boxLengthMm?: number | null;
+  packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
+}
+
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
   urgencyType?: UrgencyType;
@@ -27,6 +35,7 @@ interface ProductStatusBadgeProps {
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
   showTooltip?: boolean;
+  packagingMetadata?: PackagingMetadata;
 }
 
 export function ProductStatusBadge({
