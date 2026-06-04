@@ -357,11 +357,13 @@ export const ProductCard = memo(
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
 
     const cardImageUrl = effectiveImageUrl !== '/placeholder.svg' ? getCdnUrl(effectiveImageUrl, 'card') : '/placeholder.svg';
+    const hasNoImage = effectiveImageUrl === '/placeholder.svg';
+    
     const cardSrcSet = (effectiveImageUrl !== '/placeholder.svg' && (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0]))
       ? getSrcSet(effectiveImageUrl)
       : undefined;
 
-    const colorSpecificImage = currentImageUrl;
+    const colorSpecificImage = effectiveImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
