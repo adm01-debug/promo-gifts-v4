@@ -109,7 +109,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex items-center gap-1.5 min-h-[22px]', className)}
+      className={cn('flex items-center gap-1.5 min-h-[25px]', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
