@@ -238,6 +238,7 @@ export function SupplierFormDialog({
                 </Label>
                 <Input
                   value={editingSupplier.code || ''}
+                  data-testid="admin-code-input"
                   onChange={(e) => updateField('code', e.target.value)}
                   className={`${fieldClass} font-mono uppercase`}
                 />
@@ -1017,7 +1018,13 @@ export function SupplierFormDialog({
           <Button variant="ghost" size="sm" onClick={() => setEditingSupplier(null)}>
             Cancelar
           </Button>
-          <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5">
+          <Button
+            size="sm"
+            disabled={saving}
+            onClick={handleSave}
+            data-testid="admin-save-btn"
+            className="gap-1.5"
+          >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
