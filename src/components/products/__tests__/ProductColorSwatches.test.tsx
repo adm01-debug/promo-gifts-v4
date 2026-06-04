@@ -45,4 +45,22 @@ describe('ProductColorSwatches', () => {
     fireEvent.click(screen.getByLabelText('Opção de cor: Azul'));
     expect(onSelect).toHaveBeenCalledWith(mockColors[1], 1);
   });
+
+  it('should respect color from URL query param for initial highlight', () => {
+    // Mock window.location
+    const originalLocation = window.location;
+    delete (window as any).location;
+    (window as any).location = { search: '?cor=Azul' };
+
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={mockColors} />
+      </TooltipProvider>
+    );
+    
+    const selectedSwatch = screen.getByLabelText('Opção de cor: Azul');
+    expect(selectedSwatch.className).toContain('ring-primary');
+    
+    window.location = originalLocation;
+  });
 });

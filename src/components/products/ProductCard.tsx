@@ -128,8 +128,9 @@ export const ProductCard = memo(
 
     // Efeito para simular loading ao trocar de cor
     useEffect(() => {
+      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento
       setIsUpdatingColor(true);
-      const timer = setTimeout(() => setIsUpdatingColor(false), 300);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 350);
       return () => clearTimeout(timer);
     }, [activeVariantIdx]);
 
@@ -173,8 +174,9 @@ export const ProductCard = memo(
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlColor = urlParams.get('cor');
+        // Resolve URL param de forma estável
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const urlColor = urlParams?.get('cor');
         
         // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
@@ -185,11 +187,12 @@ export const ProductCard = memo(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
           );
           if (idx >= 0 && idx !== activeVariantIdx) {
+            // Sincroniza sem transição forçada se for o carregamento inicial
             setActiveVariantIdx(idx);
           }
         }
       }
-    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -581,8 +584,8 @@ export const ProductCard = memo(
               <div 
                 key={activeColorName || 'default'}
                 className={cn(
-                  "flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1 transition-opacity",
-                  isUpdatingColor ? "opacity-40" : "opacity-100"
+                  "flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1 transition-all",
+                  isUpdatingColor ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                 )}
               >
                 <div>
