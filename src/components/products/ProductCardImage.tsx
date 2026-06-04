@@ -219,6 +219,15 @@ export const ProductCardImage = memo(function ProductCardImage({
           />
         )}
 
+        {hasPackaging && (
+          <ProductStatusBadge
+            type="packaging"
+            size="sm"
+            value="Embalagem"
+            onClick={() => onStatusClick?.('packaging')}
+          />
+        )}
+
         {stockStatus === 'unavailable' && (
           <Badge
             variant="destructive"
