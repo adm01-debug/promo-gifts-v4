@@ -588,7 +588,10 @@ export const ProductCard = memo(
             return (
               <div 
                 key={activeColorName || 'default'}
-                className="flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1"
+                className={cn(
+                  "flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1 transition-opacity",
+                  isUpdatingColor ? "opacity-40" : "opacity-100"
+                )}
               >
                 <div>
                   <p className="mb-0.5 text-[10px] font-medium text-muted-foreground opacity-70 sm:text-[11px]">
