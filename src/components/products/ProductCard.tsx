@@ -560,6 +560,11 @@ export const ProductCard = memo(
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
+
+                // Persiste a cor na URL sem forçar navegação completa
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('cor', c.name);
+                window.history.replaceState({}, '', currentUrl.toString());
               }
               // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
               // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
