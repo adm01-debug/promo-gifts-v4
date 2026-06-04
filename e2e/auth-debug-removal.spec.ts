@@ -47,9 +47,7 @@ test.describe('Remoção do Card de Debug na Tela de Login', () => {
    * MOBILE VIEWPORT TESTS
    */
   test.describe('Mobile Viewport', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { defaultBrowserType: _dbt, ...iphone13Config } = devices['iPhone 13'];
-    test.use(iphone13Config);
+    test.use({ viewport: devices['iPhone 13'].viewport, isMobile: true, hasTouch: true });
 
     test('não deve exibir card de debug em mobile (iPhone 13)', async ({ page }) => {
       for (const selector of DEBUG_SELECTORS) {

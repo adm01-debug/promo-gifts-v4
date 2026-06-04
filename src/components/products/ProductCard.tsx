@@ -145,10 +145,20 @@ export const ProductCard = memo(
     // runtime com "Cannot access 'allMatchingVariants' before initialization"
     // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
     // primeiro uso.
-    const allMatchingVariants = useMemo(
-      () => resolveAllMatchingColors(product.colors, activeColorFilter),
-      [product.colors, activeColorFilter],
-    );
+    const allMatchingVariants = useMemo(() => {
+      const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
+      // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
+      if (matches.length === 0 && product.colors) {
+        return product.colors.map((c) => ({
+          name: c.name,
+          hex: c.hex || '#888',
+          image: c.images?.[0] || c.image,
+          groupSlug: c.groupSlug,
+          variationSlug: c.variationSlug,
+        }));
+      }
+      return matches;
+    }, [product.colors, activeColorFilter]);
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
@@ -317,16 +327,38 @@ export const ProductCard = memo(
       resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
     const hasHighlightedColor = !!matchedHighlightColor;
 
-    const variantImage = currentVariant?.image;
-    const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
-    const rawImageUrl = colorSpecificImage || product.og_image_url || product.images[0] || null;
-    const cardImageUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
-    const cardSrcSet = colorSpecificImage
-      ? undefined
-      : rawImageUrl
-        ? getSrcSet(rawImageUrl)
-        : undefined;
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
+    const _activeColorHex = currentVariant?.hex || null;
+
+    // Se houver uma cor ativa (selecionada ou filtrada), forçamos a imagem dessa cor
+    const currentImageUrl = useMemo(() => {
+      // Prioridade 1: Imagem da variante atual do carrossel/seleção
+      if (currentVariant?.image) return currentVariant.image;
+
+      // Prioridade 2: Resolver por filtro de cor (se houver)
+      const filteredImg = resolveColorImage(product, activeColorFilter);
+      if (filteredImg) return filteredImg;
+
+      // Prioridade 3: Se tivermos apenas o nome da cor (ex: seleção manual via swatch)
+      if (activeColorName) {
+        const colorMatch = product.colors?.find(
+          (c) => c.name.toLowerCase() === activeColorName.toLowerCase(),
+        );
+        const matchedImg = colorMatch ? colorMatch.images?.[0] || colorMatch.image : null;
+        if (matchedImg) return matchedImg;
+      }
+
+      // Fallback
+      return product.og_image_url || product.images[0] || null;
+    }, [product, activeColorFilter, currentVariant, activeColorName]);
+
+    const cardImageUrl = currentImageUrl ? getCdnUrl(currentImageUrl, 'card') : '/placeholder.svg';
+    const cardSrcSet =
+      currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
+        ? getSrcSet(currentImageUrl)
+        : undefined;
+
+    const colorSpecificImage = currentImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
@@ -520,17 +552,14 @@ export const ProductCard = memo(
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
               }
-              const params = new URLSearchParams();
-              params.set('cor', c.name);
-              if (c.hex) params.set('hex', c.hex);
-              const matched = idx >= 0 ? allMatchingVariants[idx] : null;
-              if (matched?.groupSlug) params.set('grupo', matched.groupSlug);
-              navigate(`/produto/${product.id}?${params.toString()}`);
+              // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
+              // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
+              // a exploração de várias cores rapidamente no grid.
             }}
           />
 
           {(() => {
-            const colorStock = resolveColorStock(product, activeColorFilter);
+            const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
             const displayStock = colorStock?.stock ?? product.stock;
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             return (
