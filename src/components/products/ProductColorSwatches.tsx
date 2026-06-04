@@ -153,11 +153,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
             <TooltipContent
               id={tooltipId}
               side="top"
-              className="text-xs"
+              className="flex flex-col gap-0.5 p-2 text-xs"
               role="tooltip"
               data-testid="color-tooltip-content"
             >
-              {c.name}
+              <span className="font-bold">{c.name}</span>
+              {c.hex && <span className="text-[10px] opacity-70 uppercase">{c.hex}</span>}
             </TooltipContent>
           </Tooltip>
         );
