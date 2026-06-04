@@ -146,7 +146,20 @@ export const ProductCard = memo(
     // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
     // primeiro uso.
     const allMatchingVariants = useMemo(
-      () => resolveAllMatchingColors(product.colors, activeColorFilter),
+      () => {
+        const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
+        // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
+        if (matches.length === 0 && product.colors) {
+          return product.colors.map(c => ({
+            name: c.name,
+            hex: c.hex || '#888',
+            image: c.images?.[0] || c.image,
+            groupSlug: c.groupSlug,
+            variationSlug: c.variationSlug
+          }));
+        }
+        return matches;
+      },
       [product.colors, activeColorFilter],
     );
 
