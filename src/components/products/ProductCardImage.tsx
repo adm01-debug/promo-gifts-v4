@@ -70,6 +70,8 @@ interface ProductCardImageProps {
   priority?: boolean;
   /** Called when the user clicks a status/badge pill */
   onStatusClick?: (type: string) => void;
+  /** Whether a color update is in progress (shows loading state) */
+  isUpdatingColor?: boolean;
 }
 
 export const ProductCardImage = memo(function ProductCardImage({
