@@ -1,7 +1,10 @@
 {
-  "generatedAt": "2026-06-03T15:31:47.576Z",
-  "totalErrors": 93,
+  "generatedAt": "2026-06-04T17:47:48.392Z",
+  "totalErrors": 94,
   "counts": {
+    "src/utils/product-mapper.ts": {
+      "TS2551": 2
+    },
     "src/components/admin/ProductPersonalizationManager.tsx": {
       "TS2345": 1,
       "TS2551": 1
@@ -125,9 +128,6 @@
     },
     "src/pages/admin/StorageTestPage.tsx": {
       "TS18046": 11
-    },
-    "src/pages/filters/useFiltersPageState.ts": {
-      "TS2353": 1
     },
     "src/pages/products/FavoritesPage.tsx": {
       "TS2322": 2
