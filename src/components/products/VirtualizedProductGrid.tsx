@@ -92,19 +92,18 @@ export function VirtualizedProductGrid({
   const rowCount = Math.ceil(products.length / effectiveColumns);
   const estimatedRowHeight =
     viewMode === 'list'
-      ? 88 // compact list item height
-      : effectiveColumns >= 8
-        ? 420
-        : effectiveColumns >= 6
-          ? 460
-          : 520;
+      ? 88 // Altura fixa do ListItem (88px)
+      : 480; // Altura média do Grid Card (pode variar ligeiramente por zoom)
 
   const virtualizer = useVirtualizer({
     count: hasMore ? rowCount + 1 : rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => estimatedRowHeight,
+    estimateSize: (index) => {
+      // O loader row pode ter altura diferente
+      if (hasMore && index === rowCount) return 80;
+      return estimatedRowHeight;
+    },
     overscan: viewMode === 'list' ? 10 : 5,
-    measureElement: (el) => el.getBoundingClientRect().height,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
