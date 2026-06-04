@@ -90,9 +90,9 @@ export function PackagingBadge({
   );
 
   return (
-    <Tooltip>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>{badge}</TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[200px]">
+      <TooltipContent side="top" className="max-w-[200px] pointer-events-none">
         <div className="space-y-1.5 text-xs">
           <p className="font-semibold text-foreground">Embalagem {displayType}</p>
           <div className="grid gap-1 text-[10px] text-muted-foreground">

@@ -327,9 +327,9 @@ export function ProductStatusBadge({
   const tooltipContent = getTooltipContent();
   if (showTooltip && tooltipContent) {
     return (
-      <Tooltip>
+      <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>{badge}</TooltipTrigger>
-        <TooltipContent side="top">{tooltipContent}</TooltipContent>
+        <TooltipContent side="top" className="pointer-events-none">{tooltipContent}</TooltipContent>
       </Tooltip>
     );
   }
