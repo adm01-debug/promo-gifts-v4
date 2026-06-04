@@ -12,8 +12,8 @@
  *
  *  Tamanho dos dots por preset (use `size`):
  *    - `xs`  → h-2.5 w-2.5 (10×10px) — densidades muito apertadas (Novidades cards-2)
- *    - `sm`  → h-3   w-3   (12×12px) — DEFAULT, usado no grid de Catálogo
- *    - `md`  → h-4   w-4   (16×16px) — listas e tabelas
+ *    - `sm`  → h-[17px] w-[17px] (aprox. 12px + 40%) — DEFAULT, usado no grid de Catálogo
+ *    - `md`  → h-[22px] w-[22px] (aprox. 16px + 40%) — listas e tabelas
  *
  *  Espaçamento horizontal: `gap-0.5` (2px) entre dots — mantém alinhamento óptico
  *  com o `+N` overflow (`text-[10px]`) sem competir com o nome (sm:text-base) e
@@ -52,9 +52,9 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-2.5 w-2.5',
-  sm: 'h-3 w-3',
-  md: 'h-4 w-4',
+  xs: 'h-[14px] w-[14px]',
+  sm: 'h-[17px] w-[17px]',
+  md: 'h-[22px] w-[22px]',
 };
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
@@ -109,7 +109,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
+      className={cn('flex items-center gap-1.5 min-h-[22px]', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -168,7 +168,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              className="ml-0.5 text-[11px] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
               onClick={(e) => {
