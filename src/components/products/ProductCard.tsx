@@ -145,23 +145,20 @@ export const ProductCard = memo(
     // runtime com "Cannot access 'allMatchingVariants' before initialization"
     // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
     // primeiro uso.
-    const allMatchingVariants = useMemo(
-      () => {
-        const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
-        // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
-        if (matches.length === 0 && product.colors) {
-          return product.colors.map(c => ({
-            name: c.name,
-            hex: c.hex || '#888',
-            image: c.images?.[0] || c.image,
-            groupSlug: c.groupSlug,
-            variationSlug: c.variationSlug
-          }));
-        }
-        return matches;
-      },
-      [product.colors, activeColorFilter],
-    );
+    const allMatchingVariants = useMemo(() => {
+      const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
+      // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
+      if (matches.length === 0 && product.colors) {
+        return product.colors.map((c) => ({
+          name: c.name,
+          hex: c.hex || '#888',
+          image: c.images?.[0] || c.image,
+          groupSlug: c.groupSlug,
+          variationSlug: c.variationSlug,
+        }));
+      }
+      return matches;
+    }, [product.colors, activeColorFilter]);
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
@@ -331,21 +328,22 @@ export const ProductCard = memo(
     const hasHighlightedColor = !!matchedHighlightColor;
 
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
-    const activeColorHex = currentVariant?.hex || null;
 
     // Se houver uma cor ativa (selecionada ou filtrada), forçamos a imagem dessa cor
     const currentImageUrl = useMemo(() => {
       // Prioridade 1: Imagem da variante atual do carrossel/seleção
       if (currentVariant?.image) return currentVariant.image;
-      
+
       // Prioridade 2: Resolver por filtro de cor (se houver)
       const filteredImg = resolveColorImage(product, activeColorFilter);
       if (filteredImg) return filteredImg;
 
       // Prioridade 3: Se tivermos apenas o nome da cor (ex: seleção manual via swatch)
       if (activeColorName) {
-        const colorMatch = product.colors?.find(c => c.name.toLowerCase() === activeColorName.toLowerCase());
-        const matchedImg = colorMatch ? (colorMatch.images?.[0] || colorMatch.image) : null;
+        const colorMatch = product.colors?.find(
+          (c) => c.name.toLowerCase() === activeColorName.toLowerCase(),
+        );
+        const matchedImg = colorMatch ? colorMatch.images?.[0] || colorMatch.image : null;
         if (matchedImg) return matchedImg;
       }
 
@@ -354,9 +352,10 @@ export const ProductCard = memo(
     }, [product, activeColorFilter, currentVariant, activeColorName]);
 
     const cardImageUrl = currentImageUrl ? getCdnUrl(currentImageUrl, 'card') : '/placeholder.svg';
-    const cardSrcSet = currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
-      ? getSrcSet(currentImageUrl)
-      : undefined;
+    const cardSrcSet =
+      currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
+        ? getSrcSet(currentImageUrl)
+        : undefined;
 
     const colorSpecificImage = currentImageUrl;
 
