@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye } from 'lucide-react';
+import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift } from 'lucide-react';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
