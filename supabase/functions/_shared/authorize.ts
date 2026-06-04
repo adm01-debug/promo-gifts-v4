@@ -76,38 +76,6 @@ export async function authorize(
   }
 
   const token = authHeader.slice(7).trim();
-  
-  // SEC-003: Allow service_role bypass for system/testing
-  if (token === SERVICE_KEY || (token.startsWith("sb_") && SERVICE_KEY.startsWith("sb_") && token === SERVICE_KEY)) {
-    const isInternal = req.headers.get("X-Internal-Call") === "true";
-    
-    // Se for a service role mas sem a flag de call interno, negamos explicitamente
-    // para garantir consistência em testes de segurança que usam a service key
-    // para verificar se o endpoint está realmente protegido.
-    if (!isInternal) {
-      return {
-        ok: false,
-        response: jsonResponse(
-          { 
-            error: "unauthorized_service_role", 
-            message: "Internal flag required for service_role bypass. Access denied to service_role without X-Internal-Call header.",
-            allowed: false 
-          },
-          401,
-          corsHeaders,
-        ),
-      };
-    }
-
-    return {
-      ok: true,
-      user: { id: "system", email: "system@lovable.local" },
-      role: "dev",
-      token,
-      supabaseUser: createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } }),
-      supabaseAdmin: createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } }),
-    };
-  }
 
   if (!token) {
     return {

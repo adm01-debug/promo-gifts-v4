@@ -24,6 +24,8 @@ interface ProductsContextType {
   /** Cached products (only those that have been requested) */
   products: Product[];
   isLoading: boolean;
+  /** Last fetch error, null when no error. Cleared on next successful fetch. */
+  fetchError: Error | null;
   getProductById: (id: string) => Product | undefined;
   getProductsByIds: (ids: string[]) => Product[];
   /** Manually register products into the cache (e.g. from page-level queries) */
@@ -41,6 +43,7 @@ export const ProductsContext = createContext<ProductsContextType | undefined>(un
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<Map<string, Product>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<Error | null>(null);
   const [key, setKey] = useState(0); // Force re-mount key
 
   // HMR Recovery: If we detect a duplicate module via Global Symbol, force a re-mount
@@ -96,6 +99,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         const mapped = raw.map(mapPromobrindToProduct);
 
         if (mountedRef.current) {
+          setFetchError(null);
           setCache((prev) => {
             const next = new Map(prev);
             mapped.forEach((p) => next.set(p.id, p));
@@ -104,6 +108,9 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         logger.warn('[ProductsContext] Failed to fetch products by IDs:', err);
+        if (mountedRef.current) {
+          setFetchError(err instanceof Error ? err : new Error(String(err)));
+        }
       } finally {
         idsToFetch.forEach((id) => fetchingRef.current.delete(id));
         if (mountedRef.current) setIsLoading(false);
@@ -182,7 +189,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   return (
     <ProductsContext.Provider
       key={key}
-      value={{ products, isLoading, getProductById, getProductsByIds, registerProducts }}
+      value={{ products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts }}
     >
       {children}
     </ProductsContext.Provider>
@@ -198,6 +205,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 const FALLBACK_CONTEXT: ProductsContextType = {
   products: [],
   isLoading: false,
+  fetchError: null,
   getProductById: () => undefined,
   getProductsByIds: () => [],
   registerProducts: () => {},
