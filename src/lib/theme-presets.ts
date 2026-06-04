@@ -1024,7 +1024,7 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
   if (preset.font) {
     root.style.setProperty('--font-sans', preset.font);
     root.style.setProperty('--font-display', preset.font);
-  } else {
+  } else if (root.style.getPropertyValue('--font-sans') !== DEFAULT_FONT_SANS) {
     root.style.setProperty('--font-sans', DEFAULT_FONT_SANS);
     root.style.setProperty('--font-display', DEFAULT_FONT_DISPLAY);
   }
