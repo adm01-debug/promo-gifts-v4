@@ -234,6 +234,13 @@ export function ProductStatusBadge({
             <p className="text-muted-foreground">Selecionado pela nossa curadoria</p>
           </div>
         );
+      case 'packaging':
+        return (
+          <div className="text-sm">
+            <p className="font-semibold">🎁 Embalagem Especial</p>
+            <p className="text-muted-foreground">Este produto possui opções de embalagem configuradas.</p>
+          </div>
+        );
       default:
         return null;
     }
