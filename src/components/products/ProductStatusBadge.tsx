@@ -244,16 +244,14 @@ export function ProductStatusBadge({
             <p className="text-muted-foreground">Selecionado pela nossa curadoria</p>
           </div>
         );
-      case 'packaging':
+      case 'packaging': {
         const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } = packagingMetadata || {};
         const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
-        
         const contextLabels: Record<string, string> = {
           always: 'Sempre disponível',
           with_customization: 'Com personalização',
           without_customization: 'Sem personalização',
         };
-
         return (
           <div className="space-y-1.5 p-1 text-sm">
             <div className="flex items-center gap-2">
@@ -279,6 +277,7 @@ export function ProductStatusBadge({
             </div>
           </div>
         );
+      }
       default:
         return null;
     }
@@ -315,7 +314,7 @@ export function ProductStatusBadge({
           if (onClick) {
             e.preventDefault();
             e.stopPropagation();
-            onClick(e as any);
+            onClick(e as unknown as React.MouseEvent);
           }
         }
       }}
