@@ -59,15 +59,15 @@ export function AppLogo({
         <div className="flex flex-col">
           <span
             className={cn(
-              'font-display text-[18px] font-black uppercase leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-[24px]',
+              'font-display text-[22px] font-black uppercase leading-[1.1] tracking-tight text-foreground drop-shadow-sm sm:text-[29px]',
               textClassName,
             )}
           >
-            Promo Brindes
+            PROMO BRINDES
           </span>
           <span
             className={cn(
-              'mt-1 flex items-center gap-1 text-[9px] font-bold leading-tight tracking-[0.2em] text-primary/90 drop-shadow-sm sm:gap-1.5 sm:text-[11px] sm:tracking-[0.25em]',
+              'mt-1 flex items-center gap-1 text-[9px] font-bold leading-relaxed tracking-[0.2em] text-primary/90 drop-shadow-sm sm:gap-1.5 sm:text-[11px] sm:tracking-[0.25em]',
             )}
           >
             Plataforma de Produtos
