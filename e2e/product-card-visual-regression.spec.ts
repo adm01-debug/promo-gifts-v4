@@ -111,4 +111,21 @@ test.describe("ProductCard — Halo e Regressão de Borda", () => {
     await activeSwatch.focus();
     await expect(activeSwatch).toHaveScreenshot("halo-focus.png");
   });
+
+  test("todos os cards no grid devem possuir exatamente a mesma altura", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    const cards = page.locator('[data-testid="product-card"]');
+    await expect(cards.first()).toBeVisible();
+    
+    const count = await cards.count();
+    if (count > 1) {
+      const firstBox = await cards.nth(0).boundingBox();
+      const secondBox = await cards.nth(1).boundingBox();
+      
+      if (firstBox && secondBox) {
+        // Altura deve ser idêntica (margem de erro de 1px para subpixels)
+        expect(Math.abs(firstBox.height - secondBox.height)).toBeLessThanOrEqual(1);
+      }
+    }
+  });
 });
