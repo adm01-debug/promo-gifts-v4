@@ -28,18 +28,16 @@ export interface ExternalCollection {
   id: string;
   user_id: string;
   name: string;
-  slug?: string;
   description?: string | null;
-  image_url?: string | null;
-  banner_url?: string | null;
-  color?: string | null;
   icon?: string | null;
   icon_color?: string | null;
-  is_active?: boolean;
+  is_deleted?: boolean;
   is_featured?: boolean;
-  display_order?: number;
-  starts_at?: string | null;
-  ends_at?: string | null;
+  is_public?: boolean;
+  client_id?: string | null;
+  client_name?: string | null;
+  share_token?: string | null;
+  share_expires_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -61,7 +59,11 @@ export function useExternalCollections() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await untypedFrom('collections').select('*').limit(100);
+      // is_deleted é a coluna real de soft-delete (is_active não existe — ver types.ts).
+      const { data, error } = await untypedFrom('collections')
+        .select('*')
+        .eq('is_deleted', false)
+        .limit(100);
 
       if (error) {
         const isGone = error.message?.includes('410') || error.message?.includes('Gone');
@@ -78,7 +80,7 @@ export function useExternalCollections() {
         throw error;
       }
 
-      return (data || []).filter((c) => c.is_active !== false);
+      return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -130,7 +132,7 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
       }
 
       const counts = new Map<string, number>();
-      for (const r of data || []) {
+      for (const r of (data || []) as unknown as { collection_id: string; product_id: string }[]) {
         counts.set(r.collection_id, (counts.get(r.collection_id) || 0) + 1);
       }
       return counts;
@@ -148,16 +150,10 @@ export function useExternalCollectionMutations() {
 
   const createCollection = useMutation({
     mutationFn: async (data: Partial<ExternalCollection>) => {
-      const slug =
-        data.name
-          ?.toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '') || `col-${Date.now()}`;
       const { data: inserted, error } = await untypedFrom('collections')
         .insert({
           ...data,
-          slug,
-          is_active: true,
+          is_deleted: false,
         })
         .select()
         .single();

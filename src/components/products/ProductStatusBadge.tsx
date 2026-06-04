@@ -245,7 +245,8 @@ export function ProductStatusBadge({
           </div>
         );
       case 'packaging': {
-        const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } = packagingMetadata || {};
+        const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } =
+          packagingMetadata || {};
         const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
         const contextLabels: Record<string, string> = {
           always: 'Sempre disponível',
@@ -271,7 +272,8 @@ export function ProductStatusBadge({
               )}
               {packagingContext && contextLabels[packagingContext] && (
                 <p>
-                  <span className="font-medium text-foreground">Regra:</span> {contextLabels[packagingContext]}
+                  <span className="font-medium text-foreground">Regra:</span>{' '}
+                  {contextLabels[packagingContext]}
                 </p>
               )}
             </div>
@@ -288,14 +290,16 @@ export function ProductStatusBadge({
       tabIndex={0}
       role={isClickable ? 'button' : 'status'}
       aria-label={
-        type === 'packaging' 
-          ? 'Produto com embalagem especial configurada. Ver detalhes.' 
-          : typeof value === 'string' ? value : String(type)
+        type === 'packaging'
+          ? 'Produto com embalagem especial configurada. Ver detalhes.'
+          : typeof value === 'string'
+            ? value
+            : String(type)
       }
       className={cn(
         'inline-flex items-center rounded-full font-semibold transition-all duration-300',
         'group-hover:scale-105 group-hover:shadow-lg',
-        'hover:brightness-110 active:scale-95 will-change-transform',
+        'will-change-transform hover:brightness-110 active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
@@ -328,7 +332,9 @@ export function ProductStatusBadge({
     return (
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>{badge}</TooltipTrigger>
-        <TooltipContent side="top" className="pointer-events-none">{tooltipContent}</TooltipContent>
+        <TooltipContent side="top" className="pointer-events-none">
+          {tooltipContent}
+        </TooltipContent>
       </Tooltip>
     );
   }

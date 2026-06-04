@@ -63,7 +63,7 @@ describe('useCatalogFiltering', () => {
         hasCategoryFilter: false,
         categoryFilteredProductIds: new Set(),
         isLoadingCategoryFilter: false,
-      })
+      }),
     );
 
     expect(result.current).toHaveLength(1);
@@ -89,7 +89,7 @@ describe('useCatalogFiltering', () => {
         hasCategoryFilter: false,
         categoryFilteredProductIds: new Set(),
         isLoadingCategoryFilter: false,
-      })
+      }),
     );
 
     expect(result.current).toHaveLength(2);

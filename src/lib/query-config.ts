@@ -198,8 +198,6 @@ export const STABLE_DATA_QUERY_OPTIONS = {
   refetchOnMount: false,
 } as const;
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // BI / Intelligence query options — dashboards analíticos
 // Cache de 5 min evita refetch completo a cada navegação para páginas de BI.

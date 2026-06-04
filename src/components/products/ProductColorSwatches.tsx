@@ -59,7 +59,8 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
   colors,
-  max = 5,
+  // `max` permanece na interface (API pública) mas não é mais consumido —
+  // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
   size = 'sm',
   className,
   hideWhenEmpty = true,
@@ -71,7 +72,10 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   if (colors === undefined) {
     return (
       <div
-        className={cn('flex flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] min-h-[var(--swatch-size-sm)]', className)}
+        className={cn(
+          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+          className,
+        )}
         aria-busy="true"
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
@@ -89,11 +93,16 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   if (colors.length === 0) {
     if (hideWhenEmpty) {
-      return <div className={cn('min-h-[var(--swatch-size-sm)]', className)} data-testid="colors-empty-hidden" />;
+      return (
+        <div
+          className={cn('min-h-[var(--swatch-size-sm)]', className)}
+          data-testid="colors-empty-hidden"
+        />
+      );
     }
     return (
       <span
-        className="text-[10px] text-muted-foreground/60 italic min-h-[var(--swatch-size-sm)] flex items-center"
+        className="flex min-h-[var(--swatch-size-sm)] items-center text-[10px] italic text-muted-foreground/60"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
@@ -108,7 +117,10 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] min-h-[var(--swatch-size-sm)]', className)}
+      className={cn(
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+        className,
+      )}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -118,15 +130,17 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     >
       {visible.map((c, idx) => {
         const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
-        const isSelected = normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
+        const isSelected =
+          normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
         return (
           <Tooltip key={`${c.name}-${idx}`}>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 className={cn(
-                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
-                  isSelected && 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-110',
+                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  isSelected &&
+                    'scale-110 ring-2 ring-primary ring-offset-1 ring-offset-background',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
@@ -158,13 +172,11 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               data-testid="color-tooltip-content"
             >
               <span className="font-bold">{c.name}</span>
-              {c.hex && <span className="text-[10px] opacity-70 uppercase">{c.hex}</span>}
+              {c.hex && <span className="text-[10px] uppercase opacity-70">{c.hex}</span>}
             </TooltipContent>
           </Tooltip>
         );
       })}
-    </div>
-  );
     </div>
   );
 });

@@ -16,10 +16,8 @@
  */
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
-import { isLightColor } from '@/hooks/products/useColorSystem';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
@@ -90,7 +88,6 @@ export const ProductCardImage = memo(function ProductCardImage({
   hasMultipleVariants,
   safeVariantIdx,
   onImageLoad,
-  onVariantChange,
   priority = false,
   onStatusClick,
 }: ProductCardImageProps) {
@@ -122,15 +119,6 @@ export const ProductCardImage = memo(function ProductCardImage({
       : product.stockStatus === 'low-stock'
         ? 'low'
         : 'ok';
-
-  // Color dots: show all matching variants when a color filter is active,
-  // otherwise show the product colors (for products with multiple colors).
-  const colorDots = hasMultipleVariants
-    ? allMatchingVariants.map((v) => ({ hex: v.hex, name: v.name }))
-    : product.colors
-        ?.slice(0, 6)
-        .map((c) => (typeof c === 'object' ? { hex: (c as { hex: string; name?: string }).hex, name: (c as { hex: string; name?: string }).name } : { hex: '#CCCCCC' }))
-        .filter((c) => c.hex) ?? [];
 
   return (
     <div className="relative aspect-square overflow-hidden">
@@ -177,7 +165,6 @@ export const ProductCardImage = memo(function ProductCardImage({
           }}
         />
       )}
-
 
       {/* Badges - Top Left */}
       <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1 sm:left-3 sm:top-3 sm:gap-1.5">

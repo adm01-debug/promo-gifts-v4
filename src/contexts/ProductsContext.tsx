@@ -189,7 +189,14 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   return (
     <ProductsContext.Provider
       key={key}
-      value={{ products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts }}
+      value={{
+        products,
+        isLoading,
+        fetchError,
+        getProductById,
+        getProductsByIds,
+        registerProducts,
+      }}
     >
       {children}
     </ProductsContext.Provider>

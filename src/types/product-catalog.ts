@@ -180,7 +180,19 @@ export interface ProductFilters {
   maxPrice?: number;
   inStock?: boolean;
   limit?: number;
-  sortBy?: 'price-asc' | 'price-desc' | 'newest' | 'stock' | 'name-asc' | 'name-desc' | string;
+  // União das opções de ambos os lados do merge (main + PR) — `| string` mantém
+  // permissivo, mas preservamos todos os literais para autocomplete/intenção.
+  sortBy?:
+    | 'price-asc'
+    | 'price-desc'
+    | 'newest'
+    | 'stock'
+    | 'best-seller-supplier'
+    | 'best-seller-promo'
+    | 'name'
+    | 'name-asc'
+    | 'name-desc'
+    | string;
 }
 
 export interface ProductLightweight {

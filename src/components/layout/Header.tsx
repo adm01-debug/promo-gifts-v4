@@ -203,7 +203,12 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
           </Button>
 
           <div className="lg:hidden">
-            <AppLogo showText={true} iconClassName="h-8 w-8 sm:h-9 sm:w-9" textClassName="text-[14px] sm:text-[16px]" subtextClassName="text-[8px] sm:text-[9px]" />
+            <AppLogo
+              showText={true}
+              iconClassName="h-8 w-8 sm:h-9 sm:w-9"
+              textClassName="text-[14px] sm:text-[16px]"
+              subtextClassName="text-[8px] sm:text-[9px]"
+            />
           </div>
 
           {/* #1 — Seção atual como âncora */}
@@ -284,7 +289,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <Heart className="h-[17px] w-[17px]" strokeWidth={1.75} />
                   {favoriteCount > 0 && (
                     <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border-0 bg-brand-primary p-0 text-[10px] font-bold text-brand-primary-foreground shadow-sm">
-
                       {favoriteCount > 99 ? '99+' : favoriteCount}
                     </Badge>
                   )}
@@ -492,11 +496,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                     Skins
                   </DropdownMenuItem>
                 </TooltipTrigger>
-                <TooltipContent
-                  side="left"
-                  sideOffset={8}
-                  data-testid="user-menu-tooltip-skins"
-                >
+                <TooltipContent side="left" sideOffset={8} data-testid="user-menu-tooltip-skins">
                   <p>Personalize a aparência da plataforma (temas e cores)</p>
                 </TooltipContent>
               </Tooltip>
@@ -522,7 +522,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <p>Reiniciar o tour guiado pelas funcionalidades do sistema</p>
                 </TooltipContent>
               </Tooltip>
-
 
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem

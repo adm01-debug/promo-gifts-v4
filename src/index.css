@@ -2523,8 +2523,8 @@ body.compare-focus-mode [role='main'] {
  *   data-offline-disabled="true"
  * ─────────────────────────────────────────────────────────────────────────────
  */
-body[data-offline="true"] button[type="submit"],
-body[data-offline="true"] [data-offline-disabled="true"] {
+body[data-offline='true'] button[type='submit'],
+body[data-offline='true'] [data-offline-disabled='true'] {
   pointer-events: none;
   opacity: 0.5;
   cursor: not-allowed;
@@ -2532,8 +2532,8 @@ body[data-offline="true"] [data-offline-disabled="true"] {
 }
 
 /* Indicador sutil de estado offline em botões bloqueados */
-body[data-offline="true"] button[type="submit"]::after {
-  content: " (offline)";
+body[data-offline='true'] button[type='submit']::after {
+  content: ' (offline)';
   font-size: 0.7em;
   opacity: 0.7;
 }

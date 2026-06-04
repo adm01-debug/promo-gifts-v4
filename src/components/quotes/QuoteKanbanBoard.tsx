@@ -123,7 +123,7 @@ function QuoteCard({ quote, isDragging, isSaving }: QuoteCardProps) {
         'cursor-grab transition-all duration-200 active:cursor-grabbing',
         'border-border/50 bg-card hover:bg-accent/50',
         isDragging && 'opacity-50 shadow-lg ring-2 ring-primary',
-        isSaving && 'opacity-70 ring-2 ring-primary/50 animate-pulse cursor-wait',
+        isSaving && 'animate-pulse cursor-wait opacity-70 ring-2 ring-primary/50',
         quote.status === 'pending_approval' && 'border-amber-500/40 ring-1 ring-amber-500/10',
       )}
     >

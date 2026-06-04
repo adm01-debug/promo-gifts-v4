@@ -17,10 +17,10 @@ export const StarBackground = memo(function StarBackground() {
     <div
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-      style={{ 
-        opacity: 0.35, 
+      style={{
+        opacity: 0.35,
         contain: 'strict',
-        willChange: 'opacity'
+        willChange: 'opacity',
       }}
     >
       {stars.map((star) => (
