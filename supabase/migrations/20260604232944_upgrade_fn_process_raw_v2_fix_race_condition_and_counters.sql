@@ -1,0 +1,23 @@
+-- ============================================================
+-- MARKER NO-OP — preserva a versão remota 20260604232944.
+-- ============================================================
+-- 🔴 Esta migration foi aplicada DIRETAMENTE no banco (out-of-band), estava
+-- AUSENTE do repo, e era DEFEITUOSA: recriou `fn_process_raw_v2` a partir de uma
+-- base escrita contra o schema ANTIGO (coluna booleana `processed`), mas foi
+-- aplicada DEPOIS do cutover `spr_cutover_status_part2` que substituiu `processed`
+-- pela coluna `status supplier_raw_status`. Resultado: a função passou a
+-- referenciar coluna inexistente e o cron `process-pending-products` (jobid 1, */5)
+-- falhou a cada tique desde 2026-06-04 23:30 («column "processed" does not exist»),
+-- parando o pipeline SPOT. Também regrediu o template de nome de variante
+-- (placeholders {size_code}/{capacity_ml} deixaram de ser resolvidos).
+--
+-- NÃO reproduzimos o DDL original aqui porque ele NÃO é reexecutável (quebra em
+-- replay: referencia coluna removida). A correção definitiva de `fn_process_raw_v2`
+-- (status-based + template completo + advisory lock) vive em:
+--   20260604234507_fix_fn_process_raw_v2_status_column.sql
+--
+-- Marcador no-op: preserva a versão remota para o CLI do Supabase sem reaplicar
+-- DDL quebrada. Não remover.
+-- Detalhes: docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md (§7).
+-- ============================================================
+SELECT 1;
