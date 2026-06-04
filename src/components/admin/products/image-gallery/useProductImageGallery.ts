@@ -6,6 +6,8 @@
 import { useState, useRef, useCallback, useMemo, type ChangeEvent, type DragEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import {
@@ -57,17 +59,18 @@ export function useProductImageGallery({
   const { data: externalImages = [], isLoading: isLoadingExt } = useQuery<ExternalImage[]>({
     queryKey: ['product-images-ext', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      try {
+        const { records } = await dbInvoke<ExternalImage>({
           table: 'product_images',
           operation: 'select',
           filters: { product_id: productId },
           limit: 200,
           orderBy: { column: 'display_order', ascending: true },
-        },
-      });
-      if (error) return [];
-      return data?.data?.records || [];
+        });
+        return records;
+      } catch {
+        return [];
+      }
     },
     enabled: !!productId,
     staleTime: 2 * 60 * 1000,
@@ -77,18 +80,20 @@ export function useProductImageGallery({
   const { data: variants = [] } = useQuery<VariantInfo[]>({
     queryKey: ['product-variants-for-gallery', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      let records: Record<string, unknown>[] = [];
+      try {
+        const result = await dbInvoke<Record<string, unknown>>({
           table: 'product_variants',
           operation: 'select',
           select: 'id, name, color_name, color_hex, color_code',
           filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'name', ascending: true },
-        },
-      });
-      if (error) return [];
-      const records = data?.data?.records || [];
+        });
+        records = result.records;
+      } catch {
+        return [];
+      }
       return records.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         name: String(r.name ?? r.color_name ?? 'Variação'),
@@ -176,18 +181,13 @@ export function useProductImageGallery({
         return;
       }
       try {
-        const { error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_images',
-            operation: 'update',
-            id: ext.id,
-            data: {
-              alt_text: data.alt_text.trim() || null,
-              image_type: data.image_type || 'main',
-              caption: data.caption.trim() || null,
-            },
-          },
-        });
+        const { error } = await untypedFrom('product_images')
+          .update({
+            alt_text: data.alt_text.trim() || null,
+            image_type: data.image_type || 'main',
+            caption: data.caption.trim() || null,
+          })
+          .eq('id', ext.id);
         if (error) throw new Error(error.message);
         toast.success('Metadados atualizados');
         setEditingIndex(null);
@@ -266,28 +266,20 @@ export function useProductImageGallery({
           externalImages.length > 0
             ? Math.max(...externalImages.map((i) => i.display_order || 0)) + 1
             : 0;
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_images',
-            operation: 'insert',
-            data: {
-              product_id: productId,
-              url_cdn: url,
-              url_original: url,
-              image_type: imageType,
-              is_primary: shouldBePrimary,
-              is_og_image: false,
-              display_order: nextOrder,
-              is_active: true,
-              supplier_code: variant?.supplier_code || null,
-              variant_id: variant?.id || null,
-              alt_text: null,
-            },
-          },
+        const { error } = await untypedFrom('product_images').insert({
+          product_id: productId,
+          url_cdn: url,
+          url_original: url,
+          image_type: imageType,
+          is_primary: shouldBePrimary,
+          is_og_image: false,
+          display_order: nextOrder,
+          is_active: true,
+          supplier_code: variant?.supplier_code || null,
+          variant_id: variant?.id || null,
+          alt_text: null,
         });
         if (error) throw new Error(error.message || 'Falha ao registrar imagem no banco externo');
-        if (!data?.success)
-          throw new Error(data?.error || 'Falha ao registrar imagem no banco externo');
         return { ok: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao criar registro no BD externo';
@@ -396,14 +388,7 @@ export function useProductImageGallery({
       const ext = extImageMap.get(url);
       if (ext?.id && productId) {
         try {
-          await supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'update',
-              id: ext.id,
-              data: { is_active: false },
-            },
-          });
+          await untypedFrom('product_images').update({ is_active: false }).eq('id', ext.id);
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {
           logger.warn('Erro ao desativar imagem no BD externo:', err);
@@ -432,26 +417,16 @@ export function useProductImageGallery({
           // Clear is_primary from all images for this product
           const currentPrimary = externalImages.find((img) => img.is_primary);
           if (currentPrimary?.id) {
-            await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: currentPrimary.id,
-                data: { is_primary: false },
-              },
-            });
+            await untypedFrom('product_images')
+              .update({ is_primary: false })
+              .eq('id', currentPrimary.id);
           }
           // Set new primary
           const newPrimaryExt = extImageMap.get(url);
           if (newPrimaryExt?.id) {
-            await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: newPrimaryExt.id,
-                data: { is_primary: true, display_order: 0 },
-              },
-            });
+            await untypedFrom('product_images')
+              .update({ is_primary: true, display_order: 0 })
+              .eq('id', newPrimaryExt.id);
           }
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {
@@ -475,14 +450,7 @@ export function useProductImageGallery({
       try {
         await Promise.all(
           updates.map(({ id, display_order: displayOrder }) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id,
-                data: { display_order: displayOrder },
-              },
-            }),
+            untypedFrom('product_images').update({ display_order: displayOrder }).eq('id', id),
           ),
         );
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
@@ -547,28 +515,22 @@ export function useProductImageGallery({
       const results = await Promise.all(
         urls.map((url) => {
           const d = resolveData(url);
-          return supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'insert',
-              data: {
-                product_id: productId,
-                url_cdn: url,
-                url_original: url,
-                image_type: d.image_type,
-                is_primary: Math.max(images.indexOf(url), 0) === 0,
-                is_og_image: false,
-                display_order: Math.max(images.indexOf(url), 0),
-                is_active: true,
-                supplier_code: d.supplier_code,
-                variant_id: d.variant_id,
-                alt_text: null,
-              },
-            },
+          return untypedFrom('product_images').insert({
+            product_id: productId,
+            url_cdn: url,
+            url_original: url,
+            image_type: d.image_type,
+            is_primary: Math.max(images.indexOf(url), 0) === 0,
+            is_og_image: false,
+            display_order: Math.max(images.indexOf(url), 0),
+            is_active: true,
+            supplier_code: d.supplier_code,
+            variant_id: d.variant_id,
+            alt_text: null,
           });
         }),
       );
-      return results.filter(({ data, error }) => !error && data?.success).length;
+      return results.filter(({ error }) => !error).length;
     },
     [images, productId],
   );
@@ -588,14 +550,7 @@ export function useProductImageGallery({
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
         await Promise.all(
           updates.map((ext) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: { image_type: newType },
-              },
-            }),
+            untypedFrom('product_images').update({ image_type: newType }).eq('id', ext.id),
           ),
         );
         const insertedCount = await createMissingExternalRecords(missingUrls, () => ({
@@ -642,17 +597,12 @@ export function useProductImageGallery({
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
         await Promise.all(
           updates.map((ext) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: {
-                  supplier_code: variant?.supplier_code || null,
-                  variant_id: variant?.id || null,
-                },
-              },
-            }),
+            untypedFrom('product_images')
+              .update({
+                supplier_code: variant?.supplier_code || null,
+                variant_id: variant?.id || null,
+              })
+              .eq('id', ext.id),
           ),
         );
         const insertedCount = await createMissingExternalRecords(missingUrls, (url) => ({
@@ -695,14 +645,7 @@ export function useProductImageGallery({
         .filter((ext): ext is ExternalImage => !!ext?.id);
       await Promise.all(
         extUpdates.map((ext) =>
-          supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'update',
-              id: ext.id,
-              data: { is_active: false },
-            },
-          }),
+          untypedFrom('product_images').update({ is_active: false }).eq('id', ext.id),
         ),
       );
       onChange(images.filter((url) => !selectedUrls.has(url)));
@@ -771,14 +714,9 @@ export function useProductImageGallery({
               .replace('{tipo}', typeLabel)
               .replace('{cor}', variantLabel)
               .replace('{n}', String(i + 1));
-            return supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: { alt_text: altText.trim() || null },
-              },
-            });
+            return untypedFrom('product_images')
+              .update({ alt_text: altText.trim() || null })
+              .eq('id', ext.id);
           }),
         );
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });

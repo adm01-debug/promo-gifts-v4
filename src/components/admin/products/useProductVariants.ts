@@ -4,7 +4,8 @@
  */
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import type { BulkAction } from '@/components/products/VariantGridMatrix';
 
@@ -64,42 +65,30 @@ export const EMPTY_FORM: VariantFormData = {
 // ── API helpers ──
 
 async function fetchProductVariants(productId: string): Promise<ProductVariant[]> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table: 'product_variants',
-      operation: 'select',
-      filters: { product_id: productId, is_active: true },
-      limit: 200,
-      orderBy: { column: 'name', ascending: true },
-    },
+  const { records } = await dbInvoke<ProductVariant>({
+    table: 'product_variants',
+    operation: 'select',
+    filters: { product_id: productId, is_active: true },
+    limit: 200,
+    orderBy: { column: 'name', ascending: true },
   });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao buscar variações');
-  return data.data?.records || [];
+  return records;
 }
 
 async function createVariantApi(payload: Record<string, unknown>): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: { table: 'product_variants', operation: 'insert', data: payload },
-  });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao criar variação');
+  const { error } = await untypedFrom('product_variants').insert(payload);
+  if (error) throw new Error(error.message || 'Erro ao criar variação');
 }
 
 async function updateVariantApi(id: string, payload: Record<string, unknown>): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: { table: 'product_variants', operation: 'update', id, data: payload },
-  });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar variação');
+  const { error } = await untypedFrom('product_variants').update(payload).eq('id', id);
+  if (error) throw new Error(error.message || 'Erro ao atualizar variação');
 }
 
 async function deleteVariantApi(id: string): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: { table: 'product_variants', operation: 'update', id, data: { is_active: false } },
-  });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao excluir variação');
+  // Soft delete: variants are deactivated, not removed.
+  const { error } = await untypedFrom('product_variants').update({ is_active: false }).eq('id', id);
+  if (error) throw new Error(error.message || 'Erro ao excluir variação');
 }
 
 function formToPayload(formData: VariantFormData, extra?: Record<string, unknown>) {

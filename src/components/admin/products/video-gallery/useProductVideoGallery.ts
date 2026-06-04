@@ -4,6 +4,8 @@
 import { useState, useCallback, useMemo, useRef, type ChangeEvent, type DragEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import {
@@ -42,17 +44,18 @@ export function useProductVideoGallery(productId?: string) {
   const { data: videos = [], isLoading } = useQuery<ExternalVideo[]>({
     queryKey: ['product-videos-ext', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      try {
+        const { records } = await dbInvoke<ExternalVideo>({
           table: 'product_videos',
           operation: 'select',
           filters: { product_id: productId, is_active: true },
           orderBy: { column: 'display_order', ascending: true },
           limit: 50,
-        },
-      });
-      if (error) return [];
-      return data?.data?.records || [];
+        });
+        return records;
+      } catch {
+        return [];
+      }
     },
     enabled: !!productId,
     staleTime: 5 * 60 * 1000,
@@ -62,23 +65,25 @@ export function useProductVideoGallery(productId?: string) {
   const { data: variants = [] } = useQuery<VideoVariant[]>({
     queryKey: ['product-variants-for-videos', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      let records: Record<string, unknown>[] = [];
+      try {
+        const result = await dbInvoke<Record<string, unknown>>({
           table: 'product_variants',
           operation: 'select',
           select: 'id, name, color_name, color_hex, color_code',
           filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'name', ascending: true },
-        },
-      });
-      if (error) return [];
-      const records = data?.data?.records || [];
+        });
+        records = result.records;
+      } catch {
+        return [];
+      }
       return records.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         name: String(r.name ?? r.color_name ?? 'Variação'),
-        color_name: r.color_name ?? null,
-        color_hex: r.color_hex ?? null,
+        color_name: (r.color_name as string) ?? null,
+        color_hex: (r.color_hex as string) ?? null,
         supplier_code: r.color_code !== null ? String(r.color_code) : undefined,
       }));
     },
@@ -249,27 +254,24 @@ export function useProductVideoGallery(productId?: string) {
       if (!productId) return null;
       const nextOrder =
         videos.length > 0 ? Math.max(...videos.map((v) => v.display_order || 0)) + 1 : 0;
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'product_videos',
-          operation: 'insert',
-          data: {
-            product_id: productId,
-            url_original: url,
-            url_stream: url,
-            url_thumbnail: thumbnailUrl,
-            source_youtube_id: youtubeId || null,
-            video_type: uploadVideoType,
-            display_order: nextOrder,
-            is_primary: videos.length === 0,
-            is_active: true,
-            title: fileName,
-            file_size_bytes: fileSize,
-          },
-        },
-      });
-      if (error || !data?.success) return null;
-      return data?.data?.id || null;
+      const { data, error } = await untypedFrom<{ id: string }>('product_videos')
+        .insert({
+          product_id: productId,
+          url_original: url,
+          url_stream: url,
+          url_thumbnail: thumbnailUrl,
+          source_youtube_id: youtubeId || null,
+          video_type: uploadVideoType,
+          display_order: nextOrder,
+          is_primary: videos.length === 0,
+          is_active: true,
+          title: fileName,
+          file_size_bytes: fileSize,
+        })
+        .select('id')
+        .single();
+      if (error || !data) return null;
+      return (data as { id?: string }).id || null;
     },
     [productId, uploadVideoType, videos],
   );
@@ -377,14 +379,7 @@ export function useProductVideoGallery(productId?: string) {
     async (videoId: string) => {
       try {
         await supabase.from('video_variant_links').delete().eq('video_id', videoId);
-        await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_videos',
-            operation: 'update',
-            id: videoId,
-            data: { is_active: false },
-          },
-        });
+        await untypedFrom('product_videos').update({ is_active: false }).eq('id', videoId);
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         queryClient.invalidateQueries({ queryKey: ['video-variant-links', productId] });
         toast.success('Vídeo removido');
@@ -402,9 +397,7 @@ export function useProductVideoGallery(productId?: string) {
       data: { title?: string; description?: string; video_type?: string },
     ) => {
       try {
-        await supabase.functions.invoke('external-db-bridge', {
-          body: { table: 'product_videos', operation: 'update', id: videoId, data },
-        });
+        await untypedFrom('product_videos').update(data).eq('id', videoId);
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Metadados do vídeo atualizados');
         setEditingVideoId(null);
@@ -438,14 +431,7 @@ export function useProductVideoGallery(productId?: string) {
       try {
         await Promise.all(
           reordered.map((v, i) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_videos',
-                operation: 'update',
-                id: v.id,
-                data: { display_order: i },
-              },
-            }),
+            untypedFrom('product_videos').update({ display_order: i }).eq('id', v.id),
           ),
         );
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
@@ -494,14 +480,9 @@ export function useProductVideoGallery(productId?: string) {
           return;
         }
         const { data: tu } = supabase.storage.from('product-videos').getPublicUrl(td.path);
-        await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_videos',
-            operation: 'update',
-            id: video.id,
-            data: { url_thumbnail: tu.publicUrl },
-          },
-        });
+        await untypedFrom('product_videos')
+          .update({ url_thumbnail: tu.publicUrl })
+          .eq('id', video.id);
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Thumbnail regenerada!');
       } catch (err: unknown) {

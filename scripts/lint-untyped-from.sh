@@ -35,6 +35,7 @@ ALLOWLIST=(
   categories
   collection_products
   color_nuances
+  kit_component_media
   personalization_simulations
   print_area_techniques
   product_category_assignments
