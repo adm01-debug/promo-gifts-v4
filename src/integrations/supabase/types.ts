@@ -4524,6 +4524,7 @@ export type Database = {
           new_arrival: boolean | null
           on_sale: boolean | null
           price: number | null
+          price_freshness_threshold_days: number | null
           sku: string | null
           stock: number | null
           stock_quantity: number | null
@@ -4556,6 +4557,7 @@ export type Database = {
           new_arrival?: boolean | null
           on_sale?: boolean | null
           price?: number | null
+          price_freshness_threshold_days?: number | null
           sku?: string | null
           stock?: number | null
           stock_quantity?: number | null
@@ -4588,6 +4590,7 @@ export type Database = {
           new_arrival?: boolean | null
           on_sale?: boolean | null
           price?: number | null
+          price_freshness_threshold_days?: number | null
           sku?: string | null
           stock?: number | null
           stock_quantity?: number | null
