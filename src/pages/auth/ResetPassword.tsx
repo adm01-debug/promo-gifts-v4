@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { HAD_RECOVERY_HASH_AT_BOOT } from '@/lib/auth/recovery-hash';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { LegalFooter } from '@/components/auth/LegalFooter';
 import { SpaceScene } from '@/pages/auth/AuthBranding';
@@ -34,19 +33,6 @@ const resetPasswordSchema = z
   });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
-
-/**
- * Lê o hash de recuperação atual de forma síncrona. Combinado com
- * HAD_RECOVERY_HASH_AT_BOOT (capturado no boot, antes de o Supabase limpar o
- * hash), evita a corrida em que o `await getSession()` cede o controle, o
- * Supabase limpa o hash e a leitura subsequente perde o token — exibindo
- * "link inválido" para um acesso de recuperação legítimo.
- */
-function readRecoveryHash(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.hash.substring(1));
-  return !!params.get('access_token') && params.get('type') === 'recovery';
-}
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -72,28 +58,26 @@ export default function ResetPassword() {
   useEffect(() => {
     // Check if there's a valid recovery session
     const checkSession = async () => {
-      // Lê o hash de forma SÍNCRONA antes de qualquer await — o
-      // detectSessionInUrl do Supabase limpa o hash de forma assíncrona, então
-      // ler depois de `await getSession()` pode perder o token de recuperação.
-      // RECOVERY_HASH_AT_LOAD cobre o caso de o hash já ter sido limpo antes
-      // mesmo deste efeito rodar.
-      const hasRecoveryHash = readRecoveryHash() || HAD_RECOVERY_HASH_AT_BOOT;
-
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
-        // Sessão (veio do e-mail de reset) OU token de recuperação no hash.
-        if (session || hasRecoveryHash) {
+        // If user came from password reset email, they'll have a session
+        if (session) {
           setIsValidToken(true);
+        } else {
+          // Check URL hash for access token (Supabase redirect format)
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const type = hashParams.get('type');
+
+          if (accessToken && type === 'recovery') {
+            setIsValidToken(true);
+          }
         }
       } catch {
-        // getSession falhou (ex.: contenção de lock) — ainda assim valida se o
-        // hash de recuperação estava presente.
-        if (hasRecoveryHash) {
-          setIsValidToken(true);
-        }
+        // getSession failed (e.g. lock contention) — treat as no valid session
       }
       setIsCheckingToken(false);
     };
