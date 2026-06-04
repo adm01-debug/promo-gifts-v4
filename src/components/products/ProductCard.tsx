@@ -128,8 +128,9 @@ export const ProductCard = memo(
 
     // Efeito para simular loading ao trocar de cor
     useEffect(() => {
+      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento
       setIsUpdatingColor(true);
-      const timer = setTimeout(() => setIsUpdatingColor(false), 300);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 350);
       return () => clearTimeout(timer);
     }, [activeVariantIdx]);
 
