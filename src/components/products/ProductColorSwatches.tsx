@@ -168,7 +168,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              className="ml-0.5 text-[11px] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
               onClick={(e) => {
