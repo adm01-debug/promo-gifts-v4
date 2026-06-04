@@ -15,6 +15,9 @@ interface PackagingBadgeProps {
   packagingContext: PackagingContext;
   onClick: () => void;
   className?: string;
+  boxWidthMm?: number | null;
+  boxHeightMm?: number | null;
+  boxLengthMm?: number | null;
 }
 
 // Mapeamento de contexto para texto de exibição
