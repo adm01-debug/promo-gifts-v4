@@ -16,6 +16,9 @@ const SidebarReorganized = lazyWithRetry(() =>
 const PageTransition = lazyWithRetry(() =>
   import('@/components/effects/PageTransition').then((m) => ({ default: m.PageTransition })),
 );
+const StarBackground = lazyWithRetry(() =>
+  import('@/components/effects/StarBackground').then((m) => ({ default: m.StarBackground })),
+);
 
 // Context providers must be imported synchronously (consumers render inside them)
 import { SellerCartProvider } from '@/contexts/SellerCartContext';
