@@ -33,6 +33,8 @@ import {
   createE2eFavoriteList,
   createE2eCartTemplate,
   createE2eCustomKit,
+  createE2eSupplier,
+  createE2eTechnique,
 } from "../helpers/e2e-resources";
 
 interface CreateOpts {
@@ -48,6 +50,8 @@ export interface E2eResources {
   createFavoriteList: (opts?: CreateOpts) => Promise<{ name: string }>;
   createCartTemplate: (opts?: CreateOpts) => Promise<{ name: string }>;
   createCustomKit: (opts?: CreateOpts) => Promise<{ name: string }>;
+  createSupplier: (opts?: CreateOpts) => Promise<{ name: string }>;
+  createTechnique: (opts?: CreateOpts) => Promise<{ name: string }>;
 }
 
 type Fixtures = {
@@ -110,6 +114,8 @@ export const test = base.extend<Fixtures>({
       createFavoriteList: (o = {}) => createE2eFavoriteList(page, { ...o, prefix }),
       createCartTemplate: (o = {}) => createE2eCartTemplate(page, { ...o, prefix }),
       createCustomKit: (o = {}) => createE2eCustomKit(page, { ...o, prefix }),
+      createSupplier: (o = {}) => createE2eSupplier(page, { ...o, prefix }),
+      createTechnique: (o = {}) => createE2eTechnique(page, { ...o, prefix }),
     };
     await use(api);
   },

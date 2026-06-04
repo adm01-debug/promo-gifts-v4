@@ -343,7 +343,7 @@ export function ProductFormFullscreen({
   const isLast = stepIndex === STEPS.length - 1;
 
   return (
-    <form onSubmit={handleSubmitWithValidation} className="flex flex-col gap-4">
+    <form data-testid="admin-form" onSubmit={handleSubmitWithValidation} className="flex flex-col gap-4">
       <Card className="border-border/50 bg-card/80 px-6 py-4">
         <div className="flex items-end justify-between gap-6">
           <div className="min-w-0 flex-1">
@@ -367,6 +367,7 @@ export function ProductFormFullscreen({
             <Button
               type="submit"
               size="sm"
+              data-testid="admin-save-btn"
               disabled={isSaving || skuStatus === 'duplicate'}
               className="gap-2 font-semibold shadow-sm"
             >
