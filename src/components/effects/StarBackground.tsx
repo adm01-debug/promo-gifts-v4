@@ -7,7 +7,7 @@ import React, { useMemo } from 'react';
  */
 export const StarBackground = React.memo(function StarBackground() {
   const stars = useMemo(() => {
-    return Array.from({ length: 60 }).map((_, i) => ({
+    return Array.from({ length: 150 }).map((_, i) => ({
       id: i,
       size: Math.random() * 2.5 + 0.5,
       top: `${Math.random() * 100}%`,
@@ -22,8 +22,8 @@ export const StarBackground = React.memo(function StarBackground() {
     <div
       aria-hidden="true"
       data-testid="space-scene"
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
-      style={{ opacity: 0.45, contain: 'strict' }}
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      style={{ opacity: 0.35, contain: 'strict' }}
     >
       {stars.map((star) => (
         <div

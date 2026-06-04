@@ -100,6 +100,12 @@ export function MainLayout({ children }: MainLayoutProps) {
             <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
           </Suspense>
 
+          <div className="fixed inset-0 z-[-1]">
+            <Suspense fallback={null}>
+              <StarBackground />
+            </Suspense>
+          </div>
+
           <div
             aria-hidden="true"
             className="shrink-0 print:hidden"
@@ -130,7 +136,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             ref={mainRef}
             tabIndex={-1}
             id="main-content"
-            className="theme-transitioning relative z-0 flex-1 overflow-x-clip bg-transparent p-3 pb-6 outline-none sm:p-4 lg:p-6 print:p-0 print:pb-0"
+            className="theme-transitioning relative z-0 flex-1 overflow-x-clip bg-background/30 p-3 pb-6 outline-none sm:p-4 lg:p-6 print:p-0 print:pb-0"
             role="main"
             aria-label="Conteúdo principal"
             aria-labelledby="main-heading"
