@@ -397,16 +397,7 @@ export const ProductCard = memo(
           'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
-          hasHighlightedColor ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]' : '',
         )}
-        style={
-          hasHighlightedColor && matchedHighlightColor
-            ? ({
-                borderColor: `${matchedHighlightColor}70`,
-                boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
-              } as React.CSSProperties)
-            : undefined
-        }
         onMouseEnter={() => {
           setIsHovered(true);
           telemetryService.logUXAction('product_hover', {
