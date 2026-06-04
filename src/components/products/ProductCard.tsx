@@ -340,6 +340,7 @@ export const ProductCard = memo(
         ? getSrcSet(rawImageUrl)
         : undefined;
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
+    const activeColorHex = currentVariant?.hex || null;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
