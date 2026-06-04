@@ -153,6 +153,11 @@ export function ProductDetailHero({
               boxLengthMm={product.boxLengthMm}
               onClick={onOpenPackagingModal}
             />
+            {!product.hasCommercialPackaging && (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/40 italic">
+                Sem embalagem
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
