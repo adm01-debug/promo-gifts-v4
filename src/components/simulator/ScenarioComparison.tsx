@@ -15,7 +15,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/hooks/simulation';
 import type { SimulationOption, Product } from '@/types/simulation';

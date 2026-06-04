@@ -2,7 +2,7 @@
  * CollectionTableView — Table view for local collections with sorting.
  */
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
   MoreVertical,
   Pencil,

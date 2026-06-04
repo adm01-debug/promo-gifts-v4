@@ -2,7 +2,7 @@
  * CollectionDetailHeader — Header section for collection detail page.
  * Contains back button, collection info, CRM badge, share, export and action buttons.
  */
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Monitor, Package, FileText, Clock, Users, Share2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

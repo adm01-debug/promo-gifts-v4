@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Heart, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QuickAddToQuote } from './QuickAddToQuote';

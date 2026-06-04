@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   Layers,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { UseSimulatorWizardReturn } from '@/hooks/simulator/useSimulatorWizard';
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, X, Loader2, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

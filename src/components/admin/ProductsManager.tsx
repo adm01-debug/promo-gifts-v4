@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 import { BulkImportDialog } from './products/BulkImportDialog';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { ProductFiltersBar } from './products/ProductFiltersBar';
 import { useProductsManager } from './products/useProductsManager';
 

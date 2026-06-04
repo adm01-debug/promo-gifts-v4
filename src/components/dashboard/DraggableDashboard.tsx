@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { m as motion, AnimatePresence, Reorder } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';

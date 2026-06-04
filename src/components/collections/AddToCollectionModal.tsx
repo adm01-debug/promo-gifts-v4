@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Check, FolderPlus, Package } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
   DialogContent,

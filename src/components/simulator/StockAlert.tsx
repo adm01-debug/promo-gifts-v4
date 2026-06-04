@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertTriangle, PackageX, Package, CheckCircle2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { Product } from '@/types/simulation';
 
 interface StockInfo {

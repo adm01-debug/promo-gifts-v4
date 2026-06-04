@@ -2,7 +2,7 @@
  * CollectionFormDialog — Create / Edit collection dialog.
  * Extracted from CollectionsPage for modularity.
  */
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

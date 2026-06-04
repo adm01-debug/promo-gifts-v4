@@ -1,5 +1,5 @@
 import { useMemo, useId } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { PhaseColors } from './usePhaseColors';
 
 /* ------------------------------------------------------------------ */

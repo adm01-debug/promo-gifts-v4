@@ -7,8 +7,8 @@ import { selectCrm } from '@/lib/crm-db';
 import { useQuotes } from '@/hooks/quotes';
 import { format, differenceInHours, startOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF + jspdf-autotable são carregados sob demanda (dynamic import) dentro de
+// exportToPdf, mantendo ~bibliotecas pesadas fora do chunk da rota de orçamentos.
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 
 interface Client {
@@ -194,7 +194,11 @@ export function useQuotesDashboard() {
     };
   }, [quotes, selectedPeriod, selectedClientId]);
 
-  const exportToPdf = useCallback(() => {
+  const exportToPdf = useCallback(async () => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF();
     const periodLabel =
       selectedPeriod === 'month' ? 'Mês Atual' : selectedPeriod === 'quarter' ? 'Trimestre' : 'Ano';

@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFilter';
 import { ColorSwatchBar, type ColorFilterSelection } from '@/components/filters/ColorGroupFilter';
 import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface VisualSearchResult {
   analysis: {

@@ -24,7 +24,7 @@ import {
   type ExternalVariantStock,
 } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 export interface BulkVariantSelection {
   product: Product;

@@ -17,7 +17,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { reportError } from '@/lib/error-reporter';
 import { logger } from '@/lib/logger';
 

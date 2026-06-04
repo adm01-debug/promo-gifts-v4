@@ -11,7 +11,7 @@ import {
   CheckSquare,
   Settings2,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import {
   DndContext,
   closestCenter,
@@ -98,7 +98,7 @@ export default function CollectionDetailPage() {
   const isExternal = !!externalCollection;
 
   const { data: externalProductLinks = [], isLoading: isLoadingExternalProducts } =
-    useExternalCollectionProducts(isExternal ? id : null);
+    useExternalCollectionProducts(isExternal ? (id ?? null) : null);
 
   const externalProductIds = useMemo(
     () => externalProductLinks.map((link) => link.product_id),

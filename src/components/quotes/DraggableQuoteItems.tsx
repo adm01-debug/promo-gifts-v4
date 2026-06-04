@@ -31,7 +31,7 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { Badge } from '@/components/ui/badge';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 

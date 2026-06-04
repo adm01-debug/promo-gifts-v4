@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ArrowUp } from 'lucide-react';
 import { useAriaLive } from '@/components/a11y';
@@ -37,24 +37,26 @@ export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButton
         behavior: prefersReduced ? 'auto' : 'smooth',
       });
       announceStatus('Voltando ao topo da página');
-      
+
       const moveFocusToTop = () => {
         const targetFocus =
           (document.getElementById('main-content') as HTMLElement | null) ??
           (document.querySelector('main') as HTMLElement | null) ??
           (document.querySelector('h1') as HTMLElement | null);
-        
+
         if (!targetFocus) {
           announceStatus('Topo da página.');
           return;
         }
-        
+
         const hadTabIndex = targetFocus.hasAttribute('tabindex');
         if (!hadTabIndex) targetFocus.setAttribute('tabindex', '-1');
         targetFocus.focus({ preventScroll: true });
-        
+
         if (!hadTabIndex) {
-          targetFocus.addEventListener('blur', () => targetFocus.removeAttribute('tabindex'), { once: true });
+          targetFocus.addEventListener('blur', () => targetFocus.removeAttribute('tabindex'), {
+            once: true,
+          });
         }
         announceStatus('Topo da página. Foco no conteúdo principal.');
       };
@@ -82,8 +84,12 @@ export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButton
             : 'pointer-events-none translate-y-2 scale-90 opacity-0',
           className,
         )}
-        style={{ 
-          bottom: bottomOffset ? (typeof bottomOffset === 'number' ? `${bottomOffset}px` : bottomOffset) : '1.5rem' 
+        style={{
+          bottom: bottomOffset
+            ? typeof bottomOffset === 'number'
+              ? `${bottomOffset}px`
+              : bottomOffset
+            : '1.5rem',
         }}
         onClick={handleScrollToTop}
         aria-label="Voltar ao topo da página"
@@ -95,5 +101,5 @@ export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButton
         <ArrowUp className="h-5 w-5" aria-hidden />
       </motion.button>
     );
-  }
+  },
 );

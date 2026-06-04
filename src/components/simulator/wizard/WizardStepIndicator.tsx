@@ -4,7 +4,7 @@
  * Produto → Local → Especificações → Comparativo
  */
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Package, MapPin, SlidersHorizontal, BarChart3, Check } from 'lucide-react';
 import { WIZARD_STEPS, WIZARD_STEP_CONFIG, type WizardStep } from '@/types/domain/simulator-wizard';

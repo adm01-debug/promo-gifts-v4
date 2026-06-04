@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toTitleCase } from '@/lib/textUtils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySidebarPanelProps {
   onSelectCategory?: (categoryId: string | null, categoryName?: string) => void;

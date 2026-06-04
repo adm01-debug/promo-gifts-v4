@@ -41,6 +41,10 @@ vi.mock("framer-motion", () => {
   };
   return {
     motion: new Proxy({}, handler),
+    m: new Proxy({}, handler),
+    LazyMotion: ({ children }: any) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: any) => <>{children}</>,
   };
 });
