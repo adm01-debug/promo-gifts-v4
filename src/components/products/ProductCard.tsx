@@ -124,6 +124,14 @@ export const ProductCard = memo(
     const [imageLoaded, setImageLoaded] = useState(false);
     const [actionsOpen, setActionsOpen] = useState(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+    const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+
+    // Efeito para simular loading ao trocar de cor
+    useEffect(() => {
+      setIsUpdatingColor(true);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 300);
+      return () => clearTimeout(timer);
+    }, [activeVariantIdx]);
 
     const filterKey = activeColorFilter
       ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
@@ -165,9 +173,13 @@ export const ProductCard = memo(
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        // Prioridade: Seleção manual > Filtro ativo
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlColor = urlParams.get('cor');
+        
+        // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
-          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
@@ -357,11 +369,13 @@ export const ProductCard = memo(
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
 
     const cardImageUrl = effectiveImageUrl !== '/placeholder.svg' ? getCdnUrl(effectiveImageUrl, 'card') : '/placeholder.svg';
+    const hasNoImage = effectiveImageUrl === '/placeholder.svg';
+    
     const cardSrcSet = (effectiveImageUrl !== '/placeholder.svg' && (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0]))
       ? getSrcSet(effectiveImageUrl)
       : undefined;
 
-    const colorSpecificImage = currentImageUrl;
+    const colorSpecificImage = effectiveImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
@@ -468,6 +482,7 @@ export const ProductCard = memo(
           }}
           priority={priority}
           onStatusClick={handleStatusClick}
+          isUpdatingColor={isUpdatingColor}
         />
 
         {/* Quick Actions FAB */}
@@ -554,6 +569,11 @@ export const ProductCard = memo(
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
+
+                // Persiste a cor na URL sem forçar navegação completa
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('cor', c.name);
+                window.history.replaceState({}, '', currentUrl.toString());
               }
               // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
               // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
@@ -569,7 +589,10 @@ export const ProductCard = memo(
             return (
               <div 
                 key={activeColorName || 'default'}
-                className="flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1"
+                className={cn(
+                  "flex items-end justify-between pt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-500 sm:pt-1 transition-opacity",
+                  isUpdatingColor ? "opacity-40" : "opacity-100"
+                )}
               >
                 <div>
                   <p className="mb-0.5 text-[10px] font-medium text-muted-foreground opacity-70 sm:text-[11px]">
