@@ -114,7 +114,8 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   const visible = colors;
   // Resolve o estado selecionado o mais cedo possível
-  const queryParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const queryParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
   const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
@@ -142,9 +143,9 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 type="button"
                 className={cn(
                   'inline-block rounded-full border border-border/60 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  isSelected 
-                    ? 'ring-[1.5px] ring-primary ring-offset-1 z-10 scale-110 shadow-sm opacity-100' 
-                    : 'hover:scale-110 opacity-90 hover:opacity-100',
+                  isSelected
+                    ? 'z-10 scale-110 opacity-100 shadow-sm ring-[1.5px] ring-primary ring-offset-1'
+                    : 'opacity-90 hover:scale-110 hover:opacity-100',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}

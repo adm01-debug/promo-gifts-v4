@@ -16,7 +16,7 @@ export const useProductSelectionStore = create<ProductSelectionState & ProductSe
   persist(
     (set, get) => ({
       selectedColors: {},
-      
+
       setSelectedColor: (productId, colorName) => {
         set((state) => ({
           selectedColors: {
@@ -25,17 +25,17 @@ export const useProductSelectionStore = create<ProductSelectionState & ProductSe
           },
         }));
       },
-      
+
       getSelectedColor: (productId) => {
         return get().selectedColors[productId];
       },
-      
+
       clearSelections: () => {
         set({ selectedColors: {} });
       },
     }),
     {
       name: 'product-selection-storage',
-    }
-  )
+    },
+  ),
 );

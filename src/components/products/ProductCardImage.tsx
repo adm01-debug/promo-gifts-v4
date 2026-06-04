@@ -128,24 +128,21 @@ export const ProductCardImage = memo(function ProductCardImage({
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
       {/* Loading overlay for color change / Skeleton transition */}
       {isUpdatingColor && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 animate-in fade-in duration-200">
-          <div className="w-full h-full bg-muted/30 animate-pulse flex items-center justify-center">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 duration-200 animate-in fade-in">
+          <div className="flex h-full w-full animate-pulse items-center justify-center bg-muted/30">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         </div>
       )}
 
       {/* Main image — fades out on hover when set image is available */}
-      <div 
-        key={activeSrc}
-        className="h-full w-full animate-in fade-in duration-500 relative"
-      >
+      <div key={activeSrc} className="relative h-full w-full duration-500 animate-in fade-in">
         {activeSrc === '/placeholder.svg' ? (
-          <div className="flex flex-col items-center justify-center h-full w-full gap-2 p-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center">
-              <Package className="w-6 h-6 text-muted-foreground/40" />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+              <Package className="h-6 w-6 text-muted-foreground/40" />
             </div>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
+            <span className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground">
               Sem foto disponível
             </span>
           </div>

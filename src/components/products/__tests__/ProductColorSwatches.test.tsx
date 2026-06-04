@@ -10,25 +10,23 @@ const mockColors = [
 ];
 
 describe('ProductColorSwatches', () => {
-  it('should render all colors provided', () => {
+  it.each(mockColors)('should render color $name', (color) => {
     render(
       <TooltipProvider>
         <ProductColorSwatches colors={mockColors} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
-    
-    mockColors.forEach(color => {
-      expect(screen.getByLabelText(`Opção de cor: ${color.name}`)).toBeDefined();
-    });
+
+    expect(screen.getByLabelText(`Opção de cor: ${color.name}`)).toBeDefined();
   });
 
   it('should highlight the selected color', () => {
     render(
       <TooltipProvider>
         <ProductColorSwatches colors={mockColors} selectedName="Amarelo" />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
-    
+
     const selectedSwatch = screen.getByLabelText('Opção de cor: Amarelo');
     expect(selectedSwatch.className).toContain('ring-primary');
     expect(selectedSwatch.getAttribute('aria-pressed')).toBe('true');
@@ -39,9 +37,9 @@ describe('ProductColorSwatches', () => {
     render(
       <TooltipProvider>
         <ProductColorSwatches colors={mockColors} onSelect={onSelect} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
-    
+
     fireEvent.click(screen.getByLabelText('Opção de cor: Azul'));
     expect(onSelect).toHaveBeenCalledWith(mockColors[1], 1);
   });
@@ -49,18 +47,20 @@ describe('ProductColorSwatches', () => {
   it('should respect color from URL query param for initial highlight', () => {
     // Mock window.location
     const originalLocation = window.location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).location = { search: '?cor=Azul' };
 
     render(
       <TooltipProvider>
         <ProductColorSwatches colors={mockColors} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
-    
+
     const selectedSwatch = screen.getByLabelText('Opção de cor: Azul');
     expect(selectedSwatch.className).toContain('ring-primary');
-    
+
     window.location = originalLocation;
   });
 });
