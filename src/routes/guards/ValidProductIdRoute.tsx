@@ -11,6 +11,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function ValidProductIdRoute({ children }: { children: ReactElement }) {
   const { id } = useParams<{ id: string }>();
   const isValid = !!id && id !== 'undefined' && id !== 'null' && UUID_RE.test(id);
-  if (!isValid) return <Navigate to="/catalogo" replace />;
+  if (!isValid) return <Navigate to="/produtos" replace />;
   return children;
 }

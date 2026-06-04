@@ -123,13 +123,34 @@ async function fetchCatalogPage(
   search?: string,
   categories?: string[],
   suppliers?: string[],
+  sortBy?: string,
 ): Promise<CatalogPage> {
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
   if (categories && categories.length > 0) filters.category_id = categories;
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
-  const orderBy = { column: 'name', ascending: true };
+  let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
+
+  if (sortBy) {
+    switch (sortBy) {
+      case 'price-asc':
+        orderBy = { column: 'sale_price', ascending: true };
+        break;
+      case 'price-desc':
+        orderBy = { column: 'sale_price', ascending: false };
+        break;
+      case 'newest':
+        orderBy = { column: 'created_at', ascending: false };
+        break;
+      case 'stock':
+        orderBy = { column: 'stock_quantity', ascending: false };
+        break;
+      default:
+        orderBy = { column: 'name', ascending: true };
+        break;
+    }
+  }
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
 
@@ -205,7 +226,7 @@ async function fetchCatalogPage(
     }
   }
 
-  const fetchedUpTo = offset + pagesToFetch * CATALOG_PAGE_SIZE;
+  const fetchedUpTo = offset + products.length;
   return {
     products,
     nextOffset: lastPageSize === CATALOG_PAGE_SIZE ? fetchedUpTo : null,
@@ -236,14 +257,16 @@ export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];
   suppliers?: string[];
+  sortBy?: string;
 }) {
   const search = filters?.search || '';
   const categories = filters?.categories || [];
   const suppliers = filters?.suppliers || [];
+  const sortBy = filters?.sortBy || 'name';
   return useInfiniteQuery<CatalogPage, Error>({
-    queryKey: ['promobrind-products-catalog', search, categories, suppliers],
+    queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],
     queryFn: ({ pageParam }) =>
-      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers),
+      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers, sortBy),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     staleTime: 30 * 60 * 1000,
