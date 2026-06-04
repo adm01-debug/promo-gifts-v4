@@ -57,11 +57,21 @@ export default defineConfig({
     // 4. Mobile
     {
       name: 'routes-mobile',
-      use: { 
+      use: {
         viewport: { width: 375, height: 667 },
         isMobile: true,
       },
       testIgnore: [/auth\.setup\.ts/],
+    },
+
+    // 5. Smoke — serial, no auth, no retries (matches *smoke.spec.ts files)
+    {
+      name: 'chromium-smoke',
+      use: {
+        viewport: { width: 1280, height: 720 },
+      },
+      testMatch: [/smoke\.spec\.ts/],
+      retries: 0,
     },
   ],
 
