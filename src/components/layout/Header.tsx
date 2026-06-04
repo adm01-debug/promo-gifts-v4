@@ -203,7 +203,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
           </Button>
 
           <div className="lg:hidden">
-            <AppLogo showText={true} textClassName="text-[16px] sm:text-[18px]" iconClassName="h-8 w-8 sm:h-9 sm:w-9" />
+            <AppLogo showText={true} iconClassName="h-8 w-8 sm:h-9 sm:w-9" />
           </div>
 
           {/* #1 — Seção atual como âncora */}
