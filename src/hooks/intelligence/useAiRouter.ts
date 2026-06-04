@@ -16,18 +16,15 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
-// Definimos um tipo estendido para o SupabaseClient que conhece as tabelas de AI
-// enquanto o database.types.ts não é regenerado.
-type ExtendedSupabaseClient = typeof supabase & {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  from: (table: 'ai_providers' | 'ai_models' | 'ai_function_routing' | string) => any;
-};
-
-const sb = supabase as ExtendedSupabaseClient;
+// As tabelas de AI (ai_providers, ai_models, ai_function_routing) existem no
+// schema gerado, mas as interfaces hand-written abaixo são o ground truth do
+// app. Usamos untypedFrom para o builder permissivo e evitar fricção de
+// excess-property entre as interfaces e os tipos Insert/Update gerados.
+const sb = { from: untypedFrom };
 
 // ============================================================
 // Types — SCHEMA REAL (ground truth)

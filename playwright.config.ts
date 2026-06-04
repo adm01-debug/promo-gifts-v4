@@ -7,6 +7,13 @@ import path from 'path';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Apenas specs Playwright. Sem isto, o testMatch padrão também casa arquivos
+  // *.test.ts — e o Vitest e2e/scripts/__tests__/generate-fixtures.test.ts
+  // importa `vitest`, cujo `expect` colide com o do Playwright no mesmo processo
+  // ("Cannot redefine property: Symbol($$jest-matchers-object)"), derrubando a
+  // coleta de TODA a suíte de forma intermitente. Projetos com testMatch próprio
+  // (setup, chromium-smoke) continuam com o seu.
+  testMatch: '**/*.spec.ts',
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,
