@@ -330,9 +330,9 @@ export const ProductListItem = memo(function ProductListItem({
 
   return (
     <>
-      <article
+    <article
         className={cn(
-          'group relative flex items-center gap-3 px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5',
+          'group relative flex h-[72px] sm:h-[88px] items-center gap-3 px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5',
           'cursor-pointer rounded-xl bg-card',
           'transition-all duration-200 ease-out',
           'touch-manipulation active:scale-[0.997]',
@@ -352,19 +352,24 @@ export const ProductListItem = memo(function ProductListItem({
       >
         {/* Thumbnail — compact square */}
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]">
-          <img
-            src={thumbUrl}
-            alt={product.name}
-            className="h-full w-full object-contain"
-            loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!img.dataset.fallback) {
-                img.dataset.fallback = '1';
-                img.src = product.images[0] || '/placeholder.svg';
-              }
-            }}
-          />
+          <div 
+            key={thumbUrl}
+            className="h-full w-full animate-in fade-in duration-500"
+          >
+            <img
+              src={thumbUrl}
+              alt={product.name}
+              className="h-full w-full object-contain"
+              loading="lazy"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = '1';
+                  img.src = product.images[0] || '/placeholder.svg';
+                }
+              }}
+            />
+          </div>
           {/* Multi-variant dots */}
           {hasMultipleVariants && (
             <div

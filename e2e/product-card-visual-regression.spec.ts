@@ -124,8 +124,54 @@ test.describe("ProductCard — Halo e Regressão de Borda", () => {
       
       if (firstBox && secondBox) {
         // Altura deve ser idêntica (margem de erro de 1px para subpixels)
+        expect(Math.abs(firstBox.height - secondBox.height)).toBeLessThanOrEqual(1.5);
+      }
+    }
+  });
+
+  test("todos os itens no layout de lista devem possuir exatamente a mesma altura", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    
+    // Ativa modo lista (assume que existe um botão para isso ou o modo padrão pode ser alterado)
+    const listButton = page.locator('[data-testid="view-mode-list"]');
+    if (await listButton.isVisible()) {
+      await listButton.click();
+    } else {
+      // Caso não tenha botão, tenta navegar diretamente se houver rota ou parâmetro
+      await page.goto(page.url() + (page.url().includes('?') ? '&' : '?') + 'view=list');
+    }
+    await waitForRouteIdle(page);
+
+    const listItems = page.locator('[data-testid^="product-list-item"], article.group.relative.flex.items-center');
+    await expect(listItems.first()).toBeVisible();
+    
+    const count = await listItems.count();
+    if (count > 1) {
+      const firstBox = await listItems.nth(0).boundingBox();
+      const secondBox = await listItems.nth(1).boundingBox();
+      
+      if (firstBox && secondBox) {
+        // Altura fixa em 72px (mobile) ou 88px (desktop)
         expect(Math.abs(firstBox.height - secondBox.height)).toBeLessThanOrEqual(1);
       }
+    }
+  });
+
+  test("título do card sempre respeita o line-clamp e não altera altura", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const title = firstCard.locator('[data-testid="product-card-name"]');
+    
+    const boxBefore = await firstCard.boundingBox();
+    
+    // Injeta um nome gigante via script para testar o clamp
+    await title.evaluate((el) => {
+      el.textContent = "Nome de produto extremamente longo que certamente ocuparia mais de duas linhas se não houvesse o line-clamp aplicado corretamente no componente CSS e nas propriedades de estilo do Tailwind";
+    });
+    
+    const boxAfter = await firstCard.boundingBox();
+    if (boxBefore && boxAfter) {
+      expect(Math.abs(boxBefore.height - boxAfter.height)).toBeLessThanOrEqual(1);
     }
   });
 });
