@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Bot, Sparkles } from 'lucide-react';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 

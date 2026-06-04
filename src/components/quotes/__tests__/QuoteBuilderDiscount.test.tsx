@@ -5,6 +5,7 @@ import { QuoteBuilderSummaryColumn } from '../QuoteBuilderSummaryColumn';
 
 describe('QuoteBuilderSummaryColumn Discount Logic', () => {
   const defaultProps = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     items: [{ product_name: 'Test', quantity: 10, unit_price: 100, product_sku: 'ABC' } as any],
     activeItemIndex: null,
     setActiveItemIndex: vi.fn(),

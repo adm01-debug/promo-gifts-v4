@@ -6,7 +6,7 @@
  *
  * Refatorado: helpers/preview/style extraídos para TechniqueCardHelpers.tsx
  */
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -413,7 +413,7 @@ export function TechniqueCard({
 
 // Formulário de configuração inline
 function InlineConfigForm({
-  technique,
+  _technique,
   settings,
   showColors,
   showSize,

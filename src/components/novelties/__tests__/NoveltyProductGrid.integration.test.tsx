@@ -1,13 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NoveltyProductGrid } from '../NoveltyProductGrid';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import * as React from 'react';
-import { SORT_OPTIONS } from '@/constants/filters';
+import type { ReactNode } from 'react';
+import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
+
+// Helper: find an input by partial placeholder text (testing-library does
+// not expose this matcher out-of-the-box; the production placeholder includes
+// the keyboard-shortcut hint and ellipsis so exact match is brittle).
+function getByPlaceholderPartial(text: string): HTMLInputElement {
+  const inputs = screen.getAllByRole('textbox');
+  const match = inputs.find((i) => (i as HTMLInputElement).placeholder.includes(text.trim()));
+  if (!match) throw new Error(`No textbox with placeholder containing "${text}"`);
+  return match as HTMLInputElement;
+}
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
@@ -48,11 +58,11 @@ vi.mock('@/hooks/products', () => ({
     isFetching: false,
     error: null,
   })),
-  useNoveltiesSelectionMode: vi.fn(({ filteredProducts }) => ({
+  useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
     clearSelection: vi.fn(),
-    noveltyToProduct: (n: any) => ({
+    noveltyToProduct: (n: NoveltyWithDetails) => ({
       id: n.product_id,
       name: n.product_name || '',
       product_name: n.product_name || '',
@@ -104,15 +114,9 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 
 // Mock Virtualized Grid to render synchronously
 vi.mock('../VirtualizedNoveltyGrid', () => ({
-  VirtualizedNoveltyGrid: ({
-    products,
-    onProductClick,
-    selectionMode,
-    selectedIds,
-    onToggleSelect,
-  }: any) => (
+  VirtualizedNoveltyGrid: ({ products }: { products: NoveltyWithDetails[] }) => (
     <div data-testid="mock-virtualized-grid">
-      {products.map((p: any) => (
+      {products.map((p) => (
         <div key={p.novelty_id} role="listitem">
           <h3>{p.product_name}</h3>
           <span>R$ {p.base_price}</span>
@@ -126,7 +130,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
+const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <TooltipProvider>{children}</TooltipProvider>
@@ -153,7 +157,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
   it('filters by search and updates badge', async () => {
     render(<NoveltyProductGrid />, { wrapper });
 
-    const searchInput = extendedScreen.getByPlaceholderRelative('Buscar novidades…  /');
+    const searchInput = getByPlaceholderPartial('Buscar novidades');
 
     fireEvent.change(searchInput, { target: { value: 'Caneta A' } });
 
@@ -169,9 +173,6 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
 
   it('sorts locally by price-asc', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-
-    // Default is newest (Caneta B then Caneta A)
-    // In Virtualized grid ordering may differ — rely on sort option change to verify
 
     // Find sort select and change to price-asc
     const selects = screen.getAllByRole('combobox');
@@ -191,12 +192,3 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     // If it didn't crash and we see the products, initial state is ok
   });
 });
-
-// Helper for finding elements with partial text in placeholder/aria
-const extendedScreen = {
-  getByPlaceholderRelative: (text: string) => {
-    const inputs = screen.getAllByRole('textbox');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return inputs.find((i: any) => i.placeholder.includes(text.trim())) as HTMLInputElement;
-  },
-};

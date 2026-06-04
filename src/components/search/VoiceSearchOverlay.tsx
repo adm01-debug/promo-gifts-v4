@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/intelligence';
 import { usePhaseColors } from './voice/usePhaseColors';
 import {
@@ -98,6 +98,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
       };
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, onClose]);
 
     // Auto-start & continuous listening

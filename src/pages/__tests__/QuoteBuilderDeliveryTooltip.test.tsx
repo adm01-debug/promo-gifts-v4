@@ -98,6 +98,7 @@ vi.mock('@/hooks/common', () => ({
     showDialog: false,
     confirmLeave: vi.fn(),
     cancelLeave: vi.fn(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     guardNavigation: (cb: any) => cb(),
     message: 'Unsaved changes',
   })),

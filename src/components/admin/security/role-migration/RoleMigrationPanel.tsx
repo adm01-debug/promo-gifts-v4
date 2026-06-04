@@ -74,7 +74,7 @@ const OPERATIONS = [
 ] as const;
 
 interface ProfileLite {
-  user_id: string;
+  userId: string;
   email: string | null;
   full_name: string | null;
   current_roles: AppRole[];
@@ -116,26 +116,26 @@ export function RoleMigrationPanel() {
       setLoadingProfiles(true);
       try {
         const [{ data: profs, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-          supabase.from('profiles').select('user_id, email, full_name').order('email'),
-          supabase.from('user_roles').select('user_id, role'),
+          supabase.from('profiles').select('userId, email, full_name').order('email'),
+          supabase.from('user_roles').select('userId, role'),
         ]);
         if (pErr) throw pErr;
         if (rErr) throw rErr;
         if (cancelled) return;
         const rolesByUser = new Map<string, AppRole[]>();
         for (const r of roles ?? []) {
-          const arr = rolesByUser.get(r.user_id) ?? [];
+          const arr = rolesByUser.get(r.userId) ?? [];
           arr.push(r.role as AppRole);
-          rolesByUser.set(r.user_id, arr);
+          rolesByUser.set(r.userId, arr);
         }
         setProfiles(
           (profs ?? [])
-            .filter((p): p is typeof p & { user_id: string } => p.user_id !== null)
+            .filter((p): p is typeof p & { userId: string } => p.userId !== null)
             .map((p) => ({
-              user_id: p.user_id,
+              userId: p.userId,
               email: p.email,
               full_name: p.full_name,
-              current_roles: rolesByUser.get(p.user_id) ?? [],
+              current_roles: rolesByUser.get(p.userId) ?? [],
             })),
         );
       } catch (e) {
@@ -170,7 +170,7 @@ export function RoleMigrationPanel() {
   };
 
   const buildItems = (): MigrationItemInput[] =>
-    Array.from(selected).map((user_id) => ({ user_id, to_role: toRole, operation }));
+    Array.from(selected).map((userId) => ({ userId, to_role: toRole, operation }));
 
   const submit = async (dryRun: boolean) => {
     if (selected.size === 0) {
@@ -330,7 +330,7 @@ export function RoleMigrationPanel() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelected(new Set(filtered.map((p) => p.user_id)))}
+                  onClick={() => setSelected(new Set(filtered.map((p) => p.userId)))}
                 >
                   Selecionar todos visíveis
                 </Button>
@@ -348,16 +348,16 @@ export function RoleMigrationPanel() {
                 <div className="divide-y">
                   {filtered.map((p) => (
                     <label
-                      key={p.user_id}
+                      key={p.userId}
                       className="flex cursor-pointer items-center gap-3 p-3 hover:bg-muted/50"
                     >
                       <Checkbox
-                        checked={selected.has(p.user_id)}
-                        onCheckedChange={() => toggle(p.user_id)}
+                        checked={selected.has(p.userId)}
+                        onCheckedChange={() => toggle(p.userId)}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">
-                          {p.full_name || p.email || p.user_id}
+                          {p.full_name || p.email || p.userId}
                         </div>
                         <div className="truncate text-xs text-muted-foreground">{p.email}</div>
                       </div>
@@ -501,7 +501,7 @@ export function RoleMigrationPanel() {
                           </Badge>
                           <div className="min-w-0 flex-1">
                             <div className="truncate">
-                              <span className="font-medium">{it.user_email ?? it.user_id}</span>
+                              <span className="font-medium">{it.user_email ?? it.userId}</span>
                               <span className="text-muted-foreground"> · {it.operation} </span>
                               <code className="text-xs">
                                 {it.from_role ?? '—'} → {it.to_role}

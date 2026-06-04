@@ -6,13 +6,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock components that require complex context
 vi.mock('@/components/ui/tooltip', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Tooltip: ({ children }: any) => <div>{children}</div>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TooltipTrigger: ({ children }: any) => <div>{children}</div>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TooltipContent: ({ children }: any) => <div>{children}</div>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TooltipProvider: ({ children }: any) => <div>{children}</div>,
 }));
 
 vi.mock('@/contexts/SellerCartContext', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   SellerCartProvider: ({ children }: any) => <div>{children}</div>,
   useSellerCartContext: () => ({
     isInAnyCart: () => false,
@@ -21,6 +26,7 @@ vi.mock('@/contexts/SellerCartContext', () => ({
 }));
 
 vi.mock('@/contexts/CollectionsContext', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   CollectionsProvider: ({ children }: any) => <div>{children}</div>,
   useCollectionsContext: () => ({
     collections: [],

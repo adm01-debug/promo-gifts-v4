@@ -1,8 +1,5 @@
-import { useState, useEffect, useRef, forwardRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowUp } from 'lucide-react';
-import { useAriaLive } from '@/components/a11y';
 
 interface ScrollProgressProps {
   className?: string;

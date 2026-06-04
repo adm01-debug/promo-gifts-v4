@@ -16,7 +16,7 @@ import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { ReplenishmentTableView } from './ReplenishmentCards';
 import { ReplenishmentToolbar } from './ReplenishmentToolbar';
 import { getGridColsClass, getGridGapClass } from './grid-layout';
@@ -73,6 +73,7 @@ export function ReplenishmentProductGrid() {
     isFetching,
     error,
   } = useReplenishmentsWithDetails({ limit: 200 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const products = replenishments ?? [];
   const loadingProgress = useLoadingProgress(isLoading);
 

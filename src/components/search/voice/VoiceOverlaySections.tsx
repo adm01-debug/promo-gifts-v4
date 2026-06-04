@@ -2,7 +2,7 @@
  * Extracted sections from VoiceSearchOverlay — suggestions, text input, footer
  */
 import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Send, Keyboard, X } from 'lucide-react';
 import type { VoiceAgentPhase } from '@/hooks/intelligence';
 import type { VoiceHistoryEntry } from '@/hooks/voice/useVoiceHistory';
@@ -144,9 +144,9 @@ export function VoiceTextInput({ phase, onSimulateCommand }: TextInputProps) {
 }
 
 function VoiceFooter({
-  showTextInput,
-  onToggleTextInput,
-  onClose,
+  _showTextInput,
+  _onToggleTextInput,
+  _onClose,
 }: {
   showTextInput: boolean;
   onToggleTextInput: () => void;

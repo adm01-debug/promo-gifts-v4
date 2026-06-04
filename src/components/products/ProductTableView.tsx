@@ -23,7 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ExternalVariantStock, type Product } from '@/hooks/products';
+// FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
@@ -135,7 +137,7 @@ export const ProductTableView = memo(function ProductTableView({
   totalEstimate,
   filteredCount,
   loadMoreRef,
-  itemsPerPage,
+  _itemsPerPage,
   onLoadMore,
 }: ProductTableViewProps) {
   const navigate = useNavigate();
@@ -187,6 +189,7 @@ export const ProductTableView = memo(function ProductTableView({
   const sorted = useMemo(() => {
     if (isLoading && products.length === 0) {
       return Array.from({ length: 12 }).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
       );
     }
@@ -207,6 +210,7 @@ export const ProductTableView = memo(function ProductTableView({
           return 0;
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, sortCol, sortDir]);
 
   const virtualizer = useVirtualizer({

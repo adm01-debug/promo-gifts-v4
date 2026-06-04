@@ -96,7 +96,7 @@ async function dbInvokeLocal<T>(
     orderBy?: { column: string; ascending?: boolean };
     limit?: number;
   },
-): Promise<{ records: T[]; count: number }> {
+): Promise<{ records: T[]; count: number | null }> {
   const { dbInvoke } = await import('@/lib/db/postgrest');
   return dbInvoke<T>({
     table,

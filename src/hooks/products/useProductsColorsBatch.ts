@@ -11,7 +11,8 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { supabase, resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface ProductColorDot {
   name: string;
@@ -23,6 +24,12 @@ type VariantRow = {
   color_name: string | null;
   color_hex: string | null;
 };
+
+/**
+ * UUID v4 regex — filtra IDs mock/placeholder (ex: "mock-1") que causam
+ * erro 400 no Supabase quando enviados em queries `.in()`.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * BUG-4 FIX: Cache de módulo para evitar re-fetch quando a queryKey muda
@@ -56,8 +63,11 @@ export function clearColorsCache(): void {
  * Ordena por nome e deduplica por (name|hex) lower-case.
  */
 export function useProductsColorsBatch(productIds: string[]) {
-  // Chave estável: ids únicos ordenados (evita refetch quando a ordem do array muda)
-  const stableIds = useMemo(() => [...new Set(productIds)].sort(), [productIds]);
+  // Chave estável: ids únicos ordenados, filtrando mock/placeholder IDs
+  const stableIds = useMemo(
+    () => [...new Set(productIds)].filter((id) => UUID_RE.test(id)).sort(),
+    [productIds],
+  );
   // Query key que inclui os IDs específicos solicitados
   const queryKey = useMemo(() => ['products-colors-batch', stableIds], [stableIds]);
 
@@ -75,9 +85,7 @@ export function useProductsColorsBatch(productIds: string[]) {
         const CHUNK = 100;
         for (let i = 0; i < missingIds.length; i += CHUNK) {
           const chunk = missingIds.slice(i, i + CHUNK);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data, error } = await (supabase as any)
-            .from(resolveTable('product_variants'))
+          const { data, error } = await untypedFrom(resolveTable('product_variants'))
             .select('product_id, color_name, color_hex')
             .in('product_id', chunk)
             .eq('is_active', true)
@@ -93,15 +101,18 @@ export function useProductsColorsBatch(productIds: string[]) {
           // Agrupa resultados por ID
           const results = new Map<string, Map<string, ProductColorDot>>();
 
-          for (const row of (data ?? []) as unknown as VariantRow[]) {
+          for (const row of (data ?? []) as VariantRow[]) {
             const pid = row.product_id;
             const name = (row.color_name || '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
-            if (!results.has(pid)) results.set(pid, new Map());
-            const dedupMap = results.get(pid) as Map<string, ProductColorDot>;
+            let dedupMap = results.get(pid);
+            if (!dedupMap) {
+              dedupMap = new Map();
+              results.set(pid, dedupMap);
+            }
             if (!dedupMap.has(key)) {
               dedupMap.set(key, { name, hex });
             }
@@ -120,8 +131,9 @@ export function useProductsColorsBatch(productIds: string[]) {
       // Constrói o Map final apenas com os IDs solicitados nesta query
       const resultMap = new Map<string, ProductColorDot[]>();
       ids.forEach((id) => {
-        if (GLOBAL_COLORS_CACHE.has(id)) {
-          resultMap.set(id, GLOBAL_COLORS_CACHE.get(id) as ProductColorDot[]);
+        const cached = GLOBAL_COLORS_CACHE.get(id);
+        if (cached) {
+          resultMap.set(id, cached);
         }
       });
 
@@ -134,15 +146,17 @@ export function useProductsColorsBatch(productIds: string[]) {
 
   return useMemo(() => {
     const resultMap = new Map<string, ProductColorDot[]>();
-    stableIds.forEach((id) => {
-      if (GLOBAL_COLORS_CACHE.has(id)) {
-        resultMap.set(id, GLOBAL_COLORS_CACHE.get(id) as ProductColorDot[]);
-      }
-    });
+    for (const id of stableIds) {
+      const cached = GLOBAL_COLORS_CACHE.get(id);
+      if (cached) resultMap.set(id, cached);
+    }
     return {
       data: resultMap,
       isLoading: query.isLoading,
       hasError: query.isError,
     };
-  }, [stableIds, query.isLoading, query.isError]);
+    // query.data is intentionally included: it changes when the query completes,
+    // which is what populates GLOBAL_COLORS_CACHE — we need to recompute then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stableIds, query.isLoading, query.isError, query.data]);
 }

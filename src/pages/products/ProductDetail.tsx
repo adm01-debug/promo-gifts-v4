@@ -267,7 +267,7 @@ export default function ProductDetail() {
       newParams.delete('grupo');
     }
     setSearchParams(newParams, { replace: true });
-  }, [selectedVariation, colorAutoSelected, setSearchParams, searchParams, product]);
+  }, [product, selectedVariation, colorAutoSelected, setSearchParams, searchParams]);
 
   if (isLoading) return <ProductDetailSkeleton />;
 

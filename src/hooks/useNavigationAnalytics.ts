@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 
@@ -32,7 +32,7 @@ export function useNavigationAnalytics() {
       if (!user?.id) return;
 
       try {
-        await supabase.from('navigation_analytics').insert({
+        await untypedFrom('navigation_analytics').insert({
           user_id: user.id,
           button_name: buttonName,
           source_path: location.pathname,

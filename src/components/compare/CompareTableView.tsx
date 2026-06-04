@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { X, Check, Minus, Crown, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useComparisonHighlight, highlightClasses } from './ComparisonHighlights';
 import { PriceSparkline } from './PriceSparkline';

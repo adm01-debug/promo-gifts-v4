@@ -22,7 +22,7 @@ import {
   FolderTree,
   ArrowUpDown,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { cn } from '@/lib/utils';
 import type { ColumnCount } from '@/components/products/ColumnSelector';

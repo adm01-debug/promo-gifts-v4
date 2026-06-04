@@ -1,6 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#3B82F6"/>
-  <g transform="translate(256,256) scale(8)" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    :root { --bg: #3B82F6; --icon: white; --stroke-w: 2; }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: white; --icon: #1D4ED8; --stroke-w: 2.5; }
+    }
+  </style>
+  <rect width="512" height="512" rx="96" fill="var(--bg)" stroke="#3B82F6" stroke-width="0"/>
+  <g transform="translate(256,256) scale(8)"
+     stroke="var(--icon)"
+     stroke-width="var(--stroke-w)"
+     fill="none"
+     stroke-linecap="round"
+     stroke-linejoin="round">
     <rect x="-16" y="-6" width="32" height="22" rx="2"/>
     <rect x="-20" y="-12" width="40" height="6" rx="1"/>
     <line x1="0" y1="-12" x2="0" y2="16"/>

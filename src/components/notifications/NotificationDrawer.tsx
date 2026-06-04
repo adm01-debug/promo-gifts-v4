@@ -224,9 +224,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
     const [localSearch, setLocalSearch] = useState(search);
     const [localCategory, setLocalCategory] = useState(category);
     const [localUnreadOnly, setLocalUnreadOnly] = useState(unreadOnly);
-    const [localDateRange, setLocalDateRange] = useState(
-      dateRange ?? { from: undefined, to: undefined },
-    );
+    const [localDateRange, setLocalDateRange] = useState(dateRange);
     const prevCountRef = React.useRef(unreadCount);
     const { announce } = useAriaLive();
     const prevRefetchingRef = useRef(false);
@@ -496,7 +494,6 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        aria-label="Exportar CSV"
                         onClick={handleExportCSV}
                       >
                         <Download className="h-4 w-4" />
@@ -624,12 +621,10 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                           defaultMonth={localDateRange?.from}
                           selected={localDateRange}
                           onSelect={(range) =>
-                            setLocalDateRange(
-                              (range ?? { from: undefined, to: undefined }) as {
-                                from: Date | undefined;
-                                to: Date | undefined;
-                              },
-                            )
+                            setLocalDateRange({
+                              from: range?.from ?? undefined,
+                              to: range?.to ?? undefined,
+                            })
                           }
                           numberOfMonths={1}
                         />

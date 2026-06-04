@@ -194,6 +194,7 @@ export default function MockupGenerator() {
     };
 
     return { data: approvalData, recordId: mg.lastSavedRecordId, userId: user.id };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mg.lastSavedRecordId,
     mg.lastSavedMockupUrl,
@@ -218,6 +219,7 @@ export default function MockupGenerator() {
     mg.setLastSavedRecordId(null);
     mg.setLastSavedMockupUrl(null);
     mg.fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mg.setLastSavedRecordId, mg.setLastSavedMockupUrl, mg.fetchHistory]);
 
   return (
@@ -363,7 +365,7 @@ export default function MockupGenerator() {
                 <div className="space-y-4 transition-all duration-300 lg:sticky lg:top-24 lg:self-start">
                   {mg.selectedProduct && mg.getProductImage() && mg.activeArea ? (
                     <LogoPositionEditor
-                      productImageUrl={mg.getProductImage()!}
+                      productImageUrl={mg.getProductImage() ?? ''}
                       logoPreview={mg.activeArea.logoPreview}
                       positionX={mg.activeArea.positionX}
                       positionY={mg.activeArea.positionY}

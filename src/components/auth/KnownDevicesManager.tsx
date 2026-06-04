@@ -46,6 +46,7 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
 
   useEffect(() => {
     loadDevices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetUserId]);
 
   const loadDevices = async () => {

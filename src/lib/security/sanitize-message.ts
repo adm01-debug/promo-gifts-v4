@@ -41,7 +41,7 @@ const TECHNICAL_PATTERNS: readonly RegExp[] = [
   /\bUNAUTHORIZED_LEGACY_JWT\b/,
   /\bSUPABASE_EDGE_RUNTIME_ERROR\b/,
   /\b[A-Z][A-Z0-9_]{6,}\b/,
-  /\b(?:401|403|404|409|422|429|500|502|503|504)\b\s*[:\-]/,
+  /\b(?:401|403|404|409|422|429|500|502|503|504)\b\s*[:-]/,
   /\bJSON(?:\.parse|\.stringify)?\b/i,
   /\bunexpected token\b/i,
   /^\s*[{[]/,
@@ -61,7 +61,7 @@ export function looksTechnical(input: unknown): boolean {
 
 /** Extrai string "melhor esforço" de qualquer entrada — sem decisão de visibilidade. */
 export function extractRawMessage(input: unknown): string {
-  if (input == null) return '';
+  if (input === null) return '';
   if (typeof input === 'string') return input;
   if (input instanceof Error) return input.message ?? '';
   if (typeof input === 'object') {
@@ -101,4 +101,5 @@ export function sanitizeMessage(input: unknown, opts: SanitizeOptions = {}): str
   return raw || fallback;
 }
 
-export const __test__ = { TECHNICAL_PATTERNS, looksTechnical };
+export // eslint-disable-next-line @typescript-eslint/naming-convention
+const __test__ = { TECHNICAL_PATTERNS, looksTechnical };

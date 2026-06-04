@@ -43,7 +43,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
   WIZARD_STEPS,
   COMMON_COMPONENTS,

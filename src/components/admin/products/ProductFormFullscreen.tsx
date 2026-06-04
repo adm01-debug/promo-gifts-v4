@@ -36,7 +36,7 @@ import {
   Info,
   Boxes,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useSkuValidation } from './hooks/useSkuValidation';
 import { useProductSeoAI } from '@/hooks/products';
 

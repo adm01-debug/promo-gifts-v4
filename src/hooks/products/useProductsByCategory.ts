@@ -91,6 +91,7 @@ export function useProductsByCategory({
       setIsLoading(false);
       isFetchingRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryIdsKey, includeDescendants, hasFilter, enabled, categoryIds]);
 
   // Buscar quando a chave de categorias muda

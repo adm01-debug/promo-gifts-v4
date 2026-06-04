@@ -15,7 +15,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/hooks/simulation';
 import type { SimulationOption, Product } from '@/types/simulation';
@@ -50,7 +50,7 @@ export function ScenarioComparison({
   onSaveAsScenario,
   onClearScenario,
 }: ScenarioComparisonProps) {
-  const [selectedView, setSelectedView] = useState<'compare' | 'details'>('compare');
+  const [_selectedView, _setSelectedView] = useState<'compare' | 'details'>('compare');
 
   const canSave = currentSimulation.options.length > 0;
 

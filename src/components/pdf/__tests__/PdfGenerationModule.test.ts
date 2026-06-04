@@ -491,10 +491,10 @@ describe('downloadPDF', () => {
 
     vi.spyOn(document, 'createElement').mockReturnValue(fakeLink as unknown as HTMLElement);
     vi.spyOn(document.body, 'appendChild').mockImplementation(
-      appendChildMock as unknown as (node: Node) => Node,
+      appendChildMock as unknown as typeof document.body.appendChild,
     );
     vi.spyOn(document.body, 'removeChild').mockImplementation(
-      removeChildMock as unknown as (child: Node) => Node,
+      removeChildMock as unknown as typeof document.body.removeChild,
     );
   });
 

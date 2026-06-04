@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, TrendingUp, Store, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -141,6 +141,7 @@ export function CategoryRanking({
     }
 
     return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedCategories, sortMode]);
 
   if (isLoading) {

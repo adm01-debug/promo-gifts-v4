@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, X, Loader2, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,6 +70,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       await performVisualSearch(base64);
     };
     reader.readAsDataURL(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const performVisualSearch = async (imageBase64: string) => {

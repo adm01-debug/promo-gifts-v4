@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/ui';
 
 interface ConfettiPiece {
@@ -62,6 +62,7 @@ export function MiniConfetti({
 
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, count, duration, colors, onComplete, isActive]);
 
   return (

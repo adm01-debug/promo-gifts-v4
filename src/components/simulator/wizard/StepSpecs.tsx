@@ -25,7 +25,7 @@ import {
   Loader2,
   Info,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
 import type { UseSimulatorWizardReturn } from '@/hooks/simulator/useSimulatorWizard';
@@ -45,6 +45,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
   });
 
   // v6: Analyze techniques to determine which fields to show
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const techniques = selectedLocation?.availableTechniques || [];
 
   const { anyUsaDimensao, anyCobraPorCor, maxColors, maxWidth, maxHeight } = useMemo(() => {

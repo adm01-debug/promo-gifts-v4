@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye } from 'lucide-react';
+import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift } from 'lucide-react';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
@@ -147,9 +147,23 @@ export function ProductDetailHero({
               hasCommercialPackaging={product.hasCommercialPackaging ?? null}
               packingType={product.packingType ?? null}
               repackingType={product.repackingType ?? null}
-              packagingContext={(product.packagingContext ?? null) as never}
+              packagingContext={
+                (product.packagingContext ?? null) as
+                  | 'always'
+                  | 'with_customization'
+                  | 'without_customization'
+                  | null
+              }
+              boxWidthMm={product.boxWidthMm}
+              boxHeightMm={product.boxHeightMm}
+              boxLengthMm={product.boxLengthMm}
               onClick={onOpenPackagingModal}
             />
+            {!product.hasCommercialPackaging && (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium italic text-muted-foreground/40">
+                Sem embalagem
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -373,8 +387,8 @@ export function ProductDetailHero({
                   variant="button"
                   buttonSize="lg"
                   className="xl:h-13 font-action-button h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-primary text-[0.875rem] text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                  labelOverride="Carrinho"
-                  iconOverride="cart"
+                  labelOverride="Personalizar"
+                  iconOverride="plus"
                 />
                 <Button
                   size="lg"
@@ -522,6 +536,65 @@ export function ProductDetailHero({
               <ProductDimensions dimensions={product.dimensions} compact />
             </div>
           </div>
+
+          {/* Packaging Summary */}
+          {product.hasCommercialPackaging && (
+            <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 xl:p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Gift className="h-5 w-5 text-warning" />
+                <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                  Embalagem Especial
+                </h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {product.packingType && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Tipo
+                    </p>
+                    <p className="text-xs font-medium">{product.packingType}</p>
+                  </div>
+                )}
+                {product.boxQuantity && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Qtd/Caixa
+                    </p>
+                    <p className="text-xs font-medium">{product.boxQuantity} un.</p>
+                  </div>
+                )}
+                {product.boxWeightKg && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Peso
+                    </p>
+                    <p className="text-xs font-medium">{product.boxWeightKg} kg</p>
+                  </div>
+                )}
+                {(product.boxWidthMm || product.boxHeightMm || product.boxLengthMm) && (
+                  <div className="col-span-2 space-y-1 sm:col-span-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Dimensões
+                    </p>
+                    <p className="text-xs font-medium">
+                      {[product.boxWidthMm, product.boxHeightMm, product.boxLengthMm]
+                        .filter(Boolean)
+                        .join(' × ')}{' '}
+                      mm
+                    </p>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="link"
+                size="sm"
+                className="mt-2 h-auto p-0 text-warning hover:text-warning/80"
+                onClick={onOpenPackagingModal}
+              >
+                Ver todos os detalhes
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Kit Composition */}

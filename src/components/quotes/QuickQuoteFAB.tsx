@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { FileText, Plus, Wand2, Calculator, ShoppingCart, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -68,17 +68,7 @@ interface QuickQuoteFABProps {
   productName?: string;
 }
 
-// Diagnostic counter
-let renderCount = 0;
-
-export function QuickQuoteFAB({ productId, productName }: QuickQuoteFABProps) {
-  renderCount++;
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(
-      `[QuickQuoteFAB] Render #${renderCount} - productId: ${productId}, path: ${window.location.pathname}`,
-    );
-  }
-
+export function QuickQuoteFAB({ productId, productName: _productName }: QuickQuoteFABProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expertOpen, setExpertOpen] = useState(false);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>();

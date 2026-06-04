@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { Loader2, ArrowUp } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { ProductListItem } from './ProductListItem';

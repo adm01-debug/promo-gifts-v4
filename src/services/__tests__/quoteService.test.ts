@@ -29,8 +29,10 @@ describe('quoteService', () => {
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       then: (cb: any) => cb({ data: [], error: null }),
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from as any).mockReturnValue({ select: () => mockQuery });
 
     await quoteService.fetchQuotes('user-123', 'self');
@@ -42,6 +44,7 @@ describe('quoteService', () => {
     const mockItems = [{ id: 'i-1', product_name: 'Item 1' }];
     const mockPers = [{ id: 'p-1', quote_item_id: 'i-1', technique: 'Laser' }];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fromMock = supabase.from as any;
 
     // First call: quotes — produção usa .select('*').eq('id').single()

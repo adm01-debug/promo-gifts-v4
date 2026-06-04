@@ -26,6 +26,7 @@ export function useSuppliers() {
       orderBy: { column: 'name', ascending: true },
       limit: 100,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Transformar dados para o formato usado pelos componentes

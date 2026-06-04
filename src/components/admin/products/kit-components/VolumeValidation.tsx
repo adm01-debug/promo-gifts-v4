@@ -100,7 +100,7 @@ export function VolumeValidation({
             <strong className="text-foreground">
               {(totalComponentsVolume / 1000).toFixed(0)} cm³
             </strong>{' '}
-            / {(boxVolumeMm3! / 1000).toFixed(0)} cm³
+            / {(boxVolumeMm3 ?? 0 / 1000).toFixed(0)} cm³
           </span>
           <span className={cn('font-bold', fits ? 'text-success' : 'text-destructive')}>
             {usagePercent}%

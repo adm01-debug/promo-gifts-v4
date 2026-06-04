@@ -74,8 +74,8 @@ export function NotificationPreferences() {
     });
     if (success) {
       setPreferences((prev) => {
-        const existing = prev.find((p) => p.category === category);
-        if (existing) {
+        const exists = prev.some((p) => p.category === category);
+        if (exists) {
           return prev.map((p) => (p.category === category ? { ...p, [type]: value } : p));
         }
         return [

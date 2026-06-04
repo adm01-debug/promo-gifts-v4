@@ -39,7 +39,7 @@ import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFil
 import { DebouncedPriceInput } from '@/components/filters/DebouncedPriceInput';
 import { FilterSection } from '@/components/filters/filter-panel/FilterSection';
 import type { StockFilters, StockStatus } from '@/types/stock';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface FilterOption {
   name: string;

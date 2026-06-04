@@ -11,7 +11,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Sparkles, CalendarRange, ChevronRight, Package, Building2, Flame } from 'lucide-react';
-import { useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
+import {
+  useNoveltiesWithDetails,
+  useNoveltyStats,
+  type NoveltyStatsDisplay,
+} from '@/hooks/products';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +33,7 @@ export function NoveltiesSection() {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
 
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 100 });
-  const { data: stats } = useNoveltyStats();
+  const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
   // Extract unique suppliers from data
   const suppliers = useMemo(() => {

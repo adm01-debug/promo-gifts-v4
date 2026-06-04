@@ -1,0 +1,117 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  quality-gate:
+    name: TypeScript + ESLint Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      # GATE 1: TypeScript — zero regressions vs baseline
+      - name: TypeScript gate (zero regressions)
+        run: node scripts/check-tsc-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 2: ESLint — zero regressions vs baseline
+      - name: ESLint gate (zero regressions)
+        run: node scripts/check-eslint-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 3: Build (zero build errors)
+      - name: Build check
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+  # GATE 4: Unit tests (fast — no network)
+  unit-tests:
+    name: Vitest Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: Run unit tests
+        run: npm run test:ci-core
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+  # GATE 5: Supabase types sync check
+  # Garante que os tipos gerados pelo Supabase estão em sincronia com o schema real.
+  # Se o schema mudar sem regenerar os tipos, esse gate falha — prevenindo o type drift
+  # que foi a causa raiz de 150+ erros TS neste projeto.
+  supabase-types:
+    name: Supabase Types Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Só roda em PRs (requer token do Supabase via secrets)
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase@latest
+
+      - name: Generate types and check drift
+        run: |
+          # Gera os tipos a partir do schema atual do Supabase
+          supabase gen types typescript \
+            --project-id ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --schema public \
+            > /tmp/supabase-types-current.ts
+
+          # Compara com o arquivo no repo
+          if ! diff -q /tmp/supabase-types-current.ts src/integrations/supabase/types.ts > /dev/null 2>&1; then
+            echo "❌ DRIFT DETECTADO: tipos Supabase desatualizados!"
+            echo "Execute: supabase gen types typescript --project-id doufsxqlfjyuvxuezpln > src/integrations/supabase/types.ts"
+            diff /tmp/supabase-types-current.ts src/integrations/supabase/types.ts | head -50
+            exit 1
+          fi
+          echo "✅ Tipos Supabase em sincronia com o schema"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        # Não bloqueia o PR se o secret não estiver configurado (primeiro setup)
+        continue-on-error: true

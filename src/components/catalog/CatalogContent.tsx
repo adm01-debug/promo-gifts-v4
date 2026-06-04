@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback, type RefObject, useEffect } from 'react';
+import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -22,8 +22,6 @@ import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCate
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 // Diagnostic counter
-let catalogRenderCount = 0;
-
 interface CatalogContentProps {
   viewMode: ViewMode;
   shouldShowCatalogSkeleton: boolean;
@@ -87,11 +85,6 @@ export const CatalogContent = memo(function CatalogContent({
   setActiveProductId: _setActiveProductId,
   hideCategoryBadges = false,
 }: CatalogContentProps) {
-  catalogRenderCount++;
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[CatalogContent] Render #${catalogRenderCount} - viewMode: ${viewMode}, gridColumns: ${gridColumns}, products: ${paginatedProducts.length}`);
-  }
-
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
@@ -158,10 +151,10 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div 
+    <div
       className={cn(
-        "relative space-y-8 pb-12 duration-500 animate-in fade-in",
-        isLoadingMore && "opacity-80 transition-opacity"
+        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
+        isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >
       <SparklineSalesProvider productIds={productIds}>

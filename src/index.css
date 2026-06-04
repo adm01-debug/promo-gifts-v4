@@ -2503,3 +2503,30 @@ body.compare-focus-mode [role='main'] {
     opacity: 0;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Proteção global de formulários quando offline.
+ *
+ * Quando GlobalOfflineAlert detecta a perda de conexão, ele adiciona
+ * data-offline="true" ao <body>. Este bloco desabilita visualmente
+ * todos os botões de submit e campos de formulário enquanto o usuário
+ * está sem internet, prevenindo tentativas de salvar dados que falhariam.
+ *
+ * Componentes que querem opt-in individualmente podem usar:
+ *   data-offline-disabled="true"
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+body[data-offline='true'] button[type='submit'],
+body[data-offline='true'] [data-offline-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+/* Indicador sutil de estado offline em botões bloqueados */
+body[data-offline='true'] button[type='submit']::after {
+  content: ' (offline)';
+  font-size: 0.7em;
+  opacity: 0.7;
+}

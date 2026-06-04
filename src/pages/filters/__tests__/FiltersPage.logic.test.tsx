@@ -17,8 +17,7 @@ vi.mock('react-router-dom', async () => {
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 
 vi.mock('@/hooks/products/useProductsLightweight', () => ({
-
-  useProductsCatalog: vi.fn(({ search, categories, suppliers, sortBy }) => ({
+  useProductsCatalog: vi.fn(({ sortBy: _sortBy }) => ({
     data: {
       pages: [
         {
@@ -35,7 +34,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               newArrival: false,
               gender: 'Unissex',
               is_bestseller: true,
-              created_at: '2026-06-01T10:00:00Z'
+              created_at: '2026-06-01T10:00:00Z',
             },
             {
               id: '2',
@@ -49,7 +48,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               newArrival: true,
               gender: 'Masculino',
               is_bestseller: false,
-              created_at: '2026-06-02T10:00:00Z'
+              created_at: '2026-06-02T10:00:00Z',
             },
             {
               id: '3',
@@ -63,7 +62,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
               newArrival: false,
               gender: 'Feminino',
               is_bestseller: false,
-              created_at: '2026-05-30T10:00:00Z'
+              created_at: '2026-05-30T10:00:00Z',
             },
           ],
           totalEstimate: 3,
@@ -76,7 +75,6 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
     isFetchingNextPage: false,
   })),
 }));
-
 
 vi.mock('@/hooks/products/useProductsByCategory', () => ({
   useProductsByCategory: vi.fn(({ categoryIds }) => ({
@@ -216,46 +214,49 @@ describe('useFiltersPageState Logic - Extended Validation', () => {
   it('should apply sorting correctly (contract validation)', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
-
     // 1. Sort by price-asc
     act(() => {
       result.current.setSortBy('price-asc');
     });
-    expect(useProductsCatalog).toHaveBeenLastCalledWith(expect.objectContaining({
-      sortBy: 'price-asc'
-    }));
+    expect(useProductsCatalog).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sortBy: 'price-asc',
+      }),
+    );
     expect(result.current.filteredProducts[0].id).toBe('2'); // Price 5
 
     // 2. Sort by price-desc
     act(() => {
       result.current.setSortBy('price-desc');
     });
-    expect(useProductsCatalog).toHaveBeenLastCalledWith(expect.objectContaining({
-      sortBy: 'price-desc'
-    }));
+    expect(useProductsCatalog).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sortBy: 'price-desc',
+      }),
+    );
     expect(result.current.filteredProducts[0].id).toBe('3'); // Price 50
 
     // 3. Sort by newest
     act(() => {
       result.current.setSortBy('newest');
     });
-    expect(useProductsCatalog).toHaveBeenLastCalledWith(expect.objectContaining({
-      sortBy: 'newest'
-    }));
+    expect(useProductsCatalog).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sortBy: 'newest',
+      }),
+    );
     expect(result.current.filteredProducts[0].id).toBe('2'); // June 02
   });
 
   it('should reset pagination when filters or sort change', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
-    
     // Changing sort should trigger useProductsCatalog with new sortBy
     // which in turn causes the queryKey to change in useInfiniteQuery, effectively resetting pagination
     act(() => {
       result.current.setSortBy('price-asc');
     });
-    
+
     expect(useProductsCatalog).toHaveBeenCalled();
   });
 });
-

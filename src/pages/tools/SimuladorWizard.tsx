@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Calculator, Save, FolderOpen, Trash2, Loader2, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -92,6 +92,7 @@ export default function SimuladorWizard() {
         duration: 3000,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, wizard.selectProduct]);
 
   const isInPersonalizationFlow =

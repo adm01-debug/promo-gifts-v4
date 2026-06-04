@@ -159,6 +159,7 @@ export function ProductCustomizationOptions({
     });
     return { confirmedHasCircular, confirmedHasFlat };
     // pricesRef é mutável, mas forceTick (via state) garante recomputação
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: see comment above
   }, [locations, pricesRef.current.size]);
 
   if (isLoading) {

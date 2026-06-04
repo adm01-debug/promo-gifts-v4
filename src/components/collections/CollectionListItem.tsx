@@ -2,7 +2,7 @@
  * CollectionListItem — Premium list view row for local collections.
  * Extracted from CollectionsPage for maintainability.
  */
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { MoreVertical, Pencil, Copy, Star, Trash2, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';

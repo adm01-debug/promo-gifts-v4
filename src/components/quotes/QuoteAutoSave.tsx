@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Cloud, CloudOff, Check, Loader2, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,7 @@ export function QuoteAutoSave({
   // Salvar estado inicial para comparação
   useEffect(() => {
     initialDataRef.current = JSON.stringify(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   // Detectar mudanças
@@ -82,6 +83,7 @@ export function QuoteAutoSave({
         clearTimeout(timeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, debounceMs, onChange]);
 
   // Verificar conectividade

@@ -5,7 +5,7 @@ import { type ExternalTechnique } from '@/types/external-db';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { fetchPromobrindProducts, getProductPrice, getProductImageUrl } from '@/lib/external-db';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -70,6 +70,7 @@ export function useSimulation() {
         setTechniqueSettingsState(preferences.lastTechniqueSettings);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferencesLoaded]);
 
   // Wrapped setters with persistence
@@ -190,8 +191,7 @@ export function useSimulation() {
   const { data: _savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
     queryKey: ['saved-simulations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('personalization_simulations')
+      const { data, error } = await untypedFrom('personalization_simulations')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
@@ -371,6 +371,7 @@ export function useSimulation() {
       }
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedProduct?.id,
     selectedTechniques,
@@ -460,7 +461,7 @@ export function useSimulation() {
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
-      const { error } = await supabase.from('personalization_simulations').insert([
+      const { error } = await untypedFrom('personalization_simulations').insert([
         {
           seller_id: user.id,
           client_id: selectedClientId,
@@ -489,7 +490,7 @@ export function useSimulation() {
 
   const deleteSimulationMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('personalization_simulations').delete().eq('id', id);
+      const { error } = await untypedFrom('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

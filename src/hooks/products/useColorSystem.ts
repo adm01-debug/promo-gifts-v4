@@ -1,6 +1,6 @@
 import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 
 export interface ColorGroup {
@@ -78,8 +78,7 @@ export function useColorSystem() {
     queryFn: async () => {
       const groups = await fetchExternalColors();
 
-      const { data: nuances, error: nuancesError } = await supabase
-        .from('color_nuances')
+      const { data: nuances, error: nuancesError } = await untypedFrom('color_nuances')
         .select('id, name, slug')
         .eq('is_active', true)
         .order('sort_order');

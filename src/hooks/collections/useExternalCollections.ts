@@ -19,7 +19,7 @@
  *     em useCollectionsPageState mas não existia neste arquivo.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
@@ -59,8 +59,8 @@ export function useExternalCollections() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('collections')
+      // is_deleted é a coluna real de soft-delete (is_active não existe — ver types.ts).
+      const { data, error } = await untypedFrom('collections')
         .select('*')
         .eq('is_deleted', false)
         .limit(100);
@@ -95,8 +95,7 @@ export function useExternalCollectionProducts(collectionId: string | null) {
     queryFn: async () => {
       if (!collectionId) return [];
 
-      const { data, error } = await supabase
-        .from('collection_products')
+      const { data, error } = await untypedFrom('collection_products')
         .select('*')
         .eq('collection_id', collectionId)
         .order('display_order', { ascending: true })
@@ -122,8 +121,7 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
     queryFn: async () => {
       if (collectionIds.length === 0) return new Map<string, number>();
 
-      const { data, error } = await supabase
-        .from('collection_products')
+      const { data, error } = await untypedFrom('collection_products')
         .select('collection_id, product_id')
         .in('collection_id', collectionIds)
         .limit(5000);
@@ -152,8 +150,7 @@ export function useExternalCollectionMutations() {
 
   const createCollection = useMutation({
     mutationFn: async (data: Partial<ExternalCollection>) => {
-      const { data: inserted, error } = await supabase
-        .from('collections')
+      const { data: inserted, error } = await untypedFrom('collections')
         .insert({
           ...data,
           is_deleted: false,
@@ -174,8 +171,7 @@ export function useExternalCollectionMutations() {
 
   const updateCollection = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ExternalCollection> }) => {
-      const { data: updated, error } = await supabase
-        .from('collections')
+      const { data: updated, error } = await untypedFrom('collections')
         .update(data)
         .eq('id', id)
         .select()
@@ -194,7 +190,7 @@ export function useExternalCollectionMutations() {
 
   const deleteCollection = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('collections').delete().eq('id', id);
+      const { error } = await untypedFrom('collections').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -214,9 +210,7 @@ export function useExternalCollectionMutations() {
       collectionId: string;
       productId: string;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: inserted, error } = await (supabase as any)
-        .from('collection_products')
+      const { data: inserted, error } = await untypedFrom('collection_products')
         .insert({
           collection_id: collectionId,
           product_id: productId,
@@ -237,7 +231,7 @@ export function useExternalCollectionMutations() {
 
   const removeProductFromCollection = useMutation({
     mutationFn: async (relationId: string) => {
-      const { error } = await supabase.from('collection_products').delete().eq('id', relationId);
+      const { error } = await untypedFrom('collection_products').delete().eq('id', relationId);
       if (error) throw error;
     },
     onSuccess: () => {

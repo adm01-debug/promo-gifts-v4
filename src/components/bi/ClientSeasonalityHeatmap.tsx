@@ -353,7 +353,7 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
                   onClick={() => {
                     // Cria evento .ics simples para download
                     const peakDate = new Date();
-                    peakDate.setMonth(seasonality.nextPeakMonth! - 1, 1);
+                    peakDate.setMonth((seasonality.nextPeakMonth ?? 1) - 1, 1);
                     if (peakDate < new Date()) peakDate.setFullYear(peakDate.getFullYear() + 1);
                     const followUp = new Date(peakDate);
                     followUp.setDate(followUp.getDate() - 21);

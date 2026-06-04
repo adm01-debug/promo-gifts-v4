@@ -2,17 +2,21 @@
 /**
  * Centralized CORS configuration — restrict to known origins.
  *
- * Observability: this module emits structured JSON logs (single-line) so they
- * are searchable in Supabase function logs. Event types:
- *   - cors_boot           → emitted once per cold start (config snapshot)
- *   - cors_preflight_ok   → 204 OPTIONS reply with allowed origin reflected
- *   - cors_preflight_warn → preflight from unknown origin OR requesting a
- *                           header that is NOT in Access-Control-Allow-Headers
+ * BUG-07 FIX (2026-06-02): getBestAllowedOrigin() fallback was returning
+ *   the Lovable dev URL (criar-together-now.lovable.app) for unknown origins.
+ *   Changed to production URL (www.promogifts.com.br).
+ *
+ * BUG-08 FIX (2026-06-02): pqpdolkaeqlyzpdpbizo.supabase.co removed from
+ *   EXACT_ALLOWED_ORIGINS. That project is in FORBIDDEN_REFS in client.ts
+ *   and must not be granted CORS access to edge functions.
  */
 
 // --- Configuration ---
 
 const EXACT_ALLOWED_ORIGINS = new Set([
+  // BUG-08 FIX: pqpdolkaeqlyzpdpbizo.supabase.co removed (FORBIDDEN project).
+  // Canonical project is doufsxqlfjyuvxuezpln — it never needs to call its own
+  // edge functions from a browser context; Supabase SDK handles that internally.
   'https://criar-together-now.lovable.app',
   'https://id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
   'https://1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
@@ -25,7 +29,6 @@ const EXACT_ALLOWED_ORIGINS = new Set([
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
   'http://127.0.0.1:3000',
-  'https://pqpdolkaeqlyzpdpbizo.supabase.co',
 ]);
 
 const ALLOWED_ORIGIN_PATTERNS = [
@@ -86,9 +89,11 @@ function isAllowedOrigin(origin: string): boolean {
 
 function getBestAllowedOrigin(origin: string | null): string {
   if (origin && isAllowedOrigin(origin)) return origin;
-  // Unknown origin: return the canonical production origin instead of failing open.
-  // The browser will block the response if the origin doesn't match.
-  return 'https://criar-together-now.lovable.app';
+  // BUG-07 FIX: Unknown origin now falls back to the PRODUCTION URL instead
+  // of the Lovable development URL (criar-together-now.lovable.app).
+  // The browser still blocks the response if the origin doesn't match anyway,
+  // so this only matters for same-origin requests and server-side callers.
+  return 'https://www.promogifts.com.br';
 }
 
 // --- Structured Logging ---
@@ -170,13 +175,9 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
     logPreflightFromRequest(req, origin);
   }
 
-  // Security Headers are now part of CORS_HEADERS_BASE
-  // and are returned for both OPTIONS and non-OPTIONS for maximum compliance.
-  const securityHeaders = SECURITY_HEADERS;
-
   return {
     ...CORS_HEADERS_BASE,
-    ...securityHeaders,
+    ...SECURITY_HEADERS,
     'Access-Control-Allow-Origin': getBestAllowedOrigin(origin),
   };
 }
@@ -252,5 +253,3 @@ export const CORS_INTROSPECTION = Object.freeze({
   allowMethods: CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
   exposeHeaders: CORS_HEADERS_BASE['Access-Control-Expose-Headers'],
 });
-
-

@@ -1,9 +1,8 @@
 /**
  * Product detail fetching — fetchById, bySku, categories, colors.
  */
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { type InvokeResult, type BatchQuery } from './bridge';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
 import {
   type PromobrindProduct,
@@ -144,12 +143,13 @@ export async function fetchPromobrindProductById(
   const stillNeedsCategory = !!categoryId && !product.category_name;
   const stillNeedsSupplier = !!product.supplier_id && !product.supplier_name;
 
-  const enrichmentQueries: BatchQuery[] = [];
+  const enrichmentQueries: InvokeOptions[] = [];
   const enrichmentSlots: Array<'category' | 'supplier' | 'materials'> = [];
 
   if (stillNeedsCategory) {
     enrichmentQueries.push({
       table: 'categories',
+      operation: 'select',
       select: 'id, name',
       filters: { id: categoryId as string },
       limit: 1,
@@ -159,6 +159,7 @@ export async function fetchPromobrindProductById(
   if (stillNeedsSupplier) {
     enrichmentQueries.push({
       table: 'suppliers',
+      operation: 'select',
       select: 'id, name, code',
       filters: { id: product.supplier_id as string },
       limit: 1,
@@ -168,6 +169,7 @@ export async function fetchPromobrindProductById(
   if (needsMaterials) {
     enrichmentQueries.push({
       table: 'product_materials',
+      operation: 'select',
       select: 'product_id, material_id, part',
       filters: { product_id: productId, is_active: true },
       limit: 20,
@@ -178,7 +180,7 @@ export async function fetchPromobrindProductById(
   const enrichmentPromise: Promise<{ materialIds: string[] }> =
     enrichmentQueries.length === 0
       ? Promise.resolve({ materialIds: [] })
-      : Promise.all(enrichmentQueries.map((q) => dbInvoke<any>(q)))
+      : Promise.all(enrichmentQueries.map((q) => dbInvoke<unknown>(q)))
           .then((batchResults) => {
             const materialIds: string[] = [];
             enrichmentSlots.forEach((slot, idx) => {

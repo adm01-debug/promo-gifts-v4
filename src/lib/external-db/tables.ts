@@ -100,7 +100,7 @@ export const PRODUCT_TABLES = [
 /** @deprecated Aliases agora vivem em TABLE_ALIASES em rest-native.ts */
 export const BRIDGE_ALIASES = [
   'tecnica_gravacao', // → tabela_preco_gravacao_oficial
-  'personalization_techniques', // → tecnicas_gravacao (via bridge alias)
+  'personalization_techniques', // real table (uuid PK, EN cols) — NOT aliased; see rest-native.ts "BUG A"
   'customization_price_tables', // → tabela_preco_fornecedores_gravacao (via bridge alias)
   'customization_price_tiers', // → tabela_preco_gravacao_oficial_faixa
 ] as const;

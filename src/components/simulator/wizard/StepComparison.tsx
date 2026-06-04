@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, ChevronLeft, AlertTriangle, Check, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,7 @@ interface StepComparisonProps {
 
 export function StepComparison({ wizard }: StepComparisonProps) {
   const navigate = useNavigate();
-  const { comparisonResults, selectedComparison, selectedLocation, engravingSpecs } = wizard;
+  const { comparisonResults, _selectedComparison, _selectedLocation, _engravingSpecs } = wizard;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const availableResults = comparisonResults.filter((r) => r.isAvailable);

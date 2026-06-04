@@ -24,7 +24,7 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
             />
             {extImageMap.get(previewUrl) &&
               (() => {
-                const ext = extImageMap.get(previewUrl)!;
+                const ext = extImageMap.get(previewUrl) ?? '';
                 const typeInfo = ext.image_type
                   ? IMAGE_TYPES.find((t) => t.value === ext.image_type)
                   : null;

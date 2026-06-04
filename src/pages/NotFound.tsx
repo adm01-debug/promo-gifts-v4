@@ -1,15 +1,40 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { Home, ArrowLeft, Gift } from 'lucide-react';
+import { Home, ArrowLeft, Gift, FileText, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+/**
+ * NotFound — página 404 com sugestões de navegação contextuais.
+ *
+ * FIX: Removido console.error em produção (poluía o console de usuários
+ * normais). O erro 404 já é capturado pelo EnhancedErrorBoundary e
+ * pelo sistema de observabilidade.
+ */
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error('404 Error: User attempted to access non-existent route:', location.pathname);
+    // Log apenas em desenvolvimento para não poluir produção
+    if (import.meta.env.DEV) {
+      console.warn('[404] Rota não encontrada:', location.pathname);
+    }
   }, [location.pathname]);
+
+  /** Sugestões de navegação baseadas na rota tentada */
+  const suggestions = (() => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes('orcamento') || path.includes('cotacao')) {
+      return [{ to: '/orcamentos', label: 'Ir para Orçamentos', icon: FileText }];
+    }
+    if (path.includes('produto') || path.includes('catalogo')) {
+      return [{ to: '/produtos', label: 'Ver Catálogo', icon: Package }];
+    }
+    if (path.includes('admin')) {
+      return [{ to: '/admin/usuarios', label: 'Painel Admin', icon: Home }];
+    }
+    return [];
+  })();
 
   return (
     <div
@@ -62,6 +87,31 @@ const NotFound = () => {
             Voltar
           </Button>
         </div>
+
+        {/* Sugestões contextuais (quando detectadas pela URL) */}
+        {suggestions.length > 0 && (
+          <div className="rounded-xl border border-border bg-muted/30 p-4 text-left">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Talvez você queira:
+            </p>
+            <div className="flex flex-col gap-2">
+              {suggestions.map((s) => (
+                <Button
+                  key={s.to}
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start gap-2"
+                >
+                  <Link to={s.to}>
+                    <s.icon className="h-4 w-4 text-primary" />
+                    {s.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Decorative line */}
         <div className="pt-4">

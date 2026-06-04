@@ -42,33 +42,37 @@
     <meta name="twitter:description" content="Acelere suas vendas de brindes com nosso catálogo inteligente, orçamentos instantâneos em PDF e gerador de mockups com IA.">
     <meta name="twitter:image" content="https://www.promogifts.com.br/og-image.png">
 
-    <!-- DNS Prefetch & Preconnect — reduce network dependency chain -->
+    <!-- DNS Prefetch & Preconnect — reduce network dependency chain
+         BUG-06 FIX: Removed preconnect/dns-prefetch to FORBIDDEN project
+         pqpdolkaeqlyzpdpbizo (listed in FORBIDDEN_REFS in client.ts).
+         Added canonical project doufsxqlfjyuvxuezpln instead. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://pqpdolkaeqlyzpdpbizo.supabase.co" />
-    <link rel="preconnect" href="https://pqpdolkaeqlyzpdpbizo.supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://imagedelivery.net" />
     <link rel="dns-prefetch" href="https://doufsxqlfjyuvxuezpln.supabase.co" />
+    <link rel="preconnect" href="https://doufsxqlfjyuvxuezpln.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://imagedelivery.net" />
     
     <!-- Load Google Fonts — non-render-blocking via media swap -->
-    <!-- Apenas Outfit (display) e Plus Jakarta Sans (sans). Inter foi removido
+    <!-- Apenas Outfit (display) e Plus Jakarta Sans (sans).o. Inter foi removido
          (era para "skins Opera GX", overhead desnecessário). display=optional evita CLS. -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=optional" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=optional" media="print" onload="this.media='all'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=optional" /></noscript>
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;600;700&display=optional" /></noscript>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
-    <!-- Theme Color & PWA — adaptativo light/dark, theme azul brand -->
+    <!-- Theme Color & PWA — adaptativo light/dark, theme azul brand
+         BUG-09 NOTE: /icons/icon-192.png and /icons/icon-512.png currently 404.
+         apple-touch-icon falls back to favicon.svg until PNG assets are created.
+         See public/og-image.README.md for icon generation instructions. -->
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
     <!-- JSON-LD Structured Data
          WebApplication + Organization em um unico @graph (recomendado pelo Google).

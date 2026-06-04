@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Package, Hash, MapPin, Palette, Ruler, Pencil, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/format';
 import type { UseSimulatorWizardReturn } from '@/hooks/simulator/useSimulatorWizard';
 

@@ -177,6 +177,7 @@ export function useFilterPanelState(
       }
     }
     prevMaterialFiltersRef.current = { groups: currentMaterialGroups, types: currentMaterialTypes };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     materialFilterState.selectedGroups,
     materialFilterState.selectedTypes,

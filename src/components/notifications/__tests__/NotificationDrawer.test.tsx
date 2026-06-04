@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NotificationBell } from '../NotificationDrawer';
 import { useNotifications } from '@/hooks/ui';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -36,6 +36,7 @@ describe('NotificationBell', () => {
   });
 
   it('renders badge when there are unread notifications', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,
@@ -56,6 +57,7 @@ describe('NotificationBell', () => {
   });
 
   it('shows empty state when there are no notifications', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: [],
       unreadCount: 0,
@@ -81,7 +83,8 @@ describe('NotificationBell', () => {
   });
 
   it('allows exporting notifications to CSV', async () => {
-    const mockExport = vi.fn();
+    const _mockExport = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,
@@ -119,6 +122,7 @@ describe('NotificationBell', () => {
     const undoMarkAsRead = vi.fn();
     const markAsRead = vi.fn();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: mockNotifications,
       unreadCount: 1,

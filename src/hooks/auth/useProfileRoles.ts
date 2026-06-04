@@ -29,7 +29,7 @@ export function useProfileRoles() {
         const [profileResult, rolesResult] = await Promise.all([
           supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email')
+            .select('id, full_name, avatar_url, email, organization_id')
             .eq('id', userId)
             .maybeSingle(),
           authService.queryRoles(userId),
@@ -38,14 +38,17 @@ export function useProfileRoles() {
         if (profileResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
         } else {
-          setProfile(profileResult.data as Profile | null);
+          setProfile(profileResult.data);
         }
 
         if (rolesResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
           setUserRoles([]);
         } else {
-          setUserRoles((rolesResult.data ?? []).map((r) => r.role as AppRole));
+          const mapped = (rolesResult.data ?? []).map(
+            (row: { role: string }) => row.role,
+          ) as AppRole[];
+          setUserRoles(mapped);
         }
 
         authDebug('useProfileRoles.fetchUserData', 'done', {

@@ -27,8 +27,11 @@ describe('rest-native-fallback: supabase-direct module', () => {
       expect(resolveTable('customization_price_tiers')).toBe('tabela_preco_gravacao_oficial_faixa');
     });
 
-    it('resolves personalization_techniques → tecnicas_gravacao', () => {
-      expect(resolveTable('personalization_techniques')).toBe('tecnicas_gravacao');
+    it('passes through personalization_techniques unchanged (real table, not aliased)', () => {
+      // personalization_techniques is a real table in the canonical DB (uuid PK,
+      // native EN columns). Aliasing it to tecnicas_gravacao (PT columns) returned
+      // wrong data — see rest-native.ts "BUG A" / postgrest.ts "BUG 1".
+      expect(resolveTable('personalization_techniques')).toBe('personalization_techniques');
     });
 
     it('resolves customization_price_tables → tabela_preco_gravacao_oficial', () => {

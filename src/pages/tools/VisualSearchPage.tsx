@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFilter';
 import { ColorSwatchBar, type ColorFilterSelection } from '@/components/filters/ColorGroupFilter';
 import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface VisualSearchResult {
   analysis: {
@@ -215,12 +215,22 @@ export default function VisualSearchPage() {
     return names;
   }, [colorSelection, colorData]);
 
+  const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem válida.');
+      toast.error('Formato inválido. Selecione uma imagem (JPG, PNG, WEBP, GIF).');
+      return;
+    }
+
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      toast.error(
+        `Imagem muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). O limite é 5 MB.`,
+        { description: 'Redimensione ou comprima a imagem e tente novamente.' }
+      );
       return;
     }
 

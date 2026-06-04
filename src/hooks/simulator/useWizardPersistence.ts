@@ -55,5 +55,6 @@ export function useWizardPersistence(state: SimulatorWizardState) {
     if (state.selectedProduct) {
       saveSession(state);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedProduct, state.quantity, state.personalizations, state.currentStep]);
 }

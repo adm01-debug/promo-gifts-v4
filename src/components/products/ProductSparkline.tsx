@@ -65,6 +65,7 @@ export const ProductSparkline = memo(function ProductSparkline({
       secondHalfTotal,
       periodChange,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: see comment above
   }, [points, hasRealData, realData, productId]);
 
   const width = 200;

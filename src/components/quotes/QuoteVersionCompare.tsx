@@ -86,7 +86,7 @@ export function QuoteVersionCompare({
   open,
   onOpenChange,
   versions,
-  currentQuoteId,
+  _currentQuoteId,
 }: QuoteVersionCompareProps) {
   const [leftId, setLeftId] = useState<string>('');
   const [rightId, setRightId] = useState<string>('');
@@ -104,6 +104,7 @@ export function QuoteVersionCompare({
   useEffect(() => {
     if (!leftId || !rightId) return;
     loadDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leftId, rightId]);
 
   async function loadDetails() {

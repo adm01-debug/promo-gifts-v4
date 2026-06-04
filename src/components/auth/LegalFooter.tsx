@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+// LegalFooter usa <a> nativo para abrir os links legais em nova aba,
+// preservando o estado do formulário de login. Não usar <Link> aqui.
 import { cn } from '@/lib/utils';
 
 interface LegalFooterProps {
@@ -14,6 +15,7 @@ interface LegalFooterProps {
  * - Responsivo: tipografia e espaçamento se adaptam em telas pequenas.
  * - Contraste melhorado em relação à versão anterior (text-muted-foreground/80).
  * - Inclui links clicáveis para Termos de Uso e Política de Privacidade.
+ * - Links abrem em nova aba (target="_blank") para não interromper o login.
  */
 export function LegalFooter({ className, withDivider = true }: LegalFooterProps) {
   const year = new Date().getFullYear();
@@ -37,21 +39,25 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[9px] opacity-90 sm:text-[10px]"
         aria-label="Links legais"
       >
-        <Link
-          to="/termos"
+        <a
+          href="/termos"
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded font-medium text-white/60 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#030508]"
         >
           Termos de Uso
-        </Link>
+        </a>
         <span aria-hidden="true" className="text-white/20">
           •
         </span>
-        <Link
-          to="/privacidade"
+        <a
+          href="/privacidade"
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded font-medium text-white/60 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#030508]"
         >
           Política de Privacidade
-        </Link>
+        </a>
       </nav>
 
       <p className="text-center text-[9px] font-medium text-white/40 opacity-90 sm:text-[10px]">

@@ -115,7 +115,8 @@ export const ProductCardImage = memo(function ProductCardImage({
   const newArrival = product.newArrival;
   const isKit = product.isKit;
   const onSale = product.onSale;
-  const stockStatus: 'ok' | 'low' | 'critical' | 'unavailable' =
+  const hasPackaging = product.hasCommercialPackaging === true;
+  const stockStatus: 'ok' | 'low' | 'unavailable' =
     product.stockStatus === 'out-of-stock'
       ? 'unavailable'
       : product.stockStatus === 'low-stock'
@@ -221,6 +222,26 @@ export const ProductCardImage = memo(function ProductCardImage({
             type="promotion"
             size="sm"
             onClick={() => onStatusClick?.('promotion')}
+          />
+        )}
+
+        {hasPackaging && (
+          <ProductStatusBadge
+            type="packaging"
+            size="sm"
+            value="Embalagem"
+            packagingMetadata={{
+              packingType: product.packingType,
+              boxWidthMm: product.boxWidthMm,
+              boxHeightMm: product.boxHeightMm,
+              boxLengthMm: product.boxLengthMm,
+              packagingContext: product.packagingContext as
+                | 'always'
+                | 'with_customization'
+                | 'without_customization'
+                | null,
+            }}
+            onClick={() => onStatusClick?.('packaging')}
           />
         )}
 

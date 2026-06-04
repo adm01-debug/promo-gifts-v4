@@ -457,6 +457,25 @@ export const ProductListItem = memo(function ProductListItem({
             {product.isKit && (
               <ProductStatusBadge type="kit" size="sm" onClick={() => handleStatusClick('kit')} />
             )}
+            {product.hasCommercialPackaging && (
+              <ProductStatusBadge
+                type="packaging"
+                size="sm"
+                value="Embalagem"
+                packagingMetadata={{
+                  packingType: product.packingType,
+                  boxWidthMm: product.boxWidthMm,
+                  boxHeightMm: product.boxHeightMm,
+                  boxLengthMm: product.boxLengthMm,
+                  packagingContext: product.packagingContext as
+                    | 'always'
+                    | 'with_customization'
+                    | 'without_customization'
+                    | null,
+                }}
+                onClick={() => handleStatusClick('packaging')}
+              />
+            )}
             <span className="max-w-[120px] truncate">
               {product.category?.name || 'Sem categoria'}
             </span>

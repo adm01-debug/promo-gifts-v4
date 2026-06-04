@@ -710,6 +710,17 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
     throw new Error(
       `rest-native: ${options.operation} on '${table}' without filter/id forbidden (mass mutation guard).`,
     );
+  // Issue #537: fail-loud quando escopo é array vazio (evita 400 PostgREST)
+  if (options.filters) {
+    const emptyKey = Object.entries(options.filters).find(
+      ([, v]) => Array.isArray(v) && (v as unknown[]).length === 0,
+    )?.[0];
+    if (emptyKey) {
+      throw new Error(
+        `rest-native: ${options.operation} on '${table}' with empty-array filter '${emptyKey}' — zero rows would be affected; fix the call-site.`,
+      );
+    }
+  }
   const client = supabase as unknown as RestWriteClient;
   const tbl = client.from(table);
   const scoped = (b: RestWriteBuilder): RestWriteBuilder => {

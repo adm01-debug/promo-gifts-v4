@@ -3,7 +3,7 @@
  * Extrai toda a lógica de estado, cálculos e ações do QuoteBuilderPage.
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import {
   useAutoSaveQuote,
@@ -20,6 +20,8 @@ import {
 } from '@/hooks/quotes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
+import { supabase } from '@/integrations/supabase/client';
+import type { ConflictInfo } from '@/hooks/quotes/useQuoteConcurrencyGuard';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
@@ -128,6 +130,10 @@ export function useQuoteBuilderState() {
   const [contactId, setContactId] = useState('');
   const [companyInfo, setCompanyInfo] = useState<SelectedCompanyInfo | null>(null);
   const [contactInfo, setContactInfo] = useState<SelectedContactInfo | null>(null);
+
+  // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
+  const baselineUpdatedAtRef = useRef<string | null>(null);
+  const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -473,7 +479,7 @@ export function useQuoteBuilderState() {
          * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
          * da pessoa de contato, não da empresa.
          */
-        setContactId(((quote as Record<string, unknown>).contact_id as string) || '');
+        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');
@@ -518,12 +524,15 @@ export function useQuoteBuilderState() {
           setDeliveryTime(quote.delivery_time);
         }
         if (quote.items) setItems(quote.items);
+        // Salva o updated_at como baseline para detecção de conflito
+        baselineUpdatedAtRef.current = quote.updated_at ?? null;
       }
       setLoadingQuote(false);
     });
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──
@@ -571,6 +580,7 @@ export function useQuoteBuilderState() {
       `Produto "${product.name}" importado do simulador com ${quotePersonalizations.length} gravação(ões)`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from cart ──
@@ -614,6 +624,7 @@ export function useQuoteBuilderState() {
       description: companyLabel || undefined,
     });
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from collection ──
@@ -648,6 +659,7 @@ export function useQuoteBuilderState() {
       `${collectionItems.length} produto(s) importado(s) da coleção "${state.fromCollection}"`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from URL params (single product or bulk items[]) ──
@@ -714,6 +726,7 @@ export function useQuoteBuilderState() {
     }
     // Clean URL params without triggering React Router re-render
     window.history.replaceState({}, document.title, location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data: products } = useQuery({
@@ -845,6 +858,7 @@ export function useQuoteBuilderState() {
       setValidUntil(format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd'));
     setTemplateApplied(template.name);
     toast.success(`Template "${template.name}" aplicado!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getTemplateItems = useCallback((): QuoteTemplateItem[] => {
@@ -969,6 +983,30 @@ export function useQuoteBuilderState() {
       };
       let result;
       if (isEditMode && quoteId) {
+        // ── Detecção de concorrência ──
+        // Compara updated_at atual do banco com o baseline registrado ao abrir o orçamento.
+        // Se outro usuário/sessão salvou enquanto estava aberto, exibe alerta.
+        if (baselineUpdatedAtRef.current) {
+          const { data: remoteQuote } = await supabase
+            .from('quotes')
+            .select('updated_at')
+            .eq('id', quoteId)
+            .single();
+
+          const remoteTs = remoteQuote?.updated_at;
+          if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
+            const label = new Date(remoteTs).toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: 'America/Sao_Paulo',
+            });
+            setConflictInfo({ modifiedAt: remoteTs, label });
+            return; // Bloqueia o save — usuário decide no banner
+          }
+        }
         result = await updateQuote(quoteId, quoteData, items);
       } else {
         result = await createQuote(quoteData, items);
@@ -1118,5 +1156,16 @@ export function useQuoteBuilderState() {
     applyTemplate,
     getTemplateItems,
     handleSaveQuote,
+    conflictInfo,
+    dismissConflict: () => setConflictInfo(null),
+    /**
+     * Ignora o conflito detectado e salva mesmo assim (overwrite consciente).
+     * Após o save, atualiza o baseline para evitar falsos positivos futuros.
+     */
+    overwriteAndSave: async (status: 'draft' | 'pending' | 'pending_approval' = 'draft') => {
+      setConflictInfo(null);
+      baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
+      await handleSaveQuote(status);
+    },
   };
 }

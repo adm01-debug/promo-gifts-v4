@@ -7,7 +7,7 @@ import { type SellerCart } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
 import { CheckCircle2, AlertCircle, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 interface CartHealthChecklistProps {
   cart: SellerCart;

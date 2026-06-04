@@ -10,6 +10,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useMemo, useEffect } from 'react';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
 
 interface ColorEnrichmentData {
@@ -92,38 +93,32 @@ export function useColorEnrichment({
       // Step 1: Load reference tables (cached after first call)
       if (!cachedColorGroups || !cachedColorVariations) {
         const refResults = await Promise.all([
-          {
+          dbInvoke<{ id: string; slug: string }>({
             table: 'color_groups',
-            operation: 'select' as const,
+            operation: 'select',
             select: 'id, slug',
             filters: { is_active: true },
             limit: 200,
             offset: 0,
-            cacheKey: 'ref:color_groups',
-          },
-          {
+          }),
+          dbInvoke<{
+            id: string;
+            name: string;
+            slug: string;
+            group_id: string;
+            hex_code: string | null;
+          }>({
             table: 'color_variations',
-            operation: 'select' as const,
+            operation: 'select',
             select: 'id, name, slug, group_id, hex_code',
             filters: { is_active: true },
             limit: 500,
             offset: 0,
-            cacheKey: 'ref:color_variations',
-          },
+          }),
         ]);
 
-        cachedColorGroups = refResults[0]?.success
-          ? ((refResults[0].data?.records || []) as Array<{ id: string; slug: string }>)
-          : [];
-        cachedColorVariations = refResults[1]?.success
-          ? ((refResults[1].data?.records || []) as Array<{
-              id: string;
-              name: string;
-              slug: string;
-              group_id: string;
-              hex_code: string | null;
-            }>)
-          : [];
+        cachedColorGroups = refResults[0].records || [];
+        cachedColorVariations = refResults[1].records || [];
       }
 
       const colorGroupsCache = cachedColorGroups ?? [];
@@ -167,20 +162,18 @@ export function useColorEnrichment({
 
       for (let i = 0; i < newProductIds.length; i += CHUNK) {
         const pidChunk = newProductIds.slice(i, i + CHUNK);
-        const results = await Promise.all([
-          {
-            table: 'product_variants',
-            operation: 'select' as const,
-            select:
-              'id, product_id, color_id, color_name, color_hex, color_code, stock_quantity, selected_thumbnail, images',
-            filters: { is_active: true, product_id: pidChunk, color_id: colorIdArray },
-            limit: 3000,
-            offset: 0,
-          },
-        ]);
+        const result = await dbInvoke<(typeof allVariants)[number]>({
+          table: 'product_variants',
+          operation: 'select',
+          select:
+            'id, product_id, color_id, color_name, color_hex, color_code, stock_quantity, selected_thumbnail, images',
+          filters: { is_active: true, product_id: pidChunk, color_id: colorIdArray },
+          limit: 3000,
+          offset: 0,
+        });
 
-        if (results[0]?.success && results[0].data?.records) {
-          allVariants.push(...(results[0].data.records as typeof allVariants));
+        if (result.records?.length) {
+          allVariants.push(...result.records);
         }
       }
 
@@ -198,20 +191,18 @@ export function useColorEnrichment({
 
       for (let i = 0; i < productIdsWithVariants.length; i += CHUNK) {
         const pidChunk = productIdsWithVariants.slice(i, i + CHUNK);
-        const results = await Promise.all([
-          {
-            table: 'product_images',
-            operation: 'select' as const,
-            select:
-              'product_id, variant_id, supplier_code, url_cdn, is_og_image, is_primary, image_type',
-            filters: { product_id: pidChunk },
-            limit: 3000,
-            offset: 0,
-          },
-        ]);
+        const result = await dbInvoke<(typeof allImages)[number]>({
+          table: 'product_images',
+          operation: 'select',
+          select:
+            'product_id, variant_id, supplier_code, url_cdn, is_og_image, is_primary, image_type',
+          filters: { product_id: pidChunk },
+          limit: 3000,
+          offset: 0,
+        });
 
-        if (results[0]?.success && results[0].data?.records) {
-          allImages.push(...(results[0].data.records as typeof allImages));
+        if (result.records?.length) {
+          allImages.push(...result.records);
         }
       }
 

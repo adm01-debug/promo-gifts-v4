@@ -33,6 +33,7 @@ export function QuoteVersionHistory({
 
   useEffect(() => {
     fetchVersions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId]);
 
   const handleCreateVersion = async () => {

@@ -2,7 +2,7 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { useState, useRef, useEffect, memo, forwardRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback } from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -102,8 +102,6 @@ export const ProductCard = memo(
   ) {
     const navigate = useNavigate();
     const { prefetchProduct } = usePrefetchProduct();
-    // Categoria-FOLHA (mais específica) resolvida em lote pelo ProductLeafCategoryProvider.
-    // Quando disponível, sobrepõe a categoria "rasa" (raiz/intermediária) no badge.
     const leafCategory = useLeafCategory(product.id);
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -142,8 +140,15 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
-    // Declared here so the useEffect below can reference it without TS2448/TS2454
-    const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
+    // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
+    // do useEffect abaixo que o referencia no array de deps — isso quebrava em
+    // runtime com "Cannot access 'allMatchingVariants' before initialization"
+    // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
+    // primeiro uso.
+    const allMatchingVariants = useMemo(
+      () => resolveAllMatchingColors(product.colors, activeColorFilter),
+      [product.colors, activeColorFilter],
+    );
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
@@ -159,14 +164,7 @@ export const ProductCard = memo(
           }
         }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-      product.colors,
-      selectedColorFromStore,
-      activeColorFilter,
-      allMatchingVariants,
-      activeVariantIdx,
-    ]);
+    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -194,6 +192,9 @@ export const ProductCard = memo(
             break;
           case 'kit':
             navigate('/filtros?isKit=1');
+            break;
+          case 'packaging':
+            navigate('/filtros?hasCommercialPackaging=1');
             break;
         }
       },
@@ -304,7 +305,8 @@ export const ProductCard = memo(
       }
     };
 
-    // Multi-variant carousel
+    // Multi-variant carousel — `allMatchingVariants` é derivado acima
+    // (TDZ FIX: precisa estar antes do primeiro useEffect que o consome).
     const hasMultipleVariants = allMatchingVariants.length > 1;
     const safeVariantIdx = hasMultipleVariants
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)
@@ -358,13 +360,10 @@ export const ProductCard = memo(
         }
         onMouseEnter={() => {
           setIsHovered(true);
-          // Telemetry for analytics (popular products)
           telemetryService.logUXAction('product_hover', {
             productId: product.id,
             name: product.name,
           });
-
-          // Prefetch product details when hovering to make "click to open" instant
           prefetchProduct(product.id);
         }}
         onMouseLeave={() => {
@@ -394,13 +393,11 @@ export const ProductCard = memo(
             return;
           }
 
-          // Use provided onClick if available, otherwise default to navigation
           if (onClick) {
             onClick();
             return;
           }
 
-          // Default navigation
           if (currentVariant?.name) {
             const params = new URLSearchParams();
             params.set('cor', currentVariant.name);
@@ -515,14 +512,12 @@ export const ProductCard = memo(
             hideWhenEmpty={false}
             selectedName={activeColorName ?? null}
             onSelect={(c) => {
-              // Reflete a escolha no estado local (índice do carrossel multi-variante)
-              // E na URL navegando ao PDP com ?cor=&hex=&grupo=.
               const idx = allMatchingVariants.findIndex(
                 (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
               );
               if (idx >= 0) {
                 setActiveVariantIdx(idx);
-                setSelectedColor(product.id, c.name); // Persiste seleção p/ quando voltar do PDP
+                setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
               }
               const params = new URLSearchParams();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Sparkles, Package, TrendingUp, Clock, Tag } from 'lucide-react';
+import { Sparkles, Package, TrendingUp, Clock, Tag, Gift } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
@@ -13,9 +13,18 @@ export type ProductStatusBadgeType =
   | 'featured'
   | 'kit'
   | 'urgency'
-  | 'out-of-stock';
+  | 'out-of-stock'
+  | 'packaging';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
+
+interface PackagingMetadata {
+  packingType?: string | null;
+  boxWidthMm?: number | null;
+  boxHeightMm?: number | null;
+  boxLengthMm?: number | null;
+  packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
+}
 
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
@@ -26,6 +35,7 @@ interface ProductStatusBadgeProps {
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
   showTooltip?: boolean;
+  packagingMetadata?: PackagingMetadata;
 }
 
 export function ProductStatusBadge({
@@ -37,6 +47,7 @@ export function ProductStatusBadge({
   onClick,
   className,
   showTooltip = true,
+  packagingMetadata,
 }: ProductStatusBadgeProps) {
   const location = useLocation();
   const { actualTheme } = useTheme();
@@ -82,6 +93,10 @@ export function ProductStatusBadge({
         return 'bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-lg animate-glow-pulse';
       case 'kit':
         return 'bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-md';
+      case 'out-of-stock':
+        return 'bg-destructive text-destructive-foreground shadow-md';
+      case 'packaging':
+        return 'bg-gradient-to-r from-warning/90 to-warning text-warning-foreground shadow-md';
       case 'promotion':
         return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
@@ -97,8 +112,6 @@ export function ProductStatusBadge({
         }
         return 'bg-brand-primary/80 text-brand-primary-foreground';
       }
-      case 'out-of-stock':
-        return 'bg-destructive text-destructive-foreground shadow-sm';
       case 'urgency':
         switch (urgencyType) {
           case 'limited-stock':
@@ -127,6 +140,13 @@ export function ProductStatusBadge({
             {size === 'sm' && <span className="sm:hidden">★</span>}
           </>
         );
+      case 'out-of-stock':
+        return (
+          <>
+            <Package className={iconSize} />
+            <span>{value || 'Fora de estoque'}</span>
+          </>
+        );
       case 'kit':
         return (
           <>
@@ -139,6 +159,13 @@ export function ProductStatusBadge({
           <>
             <Tag className={iconSize} />
             <span>{value || 'Promoção'}</span>
+          </>
+        );
+      case 'packaging':
+        return (
+          <>
+            <Gift className={iconSize} />
+            <span>{value || 'Tem embalagem'}</span>
           </>
         );
       case 'novelty': {
@@ -181,8 +208,6 @@ export function ProductStatusBadge({
             );
         }
         break;
-      case 'out-of-stock':
-        return <span>{value || 'Fora de estoque'}</span>;
     }
     return <span>{value}</span>;
   };
@@ -219,6 +244,44 @@ export function ProductStatusBadge({
             <p className="text-muted-foreground">Selecionado pela nossa curadoria</p>
           </div>
         );
+      case 'packaging': {
+        const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } =
+          packagingMetadata || {};
+        const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
+
+        const contextLabels: Record<string, string> = {
+          always: 'Sempre disponível',
+          with_customization: 'Com personalização',
+          without_customization: 'Sem personalização',
+        };
+
+        return (
+          <div className="space-y-1.5 p-1 text-sm">
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-warning" />
+              <p className="font-semibold text-foreground">Embalagem Especial</p>
+            </div>
+            <div className="grid gap-1 text-[11px] text-muted-foreground">
+              {packingType && (
+                <p>
+                  <span className="font-medium text-foreground">Tipo:</span> {packingType}
+                </p>
+              )}
+              {dimensions && (
+                <p>
+                  <span className="font-medium text-foreground">Dimensões:</span> {dimensions} mm
+                </p>
+              )}
+              {packagingContext && contextLabels[packagingContext] && (
+                <p>
+                  <span className="font-medium text-foreground">Regra:</span>{' '}
+                  {contextLabels[packagingContext]}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      }
       default:
         return null;
     }
@@ -226,14 +289,23 @@ export function ProductStatusBadge({
 
   const badge = (
     <Badge
+      tabIndex={0}
+      role={isClickable ? 'button' : 'status'}
+      aria-label={
+        type === 'packaging'
+          ? 'Produto com embalagem especial configurada. Ver detalhes.'
+          : typeof value === 'string'
+            ? value
+            : String(type)
+      }
       className={cn(
         'inline-flex items-center rounded-full font-semibold transition-all duration-300',
-        'group-hover:scale-105 group-hover:shadow-lg', // Animation on card hover
+        'group-hover:scale-105 group-hover:shadow-lg',
         'hover:brightness-110 active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
         getSizeClasses(),
-        // Subtle shimmer/pulse animation
         'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
         className,
       )}
@@ -241,6 +313,15 @@ export function ProductStatusBadge({
         if (onClick) {
           e.stopPropagation();
           onClick(e);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(e as unknown as React.MouseEvent);
+          }
         }
       }}
     >

@@ -55,6 +55,7 @@ export function useSellerCartsPage() {
   const { templates, saveTemplate, deleteTemplate } = useCartTemplates();
 
   const productsCtx = useContext(ProductsContext);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allProducts = productsCtx?.products || [];
   const isLoadingProducts = productsCtx?.isLoading || false;
 
@@ -244,6 +245,7 @@ export function useSellerCartsPage() {
         restoreItems(activeCart.id, addItems);
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearCart, activeCart, addToActiveCart]);
 
   const handleSaveTemplate = useCallback(

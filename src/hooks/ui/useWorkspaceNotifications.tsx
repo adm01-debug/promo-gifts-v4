@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
 
@@ -177,8 +178,7 @@ export function useWorkspaceNotifications() {
       notificationsMetrics.recordFetch(opts.source ?? 'initial');
       const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
       try {
-        let query = supabase
-          .from('workspace_notifications')
+        let query = untypedFrom('workspace_notifications')
           .select('*', { count: 'exact' })
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -212,8 +212,7 @@ export function useWorkspaceNotifications() {
         setTotalCount(count ?? 0);
 
         // Also fetch unread count separately to keep badge sync
-        const { count: unread } = await supabase
-          .from('workspace_notifications')
+        const { count: unread } = await untypedFrom('workspace_notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('is_read', false);
@@ -264,6 +263,7 @@ export function useWorkspaceNotifications() {
         else setIsLoading(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user], // FIX: removido notifications.length - agora usa notificationsLengthRef
   );
 
