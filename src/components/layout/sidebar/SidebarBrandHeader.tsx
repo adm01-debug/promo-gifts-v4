@@ -20,7 +20,7 @@ export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderP
         <div
           ref={ref}
           data-testid="sidebar-brand-header"
-          className="flex flex-col items-center justify-center py-4 transition-all duration-300"
+          className="flex flex-col items-center justify-center py-4 transition-all duration-300 2xl:py-5 ultra-wide:py-6"
         >
           <AppLogo
             showText={false}
@@ -33,7 +33,11 @@ export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderP
     }
 
     return (
-      <div ref={ref} data-testid="sidebar-brand-header" className="px-3 py-4 transition-all duration-300 sm:px-4">
+      <div 
+        ref={ref} 
+        data-testid="sidebar-brand-header" 
+        className="px-3 py-4 transition-all duration-300 sm:px-4 2xl:px-5 2xl:py-5 ultra-wide:px-6 ultra-wide:py-6"
+      >
         <AppLogo
           variant="sidebar"
           textClassName=""
