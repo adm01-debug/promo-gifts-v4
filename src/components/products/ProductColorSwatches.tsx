@@ -12,8 +12,8 @@
  *
  *  Tamanho dos dots por preset (use `size`):
  *    - `xs`  → h-2.5 w-2.5 (10×10px) — densidades muito apertadas (Novidades cards-2)
- *    - `sm`  → h-3   w-3   (12×12px) — DEFAULT, usado no grid de Catálogo
- *    - `md`  → h-4   w-4   (16×16px) — listas e tabelas
+ *    - `sm`  → h-[17px] w-[17px] (aprox. 12px + 40%) — DEFAULT, usado no grid de Catálogo
+ *    - `md`  → h-[22px] w-[22px] (aprox. 16px + 40%) — listas e tabelas
  *
  *  Espaçamento horizontal: `gap-0.5` (2px) entre dots — mantém alinhamento óptico
  *  com o `+N` overflow (`text-[10px]`) sem competir com o nome (sm:text-base) e
@@ -52,9 +52,9 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-2.5 w-2.5',
-  sm: 'h-3 w-3',
-  md: 'h-4 w-4',
+  xs: 'h-[16px] w-[16px]',
+  sm: 'h-[20px] w-[20px]',
+  md: 'h-[25px] w-[25px]',
 };
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
@@ -71,7 +71,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   if (colors === undefined) {
     return (
       <div
-        className={cn('flex items-center gap-1 min-h-[16px]', className)}
+        className={cn('flex min-h-[16px] items-center gap-1', className)}
         aria-busy="true"
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
@@ -93,7 +93,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     }
     return (
       <span
-        className="text-[10px] text-muted-foreground/60 italic min-h-[16px] flex items-center"
+        className="flex min-h-[16px] items-center text-[10px] italic text-muted-foreground/60"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
@@ -109,7 +109,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex items-center gap-0.5 min-h-[16px]', className)}
+      className={cn('flex min-h-[25px] flex-wrap items-center gap-1.5', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -119,15 +119,17 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
     >
       {visible.map((c, idx) => {
         const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
-        const isSelected = normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
+        const isSelected =
+          normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
         return (
           <Tooltip key={`${c.name}-${idx}`}>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 className={cn(
-                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
-                  isSelected && 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-110',
+                  'inline-block rounded-full border border-border/60 shadow-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  isSelected &&
+                    'scale-110 ring-2 ring-primary ring-offset-1 ring-offset-background',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
@@ -168,7 +170,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="ml-0.5 text-[10px] font-medium tabular-nums text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
+              className="ml-0.5 rounded-sm px-0.5 text-[12px] font-bold tabular-nums text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label={`Ver mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
               data-testid="color-swatch-overflow"
               onClick={(e) => {
@@ -181,16 +183,21 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               +{overflow}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="flex flex-col gap-1.5 p-2" role="tooltip" data-testid="color-overflow-tooltip">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1 border-b border-border/40 pb-1">
+          <TooltipContent
+            side="top"
+            className="flex flex-col gap-1.5 p-2"
+            role="tooltip"
+            data-testid="color-overflow-tooltip"
+          >
+            <p className="mb-1 border-b border-border/40 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               Mais {overflow} cor{overflow === 1 ? '' : 'es'}
             </p>
-            <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto">
+            <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto">
               {colors.slice(max).map((c, idx) => (
                 <button
                   key={`${c.name}-${idx}`}
                   type="button"
-                  className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted text-[11px] transition-colors text-left"
+                  className="flex items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] transition-colors hover:bg-muted"
                   data-testid={`color-swatch-hidden-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
                   onClick={(e) => {
                     if (!onSelect) return;
@@ -198,8 +205,8 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                     onSelect(c, max + idx);
                   }}
                 >
-                  <div 
-                    className="h-2.5 w-2.5 rounded-full border border-border/40" 
+                  <div
+                    className="h-2.5 w-2.5 rounded-full border border-border/40"
                     style={{ backgroundColor: c.hex || 'transparent' }}
                   />
                   <span>{c.name}</span>
