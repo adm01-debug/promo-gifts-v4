@@ -482,6 +482,7 @@ export const ProductCard = memo(
           }}
           priority={priority}
           onStatusClick={handleStatusClick}
+          isUpdatingColor={isUpdatingColor}
         />
 
         {/* Quick Actions FAB */}
