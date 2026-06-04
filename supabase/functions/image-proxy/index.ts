@@ -26,6 +26,9 @@ const ALLOWED_DOMAINS = [
 // promo-gifts-beta.vercel.app was missing — staging environment was rejected.
 const ALLOWED_REFERER_EXACT = new Set([
   'criar-together-now.lovable.app',
+  // First-party Lovable preview environments (same as _shared/cors.ts EXACT_ALLOWED_ORIGINS)
+  'id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
+  '1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
   'promogifts.com.br',
   'www.promogifts.com.br',
   'promogifts.atomicabr.com.br',

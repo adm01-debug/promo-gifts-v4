@@ -50,6 +50,17 @@ Deno.serve(async (req) => {
       byUser.set(notif.user_id, existing);
     }
 
+    // Confirm delivery — sets dispatched_at and clears the lease on each row.
+    // If this call fails the lease will expire and the batch will be re-claimed,
+    // giving at-least-once delivery semantics.
+    const notifIds = (unreadNotifs as NotifRow[]).map((n) => n.id);
+    const { error: confirmError } = await supabase.rpc('confirm_notifications_dispatched', {
+      p_ids: notifIds,
+    });
+    if (confirmError) {
+      console.error('[process-queue] confirm_notifications_dispatched failed:', confirmError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
