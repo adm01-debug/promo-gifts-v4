@@ -71,9 +71,11 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/@supabase/')) {
               return 'supabase-vendor';
             }
-            if (id.includes('node_modules/framer-motion/')) {
-              return 'motion-vendor';
-            }
+            // NOTE: framer-motion is intentionally NOT force-chunked here.
+            // Forcing it into one vendor blob defeats LazyMotion's code-splitting
+            // (importing LazyMotion would drag the heavy `domMax` features into the
+            // critical path). Letting Rollup split it keeps the LazyMotion runtime
+            // tiny and streams `domMax` features via dynamic import (MotionProvider).
             if (id.includes('node_modules/date-fns/')) {
               return 'date-vendor';
             }

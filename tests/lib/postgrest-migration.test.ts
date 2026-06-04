@@ -63,9 +63,34 @@ describe('postgrest helper — table aliases', () => {
 });
 
 describe('postgrest helper — PT↔EN column remap', () => {
-  it('aliases personalization_techniques → tecnicas_gravacao, remaps filters and rows', async () => {
+  // tabela_preco_gravacao_oficial is a real PT-named table: EN caller names are
+  // remapped to PT columns on filters/select and rows are aliased back to EN.
+  it('remaps EN filters/select to PT columns for tabela_preco_gravacao_oficial', async () => {
     nextResult = {
-      data: [{ codigo: 'c1', nome: 'Tampografia', ativo: true, ordem_exibicao: 3 }],
+      data: [{ id: 't1', nome: 'Tampografia', ativo: true, max_cores: 4 }],
+      error: null,
+      count: null,
+    };
+    const result = await dbInvoke<Record<string, unknown>>({
+      table: 'customization_price_tables', // bridge-era alias → tabela_preco_gravacao_oficial
+      operation: 'select',
+      select: 'id,name,is_active',
+      filters: { is_active: true },
+    });
+    // table alias resolves to the real PT-named table
+    expect(recorded.map((r) => r.table)).toContain('tabela_preco_gravacao_oficial');
+    // EN filter column remapped is_active → ativo
+    expect(callArgs('tabela_preco_gravacao_oficial', 'eq')).toContainEqual(['ativo', true]);
+    // returned row aliased back to EN keys (name from nome, is_active from ativo)
+    expect(result.records[0]).toMatchObject({ name: 'Tampografia', is_active: true });
+  });
+
+  // personalization_techniques is intentionally NOT aliased: it is a real table
+  // in the canonical DB (uuid PK, native EN columns). Queries go directly to it
+  // with no table alias and no column remapping. See rest-native.ts "BUG A".
+  it('queries personalization_techniques directly with native EN columns (no alias/remap)', async () => {
+    nextResult = {
+      data: [{ id: 'u1', name: 'Tampografia', is_active: true, display_order: 3 }],
       error: null,
       count: null,
     };
@@ -76,16 +101,17 @@ describe('postgrest helper — PT↔EN column remap', () => {
       filters: { is_active: true },
       orderBy: { column: 'display_order', ascending: true },
     });
-    // table alias
-    expect(recorded.map((r) => r.table)).toContain('tecnicas_gravacao');
-    // PT-named table selects '*' then maps rows back to EN
-    expect(callArgs('tecnicas_gravacao', 'select')[0][0]).toBe('*');
-    // filter column remapped is_active → ativo
-    expect(callArgs('tecnicas_gravacao', 'eq')).toContainEqual(['ativo', true]);
-    // orderBy column remapped display_order → ordem_exibicao
-    expect(callArgs('tecnicas_gravacao', 'order')[0][0]).toBe('ordem_exibicao');
-    // returned row remapped back to EN keys
-    expect(result.records[0]).toMatchObject({ id: 'c1', name: 'Tampografia', is_active: true });
+    // no alias — the real table name is used verbatim
+    expect(recorded.map((r) => r.table)).toContain('personalization_techniques');
+    expect(recorded.map((r) => r.table)).not.toContain('tecnicas_gravacao');
+    // EN select passed through unchanged (no remap for this real table)
+    expect(callArgs('personalization_techniques', 'select')[0][0]).toBe('id,name,is_active');
+    // EN filter column passed through unchanged
+    expect(callArgs('personalization_techniques', 'eq')).toContainEqual(['is_active', true]);
+    // orderBy column passed through unchanged
+    expect(callArgs('personalization_techniques', 'order')[0][0]).toBe('display_order');
+    // rows returned as-is (already EN)
+    expect(result.records[0]).toMatchObject({ id: 'u1', name: 'Tampografia', is_active: true });
   });
 });
 

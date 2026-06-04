@@ -1,7 +1,7 @@
 import React from 'react';
 import { CommandItem } from '@/components/ui/command';
 import { Clock, Flame, X, Sparkles, Eye, ChevronRight, Zap, Compass } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
   paletteItemStateClass,
@@ -20,8 +20,8 @@ interface GlobalSearchIdleStateProps {
     name: string;
     sku: string;
     view_count: number;
-    image_url?: string;
-    category_name?: string;
+    image_url?: string | null;
+    category_name?: string | null;
   }>;
   contextualSuggestions: Array<{ id: string; text: string; icon?: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;

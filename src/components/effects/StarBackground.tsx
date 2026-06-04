@@ -1,13 +1,8 @@
-import React, { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
-/**
- * StarBackground - CSS-only background with twinkling stars.
- * Replaced 150 framer-motion animated elements with pure CSS for dramatically
- * better performance (fewer DOM nodes, no JS animation frames).
- */
-export const StarBackground = React.memo(function StarBackground() {
+export const StarBackground = memo(function StarBackground() {
   const stars = useMemo(() => {
-    return Array.from({ length: 60 }).map((_, i) => ({
+    return Array.from({ length: 150 }).map((_, i) => ({
       id: i,
       size: Math.random() * 2.5 + 0.5,
       top: `${Math.random() * 100}%`,
@@ -21,14 +16,17 @@ export const StarBackground = React.memo(function StarBackground() {
   return (
     <div
       aria-hidden="true"
-      data-testid="space-scene"
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
-      style={{ opacity: 0.45, contain: 'strict' }}
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      style={{
+        opacity: 0.35,
+        contain: 'strict',
+        willChange: 'opacity',
+      }}
     >
       {stars.map((star) => (
         <div
           key={star.id}
-          className="absolute rounded-full bg-white"
+          className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
           style={{
             width: star.size,
             height: star.size,

@@ -45,6 +45,7 @@ import { GlobalSearchPalette } from '@/components/search/GlobalSearchPalette';
 import { CartHeaderButton } from '@/components/cart/CartHeaderButton';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from '@/components/RoleBadge';
+import { AppLogo } from '@/components/layout/AppLogo';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -189,17 +190,26 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
     >
       <div className="flex h-full items-center justify-between px-2 sm:px-4 lg:px-6">
         {/* ══════ Left section — Menu + Âncora contextual (#1) ══════ */}
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary sm:h-9 sm:w-9 lg:hidden"
+            className="h-8 w-8 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
             onClick={onMenuToggle}
             aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={sidebarOpen}
           >
             <Menu className="h-5 w-5" />
           </Button>
+
+          <div className="lg:hidden">
+            <AppLogo
+              showText={true}
+              iconClassName="h-8 w-8 sm:h-9 sm:w-9"
+              textClassName="text-[14px] sm:text-[16px]"
+              subtextClassName="text-[8px] sm:text-[9px]"
+            />
+          </div>
 
           {/* #1 — Seção atual como âncora */}
           <div className="hidden items-center gap-4 lg:flex">
@@ -279,7 +289,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <Heart className="h-[17px] w-[17px]" strokeWidth={1.75} />
                   {favoriteCount > 0 && (
                     <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border-0 bg-brand-primary p-0 text-[10px] font-bold text-brand-primary-foreground shadow-sm">
-
                       {favoriteCount > 99 ? '99+' : favoriteCount}
                     </Badge>
                   )}
@@ -487,11 +496,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                     Skins
                   </DropdownMenuItem>
                 </TooltipTrigger>
-                <TooltipContent
-                  side="left"
-                  sideOffset={8}
-                  data-testid="user-menu-tooltip-skins"
-                >
+                <TooltipContent side="left" sideOffset={8} data-testid="user-menu-tooltip-skins">
                   <p>Personalize a aparência da plataforma (temas e cores)</p>
                 </TooltipContent>
               </Tooltip>
@@ -517,7 +522,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <p>Reiniciar o tour guiado pelas funcionalidades do sistema</p>
                 </TooltipContent>
               </Tooltip>
-
 
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem

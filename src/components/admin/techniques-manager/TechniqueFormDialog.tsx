@@ -117,12 +117,12 @@ export function TechniqueFormDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button data-testid="admin-create-btn">
           <Plus className="mr-2 h-4 w-4" />
           Nova Técnica
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent data-testid="admin-form" className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nova Técnica de Personalização</DialogTitle>
           <DialogDescription>Adicione uma nova técnica ao catálogo (BD Externo)</DialogDescription>
@@ -133,6 +133,7 @@ export function TechniqueFormDialog({
               <Label>Código *</Label>
               <Input
                 placeholder="Ex: SERI, LASER"
+                data-testid="admin-code-input"
                 value={form.code}
                 onChange={(e) => update('code', e.target.value)}
               />
@@ -141,6 +142,7 @@ export function TechniqueFormDialog({
               <Label>Nome *</Label>
               <Input
                 placeholder="Ex: Serigrafia"
+                data-testid="admin-name-input"
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
               />
@@ -289,7 +291,11 @@ export function TechniqueFormDialog({
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleAdd} disabled={isCreating || !form.code || !form.name}>
+          <Button
+            onClick={handleAdd}
+            data-testid="admin-save-btn"
+            disabled={isCreating || !form.code || !form.name}
+          >
             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Criar Técnica
           </Button>

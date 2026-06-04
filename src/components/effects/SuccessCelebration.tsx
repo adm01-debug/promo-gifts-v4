@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Check, Sparkles, PartyPopper } from 'lucide-react';
 import { MiniConfetti } from './MiniConfetti';
 

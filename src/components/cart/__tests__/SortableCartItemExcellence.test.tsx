@@ -7,16 +7,20 @@ import { BrowserRouter } from 'react-router-dom';
 // Mock do framer-motion para evitar erros de animação em ambiente de teste
 vi.mock('framer-motion', async () => {
   const actual = await vi.importActual('framer-motion');
+  const motionStub = {
+    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+      <div {...props}>{children}</div>
+    ),
+    img: ({ children, ...props }: React.HTMLAttributes<HTMLImageElement>) => (
+      <img {...(props as React.ImgHTMLAttributes<HTMLImageElement>)}>{children}</img>
+    ),
+  };
   return {
     ...actual,
-    motion: {
-      div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-        <div {...props}>{children}</div>
-      ),
-      img: ({ children, ...props }: React.HTMLAttributes<HTMLImageElement>) => (
-        <img {...(props as React.ImgHTMLAttributes<HTMLImageElement>)}>{children}</img>
-      ),
-    },
+    motion: motionStub,
+    // Components now import the lightweight `m` (aliased as `motion`) under LazyMotion.
+    m: motionStub,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   };
 });

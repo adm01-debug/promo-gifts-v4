@@ -63,6 +63,10 @@ vi.mock("framer-motion", () => {
     });
   return {
     motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    m: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    LazyMotion: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });

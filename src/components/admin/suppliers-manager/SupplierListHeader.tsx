@@ -56,7 +56,12 @@ export function SupplierListHeader({
             <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             Atualizar
           </Button>
-          <Button size="sm" onClick={onNew} className="gap-1.5">
+          <Button
+            size="sm"
+            onClick={onNew}
+            data-testid="admin-create-btn"
+            className="gap-1.5"
+          >
             <Plus className="h-3.5 w-3.5" />
             Novo Fornecedor
           </Button>

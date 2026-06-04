@@ -9,15 +9,15 @@
  *
  * Utiliza helpers SSOT de e2e/helpers/ e seletores de e2e/fixtures/selectors.ts.
  */
-import { test, expect, requireAuth, requireAdmin } from "../fixtures/test-base";
-import { Sel } from "../fixtures/selectors";
-import { gotoAndSettle, expectOnRoute } from "../helpers/nav";
+import { test, expect, requireAuth, requireAdmin } from "./fixtures/test-base";
+import { Sel } from "./fixtures/selectors";
+import { gotoAndSettle, expectOnRoute } from "./helpers/nav";
 import { 
   waitForTestIdVisible, 
   clickTestId, 
   expectVisibleByTestId,
   waitForTestIdCount
-} from "../helpers/waits";
+} from "./helpers/waits";
 
 test.describe("E2E Comprehensive: Do Login ao Checkout e Admin", () => {
   

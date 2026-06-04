@@ -15,13 +15,20 @@ import { renderWithProviders } from "../render-helpers";
 import React from "react";
 
 // Framer-motion can be heavy; stub it so tests focus on logic
-vi.mock("framer-motion", () => ({
-  motion: {
+vi.mock("framer-motion", () => {
+  const motionStub = {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) =>
       React.createElement("div", props, children),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  return {
+    motion: motionStub,
+    m: motionStub,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
 
 function resizeWindowTo(width: number) {
   Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: width });

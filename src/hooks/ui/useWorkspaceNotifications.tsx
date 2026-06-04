@@ -273,7 +273,7 @@ export function useWorkspaceNotifications() {
 
     // Use a small delay for search to avoid too many requests if not handled by caller
     // but the Drawer already has a 400ms debounce.
-    fetchNotifications({ source: 'filter-change' });
+    fetchNotifications({ source: 'mutation' });
   }, [user, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
 
   // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length

@@ -114,7 +114,7 @@ jobs:
             e2e/login.spec.ts \
             e2e/mockup-generate.spec.ts \
             e2e/routes/app/replenishment-grid-visual.spec.ts \
-            --project=routes-authed
+            --project=chromium-authed
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}

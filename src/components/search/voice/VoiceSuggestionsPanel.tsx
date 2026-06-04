@@ -2,7 +2,7 @@
  * VoiceSuggestionsPanel — Shows command suggestions or recent commands + text input.
  */
 import { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Send, Keyboard, X } from 'lucide-react';
 import type { VoiceAgentPhase } from '@/hooks/intelligence';
 import type { VoiceHistoryEntry } from '@/hooks/voice/useVoiceHistory';

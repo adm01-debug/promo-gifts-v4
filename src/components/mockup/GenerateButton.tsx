@@ -5,7 +5,7 @@
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 
 interface GenerateButtonProps {
   onClick: () => void;

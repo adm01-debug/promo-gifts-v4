@@ -124,6 +124,15 @@ export const ProductCard = memo(
     const [imageLoaded, setImageLoaded] = useState(false);
     const [actionsOpen, setActionsOpen] = useState(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+    const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+
+    // Efeito para simular loading ao trocar de cor
+    useEffect(() => {
+      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento
+      setIsUpdatingColor(true);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 350);
+      return () => clearTimeout(timer);
+    }, [activeVariantIdx]);
 
     const filterKey = activeColorFilter
       ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
@@ -145,26 +154,43 @@ export const ProductCard = memo(
     // runtime com "Cannot access 'allMatchingVariants' before initialization"
     // (TDZ de const em mesma scope). Move-se a derivação para cá, antes do
     // primeiro uso.
-    const allMatchingVariants = useMemo(
-      () => resolveAllMatchingColors(product.colors, activeColorFilter),
-      [product.colors, activeColorFilter],
-    );
+    const allMatchingVariants = useMemo(() => {
+      const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
+      // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
+      if (matches.length === 0 && product.colors) {
+        return product.colors.map((c) => ({
+          name: c.name,
+          hex: c.hex || '#888',
+          image: c.images?.[0] || c.image,
+          groupSlug: c.groupSlug,
+          variationSlug: c.variationSlug,
+        }));
+      }
+      return matches;
+    }, [product.colors, activeColorFilter]);
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
-        // Prioridade: Seleção manual > Filtro ativo
+        // Resolve URL param de forma estável
+        const urlParams =
+          typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const urlColor = urlParams?.get('cor');
+
+        // Prioridade: URL > Seleção manual > Filtro ativo
         const targetColor =
-          selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
           );
+          // BUG-INF-LOOP: Avoid setting state if it's already the current value
           if (idx >= 0 && idx !== activeVariantIdx) {
             setActiveVariantIdx(idx);
           }
         }
       }
-    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+    }, [product.id, product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
@@ -192,6 +218,9 @@ export const ProductCard = memo(
             break;
           case 'kit':
             navigate('/filtros?isKit=1');
+            break;
+          case 'packaging':
+            navigate('/filtros?hasCommercialPackaging=1');
             break;
         }
       },
@@ -312,18 +341,49 @@ export const ProductCard = memo(
     const matchedHighlightColor =
       currentVariant?.hex ||
       resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
-    const hasHighlightedColor = !!matchedHighlightColor;
+    const _hasHighlightedColor = !!matchedHighlightColor;
 
-    const variantImage = currentVariant?.image;
-    const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
-    const rawImageUrl = colorSpecificImage || product.og_image_url || product.images[0] || null;
-    const cardImageUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
-    const cardSrcSet = colorSpecificImage
-      ? undefined
-      : rawImageUrl
-        ? getSrcSet(rawImageUrl)
-        : undefined;
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
+    const _activeColorHex = currentVariant?.hex || null;
+
+    // Se houver uma cor ativa (selecionada ou filtrada), forçamos a imagem dessa cor
+    const currentImageUrl = useMemo(() => {
+      // Prioridade 1: Imagem da variante atual do carrossel/seleção
+      if (currentVariant?.image) return currentVariant.image;
+
+      // Prioridade 2: Resolver por filtro de cor (se houver)
+      const filteredImg = resolveColorImage(product, activeColorFilter);
+      if (filteredImg) return filteredImg;
+
+      // Prioridade 3: Se tivermos apenas o nome da cor (ex: seleção manual via swatch)
+      if (activeColorName) {
+        const colorMatch = product.colors?.find(
+          (c) => c.name.toLowerCase() === activeColorName.toLowerCase(),
+        );
+        const matchedImg = colorMatch ? colorMatch.images?.[0] || colorMatch.image : null;
+        if (matchedImg) return matchedImg;
+      }
+
+      // Fallback
+      return product.og_image_url || product.images[0] || null;
+    }, [product, activeColorFilter, currentVariant, activeColorName]);
+
+    // Caso de fallback para quando a imagem da cor não existe
+    const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
+
+    const cardImageUrl =
+      effectiveImageUrl !== '/placeholder.svg'
+        ? getCdnUrl(effectiveImageUrl, 'card')
+        : '/placeholder.svg';
+    const _hasNoImage = effectiveImageUrl === '/placeholder.svg';
+
+    const cardSrcSet =
+      effectiveImageUrl !== '/placeholder.svg' &&
+      (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
+        ? getSrcSet(effectiveImageUrl)
+        : undefined;
+
+    const colorSpecificImage = effectiveImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
@@ -341,20 +401,11 @@ export const ProductCard = memo(
         data-testid="product-card"
         data-product-id={product.id}
         className={cn(
-          'card-lift card-glow group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
+          'card-lift card-glow group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card sm:rounded-2xl',
           'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
-          hasHighlightedColor ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]' : '',
         )}
-        style={
-          hasHighlightedColor && matchedHighlightColor
-            ? ({
-                borderColor: `${matchedHighlightColor}70`,
-                boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
-              } as React.CSSProperties)
-            : undefined
-        }
         onMouseEnter={() => {
           setIsHovered(true);
           telemetryService.logUXAction('product_hover', {
@@ -430,6 +481,7 @@ export const ProductCard = memo(
           }}
           priority={priority}
           onStatusClick={handleStatusClick}
+          isUpdatingColor={isUpdatingColor}
         />
 
         {/* Quick Actions FAB */}
@@ -462,7 +514,7 @@ export const ProductCard = memo(
         {/* Info section */}
         <div
           className={cn(
-            'relative space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
+            'relative flex flex-1 flex-col space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
             isHovered ? 'translate-y-[-2px] bg-background' : 'bg-background',
           )}
           style={{ zIndex: 10 }}
@@ -497,7 +549,7 @@ export const ProductCard = memo(
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className="line-clamp-2 min-h-[2.25rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[2.75rem] sm:text-base"
+            className="line-clamp-2 max-h-[2.5rem] min-h-[2.5rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:max-h-[3rem] sm:min-h-[3rem] sm:text-base"
           >
             {product.name}
           </h3>
@@ -516,25 +568,36 @@ export const ProductCard = memo(
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
+
+                // Persiste a cor na URL sem forçar navegação completa
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('cor', c.name);
+                window.history.replaceState({}, '', currentUrl.toString());
               }
-              const params = new URLSearchParams();
-              params.set('cor', c.name);
-              if (c.hex) params.set('hex', c.hex);
-              const matched = idx >= 0 ? allMatchingVariants[idx] : null;
-              if (matched?.groupSlug) params.set('grupo', matched.groupSlug);
-              navigate(`/produto/${product.id}?${params.toString()}`);
+              // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
+              // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
+              // a exploração de várias cores rapidamente no grid.
             }}
           />
 
+          <div className="flex-1" />
+
           {(() => {
-            const colorStock = resolveColorStock(product, activeColorFilter);
+            const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
             const displayStock = colorStock?.stock ?? product.stock;
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
+
             return (
-              <div className="flex items-end justify-between pt-0.5 sm:pt-1">
+              <div
+                key={activeColorName || 'default'}
+                className={cn(
+                  'flex items-end justify-between pt-0.5 transition-all duration-500 animate-in fade-in slide-in-from-bottom-1 sm:pt-1',
+                  isUpdatingColor ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100',
+                )}
+              >
                 <div>
                   <p className="mb-0.5 text-[10px] font-medium text-muted-foreground opacity-70 sm:text-[11px]">
-                    A partir de
+                    {activeColorName ? `Estoque ${activeColorName}` : 'A partir de'}
                   </p>
                   <span className="inline-flex items-center gap-2 font-display text-xs font-black tracking-tight text-foreground sm:text-lg">
                     {formatPrice(product.price)}

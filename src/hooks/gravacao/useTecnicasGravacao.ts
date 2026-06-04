@@ -47,9 +47,7 @@ export function useTecnicasGravacao() {
       // FIX BUG-TEC-01: buscar faixas em paralelo com técnicas
       // antes buscava tpgo duas vezes (sem utilidade)
       const [tecnicasResult, faixasResult] = await Promise.all([
-        untypedFrom('tabela_preco_gravacao_oficial')
-          .select('*')
-          .order('nome', { ascending: true }),
+        untypedFrom('tabela_preco_gravacao_oficial').select('*').order('nome', { ascending: true }),
         untypedFrom('tabela_preco_gravacao_oficial_faixa').select('tabela_preco_gravacao_id'), // só o FK — evita baixar 884 rows completos
       ]);
 
@@ -74,7 +72,7 @@ export function useTecnicasGravacao() {
       // antes tentava v.tecnica_gravacao_id que não existe → sempre 0
       const variantesCount: Record<string, number> = {};
       (faixasResult.data || []).forEach((f) => {
-        const tid = (f as { tabela_preco_gravacao_id: string }).tabela_preco_gravacao_id;
+        const tid = (f as unknown as { tabela_preco_gravacao_id: string }).tabela_preco_gravacao_id;
         if (tid) {
           variantesCount[tid] = (variantesCount[tid] || 0) + 1;
         }
@@ -139,7 +137,9 @@ export function useTecnicasGravacao() {
     mutationFn: async (id: string): Promise<void> => {
       // FIX BUG-TEC-04: verificar FAIXAS vinculadas antes de deletar
       // antes verificava count da própria tabela (dead code — sempre ≥ 1)
-      const { count: faixasCount, error: faixasError } = await untypedFrom('tabela_preco_gravacao_oficial_faixa')
+      const { count: faixasCount, error: faixasError } = await untypedFrom(
+        'tabela_preco_gravacao_oficial_faixa',
+      )
         .select('id', { count: 'exact', head: true })
         .eq('tabela_preco_gravacao_id', id);
 

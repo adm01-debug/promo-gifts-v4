@@ -104,7 +104,11 @@ export function ComponentAccordionItem({
 
   return (
     <SortableItem key={component.id} id={component.id}>
-      <AccordionItem value={component.id} className="rounded-lg border px-4">
+      <AccordionItem
+        value={component.id}
+        data-testid={`admin-row-${component.id}`}
+        className="rounded-lg border px-4"
+      >
         <AccordionTrigger className="hover:no-underline">
           <div className="flex flex-1 items-center gap-3">
             <Badge variant="outline" className="font-mono">

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Zap, Clock, DollarSign, Check, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
 import type { TechniqueComparisonResult } from '@/types/domain/simulator-wizard';

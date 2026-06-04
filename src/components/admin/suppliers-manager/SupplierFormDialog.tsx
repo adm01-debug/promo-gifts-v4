@@ -138,7 +138,7 @@ export function SupplierFormDialog({
         if (!open) setEditingSupplier(null);
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent data-testid="admin-form" className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -238,6 +238,7 @@ export function SupplierFormDialog({
                 </Label>
                 <Input
                   value={editingSupplier.code || ''}
+                  data-testid="admin-code-input"
                   onChange={(e) => updateField('code', e.target.value)}
                   className={`${fieldClass} font-mono uppercase`}
                 />
@@ -249,6 +250,7 @@ export function SupplierFormDialog({
               </Label>
               <Input
                 value={editingSupplier.name || ''}
+                data-testid="admin-name-input"
                 onChange={(e) => updateField('name', e.target.value)}
                 className={fieldClass}
               />
@@ -1016,7 +1018,13 @@ export function SupplierFormDialog({
           <Button variant="ghost" size="sm" onClick={() => setEditingSupplier(null)}>
             Cancelar
           </Button>
-          <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5">
+          <Button
+            size="sm"
+            disabled={saving}
+            onClick={handleSave}
+            data-testid="admin-save-btn"
+            className="gap-1.5"
+          >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (

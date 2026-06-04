@@ -31,7 +31,12 @@ export function TechniquesManager() {
               Gerencie as técnicas disponíveis no catálogo Promobrind
             </CardDescription>
           </div>
-          <TechniqueFormDialog categorias={categorias} isCreating={isCreating} onCreate={create} />
+          <TechniqueFormDialog
+            categorias={categorias}
+            isCreating={isCreating}
+            onCreate={create}
+            data-testid="admin-create-btn"
+          />
         </div>
       </CardHeader>
       <CardContent>

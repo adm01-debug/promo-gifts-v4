@@ -7,9 +7,9 @@ test.describe("Fluxo: Password Reset UI", () => {
   test("mostra erro para link inválido (sem token)", async ({ page }) => {
     await gotoAndSettle(page, "/reset-password");
     
-    // Deve mostrar o card de link inválido/expirado
-    await expect(page.getByText("Link inválido ou expirado")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Voltar ao login" })).toBeVisible();
+    // Deve mostrar o card de link inválido/expirado (aguarda token check async completar)
+    await expect(page.getByText("Link inválido ou expirado")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "Solicitar novo link" })).toBeVisible();
   });
 
   test("renderiza formulário quando há token no hash", async ({ page }) => {

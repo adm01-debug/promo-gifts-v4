@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Save, Palette, Sparkles, Check, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
 import {

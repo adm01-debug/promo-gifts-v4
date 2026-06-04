@@ -93,8 +93,6 @@ export async function getNotifications(
   };
 }
 
-// Add return type to getNotifications above (implicitly handled by JS/TS but good to note)
-
 /**
  * Conta notificações não lidas do usuário autenticado.
  * Usa count agregado para não baixar os registros completos.

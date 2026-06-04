@@ -50,7 +50,9 @@ export function useProductPrintAreas(productId: string | null) {
       const areas = await fetchPrintAreasFromProduct(productId);
       if (!areas.length) return [];
 
-      const { data: techData, error: techError } = await untypedFrom('tabela_preco_gravacao_oficial')
+      const { data: techData, error: techError } = await untypedFrom(
+        'tabela_preco_gravacao_oficial',
+      )
         .select('*')
         .eq('ativo', true)
         .limit(100);

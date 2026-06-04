@@ -2,7 +2,7 @@
  * CollectionGridCard — Premium card with dynamic diagonal collage layout.
  * Inspired by editorial photo grids with angular cuts.
  */
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import {
   FolderOpen,
   MoreVertical,

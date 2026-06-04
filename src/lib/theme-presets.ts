@@ -195,7 +195,7 @@ export interface ThemePreset {
 export interface ThemeConfig {
   presetId: string;
   radius: number;
-  mode: 'dark';
+  mode: 'light' | 'dark';
 }
 
 // =====================================================
@@ -959,8 +959,8 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
-      // Force dark mode even if stored as light
-      parsed.mode = 'dark';
+      // Support both light/dark if ever expanded, but default to dark for now
+      parsed.mode = parsed.mode || 'dark';
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }
@@ -984,17 +984,33 @@ export function saveThemeConfig(config: ThemeConfig): void {
  * Quando o preset não define radius/font, restaura os defaults para que
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
-export function applyThemePreset(presetId: string, _mode: 'light' | 'dark'): void {
-  const mode = 'dark'; // Always use dark mode tokens
+export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dark'): void {
+  const actualMode = mode === 'light' ? 'light' : 'dark';
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
-  if (!preset) return;
+  if (!preset) {
+    if (import.meta.env.DEV) {
+      console.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
+    }
+    const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
+    if (!fallback) return;
+    
+    const root = document.documentElement;
+    root.classList.add('theme-transitioning');
+    const colors = fallback[mode];
+    CSS_VARS_TO_APPLY.forEach((key) => {
+      const value = colors[key];
+      if (value !== undefined) root.style.setProperty(`--${key}`, value);
+    });
+    setTimeout(() => root.classList.remove('theme-transitioning'), 500);
+    return;
+  }
 
   const root = document.documentElement;
 
   // Enable smooth transition for all elements
   root.classList.add('theme-transitioning');
 
-  const colors = preset[mode];
+  const colors = preset[actualMode];
 
   CSS_VARS_TO_APPLY.forEach((key) => {
     const value = colors[key];
@@ -1008,7 +1024,7 @@ export function applyThemePreset(presetId: string, _mode: 'light' | 'dark'): voi
   if (preset.font) {
     root.style.setProperty('--font-sans', preset.font);
     root.style.setProperty('--font-display', preset.font);
-  } else {
+  } else if (root.style.getPropertyValue('--font-sans') !== DEFAULT_FONT_SANS) {
     root.style.setProperty('--font-sans', DEFAULT_FONT_SANS);
     root.style.setProperty('--font-display', DEFAULT_FONT_DISPLAY);
   }

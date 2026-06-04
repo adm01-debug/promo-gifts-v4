@@ -3,7 +3,7 @@
  * Design 10/10 com animações premium via framer-motion.
  */
 import { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Sparkles, PackagePlus, ArrowUpRight, Zap } from 'lucide-react';

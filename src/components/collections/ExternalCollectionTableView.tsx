@@ -2,7 +2,7 @@
  * ExternalCollectionTableView — Table view for catalog (external) collections with sorting.
  */
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { FolderOpen, Package, Copy, ArrowUp, ArrowDown, ArrowUpDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
