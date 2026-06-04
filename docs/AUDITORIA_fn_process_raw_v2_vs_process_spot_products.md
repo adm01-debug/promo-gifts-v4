@@ -26,9 +26,12 @@ precisam de decisão/correção. Nenhum caller ficou quebrado: `process_spot_pro
 
 | Severidade | Item | Status |
 |---|---|---|
-| 🟠 Médio | Limpeza de nome (`clean_spot_name`) **perdida** | Gap confirmado |
-| 🟡 Baixo/Médio | Prefixo de SKU `SPOT-` deixou de ser aplicado | Desvio confirmado |
-| 🔴 Alto (operacional) | **56.428 batches vazios** (99,98%) por race condition de cron | Defeito confirmado |
+| 🟠 Médio | Limpeza de nome (`clean_spot_name`) **perdida** | ✅ **Corrigido** (migr. `20260604220000`) |
+| 🟡 Baixo/Médio | Prefixo de SKU `SPOT-` deixou de ser aplicado | ✅ **Decidido**: manter sem prefixo (formato atual) — sem mudança |
+| 🔴 Alto (operacional) | **56.428 batches vazios** (99,98%) por race condition de cron | ✅ **Corrigido** (migr. `20260604221000`) |
+
+> **Atualização 2026-06-04 (remediação):** os itens 🟠 e 🔴 foram corrigidos e
+> validados em produção. Detalhes ao final (§8).
 
 ---
 
@@ -210,3 +213,37 @@ gerando **batch vazio**. Medições: **56.440 batches** do SPOT, **56.428 vazios
 > Nenhuma alteração de DDL/cron/dados foi aplicada nesta auditoria — apenas leitura e
 > um teste E2E com rollback total. As remediações dos itens 1–3 podem ser implementadas
 > mediante aprovação.
+
+---
+
+## 8. Remediação aplicada (2026-06-04)
+
+### ✅ 🟠 Limpeza de nome — `20260604220000_fix_spot_name_cleaning.sql`
+- Criada `fn_clean_spot_name(text)` (sentence-case: colapsa espaços, trim,
+  1ª letra maiúscula, resto minúsculo) — reproduz o padrão dos 1.200 nomes atuais.
+- Adicionado o branch `fn_clean_spot_name` ao CASE `custom` de `fn_apply_transform`.
+- Mapping `products.name` migrado de `direct` → `custom`/`fn_clean_spot_name`.
+- **Validação E2E (rollback):** raw `Name='  CANECA   de   PORCELANA   BRANCA  '`
+  → produto `Caneca de porcelana branca`, variante `Caneca de porcelana branca | Branco`.
+
+### ✅ 🔴 Race / batches vazios — `20260604221000_fix_raw_v2_race_and_batch_spam.sql`
+- `fn_process_raw_v2` v2.1: `pg_try_advisory_xact_lock` por fornecedor (anti-race)
+  + abertura **LAZY** do batch (só cria batch quando há ≥1 parent real).
+- `process_pending_batches` simplificada (1 chamada à v2, sem loop redundante).
+- Cron duplicado `process-marked-products` (jobid 2) **removido**;
+  resta apenas `process-pending-products` (jobid 1).
+- **Purge:** 56.428 batches vazios/não-referenciados removidos
+  (SPOT: 56.440 → **12**).
+- **Validações:** no-op não cria batch (delta=0, `batch_id=NULL`);
+  `process_pending_batches()` → `SUCCESS`; cron sem duplicata.
+
+> Nota: o espaço físico de `supplier_import_batches` é reclamado pelo job
+> semanal `vacuum-analyze-weekly` (jobid 49), que já inclui a tabela.
+
+### ✅ 🟡 Prefixo de SKU — decidido: manter sem prefixo
+**Decisão (2026-06-04):** adotar formalmente o formato atual `sku = ProdReference`
+(sem `SPOT-`). Os 1.200 produtos já usam esse formato, internamente consistente e
+idempotente (lookup por `supplier_reference`). Reintroduzir `SPOT-` criaria
+inconsistência (só novos) ou exigiria migração outward-facing de 1.200 SKUs com risco
+de quebrar integrações. **Nenhuma mudança de dados é necessária** — o
+`supplier_settings.sku_prefix=''` permanece como está.
