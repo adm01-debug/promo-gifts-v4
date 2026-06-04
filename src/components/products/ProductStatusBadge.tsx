@@ -13,7 +13,8 @@ export type ProductStatusBadgeType =
   | 'featured'
   | 'kit'
   | 'urgency'
-  | 'out-of-stock';
+  | 'out-of-stock'
+  | 'packaging';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
