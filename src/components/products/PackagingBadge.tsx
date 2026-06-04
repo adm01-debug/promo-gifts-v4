@@ -74,7 +74,7 @@ export function PackagingBadge({
         'bg-gradient-to-r from-warning/10 to-warning/5',
         'border-warning/30 hover:border-warning/60',
         'hover:from-warning/20 hover:to-warning/10',
-        'hover:scale-[1.02] hover:shadow-md',
+        'will-change-transform hover:scale-[1.02] hover:shadow-md',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2',
         'flex-col items-start gap-0.5 px-3 py-1.5',
         className,
@@ -90,9 +90,9 @@ export function PackagingBadge({
   );
 
   return (
-    <Tooltip>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>{badge}</TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[200px]">
+      <TooltipContent side="top" className="pointer-events-none max-w-[200px]">
         <div className="space-y-1.5 text-xs">
           <p className="font-semibold text-foreground">Embalagem {displayType}</p>
           <div className="grid gap-1 text-[10px] text-muted-foreground">

@@ -186,7 +186,7 @@ export const ProductCardImage = memo(function ProductCardImage({
       )}
 
       {/* Badges - Top Left */}
-      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
+      <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
         {featured && (
           <ProductStatusBadge
             type="featured"
@@ -229,7 +229,6 @@ export const ProductCardImage = memo(function ProductCardImage({
           <ProductStatusBadge
             type="packaging"
             size="sm"
-            value="Embalagem"
             packagingMetadata={{
               packingType: product.packingType,
               boxWidthMm: product.boxWidthMm,

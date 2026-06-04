@@ -160,8 +160,9 @@ export function ProductDetailHero({
               onClick={onOpenPackagingModal}
             />
             {!product.hasCommercialPackaging && (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium italic text-muted-foreground/40">
-                Sem embalagem
+              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium italic text-muted-foreground/30">
+                <Gift className="h-3 w-3 opacity-50" />
+                Sem embalagem especial
               </span>
             )}
           </div>
