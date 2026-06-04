@@ -330,17 +330,35 @@ export const ProductCard = memo(
       resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
     const hasHighlightedColor = !!matchedHighlightColor;
 
-    const variantImage = currentVariant?.image;
-    const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
-    const rawImageUrl = colorSpecificImage || product.og_image_url || product.images[0] || null;
-    const cardImageUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
-    const cardSrcSet = colorSpecificImage
-      ? undefined
-      : rawImageUrl
-        ? getSrcSet(rawImageUrl)
-        : undefined;
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
     const activeColorHex = currentVariant?.hex || null;
+
+    // Se houver uma cor ativa (selecionada ou filtrada), forçamos a imagem dessa cor
+    const currentImageUrl = useMemo(() => {
+      // Prioridade 1: Imagem da variante atual do carrossel/seleção
+      if (currentVariant?.image) return currentVariant.image;
+      
+      // Prioridade 2: Resolver por filtro de cor (se houver)
+      const filteredImg = resolveColorImage(product, activeColorFilter);
+      if (filteredImg) return filteredImg;
+
+      // Prioridade 3: Se tivermos apenas o nome da cor (ex: seleção manual via swatch)
+      if (activeColorName) {
+        const colorMatch = product.colors?.find(c => c.name.toLowerCase() === activeColorName.toLowerCase());
+        const matchedImg = colorMatch ? (colorMatch.images?.[0] || colorMatch.image) : null;
+        if (matchedImg) return matchedImg;
+      }
+
+      // Fallback
+      return product.og_image_url || product.images[0] || null;
+    }, [product, activeColorFilter, currentVariant, activeColorName]);
+
+    const cardImageUrl = currentImageUrl ? getCdnUrl(currentImageUrl, 'card') : '/placeholder.svg';
+    const cardSrcSet = currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
+      ? getSrcSet(currentImageUrl)
+      : undefined;
+
+    const colorSpecificImage = currentImageUrl;
 
     const imageBounds = useProductBounds(
       cardImageUrl !== '/placeholder.svg' ? cardImageUrl : null,
