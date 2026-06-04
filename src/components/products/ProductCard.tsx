@@ -396,7 +396,7 @@ export const ProductCard = memo(
         data-testid="product-card"
         data-product-id={product.id}
         className={cn(
-          'card-lift card-glow group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
+          'card-lift card-glow group relative flex h-full flex-col cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
           'touch-manipulation transition-all duration-500 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
@@ -509,7 +509,7 @@ export const ProductCard = memo(
         {/* Info section */}
         <div
           className={cn(
-            'relative space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
+            'relative flex flex-1 flex-col space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
             isHovered ? 'translate-y-[-2px] bg-background' : 'bg-background',
           )}
           style={{ zIndex: 10 }}
@@ -544,7 +544,7 @@ export const ProductCard = memo(
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className="line-clamp-2 min-h-[2.25rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[2.75rem] sm:text-base"
+            className="line-clamp-2 min-h-[2.5rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[3rem] sm:text-base"
           >
             {product.name}
           </h3>
@@ -574,6 +574,8 @@ export const ProductCard = memo(
               // a exploração de várias cores rapidamente no grid.
             }}
           />
+
+          <div className="flex-1" />
 
           {(() => {
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
