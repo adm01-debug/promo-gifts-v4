@@ -74,7 +74,7 @@ export function PackagingBadge({
         'bg-gradient-to-r from-warning/10 to-warning/5',
         'border-warning/30 hover:border-warning/60',
         'hover:from-warning/20 hover:to-warning/10',
-        'hover:scale-[1.02] hover:shadow-md',
+        'hover:scale-[1.02] hover:shadow-md will-change-transform',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2',
         'flex-col items-start gap-0.5 px-3 py-1.5',
         className,

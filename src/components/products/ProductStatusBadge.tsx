@@ -296,7 +296,7 @@ export function ProductStatusBadge({
       className={cn(
         'inline-flex items-center rounded-full font-semibold transition-all duration-300',
         'group-hover:scale-105 group-hover:shadow-lg',
-        'hover:brightness-110 active:scale-95',
+        'hover:brightness-110 active:scale-95 will-change-transform',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
