@@ -115,6 +115,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   const newArrival = product.newArrival;
   const isKit = product.isKit;
   const onSale = product.onSale;
+  const hasPackaging = product.hasCommercialPackaging === true;
   const stockStatus: 'ok' | 'low' | 'unavailable' =
     product.stockStatus === 'out-of-stock'
       ? 'unavailable'
