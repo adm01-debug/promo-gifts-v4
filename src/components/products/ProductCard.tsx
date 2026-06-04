@@ -193,6 +193,9 @@ export const ProductCard = memo(
           case 'kit':
             navigate('/filtros?isKit=1');
             break;
+          case 'packaging':
+            navigate('/filtros?hasCommercialPackaging=1');
+            break;
         }
       },
       [onStatusClick, navigate],
