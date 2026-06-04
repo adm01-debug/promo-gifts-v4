@@ -123,25 +123,30 @@ export const ProductCardImage = memo(function ProductCardImage({
   return (
     <div className="relative aspect-square overflow-hidden">
       {/* Main image — fades out on hover when set image is available */}
-      <OptimizedImage
-        src={activeSrc}
-        alt={product.name}
-        srcSet={cardSrcSet}
-        className={cn(
-          'h-full w-full object-contain',
-          'transition-opacity duration-300 ease-in-out',
-          hasSetHover && isHovered && 'opacity-0',
-        )}
-        style={{
-          transform: `scale(${computedImageScale})`,
-          willChange: 'transform',
-          transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
-        }}
-        containerClassName="h-full w-full"
-        priority={priority}
-        onLoad={onImageLoad}
-        {...DEFAULT_IMAGE_CONFIG}
-      />
+      <div 
+        key={activeSrc}
+        className="h-full w-full animate-in fade-in duration-500"
+      >
+        <OptimizedImage
+          src={activeSrc}
+          alt={product.name}
+          srcSet={cardSrcSet}
+          className={cn(
+            'h-full w-full object-contain',
+            'transition-opacity duration-300 ease-in-out',
+            hasSetHover && isHovered && 'opacity-0',
+          )}
+          style={{
+            transform: `scale(${computedImageScale})`,
+            willChange: 'transform',
+            transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
+          }}
+          containerClassName="h-full w-full"
+          priority={priority}
+          onLoad={onImageLoad}
+          {...DEFAULT_IMAGE_CONFIG}
+        />
+      </div>
 
       {/* Set image (todas as cores) — fades in on hover, only when no variant is active */}
       {hasSetHover && setImageSrc && (
