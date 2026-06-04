@@ -29,6 +29,7 @@ export function AppLogo({
     <div
       className={cn(
         'group flex select-none items-center gap-2 sm:gap-3',
+        isSidebar ? 'gap-2' : 'gap-2 sm:gap-3',
         className,
         onClick && 'cursor-pointer transition-transform duration-200 active:scale-95',
       )}
@@ -37,7 +38,7 @@ export function AppLogo({
       <div
         className={cn(
           'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] sm:rounded-[12px] border border-white/5 shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-500',
-          !iconClassName?.includes('h-') && (isSidebar ? 'h-8 w-8' : 'h-10 w-10 sm:h-11 sm:w-11'),
+          !iconClassName?.includes('h-') && (isSidebar ? 'h-7 w-7' : 'h-10 w-10 sm:h-11 sm:w-11'),
           iconBg,
           iconClassName,
         )}
@@ -50,7 +51,7 @@ export function AppLogo({
               : iconClassName?.includes('h-14')
                 ? 'h-7 w-7'
                 : isSidebar
-                  ? 'h-4 w-4'
+                  ? 'h-3.5 w-3.5'
                   : 'h-5 w-5 sm:h-6 sm:w-6',
             iconColor,
           )}
@@ -62,8 +63,8 @@ export function AppLogo({
         <div className="flex flex-col">
           <span
             className={cn(
-              'font-display font-black uppercase leading-tight tracking-tight text-foreground drop-shadow-sm',
-              isSidebar ? 'text-base sm:text-lg' : 'text-[22px] sm:text-[34.8px] tracking-[0.08em]',
+              'font-display font-black uppercase leading-tight tracking-tight text-foreground drop-shadow-sm transition-all duration-300',
+              isSidebar ? 'text-[13px] sm:text-sm' : 'text-[22px] sm:text-[34.8px] tracking-[0.08em]',
               textClassName,
             )}
           >
@@ -71,8 +72,8 @@ export function AppLogo({
           </span>
           <span
             className={cn(
-              'flex items-center gap-1 font-bold leading-none text-muted-foreground drop-shadow-sm',
-              isSidebar ? 'mt-0.5 text-[9px] uppercase tracking-wider' : 'mt-1.5 text-[9px] sm:text-[13.2px] tracking-[0.3em] sm:tracking-[0.35em] text-primary/90',
+              'flex items-center gap-1 font-bold leading-none text-muted-foreground drop-shadow-sm transition-all duration-300',
+              isSidebar ? 'mt-0.5 text-[8px] uppercase tracking-[0.1em]' : 'mt-1.5 text-[9px] sm:text-[13.2px] tracking-[0.3em] sm:tracking-[0.35em] text-primary/90',
               subtextClassName,
             )}
           >
