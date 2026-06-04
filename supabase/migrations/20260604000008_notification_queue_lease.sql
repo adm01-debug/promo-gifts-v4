@@ -20,9 +20,8 @@
 ALTER TABLE public.workspace_notifications
   ADD COLUMN IF NOT EXISTS dispatch_claim_expires_at TIMESTAMPTZ;
 
-CREATE INDEX IF NOT EXISTS idx_workspace_notifications_claimable
-  ON public.workspace_notifications (created_at ASC)
-  WHERE dispatched_at IS NULL;
+-- idx_workspace_notifications_undispatched (created_at ASC, WHERE dispatched_at IS NULL)
+-- was already created by migration 000006 — no duplicate index needed here.
 
 -- Replace process_notifications_queue: set lease only (not dispatched_at).
 CREATE OR REPLACE FUNCTION public.process_notifications_queue(
@@ -83,7 +82,9 @@ BEGIN
   SET dispatched_at = NOW(),
       dispatch_claim_expires_at = NULL
   WHERE id = ANY(p_ids)
-    AND dispatched_at IS NULL;
+    AND dispatched_at IS NULL
+    AND dispatch_claim_expires_at IS NOT NULL
+    AND dispatch_claim_expires_at > NOW();
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
@@ -102,5 +103,6 @@ COMMENT ON FUNCTION public.process_notifications_queue IS
 
 COMMENT ON FUNCTION public.confirm_notifications_dispatched IS
   'Marks notifications as permanently dispatched after successful delivery. '
-  'Must be called by the process-queue edge function with the IDs returned by '
-  'process_notifications_queue(). Safe to call multiple times (idempotent via dispatched_at IS NULL guard).';
+  'Only confirms rows with an active (non-expired) lease to prevent accidentally '
+  'dispatching unclaimed rows. Must be called by process-queue with IDs from '
+  'process_notifications_queue(). Idempotent — already-confirmed rows are silently skipped.';
