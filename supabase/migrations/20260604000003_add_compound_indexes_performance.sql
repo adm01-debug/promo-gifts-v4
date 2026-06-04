@@ -15,8 +15,9 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_active_supplier
   WHERE is_active = true AND deleted_at IS NULL;
 
 -- 3. Consultas por faixa de preço (filtro de preço no catálogo)
+-- The catalog price column is sale_price (not a generic 'price'); base_price is deprecated.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_active_price
-  ON public.products (is_active, price)
+  ON public.products (is_active, sale_price)
   WHERE is_active = true AND deleted_at IS NULL;
 
 -- 4. Ordenação por data de criação (grid "mais recentes")

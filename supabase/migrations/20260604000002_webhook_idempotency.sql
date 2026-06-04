@@ -14,7 +14,23 @@ ALTER TABLE public.webhook_deliveries
     webhook_id::text || ':' || payload_hash
   ) STORED;
 
--- 2. Índice único para prevenir duplicatas em nível de banco
+-- 2a. Remover duplicatas históricas antes de criar o índice único.
+-- Se já existirem dois sucessos para o mesmo (webhook_id, payload_hash),
+-- o CREATE UNIQUE INDEX abaixo falharia. Mantém a entrega mais antiga (menor id).
+WITH ranked AS (
+  SELECT id,
+         ROW_NUMBER() OVER (
+           PARTITION BY webhook_id, payload_hash
+           ORDER BY id
+         ) AS rn
+  FROM public.webhook_deliveries
+  WHERE status_code BETWEEN 200 AND 299
+    AND payload_hash IS NOT NULL
+)
+DELETE FROM public.webhook_deliveries
+WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
+
+-- 2b. Índice único para prevenir duplicatas em nível de banco
 CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_deliveries_idempotency
   ON public.webhook_deliveries (idempotency_key)
   WHERE status_code BETWEEN 200 AND 299;

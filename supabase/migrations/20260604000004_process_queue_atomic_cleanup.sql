@@ -33,11 +33,13 @@ BEGIN
     ORDER BY wn.created_at DESC
     LIMIT p_limit;
 
-  -- 2. Limpa notificações antigas APÓS ter retornado as atuais
-  -- workspace_notifications only has created_at (no updated_at column).
-  -- Remove entries older than 90 days regardless of read status.
+  -- 2. Limpa notificações LIDAS antigas APÓS ter retornado as atuais.
+  -- Only deletes is_read=true rows so unread notifications older than 90 days
+  -- (e.g. inactive users) are never silently discarded before processing.
+  -- workspace_notifications has no updated_at column; use created_at only.
   DELETE FROM public.workspace_notifications
-  WHERE created_at < NOW() - INTERVAL '90 days';
+  WHERE is_read = true
+    AND created_at < NOW() - INTERVAL '90 days';
 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';

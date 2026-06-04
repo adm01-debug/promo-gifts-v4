@@ -31,6 +31,8 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_images',
   'product_videos',
   'product_kit_components',
+  'kit_component_print_areas',
+  'kit_component_media',
   'product_materials',
   'product_properties', // PHASE 6: real table name for product attributes
   'supplier_property_mappings', // PHASE 6: real table name for supplier attr mappings
