@@ -91,6 +91,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   onImageLoad,
   priority = false,
   onStatusClick,
+  isUpdatingColor = false,
 }: ProductCardImageProps) {
   // Resolve the active image: prefer the variant-specific image (if a color is
   // selected in the carousel), otherwise fall back to the card image URL.
