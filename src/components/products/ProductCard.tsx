@@ -353,9 +353,12 @@ export const ProductCard = memo(
       return product.og_image_url || product.images[0] || null;
     }, [product, activeColorFilter, currentVariant, activeColorName]);
 
-    const cardImageUrl = currentImageUrl ? getCdnUrl(currentImageUrl, 'card') : '/placeholder.svg';
-    const cardSrcSet = currentImageUrl === product.og_image_url || currentImageUrl === product.images[0]
-      ? getSrcSet(currentImageUrl)
+    // Caso de fallback para quando a imagem da cor não existe
+    const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
+
+    const cardImageUrl = effectiveImageUrl !== '/placeholder.svg' ? getCdnUrl(effectiveImageUrl, 'card') : '/placeholder.svg';
+    const cardSrcSet = (effectiveImageUrl !== '/placeholder.svg' && (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0]))
+      ? getSrcSet(effectiveImageUrl)
       : undefined;
 
     const colorSpecificImage = currentImageUrl;
