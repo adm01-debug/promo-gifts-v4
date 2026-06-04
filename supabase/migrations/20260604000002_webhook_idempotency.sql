@@ -14,14 +14,21 @@ ALTER TABLE public.webhook_deliveries
     webhook_id::text || ':' || payload_hash
   ) STORED;
 
--- 2a. Remover duplicatas históricas antes de criar o índice único.
--- Se já existirem dois sucessos para o mesmo (webhook_id, payload_hash),
--- o CREATE UNIQUE INDEX abaixo falharia. Mantém a entrega mais antiga (menor id).
+-- 2a. Lock the table to serialise all three steps (DELETE + CREATE INDEX) against
+-- concurrent webhook inserts. SHARE ROW EXCLUSIVE MODE blocks INSERT/UPDATE/DELETE
+-- for the lifetime of this transaction, so no new duplicate can slip in between
+-- the cleanup and the moment the unique index becomes active.
+LOCK TABLE public.webhook_deliveries IN SHARE ROW EXCLUSIVE MODE;
+
+-- 2b. Remover duplicatas históricas antes de criar o índice único.
+-- Uses ctid (physical tuple position) as the stable tiebreaker — rows with a
+-- smaller ctid were inserted earlier, approximating "oldest delivery" for
+-- pre-existing rows where id is a random UUID and carries no time ordering.
 WITH ranked AS (
   SELECT id,
          ROW_NUMBER() OVER (
            PARTITION BY webhook_id, payload_hash
-           ORDER BY id
+           ORDER BY ctid
          ) AS rn
   FROM public.webhook_deliveries
   WHERE status_code BETWEEN 200 AND 299
@@ -30,7 +37,7 @@ WITH ranked AS (
 DELETE FROM public.webhook_deliveries
 WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 
--- 2b. Índice único para prevenir duplicatas em nível de banco
+-- 2c. Índice único para prevenir duplicatas em nível de banco
 CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_deliveries_idempotency
   ON public.webhook_deliveries (idempotency_key)
   WHERE status_code BETWEEN 200 AND 299;
