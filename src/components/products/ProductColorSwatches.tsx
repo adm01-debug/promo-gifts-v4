@@ -52,9 +52,9 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-2.5 w-2.5',
-  sm: 'h-3 w-3',
-  md: 'h-4 w-4',
+  xs: 'h-[14px] w-[14px]',
+  sm: 'h-[17px] w-[17px]',
+  md: 'h-[22px] w-[22px]',
 };
 
 export const ProductColorSwatches = memo(function ProductColorSwatches({
