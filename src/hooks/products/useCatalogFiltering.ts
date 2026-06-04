@@ -132,6 +132,10 @@ export function useCatalogFiltering({
       result = result.filter((p) => (p.stock || 0) > 0);
     }
 
+    if (filters.hasCommercialPackaging) {
+      result = result.filter((p) => p.hasCommercialPackaging === true);
+    }
+
     if (genderFilterSet.size > 0) {
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
     }
