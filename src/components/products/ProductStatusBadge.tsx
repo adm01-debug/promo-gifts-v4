@@ -47,6 +47,7 @@ export function ProductStatusBadge({
   onClick,
   className,
   showTooltip = true,
+  packagingMetadata,
 }: ProductStatusBadgeProps) {
   const location = useLocation();
   const { actualTheme } = useTheme();
