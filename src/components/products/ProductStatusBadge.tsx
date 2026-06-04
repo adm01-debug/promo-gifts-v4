@@ -151,6 +151,13 @@ export function ProductStatusBadge({
             <span>{value || 'Promoção'}</span>
           </>
         );
+      case 'packaging':
+        return (
+          <>
+            <Gift className={iconSize} />
+            <span>{value || 'Tem embalagem'}</span>
+          </>
+        );
       case 'novelty': {
         const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
         const label =
