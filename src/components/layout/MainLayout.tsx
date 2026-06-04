@@ -16,6 +16,9 @@ const SidebarReorganized = lazyWithRetry(() =>
 const PageTransition = lazyWithRetry(() =>
   import('@/components/effects/PageTransition').then((m) => ({ default: m.PageTransition })),
 );
+const StarBackground = lazyWithRetry(() =>
+  import('@/components/effects/StarBackground').then((m) => ({ default: m.StarBackground })),
+);
 
 // Context providers must be imported synchronously (consumers render inside them)
 import { SellerCartProvider } from '@/contexts/SellerCartContext';
@@ -75,6 +78,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const layoutContent = (
     <div className="min-h-screen bg-background print:min-h-0" role="document">
+      <div className="fixed inset-0 z-[-1]">
+        <Suspense fallback={null}>
+          <StarBackground />
+        </Suspense>
+      </div>
       <GlobalOverlay />
       <ShortcutsHelpDialog />
       <div className="print:hidden">
@@ -130,7 +138,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             ref={mainRef}
             tabIndex={-1}
             id="main-content"
-            className="theme-transitioning relative z-0 flex-1 overflow-x-clip bg-transparent p-3 pb-6 outline-none sm:p-4 lg:p-6 print:p-0 print:pb-0"
+            className="theme-transitioning relative z-0 flex-1 overflow-x-clip bg-background/30 p-3 pb-6 outline-none sm:p-4 lg:p-6 print:p-0 print:pb-0"
             role="main"
             aria-label="Conteúdo principal"
             aria-labelledby="main-heading"

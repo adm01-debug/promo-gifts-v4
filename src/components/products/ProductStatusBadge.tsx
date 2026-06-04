@@ -165,7 +165,7 @@ export function ProductStatusBadge({
         return (
           <>
             <Gift className={iconSize} />
-            <span>{value || 'Tem embalagem'}</span>
+            <span>{value || 'Embalagem'}</span>
           </>
         );
       case 'novelty': {
