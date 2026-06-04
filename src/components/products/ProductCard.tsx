@@ -544,7 +544,7 @@ export const ProductCard = memo(
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className="line-clamp-2 min-h-[2.5rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[3rem] sm:text-base"
+            className="line-clamp-2 min-h-[2.5rem] max-h-[2.5rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[3rem] sm:max-h-[3rem] sm:text-base"
           >
             {product.name}
           </h3>
