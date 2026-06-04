@@ -147,7 +147,10 @@ export function ProductDetailHero({
               hasCommercialPackaging={product.hasCommercialPackaging ?? null}
               packingType={product.packingType ?? null}
               repackingType={product.repackingType ?? null}
-              packagingContext={(product.packagingContext ?? null) as never}
+              packagingContext={(product.packagingContext ?? null) as any}
+              boxWidthMm={product.boxWidthMm}
+              boxHeightMm={product.boxHeightMm}
+              boxLengthMm={product.boxLengthMm}
               onClick={onOpenPackagingModal}
             />
           </div>
