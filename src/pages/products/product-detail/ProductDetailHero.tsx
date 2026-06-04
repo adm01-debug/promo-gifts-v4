@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye } from 'lucide-react';
+import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift } from 'lucide-react';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
@@ -522,6 +522,56 @@ export function ProductDetailHero({
               <ProductDimensions dimensions={product.dimensions} compact />
             </div>
           </div>
+
+          {/* Packaging Summary */}
+          {product.hasCommercialPackaging && (
+            <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 xl:p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Gift className="h-5 w-5 text-warning" />
+                <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                  Embalagem Especial
+                </h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {product.packingType && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Tipo</p>
+                    <p className="text-xs font-medium">{product.packingType}</p>
+                  </div>
+                )}
+                {product.boxQuantity && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Qtd/Caixa</p>
+                    <p className="text-xs font-medium">{product.boxQuantity} un.</p>
+                  </div>
+                )}
+                {product.boxWeightKg && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Peso</p>
+                    <p className="text-xs font-medium">{product.boxWeightKg} kg</p>
+                  </div>
+                )}
+                {(product.boxWidthMm || product.boxHeightMm || product.boxLengthMm) && (
+                  <div className="col-span-2 space-y-1 sm:col-span-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Dimensões</p>
+                    <p className="text-xs font-medium">
+                      {[product.boxWidthMm, product.boxHeightMm, product.boxLengthMm]
+                        .filter(Boolean)
+                        .join(' × ')} mm
+                    </p>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="link"
+                size="sm"
+                className="mt-2 h-auto p-0 text-warning hover:text-warning/80"
+                onClick={onOpenPackagingModal}
+              >
+                Ver todos os detalhes
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Kit Composition */}

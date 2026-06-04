@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Sparkles, Package, TrendingUp, Clock, Tag } from 'lucide-react';
+import { Sparkles, Package, TrendingUp, Clock, Tag, Gift } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
@@ -13,7 +13,8 @@ export type ProductStatusBadgeType =
   | 'featured'
   | 'kit'
   | 'urgency'
-  | 'out-of-stock';
+  | 'out-of-stock'
+  | 'packaging';
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
@@ -84,6 +85,8 @@ export function ProductStatusBadge({
         return 'bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-md';
       case 'out-of-stock':
         return 'bg-destructive text-destructive-foreground shadow-md';
+      case 'packaging':
+        return 'bg-gradient-to-r from-warning/90 to-warning text-warning-foreground shadow-md';
       case 'promotion':
         return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
@@ -146,6 +149,13 @@ export function ProductStatusBadge({
           <>
             <Tag className={iconSize} />
             <span>{value || 'Promoção'}</span>
+          </>
+        );
+      case 'packaging':
+        return (
+          <>
+            <Gift className={iconSize} />
+            <span>{value || 'Tem embalagem'}</span>
           </>
         );
       case 'novelty': {
@@ -222,6 +232,13 @@ export function ProductStatusBadge({
           <div className="text-sm">
             <p className="font-semibold">✨ Produto em Destaque</p>
             <p className="text-muted-foreground">Selecionado pela nossa curadoria</p>
+          </div>
+        );
+      case 'packaging':
+        return (
+          <div className="text-sm">
+            <p className="font-semibold">🎁 Embalagem Especial</p>
+            <p className="text-muted-foreground">Este produto possui opções de embalagem configuradas.</p>
           </div>
         );
       default:
