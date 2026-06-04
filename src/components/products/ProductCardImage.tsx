@@ -221,14 +221,7 @@ export const ProductCardImage = memo(function ProductCardImage({
           />
         )}
 
-        {stockStatus === 'unavailable' && (
-          <Badge
-            variant="destructive"
-            className="h-auto px-1.5 py-0.5 text-[9px] font-medium leading-none shadow-sm"
-          >
-            Fora de estoque
-          </Badge>
-        )}
+        {/* Stock status badge removed from here as requested - keeping only the bottom one */}
 
         {stockStatus === 'low' && (
           <ProductStatusBadge

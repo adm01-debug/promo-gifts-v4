@@ -93,11 +93,16 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   if (colors.length === 0) {
     if (hideWhenEmpty) {
-      return <div className={cn('min-h-[16px]', className)} data-testid="colors-empty-hidden" />;
+      return (
+        <div
+          className={cn('min-h-[var(--swatch-size-sm)]', className)}
+          data-testid="colors-empty-hidden"
+        />
+      );
     }
     return (
       <span
-        className="flex min-h-[16px] items-center text-[10px] italic text-muted-foreground/60"
+        className="flex min-h-[var(--swatch-size-sm)] items-center text-[10px] italic text-muted-foreground/60"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
