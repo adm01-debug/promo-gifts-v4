@@ -4,13 +4,12 @@
  */
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Fuse from 'fuse.js';
 import { Building2, Search, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { selectCrm, searchCrm } from '@/lib/crm-db';
+import { searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 
 interface CompanyItem {
@@ -36,64 +35,35 @@ export function FavoritesClientPicker({ selectedClientId, selectedClientName, on
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  const { data: localCompanies = [], isLoading: loadingLocal } = useQuery({
-    queryKey: ['fav-client-picker-local'],
-    queryFn: async () => {
-      const companies = await selectCrm<CrmCompany>('companies', {
-        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade',
-        filters: { deleted_at: null, is_customer: true },
-        orderBy: { column: 'razao_social', ascending: true },
-        limit: 100,
-      });
-      return companies.map(
-        (c): CompanyItem => ({
-          id: c.id,
-          name: getCompanyDisplayName(c),
-          ramo: c.ramo_atividade || null,
-          logo_url: c.logo_url || null,
-        }),
-      );
-    },
-    staleTime: 15 * 60 * 1000,
-  });
-
+  // Server-side search apenas (preload de 100 empresas estourava statement_timeout no CRM).
   const { data: serverResults = [], isLoading: loadingServer } = useQuery({
     queryKey: ['fav-client-picker-search', debounced],
     queryFn: async () => {
-      if (debounced.length < 3) return [];
-      const results = await searchCrm<CrmCompany>('companies', 'razao_social', debounced, {
-        orderBy: { column: 'razao_social', ascending: true },
-        limit: 20,
-      });
-      return results.map(
-        (c): CompanyItem => ({
-          id: c.id,
-          name: getCompanyDisplayName(c),
-          ramo: c.ramo_atividade || null,
-          logo_url: c.logo_url || null,
-        }),
-      );
+      if (debounced.length < 2) return [];
+      try {
+        const results = await searchCrm<CrmCompany>('companies', 'razao_social', debounced, {
+          limit: 15,
+        });
+        return results.map(
+          (c): CompanyItem => ({
+            id: c.id,
+            name: getCompanyDisplayName(c),
+            ramo: c.ramo_atividade || null,
+            logo_url: c.logo_url || null,
+          }),
+        );
+      } catch {
+        return [];
+      }
     },
-    enabled: debounced.length >= 3,
+    enabled: debounced.length >= 2,
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
   });
 
-  const fuse = useMemo(
-    () => new Fuse(localCompanies, { keys: ['name'], threshold: 0.4 }),
-    [localCompanies],
-  );
+  const list = useMemo(() => serverResults.slice(0, 20), [serverResults]);
 
-  const list = useMemo(() => {
-    if (!searchTerm) return localCompanies.slice(0, 20);
-    const local = fuse.search(searchTerm).map((r) => r.item);
-    const ids = new Set(local.map((c) => c.id));
-    const merged = [...local];
-    for (const sr of serverResults) {
-      if (!ids.has(sr.id)) merged.push(sr);
-    }
-    return merged.slice(0, 30);
-  }, [searchTerm, fuse, localCompanies, serverResults]);
-
-  const isLoading = loadingLocal || loadingServer;
+  const isLoading = loadingServer;
 
   // Quando já tem cliente selecionado, mostra chip e permite remover
   if (selectedClientId && selectedClientName) {
