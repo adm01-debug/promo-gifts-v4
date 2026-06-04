@@ -169,7 +169,7 @@ export function StarfieldCanvas({ density = 150, className, mousePos = { x: 0, y
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [density, mousePos.x, mousePos.y, scrollY]);
+  }, [density]);
 
   return (
     <canvas
