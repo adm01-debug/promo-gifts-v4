@@ -241,6 +241,22 @@ Deno.serve(async (req) => {
       let success = false;
       let attempt = 0;
 
+      // Dedup check: skip this hook if an identical payload was successfully
+      // delivered within the last 5 minutes (idempotency window).
+      // check_webhook_dedup returns TRUE when delivery should proceed.
+      if (phash) {
+        const { data: canProceed, error: dedupErr } = await supabase.rpc('check_webhook_dedup', {
+          p_webhook_id: hook.id,
+          p_payload_hash: phash,
+        });
+        if (dedupErr) {
+          console.warn('[webhook-dispatcher] check_webhook_dedup error (continuing):', dedupErr);
+        } else if (!canProceed) {
+          results.push({ webhook_id: hook.id, status: 'skipped_duplicate' });
+          continue;
+        }
+      }
+
       while (attempt < max && !success) {
         attempt++;
         try {
