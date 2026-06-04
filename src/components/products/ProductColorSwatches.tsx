@@ -138,8 +138,10 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               <button
                 type="button"
                 className={cn(
-                  'inline-block rounded-full border border-border/60 shadow-sm transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  isSelected && 'z-10 scale-110 ring-2 ring-primary ring-offset-1',
+                  'inline-block rounded-full border border-border/60 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  isSelected
+                    ? 'z-10 scale-110 opacity-100 shadow-sm ring-[1.5px] ring-primary ring-offset-1'
+                    : 'opacity-90 hover:scale-110 hover:opacity-100',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
