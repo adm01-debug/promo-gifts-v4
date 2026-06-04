@@ -41,8 +41,9 @@ BEGIN
     RETURN TRUE;
   END IF;
 
-  -- Serialise concurrent checks for the same webhook + payload combination
-  v_lock_key := hashtext(p_webhook_id::text || ':' || p_payload_hash);
+  -- Serialise concurrent checks for the same webhook + payload combination.
+  -- hashtextextended returns 64-bit, avoiding the collision contention of hashtext (32-bit).
+  v_lock_key := hashtextextended(p_webhook_id::text || ':' || p_payload_hash, 0);
   PERFORM pg_advisory_xact_lock(v_lock_key);
 
   SELECT COUNT(*)

@@ -34,11 +34,10 @@ BEGIN
     LIMIT p_limit;
 
   -- 2. Limpa notificações antigas APÓS ter retornado as atuais
-  -- (expired = lidas há mais de 30 dias OU criadas há mais de 90 dias)
+  -- workspace_notifications only has created_at (no updated_at column).
+  -- Remove entries older than 90 days regardless of read status.
   DELETE FROM public.workspace_notifications
-  WHERE
-    (is_read = true AND updated_at < NOW() - INTERVAL '30 days')
-    OR created_at < NOW() - INTERVAL '90 days';
+  WHERE created_at < NOW() - INTERVAL '90 days';
 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';

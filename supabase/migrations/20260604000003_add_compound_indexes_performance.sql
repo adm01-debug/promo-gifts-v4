@@ -42,9 +42,9 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_quotes_org_status
   WHERE deleted_at IS NULL;
 
 -- 8. stock_snapshots: acesso por variante + fornecedor (estoque em tempo real)
+-- No deleted_at column on stock_snapshots — purged by captured_at, not soft-deleted.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stock_snapshots_variant_supplier
-  ON public.stock_snapshots (variant_id, supplier_id)
-  WHERE deleted_at IS NULL;
+  ON public.stock_snapshots (variant_id, supplier_id);
 
 -- 9. order_items por pedido (join crítico em tela de pedido)
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id
