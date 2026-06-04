@@ -18,6 +18,14 @@ export type ProductStatusBadgeType =
 
 export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
 
+interface PackagingMetadata {
+  packingType?: string | null;
+  boxWidthMm?: number | null;
+  boxHeightMm?: number | null;
+  boxLengthMm?: number | null;
+  packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
+}
+
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
   urgencyType?: UrgencyType;
@@ -27,6 +35,7 @@ interface ProductStatusBadgeProps {
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
   showTooltip?: boolean;
+  packagingMetadata?: PackagingMetadata;
 }
 
 export function ProductStatusBadge({
@@ -38,6 +47,7 @@ export function ProductStatusBadge({
   onClick,
   className,
   showTooltip = true,
+  packagingMetadata,
 }: ProductStatusBadgeProps) {
   const location = useLocation();
   const { actualTheme } = useTheme();
@@ -235,10 +245,38 @@ export function ProductStatusBadge({
           </div>
         );
       case 'packaging':
+        const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } = packagingMetadata || {};
+        const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
+        
+        const contextLabels: Record<string, string> = {
+          always: 'Sempre disponível',
+          with_customization: 'Com personalização',
+          without_customization: 'Sem personalização',
+        };
+
         return (
-          <div className="text-sm">
-            <p className="font-semibold">🎁 Embalagem Especial</p>
-            <p className="text-muted-foreground">Este produto possui opções de embalagem configuradas.</p>
+          <div className="space-y-1.5 p-1 text-sm">
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-warning" />
+              <p className="font-semibold text-foreground">Embalagem Especial</p>
+            </div>
+            <div className="grid gap-1 text-[11px] text-muted-foreground">
+              {packingType && (
+                <p>
+                  <span className="font-medium text-foreground">Tipo:</span> {packingType}
+                </p>
+              )}
+              {dimensions && (
+                <p>
+                  <span className="font-medium text-foreground">Dimensões:</span> {dimensions} mm
+                </p>
+              )}
+              {packagingContext && contextLabels[packagingContext] && (
+                <p>
+                  <span className="font-medium text-foreground">Regra:</span> {contextLabels[packagingContext]}
+                </p>
+              )}
+            </div>
           </div>
         );
       default:
@@ -248,14 +286,21 @@ export function ProductStatusBadge({
 
   const badge = (
     <Badge
+      tabIndex={0}
+      role={isClickable ? 'button' : 'status'}
+      aria-label={
+        type === 'packaging' 
+          ? 'Produto com embalagem especial configurada. Ver detalhes.' 
+          : typeof value === 'string' ? value : String(type)
+      }
       className={cn(
         'inline-flex items-center rounded-full font-semibold transition-all duration-300',
-        'group-hover:scale-105 group-hover:shadow-lg', // Animation on card hover
+        'group-hover:scale-105 group-hover:shadow-lg',
         'hover:brightness-110 active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
         getSizeClasses(),
-        // Subtle shimmer/pulse animation
         'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
         className,
       )}
@@ -263,6 +308,15 @@ export function ProductStatusBadge({
         if (onClick) {
           e.stopPropagation();
           onClick(e);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(e as any);
+          }
         }
       }}
     >

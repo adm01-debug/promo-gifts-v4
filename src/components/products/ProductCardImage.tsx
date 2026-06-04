@@ -224,6 +224,13 @@ export const ProductCardImage = memo(function ProductCardImage({
             type="packaging"
             size="sm"
             value="Embalagem"
+            packagingMetadata={{
+              packingType: product.packingType,
+              boxWidthMm: product.boxWidthMm,
+              boxHeightMm: product.boxHeightMm,
+              boxLengthMm: product.boxLengthMm,
+              packagingContext: product.packagingContext as any,
+            }}
             onClick={() => onStatusClick?.('packaging')}
           />
         )}

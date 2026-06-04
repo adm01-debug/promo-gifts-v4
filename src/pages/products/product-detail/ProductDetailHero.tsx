@@ -147,9 +147,17 @@ export function ProductDetailHero({
               hasCommercialPackaging={product.hasCommercialPackaging ?? null}
               packingType={product.packingType ?? null}
               repackingType={product.repackingType ?? null}
-              packagingContext={(product.packagingContext ?? null) as never}
+              packagingContext={(product.packagingContext ?? null) as any}
+              boxWidthMm={product.boxWidthMm}
+              boxHeightMm={product.boxHeightMm}
+              boxLengthMm={product.boxLengthMm}
               onClick={onOpenPackagingModal}
             />
+            {!product.hasCommercialPackaging && (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/40 italic">
+                Sem embalagem
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
