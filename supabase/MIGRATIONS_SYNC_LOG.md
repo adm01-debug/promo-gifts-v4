@@ -46,3 +46,34 @@ O marker `20250103` nao foi reintroduzido: esse prefixo curto ja causou drift
 de ordenacao no Supabase CLI. Se ele aparecer novamente como remoto-only, a
 correcao deve ser `migration repair --status reverted` no projeto afetado, nao
 um arquivo local com esse prefixo.
+
+## 2026-06-04 - Reconciliacao motor_v2 / paridade Spot (doufsxqlfjyuvxuezpln)
+
+17 migrations estavam aplicadas no banco (registradas em
+`supabase_migrations.schema_migrations`) mas faltavam como arquivo no repo,
+gerando drift desde `20260604170220`. Os arquivos foram restaurados
+**byte-a-byte** a partir da coluna `statements` do banco e conferidos por `md5`
+(DB == arquivo, 17/17 OK). Nenhuma DDL foi reaplicada.
+
+Conjunto reconciliado (em ordem):
+
+- `20260604171726` motor_v2_config_foundation
+- `20260604171814` motor_v2_create_fn_process_raw_v2
+- `20260604172240` motor_v2_parity_harness
+- `20260604173140` motor_v2_variant_identity_supplier_sku
+- `20260604173153` spot_activate_variant_mappings_and_template
+- `20260604173213` motor_v2_parity_harness_v2
+- `20260604174303` motor_v2_respect_locks_and_write_source
+- `20260604174339` motor_v2_parity_harness_v3
+- `20260604174413` motor_v2_parity_harness_v3b
+- `20260604174444` motor_v2_drop_old_2arg_overload
+- `20260604184447` spot_v2_fix_products_depara_and_cost          (M1)
+- `20260604184459` spot_v2_align_sku_prefix_to_catalog           (M2)
+- `20260604184644` fn_process_raw_v2_parity_upgrade              (M3)
+- `20260604185153` fix_search_path_unaccent_functions            (M4)
+- `20260604185419` fn_process_raw_v2_fix_batch_fk_order          (M5, fn canonica)
+- `20260604185737` spot_v2_map_products_cost_price               (M6)
+- `20260604210435` add_catalog_sort_indexes
+
+Contexto da paridade Spot (G1-G4 / M1-M6) em
+`docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md`.
