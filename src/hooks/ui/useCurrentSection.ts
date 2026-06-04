@@ -29,6 +29,11 @@ export function useCurrentSection(): string {
     // Try exact match first
     if (sectionMap[pathname]) return sectionMap[pathname];
 
+    // Special handling for dynamic routes
+    if (pathname.startsWith('/produto/')) return 'Detalhes do Produto';
+    if (pathname.startsWith('/cliente/')) return 'Detalhes do Cliente';
+    if (pathname.startsWith('/orcamento/')) return 'Detalhes do Orçamento';
+
     // Try progressively shorter prefixes
     const parts = pathname.split('/').filter(Boolean);
     while (parts.length > 0) {
