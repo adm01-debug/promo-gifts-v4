@@ -286,14 +286,21 @@ export function ProductStatusBadge({
 
   const badge = (
     <Badge
+      tabIndex={0}
+      role={isClickable ? 'button' : 'status'}
+      aria-label={
+        type === 'packaging' 
+          ? 'Produto com embalagem especial configurada. Ver detalhes.' 
+          : typeof value === 'string' ? value : String(type)
+      }
       className={cn(
         'inline-flex items-center rounded-full font-semibold transition-all duration-300',
-        'group-hover:scale-105 group-hover:shadow-lg', // Animation on card hover
+        'group-hover:scale-105 group-hover:shadow-lg',
         'hover:brightness-110 active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
         getSizeClasses(),
-        // Subtle shimmer/pulse animation
         'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
         className,
       )}
@@ -301,6 +308,15 @@ export function ProductStatusBadge({
         if (onClick) {
           e.stopPropagation();
           onClick(e);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (onClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(e as any);
+          }
         }
       }}
     >
