@@ -1,3 +1,6 @@
+// Deve ser o PRIMEIRO import: captura o token de recuperação no hash da URL
+// de forma síncrona, antes de o Supabase (detectSessionInUrl) limpá-lo.
+import './lib/auth/recovery-hash';
 import './lib/console-filter';
 import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
