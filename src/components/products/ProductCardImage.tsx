@@ -15,6 +15,7 @@
  * variant's image takes priority over the set image).
  */
 import { memo } from 'react';
+import { Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
