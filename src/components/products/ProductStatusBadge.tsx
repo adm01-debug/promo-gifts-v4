@@ -85,6 +85,8 @@ export function ProductStatusBadge({
         return 'bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-md';
       case 'out-of-stock':
         return 'bg-destructive text-destructive-foreground shadow-md';
+      case 'packaging':
+        return 'bg-gradient-to-r from-warning/90 to-warning text-warning-foreground shadow-md';
       case 'promotion':
         return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
