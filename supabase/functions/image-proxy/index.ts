@@ -32,12 +32,10 @@ const ALLOWED_REFERER_EXACT = new Set([
   'promo-gifts-beta.vercel.app',
 ]);
 
-// Lovable subdomain pattern (Lovable controls all *.lovable.app and *.lovableproject.com)
-const LOVABLE_PATTERN = /^[a-z0-9-]+\.lovableproject\.com$/i;
-const LOVABLE_APP_PATTERN = /^[a-z0-9-]+\.lovable\.app$/i;
-
 // Vercel preview pattern: only this team's deployments (suffix -juca1.vercel.app)
 const VERCEL_TEAM_PATTERN = /^[\w-]+-juca1\.vercel\.app$/i;
+// Lovable: no wildcard — specific project domains go in ALLOWED_REFERER_EXACT above.
+// A wildcard *.lovable.app / *.lovableproject.com would allow any Lovable tenant to hotlink.
 
 const ALLOW_LOCALHOST = Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true';
 
@@ -47,8 +45,6 @@ function isAllowedReferer(referer: string | null): boolean {
     const host = new URL(referer).hostname.toLowerCase();
     return (
       ALLOWED_REFERER_EXACT.has(host) ||
-      LOVABLE_PATTERN.test(host) ||
-      LOVABLE_APP_PATTERN.test(host) ||
       VERCEL_TEAM_PATTERN.test(host) ||
       (ALLOW_LOCALHOST && (host === 'localhost' || host === '127.0.0.1'))
     );

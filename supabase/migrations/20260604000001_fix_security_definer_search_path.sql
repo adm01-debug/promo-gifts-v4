@@ -82,3 +82,15 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 COMMENT ON FUNCTION public.permanent_delete_record IS 'Deleta permanentemente um registro soft-deleted. SECURITY DEFINER com search_path fixo.';
+
+-- Restrict EXECUTE to service_role only.
+-- By default, PUBLIC (including anon/authenticated) can call any function; these
+-- SECURITY DEFINER functions must not be callable by end users via PostgREST.
+REVOKE EXECUTE ON FUNCTION public.soft_delete_record(TEXT, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.soft_delete_record(TEXT, UUID) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.restore_record(TEXT, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.restore_record(TEXT, UUID) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.permanent_delete_record(TEXT, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.permanent_delete_record(TEXT, UUID) TO service_role;

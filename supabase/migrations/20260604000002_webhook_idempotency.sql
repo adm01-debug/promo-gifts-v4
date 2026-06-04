@@ -37,8 +37,11 @@ WITH ranked AS (
 DELETE FROM public.webhook_deliveries
 WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 
--- 2c. Índice único para prevenir duplicatas em nível de banco
-CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_deliveries_idempotency
+-- 2c. Índice para acesso eficiente por idempotency_key.
+-- Não usamos UNIQUE aqui — o check de deduplicação com janela de tempo é feito
+-- em check_webhook_dedup(); um índice UNIQUE impediria replay legítimo após o
+-- vencimento da janela (ex.: retry após 10 min com window de 5 min).
+CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_idempotency
   ON public.webhook_deliveries (idempotency_key)
   WHERE status_code BETWEEN 200 AND 299;
 

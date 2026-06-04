@@ -19,7 +19,7 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
 - Testes E2E (155+ specs) + unidade (349+ arquivos) + cobertura mínima de 80%
 - Audit trail completo, rate limiting, circuit breaker, kill-switch de emergência
 
-**Problemas críticos não resolvidos (P0):**
+**P0 identificados (corrigidos neste PR):**
 1. 3 funções SECURITY DEFINER sem `SET search_path` (schema injection)
 2. Service role bypass spoofável via header HTTP em `authorize.ts`
 3. Sem idempotência em `webhook_deliveries` (double processing)
@@ -44,7 +44,7 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
   $$ LANGUAGE plpgsql SECURITY DEFINER;
   -- ^ sem SET search_path — o CI gate existente deveria ter bloqueado
   ```
-- **✅ Corrigido em:** `migrations/20260604000001_fix_security_definer_search_path.sql`
+- **✅ Corrigido em:** `supabase/migrations/20260604000001_fix_security_definer_search_path.sql`
 
 ---
 
@@ -109,7 +109,7 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
 - **Severidade:** Alta | **Impacto:** Estabilidade/Dados | **Prioridade:** Crítico
 - **Arquivo:** `supabase/functions/webhook-dispatcher/index.ts` linhas 261-296
 - **Problema:** Entrega de webhook registrada APÓS o envio HTTP. Se o processo cair entre o envio e o INSERT, o webhook é entregue novamente na próxima tentativa. Sem deduplicação por `payload_hash`, o mesmo evento pode gerar double-charge ou double-order.
-- **✅ Corrigido em:** `migrations/20260604000002_webhook_idempotency.sql` (coluna `idempotency_key` UNIQUE, função `check_webhook_dedup()`, coluna `replay_of` para reenvios explícitos)
+- **✅ Corrigido em:** `supabase/migrations/20260604000002_webhook_idempotency.sql` (coluna `idempotency_key`, função `check_webhook_dedup()`, coluna `replay_of` para reenvios explícitos)
 
 ---
 
@@ -142,7 +142,7 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
 - **Arquivo:** Ausência nos migrations existentes
 - **Problema:** Filtros mais comuns do catálogo (`is_active + category_id`, `is_active + price`, `supplier_id + is_active`) não tinham índices compostos. Resultado: full scan de 6000+ produtos por requisição de filtro.
 - **Impacto estimado:** Query time de 500ms-2s → <50ms com índice.
-- **✅ Corrigido em:** `migrations/20260604000003_add_compound_indexes_performance.sql`
+- **✅ Corrigido em:** `supabase/migrations/20260604000003_add_compound_indexes_performance.sql`
 
 ---
 
@@ -232,7 +232,7 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
 #### [P0-DB-03] process-queue Sem Transação (notificações duplicadas)
 - **Severidade:** Alta | **Impacto:** Estabilidade | **Prioridade:** Crítico
 - **Problema:** Cleanup e fetch em operações separadas — se cleanup succeeds mas fetch falha, notificações são perdidas ou processadas múltiplas vezes.
-- **✅ Corrigido em:** `migrations/20260604000004_process_queue_atomic_cleanup.sql` (função SQL `process_notifications_queue()` que executa ambas as operações em uma transação)
+- **✅ Corrigido em:** `supabase/migrations/20260604000004_process_queue_atomic_cleanup.sql` (função SQL `process_notifications_queue()` que executa ambas as operações em uma transação)
 
 ---
 
@@ -383,14 +383,14 @@ O sistema **Promo Gifts v4** é uma plataforma B2B SaaS madura para vendas de br
 
 | # | Arquivo | Descrição | Criticidade |
 |---|---------|-----------|-------------|
-| 1 | `migrations/20260604000001_fix_security_definer_search_path.sql` | Fix `SET search_path` em 3 funções SECURITY DEFINER | P0 |
+| 1 | `supabase/migrations/20260604000001_fix_security_definer_search_path.sql` | Fix `SET search_path` em 3 funções SECURITY DEFINER | P0 |
 | 2 | `supabase/functions/_shared/authorize.ts` | Remove service_role bypass spoofável | P0 |
 | 3 | `src/contexts/ProductsContext.tsx` | Adiciona `fetchError: Error \| null` à interface e provider | P1 |
 | 4 | `supabase/functions/_shared/security.ts` | Implementa CSRF validation real (HMAC-SHA256 + TTL + timing-safe) | P0 |
 | 5 | `supabase/functions/_shared/rate-limiter.ts` | Adiciona opção `failClosed` + `rateLimiters.approval` fail-closed | P0 |
-| 6 | `migrations/20260604000002_webhook_idempotency.sql` | Idempotency key para webhook_deliveries + função check_webhook_dedup() | P0 |
-| 7 | `migrations/20260604000003_add_compound_indexes_performance.sql` | 10 índices compostos para queries críticas de catálogo | P0/P1 |
-| 8 | `migrations/20260604000004_process_queue_atomic_cleanup.sql` | process_notifications_queue() atômica (cleanup + fetch na mesma transação) | P0 |
+| 6 | `supabase/migrations/20260604000002_webhook_idempotency.sql` | Idempotency key para webhook_deliveries + função check_webhook_dedup() | P0 |
+| 7 | `supabase/migrations/20260604000003_add_compound_indexes_performance.sql` | 10 índices compostos para queries críticas de catálogo | P0/P1 |
+| 8 | `supabase/migrations/20260604000004_process_queue_atomic_cleanup.sql` | process_notifications_queue() atômica (cleanup + fetch na mesma transação) | P0 |
 
 ---
 

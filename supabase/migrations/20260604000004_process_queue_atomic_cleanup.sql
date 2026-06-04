@@ -18,20 +18,23 @@ RETURNS TABLE (
   created_at TIMESTAMPTZ
 ) AS $$
 BEGIN
-  -- 1. Busca notificações não lidas (dentro da mesma transação)
+  -- 1. Atomically claim and return unread notifications.
+  -- FOR UPDATE SKIP LOCKED ensures concurrent callers skip rows already claimed
+  -- by a peer, preventing duplicate dispatch across parallel edge function invocations.
   RETURN QUERY
-    SELECT
-      wn.id,
-      wn.user_id,
-      wn.title,
-      wn.message,
-      wn.type,
-      wn.category,
-      wn.created_at
-    FROM public.workspace_notifications wn
-    WHERE wn.is_read = false
-    ORDER BY wn.created_at DESC
-    LIMIT p_limit;
+    WITH claimed AS (
+      SELECT wn.id
+      FROM public.workspace_notifications wn
+      WHERE wn.is_read = false
+      ORDER BY wn.created_at ASC
+      LIMIT p_limit
+      FOR UPDATE SKIP LOCKED
+    )
+    UPDATE public.workspace_notifications wn
+    SET is_read = true
+    FROM claimed
+    WHERE wn.id = claimed.id
+    RETURNING wn.id, wn.user_id, wn.title, wn.message, wn.type, wn.category, wn.created_at;
 
   -- 2. Limpa notificações LIDAS antigas APÓS ter retornado as atuais.
   -- Only deletes is_read=true rows so unread notifications older than 90 days
