@@ -490,7 +490,7 @@ export function ProductsManager() {
 
       {/* Delete Dialog */}
       <AlertDialog open={s.isDeleteOpen} onOpenChange={s.setIsDeleteOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="admin-confirm-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Produto?</AlertDialogTitle>
             <AlertDialogDescription>
