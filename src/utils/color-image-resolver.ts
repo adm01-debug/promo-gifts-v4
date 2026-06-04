@@ -96,10 +96,27 @@ function getColorImage(color: ProductColor): string | undefined {
  * Resolve o estoque da variação que corresponde ao filtro de cor ativo.
  * Retorna { stock, stockStatus } ou undefined se nenhum filtro ativo.
  */
+/**
+ * Resolve o estoque da variação que corresponde a um nome de cor específico ou filtro ativo.
+ */
 export function resolveColorStock(
   product: Product,
   activeColors: ActiveColorFilter | null | undefined,
+  specificColorName?: string | null,
 ): { stock: number; stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' } | undefined {
+  if (specificColorName && product.variations?.length) {
+    const variant = product.variations.find(
+      (v) => v.color?.name?.toLowerCase() === specificColorName.toLowerCase(),
+    );
+    if (variant) {
+      const s = variant.stock ?? 0;
+      return {
+        stock: s,
+        stockStatus: s <= 0 ? 'out-of-stock' : s < 10 ? 'low-stock' : 'in-stock',
+      };
+    }
+  }
+
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
   if (!product.variations?.length) return undefined;
