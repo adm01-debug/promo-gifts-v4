@@ -124,6 +124,14 @@ export const ProductCard = memo(
     const [imageLoaded, setImageLoaded] = useState(false);
     const [actionsOpen, setActionsOpen] = useState(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+    const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+
+    // Efeito para simular loading ao trocar de cor
+    useEffect(() => {
+      setIsUpdatingColor(true);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 300);
+      return () => clearTimeout(timer);
+    }, [activeVariantIdx]);
 
     const filterKey = activeColorFilter
       ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
