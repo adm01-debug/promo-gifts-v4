@@ -25,9 +25,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_active_created_desc
   WHERE is_active = true AND deleted_at IS NULL;
 
 -- 5. Filtro de soft-delete em catálogo (todos os SELECTs de produto)
--- Já existe idx_products_deleted_at mas não é compound com is_active
+-- deleted_at não é incluído nas colunas: o predicado WHERE deleted_at IS NULL
+-- já o fixa em NULL, tornando-o constante e sem benefício como coluna indexada.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_not_deleted_active
-  ON public.products (deleted_at, is_active)
+  ON public.products (is_active)
   WHERE deleted_at IS NULL;
 
 -- 6. quotes por status + usuário (dashboard de orçamentos)
@@ -49,6 +50,5 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stock_snapshots_variant_supplier
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id
   ON public.order_items (order_id);
 
--- 10. color_variations por grupo (filtro de cores no catálogo)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_color_variations_group
-  ON public.color_variations (color_group_id);
+-- 10. color_variations por grupo — já coberto por idx_color_variations_color_group_id
+-- criado em 20260602_001_add_fk_indexes_critical.sql; índice redundante removido.

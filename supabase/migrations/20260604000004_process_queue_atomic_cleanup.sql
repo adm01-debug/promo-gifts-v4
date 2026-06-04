@@ -45,4 +45,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 COMMENT ON FUNCTION public.process_notifications_queue IS
   'Retorna notificações não lidas e limpa antigas em transação única. '
-  'Substitui o padrão de dois comandos separados na edge function process-queue.';
+  'Deve ser chamada apenas pela edge function process-queue via service_role.';
+
+-- A função lê workspace_notifications sem filtro por user_id (processamento de fila
+-- global). Revogar acesso público para impedir que clientes leiam notificações de
+-- outros usuários via PostgREST.
+REVOKE EXECUTE ON FUNCTION public.process_notifications_queue FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.process_notifications_queue TO service_role;

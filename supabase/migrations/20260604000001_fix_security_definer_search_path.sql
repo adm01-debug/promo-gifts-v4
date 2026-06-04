@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION public.soft_delete_record(
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_sql TEXT;
+    v_rows_affected INT;
 BEGIN
     IF p_table_name NOT IN ('products', 'clients', 'suppliers', 'quotes', 'orders', 'collections', 'categories') THEN
         RAISE EXCEPTION 'Invalid table name: %', p_table_name;
@@ -22,8 +23,9 @@ BEGIN
     );
 
     EXECUTE v_sql USING p_record_id;
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
 
-    RETURN FOUND;
+    RETURN v_rows_affected > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
@@ -35,6 +37,7 @@ CREATE OR REPLACE FUNCTION public.restore_record(
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_sql TEXT;
+    v_rows_affected INT;
 BEGIN
     IF p_table_name NOT IN ('products', 'clients', 'suppliers', 'quotes', 'orders', 'collections', 'categories') THEN
         RAISE EXCEPTION 'Invalid table name: %', p_table_name;
@@ -46,8 +49,9 @@ BEGIN
     );
 
     EXECUTE v_sql USING p_record_id;
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
 
-    RETURN FOUND;
+    RETURN v_rows_affected > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
@@ -59,6 +63,7 @@ CREATE OR REPLACE FUNCTION public.permanent_delete_record(
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_sql TEXT;
+    v_rows_affected INT;
 BEGIN
     IF p_table_name NOT IN ('products', 'clients', 'suppliers', 'quotes', 'orders', 'collections', 'categories') THEN
         RAISE EXCEPTION 'Invalid table name: %', p_table_name;
@@ -70,8 +75,9 @@ BEGIN
     );
 
     EXECUTE v_sql USING p_record_id;
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
 
-    RETURN FOUND;
+    RETURN v_rows_affected > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 

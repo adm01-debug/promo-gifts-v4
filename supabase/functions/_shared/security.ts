@@ -68,8 +68,14 @@ export async function validateCsrfToken(req: Request, userId?: string): Promise<
     throw { status: 403, message: 'CSRF token expirado' };
   }
 
-  const secret = Deno.env.get('CSRF_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const message = `${userId ?? 'anon'}:${tsStr}`;
+  const secret = Deno.env.get('CSRF_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!secret) {
+    throw { status: 500, message: 'CSRF_SECRET not configured' };
+  }
+  if (!userId) {
+    throw { status: 403, message: 'userId required for CSRF validation' };
+  }
+  const message = `${userId}:${tsStr}`;
   const expectedHmac = await hmacSign(secret, message);
 
   // Constant-time comparison to prevent timing attacks
@@ -89,10 +95,13 @@ export async function validateCsrfToken(req: Request, userId?: string): Promise<
  * Generate a CSRF token for inclusion in API responses or HTML pages.
  * Format: <timestamp>.<hmac(secret, userId:timestamp)>
  */
-export async function generateCsrfToken(userId?: string): Promise<string> {
+export async function generateCsrfToken(userId: string): Promise<string> {
   const ts = Date.now().toString();
-  const secret = Deno.env.get('CSRF_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const message = `${userId ?? 'anon'}:${ts}`;
+  const secret = Deno.env.get('CSRF_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!secret) {
+    throw new Error('CSRF_SECRET not configured');
+  }
+  const message = `${userId}:${ts}`;
   const hmac = await hmacSign(secret, message);
   return `${ts}.${hmac}`;
 }

@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from 'react';
 import type { Product } from '@/types/product-catalog';
@@ -61,7 +62,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const batchIdsRef = useRef<Set<string>>(new Set());
   const mountedRef = useRef(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     cacheRef.current = cache;
   }, [cache]);
 
@@ -103,8 +104,6 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
           setCache((prev) => {
             const next = new Map(prev);
             mapped.forEach((p) => next.set(p.id, p));
-            // Sync ref immediately so queueFetch sees fresh data before useEffect runs
-            cacheRef.current = next;
             return next;
           });
         }

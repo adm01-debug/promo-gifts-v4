@@ -314,12 +314,10 @@ export function ProductStatusBadge({
         }
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          if (onClick) {
-            e.preventDefault();
-            e.stopPropagation();
-            onClick(e as unknown as React.MouseEvent);
-          }
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          e.stopPropagation();
+          (e.currentTarget as HTMLElement).click();
         }
       }}
     >

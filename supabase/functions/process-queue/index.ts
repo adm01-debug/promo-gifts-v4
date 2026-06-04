@@ -21,27 +21,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Cleanup old read notifications
-    const { error: cleanupError } = await supabase.rpc('cleanup_old_notifications');
-    
-    if (cleanupError) {
-      console.warn('Cleanup warning:', cleanupError.message);
-    }
-
-    // 2. Count unprocessed notifications per user for digest
-    const { data: unreadNotifs, error: fetchError } = await supabase
-      .from('workspace_notifications')
-      .select('user_id, id, title, message, type, category, created_at')
-      .eq('is_read', false)
-      .order('created_at', { ascending: false })
-      .limit(500);
+    // Atomic fetch + cleanup in a single RPC call (process_notifications_queue
+    // returns unread rows and deletes expired ones in the same transaction).
+    const { data: unreadNotifs, error: fetchError } = await supabase.rpc(
+      'process_notifications_queue',
+      { p_limit: 500 }
+    );
 
     if (fetchError) throw fetchError;
 
     if (!unreadNotifs || unreadNotifs.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           processed: 0,
           message: 'No unread notifications to process'
         }),
@@ -49,21 +41,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Group by user
-    const byUser = new Map<string, typeof unreadNotifs>();
-    for (const notif of unreadNotifs) {
+    // Group by user
+    type NotifRow = { user_id: string; id: string; title: string; message: string; type: string; category: string; created_at: string };
+    const byUser = new Map<string, NotifRow[]>();
+    for (const notif of (unreadNotifs as NotifRow[])) {
       const existing = byUser.get(notif.user_id) || [];
       existing.push(notif);
       byUser.set(notif.user_id, existing);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         processed: byUser.size,
         users_with_unread: byUser.size,
         total_unread: unreadNotifs.length,
-        cleanup_ran: !cleanupError,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
