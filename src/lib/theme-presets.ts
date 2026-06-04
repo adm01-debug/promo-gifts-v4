@@ -987,7 +987,23 @@ export function saveThemeConfig(config: ThemeConfig): void {
 export function applyThemePreset(presetId: string, _mode: 'light' | 'dark'): void {
   const mode = 'dark'; // Always use dark mode tokens
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
-  if (!preset) return;
+  if (!preset) {
+    if (import.meta.env.DEV) {
+      console.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
+    }
+    const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
+    if (!fallback) return;
+    
+    const root = document.documentElement;
+    root.classList.add('theme-transitioning');
+    const colors = fallback[mode];
+    CSS_VARS_TO_APPLY.forEach((key) => {
+      const value = colors[key];
+      if (value !== undefined) root.style.setProperty(`--${key}`, value);
+    });
+    setTimeout(() => root.classList.remove('theme-transitioning'), 500);
+    return;
+  }
 
   const root = document.documentElement;
 

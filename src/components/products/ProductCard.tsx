@@ -184,13 +184,13 @@ export const ProductCard = memo(
           const idx = allMatchingVariants.findIndex(
             (v) => v.name?.toLowerCase() === targetColor.toLowerCase(),
           );
+          // BUG-INF-LOOP: Avoid setting state if it's already the current value
           if (idx >= 0 && idx !== activeVariantIdx) {
-            // Sincroniza sem transição forçada se for o carregamento inicial
             setActiveVariantIdx(idx);
           }
         }
       }
-    }, [product, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
+    }, [product.id, product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);
     const [variantPickerOpen, setVariantPickerOpen] = useState(false);
