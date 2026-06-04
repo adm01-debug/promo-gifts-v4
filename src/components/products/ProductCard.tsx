@@ -575,6 +575,8 @@ export const ProductCard = memo(
             }}
           />
 
+          <div className="flex-1" />
+
           {(() => {
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
             const displayStock = colorStock?.stock ?? product.stock;
