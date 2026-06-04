@@ -78,6 +78,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const layoutContent = (
     <div className="min-h-screen bg-background print:min-h-0" role="document">
+      <div className="fixed inset-0 z-[-1]">
+        <Suspense fallback={null}>
+          <StarBackground />
+        </Suspense>
+      </div>
       <GlobalOverlay />
       <ShortcutsHelpDialog />
       <div className="print:hidden">
@@ -102,12 +107,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           <Suspense fallback={<div style={{ height: 56 }} className="print:hidden" />}>
             <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
           </Suspense>
-
-          <div className="fixed inset-0 z-[-1]">
-            <Suspense fallback={null}>
-              <StarBackground />
-            </Suspense>
-          </div>
 
           <div
             aria-hidden="true"

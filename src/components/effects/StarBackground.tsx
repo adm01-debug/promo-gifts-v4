@@ -1,5 +1,4 @@
-import { memo, useMemo, useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { memo, useMemo } from 'react';
 
 export const StarBackground = memo(function StarBackground() {
   const stars = useMemo(() => {
@@ -14,17 +13,6 @@ export const StarBackground = memo(function StarBackground() {
     }));
   }, []);
 
-  const [offsetY, setOffsetY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Parallax effect: moves background slower than content
-      setOffsetY(window.pageYOffset * 0.15);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div
       aria-hidden="true"
@@ -32,8 +20,7 @@ export const StarBackground = memo(function StarBackground() {
       style={{ 
         opacity: 0.35, 
         contain: 'strict',
-        transform: `translateY(${offsetY}px)`,
-        willChange: 'transform'
+        willChange: 'opacity'
       }}
     >
       {stars.map((star) => (
