@@ -102,7 +102,7 @@ export function useExternalCollectionProducts(collectionId: string | null) {
         .limit(500);
 
       if (error) {
-        if (error.message?.includes('410')) return [];
+        if (error.message?.includes('410') || error.message?.includes('Gone')) return [];
         throw error;
       }
       return data || [];

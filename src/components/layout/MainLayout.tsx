@@ -2,6 +2,7 @@ import { useState, Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { performanceTracker } from '@/utils/performance';
 import { useScrollLockFix } from '@/hooks/ui/useScrollLockFix';
+import { useMobileSidebarFix } from '@/hooks/ui/useMobileSidebarFix';
 import { useGlobalShortcuts } from '@/hooks/ui/useGlobalShortcuts';
 
 import { SkipToContent } from '@/components/common/SkipToContent';
@@ -46,6 +47,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const isHome = location.pathname === '/';
 
   useScrollLockFix();
+  useMobileSidebarFix(() => setSidebarOpen(false), sidebarOpen);
   useGlobalShortcuts();
 
   useEffect(() => {

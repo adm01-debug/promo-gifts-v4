@@ -232,6 +232,7 @@ export default function Auth() {
   };
 
   const handleLogin = async (data: LoginForm) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setIpBlocked(false);
 

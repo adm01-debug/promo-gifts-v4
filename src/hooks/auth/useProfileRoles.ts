@@ -66,8 +66,9 @@ export function useProfileRoles() {
       }
     };
 
-    fetchPromiseRef.current = doFetch();
-    await fetchPromiseRef.current;
+    const promise = doFetch();
+    fetchPromiseRef.current = promise;
+    await promise;
   }, []);
 
   const clearProfileRoles = useCallback(() => {
