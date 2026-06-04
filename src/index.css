@@ -313,7 +313,8 @@ html[data-scroll-locked] body {
     --swatch-size-xs: 16px;
     --swatch-size-sm: 20px;
     --swatch-size-md: 25px;
-    --swatch-gap: 6px;
+    --swatch-gap-x: 6px;
+    --swatch-gap-y: 6px;
   }
 
   .dark {

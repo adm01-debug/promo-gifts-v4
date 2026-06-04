@@ -108,7 +108,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-x-[var(--swatch-gap)] gap-y-1.5 min-h-[var(--swatch-size-sm)]', className)}
+      className={cn('flex flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] min-h-[var(--swatch-size-sm)]', className)}
       role="group"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
@@ -153,11 +153,12 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
             <TooltipContent
               id={tooltipId}
               side="top"
-              className="text-xs"
+              className="flex flex-col gap-0.5 p-2 text-xs"
               role="tooltip"
               data-testid="color-tooltip-content"
             >
-              {c.name}
+              <span className="font-bold">{c.name}</span>
+              {c.hex && <span className="text-[10px] opacity-70 uppercase">{c.hex}</span>}
             </TooltipContent>
           </Tooltip>
         );
