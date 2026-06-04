@@ -502,6 +502,7 @@ export function ProductsManager() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={s.handleDelete}
+              data-testid="admin-confirm-delete-btn"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
