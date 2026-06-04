@@ -264,45 +264,7 @@ export const ProductCardImage = memo(function ProductCardImage({
         </Badge>
       </div>
 
-      {/* Color / variant dots */}
-      {colorDots.length > 1 && (
-        <div className="absolute bottom-1.5 left-1.5 z-10 flex gap-0.5">
-          {colorDots.slice(0, 6).map((color, idx) => (
-            <Tooltip key={`${color.hex}-${idx}`}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'h-3 w-3 rounded-full border transition-all hover:scale-125',
-                    (hasMultipleVariants ? safeVariantIdx : 0) === idx
-                      ? 'scale-125 border-primary shadow-sm'
-                      : 'border-transparent',
-                  )}
-                  style={{ backgroundColor: color.hex }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVariantChange(idx);
-                  }}
-                  aria-label={color.name || color.hex}
-                >
-                  {(hasMultipleVariants ? safeVariantIdx : 0) === idx &&
-                    isLightColor(color.hex) && (
-                      <span className="sr-only">Cor selecionada</span>
-                    )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {color.name || color.hex}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-          {colorDots.length > 6 && (
-            <span className="flex h-3 items-center text-[9px] text-muted-foreground">
-              +{colorDots.length - 6}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Color / variant dots - REMOVED from image area as requested */}
     </div>
   );
 });
