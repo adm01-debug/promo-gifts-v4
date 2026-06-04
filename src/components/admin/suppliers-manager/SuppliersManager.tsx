@@ -101,7 +101,7 @@ export function SuppliersManager() {
           if (!open) m.cancelDelete();
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="admin-confirm-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir fornecedor</AlertDialogTitle>
             <AlertDialogDescription>
@@ -114,6 +114,7 @@ export function SuppliersManager() {
             <AlertDialogCancel onClick={m.cancelDelete}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={m.confirmDelete}
+              data-testid="admin-confirm-delete-btn"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir

@@ -138,7 +138,7 @@ export function SupplierFormDialog({
         if (!open) setEditingSupplier(null);
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent data-testid="admin-form" className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -249,6 +249,7 @@ export function SupplierFormDialog({
               </Label>
               <Input
                 value={editingSupplier.name || ''}
+                data-testid="admin-name-input"
                 onChange={(e) => updateField('name', e.target.value)}
                 className={fieldClass}
               />
