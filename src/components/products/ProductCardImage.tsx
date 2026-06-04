@@ -121,31 +121,42 @@ export const ProductCardImage = memo(function ProductCardImage({
         : 'ok';
 
   return (
-    <div className="relative aspect-square overflow-hidden">
+    <div className="relative aspect-square overflow-hidden bg-muted/20">
       {/* Main image — fades out on hover when set image is available */}
       <div 
         key={activeSrc}
-        className="h-full w-full animate-in fade-in duration-500"
+        className="h-full w-full animate-in fade-in duration-500 relative"
       >
-        <OptimizedImage
-          src={activeSrc}
-          alt={product.name}
-          srcSet={cardSrcSet}
-          className={cn(
-            'h-full w-full object-contain',
-            'transition-opacity duration-300 ease-in-out',
-            hasSetHover && isHovered && 'opacity-0',
-          )}
-          style={{
-            transform: `scale(${computedImageScale})`,
-            willChange: 'transform',
-            transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
-          }}
-          containerClassName="h-full w-full"
-          priority={priority}
-          onLoad={onImageLoad}
-          {...DEFAULT_IMAGE_CONFIG}
-        />
+        {activeSrc === '/placeholder.svg' ? (
+          <div className="flex flex-col items-center justify-center h-full w-full gap-2 p-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center">
+              <Package className="w-6 h-6 text-muted-foreground/40" />
+            </div>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
+              Sem foto disponível
+            </span>
+          </div>
+        ) : (
+          <OptimizedImage
+            src={activeSrc}
+            alt={product.name}
+            srcSet={cardSrcSet}
+            className={cn(
+              'h-full w-full object-contain',
+              'transition-opacity duration-300 ease-in-out',
+              hasSetHover && isHovered && 'opacity-0',
+            )}
+            style={{
+              transform: `scale(${computedImageScale})`,
+              willChange: 'transform',
+              transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
+            }}
+            containerClassName="h-full w-full"
+            priority={priority}
+            onLoad={onImageLoad}
+            {...DEFAULT_IMAGE_CONFIG}
+          />
+        )}
       </div>
 
       {/* Set image (todas as cores) — fades in on hover, only when no variant is active */}
