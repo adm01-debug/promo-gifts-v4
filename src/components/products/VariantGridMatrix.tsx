@@ -190,7 +190,7 @@ export function VariantGridMatrix({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {variant.sku && <p className="font-mono text-xs">{variant.sku}</p>}
+                  {variant.sku && <p className="font-mono text-xs opacity-70 mb-1">{variant.sku}</p>}
                   <p>{stock} un. em estoque</p>
                   {isAdmin && (
                     <p className="text-xs text-muted-foreground">Clique para selecionar</p>
