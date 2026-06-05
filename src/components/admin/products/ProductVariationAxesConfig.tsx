@@ -8,7 +8,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { Palette, Ruler, Beaker, Settings2, ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -94,17 +94,14 @@ export function ProductVariationAxesConfig({
   const { data: variants = [], isLoading } = useQuery({
     queryKey: ['product-variants-axes', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'product_variants',
-          operation: 'select',
-          filters: { product_id: productId, is_active: true },
-          select: 'id, color_name, color_hex, size_code, capacity_ml, is_active',
-          limit: 500,
-        },
+      const { records } = await dbInvoke<VariantRecord>({
+        table: 'product_variants',
+        operation: 'select',
+        filters: { product_id: productId, is_active: true },
+        select: 'id, color_name, color_hex, size_code, capacity_ml, is_active',
+        limit: 500,
       });
-      if (error) throw new Error(error.message);
-      return (data?.data?.records || []) as VariantRecord[];
+      return records;
     },
     enabled: !!productId,
     staleTime: 2 * 60 * 1000,

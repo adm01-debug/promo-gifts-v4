@@ -24915,96 +24915,6 @@ export type Database = {
           },
         ]
       }
-      supplier_products_raw_bkp_20260604: {
-        Row: {
-          attempts: number | null
-          claimed_at: string | null
-          content_hash: string | null
-          created_at: string | null
-          id: string | null
-          images_processed: boolean | null
-          images_status:
-            | Database["public"]["Enums"]["supplier_raw_status"]
-            | null
-          import_batch_id: string | null
-          imported_at: string | null
-          last_error: Json | null
-          process_errors: Json | null
-          processed: boolean | null
-          processed_at: string | null
-          product_id: string | null
-          raw_data: Json | null
-          raw_hash: string | null
-          source_channel: string | null
-          source_endpoint: string | null
-          source_event_id: string | null
-          status: Database["public"]["Enums"]["supplier_raw_status"] | null
-          supplier_id: string | null
-          supplier_reference: string | null
-          supplier_sku: string | null
-          updated_at: string | null
-          variant_id: string | null
-        }
-        Insert: {
-          attempts?: number | null
-          claimed_at?: string | null
-          content_hash?: string | null
-          created_at?: string | null
-          id?: string | null
-          images_processed?: boolean | null
-          images_status?:
-            | Database["public"]["Enums"]["supplier_raw_status"]
-            | null
-          import_batch_id?: string | null
-          imported_at?: string | null
-          last_error?: Json | null
-          process_errors?: Json | null
-          processed?: boolean | null
-          processed_at?: string | null
-          product_id?: string | null
-          raw_data?: Json | null
-          raw_hash?: string | null
-          source_channel?: string | null
-          source_endpoint?: string | null
-          source_event_id?: string | null
-          status?: Database["public"]["Enums"]["supplier_raw_status"] | null
-          supplier_id?: string | null
-          supplier_reference?: string | null
-          supplier_sku?: string | null
-          updated_at?: string | null
-          variant_id?: string | null
-        }
-        Update: {
-          attempts?: number | null
-          claimed_at?: string | null
-          content_hash?: string | null
-          created_at?: string | null
-          id?: string | null
-          images_processed?: boolean | null
-          images_status?:
-            | Database["public"]["Enums"]["supplier_raw_status"]
-            | null
-          import_batch_id?: string | null
-          imported_at?: string | null
-          last_error?: Json | null
-          process_errors?: Json | null
-          processed?: boolean | null
-          processed_at?: string | null
-          product_id?: string | null
-          raw_data?: Json | null
-          raw_hash?: string | null
-          source_channel?: string | null
-          source_endpoint?: string | null
-          source_event_id?: string | null
-          status?: Database["public"]["Enums"]["supplier_raw_status"] | null
-          supplier_id?: string | null
-          supplier_reference?: string | null
-          supplier_sku?: string | null
-          updated_at?: string | null
-          variant_id?: string | null
-        }
-        Relationships: []
-      }
       supplier_products_raw_history: {
         Row: {
           captured_at: string
@@ -32595,7 +32505,7 @@ export type Database = {
           created_at?: string | null
           nome_produto?: never
           process_errors?: Json | null
-          processed?: boolean | null
+          processed?: never
           processed_at?: string | null
           supplier_reference?: string | null
         }
@@ -32603,7 +32513,7 @@ export type Database = {
           created_at?: string | null
           nome_produto?: never
           process_errors?: Json | null
-          processed?: boolean | null
+          processed?: never
           processed_at?: string | null
           supplier_reference?: string | null
         }
@@ -34787,6 +34697,7 @@ export type Database = {
           spot_ref: string
         }[]
       }
+      fn_clean_spot_name: { Args: { p_name: string }; Returns: string }
       fn_cleanup_log_tables: { Args: never; Returns: Json }
       fn_complete_ai_description: {
         Args: {
@@ -35339,6 +35250,7 @@ export type Database = {
           updated_products: number
         }[]
       }
+      fn_purge_spr_history: { Args: { p_keep_days?: number }; Returns: number }
       fn_recalculate_all_sale_prices: {
         Args: { p_batch_size?: number }
         Returns: {

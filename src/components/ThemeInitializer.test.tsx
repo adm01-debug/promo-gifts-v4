@@ -11,7 +11,7 @@ vi.mock('@/lib/theme-presets', () => ({
   THEME_PRESETS: [{ id: 'corporate', dark: {} }],
   DEFAULT_FONT_SANS: '',
   DEFAULT_FONT_DISPLAY: '',
-  CSS_VARS_TO_APPLY: []
+  CSS_VARS_TO_APPLY: [],
 }));
 
 describe('ThemeInitializer', () => {
@@ -22,9 +22,10 @@ describe('ThemeInitializer', () => {
   it('waits for ThemeContext to be available', () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={undefined as any}>
         <ThemeInitializer />
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
     expect(themePresets.loadThemeConfig).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
@@ -32,12 +33,14 @@ describe('ThemeInitializer', () => {
 
   it('applies theme configuration when context is available', async () => {
     const mockConfig = { presetId: 'corporate', radius: 14, mode: 'dark' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(themePresets.loadThemeConfig).mockReturnValue(mockConfig as any);
 
     render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={{ actualTheme: 'dark' } as any}>
         <ThemeInitializer />
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     await waitFor(() => {
