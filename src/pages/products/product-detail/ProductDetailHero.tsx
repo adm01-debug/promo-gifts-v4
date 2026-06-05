@@ -147,15 +147,16 @@ export function ProductDetailHero({
               hasCommercialPackaging={product.hasCommercialPackaging ?? null}
               packingType={product.packingType ?? null}
               repackingType={product.repackingType ?? null}
-              packagingContext={(product.packagingContext ?? null) as any}
+              packagingContext={product.packagingContext ?? null}
               boxWidthMm={product.boxWidthMm}
               boxHeightMm={product.boxHeightMm}
               boxLengthMm={product.boxLengthMm}
               onClick={onOpenPackagingModal}
             />
             {!product.hasCommercialPackaging && (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/40 italic">
-                Sem embalagem
+              <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium italic text-muted-foreground/30">
+                <Gift className="h-3 w-3 opacity-50" />
+                Sem embalagem especial
               </span>
             )}
           </div>
@@ -543,29 +544,38 @@ export function ProductDetailHero({
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {product.packingType && (
                   <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Tipo</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Tipo
+                    </p>
                     <p className="text-xs font-medium">{product.packingType}</p>
                   </div>
                 )}
                 {product.boxQuantity && (
                   <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Qtd/Caixa</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Qtd/Caixa
+                    </p>
                     <p className="text-xs font-medium">{product.boxQuantity} un.</p>
                   </div>
                 )}
                 {product.boxWeightKg && (
                   <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Peso</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Peso
+                    </p>
                     <p className="text-xs font-medium">{product.boxWeightKg} kg</p>
                   </div>
                 )}
                 {(product.boxWidthMm || product.boxHeightMm || product.boxLengthMm) && (
                   <div className="col-span-2 space-y-1 sm:col-span-1">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">Dimensões</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+                      Dimensões
+                    </p>
                     <p className="text-xs font-medium">
                       {[product.boxWidthMm, product.boxHeightMm, product.boxLengthMm]
                         .filter(Boolean)
-                        .join(' × ')} mm
+                        .join(' × ')}{' '}
+                      mm
                     </p>
                   </div>
                 )}

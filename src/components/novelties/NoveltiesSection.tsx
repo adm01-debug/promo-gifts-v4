@@ -11,7 +11,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Sparkles, CalendarRange, ChevronRight, Package, Building2, Flame } from 'lucide-react';
-import { useNoveltiesWithDetails, useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
+import {
+  useNoveltiesWithDetails,
+  useNoveltyStats,
+  type NoveltyStatsDisplay,
+} from '@/hooks/products';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';

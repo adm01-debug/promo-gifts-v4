@@ -32,7 +32,7 @@ export function SupplierTable({
 }: SupplierTableProps) {
   return (
     <Card className="overflow-hidden">
-      <ScrollArea className="max-h-[600px]">
+      <ScrollArea data-testid="admin-table" className="max-h-[600px]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -63,6 +63,7 @@ export function SupplierTable({
               suppliers.map((supplier) => (
                 <TableRow
                   key={supplier.id}
+                  data-testid={`admin-row-${supplier.id}`}
                   className="group cursor-pointer hover:bg-accent/50"
                   onClick={() => onEdit(supplier)}
                 >
@@ -150,6 +151,7 @@ export function SupplierTable({
                         size="icon"
                         aria-label="Carregando"
                         className="h-7 w-7 text-destructive hover:text-destructive"
+                        data-testid="admin-delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           onDelete(supplier);

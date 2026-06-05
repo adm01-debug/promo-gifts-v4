@@ -157,6 +157,36 @@ export async function createE2eCustomKit(
   return { name };
 }
 
+export async function createE2eSupplier(
+  page: Page,
+  opts: CreateOpts = {},
+): Promise<{ name: string }> {
+  const name = e2eName(opts.label ?? "fornecedor", { prefix: opts.prefix });
+  const field = page.locator(Sel.admin.nameInput).first();
+  await fillResourceNameField(field, name, "suppliers.name", opts.prefix);
+  if (opts.submit) {
+    const submit = page.locator(Sel.admin.saveBtn).first();
+    await submit.waitFor({ state: "visible", timeout: 8_000 });
+    await submit.click();
+  }
+  return { name };
+}
+
+export async function createE2eTechnique(
+  page: Page,
+  opts: CreateOpts = {},
+): Promise<{ name: string }> {
+  const name = e2eName(opts.label ?? "tecnica", { prefix: opts.prefix });
+  const field = page.locator(Sel.admin.nameInput).first();
+  await fillResourceNameField(field, name, "personalization_techniques.name", opts.prefix);
+  if (opts.submit) {
+    const submit = page.locator(Sel.admin.saveBtn).first();
+    await submit.waitFor({ state: "visible", timeout: 8_000 });
+    await submit.click();
+  }
+  return { name };
+}
+
 /**
  * Espera que um recurso de nome E2E apareça na lista correspondente.
  * Aceita opcionalmente um `expectedPrefix` para validação estrita.

@@ -90,6 +90,7 @@ export function ProductsManager() {
           <Button
             size="sm"
             onClick={s.openCreateForm}
+            data-testid="admin-create-btn"
             className="gap-2 bg-primary shadow-sm hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
@@ -172,6 +173,7 @@ export function ProductsManager() {
               <Input
                 placeholder="Buscar por nome, SKU ou categoria..."
                 value={s.searchTerm}
+                data-testid="admin-search-input"
                 onChange={(e) => s.setSearchTerm(e.target.value)}
                 className="h-10 bg-background pl-10"
               />
@@ -262,7 +264,7 @@ export function ProductsManager() {
               <p className="mt-1 text-sm">Tente ajustar os filtros ou o termo de busca</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div data-testid="admin-table" className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/50 hover:bg-transparent">
@@ -293,6 +295,7 @@ export function ProductsManager() {
                     return (
                       <TableRow
                         key={product.id}
+                        data-testid={`admin-row-${product.id}`}
                         className={cn(
                           'group cursor-pointer border-border/30 transition-colors hover:bg-muted/40',
                           s.selectedIds.has(product.id) && 'bg-primary/5',
@@ -404,6 +407,7 @@ export function ProductsManager() {
                               variant="ghost"
                               size="icon"
                               aria-label="Excluir"
+                              data-testid="admin-delete-btn"
                               className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => s.openDeleteDialog(product)}
                             >
@@ -486,7 +490,7 @@ export function ProductsManager() {
 
       {/* Delete Dialog */}
       <AlertDialog open={s.isDeleteOpen} onOpenChange={s.setIsDeleteOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="admin-confirm-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Produto?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -498,6 +502,7 @@ export function ProductsManager() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={s.handleDelete}
+              data-testid="admin-confirm-delete-btn"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir

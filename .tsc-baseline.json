@@ -1,10 +1,7 @@
 {
-  "generatedAt": "2026-06-04T17:47:48.392Z",
-  "totalErrors": 94,
+  "generatedAt": "2026-06-04T21:14:18.748Z",
+  "totalErrors": 103,
   "counts": {
-    "src/utils/product-mapper.ts": {
-      "TS2551": 2
-    },
     "src/components/admin/ProductPersonalizationManager.tsx": {
       "TS2345": 1,
       "TS2551": 1
@@ -29,9 +26,6 @@
       "TS2322": 1,
       "TS2339": 6,
       "TS2551": 1
-    },
-    "src/components/notifications/NotificationPreferences.tsx": {
-      "TS2352": 1
     },
     "src/components/notifications/badge-stats/EfficiencyGrid.tsx": {
       "TS2339": 1
@@ -135,8 +129,17 @@
     "src/pages/products/seller-carts/CartSidebar.tsx": {
       "TS2322": 1
     },
-    "src/services/__tests__/productService.test.ts": {
-      "TS2345": 3
+    "src/pages/tools/VisualSearchPage.tsx": {
+      "TS2322": 7,
+      "TS2769": 1
+    },
+    "src/services/notificationPreferenceService.ts": {
+      "TS2322": 3,
+      "TS2589": 1,
+      "TS2769": 2
+    },
+    "src/tests/visual-search/VisualSearch.test.ts": {
+      "TS2769": 1
     }
   }
 }

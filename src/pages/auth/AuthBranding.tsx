@@ -255,9 +255,9 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
       {/* Dynamic Stars - Etapa 12: canvas único por padrão; DOM legacy via flag */}
       {useCanvasStarfield ? (
-        <StarfieldCanvas 
-          density={isFull ? 300 : 100} 
-          className="pointer-events-none fixed inset-0 z-0 h-screen w-screen" 
+        <StarfieldCanvas
+          density={isFull ? 300 : 100}
+          className="pointer-events-none fixed inset-0 z-0 h-screen w-screen"
           mousePos={mousePos}
           scrollY={scrollY}
         />

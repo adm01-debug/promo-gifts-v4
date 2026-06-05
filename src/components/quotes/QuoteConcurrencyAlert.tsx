@@ -28,7 +28,7 @@ export function QuoteConcurrencyAlert({
   return (
     <Alert
       variant="destructive"
-      className="animate-in slide-in-from-top-2 border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+      className="border-amber-500/50 bg-amber-500/10 text-amber-700 animate-in slide-in-from-top-2 dark:text-amber-400"
       role="alert"
       aria-live="assertive"
     >
@@ -39,8 +39,8 @@ export function QuoteConcurrencyAlert({
       <AlertDescription className="mt-2 space-y-3">
         <p className="text-sm text-amber-600 dark:text-amber-400">
           Este orçamento foi atualizado por outra sessão em{' '}
-          <strong className="font-semibold">{conflict.label}</strong>.
-          Suas alterações locais podem entrar em conflito.
+          <strong className="font-semibold">{conflict.label}</strong>. Suas alterações locais podem
+          entrar em conflito.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button

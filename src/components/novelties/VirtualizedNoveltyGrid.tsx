@@ -88,9 +88,10 @@ export function VirtualizedNoveltyGrid({
                     product={product}
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(product.product_id)}
-                    onSelect={selectionMode
-                      ? () => onToggleSelect(product.product_id)
-                      : () => onProductClick(product.product_id)
+                    onSelect={
+                      selectionMode
+                        ? () => onToggleSelect(product.product_id)
+                        : () => onProductClick(product.product_id)
                     }
                     onStatusClick={onStatusClick}
                     colors={colorsByProduct?.get(product.product_id)}

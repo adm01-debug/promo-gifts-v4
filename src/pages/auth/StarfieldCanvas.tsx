@@ -78,7 +78,12 @@ function createStars(count: number, width: number, height: number): Star[] {
   }));
 }
 
-export function StarfieldCanvas({ density = 150, className, mousePos = { x: 0, y: 0 }, scrollY = 0 }: StarfieldCanvasProps) {
+export function StarfieldCanvas({
+  density = 150,
+  className,
+  mousePos: _mousePos = { x: 0, y: 0 },
+  scrollY: _scrollY = 0,
+}: StarfieldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -122,7 +127,7 @@ export function StarfieldCanvas({ density = 150, className, mousePos = { x: 0, y
         // Wrapping logic com margem para não piscar
         let x = (star.x + driftX) % width;
         if (x < 0) x += width;
-        
+
         let y = star.y % height;
         if (y < 0) y += height;
 

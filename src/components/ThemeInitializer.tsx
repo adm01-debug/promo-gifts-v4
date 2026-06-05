@@ -23,7 +23,7 @@ export function ThemeInitializer() {
     }
 
     const cfg = loadThemeConfig();
-    applyThemePreset(cfg.presetId, ctx.actualTheme);
+    applyThemePreset(cfg.presetId, cfg.mode);
     applyRadius(cfg.radius);
   }, [ctx, ctx?.actualTheme]);
 

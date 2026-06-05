@@ -76,7 +76,7 @@ export function TechniqueTable({
   }
 
   return (
-    <Table>
+    <Table data-testid="admin-table">
       <TableHeader>
         <TableRow>
           <TableHead className="w-[80px]">Código</TableHead>
@@ -94,7 +94,7 @@ export function TechniqueTable({
       </TableHeader>
       <TableBody>
         {tecnicas.map((tecnica) => (
-          <TableRow key={tecnica.id}>
+          <TableRow key={tecnica.id} data-testid={`admin-row-${tecnica.id}`}>
             <TableCell>
               <InlineEditField
                 value={tecnica.codigo || ''}
@@ -209,6 +209,7 @@ export function TechniqueTable({
                 size="sm"
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
+                data-testid="admin-delete-btn"
                 onClick={() => onRemove(tecnica.id)}
                 disabled={isRemoving}
               >

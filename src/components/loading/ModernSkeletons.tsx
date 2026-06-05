@@ -528,8 +528,8 @@ export function ProductDetailSkeleton() {
             <Skeleton className="h-6 w-16 rounded-full" />
           </div>
           <div className="flex flex-wrap gap-2">
-             <Skeleton className="h-8 w-28 rounded-lg" />
-             <Skeleton className="h-8 w-36 rounded-lg" />
+            <Skeleton className="h-8 w-28 rounded-lg" />
+            <Skeleton className="h-8 w-36 rounded-lg" />
           </div>
           <Skeleton className="h-24 w-full rounded-xl" />
           <div className="space-y-4 border-t border-border/60 pt-4">

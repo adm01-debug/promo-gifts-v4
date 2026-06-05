@@ -34,12 +34,9 @@ export function useNavigationAnalytics() {
       try {
         await untypedFrom('navigation_analytics').insert({
           user_id: user.id,
-          event_type: 'navigation_click',
-          event_data: {
-            button_name: buttonName,
-            source_path: location.pathname,
-            ...(destination !== undefined && { destination_path: destination }),
-          },
+          button_name: buttonName,
+          source_path: location.pathname,
+          ...(destination !== undefined && { destination_path: destination }),
         });
       } catch {
         // Silently ignore tracking errors — analytics must never break the UI

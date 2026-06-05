@@ -3,6 +3,7 @@ import { NotificationBell } from '../NotificationDrawer';
 import { useNotifications } from '@/hooks/ui';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 vi.mock('@/hooks/ui', () => ({
   useNotifications: vi.fn(),
@@ -10,6 +11,10 @@ vi.mock('@/hooks/ui', () => ({
 
 vi.mock('@/components/a11y/AriaLive', () => ({
   useAriaLive: () => ({ announce: vi.fn() }),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn().mockReturnValue({ isAdmin: false, user: null }),
 }));
 
 const mockNotifications = [
@@ -37,13 +42,15 @@ describe('NotificationBell', () => {
       unreadCount: 1,
       isLoading: false,
       markAllAsRead: vi.fn(),
-      prefetch: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
     });
 
     render(
-      <BrowserRouter>
-        <NotificationBell />
-      </BrowserRouter>,
+      <TooltipProvider>
+        <BrowserRouter>
+          <NotificationBell />
+        </BrowserRouter>
+      </TooltipProvider>,
     );
 
     expect(screen.getByText('1')).toBeInTheDocument();
@@ -56,15 +63,17 @@ describe('NotificationBell', () => {
       unreadCount: 0,
       isLoading: false,
       markAllAsRead: vi.fn(),
-      prefetch: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
     });
 
     render(
-      <BrowserRouter>
-        <NotificationBell />
-      </BrowserRouter>,
+      <TooltipProvider>
+        <BrowserRouter>
+          <NotificationBell />
+        </BrowserRouter>
+      </TooltipProvider>,
     );
 
     const bellButton = screen.getByRole('button', { name: /Notificações/i });
@@ -83,15 +92,17 @@ describe('NotificationBell', () => {
       markAsRead: vi.fn(),
       undoMarkAsRead: vi.fn(),
       markAllAsRead: vi.fn(),
-      prefetch: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
     });
 
     render(
-      <BrowserRouter>
-        <NotificationBell />
-      </BrowserRouter>,
+      <TooltipProvider>
+        <BrowserRouter>
+          <NotificationBell />
+        </BrowserRouter>
+      </TooltipProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Notificações/i }));
@@ -119,15 +130,17 @@ describe('NotificationBell', () => {
       markAsRead,
       undoMarkAsRead,
       markAllAsRead: vi.fn(),
-      prefetch: vi.fn(),
+      prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
     });
 
     render(
-      <BrowserRouter>
-        <NotificationBell />
-      </BrowserRouter>,
+      <TooltipProvider>
+        <BrowserRouter>
+          <NotificationBell />
+        </BrowserRouter>
+      </TooltipProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Notificações/i }));

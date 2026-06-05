@@ -35,13 +35,17 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
-const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium-smoke', '--workers=1'];
+// Note: chromium-smoke project was merged into chromium-public.
+// We add --grep=/@smoke/ here to replicate the old project-level filter.
+const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium-public', '--workers=1'];
 
 if (tag && tag.trim()) {
-  // combina via AND com o grep do project (`/@smoke/`)
-  args.push(`--grep=${tag.trim()}`);
+  // Build combined AND regex: must match both @smoke and the requested tag
+  const combined = `(?=.*@smoke)(?=.*${tag.trim()})`;
+  args.push(`--grep=${combined}`);
   console.log(`\n🎯 Smoke filtrado por: ${tag.trim()}\n`);
 } else {
+  args.push('--grep=/@smoke/');
   console.log(`\n🚬 Smoke completo (sem filtro)\n`);
 }
 

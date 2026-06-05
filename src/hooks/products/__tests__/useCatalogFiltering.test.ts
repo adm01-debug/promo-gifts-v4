@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useCatalogFiltering } from '../useCatalogFiltering';
 import { defaultFilters } from '@/components/filters/filter-panel/types';
@@ -63,7 +63,7 @@ describe('useCatalogFiltering', () => {
         hasCategoryFilter: false,
         categoryFilteredProductIds: new Set(),
         isLoadingCategoryFilter: false,
-      })
+      }),
     );
 
     expect(result.current).toHaveLength(1);
@@ -89,7 +89,7 @@ describe('useCatalogFiltering', () => {
         hasCategoryFilter: false,
         categoryFilteredProductIds: new Set(),
         isLoadingCategoryFilter: false,
-      })
+      }),
     );
 
     expect(result.current).toHaveLength(2);

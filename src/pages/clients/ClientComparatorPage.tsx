@@ -100,8 +100,8 @@ export default function ClientComparatorPage() {
             </div>
             <h3 className="mb-2 font-display text-lg font-semibold">Nenhum cliente selecionado</h3>
             <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-              Selecione acima pelo menos um cliente da sua carteira para iniciar a comparação lado
-              a lado.
+              Selecione acima pelo menos um cliente da sua carteira para iniciar a comparação lado a
+              lado.
             </p>
             <p className="text-xs text-muted-foreground">
               Você pode comparar até {MAX_CLIENTS} clientes simultaneamente.

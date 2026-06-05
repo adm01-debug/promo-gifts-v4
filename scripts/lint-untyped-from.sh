@@ -33,12 +33,25 @@ DEF_FILE="src/lib/supabase-untyped.ts"
 # Removê-las da allowlist requer: supabase gen types typescript --project-id <id>
 ALLOWLIST=(
   categories
+  collection_products
+  color_nuances
+  kit_component_media
+  personalization_simulations
+  print_area_techniques
   product_category_assignments
   product_component_location_techniques
   product_group_components
   product_group_location_techniques
   product_group_locations
+  sales_goals
+  security_settings
+  supplier_branches
   system_kill_switches
+  tabela_preco_gravacao_oficial
+  tabela_preco_gravacao_oficial_faixa
+  tecnicas_gravacao
+  user_2fa_settings
+  user_ip_allowlist
   v_kill_switch_hits_summary
   v_smoke_tests_latest_run
   v_smoke_tests_trend
