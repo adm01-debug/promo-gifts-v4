@@ -243,3 +243,31 @@ products_batch` ja e so postgres+service_role; `CREATE POLICY IF NOT EXISTS`
 Issues so-de-replay em migrations historicas ja aplicadas nao foram "corrigidas"
 editando os arquivos byte-exatos (quebraria a invariante DB==repo; workflow e
 forward-only contra o banco vivo).
+
+### Caveat de replay byte-exato (decisao: manter byte-exato + documentar)
+
+Os arquivos historicos deste conjunto sao **snapshots fieis de producao**, nao
+scripts idempotentes de `db reset`/replay from-scratch. Producao esta correta e o
+check `Supabase Preview` esta desabilitado para este repo, entao estes achados so
+afetariam um replay limpo (que nao usamos: o workflow e forward-only contra o
+banco vivo). Por decisao explicita, os arquivos byte-exatos **nao** sao alterados
+(manter a invariante DB==repo). Os achados do Codex abaixo ficam **by-design**:
+
+- **P1** `20260605004956_harden_raw_sibling_tables_rls_grants.sql:26` — `REVOKE`
+  em `_asia_api_staging` sem guarda `to_regclass`. A tabela e production-only
+  (criada fora do repo); em DB fresh sem ela o REVOKE abortaria. Em producao
+  existe e o REVOKE e correto.
+- **P1** `20260604141743_add_updated_at_triggers_physical_pricetiers.sql:3` —
+  usa `moddatetime` (contrib) sem `CREATE EXTENSION` previo. Em producao a
+  extensao ja esta instalada; num replay sem ela o trigger abortaria.
+- **P2** `20260604141720_create_supplier_price_tiers.sql:19` — RLS sem `GRANT`
+  de privilegios de tabela no mesmo arquivo. Em producao os grants vivos cobrem
+  o caminho de leitura autenticado; num DB fresh faltaria privilegio.
+- **P1** `20260605012421_spr_p1_security_close_bronze_to_anon.sql:2` — `ALTER VIEW`
+  em `somarcas_catalogo_publico` antes do `CREATE` (que mora numa migration
+  posterior). Em producao a view ja existe; num replay ordenado o ALTER viria
+  antes do CREATE.
+
+Se algum dia precisarmos de replay from-scratch confiavel (ex.: reabilitar o
+Preview), o caminho e UMA migration forward no tip que torne estes objetos
+idempotentes — nunca editar os snapshots historicos.
