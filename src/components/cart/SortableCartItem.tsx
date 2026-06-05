@@ -277,9 +277,10 @@ export const SortableCartItem = memo(function SortableCartItem({
               data-testid="cart-item-color"
               className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full border border-border/50 bg-card/90 px-2.5 py-1 shadow-sm backdrop-blur-md"
             >
+              {/* Only show circle if color_hex is available, but don't show hex code text */}
               <div
                 className="h-3.5 w-3.5 rounded-full border border-border/50 shadow-inner"
-                style={{ backgroundColor: item.color_hex || undefined }}
+                style={{ backgroundColor: item.color_hex || 'transparent' }}
               />
               <span
                 data-testid="cart-item-color-name"
