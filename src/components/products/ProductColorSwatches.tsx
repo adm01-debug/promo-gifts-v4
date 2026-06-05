@@ -122,7 +122,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   return (
     <div
       className={cn(
-        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden py-1',
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-1.5',
         className,
       )}
       role="group"
@@ -142,10 +142,10 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
               <button
                 type="button"
                 className={cn(
-                  'inline-block rounded-full border border-border/60 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  'relative inline-block rounded-full border border-border/60 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   isSelected
-                    ? 'z-10 scale-110 opacity-100 shadow-sm ring-[1.5px] ring-primary ring-offset-1'
-                    : 'opacity-90 hover:scale-110 hover:opacity-100',
+                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 shadow-sm ring-[var(--swatch-ring-width)] ring-primary ring-offset-1'
+                    : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
