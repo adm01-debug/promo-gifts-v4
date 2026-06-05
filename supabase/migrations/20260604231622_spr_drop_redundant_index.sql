@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.idx_spr_supplier;

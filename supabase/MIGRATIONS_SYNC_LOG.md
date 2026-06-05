@@ -77,3 +77,64 @@ Conjunto reconciliado (em ordem):
 
 Contexto da paridade Spot (G1-G4 / M1-M6) em
 `docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md`.
+
+## 2026-06-05 - Reconciliacao pos-cutover SPR / motor_v2 (doufsxqlfjyuvxuezpln)
+
+28 migrations aplicadas em producao entre 2026-06-04T21:41 e 2026-06-05T00:49
+nao estavam no repo. Restauradas byte-a-byte (md5 DB==arquivo, 28/28 OK).
+
+Descoberta durante auditoria de teste exhaustivo: o arquivo reconciliado M5
+(`20260604185419`) continha `processed = false` (coluna inexistente), corrigida
+sequencialmente pelas migrations abaixo via `fix_fn_process_raw_v2_status_column`
+e `fix_fn_process_raw_v2_integer_cast_and_failed_status`. O estado final do banco
+esta correto; os arquivos agora refletem cada passo evolutivo.
+
+Conjunto reconciliado (em ordem):
+
+- `20260604214100` fix_spot_name_cleaning
+- `20260604214243` fix_raw_v2_race_and_batch_spam
+- `20260604231622` spr_drop_redundant_index
+- `20260604231629` spr_drop_bkp_table
+- `20260604231631` spr_harden_grants_rls
+- `20260604231642` spr_maintenance_and_history_retention
+- `20260604231826` spr_cutover_status_part1
+- `20260604232403` spr_cutover_status_part2
+- `20260604232535` spr_before_write_search_path
+- `20260604232837` upgrade_fn_apply_transform_add_missing_transforms
+- `20260604232944` upgrade_fn_process_raw_v2_fix_race_condition_and_counters
+- `20260604234507` fix_fn_process_raw_v2_status_column        (status enum fix)
+- `20260604234647` restore_fn_clean_spot_name_branch_in_apply_transform
+- `20260604235853` spr_drop_unused_partial_indexes
+- `20260605000239` fix_raw_v2_product_type_mapping_parity
+- `20260605000347` raw_v2_transform_maxlength_and_spot_overflow_caps
+- `20260605001811` spr2_state_integrity_and_wiring
+- `20260605001830` spr2_images_generated_drop_claimed
+- `20260605001850` spr2_motor_quarantine_terminal
+- `20260605001911` spr2_history_old_version_and_index_cleanup
+- `20260605001917` spr2_autovacuum_tuning
+- `20260605002044` harden_fn_clean_spot_name_unicode_spaces
+- `20260605002243` fix_fn_process_raw_v2_use_status_enum      (status enum fix 2)
+- `20260605002302` fix_process_supplier_products_batch_use_status_enum
+- `20260605002334` fix_fn_process_raw_v2_integer_cast_and_failed_status  (BUG-1/3)
+- `20260605002346` fix_trigger_limpar_nome_capitalize_after_strip
+- `20260605002357` backfill_locked_fields_brand_manual_edits
+- `20260605004956` harden_raw_sibling_tables_rls_grants
+
+### Resultado do teste exhaustivo de paridade (2026-06-05)
+
+Dry-run transacional (BEGIN → fn_process_raw_v2 → captura → ROLLBACK automatico)
+com produto inedito `DRYRUN-PARITY-999` / variante `DRYRUN-PARITY-999-BLK`:
+
+| Verificacao | Esperado | Observado | Status |
+|---|---|---|---|
+| G1: mapeamento produtos | source_path=NULL, campos preenchidos | name, brand, description OK | OK |
+| G2: VSS cost_price | Price1 -> vss.cost_price | 25.50 | OK |
+| G3: sale_price | cost * 2.15 | 54.83 (ratio=2.1502) | OK |
+| M2: sku_prefix | sku = ProdReference sem prefixo | "DRYRUN-PARITY-999" | OK |
+| G4: unaccent | sem crash no INSERT | nenhum erro | OK |
+| M5: batch telemetria | parents=1, variants=1, errors=[] | 100% | OK |
+| raw.status apos run | "processed" | "processed" | OK |
+| Rollback | sem dados gravados em prod | confirmado | OK |
+
+Estado producao: 1200 produtos / 3612 VSS todos com cost_price e sale_price.
+Markup observado: 2.1500 (115%) em 100% dos produtos amostrados.

@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.supplier_products_raw_bkp_20260604;
