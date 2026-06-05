@@ -136,7 +136,6 @@ export function useFiltersPageState() {
     sortBy: filters.sortBy,
   });
 
-
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -154,9 +153,7 @@ export function useFiltersPageState() {
   // a UI honesta.
   const techniquesDataAvailable = useMemo(
     () =>
-      realProducts.some(
-        (p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0,
-      ),
+      realProducts.some((p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0),
     [realProducts],
   );
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
@@ -492,7 +489,9 @@ export function useFiltersPageState() {
           ...(product.tags?.ramo || []),
           ...(product.tags?.nicho || []),
         ].map((v: string) => v.toLowerCase());
-        return tagIdsLower.some((tagId) => allTagValues.some((v) => v === tagId || v.includes(tagId)));
+        return tagIdsLower.some((tagId) =>
+          allTagValues.some((v) => v === tagId || v.includes(tagId)),
+        );
       });
     }
     // BUG-SF-01 FIX: techniques era contabilizado/chipeado mas sem bloco de filtro.

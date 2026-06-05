@@ -240,6 +240,28 @@ Deno.serve(async (req) => {
       const backoff = Array.isArray(policy.backoff_seconds) ? policy.backoff_seconds : [5, 30, 120];
       let success = false;
       let attempt = 0;
+      let deliveryRowInserted = false;
+
+      // Atomic delivery claim: claim_webhook_delivery inserts a lock row within
+      // its own transaction via INSERT ... ON CONFLICT DO NOTHING. The unique
+      // constraint on (webhook_id, payload_hash) ensures only one concurrent
+      // invocation acquires the lock — the other receives FALSE and skips.
+      // This closes the race that existed with check_webhook_dedup, where the
+      // advisory lock was released before the delivery INSERT happened.
+      const { data: claimed, error: claimErr } = await supabase.rpc('claim_webhook_delivery', {
+        p_webhook_id: hook.id,
+        p_payload_hash: phash ?? null,
+      });
+      if (claimErr) {
+        // Fail closed: without a confirmed claim we have no dedup guarantee.
+        // Logging and continuing would re-open the race we just closed.
+        console.warn('[webhook-dispatcher] claim_webhook_delivery error (skipping delivery):', claimErr);
+        results.push({ webhook_id: hook.id, status: 'skipped_claim_error' });
+        continue;
+      } else if (!claimed) {
+        results.push({ webhook_id: hook.id, status: 'skipped_duplicate' });
+        continue;
+      }
 
       while (attempt < max && !success) {
         attempt++;
@@ -258,7 +280,7 @@ Deno.serve(async (req) => {
           const res = await fetch(hook.url, { method: "POST", headers, body: bodyJson });
           const respText = (await res.text()).slice(0, 4000);
 
-          await supabase.from("webhook_deliveries").insert({
+          const { error: insertErr } = await supabase.from("webhook_deliveries").insert({
             webhook_id: hook.id,
             event,
             payload: payload ?? null,
@@ -271,6 +293,14 @@ Deno.serve(async (req) => {
           });
 
           if (res.ok) {
+            if (!insertErr) {
+              deliveryRowInserted = true;
+            } else {
+              // Delivery succeeded but the dedup row was not written — log at
+              // critical level so an on-call can investigate. The lock is NOT
+              // released in this case so the dedup window remains active.
+              console.error('[webhook-dispatcher] CRITICAL: delivery row INSERT failed after 2xx; lock will not be released', insertErr);
+            }
             success = true;
             await supabase.from("outbound_webhooks").update({
               last_triggered_at: new Date().toISOString(),
@@ -294,6 +324,23 @@ Deno.serve(async (req) => {
             await new Promise((r) => setTimeout(r, delay));
           }
         }
+      }
+
+      // Release delivery lock so failed deliveries can be retried by the next
+      // dispatcher invocation. On success the delivery row acts as the dedup;
+      // on failure releasing the lock allows a future retry cycle to proceed.
+      // Release the lock only when it is safe to do so:
+      //  - On failure: always release so the next retry cycle can re-claim.
+      //  - On success: release only after the delivery row was durably written.
+      //    If the INSERT failed after a 2xx response the lock is intentionally
+      //    kept so the dedup window stays active (no delivery row = no proof of
+      //    delivery; keeping the lock prevents an immediate re-dispatch).
+      if (phash && !claimErr && (!success || deliveryRowInserted)) {
+        const { error: releaseErr } = await supabase.rpc('release_webhook_delivery_lock', {
+          p_webhook_id: hook.id,
+          p_payload_hash: phash,
+        });
+        if (releaseErr) console.warn('[webhook-dispatcher] release_webhook_delivery_lock error:', releaseErr);
       }
 
       if (!success) {

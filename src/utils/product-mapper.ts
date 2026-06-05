@@ -119,7 +119,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     price: getProductPrice(p),
     image_url: images[0],
     og_image_url: p.og_image_url || undefined,
-    set_image_url: null,
+    set_image_url: p.set_image_url ?? null,
     images,
     sku: p.sku,
     stock,

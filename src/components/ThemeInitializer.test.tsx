@@ -11,7 +11,7 @@ vi.mock('@/lib/theme-presets', () => ({
   THEME_PRESETS: [{ id: 'corporate', dark: {} }],
   DEFAULT_FONT_SANS: '',
   DEFAULT_FONT_DISPLAY: '',
-  CSS_VARS_TO_APPLY: []
+  CSS_VARS_TO_APPLY: [],
 }));
 
 describe('ThemeInitializer', () => {
@@ -25,7 +25,7 @@ describe('ThemeInitializer', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={undefined as any}>
         <ThemeInitializer />
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
     expect(themePresets.loadThemeConfig).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
@@ -40,7 +40,7 @@ describe('ThemeInitializer', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <ThemeContext.Provider value={{ actualTheme: 'dark' } as any}>
         <ThemeInitializer />
-      </ThemeContext.Provider>
+      </ThemeContext.Provider>,
     );
 
     await waitFor(() => {
