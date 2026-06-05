@@ -32,6 +32,7 @@ interface ProductCardActionsProps {
   canAddToCompare: boolean;
   actionsOpen: boolean;
   onToggleActions: () => void;
+  isOutOfStock?: boolean;
   onFavorite: (e: React.MouseEvent) => void;
   onCompare: (e: React.MouseEvent) => void;
   onOpenVariantPicker: (mode: VariantActionMode) => void;
