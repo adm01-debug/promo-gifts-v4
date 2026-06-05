@@ -224,5 +224,11 @@ export const Sel = {
     notFound: TID("app-not-found"),
     accessDenied: TID("app-access-denied"),
     header: TID("app-header"),
+    layout: {
+      header: TID("app-header"),
+      scrollToTop: TID("scroll-to-top"),
+      teleport: TID("app-teleport-btn"),
+      teleportTooltip: TID("app-teleport-tooltip"),
+    },
   },
 } as const;
