@@ -379,12 +379,15 @@ export function useProductVideoGallery(productId?: string) {
     async (videoId: string) => {
       try {
         await supabase.from('video_variant_links').delete().eq('video_id', videoId);
-        await untypedFrom('product_videos').update({ is_active: false }).eq('id', videoId);
+        const { error } = await untypedFrom('product_videos')
+          .update({ is_active: false })
+          .eq('id', videoId);
+        if (error) throw new Error(error.message || 'Erro ao remover vídeo');
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         queryClient.invalidateQueries({ queryKey: ['video-variant-links', productId] });
         toast.success('Vídeo removido');
-      } catch {
-        toast.error('Erro ao remover vídeo');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao remover vídeo');
       }
     },
     [productId, queryClient],
@@ -397,12 +400,13 @@ export function useProductVideoGallery(productId?: string) {
       data: { title?: string; description?: string; video_type?: string },
     ) => {
       try {
-        await untypedFrom('product_videos').update(data).eq('id', videoId);
+        const { error } = await untypedFrom('product_videos').update(data).eq('id', videoId);
+        if (error) throw new Error(error.message || 'Erro ao atualizar metadados');
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Metadados do vídeo atualizados');
         setEditingVideoId(null);
-      } catch {
-        toast.error('Erro ao atualizar metadados');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar metadados');
       }
     },
     [productId, queryClient],
@@ -429,15 +433,17 @@ export function useProductVideoGallery(productId?: string) {
       setDragOverIndex(null);
       // Persist order
       try {
-        await Promise.all(
+        const results = await Promise.all(
           reordered.map((v, i) =>
             untypedFrom('product_videos').update({ display_order: i }).eq('id', v.id),
           ),
         );
+        const firstError = results.find((r) => r.error);
+        if (firstError?.error) throw new Error(firstError.error.message || 'Erro ao salvar ordem');
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Ordem dos vídeos salva');
-      } catch {
-        toast.error('Erro ao salvar ordem');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao salvar ordem');
       }
     },
     [dragIndex, filteredVideos, productId, queryClient],
@@ -480,9 +486,10 @@ export function useProductVideoGallery(productId?: string) {
           return;
         }
         const { data: tu } = supabase.storage.from('product-videos').getPublicUrl(td.path);
-        await untypedFrom('product_videos')
+        const { error: updateError } = await untypedFrom('product_videos')
           .update({ url_thumbnail: tu.publicUrl })
           .eq('id', video.id);
+        if (updateError) throw new Error(updateError.message || 'Erro ao salvar thumbnail');
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Thumbnail regenerada!');
       } catch (err: unknown) {
