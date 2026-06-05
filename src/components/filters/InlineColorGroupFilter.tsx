@@ -77,7 +77,6 @@ function InlineColorSwatch({
         </TooltipTrigger>
         <TooltipContent side="top">
           {label}
-          {hasVariations ? ' (clique ▾ para variações)' : ''}
         </TooltipContent>
       </Tooltip>
       {/* Indicador de variações */}
