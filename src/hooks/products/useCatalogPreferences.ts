@@ -15,7 +15,7 @@ interface CatalogPreferences {
 }
 
 const DEFAULT_PREFERENCES: CatalogPreferences = {
-  sortBy: 'name',
+  sortBy: 'newest',
 };
 
 const STORAGE_KEY = 'catalog_preferences';
