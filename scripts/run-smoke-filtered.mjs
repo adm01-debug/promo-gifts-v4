@@ -40,8 +40,12 @@ for (let i = 0; i < argv.length; i++) {
 const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium-public', '--workers=1'];
 
 if (tag && tag.trim()) {
-  // Build combined AND regex: must match both @smoke and the requested tag
-  const combined = `(?=.*@smoke)(?=.*${tag.trim()})`;
+  // Tag is intentionally treated as regex (see header: --tag "Catálogo|Busca").
+  // Wrap in a non-capturing group so alternation (|) stays scoped to the tag
+  // and doesn't break the outer AND with @smoke. The caller is a developer
+  // running a local CLI — not an end-user path.
+  const escapedTag = `(?:${tag.trim()})`;
+  const combined = `(?=.*@smoke)(?=.*${escapedTag})`;
   args.push(`--grep=${combined}`);
   console.log(`\n🎯 Smoke filtrado por: ${tag.trim()}\n`);
 } else {

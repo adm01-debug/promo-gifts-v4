@@ -24,26 +24,33 @@ const ALLOWED_DOMAINS = [
 
 // BUG-A05 FIX (26/05/2026): Added staging/beta domains to ALLOWED_REFERER_HOSTS.
 // promo-gifts-beta.vercel.app was missing — staging environment was rejected.
-const ALLOWED_REFERER_HOSTS = [
+const ALLOWED_REFERER_EXACT = new Set([
   'criar-together-now.lovable.app',
+  // First-party Lovable preview environments (same as _shared/cors.ts EXACT_ALLOWED_ORIGINS)
+  'id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
+  '1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
   'promogifts.com.br',
   'www.promogifts.com.br',
-  'promo-gifts-beta.vercel.app',  // Staging/beta Vercel deployment
-  'lovable.app',                  // any *.lovable.app subdomain
-  'lovableproject.com',
-  'vercel.app',                   // Generic Vercel preview deployments
-];
+  'promogifts.atomicabr.com.br',
+  'promo-gifts-beta.vercel.app',
+]);
 
-// Localhost/127.0.0.1 conditional (Hardening 6.3)
-if (Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true') {
-  ALLOWED_REFERER_HOSTS.push('localhost', '127.0.0.1');
-}
+// Vercel preview pattern: only this team's deployments (suffix -juca1.vercel.app)
+const VERCEL_TEAM_PATTERN = /^[\w-]+-juca1\.vercel\.app$/i;
+// Lovable: no wildcard — specific project domains go in ALLOWED_REFERER_EXACT above.
+// A wildcard *.lovable.app / *.lovableproject.com would allow any Lovable tenant to hotlink.
+
+const ALLOW_LOCALHOST = Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true';
 
 function isAllowedReferer(referer: string | null): boolean {
   if (!referer) return false;
   try {
     const host = new URL(referer).hostname.toLowerCase();
-    return ALLOWED_REFERER_HOSTS.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+    return (
+      ALLOWED_REFERER_EXACT.has(host) ||
+      VERCEL_TEAM_PATTERN.test(host) ||
+      (ALLOW_LOCALHOST && (host === 'localhost' || host === '127.0.0.1'))
+    );
   } catch {
     return false;
   }

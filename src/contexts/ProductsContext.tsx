@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from 'react';
 import type { Product } from '@/types/product-catalog';
@@ -61,7 +62,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const batchIdsRef = useRef<Set<string>>(new Set());
   const mountedRef = useRef(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     cacheRef.current = cache;
   }, [cache]);
 
@@ -99,11 +100,19 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         const mapped = raw.map(mapPromobrindToProduct);
 
         if (mountedRef.current) {
+          // Update ref synchronously (async context — safe, not render phase) so that
+          // getProductById/getProductsByIds callers see the new entries immediately,
+          // without waiting for the useLayoutEffect to run after setCache re-renders.
+          const next = new Map(cacheRef.current);
+          mapped.forEach((p) => next.set(p.id, p));
+          cacheRef.current = next;
           setFetchError(null);
+          // Functional updater ensures correctness if concurrent batches race:
+          // each updater receives the latest committed state, not stale closure.
           setCache((prev) => {
-            const next = new Map(prev);
-            mapped.forEach((p) => next.set(p.id, p));
-            return next;
+            const merged = new Map(prev);
+            mapped.forEach((p) => merged.set(p.id, p));
+            return merged;
           });
         }
       } catch (err) {

@@ -12,9 +12,9 @@
 import { test, expect, requireAuth, requireAdmin } from "./fixtures/test-base";
 import { Sel } from "./fixtures/selectors";
 import { gotoAndSettle, expectOnRoute } from "./helpers/nav";
-import { 
-  waitForTestIdVisible, 
-  clickTestId, 
+import {
+  waitForTestIdVisible,
+  clickTestId,
   expectVisibleByTestId,
   waitForTestIdCount
 } from "./helpers/waits";
