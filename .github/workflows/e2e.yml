@@ -431,14 +431,15 @@ jobs:
           retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
-      - name: Upload evidence artifacts
+      - name: Upload evidence artifacts (Videos, Screenshots & Network Logs)
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: e2e-evidence
           path: |
-            e2e-artifacts
-            test-results
+            e2e-artifacts/
+            test-results/
+            playwright-report/
           retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
       # Gate final do job: o smoke já falhou cedo (Fail-fast acima), aqui
