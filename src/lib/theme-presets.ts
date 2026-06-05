@@ -993,7 +993,7 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
     }
     const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
     if (!fallback) return;
-    
+
     const root = document.documentElement;
     root.classList.add('theme-transitioning');
     const colors = fallback[mode];
