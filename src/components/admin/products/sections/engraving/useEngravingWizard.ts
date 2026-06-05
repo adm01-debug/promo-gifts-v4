@@ -8,10 +8,10 @@
  *     limitation — fix requires AdminProductFormPage to call flushLocalAreas(productId) after
  *     successful creation. Deferred to Sprint 3. A warning badge is shown in the UI.
  */
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, dbInvokeDelete } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import {
@@ -101,11 +101,8 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
 
   const createMutation = useMutation({
     mutationFn: async (area: Omit<PrintAreaTechnique, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: { table: 'print_area_techniques', operation: 'insert', data: area },
-      });
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao criar área');
+      const { error } = await untypedFrom('print_area_techniques').insert(area);
+      if (error) throw new Error(error.message || 'Erro ao criar área');
     },
     onSuccess: () => {
       invalidate();
@@ -116,11 +113,8 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: { table: 'print_area_techniques', operation: 'update', id, data: payload },
-      });
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar área');
+      const { error } = await untypedFrom('print_area_techniques').update(payload).eq('id', id);
+      if (error) throw new Error(error.message || 'Erro ao atualizar área');
     },
     onSuccess: () => {
       invalidate();
@@ -131,11 +125,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: { table: 'print_area_techniques', operation: 'delete', id },
-      });
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
+      await dbInvokeDelete({ table: 'print_area_techniques', id });
     },
     onSuccess: () => {
       invalidate();
@@ -293,15 +283,11 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
         _techData: _td,
         ...areaData
       } = area as typeof area & { _techData?: ExternalTechnique };
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'print_area_techniques',
-          operation: 'insert',
-          data: { ...areaData, product_id: realProductId },
-        },
+      const { error } = await untypedFrom('print_area_techniques').insert({
+        ...areaData,
+        product_id: realProductId,
       });
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao salvar área de personalização');
+      if (error) throw new Error(error.message || 'Erro ao salvar área de personalização');
     }
     setLocalAreas([]);
   }, []);
