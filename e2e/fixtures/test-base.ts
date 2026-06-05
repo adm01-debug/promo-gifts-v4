@@ -120,18 +120,28 @@ export const test = base.extend<Fixtures>({
     await use(api);
   },
 
-  cleanupOnFailure: [
+  cleanup: [
     async ({ resources }, use, testInfo) => {
-      await use();
-      if (process.env.E2E_CLEANUP_ON_FAILURE === "0") return;
-      if (testInfo.status === testInfo.expectedStatus) return;
+      // Setup: Limpa recursos ANTES do teste para garantir isolamento
       const cfg = loadCleanupConfig();
-      if (!cfg) return;
-      await purgeAll(cfg, {
-        quiet: true,
-        reason: `failure:${testInfo.title}`,
-        nameFilterPrefix: resources.prefix,
-      }).catch(() => {});
+      if (cfg && process.env.E2E_CLEANUP_ON_START !== "0") {
+        await purgeAll(cfg, {
+          quiet: true,
+          reason: `setup:${testInfo.title}`,
+          nameFilterPrefix: resources.prefix,
+        }).catch(() => {});
+      }
+
+      await use();
+
+      // Teardown: Limpa recursos APÓS o teste se passar
+      if (cfg && (testInfo.status === testInfo.expectedStatus || process.env.E2E_CLEANUP_ALWAYS === "1")) {
+        await purgeAll(cfg, {
+          quiet: true,
+          reason: `teardown:${testInfo.title}`,
+          nameFilterPrefix: resources.prefix,
+        }).catch(() => {});
+      }
     },
     { auto: true },
   ],

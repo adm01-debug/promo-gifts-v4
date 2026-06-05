@@ -402,6 +402,15 @@ jobs:
           path: playwright-report
           retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
+      - name: Publish HTML Report to GitHub Pages
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./playwright-report
+          destination_dir: e2e-report/${{ github.run_number }}
+          keep_files: true
+
       - name: Upload smoke summary (markdown + json)
         if: always()
         uses: actions/upload-artifact@v5

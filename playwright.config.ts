@@ -20,11 +20,12 @@ export default defineConfig({
   },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 3 : 1,
   workers: 1, // Set to 1 to avoid resource issues
   reporter: [
-    ['html'],
-    ['list']
+    ['html', { open: 'never' }],
+    ['list'],
+    ['github']
   ],
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:8080',
