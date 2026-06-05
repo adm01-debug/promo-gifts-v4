@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('PromoFlixPlayer Visual Regression', () => {
+  test.beforeEach(() => {
+    // /promoflix-playground is under ProtectedRoute — skip when no auth credentials
+    test.skip(
+      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+      'E2E_USER_EMAIL/PASSWORD não configurados — visual baseline de rota autenticada indisponível',
+    );
+  });
+
   test('should render the player correctly on the playground page', async ({ page }) => {
     // Navigate to the playground (authed)
     await page.goto('/promoflix-playground');

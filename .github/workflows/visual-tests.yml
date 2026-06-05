@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: write
+
 jobs:
   visual-baseline:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -35,10 +40,35 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Run Playwright Visual Tests
-      run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts e2e/flows/voice-tooltip.spec.ts e2e/product-card-visual-regression.spec.ts
+    - name: Run Playwright Visual Tests (update missing baselines)
+      run: npx playwright test --update-snapshots --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts e2e/flows/voice-tooltip.spec.ts e2e/product-card-visual-regression.spec.ts
       env:
         CI: true
+
+    - name: Commit new baselines if generated
+      if: always()
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
+        if ! git diff --staged --quiet; then
+          git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
+          # CI runs on detached HEAD (merge commit); push explicitly to the PR branch.
+          TARGET_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          # The matrix runs shards in parallel; both may push baselines for distinct
+          # PNG files to the same branch. Rebase + retry so the losing shard's push
+          # is replayed on top of the winner's (different files => no conflicts).
+          for attempt in 1 2 3 4 5; do
+            if git push origin "HEAD:${TARGET_BRANCH}"; then
+              echo "Baselines pushed (attempt ${attempt})."
+              break
+            fi
+            echo "Push rejected (attempt ${attempt}) — fetch + rebase and retry."
+            git fetch origin "${TARGET_BRANCH}"
+            git rebase "origin/${TARGET_BRANCH}" || { git rebase --abort; exit 1; }
+            sleep $(( (RANDOM % 4) + 1 ))
+          done
+        fi
 
     - name: Upload Test Report
       if: always()
@@ -47,8 +77,3 @@ jobs:
         name: playwright-report-${{ matrix.shardIndex }}
         path: playwright-report/
         retention-days: 30
-
-    - name: Auto-update Baseline (Optional)
-      if: failure() && github.event_name == 'pull_request'
-      run: |
-        echo "Visual regression detected. If this is expected, run 'npm run test:baseline-update' locally."

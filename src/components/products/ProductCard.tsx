@@ -587,7 +587,7 @@ export const ProductCard = memo(
               );
               if (idx >= 0) {
                 // Efeito visual de destaque ao clicar
-                feedback.impact('light');
+                feedback.light();
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
@@ -614,7 +614,7 @@ export const ProductCard = memo(
                   'flex items-end justify-between pt-0.5 transition-all duration-500 sm:pt-1',
                   !isInitialLoad && isUpdatingColor
                     ? 'translate-y-2 opacity-0'
-                    : 'animate-in fade-in slide-in-from-bottom-1 translate-y-0 opacity-100',
+                    : 'translate-y-0 opacity-100 animate-in fade-in slide-in-from-bottom-1',
                 )}
               >
                 <div>
@@ -640,9 +640,7 @@ export const ProductCard = memo(
                     )}
                   >
                     <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
-                    <span className="whitespace-nowrap">
-                      {getStockStatusLabel(displayStatus)}
-                    </span>
+                    <span className="whitespace-nowrap">{getStockStatusLabel(displayStatus)}</span>
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
                     {(displayStock ?? 0).toLocaleString('pt-BR')} un.

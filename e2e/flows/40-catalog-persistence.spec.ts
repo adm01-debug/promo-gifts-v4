@@ -1,8 +1,10 @@
 import { test, expect } from '../fixtures/extended-test';
+import { requireAuth } from '../fixtures/test-base';
 import { Sel } from '../fixtures/selectors';
 
 test.describe('Catalog Persistence & Resilience @smoke', () => {
   test.beforeEach(async ({ page }) => {
+    requireAuth();
     // Garantir que estamos na página de produtos
     await page.goto('/produtos');
     await expect(page.locator(Sel.page.title('produtos'))).toBeVisible();
