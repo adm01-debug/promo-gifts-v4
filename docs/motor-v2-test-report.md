@@ -13,6 +13,11 @@ em produção mas afetam a rastreabilidade e a segurança de tipo do código-fon
 | 1 | 🔴 CRÍTICO | **28 migrações de produção fora do git** | Aberto |
 | 2 | 🟠 ALTO | **Versão divergente de 2 migrações no repo** | Aberto |
 | 3 | 🟡 MÉDIO | **TypeScript types com 3 colunas removidas** | **CORRIGIDO** neste PR |
+| 4 | 🟠 ALTO | **Motor V2 sem `parent_key_source` p/ 3 de 5 fornecedores** | Aberto |
+
+> A 2ª rodada de testes (22 verificações adicionais — §4.1) **não encontrou novos bugs no
+> motor em si**: integridade de estado, FKs, unicidade, quarantine terminal, cast de inteiro
+> e reprocessamento estão todos corretos. O único achado novo foi de **configuração** (BUG #4).
 
 ---
 
@@ -221,6 +226,40 @@ falharia em runtime
 
 ---
 
+### 🟠 BUG #4 — Motor V2 não configurado para 3 de 5 fornecedores
+
+**Severidade:** ALTO — bloqueia reprocessamento de 3 fornecedores  
+**Descoberto na 2ª rodada de testes (2026-06-05)**
+
+`fn_process_raw_v2` aborta logo no início se `supplier_settings.parent_key_source IS NULL`:
+
+```sql
+IF v_parent_key_source IS NULL THEN
+    RETURN jsonb_build_object('success', false,
+        'error', 'supplier_settings.parent_key_source ausente ...');
+END IF;
+```
+
+Estado atual de `supplier_settings`:
+
+| Fornecedor | `parent_key_source` | Motor V2 processa? |
+|---|---|---|
+| Spot \| Stricker | `ProdReference` | ✅ Sim |
+| XBZ Brindes | `CodigoAmigavel` | ✅ Sim |
+| **88 Brindes** | **NULL** | ❌ **Não** |
+| **Asia Import** | **NULL** | ❌ **Não** |
+| **Só Marcas** | **NULL** | ❌ **Não** |
+
+**Impacto:** Os 2.502 registros de 88/Asia/Só Marcas foram carregados pelo **motor legado**
+(datas de processamento fev–mar/2026, antes do V2). Se chegarem novos dados desses 3
+fornecedores, o V2 retorna `success:false` e **não processa nada** — silenciosamente, pois
+o retorno não é uma exceção. Confirmado via `fn_dryrun_raw_v2(asia_id)` → `{"error":"sem parent_key_source"}`.
+
+**Ação necessária:** Configurar `parent_key_source` (+ `variant_name_template`, `sku_prefix`)
+em `supplier_settings` para os 3 fornecedores, OU documentar que eles permanecem no motor legado.
+
+---
+
 ## 4. Confirmação das melhorias implantadas
 
 ### ✅ Race condition / batch spam — CORRIGIDO
@@ -254,6 +293,89 @@ do namespace `public`: **zero ocorrências**.
 
 ---
 
+## 4.1. Segunda rodada de testes (2026-06-05) — verificações profundas
+
+Bateria adicional de 22 testes executados diretamente no DB de produção.
+
+### ✅ Integridade de estado
+
+| Verificação | Resultado |
+|---|---|
+| Linhas com `content_hash` nulo/vazio | **0** |
+| Linhas com `imported_at` nulo | **0** |
+| Linhas com `updated_at` nulo | **0** |
+| `status='processed'` + `process_errors` não-nulo | **0** |
+| Estados distintos | apenas `processed/pending` e `processed/processed` |
+
+### ✅ Integridade referencial (FKs órfãs)
+
+| FK | Órfãs |
+|---|---|
+| `product_id → products` | **0** |
+| `variant_id → product_variants` | **0** |
+| `supplier_id → suppliers` | **0** |
+| `import_batch_id → supplier_import_batches` | **0** |
+
+### ✅ Unicidade honrada
+
+| Métrica | Valor |
+|---|---|
+| Total | 16.508 |
+| `(supplier_id, supplier_reference)` distintos | 16.508 (100%) |
+| `content_hash` distintos | 16.508 (100%) |
+| `(supplier_id, supplier_sku)` distintos | 16.468 / 16.468 |
+
+### ✅ BUG-1 (cast de inteiro) — confirmação cirúrgica
+
+Os 2 casts `::integer` restantes em `fn_process_raw_v2` são **seguros**:
+```sql
+COALESCE(ROUND(NULLIF(v_ssfields->>'quantity','')::numeric), 0)::integer
+quantity = COALESCE(ROUND(NULLIF(v_ssfields->>'quantity','')::numeric)::integer, quantity)
+```
+Ambos passam por `text → numeric → ROUND → integer` — nunca `text → integer` direto.
+Teste com `"TEXTO_INVALIDO_QTD"` confirmou que o erro é capturado e a variante marcada
+como `failed` (batch `b721deac`, `variants_errors=1`).
+
+### ✅ Quarantine terminal
+
+- `fn_process_raw_v2` usa `WHERE status NOT IN ('processed','quarantined')` →
+  linhas `quarantined` **nunca** são re-selecionadas (terminal).
+- `fn_spr_before_write` escala automaticamente: após `attempts >= 5`, `status → quarantined`;
+  abaixo disso `→ failed`.
+
+### ✅ Batch spam — zero batches-zumbi
+
+`batches vazios E limpos (error_log=[])` = **0**. Todos os batches recentes têm trabalho real
+ou `error_log` legítimo (testes de injeção de erro `TEST_FAIL_*`).
+
+### ✅ Motor end-to-end funcional (dry-run com rollback)
+
+`fn_dryrun_raw_v2(xbz_id, 2)` → **2 parents, 38 variants, 0 errors**, `success:true`.
+
+### ✅ Sem perda de dados nos 499 reprocessados via V2
+
+Os 499 registros XBZ reprocessados pelo V2 em 2026-06-05 retiveram **100%** de
+`attributes.hex` e da coluna `color_hex` (`sem_hex_attr=0`, `sem_color_hex_col=0`).
+
+> ⚠️ **Nota sobre o dry-run:** o `after` do `fn_dryrun_raw_v2` aparenta "perder" `hex`/`codigo_cor`,
+> mas isso é um **artefato** — `fn_process_raw_v2` ativa `app.bulk_import_mode=true`, que
+> suprime os triggers de enriquecimento de cor, e o dry-run faz rollback antes do passe de
+> enriquecimento downstream. **Não é perda de dados real.** As 102 variantes legadas (lote
+> 03-03) sem `hex` são gaps pré-existentes do motor legado.
+
+### ℹ️ Observações (não-bugs)
+
+- **`content_hash` agora é SHA-256**, não MD5 — `fn_spr_before_write` usa
+  `encode(digest(raw_data::text,'sha256'),'hex')`. A análise original (`bronze-table-analysis.md`)
+  mencionava MD5; está desatualizada.
+- **Dados de teste em produção:** 5 linhas `TESTE*` no XBZ + rows `TEST_FAIL_*` injetadas
+  deliberadamente para validar o caminho de erro do motor (criaram os batches "vazios" recentes
+  com `error_log` legítimo). Recomenda-se limpeza.
+- **142 linhas `processed` sem `variant_id`:** 100 XBZ + 40 (88 Brindes) + 2 (Só Marcas) —
+  todas processadas pelo **motor legado** (não-V2), onde nem toda raw vira variante.
+
+---
+
 ## 5. Recomendações prioritárias
 
 1. **BUG #1:** Exportar e commitar as 28 migrações ausentes via:
@@ -272,8 +394,15 @@ do namespace `public`: **zero ocorrências**.
    ON CONFLICT DO NOTHING;
    ```
 
-3. **Imagens pendentes:** 11.641 SKUs (70,5%) ainda com `images_status='pending'`.
+3. **BUG #4:** Configurar `parent_key_source` em `supplier_settings` para 88 Brindes, Asia
+   e Só Marcas, OU documentar formalmente que permanecem no motor legado. Senão, novos
+   dados desses fornecedores serão silenciosamente ignorados pelo V2.
+
+4. **Limpeza de dados de teste:** remover as 5 linhas `TESTE*` do XBZ e as rows
+   `TEST_FAIL_*` do fornecedor de teclado de testes em produção.
+
+5. **Imagens pendentes:** 11.641 SKUs (70,5%) ainda com `images_status='pending'`.
    Acionar pipeline de imagens para XBZ (10.394) e Asia (1.245).
 
-4. **Cobertura Silver:** Apenas 37,8% dos 16.508 registros bronze foram promovidos
+6. **Cobertura Silver:** Apenas 37,8% dos 16.508 registros bronze foram promovidos
    para `produtos_padronizacao` (silver). Meta: aumentar para ≥80%.
