@@ -187,3 +187,26 @@ Itens deixados como nota (nao acionados): `ON CONFLICT (sku)` global em
 busca variante por (product_id, supplier_sku) antes do insert); `DROP COLUMN
 claimed_at` sem tabela de backup em `20260605001830` (coluna ja removida, sem
 recuperacao retroativa possivel).
+
+### Forward fix adicional (regressao Spot detectada na 2a rodada de review)
+
+- `20260605020240 restore_spot_name_clean_and_maxlength_in_fn_apply_transform`
+  A migration `20260605011952` (guard multiply/divide NULL) fez CREATE OR REPLACE
+  de `fn_apply_transform` e PERDEU dois branches que `20260604234647` /
+  `20260605000347` haviam adicionado: o `custom -> fn_clean_spot_name` e o cap de
+  `max_length`. Efeito vivo no pipeline SPOT: `products.name` deixou de ser limpo
+  (caia no ELSE -> valor cru) e `ncm_code`(10)/`short_description`(500) podiam
+  estourar. O fix parte do corpo atual (preserva os guards de multiply/divide/
+  regex null) e readiciona ambos os branches. Verificado: max_length corta para
+  10; branch fn_clean_spot_name presente.
+
+### Achados de review em workstreams FORA do escopo Spot (pendentes de decisao)
+
+A 2a rodada (cubic/Codex) sobre o conjunto reconciliado completo apontou issues
+em migrations de OUTROS workstreams (pipeline Silver/medallion p/ XBZ/Asia/So
+Marcas, `mcp_sessions`, seeds) — codigo ja aplicado em prod, apenas reconciliado
+aqui. Verificacao destacou um **P0 vivo**: `mcp_sessions` tem policy
+`FOR ALL TO anon USING(true)` + GRANT completo a `anon` (a tabela guarda
+`cookie`), expondo leitura/escrita/exclusao de todas as sessoes via anon key.
+Esses itens NAO foram alterados (fora do escopo da auditoria Spot) e aguardam
+decisao de escopo.
