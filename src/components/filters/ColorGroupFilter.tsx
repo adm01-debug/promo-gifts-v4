@@ -238,7 +238,6 @@ export function ColorGroupFilter({
                         key={i}
                         className="h-5 w-5 rounded-full border-2 border-background"
                         style={{ backgroundColor: hex }}
-                        title={name}
                       />
                     );
                   })}
