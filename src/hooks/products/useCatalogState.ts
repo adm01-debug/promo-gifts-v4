@@ -192,7 +192,7 @@ export function useCatalogState() {
 
     // 2. Update URL
     const newParams = new URLSearchParams(window.location.search);
-    if (sortBy === 'name') {
+    if (sortBy === 'newest') {
       // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
       // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
       // selecionava 'Nome A-Z'. O URL sync effect lia o param stale e revertia
