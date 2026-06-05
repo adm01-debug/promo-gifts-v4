@@ -3,6 +3,7 @@
 > Avaliação arquitetural (DBA) da tabela `public.products` e da camada de
 > padronização/de-para de fornecedores no projeto Supabase `doufsxqlfjyuvxuezpln`.
 > Data: 2026-06-05. Base inspecionada ao vivo (não é estimativa).
+> PostgreSQL 17.6 — testado exaustivamente em 2026-06-05 (v2, com correções de bugs).
 
 ---
 
@@ -11,7 +12,7 @@
 A arquitetura de padronização **já existe e é madura** (de-para por
 fornecedor, equivalências de cor/material, staging de raw, variantes
 canônicas). O problema **não** é falta de modelo — é que a tabela
-`products` virou uma *god table* de ~135 colunas que **duplica** dados que
+`products` virou uma *god table* de **153 colunas** que **duplica** dados que
 já vivem nas tabelas filhas normalizadas e ainda carrega identidade de
 fornecedor que hoje pertence à camada de variante. Isso cria **ambiguidade
 de fonte de verdade** e risco de *drift*.
@@ -20,7 +21,7 @@ de fonte de verdade** e risco de *drift*.
 
 | Métrica | Valor |
 |---|---|
-| Colunas em `products` | ~135 (posições até 171) |
+| Colunas em `products` | **153** (posições até 171 — alguns slots foram dropados) |
 | Linhas | 6.123 |
 | Tamanho (com índices) | 59 MB (tabela 25 MB) |
 | Índices em `products` | 30 |
@@ -29,7 +30,7 @@ de fonte de verdade** e risco de *drift*.
 | `active` vs `is_active` | ambos 100% preenchidos, 0 divergências hoje |
 | `supplier_id` / `supplier_reference` | 100% / 100% |
 | `ncm_code` (varchar) / `ncm_id` (FK) | 100% / 99,98% |
-| `category_id` / `main_category_id` | 100% / 100% |
+| `category_id` / `main_category_id` | 100% / 100% — mas **136 produtos divergem** entre si |
 
 **Armazenamento duplo (JSONB em `products` × tabelas filhas):**
 
@@ -71,14 +72,20 @@ de escrita e servir via `v_products_complete`/`mv_product_cards`). Marcar as
 colunas JSONB como *deprecated* e congelar escrita.
 
 ### P0 — `active` **e** `is_active` (flag duplicada)
-Dois booleanos de "ativo", ambos default `true`, ambos 100% preenchidos.
-Hoje não divergem, mas os **índices estão divididos** entre os dois
-(`idx_products_active_*` usam `active`; `idx_products_active`,
-`idx_products_org_active*` usam `is_active`). É um bug latente: basta um
-caminho de escrita atualizar só um.
+Dois booleanos de "ativo", ambos plain `boolean` com default `true`, ambos
+100% preenchidos, 0 divergências atuais. Os **4 índices ativos** existentes
+(`idx_products_active`, `idx_products_org_active`,
+`idx_products_org_active_name`, `idx_products_seo_listing`) usam todos
+`is_active` — a coluna `active` não tem índice dedicado.
 
-**Ação:** consolidar em `is_active`. Migrar índices, criar coluna gerada
-`active` como alias temporário (compat) e depois dropar.
+O risco **não** é a divisão de índices (que não existe), mas sim que dois
+caminhos de escrita independentes podem atualizar apenas um dos dois flags e
+silenciosamente divergirem. Sem constraint ou trigger, a consistência
+depende de disciplina de código.
+
+**Ação:** consolidar em `is_active`. Adicionar coluna gerada
+`active BOOLEAN GENERATED ALWAYS AS (is_active) STORED` como alias de
+compatibilidade temporária; depois dropar quando todos os callers migrarem.
 
 ### P1 — Identidade de fornecedor dentro de `products` é redundante
 `supplier_id` (FK 1:1) + `supplier_reference` + `manufacturer_sku` +
@@ -115,12 +122,22 @@ indexação), centralizada em `product_physical` (1:1). Demais colunas viram
 
 ### P1 — Taxonomia e NCM duplicados
 - `category_id` **e** `main_category_id` (ambos FK→`categories`, 100%) +
-  `product_category_assignments` (N:N). Três mecanismos.
+  `product_category_assignments` (N:N). Três mecanismos. **ATENÇÃO:** 136
+  produtos têm `category_id ≠ main_category_id` — os dois campos **não são
+  redundantes** para 2,2% do catálogo; provavelmente representam "categoria
+  de browsing" vs "categoria principal de classificação". Qualquer
+  consolidação deve preservar ambos os valores até a semântica ser confirmada.
 - `ncm_code` (varchar, 100%) **e** `ncm_id` (FK→`ncm_codes`, 99,98%).
+  **ATENÇÃO:** 1 produto (`id = 0e115d94…`, SKU `15426`, "Mochila em couro")
+  tem `ncm_code = '00000000'` mas `ncm_id IS NULL`. Uma coluna
+  `GENERATED ALWAYS AS` calculada via FK **falharia** para esse registro —
+  tratar o outlier antes de qualquer migração DDL.
 
-**Ação:** eleger `product_category_assignments` (N:N) + uma flag/coluna de
-categoria primária como fonte; `ncm_id` (FK) como verdade e `ncm_code` como
-coluna **gerada** a partir do FK (ou view).
+**Ação:** eleger `product_category_assignments` (N:N) + coluna `primary_category_id`
+como fonte canônica; investigar os 136 divergentes antes de dropar `category_id`
+ou `main_category_id`. Para NCM: `ncm_id` (FK) como verdade, mas implementar
+como **view** `v_products_ncm` ou coluna `ncm_code` com `CHECK` em vez de
+`GENERATED ALWAYS AS` (safe fallback para o outlier).
 
 ### P2 — *God table*: extrair blocos coesos para satélites 1:1
 Grandes blocos temáticos inflam toda leitura de catálogo:
@@ -148,6 +165,15 @@ varredura de catálogo, menos *bloat*, *HOT updates* mais baratos.
 - `meta_keywords ARRAY` + `key_benefits/use_cases/target_audience ARRAY` —
   ok para leitura, mas sem GIN não filtram bem; ou normalizar
   (`product_target_audiences` já existe).
+- **Grupos repetidos em `variant_supplier_sources`**: colunas
+  `cost_price_1..5` / `min_qty_1..5` (5 faixas de preço) e
+  `next_quantity_1..3` / `next_date_1..3` (3 previsões de reposição) violam
+  1NF. Se o número de faixas precisar crescer, requer DDL. Considerar tabela
+  filha `variant_price_tiers (variant_source_id, tier, min_qty, cost_price)`
+  em backlog futuro.
+- **Nomenclatura inconsistente**: `produtos_padronizacao_variantes` usa
+  português enquanto todo o restante do schema usa inglês — prejudica
+  descobribilidade e consistência de tooling.
 
 ### Performance (advisors, baixo risco/alto retorno)
 - **74 `unused_index`** no schema (vários em `products`): revisar e dropar os
@@ -209,7 +235,7 @@ Tudo atrás de *views* de compatibilidade (`v_products_complete`,
 |---|---|---|
 | 0 | Adicionar `COMMENT ON COLUMN` marcando colunas *deprecated*; congelar escrita nos JSONB | Nulo |
 | 1 | **Quick wins** de performance: dropar `unused_index`, indexar FKs quentes, corrigir `auth_rls_initplan` com `(SELECT auth.uid())`, consolidar policies | Baixo |
-| 2 | Consolidar `active`→`is_active` (coluna gerada de compat + migrar índices) | Baixo |
+| 2 | Consolidar `active`→`is_active`: DROP + ADD GENERATED ALWAYS AS — todos os índices já usam `is_active` | Baixo (requer rewrite; janela de manutenção) |
 | 3 | Popular/validar `external_id` (chave canônica); reduzir dependência de `sku`/`supplier_reference` | Médio |
 | 4 | Extrair satélites: `product_seo`, `product_ai`, `product_packaging` (criar + backfill + view) | Médio |
 | 5 | Migrar dimensões para `product_physical` (unidade única) + colunas geradas | Médio |
@@ -224,33 +250,53 @@ Tudo atrás de *views* de compatibilidade (`v_products_complete`,
 > Apenas sugestões. **Nada foi executado** no banco. Validar em branch/staging.
 
 ```sql
--- (a) Consolidar flag de ativo: índices passam a usar is_active; manter
---     'active' como coluna gerada temporária para compatibilidade de leitura.
---     (executar fora de horário de pico; recriar índices CONCURRENTLY)
--- DROP os índices que usam 'active' e recriar sobre 'is_active', ex.:
---   CREATE INDEX CONCURRENTLY idx_products_active_created_at2
---     ON products (created_at DESC) WHERE (is_active = true);
+-- (a) Consolidar flag de ativo: todos os 4 índices já usam is_active.
+--     Basta tornar 'active' uma coluna gerada (alias) para garantir consistência.
+--     (executar fora de horário de pico)
+ALTER TABLE public.products
+  DROP COLUMN active;                         -- remove o bool independente
+ALTER TABLE public.products
+  ADD COLUMN active boolean
+    GENERATED ALWAYS AS (is_active) STORED;  -- alias de leitura seguro
+-- Nota: DROP/ADD em PG 17 requer rewrite de tabela; usar janela de manutenção.
 
 -- (b) RLS: avaliar função 1x por query (corrige auth_rls_initplan)
+-- ATENÇÃO: cada policy tem estrutura diferente — sintaxes distintas.
+
+-- products_update tem USING + WITH CHECK:
 ALTER POLICY products_update ON public.products
-  USING ( (SELECT public.is_org_owner_or_admin(organization_id)) )
+  USING      ( (SELECT public.is_org_owner_or_admin(organization_id)) )
   WITH CHECK ( (SELECT public.is_org_owner_or_admin(organization_id)) );
--- idem para products_insert / products_delete.
+
+-- products_delete tem apenas USING (sem WITH CHECK):
+ALTER POLICY products_delete ON public.products
+  USING ( (SELECT public.is_org_owner_or_admin(organization_id)) );
+
+-- products_insert tem apenas WITH CHECK (sem USING):
+ALTER POLICY products_insert ON public.products
+  WITH CHECK ( (SELECT public.is_org_owner_or_admin(organization_id)) );
+
+-- products_public_read: USING (true) — sem subquery, não gera initplan.
 
 -- (c) Marcar fonte de verdade (documentação executável)
 COMMENT ON COLUMN public.products.colors    IS 'DEPRECATED: usar product_variants. Cache somente-leitura.';
 COMMENT ON COLUMN public.products.materials IS 'DEPRECATED: usar product_materials.';
 COMMENT ON COLUMN public.products.tags      IS 'DEPRECATED: usar product_tags.';
 COMMENT ON COLUMN public.products.images    IS 'DEPRECATED: usar product_images.';
-COMMENT ON COLUMN public.products.ncm_code  IS 'DEPRECATED: derivar de ncm_id (FK ncm_codes).';
+COMMENT ON COLUMN public.products.ncm_code  IS 'DEPRECATED: derivar de ncm_id (FK ncm_codes). Exceção: SKU 15426 tem ncm_code sem ncm_id — tratar antes de remover.';
 
--- (d) NCM como coluna gerada a partir do FK (após validar 100% de match)
--- ALTER TABLE products DROP COLUMN ncm_code;
--- ALTER TABLE products ADD COLUMN ncm_code text
---   GENERATED ALWAYS AS (... lookup ...) STORED;  -- ou servir via view
+-- (d) NCM — NÃO usar GENERATED ALWAYS AS diretamente:
+--   1 produto (SKU 15426, "Mochila em couro") tem ncm_id NULL → a expressão
+--   GENERATED falharia na reescrita da tabela.
+--   Alternativa segura: view ou coluna com default NULL e trigger de sync.
+-- CREATE VIEW v_products_ncm AS
+--   SELECT p.id, COALESCE(n.code, p.ncm_code) AS ncm_code_resolved
+--   FROM public.products p
+--   LEFT JOIN public.ncm_codes n ON n.id = p.ncm_id;
 
 -- (e) Higiene: 54 produtos sem imagem primária, 5 sem preço.
 SELECT id, name FROM public.products WHERE primary_image_url IS NULL; -- tratar
+SELECT id, name FROM public.products WHERE cost_price IS NULL OR cost_price = 0; -- tratar
 ```
 
 ---
