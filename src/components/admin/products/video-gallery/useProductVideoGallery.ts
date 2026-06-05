@@ -386,8 +386,8 @@ export function useProductVideoGallery(productId?: string) {
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         queryClient.invalidateQueries({ queryKey: ['video-variant-links', productId] });
         toast.success('Vídeo removido');
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao remover vídeo');
+      } catch {
+        toast.error('Erro ao remover vídeo');
       }
     },
     [productId, queryClient],
@@ -405,8 +405,8 @@ export function useProductVideoGallery(productId?: string) {
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Metadados do vídeo atualizados');
         setEditingVideoId(null);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar metadados');
+      } catch {
+        toast.error('Erro ao atualizar metadados');
       }
     },
     [productId, queryClient],
@@ -442,8 +442,8 @@ export function useProductVideoGallery(productId?: string) {
         if (firstError?.error) throw new Error(firstError.error.message || 'Erro ao salvar ordem');
         queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
         toast.success('Ordem dos vídeos salva');
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao salvar ordem');
+      } catch {
+        toast.error('Erro ao salvar ordem');
       }
     },
     [dragIndex, filteredVideos, productId, queryClient],

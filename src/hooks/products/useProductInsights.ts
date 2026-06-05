@@ -65,8 +65,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {
-        // rls-allow: seller-scope enforced by RLS policy; preserving typed client for scope checker
         const { data: orders } = await supabase
+          // rls-allow: seller-scope enforced by RLS policy; orderIds filtered from seller's own items
           .from('orders')
           .select('client_id')
           .in('id', orderIds);
