@@ -373,7 +373,7 @@ export function useCatalogState() {
       const urlNeedsNormalization = validated === 'name' || urlSort !== validated;
       if (urlNeedsNormalization) {
         const newParams = new URLSearchParams(window.location.search);
-        if (validated === 'name') {
+        if (validated === 'newest') {
           newParams.delete('sort');
         } else {
           newParams.set('sort', validated);
