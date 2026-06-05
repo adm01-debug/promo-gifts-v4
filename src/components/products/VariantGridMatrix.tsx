@@ -395,7 +395,7 @@ export function VariantGridMatrix({
                                 {color.name} — {size}
                               </p>
                               {variant.sku && (
-                                <p className="font-mono text-muted-foreground">{variant.sku}</p>
+                                <p className="font-mono text-[10px] opacity-70 mb-0.5">{variant.sku}</p>
                               )}
                               {typeof variant.price === 'number' && (
                                 <p className="font-medium text-primary">
