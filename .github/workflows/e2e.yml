@@ -59,8 +59,8 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: playwright-${{ runner.os }}-
 
-      - name: Install Playwright (chromium)
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright (browsers)
+        run: npx playwright install --with-deps
 
       # Pré-gera fixtures de E2E (permissões-matrix → JSON) antes de qualquer
       # step do Playwright. Separa essa etapa do webServer para que o comando
@@ -367,7 +367,7 @@ jobs:
               --reporter=github,line,html,json,junit
           else
             npx playwright test \
-              --project=routes-public \
+              --project=chromium-public \
               --grep-invert @smoke \
               --pass-with-no-tests \
               --reporter=github,line,html,json,junit
