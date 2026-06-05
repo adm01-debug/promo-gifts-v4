@@ -548,11 +548,15 @@ export function useProductImageGallery({
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
-        await Promise.all(
+        const updateResults = await Promise.all(
           updates.map((ext) =>
             untypedFrom('product_images').update({ image_type: newType }).eq('id', ext.id),
           ),
         );
+        const updateErrors = updateResults.filter((r) => r.error);
+        if (updateErrors.length > 0) {
+          throw new Error(updateErrors[0].error?.message || 'Erro ao atualizar tipo em lote');
+        }
         const insertedCount = await createMissingExternalRecords(missingUrls, () => ({
           image_type: newType,
           supplier_code: null,
@@ -565,8 +569,8 @@ export function useProductImageGallery({
           toast.warning('Nenhuma imagem elegível para classificação em lote');
         else toast.success(`${affectedCount} imagem(ns) classificada(s) como "${label}"`);
         clearSelection();
-      } catch {
-        toast.error('Erro ao atualizar tipo em lote');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar tipo em lote');
       } finally {
         setIsBulkUpdating(false);
       }
@@ -595,7 +599,7 @@ export function useProductImageGallery({
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
-        await Promise.all(
+        const updateResults = await Promise.all(
           updates.map((ext) =>
             untypedFrom('product_images')
               .update({
@@ -605,6 +609,10 @@ export function useProductImageGallery({
               .eq('id', ext.id),
           ),
         );
+        const updateErrors = updateResults.filter((r) => r.error);
+        if (updateErrors.length > 0) {
+          throw new Error(updateErrors[0].error?.message || 'Erro ao atualizar variação em lote');
+        }
         const insertedCount = await createMissingExternalRecords(missingUrls, (url) => ({
           image_type: images.indexOf(url) === 0 ? 'main' : 'gallery',
           supplier_code: variant?.supplier_code || null,
@@ -616,8 +624,8 @@ export function useProductImageGallery({
         if (affectedCount === 0) toast.warning('Nenhuma imagem elegível para vínculo em lote');
         else toast.success(`${affectedCount} imagem(ns) vinculada(s) a "${label}"`);
         clearSelection();
-      } catch {
-        toast.error('Erro ao atualizar variação em lote');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar variação em lote');
       } finally {
         setIsBulkUpdating(false);
       }
@@ -643,17 +651,21 @@ export function useProductImageGallery({
       const extUpdates = toRemove
         .map((url) => extImageMap.get(url))
         .filter((ext): ext is ExternalImage => !!ext?.id);
-      await Promise.all(
+      const deactivateResults = await Promise.all(
         extUpdates.map((ext) =>
           untypedFrom('product_images').update({ is_active: false }).eq('id', ext.id),
         ),
       );
+      const deactivateErrors = deactivateResults.filter((r) => r.error);
+      if (deactivateErrors.length > 0) {
+        throw new Error(deactivateErrors[0].error?.message || 'Erro ao desativar imagens no banco');
+      }
       onChange(images.filter((url) => !selectedUrls.has(url)));
       if (productId) queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
       toast.success(`${toRemove.length} imagem(ns) removida(s)`);
       clearSelection();
-    } catch {
-      toast.error('Erro ao remover imagens em lote');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao remover imagens em lote');
     } finally {
       setIsBulkUpdating(false);
     }
@@ -700,7 +712,7 @@ export function useProductImageGallery({
         const updates = selectedList
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
-        await Promise.all(
+        const altResults = await Promise.all(
           updates.map((ext, i) => {
             const typeLabel =
               IMAGE_TYPES.find((t) => t.value === ext.image_type)?.label ||
@@ -719,11 +731,15 @@ export function useProductImageGallery({
               .eq('id', ext.id);
           }),
         );
+        const altErrors = altResults.filter((r) => r.error);
+        if (altErrors.length > 0) {
+          throw new Error(altErrors[0].error?.message || 'Erro ao atualizar alt text em lote');
+        }
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         toast.success(`Alt text atualizado em ${updates.length} imagem(ns)`);
         clearSelection();
-      } catch {
-        toast.error('Erro ao atualizar alt text em lote');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar alt text em lote');
       } finally {
         setIsBulkUpdating(false);
       }
