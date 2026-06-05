@@ -48,7 +48,9 @@ jobs:
         git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
         if ! git diff --staged --quiet; then
           git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
-          git push
+          # CI runs on detached HEAD (merge commit); push explicitly to the PR branch
+          TARGET_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          git push origin "HEAD:${TARGET_BRANCH}"
         fi
 
     - name: Upload Test Report
