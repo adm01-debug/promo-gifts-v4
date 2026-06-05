@@ -6,7 +6,7 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 
-test.describe("Fluxo: Filtros UI", () => {
+test.describe("Fluxo: Filtros UI e Persistência", () => {
   test.beforeEach(() => requireAuth());
 
   test("navega para filtros e aplica busca por texto", async ({ page }) => {
@@ -24,36 +24,45 @@ test.describe("Fluxo: Filtros UI", () => {
     await expect(page.locator(Sel.page.title("produtos"))).toBeVisible();
   });
 
+  test("persiste busca após refresh e navegação back/forward", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos?search=caneta");
+    await expect(page.locator(Sel.catalog.searchInput)).toHaveValue("caneta");
+
+    // Refresh
+    await page.reload();
+    await settleAfterAction(page);
+    await expect(page).toHaveURL(/search=caneta/);
+    await expect(page.locator(Sel.catalog.searchInput)).toHaveValue("caneta");
+
+    // Navega para detalhe e volta
+    const firstCard = page.locator(Sel.catalog.card).first();
+    await firstCard.click();
+    await settleAfterAction(page);
+    await expect(page).not.toHaveURL(/\/produtos/);
+
+    await page.goBack();
+    await settleAfterAction(page);
+    await expect(page).toHaveURL(/search=caneta/);
+    await expect(page.locator(Sel.catalog.searchInput)).toHaveValue("caneta");
+  });
+
   test("aplica filtro de categoria via sidebar", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
     
-    // O seletor para checkbox de categoria externa é [id^='ext-cat-']
-    // Pode levar alguns segundos para carregar as categorias da API externa
     const categoryCheckbox = page.locator("[id^='ext-cat-']").first();
     await expect(categoryCheckbox).toBeVisible({ timeout: 15_000 });
     
     await categoryCheckbox.click();
-    
-    // Verifica se a URL contém o ID ou parâmetro de categoria
     await expect(page).toHaveURL(/categories=/);
   });
 
   test("limpa filtros via botão reset", async ({ page }) => {
-    await gotoAndSettle(page, "/produtos");
+    await gotoAndSettle(page, "/produtos?search=teste");
     
-    // Aplicar um filtro via URL para garantir que o botão reset apareça
-    await page.goto("/produtos?search=teste");
-    
-    // Espera o carregamento da página com o filtro
-    await page.waitForURL(/search=teste/);
-    
-    // Clicar no botão Reset (aria-label definido em FilterPanelHeader)
     const resetButton = page.getByLabel("Resetar todos os filtros");
     await expect(resetButton).toBeVisible({ timeout: 10000 });
-    await expect(resetButton).toBeEnabled();
     await resetButton.click();
     
-    // Verifica se a URL voltou ao normal (sem search)
     await expect(page).not.toHaveURL(/search=teste/);
   });
 });
