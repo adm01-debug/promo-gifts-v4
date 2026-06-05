@@ -250,32 +250,80 @@ Tudo atrás de *views* de compatibilidade (`v_products_complete`,
 > Apenas sugestões. **Nada foi executado** no banco. Validar em branch/staging.
 
 ```sql
--- (a) Consolidar flag de ativo: todos os 4 índices já usam is_active.
---     Basta tornar 'active' uma coluna gerada (alias) para garantir consistência.
---     (executar fora de horário de pico)
-ALTER TABLE public.products
-  DROP COLUMN active;                         -- remove o bool independente
+-- (a) Consolidar flag de ativo — requer 3 pré-requisitos antes do DDL:
+--
+-- PRÉ-REQUISITO 1 (código): remover 'active' do payload de escrita.
+--   src/pages/admin/AdminProductFormPage.tsx:269 escreve:
+--     active: data.is_active   ← REMOVER esta linha antes do DROP COLUMN
+--   Qualquer INSERT/UPDATE que ainda forneça 'active' explicitamente vai
+--   falhar com "cannot insert a non-DEFAULT value into column 'active'"
+--   após a coluna virar GENERATED ALWAYS.
+--
+-- PRÉ-REQUISITO 2 (view): recriar v_products_public sem depender de 'active'.
+--   v_products_public seleciona 'active AS active' de products.active
+--   (supabase/migrations/20260602120000_…:78-98). PostgreSQL recusa
+--   DROP COLUMN se uma view depende da coluna. Recriar a view primeiro:
+CREATE OR REPLACE VIEW public.v_products_public AS
+  SELECT id, name, sku, sale_price, NULL::numeric AS cost_price,
+         primary_image_url, set_image_url,
+         supplier_id, category_id, main_category_id, brand,
+         is_active,
+         is_active AS active,   -- alias temporário via is_active (sem dep. física)
+         stock_quantity, min_quantity, is_kit, gender, price_updated_at
+  FROM public.products;
+-- (ajustar colunas conforme definição vigente)
+--
+-- PRÉ-REQUISITO 3 (callers): migrar filtros de 'active' para 'is_active'.
+--   src/lib/external-db/products.ts:82-85 usa { active: true } como filtro
+--   padrão. WHERE active = true não aproveita os índices parciais em
+--   is_active — migrar para { is_active: true } antes de depender dos
+--   índices de is_active para performance.
+--
+-- Somente após os 3 pré-requisitos acima:
+ALTER TABLE public.products DROP COLUMN active;
 ALTER TABLE public.products
   ADD COLUMN active boolean
-    GENERATED ALWAYS AS (is_active) STORED;  -- alias de leitura seguro
+    GENERATED ALWAYS AS (is_active) STORED;
 -- Nota: DROP/ADD em PG 17 requer rewrite de tabela; usar janela de manutenção.
 
--- (b) RLS: avaliar função 1x por query (corrige auth_rls_initplan)
--- ATENÇÃO: cada policy tem estrutura diferente — sintaxes distintas.
-
--- products_update tem USING + WITH CHECK:
-ALTER POLICY products_update ON public.products
-  USING      ( (SELECT public.is_org_owner_or_admin(organization_id)) )
-  WITH CHECK ( (SELECT public.is_org_owner_or_admin(organization_id)) );
-
--- products_delete tem apenas USING (sem WITH CHECK):
-ALTER POLICY products_delete ON public.products
-  USING ( (SELECT public.is_org_owner_or_admin(organization_id)) );
-
--- products_insert tem apenas WITH CHECK (sem USING):
-ALTER POLICY products_insert ON public.products
-  WITH CHECK ( (SELECT public.is_org_owner_or_admin(organization_id)) );
-
+-- (b) RLS: corrigir auth_rls_initplan
+-- ATENÇÃO: o padrão (SELECT fn(organization_id)) NÃO resolve o problema
+-- aqui. is_org_owner_or_admin(org_id) chama auth.uid() internamente,
+-- mas recebe organization_id como parâmetro de linha — a subquery ainda é
+-- correlacionada por linha; PostgreSQL não pode hoist para initplan.
+--
+-- Correção efetiva: passar (SELECT auth.uid()) como argumento, forçando
+-- o planejador a avaliar auth.uid() uma vez só como initplan:
+--
+-- OPÇÃO A — alterar a função para aceitar user_id externo:
+-- CREATE OR REPLACE FUNCTION public.is_org_owner_or_admin(org_id uuid, _uid uuid)
+--   RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+--   SELECT EXISTS (
+--     SELECT 1 FROM public.user_organizations uo
+--     WHERE uo.user_id = _uid
+--       AND uo.organization_id = org_id
+--       AND uo.role IN ('owner','admin')
+--   );
+-- $$;
+--
+-- OPÇÃO B (recomendada — sem alterar a função) — inline o predicado:
+-- ALTER POLICY products_update ON public.products
+--   USING (
+--     organization_id IN (
+--       SELECT uo.organization_id FROM public.user_organizations uo
+--       WHERE uo.user_id = (SELECT auth.uid())
+--         AND uo.role IN ('owner','admin')
+--     )
+--   )
+--   WITH CHECK (
+--     organization_id IN (
+--       SELECT uo.organization_id FROM public.user_organizations uo
+--       WHERE uo.user_id = (SELECT auth.uid())
+--         AND uo.role IN ('owner','admin')
+--     )
+--   );
+-- -- idem para products_delete (USING) e products_insert (WITH CHECK).
+--
 -- products_public_read: USING (true) — sem subquery, não gera initplan.
 
 -- (c) Marcar fonte de verdade (documentação executável)
