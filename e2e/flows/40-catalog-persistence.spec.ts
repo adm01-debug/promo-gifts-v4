@@ -2,9 +2,19 @@ import { test, expect } from '../fixtures/extended-test';
 import { requireAuth } from '../fixtures/test-base';
 import { Sel } from '../fixtures/selectors';
 
-test.describe('Catalog Persistence & Resilience @smoke', () => {
-  test.beforeEach(async ({ page }) => {
+// `/produtos` e `/favoritos` são rotas ProtectedRoute (somente autenticado).
+// Por isso este fluxo NÃO é `@smoke`: o smoke gate roda em `chromium-public`
+// sem sessão. `requireAuth()` só pula quando não há credenciais/cookies em
+// disco — não aplica sessão ao projeto público. O guard de `storageState`
+// abaixo garante que o spec só rode em projetos autenticados (mesmo na
+// regressão `--grep-invert @smoke`, que roda em todos os projetos).
+test.describe('Catalog Persistence & Resilience', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
     requireAuth();
+    test.skip(
+      !testInfo.project.use.storageState,
+      'requer projeto autenticado (storageState)',
+    );
     // Garantir que estamos na página de produtos
     await page.goto('/produtos');
     await expect(page.locator(Sel.page.title('produtos'))).toBeVisible();
