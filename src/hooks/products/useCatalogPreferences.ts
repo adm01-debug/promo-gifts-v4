@@ -15,7 +15,7 @@ interface CatalogPreferences {
 }
 
 const DEFAULT_PREFERENCES: CatalogPreferences = {
-  sortBy: 'name',
+  sortBy: 'newest',
 };
 
 const STORAGE_KEY = 'catalog_preferences';
@@ -27,14 +27,14 @@ const CATALOG_VALID_SORT_VALUES = new Set(SORT_OPTIONS.map((o) => o.value));
 
 /**
  * BUG-PREF-01 FIX: Sanitiza um valor de sortBy antes de aplicar ao state.
- * Retorna 'name' para qualquer valor inválido, null ou ausente.
+ * Retorna 'newest' para qualquer valor inválido, null ou ausente.
  * Previne que localStorage/cloud stale (ex: 'relevance' de versão anterior)
  * quebre o catálogo ou entre no state sem validação.
  */
 function sanitizeSortBy(val: unknown): SortOption {
   return typeof val === 'string' && CATALOG_VALID_SORT_VALUES.has(val)
     ? (val as SortOption)
-    : 'name';
+    : 'newest';
 }
 
 export function useCatalogPreferences() {

@@ -73,11 +73,11 @@ const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
  * de voice agent quebrem o Select UI e o URL sync loop.
  */
 function validateSortOption(s: string | null | undefined): SortOption {
-  if (!s) return 'name';
+  if (!s) return 'newest';
   // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
   if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
   if (VALID_SORT_VALUES.has(s)) return s as SortOption;
-  return 'name';
+  return 'newest';
 }
 
 function getPersistedViewMode(): ViewMode {
@@ -192,7 +192,7 @@ export function useCatalogState() {
 
     // 2. Update URL
     const newParams = new URLSearchParams(window.location.search);
-    if (sortBy === 'name') {
+    if (sortBy === 'newest') {
       // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
       // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
       // selecionava 'Nome A-Z'. O URL sync effect lia o param stale e revertia
@@ -370,10 +370,10 @@ export function useCatalogState() {
       // Cobre dois casos:
       //   1. ?sort=name        → remover (é o default; param redundante)
       //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
-      const urlNeedsNormalization = validated === 'name' || urlSort !== validated;
+      const urlNeedsNormalization = validated === 'newest' || urlSort !== validated;
       if (urlNeedsNormalization) {
         const newParams = new URLSearchParams(window.location.search);
-        if (validated === 'name') {
+        if (validated === 'newest') {
           newParams.delete('sort');
         } else {
           newParams.set('sort', validated);
