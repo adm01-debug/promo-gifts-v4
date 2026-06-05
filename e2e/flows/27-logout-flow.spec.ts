@@ -1,10 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+const hasAuth = !!(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
+
 /**
  * Teste E2E para o Fluxo de Logout
  * Garante que a sessão é encerrada, o estado limpo e o usuário redirecionado.
  */
 test.describe('Logout Flow @smoke', () => {
+  test.beforeEach(() => {
+    test.skip(!hasAuth, 'E2E_USER_EMAIL/PASSWORD não configurados — teste requer sessão autenticada');
+  });
+
   test('should sign out successfully and redirect to login', async ({ page }) => {
     // 1. Estar logado (usando storageState configurado no playwright.config.ts)
     await page.goto('/');

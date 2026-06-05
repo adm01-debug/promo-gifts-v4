@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const hasAuth = !!(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
+
 test.describe('ProductCard Interaction & Accessibility @smoke', () => {
   test.beforeEach(async ({ page }) => {
+    test.skip(!hasAuth, 'E2E_USER_EMAIL/PASSWORD não configurados — teste requer catálogo autenticado');
     await page.goto('/');
     await page.waitForSelector('[data-testid="product-card"]');
   });

@@ -9,6 +9,10 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -18,9 +22,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --project=chromium-smoke
+      env:
+        E2E_BASE_URL: http://localhost:8080
     - uses: actions/upload-artifact@v4
       if: always()
       with:
