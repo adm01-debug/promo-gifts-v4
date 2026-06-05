@@ -24562,21 +24562,18 @@ export type Database = {
       supplier_products_raw: {
         Row: {
           attempts: number
-          claimed_at: string | null
           content_hash: string
-          created_at: string | null
+          created_at: string
           id: string
           images_processed: boolean | null
           images_status: Database["public"]["Enums"]["supplier_raw_status"]
           import_batch_id: string | null
-          imported_at: string | null
+          imported_at: string
           last_error: Json | null
           process_errors: Json | null
-          processed: boolean | null
           processed_at: string | null
           product_id: string | null
           raw_data: Json
-          raw_hash: string | null
           source_channel: string
           source_endpoint: string | null
           source_event_id: string | null
@@ -24584,26 +24581,23 @@ export type Database = {
           supplier_id: string
           supplier_reference: string
           supplier_sku: string | null
-          updated_at: string | null
+          updated_at: string
           variant_id: string | null
         }
         Insert: {
           attempts?: number
-          claimed_at?: string | null
           content_hash?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           images_processed?: boolean | null
           images_status?: Database["public"]["Enums"]["supplier_raw_status"]
           import_batch_id?: string | null
-          imported_at?: string | null
+          imported_at?: string
           last_error?: Json | null
           process_errors?: Json | null
-          processed?: boolean | null
           processed_at?: string | null
           product_id?: string | null
           raw_data: Json
-          raw_hash?: string | null
           source_channel?: string
           source_endpoint?: string | null
           source_event_id?: string | null
@@ -24611,26 +24605,23 @@ export type Database = {
           supplier_id: string
           supplier_reference: string
           supplier_sku?: string | null
-          updated_at?: string | null
+          updated_at?: string
           variant_id?: string | null
         }
         Update: {
           attempts?: number
-          claimed_at?: string | null
           content_hash?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           images_processed?: boolean | null
           images_status?: Database["public"]["Enums"]["supplier_raw_status"]
           import_batch_id?: string | null
-          imported_at?: string | null
+          imported_at?: string
           last_error?: Json | null
           process_errors?: Json | null
-          processed?: boolean | null
           processed_at?: string | null
           product_id?: string | null
           raw_data?: Json
-          raw_hash?: string | null
           source_channel?: string
           source_endpoint?: string | null
           source_event_id?: string | null
@@ -24638,7 +24629,7 @@ export type Database = {
           supplier_id?: string
           supplier_reference?: string
           supplier_sku?: string | null
-          updated_at?: string | null
+          updated_at?: string
           variant_id?: string | null
         }
         Relationships: [
