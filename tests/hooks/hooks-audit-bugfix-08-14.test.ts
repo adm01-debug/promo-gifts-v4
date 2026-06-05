@@ -74,13 +74,13 @@ describe('BUG-08 -- polling nao recriado apos fetch', () => {
     let fetchCount = 0;
     (supabase.from as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockReturnValue({
-            limit: vi.fn().mockImplementation(() => {
-              fetchCount++;
-              return Promise.resolve({ data: [], error: null });
-            }),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnValue({
+          range: vi.fn().mockImplementation(() => {
+            fetchCount++;
+            return Promise.resolve({ data: [], error: null, count: 0 });
           }),
+          eq: vi.fn().mockReturnThis(),
         }),
       }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }) }),
@@ -238,7 +238,7 @@ describe('BUG-11 -- useKitAutoSave refs e cleanup dedicado', () => {
 // BUG-12 -- useTechniquePricing: PostgREST nativo
 // ────────────────────────────────────────────────────────────────────────────
 describe('BUG-12 -- useTechniquePricing PostgREST nativo', () => {
-  it('NAO usa external-db-bridge, CHAMA from(customization_price_tables)', async () => {
+  it('NAO usa external-db-bridge, CHAMA from(tabela_preco_gravacao_oficial)', async () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => useTechniquePricing('SILK'));
     vi.useRealTimers();
@@ -246,7 +246,7 @@ describe('BUG-12 -- useTechniquePricing PostgREST nativo', () => {
     await waitFor(() => {
       expect(
         (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-          .some(([t]: [string]) => t === 'customization_price_tables')
+          .some(([t]: [string]) => t === 'tabela_preco_gravacao_oficial')
       ).toBe(true);
     });
     expect(
