@@ -498,31 +498,39 @@ export const ProductCard = memo(
         />
 
         {/* Quick Actions FAB */}
-        <ProductCardActions
-          productId={product.id}
-          productName={product.name}
-          productSku={product.sku}
-          productImageUrl={product.og_image_url || product.images[0]}
-          productPrice={product.price}
-          productMinQuantity={product.minQuantity || 1}
-          isFavorited={isFavorited}
-          isInCompare={isInCompare}
-          canAddToCompare={canAddToCompare}
-          actionsOpen={actionsOpen}
-          onToggleActions={() => setActionsOpen(!actionsOpen)}
-          onFavorite={handleFavorite}
-          onCompare={handleCompare}
-          onOpenVariantPicker={(mode) => {
-            setActionsOpen(false);
-            setVariantPickerMode(mode);
-            setVariantPickerOpen(true);
-          }}
-          onQuickView={() => {
-            setActionsOpen(false);
-            setQuickViewOpen(true);
-          }}
-          markBusy={markBusy}
-        />
+        {(() => {
+          const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
+          const isOutOfStock = (colorStock?.stockStatus ?? product.stockStatus) === 'out-of-stock';
+
+          return (
+            <ProductCardActions
+              productId={product.id}
+              productName={product.name}
+              productSku={product.sku}
+              productImageUrl={product.og_image_url || product.images[0]}
+              productPrice={product.price}
+              productMinQuantity={product.minQuantity || 1}
+              isFavorited={isFavorited}
+              isInCompare={isInCompare}
+              canAddToCompare={canAddToCompare}
+              actionsOpen={actionsOpen}
+              isOutOfStock={isOutOfStock}
+              onToggleActions={() => setActionsOpen(!actionsOpen)}
+              onFavorite={handleFavorite}
+              onCompare={handleCompare}
+              onOpenVariantPicker={(mode) => {
+                setActionsOpen(false);
+                setVariantPickerMode(mode);
+                setVariantPickerOpen(true);
+              }}
+              onQuickView={() => {
+                setActionsOpen(false);
+                setQuickViewOpen(true);
+              }}
+              markBusy={markBusy}
+            />
+          );
+        })()}
 
         {/* Info section */}
         <div
@@ -625,23 +633,18 @@ export const ProductCard = memo(
                 <div className="flex flex-col items-end gap-0.5 sm:gap-1">
                   <span
                     className={cn(
-                      'stock-indicator text-[10px] sm:text-xs',
-                      getStockStatusColor(displayStatus),
+                      'stock-indicator flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight sm:text-[10px]',
+                      displayStatus === 'out-of-stock'
+                        ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
+                        : getStockStatusColor(displayStatus),
                     )}
                   >
                     <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
-                    <span className="hidden whitespace-nowrap sm:inline">
+                    <span className="whitespace-nowrap">
                       {getStockStatusLabel(displayStatus)}
                     </span>
-                    <span className="sm:hidden">
-                      {displayStatus === 'in-stock'
-                        ? '✓'
-                        : displayStatus === 'low-stock'
-                          ? '!'
-                          : '✗'}
-                    </span>
                   </span>
-                  <span className="text-[10px] text-muted-foreground sm:text-xs">
+                  <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
                     {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                   </span>
                 </div>

@@ -16,6 +16,7 @@
  */
 import { memo } from 'react';
 import { Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
@@ -135,38 +136,49 @@ export const ProductCardImage = memo(function ProductCardImage({
         </div>
       )}
 
-      {/* Main image — fades out on hover when set image is available */}
-      <div key={activeSrc} className="relative h-full w-full duration-500 animate-in fade-in">
-        {activeSrc === '/placeholder.svg' ? (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
-              <Package className="h-6 w-6 text-muted-foreground/40" />
-            </div>
-            <span className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground">
-              Sem foto disponível
-            </span>
-          </div>
-        ) : (
-          <OptimizedImage
-            src={activeSrc}
-            alt={product.name}
-            srcSet={cardSrcSet}
-            className={cn(
-              'h-full w-full object-contain',
-              'transition-opacity duration-300 ease-in-out',
-              hasSetHover && isHovered && 'opacity-0',
+      {/* Main image container with crossfade transition */}
+      <div className="relative h-full w-full overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeSrc}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="absolute inset-0 h-full w-full"
+          >
+            {activeSrc === '/placeholder.svg' ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+                  <Package className="h-6 w-6 text-muted-foreground/40" />
+                </div>
+                <span className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground">
+                  Sem foto disponível
+                </span>
+              </div>
+            ) : (
+              <OptimizedImage
+                src={activeSrc}
+                alt={product.name}
+                srcSet={cardSrcSet}
+                className={cn(
+                  'h-full w-full object-contain',
+                  'transition-opacity duration-300 ease-in-out',
+                  hasSetHover && isHovered && 'opacity-0',
+                )}
+                style={{
+                  transform: `scale(${computedImageScale})`,
+                  willChange: 'transform',
+                  transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
+                }}
+                containerClassName="h-full w-full"
+                priority={priority}
+                onLoad={onImageLoad}
+                {...DEFAULT_IMAGE_CONFIG}
+              />
             )}
-            style={{
-              transform: `scale(${computedImageScale})`,
-              willChange: 'transform',
-              transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
-            }}
-            containerClassName="h-full w-full"
-            priority={priority}
-            onLoad={onImageLoad}
-            {...DEFAULT_IMAGE_CONFIG}
-          />
-        )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Set image (todas as cores) — fades in on hover, only when no variant is active */}

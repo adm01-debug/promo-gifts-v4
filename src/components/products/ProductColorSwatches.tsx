@@ -125,7 +125,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
         'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
         className,
       )}
-      role="group"
+      role="radiogroup"
       aria-live="polite"
       aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
         colors.length === 1 ? 'el' : 'eis'
@@ -141,17 +141,18 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
             <TooltipTrigger asChild>
               <button
                 type="button"
+                role="radio"
                 className={cn(
-                  'relative inline-block rounded-full border border-border/60 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   isSelected
-                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 shadow-md ring-[var(--swatch-ring-width)] ring-primary ring-offset-2'
+                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 shadow-md ring-[var(--swatch-ring-width)] ring-primary ring-offset-1'
                     : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
                   SIZE_CLASS[size],
                 )}
                 style={{ backgroundColor: c.hex || 'transparent' }}
                 aria-label={`Opção de cor: ${c.name}`}
                 aria-describedby={tooltipId}
-                aria-pressed={isSelected || undefined}
+                aria-checked={isSelected}
                 data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
                 data-color-name={c.name}
                 onClick={(e) => {
