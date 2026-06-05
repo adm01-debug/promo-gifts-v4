@@ -155,9 +155,9 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
       try {
         await saveProductTags(productId, newTags);
         toast.success(isSelected ? 'Removido' : 'Adicionado');
-      } catch (err) {
+      } catch {
         setTags(tags);
-        toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
+        toast.error('Erro ao salvar');
       } finally {
         setSaving(false);
         setTogglingKeys((prev) => {
@@ -186,8 +186,8 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
     try {
       await saveProductTags(productId, newTags);
       toast.success('Todas as classificações removidas');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao limpar');
+    } catch {
+      toast.error('Erro ao limpar');
     } finally {
       setSaving(false);
     }

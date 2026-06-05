@@ -103,8 +103,8 @@ export function ProductTagsSection({ productId }: ProductTagsSectionProps) {
           toast.success('Tag adicionada');
         }
         queryClient.invalidateQueries({ queryKey: ['product-tags', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao alterar tag');
+      } catch {
+        toast.error('Erro ao alterar tag');
       } finally {
         setTogglingIds((prev) => {
           const next = new Set(prev);

@@ -62,8 +62,8 @@ export function AppHealthDashboard() {
       if (res.event_count === 0) {
         toast.info('Nenhum evento encontrado para este request-id');
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha no lookup');
+    } catch {
+      toast.error('Falha no lookup');
     } finally {
       setLookupLoading(false);
     }

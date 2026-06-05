@@ -41,10 +41,10 @@ export function ForceGlobalLogoutDialog() {
       });
       setOpen(false);
       setConfirmText('');
-    } catch (err) {
+    } catch {
       toast({
         title: 'Erro ao forçar logout',
-        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        description: 'Não foi possível executar o logout global.',
         variant: 'destructive',
       });
     } finally {

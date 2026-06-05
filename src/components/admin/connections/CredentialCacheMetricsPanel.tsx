@@ -95,7 +95,7 @@ export function CredentialCacheMetricsPanel() {
       body: { action: 'reset_cache_metrics' },
     });
     if (invErr || !data?.ok) {
-      toast.error(invErr?.message ?? data?.error?.message ?? 'Falha ao reiniciar métricas');
+      toast.error('Falha ao reiniciar métricas');
       return;
     }
     toast.success('Métricas reiniciadas neste isolate');

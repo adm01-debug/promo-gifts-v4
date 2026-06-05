@@ -56,10 +56,10 @@ export function BlockIpButton({
       });
       setOpen(false);
       onBlocked?.();
-    } catch (err) {
+    } catch {
       toast({
         title: 'Erro ao bloquear',
-        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        description: 'Não foi possível bloquear o IP.',
         variant: 'destructive',
       });
     } finally {

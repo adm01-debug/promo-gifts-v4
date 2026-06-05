@@ -294,8 +294,7 @@ export function useProductsManager() {
           };
         });
         setProducts(formatted as unknown as AdminProduct[]);
-      } catch (error) {
-        console.error('Error fetching products:', error);
+      } catch {
         toast.error('Erro ao carregar produtos');
       } finally {
         setIsLoading(false);
@@ -389,7 +388,7 @@ export function useProductsManager() {
       fetchProducts(currentPage, pageSize, searchTerm);
     } catch (error: unknown) {
       console.error('Error deleting product:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao excluir produto');
+      toast.error('Erro ao excluir produto');
     }
   };
 
@@ -443,7 +442,7 @@ export function useProductsManager() {
         fetchProducts(currentPage, pageSize, searchTerm);
       } catch (error: unknown) {
         console.error('Bulk update error:', error);
-        toast.error(error instanceof Error ? error.message : 'Erro ao atualizar produtos em lote');
+        toast.error('Erro ao atualizar produtos em lote');
       } finally {
         setIsBulkUpdating(false);
       }

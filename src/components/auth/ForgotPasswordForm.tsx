@@ -49,14 +49,14 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         toast({
           variant: 'destructive',
           title: 'Erro ao enviar solicitação',
-          description: result.message,
+          description: 'Não foi possível processar sua solicitação. Tente novamente.',
         });
         return;
       }
 
       toast({
         title: 'Solicitação enviada!',
-        description: result.message,
+        description: 'Confira seu e-mail com as instruções para redefinir a senha.',
       });
 
       // Navega para a página de confirmação com instruções detalhadas

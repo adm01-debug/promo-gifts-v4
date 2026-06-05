@@ -76,8 +76,8 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
           toast.success('Segmento adicionado');
         }
         queryClient.invalidateQueries({ queryKey: ['produto-ramos', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao alterar segmento');
+      } catch {
+        toast.error('Erro ao alterar segmento');
       } finally {
         setTogglingIds((prev) => {
           const next = new Set(prev);

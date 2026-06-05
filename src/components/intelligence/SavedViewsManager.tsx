@@ -70,8 +70,12 @@ export function SavedViewsManager() {
       setName('');
       setOpen(false);
     },
-    onError: (e: Error) =>
-      toast({ title: 'Erro ao salvar', description: e.message, variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar a visão.',
+        variant: 'destructive',
+      }),
   });
 
   const deleteMutation = useMutation({

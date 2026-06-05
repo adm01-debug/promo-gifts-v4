@@ -166,8 +166,8 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
           toast.success('Material adicionado');
         }
         queryClient.invalidateQueries({ queryKey: ['product-materials-full', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao alterar material');
+      } catch {
+        toast.error('Erro ao alterar material');
       }
     },
     [productId, queryClient, linkedMap],
@@ -193,8 +193,8 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
         toast.success('Detalhes atualizados');
         setEditingMaterialId(null);
         queryClient.invalidateQueries({ queryKey: ['product-materials-full', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+      } catch {
+        toast.error('Erro ao atualizar');
       }
     },
     [productId, queryClient, linkedMap],

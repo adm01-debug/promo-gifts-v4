@@ -83,9 +83,9 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       toast.success('Credenciais recarregadas', {
         description: 'Cache do secrets-manager invalidado e integration_credentials re-listada.',
       });
-    } catch (err) {
+    } catch {
       toast.error('Falha ao recarregar credenciais', {
-        description: err instanceof Error ? err.message : 'Erro desconhecido.',
+        description: 'Erro desconhecido.',
       });
     } finally {
       setRefreshing(false);

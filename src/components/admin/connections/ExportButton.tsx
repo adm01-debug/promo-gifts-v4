@@ -65,9 +65,9 @@ export function ExportButton({
       toast.success(`Exportado (${fmt.toUpperCase()})`, {
         description: `${rows.length} registro${rows.length === 1 ? '' : 's'}`,
       });
-    } catch (err) {
+    } catch {
       toast.error('Falha ao exportar', {
-        description: err instanceof Error ? err.message : undefined,
+        description: undefined,
       });
     } finally {
       setBusy(false);

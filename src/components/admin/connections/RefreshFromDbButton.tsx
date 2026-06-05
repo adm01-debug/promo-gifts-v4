@@ -60,12 +60,12 @@ export function RefreshFromDbButton({
       const r = await refreshCache(secretName);
       if (r.ok) {
         toast.success('Cache invalidado', {
-          description: r.message ?? 'Próximas chamadas relerão os valores do banco.',
+          description: 'Próximas chamadas relerão os valores do banco.',
         });
         await onRefreshed?.();
       } else {
         toast.error('Falha ao atualizar cache', {
-          description: r.error?.message ?? 'Erro desconhecido',
+          description: 'Não foi possível atualizar o cache.',
         });
       }
     } finally {

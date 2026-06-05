@@ -77,7 +77,7 @@ export function SecureUploadManager() {
         if (error.status === 403) {
           toast.error('Upload Bloqueado: Ameaça detectada ou falha na verificação!');
         } else {
-          toast.error(`Erro no upload: ${error.message}`);
+          toast.error('Erro no upload');
         }
         return;
       }

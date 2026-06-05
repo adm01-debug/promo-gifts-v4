@@ -198,7 +198,7 @@ export default function AdminSegurancaAcessoPage() {
     if (!parsed.success) {
       toast({
         title: 'Dados inválidos',
-        description: parsed.error.errors[0].message,
+        description: 'Verifique os campos obrigatórios e tente novamente.',
         variant: 'destructive',
       });
       return;
@@ -216,7 +216,11 @@ export default function AdminSegurancaAcessoPage() {
       created_by: userRes.user.id,
     });
     if (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o registro de IP.',
+        variant: 'destructive',
+      });
       return;
     }
     toast({
@@ -231,7 +235,11 @@ export default function AdminSegurancaAcessoPage() {
   const removeIpEntry = async (id: string) => {
     const { error } = await supabase.from('ip_access_control').delete().eq('id', id);
     if (error) {
-      toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao remover',
+        description: 'Não foi possível remover o registro de IP.',
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'Removido' });

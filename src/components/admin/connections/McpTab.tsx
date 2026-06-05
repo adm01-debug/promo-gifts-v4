@@ -66,7 +66,10 @@ export function McpTab() {
       .from('mcp_api_keys')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) toast.error('Erro ao carregar chaves', { description: error.message });
+    if (error)
+      toast.error('Erro ao carregar chaves', {
+        description: 'Não foi possível carregar as chaves MCP.',
+      });
     else setKeys((data ?? []) as McpKey[]);
     setLoading(false);
   };

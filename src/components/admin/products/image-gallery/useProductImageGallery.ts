@@ -193,8 +193,8 @@ export function useProductImageGallery({
         setEditingIndex(null);
         if (productId)
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+      } catch {
+        toast.error('Erro ao atualizar');
       }
     },
     [extImageMap, productId, queryClient],
