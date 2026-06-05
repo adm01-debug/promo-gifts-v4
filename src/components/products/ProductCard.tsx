@@ -498,31 +498,39 @@ export const ProductCard = memo(
         />
 
         {/* Quick Actions FAB */}
-        <ProductCardActions
-          productId={product.id}
-          productName={product.name}
-          productSku={product.sku}
-          productImageUrl={product.og_image_url || product.images[0]}
-          productPrice={product.price}
-          productMinQuantity={product.minQuantity || 1}
-          isFavorited={isFavorited}
-          isInCompare={isInCompare}
-          canAddToCompare={canAddToCompare}
-          actionsOpen={actionsOpen}
-          onToggleActions={() => setActionsOpen(!actionsOpen)}
-          onFavorite={handleFavorite}
-          onCompare={handleCompare}
-          onOpenVariantPicker={(mode) => {
-            setActionsOpen(false);
-            setVariantPickerMode(mode);
-            setVariantPickerOpen(true);
-          }}
-          onQuickView={() => {
-            setActionsOpen(false);
-            setQuickViewOpen(true);
-          }}
-          markBusy={markBusy}
-        />
+        {(() => {
+          const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
+          const isOutOfStock = (colorStock?.stockStatus ?? product.stockStatus) === 'out-of-stock';
+
+          return (
+            <ProductCardActions
+              productId={product.id}
+              productName={product.name}
+              productSku={product.sku}
+              productImageUrl={product.og_image_url || product.images[0]}
+              productPrice={product.price}
+              productMinQuantity={product.minQuantity || 1}
+              isFavorited={isFavorited}
+              isInCompare={isInCompare}
+              canAddToCompare={canAddToCompare}
+              actionsOpen={actionsOpen}
+              isOutOfStock={isOutOfStock}
+              onToggleActions={() => setActionsOpen(!actionsOpen)}
+              onFavorite={handleFavorite}
+              onCompare={handleCompare}
+              onOpenVariantPicker={(mode) => {
+                setActionsOpen(false);
+                setVariantPickerMode(mode);
+                setVariantPickerOpen(true);
+              }}
+              onQuickView={() => {
+                setActionsOpen(false);
+                setQuickViewOpen(true);
+              }}
+              markBusy={markBusy}
+            />
+          );
+        })()}
 
         {/* Info section */}
         <div
