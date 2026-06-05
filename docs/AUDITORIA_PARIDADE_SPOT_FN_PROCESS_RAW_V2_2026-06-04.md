@@ -79,6 +79,74 @@ Predecessoras do motor v2 (mesma iniciativa, reconciliadas no mesmo PR para deix
 | `products_search_vector_update` search_path | `public, extensions` | **ok** |
 | `fn_safe_bool` search_path | `public, extensions` | **ok** |
 
+## 7. Re-auditoria ao vivo (2026-06-04, pós-cutover) — REGRESSÕES CRÍTICAS
+
+Nova varredura exaustiva **ao vivo** no banco `doufsxqlfjyuvxuezpln` (motivada por
+"validar se TODAS as funcionalidades foram implementadas; procurar falhas e gaps").
+Descobertas que **invalidavam** o veredito "concluído" das seções anteriores: duas
+migrations *out-of-band* aplicadas DIRETO no banco (ausentes do repo) regrediram o
+motor **depois** do cutover `supplier_products_raw.processed → status`.
+
+### 🔴 DEFEITO-2 — `fn_process_raw_v2` quebrada (coluna removida `processed`)
+A migration **`20260604232944_upgrade_fn_process_raw_v2_fix_race_condition_and_counters`**
+(no banco, fora do repo) recriou a função a partir de uma base que ainda usa a coluna
+booleana `processed`. Como foi aplicada **após** o cutover (`20260604232403_spr_cutover_
+status_part2`) que trocou `processed` por `status supplier_raw_status`, a função passou a
+referenciar coluna inexistente.
+
+- **Prova:** `SELECT fn_process_raw_v2('bcfc0d02…',1,true)` →
+  `ERROR: column "processed" does not exist (line 56)`.
+- **Impacto em produção:** o cron `process-pending-products` (jobid 1, `*/5`, que chama
+  `process_pending_batches()` → `fn_process_raw_v2`) **falhou a cada execução desde
+  2026-06-04 23:30** (sucesso até 23:25). Pipeline SPOT **parado**. Sem corrupção de
+  dados (a função aborta antes de qualquer escrita).
+- **Correção:** `20260604234507_fix_fn_process_raw_v2_status_column.sql` — recria a função
+  com `status <> 'processed'` (leitura) / `status = 'processed'` (conclusão), mantendo as
+  melhorias legítimas da 232944 (early-return anti-zumbi, `FOR UPDATE SKIP LOCKED`,
+  `source='raw_v2'` no UPDATE de VSS) e **restaurando** (a) o template de nome completo
+  (`{size_code}`/`{capacity_ml}` + colapso de separadores vazios) e (b) o
+  `pg_try_advisory_xact_lock` anti-race.
+
+### 🟠 DEFEITO-3 — `fn_clean_spot_name` deixou de ser aplicada (nome cru)
+A migration **`20260604232837_upgrade_fn_apply_transform_add_missing_transforms`** (idem,
+out-of-band) recriou `fn_apply_transform` e **removeu** do `CASE 'custom'` o branch
+`fn_clean_spot_name` (restaram só `fn_parse_capacity_ml` e `fn_convert_box_dimension_to_cm`).
+O mapping `products.name` (custom → `fn_clean_spot_name`) virou passthrough: nomes saíam
+**crus** (caixa alta, espaços múltiplos) → reverteu o GAP-1.
+
+- **Prova (E2E):** `Name='  CANECA   de   PORCELANA   BRANCA  '` gerava produto
+  `'CANECA   de   PORCELANA   BRANCA'`.
+- **Correção:** `20260604234647_restore_fn_clean_spot_name_branch_in_apply_transform.sql`
+  — recria `fn_apply_transform` com TODAS as transforms da 232837 **+** o branch
+  `fn_clean_spot_name`.
+
+### 🟠 DEFEITO-4 — `{size_code}`/`{capacity_ml}` literais no nome da variante
+A 232944 também só substituía `{product_name}` e `{color_name}`, deixando `{size_code}`
+(e `{capacity_ml}`) **literais** no nome. Corrigido junto da DEFEITO-2 (234507).
+
+### Validação pós-correção (testes ao vivo, todos com ROLLBACK total)
+| Teste | Resultado |
+|---|---|
+| `fn_process_raw_v2` no-op (0 pendentes) | `success:true, batch_id:null` (não cria batch) |
+| `process_pending_batches()` (caminho do cron) | `SUCCESS` (antes: ERROR) |
+| E2E produto inédito | produto+variante+VSS criados; `parents=1, variants=1, errors=[]` |
+| Nome do produto | `'  CANECA   de   PORCELANA   BRANCA  '` → **`'Caneca de porcelana branca'`** |
+| Nome da variante | **`'Caneca de porcelana branca | Vermelho | M'`** (size resolvido; sem `{}`) |
+| `cost_price` / `sale_price` | `12.34` / **`26.53`** (markup 115% via trigger) |
+| VSS | `cost_price=12.34, source='raw_v2', is_preferred=true, quantity=0` |
+| `variant.sku = supplier_sku (= Sku)` | ✓ paridade |
+| Raw carimbada | `status='processed'`, `product_id`/`variant_id` setados, `process_errors=NULL` |
+| Idempotência (2º ciclo) | 1 produto / 1 variante / 1 VSS (upsert, sem duplicar) |
+| `locked_fields=['name']` | nome **não** sobrescrito (`lock_respected=true`) |
+| Integridade do acervo (3.612 raw / 1.200 prod / 3.612 var / VSS) | 0 órfãos, 0 SKU duplicado, 0 nome vazio, 0 `{}` residual, 0 custo nulo, 0 cost-sem-sale |
+| Outras funções pós-cutover (fn_finish_import_batch, fn_process_staged_product, process_supplier_products_batch) | já usam `status` (não quebradas) — só `fn_process_raw_v2` regrediu |
+
+### Lições / risco sistêmico
+A causa-raiz de ambos os defeitos é **edição direta no banco fora do fluxo de migrations
+versionadas** (DB → repo drift). As correções foram versionadas; as duas migrations
+out-of-band foram preservadas como **marcadores no-op** no repo (232837/232944) para
+manter a paridade DB↔repo no CLI sem reaplicar DDL quebrada/superada.
+
 ## 6. Reconciliação repo ↔ banco
 
 As 16 migrations acima já estavam aplicadas no banco (registradas em `supabase_migrations.schema_migrations`) mas faltavam como arquivo no repositório. Foram gravadas **byte-a-byte** a partir do banco (verificadas por `md5`), restaurando a invariante DB == repo. Junto, reconciliou-se também `20260604210435_add_catalog_sort_indexes` (workstream de catálogo, não relacionada à paridade Spot, mas órfã no mesmo intervalo).
