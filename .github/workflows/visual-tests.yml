@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: write
+
 jobs:
   visual-baseline:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:

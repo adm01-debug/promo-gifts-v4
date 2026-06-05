@@ -33,10 +33,10 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
 
-    # /debug/images is now a public route (outside ProtectedRoute) —
-    # no auth setup required. Tests run cleanly against routes-public project.
+    # /debug/images is a public route (outside ProtectedRoute) —
+    # no auth setup required. Tests run against chromium-public project.
     - name: Run OptimizedImage E2E tests
-      run: npx playwright test optimized-image-detection.spec.ts optimized-image-visual.spec.ts --project=routes-public
+      run: npx playwright test optimized-image-detection.spec.ts optimized-image-visual.spec.ts --project=chromium-public
       env:
         CI: true
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
