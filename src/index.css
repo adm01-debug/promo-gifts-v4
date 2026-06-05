@@ -314,10 +314,10 @@ html[data-scroll-locked] body {
     --swatch-size-xs: 18px;
     --swatch-size-sm: 22px;
     --swatch-size-md: 26px;
-    --swatch-gap-x: 4px;
-    --swatch-gap-y: 4px;
-    --swatch-scale-hover: 1.15;
-    --swatch-ring-width: 2px;
+    --swatch-gap-x: 6px;
+    --swatch-gap-y: 6px;
+    --swatch-scale-hover: 1.1;
+    --swatch-ring-width: 1.5px;
     --swatch-container-py: 4px;
   }
 
