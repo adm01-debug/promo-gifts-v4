@@ -310,11 +310,14 @@ html[data-scroll-locked] body {
     --gradient-card: linear-gradient(180deg, hsl(var(--card-elevated)) 0%, hsl(var(--card)) 100%);
 
     /* 13. Product Swatches Tokens */
+    /* 13. Product Swatches Design Tokens (SSOT) */
     --swatch-size-xs: 18px;
     --swatch-size-sm: 23px;
     --swatch-size-md: 29px;
-    --swatch-gap-x: 6px;
-    --swatch-gap-y: 6px;
+    --swatch-gap-x: 4px;
+    --swatch-gap-y: 4px;
+    --swatch-scale-hover: 1.12;
+    --swatch-ring-width: 1.5px;
   }
 
   .dark {
