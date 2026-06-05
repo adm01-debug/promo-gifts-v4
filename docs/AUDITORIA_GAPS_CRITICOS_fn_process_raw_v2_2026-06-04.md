@@ -27,10 +27,10 @@ constraint. A migração **NÃO está pronta** para a próxima importação real
 
 | Sev. | Gap | Impacto medido | Status |
 |---|---|---|---|
-| 🔴 **Crítico** | `Type → products.product_type` (mapping `direct` ativo) injeta categorias SPOT (`SUCO`, `Escrita`…) que violam `products_product_type_check` | **1.200/1.200 ProdReferences (100%)** falham; produto **não é criado**, raw fica **`pending`** (re-tentado a cada 5 min para sempre), e a função retorna `success:true` (mascara a falha) | ❌ Aberto |
-| 🟠 Médio | `short_description` é `varchar(500)`, mas `ShortDescription` raw chega a **969** chars | 48 ProdReferences falhariam (após corrigir o crítico) | ❌ Aberto |
-| 🟠 Médio | `ncm_code` é `varchar(10)`, mas `Taric` raw chega a **11** chars | 6 ProdReferences falhariam (após corrigir o crítico) | ❌ Aberto |
-| 🟡 Baixo | `process_pending_batches` reporta `variants_processed` na coluna `products_processed`; `success` da fn é `true` mesmo com `products_errors>0` | Telemetria/observabilidade enganosa (esconde o crítico) | ❌ Aberto |
+| 🔴 **Crítico** | `Type → products.product_type` (mapping `direct` ativo) injeta categorias SPOT (`SUCO`, `Escrita`…) que violam `products_product_type_check` | **1.200/1.200 ProdReferences (100%)** falham; produto **não é criado**, raw fica **`pending`** (re-tentado a cada 5 min para sempre), e a função retorna `success:true` (mascara a falha) | ✅ **Corrigido** (migr. `20260605000239`) |
+| 🟠 Médio | `short_description` é `varchar(500)`, mas `ShortDescription` raw chega a **969** chars | 48 ProdReferences falhariam (após corrigir o crítico) | ✅ **Corrigido** (migr. `20260605000347`) |
+| 🟠 Médio | `ncm_code` é `varchar(10)`, mas `Taric` raw chega a **11** chars | 6 ProdReferences falhariam (após corrigir o crítico) | ✅ **Corrigido** (migr. `20260605000347`) |
+| 🟡 Baixo | `process_pending_batches` reporta `variants_processed` na coluna `products_processed`; `success` da fn é `true` mesmo com `products_errors>0` | Telemetria/observabilidade enganosa (esconde o crítico) | ⚠️ Aberto (cosmético) |
 
 Itens já corrigidos pelas auditorias anteriores e **confirmados ao vivo como OK**: nome
 limpo (`fn_clean_spot_name`), `cost_price`+`sale_price` (markup), VSS, advisory-lock
@@ -136,5 +136,45 @@ Validação pós-fix recomendada: reproduzir o Caso A (agora deve criar produto
 `product_type='product'`) e rodar os 54 ProdReferences de overflow num dry-run
 transacional.
 
-> Nenhuma alteração foi aplicada ao banco nesta auditoria além de 2 testes E2E revertidos
-> por `ROLLBACK` (0 resíduos confirmados). A aplicação das correções aguarda aprovação.
+---
+
+## 6. Remediação APLICADA e validada (2026-06-05)
+
+Aprovada pelo dono (`adm01@promobrindes.com.br`) e aplicada em produção:
+
+### ✅ 🔴 `product_type` — `20260605000239_fix_raw_v2_product_type_mapping_parity`
+Mapping `Type→products.product_type` desativado (`is_active=false`). `product_type` volta
+ao default da coluna (`'product'`) = comportamento legado.
+
+### ✅ 🟠 Overflows — `20260605000347_raw_v2_transform_maxlength_and_spot_overflow_caps`
+`fn_apply_transform` passou a truncar o resultado quando `transform_config.max_length`
+existe (aditivo/opt-in; nenhum outro fornecedor usa). Aplicados caps:
+`short_description → 500`, `ncm_code → 10`. **Optou-se por cap no mapeamento em vez de
+`ALTER COLUMN`** porque `short_description`/`ncm_code` são referenciados por
+`public.v_products_public` e `analytics.mv_product_cards` — alargar exigiria recriar esses
+contratos públicos (risco desnecessário para um fix de paridade).
+
+### Validação E2E pós-fix (transacional, rollback total, 0 resíduos)
+Raw real reproduzindo as 3 falhas (`Type='SUCO'`, `Taric` 11 chars, `ShortDescription`
+969 chars):
+
+```
+fn_result = {"success":true,"parents_processed":1,"variants_processed":1,"errors":[]}
+product   = {"name":"Caneca de porcelana","product_type":"product","sku":"ZZFIX_1",
+             "cost_price":7.50,"sale_price":16.13,"brand":"MarcaY",
+             "ncm_code":"1234567890","ncm_len":10,"sd_len":500}
+raw_after = processed
+```
+
+Antes: `<<nenhum produto criado>>`, raw `pending`. Depois: produto completo,
+`product_type='product'`, campos truncados ao limite, raw `processed`. Gap crítico
+eliminado e paridade real restaurada.
+
+> Estado pós-fix confirmado: `product_type` mapping `is_active=false`;
+> `short_description.cfg={max_length:500}`; `ncm_code.cfg={max_length:10}`; 0 raw SPOT
+> pendentes; 0 resíduos de teste (todos os E2E revertidos por `ROLLBACK`).
+
+### Pendente (cosmético, não bloqueia importação)
+`process_pending_batches` ainda reporta `variants_processed` como `products_processed` e
+`success:true` mesmo com `products_errors>0`. Recomendado expor `products_errors`/status
+real para não mascarar futuras falhas — não aplicado (mudança de contrato de telemetria).
