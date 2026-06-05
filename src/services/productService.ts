@@ -52,7 +52,6 @@ export const productService = {
       filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
     });
 
-
     let result = products.map(mapPromobrindToProduct);
 
     const category = filters?.category;
