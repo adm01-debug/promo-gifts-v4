@@ -125,6 +125,7 @@ export const ProductCard = memo(
     const [actionsOpen, setActionsOpen] = useState(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
     const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     // Efeito para simular loading ao trocar de cor
     useEffect(() => {
@@ -168,6 +169,10 @@ export const ProductCard = memo(
       }
       return matches;
     }, [product.colors, activeColorFilter]);
+
+    useEffect(() => {
+      setIsInitialLoad(false);
+    }, []);
 
     useEffect(() => {
       if (product.colors && product.colors.length > 0) {
@@ -573,6 +578,8 @@ export const ProductCard = memo(
                 (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
               );
               if (idx >= 0) {
+                // Efeito visual de destaque ao clicar
+                feedback.impact('light');
                 setActiveVariantIdx(idx);
                 setSelectedColor(product.id, c.name);
                 setImageLoaded(false);
@@ -582,9 +589,6 @@ export const ProductCard = memo(
                 currentUrl.searchParams.set('cor', c.name);
                 window.history.replaceState({}, '', currentUrl.toString());
               }
-              // O vendedor agora pode ver a foto e estoque da cor clicada no próprio card.
-              // Não navegamos para a PDP automaticamente no clique da bolinha para permitir
-              // a exploração de várias cores rapidamente no grid.
             }}
           />
 
@@ -599,8 +603,10 @@ export const ProductCard = memo(
               <div
                 key={activeColorName || 'default'}
                 className={cn(
-                  'flex items-end justify-between pt-0.5 transition-all duration-500 animate-in fade-in slide-in-from-bottom-1 sm:pt-1',
-                  isUpdatingColor ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100',
+                  'flex items-end justify-between pt-0.5 transition-all duration-500 sm:pt-1',
+                  !isInitialLoad && isUpdatingColor
+                    ? 'translate-y-2 opacity-0'
+                    : 'animate-in fade-in slide-in-from-bottom-1 translate-y-0 opacity-100',
                 )}
               >
                 <div>
