@@ -26,16 +26,19 @@ describe('useCatalogPrefetch', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useQueryClient).mockReturnValue(mockQueryClient as any);
   });
 
   it('does not prefetch if not authenticated', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useAuth).mockReturnValue({ isAuthenticated: false, isLoading: false } as any);
     renderHook(() => useCatalogPrefetch());
     expect(mockQueryClient.prefetchInfiniteQuery).not.toHaveBeenCalled();
   });
 
   it('prefetches catalog after delay when authenticated', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useAuth).mockReturnValue({ isAuthenticated: true, isLoading: false } as any);
     renderHook(() => useCatalogPrefetch());
     
