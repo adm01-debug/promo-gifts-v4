@@ -52,6 +52,7 @@ export const ProductCardActions = memo(function ProductCardActions({
   canAddToCompare,
   actionsOpen,
   onToggleActions,
+  isOutOfStock = false,
   onFavorite,
   onCompare,
   onOpenVariantPicker,
