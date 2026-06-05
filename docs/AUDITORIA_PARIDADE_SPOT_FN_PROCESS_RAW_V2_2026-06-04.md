@@ -81,4 +81,4 @@ Predecessoras do motor v2 (mesma iniciativa, reconciliadas no mesmo PR para deix
 
 ## 6. Reconciliação repo ↔ banco
 
-As 16 migrations acima já estavam aplicadas no banco (registradas em `supabase_migrations.schema_migrations`) mas faltavam como arquivo no repositório. Foram gravadas **byte-a-byte** a partir do banco (verificadas por `md5`), restaurando a invariante DB == repo. Junto, reconciliou-se também `20260604210435_add_catalog_sort_indexes` (workstream de catálogo, não relacionada à paridade Spot, mas órfã no mesmo intervalo).
+As 17 migrations acima já estavam aplicadas no banco (registradas em `supabase_migrations.schema_migrations`) mas faltavam como arquivo no repositório. Foram gravadas **byte-a-byte** a partir do banco (verificadas por `md5`), restaurando a invariante DB == repo. Junto, reconciliou-se também `20260604210435_add_catalog_sort_indexes` (workstream de catálogo, não relacionada à paridade Spot, mas órfã no mesmo intervalo).

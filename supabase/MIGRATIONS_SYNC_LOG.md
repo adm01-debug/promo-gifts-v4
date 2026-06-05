@@ -200,13 +200,46 @@ recuperacao retroativa possivel).
   regex null) e readiciona ambos os branches. Verificado: max_length corta para
   10; branch fn_clean_spot_name presente.
 
-### Achados de review em workstreams FORA do escopo Spot (pendentes de decisao)
+### Hardening abrangente pos-review (CodeRabbit/Codex/cubic) — aprovado pelo usuario
 
-A 2a rodada (cubic/Codex) sobre o conjunto reconciliado completo apontou issues
-em migrations de OUTROS workstreams (pipeline Silver/medallion p/ XBZ/Asia/So
-Marcas, `mcp_sessions`, seeds) — codigo ja aplicado em prod, apenas reconciliado
-aqui. Verificacao destacou um **P0 vivo**: `mcp_sessions` tem policy
-`FOR ALL TO anon USING(true)` + GRANT completo a `anon` (a tabela guarda
-`cookie`), expondo leitura/escrita/exclusao de todas as sessoes via anon key.
-Esses itens NAO foram alterados (fora do escopo da auditoria Spot) e aguardam
-decisao de escopo.
+A 2a/3a rodada de review (CodeRabbit 19+ comentarios, Codex, cubic) cobriu o
+conjunto reconciliado completo. Cada achado foi verificado contra o estado ATUAL
+de producao; muitos ja estavam superados pelo estado final (os revisores viam
+snapshots intermediarios). Os fixes ainda vivos foram aplicados como migrations
+forward (nao se editou nenhum arquivo historico byte-exato):
+
+- `20260605100708 harden_rls_mcp_sessions_silver_pricetiers_physical_and_dryrun_acl`
+  - **P0** `mcp_sessions`: removida policy `FOR ALL TO anon` + REVOKE anon/
+    authenticated; acesso so via service_role (guarda `cookie`).
+  - `produtos_padronizacao`: policy de escrita ampla de authenticated -> SELECT.
+  - `product_physical` / `supplier_price_tiers`: removida escrita de authenticated
+    + REVOKE anon (cost_price sensivel); service_role mantem tudo (BYPASSRLS).
+  - `fn_dryrun_raw_v2` (SECURITY DEFINER): REVOKE EXECUTE de PUBLIC/anon/authenticated.
+- `20260605101258 fix_silver_promotion_cost_isactive_locks_and_races`
+  - `fn_standardize_variant`: restaura custo XBZ (`PrecoVenda`) e ASIA (`preco`)
+    que a `silver_08g` regrediu; inclui `is_active` no ON CONFLICT.
+  - `fn_promote_variants_of_parent`: VSS vira upsert (custo nao fica stale);
+    INSERT da variante race-safe via `ON CONFLICT (sku)`.
+  - `fn_promote_padronizacao`: `FOR UPDATE` (lock pessimista anti-promocao dupla).
+  - `+ SET search_path` nas funcoes do pipeline que estavam sem.
+- `20260605101342 fix_silver_safebool_purge_colormatch_dryrun_lockedfields`
+  - `fn_safe_bool`: fallback passa a aceitar `active/inactive`.
+  - `fn_spr_history_purge`: guard `p_keep_months >= 1`.
+  - `fn_match_canonical_color`: normaliza nome/hex (NULLIF) anti-match de string vazia.
+  - `fn_dryrun_standardize_supplier`: ignora parent nulo, conta so sucessos reais.
+  - `fn_products_capture_manual_edits`: `v_campos` completado (box_*, repacking_type,
+    capacities, capacity_ml, colors) p/ proteger edicoes manuais.
+- `20260605101432 add_supplier_price_tiers_check_constraints`
+  - CHECKs `tier_order>0`, `min_qty>0`, `cost_price>=0`, janela valid_from/to
+    (17.722 linhas, 0 violacoes).
+
+Falsos-positivos / ja superados (verificados, sem acao): `fn_apply_transform`
+multiply NULL ja tem guard e `replace` com find vazio e no-op nativo do PG;
+`fn_spr_before_write` ja tem search_path e nao escreve `images_processed`;
+`content_hash` virou coluna normal com DEFAULT (nao GENERATED); `fn_process_raw_v2`
+ja usa `status=ANY('{pending,processing}')` e ja teve REVOKE; `process_supplier_
+products_batch` ja e so postgres+service_role; `CREATE POLICY IF NOT EXISTS`
+(20260601180000) foi aceito e a policy existe; `set_image_url` existe em products.
+Issues so-de-replay em migrations historicas ja aplicadas nao foram "corrigidas"
+editando os arquivos byte-exatos (quebraria a invariante DB==repo; workflow e
+forward-only contra o banco vivo).
