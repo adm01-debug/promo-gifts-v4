@@ -190,6 +190,7 @@ export const ProductCard = memo(
           }
         }
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- granular deps (product.id, product.colors) intentionally preferred over `product` to avoid spurious re-runs
     }, [product.id, product.colors, selectedColorFromStore, activeColorFilter, allMatchingVariants, activeVariantIdx]);
 
     const actionBusyRef = useRef(false);

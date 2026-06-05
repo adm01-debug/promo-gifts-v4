@@ -17,5 +17,6 @@ export function useMobileSidebarFix(onToggle: () => void, isOpen: boolean) {
     if (isOpen && window.innerWidth < 1024) {
       onToggle();
     }
-  }, [pathname]); // Só depende do pathname
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // intentionally omit isOpen/onToggle: effect must only fire on route change
 }

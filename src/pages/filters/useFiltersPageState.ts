@@ -708,6 +708,7 @@ export function useFiltersPageState() {
     if (filters.isNew) summary.push({ label: 'Lançamento', value: 'Sim', key: 'isNew' });
     if (filters.hasPersonalization)
       summary.push({ label: 'Personalizável', value: 'Sim', key: 'hasPersonalization' });
+    if (filters.onSale) summary.push({ label: 'Em Oferta', value: 'Sim', key: 'onSale' });
     if (filters.hasCommercialPackaging)
       summary.push({ label: 'Embalagem', value: 'Comercial', key: 'hasCommercialPackaging' });
     if (filters.search)
