@@ -6,7 +6,7 @@ import { gotoAndSettle } from './helpers/nav';
  * Validates Cloudflare imagedelivery.net handling and other CDN providers.
  *
  * A rota /debug/images é pública (sem ProtectedRoute) em todos os ambientes.
- * Executa exclusivamente no project routes-public (chromium).
+ * Executa no project chromium-public (chromium, sem auth).
  */
 test.describe('OptimizedImage Detection & Placeholders', () => {
   const DEMO_URL = '/debug/images';
@@ -17,8 +17,14 @@ test.describe('OptimizedImage Detection & Placeholders', () => {
   });
 
   test('should detect Cloudflare images and generate /thumbnail placeholder', async ({ page }) => {
-    const cfCard = page.locator('div:has-text("Cloudflare Images Detection")').locator('..').first();
-    const container = cfCard.locator('div.relative.overflow-hidden').first();
+    // The "Cloudflare CDN" demo card renders an OptimizedImage whose root div
+    // carries data-detection-rule. Scope to it via the card image's unique alt
+    // ("Cloudflare CDN Demo") — the demo wrapper div is also relative/overflow-hidden,
+    // so a positional `.first()` on div.relative.overflow-hidden is ambiguous.
+    const container = page
+      .locator('[data-detection-rule]')
+      .filter({ has: page.locator('img[alt="Cloudflare CDN Demo"]') })
+      .first();
 
     await expect(container).toHaveAttribute('data-detection-rule', 'cloudflare');
 

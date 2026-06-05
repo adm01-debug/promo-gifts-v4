@@ -6,7 +6,7 @@ import { gotoAndSettle } from './helpers/nav';
  * Valida o efeito blur-up, fade-in e estado de erro em diferentes viewports.
  *
  * A rota /debug/images é pública (sem ProtectedRoute) em todos os ambientes.
- * Executa exclusivamente no project routes-public (chromium).
+ * Executa no project chromium-public (chromium, sem auth).
  */
 test.describe('OptimizedImage Visual Regression', () => {
   const DEBUG_URL = '/debug/images';

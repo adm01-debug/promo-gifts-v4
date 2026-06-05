@@ -35,8 +35,10 @@ jobs:
 
     # /debug/images is a public route (outside ProtectedRoute) —
     # no auth setup required. Tests run against chromium-public project.
+    # --update-snapshots: no baseline PNGs are committed to the repo, so generate
+    # them on the fly (Playwright passes the test when it writes a new snapshot).
     - name: Run OptimizedImage E2E tests
-      run: npx playwright test optimized-image-detection.spec.ts optimized-image-visual.spec.ts --project=chromium-public
+      run: npx playwright test optimized-image-detection.spec.ts optimized-image-visual.spec.ts --project=chromium-public --update-snapshots
       env:
         CI: true
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
