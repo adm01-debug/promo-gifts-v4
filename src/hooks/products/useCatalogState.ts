@@ -77,7 +77,7 @@ function validateSortOption(s: string | null | undefined): SortOption {
   // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
   if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
   if (VALID_SORT_VALUES.has(s)) return s as SortOption;
-  return 'name';
+  return 'newest';
 }
 
 function getPersistedViewMode(): ViewMode {
