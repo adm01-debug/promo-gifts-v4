@@ -34,7 +34,11 @@ export const productService = {
         case 'best-seller-promo':
           orderBy = { column: 'is_featured', ascending: false };
           break;
+        case 'name-desc':
+          orderBy = { column: 'name', ascending: false };
+          break;
         case 'name':
+        case 'name-asc':
         default:
           orderBy = { column: 'name', ascending: true };
           break;
@@ -47,7 +51,6 @@ export const productService = {
       orderBy,
       filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
     });
-
 
     let result = products.map(mapPromobrindToProduct);
 

@@ -1,7 +1,11 @@
+-- Overflow de campos texto da SPOT SEM alterar colunas (short_description e ncm_code são
+-- referenciados por public.v_products_public e analytics.mv_product_cards; um ALTER TYPE exigiria
+-- recriar esses objetos). Em vez disso, fn_apply_transform passa a truncar o resultado quando
+-- transform_config.max_length está presente. Aditivo e opt-in: nenhum mapping existente usa
+-- max_length, logo é backward-compatible para todos os fornecedores.
+-- Dados reais: ShortDescription chega a 969 (col varchar(500)); Taric chega a 11 (col varchar(10)).
+-- Ref.: docs/AUDITORIA_GAPS_CRITICOS_fn_process_raw_v2_2026-06-04.md
 
--- Overflow sem mexer em colunas (evita recriar v_products_public / mv_product_cards):
--- fn_apply_transform passa a truncar o resultado quando transform_config.max_length existe.
--- Aditivo e opt-in: nenhum mapping existente usa max_length, então é backward-compatible.
 CREATE OR REPLACE FUNCTION public.fn_apply_transform(p_value text, p_transform_type character varying, p_transform_config jsonb, p_source_unit character varying, p_target_unit character varying, p_supplier_id uuid)
  RETURNS text
  LANGUAGE plpgsql
@@ -153,7 +157,7 @@ BEGIN
 END;
 $function$;
 
--- Aplica os caps nos dois campos que estouram com dados reais da SPOT.
+-- Caps para os dois campos que estouram com dados reais da SPOT.
 UPDATE public.supplier_field_mappings
    SET transform_config = '{"max_length":500}'::jsonb, updated_at = now()
  WHERE supplier_id='bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid

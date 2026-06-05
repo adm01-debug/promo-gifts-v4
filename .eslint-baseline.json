@@ -1,25 +1,18 @@
 {
-  "generatedAt": "2026-06-04T17:39:39.537Z",
-  "totalErrors": 9,
+  "generatedAt": "2026-06-04T21:18:37.531Z",
+  "totalErrors": 0,
   "counts": {
-    "src/components/products/ProductCardImage.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
+    "src/components/ThemeInitializer.test.tsx": {
+      "@typescript-eslint/no-explicit-any": 3
     },
-    "src/components/products/ProductListItem.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
+    "src/components/products/ProductCard.tsx": {
+      "react-hooks/exhaustive-deps": 1
     },
-    "src/components/products/ProductStatusBadge.tsx": {
-      "@typescript-eslint/no-explicit-any": 1,
-      "no-case-declarations": 3
+    "src/hooks/products/useCatalogPrefetch.test.ts": {
+      "@typescript-eslint/no-explicit-any": 3
     },
-    "src/hooks/products/__tests__/useCatalogFiltering.test.ts": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/pages/auth/StarfieldCanvas.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
-    },
-    "src/pages/products/product-detail/ProductDetailHero.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
+    "src/hooks/ui/useMobileSidebarFix.ts": {
+      "react-hooks/exhaustive-deps": 1
     }
   }
 }

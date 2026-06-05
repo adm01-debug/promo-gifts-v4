@@ -1,3 +1,11 @@
+-- CUTOVER (parte 1/2): tornar `status` (enum) a fonte única da verdade.
+-- Reescreve views/funções/triggers para não dependerem mais do booleano `processed`
+-- nem do `raw_hash` legado. A coluna física só é removida na parte 2/2.
+-- Semântica preservada: processed = (status = 'processed') com 0 divergências hoje.
+
+-- 1) Views: troca predicados processed=true/false por status (preservando contrato e
+--    a opção security_invoker). Feito via pg_get_viewdef+regex para não transcrever as
+--    views grandes (ex.: v_system_health_dashboard) à mão.
 DO $vw$
 DECLARE r record; v_new text;
 BEGIN
@@ -10,15 +18,19 @@ BEGIN
                         'vw_somarcas_sync_status','vw_xbz_products_stats')
   LOOP
     v_new := pg_get_viewdef(('public.'||r.viewname)::regclass, true);
+    -- processed = true  -> status = 'processed'
     v_new := regexp_replace(v_new,
       '([a-z0-9_]+\.)?\mprocessed\M\s*=\s*true',
       '\1status = ''processed''::supplier_raw_status', 'gi');
+    -- processed = false OR processed IS NULL  -> status <> 'processed'
     v_new := regexp_replace(v_new,
       '([a-z0-9_]+\.)?\mprocessed\M\s*=\s*false\s+OR\s+([a-z0-9_]+\.)?\mprocessed\M\s+IS\s+NULL',
       '\1status <> ''processed''::supplier_raw_status', 'gi');
+    -- processed = false  -> status <> 'processed'
     v_new := regexp_replace(v_new,
       '([a-z0-9_]+\.)?\mprocessed\M\s*=\s*false',
       '\1status <> ''processed''::supplier_raw_status', 'gi');
+
     EXECUTE 'CREATE OR REPLACE VIEW public.'||quote_ident(r.viewname)||' AS '||v_new;
     EXECUTE 'ALTER VIEW public.'||quote_ident(r.viewname)||' SET (security_invoker = on)';
   END LOOP;
@@ -32,24 +44,30 @@ BEGIN
                         'vw_somarcas_sync_status','vw_xbz_products_stats')
        AND (definition ~* '\mprocessed\M\s*=' OR definition ~* '\mprocessed\M\s+IS\s+NULL')
   ) THEN
-    RAISE EXCEPTION 'Cutover abortado: ainda ha view referenciando a coluna processed';
+    RAISE EXCEPTION 'Cutover abortado: ainda há view referenciando a coluna processed';
   END IF;
 END $vw$;
 
+-- 2) Funções diagnósticas/de fila: troca de processed por status (swap pontual via
+--    pg_get_functiondef+regex, preservando corpo, SECURITY e search_path).
 DO $fns$
 DECLARE v_src text;
 BEGIN
+  -- fn_dryrun_raw_v2: UPDATE ... SET processed=false  -> SET status='pending'
   v_src := pg_get_functiondef('public.fn_dryrun_raw_v2(uuid,integer)'::regprocedure);
   v_src := regexp_replace(v_src, '\mprocessed\M\s*=\s*false',
                           'status=''pending''::supplier_raw_status', 'gi');
   EXECUTE v_src;
 
+  -- fn_process_all_staged_products: WHERE processed = FALSE -> status <> 'processed'
   v_src := pg_get_functiondef('public.fn_process_all_staged_products(uuid,integer)'::regprocedure);
   v_src := regexp_replace(v_src, '\mprocessed\M\s*=\s*false',
                           'status <> ''processed''::supplier_raw_status', 'gi');
   EXECUTE v_src;
 END $fns$;
 
+-- 3) Funções de ingestão: removem raw_hash e processed; detecção de mudança passa a
+--    usar content_hash (hash "limpo", calculado pelo trigger ignorando campos voláteis).
 CREATE OR REPLACE FUNCTION public.fn_stage_product(
   p_batch_id uuid, p_supplier_id uuid, p_supplier_reference text, p_raw_data jsonb)
  RETURNS uuid
@@ -99,6 +117,7 @@ BEGIN
     raw_data        = EXCLUDED.raw_data,
     import_batch_id = EXCLUDED.import_batch_id,
     imported_at     = NOW(),
+    -- content_hash é recalculado pelo trigger BEFORE; reabre p/ reprocesso só se mudou.
     status          = CASE
                         WHEN supplier_products_raw.content_hash IS DISTINCT FROM EXCLUDED.content_hash
                         THEN 'pending'::supplier_raw_status
@@ -109,12 +128,16 @@ BEGIN
   RETURN v_id;
 END $fn$;
 
+-- 4) Consolida os 4 triggers BEFORE (normalize + initial_state + sync_status +
+--    set_updated_at) num único. images_processed vira espelho UNIDIRECIONAL de
+--    images_status (corrige o drift histórico e elimina o "reverse bridge").
 CREATE OR REPLACE FUNCTION public.fn_spr_before_write()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $fn$
 DECLARE v_clean jsonb;
 BEGIN
+  -- normalize: source_channel e imported_at a partir de metacampos do payload
   IF NEW.raw_data ? '_source' AND COALESCE(NEW.source_channel,'') IN ('','n8n','legacy') THEN
     NEW.source_channel := NEW.raw_data->>'_source';
   END IF;
@@ -123,6 +146,7 @@ BEGIN
     EXCEPTION WHEN others THEN NULL; END;
   END IF;
 
+  -- remove metacampos voláteis e calcula content_hash "limpo"
   v_clean := NEW.raw_data - '_source' - '_api_fields_count' - '_imported_at';
   NEW.raw_data     := v_clean;
   NEW.content_hash := md5(v_clean::text);
@@ -132,7 +156,7 @@ BEGIN
     IF NEW.process_errors IS NOT NULL AND NEW.last_error IS NULL THEN
       NEW.last_error := NEW.process_errors;
     END IF;
-  ELSE
+  ELSE -- UPDATE
     NEW.updated_at := now();
     IF NEW.process_errors IS DISTINCT FROM OLD.process_errors AND NEW.process_errors IS NOT NULL THEN
       NEW.last_error := NEW.process_errors;
@@ -142,6 +166,7 @@ BEGIN
     END IF;
   END IF;
 
+  -- espelho unidirecional (fonte da verdade = images_status)
   NEW.images_processed := (NEW.images_status = 'processed');
 
   RETURN NEW;
@@ -156,6 +181,8 @@ CREATE TRIGGER trg_spr_before_write
   BEFORE INSERT OR UPDATE ON public.supplier_products_raw
   FOR EACH ROW EXECUTE FUNCTION public.fn_spr_before_write();
 
+-- funções dos triggers antigos: exclusivas desta tabela, agora órfãs.
 DROP FUNCTION IF EXISTS public.fn_spr_normalize();
 DROP FUNCTION IF EXISTS public.fn_set_initial_processed_state();
 DROP FUNCTION IF EXISTS public.fn_sync_raw_status();
+-- set_updated_at NÃO é removida: compartilhada por 65 tabelas.

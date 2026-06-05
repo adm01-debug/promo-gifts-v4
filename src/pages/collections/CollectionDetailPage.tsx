@@ -129,7 +129,7 @@ export default function CollectionDetailPage() {
         id: externalCollection.id,
         name: externalCollection.name,
         description: externalCollection.description || undefined,
-        color: externalCollection.color || '#3B82F6',
+        color: externalCollection.icon_color || '#3B82F6',
         icon: externalCollection.icon || '📁',
         isFeatured: externalCollection.is_featured || false,
         updatedAt: externalCollection.updated_at,

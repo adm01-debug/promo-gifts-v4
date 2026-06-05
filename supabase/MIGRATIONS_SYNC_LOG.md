@@ -78,6 +78,31 @@ Conjunto reconciliado (em ordem):
 Contexto da paridade Spot (G1-G4 / M1-M6) em
 `docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md`.
 
+## 2026-06-04 - Re-auditoria pos-cutover: 2 migrations out-of-band + correcoes (doufsxqlfjyuvxuezpln)
+
+Re-auditoria ao vivo encontrou DUAS migrations aplicadas DIRETO no banco e AUSENTES
+do repo, ambas REGRESSOES pos-cutover `processed -> status`:
+
+- `20260604232837` upgrade_fn_apply_transform_add_missing_transforms
+  -> removeu o branch custom `fn_clean_spot_name` (nomes deixaram de ser limpos).
+- `20260604232944` upgrade_fn_process_raw_v2_fix_race_condition_and_counters
+  -> recriou `fn_process_raw_v2` referenciando a coluna REMOVIDA `processed`
+     => funcao quebrada; cron `process-pending-products` falhando a cada 5 min
+     desde 23:30; pipeline SPOT parado. Tambem deixou `{size_code}` literal no nome.
+
+Acoes:
+1. Correcoes versionadas E aplicadas no banco (apply_migration):
+   - `20260604234507` fix_fn_process_raw_v2_status_column        (DEFEITO-2/4)
+   - `20260604234647` restore_fn_clean_spot_name_branch_in_apply_transform (DEFEITO-3)
+2. As duas migrations out-of-band foram preservadas no repo como MARCADORES NO-OP
+   (`20260604232837_*.sql`, `20260604232944_*.sql`) para manter a paridade DB<->repo
+   no CLI sem reaplicar DDL quebrada/superada (a DDL correta vive nas 234507/234647).
+
+Validacao: no-op idempotente OK; `process_pending_batches()` -> SUCCESS; E2E (rollback)
+cria produto+variante+VSS com nome limpo (`Caneca de porcelana branca | Vermelho | M`),
+`sale_price` 26.53 (markup 115%), `locked_fields` respeitado, idempotencia 1/1/1.
+Detalhes: `docs/AUDITORIA_PARIDADE_SPOT_FN_PROCESS_RAW_V2_2026-06-04.md` (§7).
+
 ## 2026-06-05 - Reconciliacao pos-cutover SPR / motor_v2 (doufsxqlfjyuvxuezpln)
 
 28 migrations aplicadas em producao entre 2026-06-04T21:41 e 2026-06-05T00:49

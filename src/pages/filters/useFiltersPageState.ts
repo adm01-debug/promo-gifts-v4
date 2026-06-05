@@ -12,8 +12,20 @@ import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRankin
 import { useDebounce } from '@/hooks/common/useDebounce';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
 import { sortProducts } from '@/utils/product-sorting';
+import { SORT_OPTIONS } from '@/constants/filters';
 import { toast } from 'sonner';
 import type { ProductVariation } from '@/types/product-catalog';
+
+// Valores de sortBy aceitos: os expostos na UI (SORT_OPTIONS) + os internos
+// suportados pelo pipeline sortProducts (color-match/popularity são definidos
+// upstream; name-asc/name-desc são aliases tratados no sorter).
+const VALID_SORT_VALUES = new Set<string>([
+  ...SORT_OPTIONS.map((o) => o.value),
+  'name-asc',
+  'name-desc',
+  'popularity',
+  'color-match',
+]);
 
 export function useFiltersPageState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -71,9 +83,22 @@ export function useFiltersPageState() {
     const pMin = get('priceMin');
     const pMax = get('priceMax');
     // FIX-04: usar parseFloat para preservar centavos (ex: "15.99" → 15.99, não 15)
-    if (pMin || pMax) f.priceRange = [pMin ? parseFloat(pMin) : 0, pMax ? parseFloat(pMax) : 9999];
+    // FIX-28: validar NaN e fazer clamp (min<=max). Valores inválidos na URL
+    // (?priceMin=abc, min>max) caíam como NaN e zeravam a lista sem feedback.
+    if (pMin || pMax) {
+      const PRICE_MAX = 9999;
+      const parsedMin = pMin ? parseFloat(pMin) : 0;
+      const parsedMax = pMax ? parseFloat(pMax) : PRICE_MAX;
+      let min = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : 0;
+      let max = Number.isFinite(parsedMax) && parsedMax >= 0 ? parsedMax : PRICE_MAX;
+      if (min > max) [min, max] = [max, min];
+      f.priceRange = [min, max];
+    }
     const ms = get('minStock');
-    if (ms) f.minStock = parseInt(ms); // minStock é sempre inteiro — parseInt ok
+    if (ms) {
+      const parsedMs = parseInt(ms, 10);
+      if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
+    }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
     if (get('featured') === '1') f.featured = true;
@@ -81,8 +106,11 @@ export function useFiltersPageState() {
     if (get('hasPersonalization') === '1') f.hasPersonalization = true;
     if (get('onSale') === '1') f.onSale = true;
     if (get('hasCommercialPackaging') === '1') f.hasCommercialPackaging = true;
+    // FIX-28/B5: só aceitar sortBy da URL se for um valor conhecido — evita
+    // que o Select fique sem opção correspondente (placeholder vazio) e que o
+    // pipeline de sort receba um valor que cai no no-op silencioso.
     const sortByParam = get('sortBy');
-    if (sortByParam) f.sortBy = sortByParam;
+    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) f.sortBy = sortByParam;
     return f;
   });
 
@@ -108,7 +136,6 @@ export function useFiltersPageState() {
     sortBy: filters.sortBy,
   });
 
-
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -116,6 +143,18 @@ export function useFiltersPageState() {
   const realProducts = useMemo(
     () => (catalogData?.pages ? catalogData.pages.flatMap((page) => page.products) : []),
     [catalogData],
+  );
+
+  // FIX-20: o filtro de Técnicas só funciona se os produtos carregados trouxerem
+  // `metadata.techniques`. Quando nenhum produto tem esse dado (caso do catálogo
+  // lightweight atual), selecionar uma técnica não filtra nada — então não
+  // devemos contá-la como filtro ativo nem exibir o chip (evita falso positivo).
+  // Até existir um hook server-side (useProductsByTechnique), este sinal mantém
+  // a UI honesta.
+  const techniquesDataAvailable = useMemo(
+    () =>
+      realProducts.some((p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0),
+    [realProducts],
   );
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
   const isFullyLoaded = !hasNextPage && !isFetchingNextPage;
@@ -276,13 +315,13 @@ export function useFiltersPageState() {
     if (filters.hasPersonalization) count++;
     if (filters.onSale) count++;
     if (filters.hasCommercialPackaging) count++;
-    if ((filters.techniques?.length || 0) > 0) count++;
+    if (techniquesDataAvailable && (filters.techniques?.length || 0) > 0) count++;
     if ((filters.tags?.length || 0) > 0) count++;
     if ((filters.gender?.length || 0) > 0) count++;
     if ((filters.sizes?.length || 0) > 0) count++;
     if (filters.search) count++;
     return count;
-  }, [filters]);
+  }, [filters, techniquesDataAvailable]);
 
   const handleReset = () => {
     const hadFilters = activeFiltersCount > 0;
@@ -450,23 +489,26 @@ export function useFiltersPageState() {
           ...(product.tags?.ramo || []),
           ...(product.tags?.nicho || []),
         ].map((v: string) => v.toLowerCase());
-        return tagIdsLower.some((tagId) => allTagValues.some((v) => v === tagId || v.includes(tagId)));
+        return tagIdsLower.some((tagId) =>
+          allTagValues.some((v) => v === tagId || v.includes(tagId)),
+        );
       });
     }
     // BUG-SF-01 FIX: techniques era contabilizado/chipeado mas sem bloco de filtro.
     // O campo techniques não existe diretamente no Product lightweight — filtro
     // client-side faz match pelo ID/nome da técnica no metadata do produto.
     // Para filtro server-side completo, implementar useProductsByTechnique hook.
-    if (filters.techniques?.length) {
+    // FIX-20: só aplica o filtro quando há dados de técnica nos produtos
+    // (techniquesDataAvailable). Sem dados, o filtro era um no-op que ainda
+    // contava como ativo/chip — agora a seleção é inerte de forma consistente
+    // (não conta, não chipa, não filtra) até existir suporte server-side.
+    if (techniquesDataAvailable && filters.techniques?.length) {
       const techSet = new Set(filters.techniques.map((t) => t.toLowerCase()));
       result = result.filter((product) => {
-        // Tenta match via metadata.techniques (se disponível no produto enriquecido)
         const metaTechs: string[] = (product.metadata?.techniques as string[]) || [];
         if (metaTechs.length > 0) {
           return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
         }
-        // Fallback: sem dados de técnica no produto — não filtra (inclui o produto)
-        // para não esconder produtos válidos enquanto o hook server-side não existe.
         return true;
       });
     }
@@ -481,6 +523,7 @@ export function useFiltersPageState() {
     hasFuzzySearch,
     fuzzySearchResults,
     realProducts,
+    techniquesDataAvailable,
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
@@ -634,7 +677,7 @@ export function useFiltersPageState() {
       });
     // Tipos ausentes no original — FIX-05:
     const techArr = filters.techniques || [];
-    if (techArr.length > 0)
+    if (techArr.length > 0 && techniquesDataAvailable)
       summary.push({
         label: 'Técnicas',
         value: `${techArr.length} selecionada${techArr.length > 1 ? 's' : ''}`,
@@ -664,12 +707,13 @@ export function useFiltersPageState() {
     if (filters.isNew) summary.push({ label: 'Lançamento', value: 'Sim', key: 'isNew' });
     if (filters.hasPersonalization)
       summary.push({ label: 'Personalizável', value: 'Sim', key: 'hasPersonalization' });
+    if (filters.onSale) summary.push({ label: 'Em Oferta', value: 'Sim', key: 'onSale' });
     if (filters.hasCommercialPackaging)
       summary.push({ label: 'Embalagem', value: 'Comercial', key: 'hasCommercialPackaging' });
     if (filters.search)
       summary.push({ label: 'Busca', value: `"${filters.search}"`, key: 'search' });
     return summary;
-  }, [filters]);
+  }, [filters, techniquesDataAvailable]);
 
   const clearSingleFilter = (key: keyof FilterState) => {
     if (key === 'colors')

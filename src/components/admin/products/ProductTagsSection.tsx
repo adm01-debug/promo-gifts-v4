@@ -5,7 +5,8 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke, dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,30 +33,24 @@ interface ProductTag {
 }
 
 async function fetchTags(): Promise<ExternalTag[]> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table: 'tags',
-      operation: 'select',
-      limit: 500,
-      orderBy: { column: 'name', ascending: true },
-      countMode: 'none',
-    },
+  const { records } = await dbInvoke<ExternalTag>({
+    table: 'tags',
+    operation: 'select',
+    limit: 500,
+    orderBy: { column: 'name', ascending: true },
+    countMode: 'none',
   });
-  if (error) throw new Error(error.message);
-  return data?.data?.records || [];
+  return records;
 }
 
 async function fetchProductTags(productId: string): Promise<ProductTag[]> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table: 'product_tags',
-      operation: 'select',
-      filters: { product_id: productId },
-      limit: 500,
-    },
+  const { records } = await dbInvoke<ProductTag>({
+    table: 'product_tags',
+    operation: 'select',
+    filters: { product_id: productId },
+    limit: 500,
   });
-  if (error) throw new Error(error.message);
-  return data?.data?.records || [];
+  return records;
 }
 
 export function ProductTagsSection({ productId }: ProductTagsSectionProps) {
@@ -85,36 +80,26 @@ export function ProductTagsSection({ productId }: ProductTagsSectionProps) {
         if (isLinked) {
           const record = productTags.find((pt) => pt.tag_id === tagId);
           if (!record?.id) {
-            const { data: findData } = await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_tags',
-                operation: 'select',
-                filters: { product_id: productId, tag_id: tagId },
-                limit: 1,
-              },
+            const found = await dbInvokeSingle<ProductTag>({
+              table: 'product_tags',
+              operation: 'select',
+              filters: { product_id: productId, tag_id: tagId },
             });
-            const found = findData?.data?.records?.[0];
             if (!found?.id) {
               toast.error('Registro não encontrado');
               return;
             }
-            await supabase.functions.invoke('external-db-bridge', {
-              body: { table: 'product_tags', operation: 'delete', id: found.id },
-            });
+            await dbInvokeDelete({ table: 'product_tags', id: found.id });
           } else {
-            await supabase.functions.invoke('external-db-bridge', {
-              body: { table: 'product_tags', operation: 'delete', id: record.id },
-            });
+            await dbInvokeDelete({ table: 'product_tags', id: record.id });
           }
           toast.success('Tag removida');
         } else {
-          await supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_tags',
-              operation: 'insert',
-              data: { product_id: productId, tag_id: tagId },
-            },
+          const { error } = await untypedFrom('product_tags').insert({
+            product_id: productId,
+            tag_id: tagId,
           });
+          if (error) throw new Error(error.message);
           toast.success('Tag adicionada');
         }
         queryClient.invalidateQueries({ queryKey: ['product-tags', productId] });

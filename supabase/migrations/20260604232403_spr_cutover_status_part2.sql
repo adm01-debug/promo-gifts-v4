@@ -1,3 +1,13 @@
+-- CUTOVER (parte 2/2): reescreve o restante do motor para `status`, reconcilia a
+-- janela de transição, recria o índice de fila, faz o backfill de imagens e remove
+-- fisicamente as colunas legadas. Tudo atômico.
+-- Funções que ainda liam/escreviam `processed` (descobertas na verificação pós-parte1):
+--   fn_process_raw_v2 (motor), fn_process_staged_product, fn_finish_import_batch,
+--   process_supplier_products_batch.
+
+-- 0) Duas views remanescentes que dependiam de `processed` (ambas contêm processed_at,
+--    por isso escaparam do filtro inicial). vw_asia_products_errors expõe `processed`
+--    como coluna de saída -> preserva contrato com (status='processed') AS processed.
 CREATE OR REPLACE VIEW public.vw_asia_products_errors AS
  SELECT supplier_reference,
     raw_data ->> 'nome'::text AS nome_produto,
@@ -27,6 +37,9 @@ CREATE OR REPLACE VIEW public.vw_supplier_products_raw_status AS
   ORDER BY (count(*)) DESC;
 ALTER VIEW public.vw_supplier_products_raw_status SET (security_invoker = on);
 
+-- 1) Swap por regex nas 3 funções cujos usos de `processed` são todos = TRUE/FALSE
+--    sem ambiguidade SET/WHERE (no motor os '=false' são todos WHERE; o único '=true'
+--    é o SET final de conclusão).
 DO $f$
 DECLARE r record; v_src text;
 BEGIN
@@ -44,6 +57,9 @@ BEGIN
   END LOOP;
 END $f$;
 
+-- 2) process_supplier_products_batch: reescrita explícita (mistura SET/WHERE com
+--    'processed = FALSE'). Sucesso -> status 'processed'; falha -> status 'failed'
+--    (continua sendo re-tentado pois a fila usa status <> 'processed').
 CREATE OR REPLACE FUNCTION public.process_supplier_products_batch(p_supplier_id uuid, p_limit integer DEFAULT 100)
  RETURNS TABLE(staging_id uuid, supplier_reference text, success boolean, product_id uuid, variants_created integer, error_message text, processed_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -132,6 +148,7 @@ BEGIN
 END;
 $function$;
 
+-- 3) Guarda: nenhuma das funções tocadas pode mais referenciar a coluna processed.
 DO $g$
 BEGIN
   IF EXISTS (
@@ -146,17 +163,25 @@ BEGIN
   END IF;
 END $g$;
 
+-- 4) Reconcilia a janela de transição (motor pode ter marcado processed=true sem a
+--    ponte). Alinha status a partir do booleano antes de removê-lo.
 UPDATE public.supplier_products_raw
    SET status = 'processed'::supplier_raw_status
  WHERE processed = true AND status <> 'processed'::supplier_raw_status;
 
+-- 5) Backfill final de images_processed (drift histórico). O trigger BEFORE recomputa
+--    images_processed a partir de images_status, sem clobber do enum.
 UPDATE public.supplier_products_raw
    SET images_status = images_status
  WHERE images_processed IS DISTINCT FROM (images_status = 'processed');
 
+-- 6) Remove colunas legadas (idx_spr_processed cai junto com a coluna).
 ALTER TABLE public.supplier_products_raw DROP COLUMN processed;
 ALTER TABLE public.supplier_products_raw DROP COLUMN raw_hash;
 
+-- 7) Índice de fila equivalente ao antigo idx_spr_processed (WHERE processed=false),
+--    agora sobre o enum. Como quase tudo fica 'processed', o conjunto pendente é
+--    pequeno -> índice parcial enxuto e ideal para o motor.
 CREATE INDEX IF NOT EXISTS idx_spr_unprocessed
   ON public.supplier_products_raw (supplier_id, imported_at)
   WHERE status <> 'processed'::supplier_raw_status;

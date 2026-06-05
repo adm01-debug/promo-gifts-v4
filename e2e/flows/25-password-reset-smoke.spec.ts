@@ -19,8 +19,9 @@ test.describe("Fluxo: Password Reset UI", () => {
     // Aguarda o settlement da página
     await page.waitForLoadState("networkidle");
     
-    // Deve mostrar o formulário de redefinição
-    await expect(page.getByRole("heading", { name: "Redefinir senha" })).toBeVisible();
+    // Deve mostrar o formulário de redefinição. O heading do formulário é
+    // "Nova Senha" (o texto "Redefinir Senha" é o botão de submit).
+    await expect(page.getByRole("heading", { name: "Nova Senha" })).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("input#confirmPassword")).toBeVisible();
     await expect(page.getByRole("button", { name: "Redefinir senha" })).toBeVisible();
