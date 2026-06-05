@@ -138,3 +138,52 @@ com produto inedito `DRYRUN-PARITY-999` / variante `DRYRUN-PARITY-999-BLK`:
 
 Estado producao: 1200 produtos / 3612 VSS todos com cost_price e sale_price.
 Markup observado: 2.1500 (115%) em 100% dos produtos amostrados.
+
+## 2026-06-05 - Reconciliacao TOTAL de junho + hardening (PR #659 review)
+
+A revisao automatizada do PR #659 (Codex + cubic, 3 ferramentas) apontou P1s de
+"replay falha em ambiente limpo" (enum `supplier_raw_status` e tabela
+`supplier_products_raw_history` referenciados mas nunca criados no repo). A
+investigacao contra o banco revelou que a deriva de junho era MUITO maior que os
+intervalos ja reconciliados: **72 migrations aplicadas em producao entre
+2026-06-01T18:00 e 2026-06-05T01:28 faltavam no repo** (faixas
+`20260601180000`-`20260604165156` e `20260605010642`-`20260605012842`).
+
+Restauradas byte-a-byte de `array_to_string(statements,E'\n')` (md5 DB==arquivo,
+**74/74 OK** incluindo os 2 forward abaixo). Apos isso, o slice de junho tem
+diff vazio: **repo contem banco** para todas as 119 versoes de junho. Um
+`db reset` limpo agora cria o enum
+(`20260603215516 raw_landing_phase1_status_provenance`) e a tabela history
+(`20260604120414 spr_p3_history_versionamento`) ANTES de serem usados,
+eliminando os P1 de replay.
+
+Descoberta-chave: quase todos os P1 dos revisores ja estavam corrigidos em
+producao por migrations orfas que faltavam no repo — os revisores so viam os
+snapshots intermediarios:
+
+| Achado (Codex/cubic) | Resolucao |
+|---|---|
+| enum/history criados depois do uso | migrations criadoras agora no repo (replay OK) |
+| quarantined re-enfileirado (`status<>'processed'`) | ja corrigido por `20260605011404` (BUG-3b: `status=ANY('{pending,processing}')`) |
+| `fn_purge_spr_history` sem REVOKE | ja corrigido por `20260605011613` (ACL: so postgres+service_role) |
+| `process_supplier_products_batch` sem REVOKE | ja com ACL so postgres+service_role |
+| VSS UPDATE sem `source='raw_v2'` | funcao final ja tem `source='raw_v2'` |
+| `fn_process_raw_v2` exec. por anon/authenticated | **forward fix** `20260605014545` (REVOKE) |
+| cron `VACUUM` multi-statement em txn block | **forward fix** `20260605014600` (ANALYZE-only) |
+
+### Forward fixes aplicados em producao (aprovados pelo usuario)
+
+- `20260605014545 revoke_fn_process_raw_v2_execute_from_anon_authenticated`
+  fecha escalacao: `fn_process_raw_v2` e SECURITY DEFINER e o guard de admin tem
+  bypass quando `auth.uid() IS NULL` (chamada anonima via PostgREST /rpc).
+  ACL final: `postgres=X | service_role=X` (anon/authenticated removidos).
+- `20260605014600 fix_vacuum_analyze_weekly_cron_no_vacuum_in_txn`
+  reverte a regressao de `20260604231642`: `VACUUM` nao roda em transaction
+  block via pg_cron (mesma licao de `20260602_002_fix_cron_jobs_never_ran`).
+  Job recriado com ANALYZE-only; VACUUM fica a cargo do autovacuum tuning.
+
+Itens deixados como nota (nao acionados): `ON CONFLICT (sku)` global em
+`20260604173140` (risco de colisao cross-produto, baixo na pratica — o motor
+busca variante por (product_id, supplier_sku) antes do insert); `DROP COLUMN
+claimed_at` sem tabela de backup em `20260605001830` (coluna ja removida, sem
+recuperacao retroativa possivel).
