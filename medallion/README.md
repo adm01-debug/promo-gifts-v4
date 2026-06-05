@@ -2,7 +2,32 @@
 
 Pipeline de dados em 3 camadas para padronização de catálogo multi-fornecedor.
 
-## Estrutura de Camadas
+> ## ⚠️ ATUALIZAÇÃO 2026-06-05 — Pipeline unificado (ADR 0007)
+>
+> A normalização foi **unificada em um único caminho de-para**, respeitando as
+> 3 fases (Bronze → Silver → Gold). A Silver canônica passou a ser
+> **`produtos_padronizacao` + `produtos_padronizacao_variantes`** (de-para via
+> `supplier_field_mappings` + `fn_apply_transform`).
+>
+> **Fluxo oficial (cron `process_pending_batches` a cada 5 min, por fornecedor `auto_sync`):**
+> ```
+> Bronze: supplier_products_raw (status='pending')
+>   └─ fn_standardize_supplier()        Fase 1→2  (Bronze → Silver de-para)
+>        ├─ fn_standardize_variant      → produtos_padronizacao_variantes
+>        └─ fn_standardize_parent       → produtos_padronizacao
+>   └─ fn_promote_supplier()            Fase 2→3  (Silver → Gold)
+>        ├─ fn_promote_padronizacao         → products
+>        └─ fn_promote_variants_of_parent   → product_variants + variant_supplier_sources
+> Gold: products / product_variants / variant_supplier_sources (status='promoted')
+> ```
+>
+> **Aposentados (deprecated, sem dropar):** o motor `fn_process_raw_v2`
+> (gravava Bronze→Gold direto), `process_supplier_product(_batch)`, e **todo o
+> Silver legado abaixo** (`silver_*` + `fn_*_to_silver` + `fn_silver_to_gold`).
+> A seção a seguir descreve a estrutura **legada**, mantida apenas para histórico.
+> Ver `docs/adr/0007-silver-de-para-pipeline-unico.md`.
+
+## Estrutura de Camadas (LEGADO — ver aviso acima)
 
 ```
 Bronze → Silver → Gold → Frontend
