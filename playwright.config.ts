@@ -45,6 +45,7 @@ export default defineConfig({
     {
       name: 'chromium-public',
       use: { 
+        ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
       },
       testIgnore: [/auth\.setup\.ts/],
@@ -54,7 +55,28 @@ export default defineConfig({
     {
       name: 'chromium-authed',
       use: {
+        ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
+        storageState: path.resolve('e2e/.auth/storageState.json'),
+      },
+      dependencies: ['setup'],
+      testIgnore: [/auth\.setup\.ts/],
+    },
+
+    {
+      name: 'firefox-authed',
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: path.resolve('e2e/.auth/storageState.json'),
+      },
+      dependencies: ['setup'],
+      testIgnore: [/auth\.setup\.ts/],
+    },
+
+    {
+      name: 'webkit-authed',
+      use: {
+        ...devices['Desktop Safari'],
         storageState: path.resolve('e2e/.auth/storageState.json'),
       },
       dependencies: ['setup'],
@@ -63,18 +85,30 @@ export default defineConfig({
 
     // 4. Mobile
     {
-      name: 'routes-mobile',
+      name: 'mobile-chrome',
       use: {
-        viewport: { width: 375, height: 667 },
-        isMobile: true,
+        ...devices['Pixel 5'],
+        storageState: path.resolve('e2e/.auth/storageState.json'),
       },
+      dependencies: ['setup'],
       testIgnore: [/auth\.setup\.ts/],
     },
 
-    // 5. Smoke — serial, no auth, no retries (matches *smoke.spec.ts files)
+    {
+      name: 'mobile-safari',
+      use: {
+        ...devices['iPhone 12'],
+        storageState: path.resolve('e2e/.auth/storageState.json'),
+      },
+      dependencies: ['setup'],
+      testIgnore: [/auth\.setup\.ts/],
+    },
+
+    // 5. Smoke — serial, no auth, no retries
     {
       name: 'chromium-smoke',
       use: {
+        ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
       },
       testMatch: [/smoke\.spec\.ts/],
