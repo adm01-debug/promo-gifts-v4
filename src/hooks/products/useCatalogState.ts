@@ -370,7 +370,7 @@ export function useCatalogState() {
       // Cobre dois casos:
       //   1. ?sort=name        → remover (é o default; param redundante)
       //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
-      const urlNeedsNormalization = validated === 'name' || urlSort !== validated;
+      const urlNeedsNormalization = validated === 'newest' || urlSort !== validated;
       if (urlNeedsNormalization) {
         const newParams = new URLSearchParams(window.location.search);
         if (validated === 'newest') {
