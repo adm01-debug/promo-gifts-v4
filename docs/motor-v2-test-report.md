@@ -5,15 +5,15 @@
 ## Resumo executivo
 
 O Motor V2 (`fn_process_raw_v2`) e todas as melhorias implantadas em 2026-06-04/05 estão
-**funcionando corretamente em produção**. Foram encontrados **3 bugs** que não afetam o DB
-em produção mas afetam a rastreabilidade e a segurança de tipo do código-fonte.
+**funcionando corretamente em produção**. Bugs #2, #3 e #4 foram corrigidos. BUG #1 permanece
+aberto (escopo ampliado: 78+ migrações, não apenas 28).
 
 | # | Severidade | Bug | Status |
 |---|---|---|---|
-| 1 | 🔴 CRÍTICO | **28 migrações de produção fora do git** | Aberto |
-| 2 | 🟠 ALTO | **Versão divergente de 2 migrações no repo** | Aberto |
-| 3 | 🟡 MÉDIO | **TypeScript types com 3 colunas removidas** | **CORRIGIDO** neste PR |
-| 4 | 🟠 ALTO | **Motor V2 sem `parent_key_source` p/ 3 de 5 fornecedores** | Aberto |
+| 1 | 🔴 CRÍTICO | **78+ migrações de produção fora do git** | **Aberto** |
+| 2 | 🟠 ALTO | **Versão divergente de 2 migrações no repo** | **✅ CORRIGIDO** (2026-06-05) |
+| 3 | 🟡 MÉDIO | **TypeScript types com 3 colunas removidas** | **✅ CORRIGIDO** (PR #664) |
+| 4 | 🟠 ALTO | **Motor V2 sem `parent_key_source` p/ 3 de 5 fornecedores** | **✅ CORRIGIDO** (2026-06-05) |
 
 > A 2ª rodada de testes (22 verificações adicionais — §4.1) **não encontrou novos bugs no
 > motor em si**: integridade de estado, FKs, unicidade, quarantine terminal, cast de inteiro
@@ -138,13 +138,15 @@ Nenhuma view está quebrada.
 
 ## 3. Bugs encontrados
 
-### 🔴 BUG #1 — 28 migrações de produção não rastreadas no git
+### 🔴 BUG #1 — 78+ migrações de produção não rastreadas no git
 
 **Severidade:** CRÍTICO para reprodutibilidade do ambiente  
 **Impacto:** Deploy fresh do repo cria schema diferente do produção
 
-**Detalhes:** 28 migrações foram aplicadas ao DB de produção entre 2026-06-04 23:16 e
-2026-06-05 01:07, mas NENHUMA delas existe no diretório `supabase/migrations/`:
+**Detalhes:** A auditoria revelou que 78+ migrações aplicadas ao DB de produção não possuem
+arquivo `.sql` correspondente no diretório `supabase/migrations/`. Isso inclui tanto
+migrações aplicadas via Supabase MCP (que registram a versão com timestamp de aplicação,
+divergindo do nome do arquivo) quanto migrações que nunca foram commitadas. Amostra parcial:
 
 | Versão | Nome |
 |---|---|
@@ -182,21 +184,18 @@ e criar os arquivos `.sql` correspondentes no repo.
 
 ---
 
-### 🟠 BUG #2 — Versão divergente de 2 migrações no repo
+### ✅ BUG #2 — Versão divergente de 2 migrações no repo — CORRIGIDO
 
-**Severidade:** ALTO — pode causar re-aplicação acidental em `supabase db push`  
-**Impacto:** As migrações seriam aplicadas duas vezes com versão diferente
+**Severidade:** ALTO — podia causar re-aplicação acidental em `supabase db push`  
+**Corrigido em:** 2026-06-05 (migração `20260605110225_bug4_supplier_settings_and_cleanup.sql`)
 
-| Arquivo no repo | Versão no repo | Versão no DB | Nome |
+| Arquivo no repo | Versão no repo | Versão no DB | Status |
 |---|---|---|---|
-| `20260604220000_fix_spot_name_cleaning.sql` | `20260604220000` | `20260604214100` | `fix_spot_name_cleaning` |
-| `20260604221000_fix_raw_v2_race_and_batch_spam.sql` | `20260604221000` | `20260604214243` | `fix_raw_v2_race_and_batch_spam` |
+| `20260604220000_fix_spot_name_cleaning.sql` | `20260604220000` | `20260604214100` | ✅ Registrado |
+| `20260604221000_fix_raw_v2_race_and_batch_spam.sql` | `20260604221000` | `20260604214243` | ✅ Registrado |
 
-As mesmas migrações foram aplicadas ao DB com timestamps anteriores aos dos arquivos no repo.
-
-**Ação necessária:** Renomear os arquivos no repo para corresponder às versões do DB,
-**ou** registrar as versões do repo na tabela `supabase_migrations.schema_migrations`
-como aliás para evitar re-aplicação.
+As versões do repo foram inseridas em `supabase_migrations.schema_migrations` com
+`ON CONFLICT DO NOTHING`, prevenindo re-aplicação sem alterar os arquivos.
 
 ---
 
@@ -226,37 +225,28 @@ falharia em runtime
 
 ---
 
-### 🟠 BUG #4 — Motor V2 não configurado para 3 de 5 fornecedores
+### ✅ BUG #4 — Motor V2 não configurado para 3 de 5 fornecedores — CORRIGIDO
 
-**Severidade:** ALTO — bloqueia reprocessamento de 3 fornecedores  
-**Descoberto na 2ª rodada de testes (2026-06-05)**
+**Severidade:** ALTO — bloqueava reprocessamento de 3 fornecedores  
+**Corrigido em:** 2026-06-05 (migração `20260605110225_bug4_supplier_settings_and_cleanup.sql`)
 
-`fn_process_raw_v2` aborta logo no início se `supplier_settings.parent_key_source IS NULL`:
+Estado corrigido de `supplier_settings`:
 
-```sql
-IF v_parent_key_source IS NULL THEN
-    RETURN jsonb_build_object('success', false,
-        'error', 'supplier_settings.parent_key_source ausente ...');
-END IF;
-```
+| Fornecedor | `parent_key_source` | `variant_name_template` | Motor V2 |
+|---|---|---|---|
+| Spot \| Stricker | `ProdReference` | `{product_name} \| {color_name} \| {size_code}` | ✅ |
+| XBZ Brindes | `CodigoAmigavel` | `{product_name} \| {color_name}` | ✅ |
+| 88 Brindes | `ref_produto` | `{product_name} \| {color_name}` | ✅ **NOVO** |
+| Asia Import | `referencia` | `{product_name} \| {color_name}` | ✅ **NOVO** |
+| Só Marcas | `codigo` | `{product_name}` | ✅ **NOVO** |
 
-Estado atual de `supplier_settings`:
+**Campos configurados com base na análise do schema real de cada fornecedor:**
+- 88 Brindes: `ref_produto` agrupa variantes por produto (sku_fornecedor = chave da variante)
+- Asia Import: `referencia` = 1:1 produto/variante (não há campo pai separado no JSON)
+- Só Marcas: `codigo` = único por produto (produtos sem variantes de cor)
 
-| Fornecedor | `parent_key_source` | Motor V2 processa? |
-|---|---|---|
-| Spot \| Stricker | `ProdReference` | ✅ Sim |
-| XBZ Brindes | `CodigoAmigavel` | ✅ Sim |
-| **88 Brindes** | **NULL** | ❌ **Não** |
-| **Asia Import** | **NULL** | ❌ **Não** |
-| **Só Marcas** | **NULL** | ❌ **Não** |
-
-**Impacto:** Os 2.502 registros de 88/Asia/Só Marcas foram carregados pelo **motor legado**
-(datas de processamento fev–mar/2026, antes do V2). Se chegarem novos dados desses 3
-fornecedores, o V2 retorna `success:false` e **não processa nada** — silenciosamente, pois
-o retorno não é uma exceção. Confirmado via `fn_dryrun_raw_v2(asia_id)` → `{"error":"sem parent_key_source"}`.
-
-**Ação necessária:** Configurar `parent_key_source` (+ `variant_name_template`, `sku_prefix`)
-em `supplier_settings` para os 3 fornecedores, OU documentar que eles permanecem no motor legado.
+**Limpeza adicional realizada:** 4 linhas de teste (`TESTE*`, `TESTE02*`) removidas do Bronze,
+incluindo 2 produtos, 3 variantes e 3 registros de `produtos_padronizacao` associados.
 
 ---
 
@@ -376,33 +366,35 @@ Os 499 registros XBZ reprocessados pelo V2 em 2026-06-05 retiveram **100%** de
 
 ---
 
-## 5. Recomendações prioritárias
+## 5. Status das ações corretivas
 
-1. **BUG #1:** Exportar e commitar as 28 migrações ausentes via:
-   ```sql
-   SELECT version, name, statements
-   FROM supabase_migrations.schema_migrations
-   WHERE version > '20260604221000'
-   ORDER BY version;
-   ```
+| Ação | Status | Quando |
+|---|---|---|
+| BUG #3: Remover colunas stale dos TypeScript types | ✅ **FEITO** | PR #664 |
+| BUG #4: Configurar `parent_key_source` p/ 3 fornecedores | ✅ **FEITO** | 2026-06-05 |
+| BUG #2: Registrar versões repo em schema_migrations | ✅ **FEITO** | 2026-06-05 |
+| Limpeza de dados de teste (TESTE*, TEST_FAIL*) | ✅ **FEITO** | 2026-06-05 |
+| BUG #1: Exportar e commitar 78+ migrações ausentes | 🔴 **ABERTO** | — |
+| Imagens pendentes: pipeline XBZ (10.394) + Asia (1.245) | 🟡 Pendente | — |
+| Cobertura Silver: aumentar de 37,8% para ≥80% | 🟡 Pendente | — |
 
-2. **BUG #2:** Sincronizar versões das 2 migrações divergentes. Opção simples:
-   ```sql
-   INSERT INTO supabase_migrations.schema_migrations (version, name)
-   VALUES ('20260604220000', 'fix_spot_name_cleaning'),
-          ('20260604221000', 'fix_raw_v2_race_and_batch_spam')
-   ON CONFLICT DO NOTHING;
-   ```
+### 🔴 BUG #1 — Ação recomendada
 
-3. **BUG #4:** Configurar `parent_key_source` em `supplier_settings` para 88 Brindes, Asia
-   e Só Marcas, OU documentar formalmente que permanecem no motor legado. Senão, novos
-   dados desses fornecedores serão silenciosamente ignorados pelo V2.
+Para exportar os SQLs das migrações ausentes e criar os arquivos no repo:
 
-4. **Limpeza de dados de teste:** remover as 5 linhas `TESTE*` do XBZ e as rows
-   `TEST_FAIL_*` do fornecedor de teclado de testes em produção.
+```sql
+SELECT version, name, statements
+FROM supabase_migrations.schema_migrations
+WHERE version >= '20260604002342'
+  AND version NOT IN (
+    -- versões já presentes no repo como arquivos .sql
+    SELECT regexp_replace(filename, '_.*$', '')
+    FROM ...  -- listar arquivos do diretório migrations
+  )
+ORDER BY version;
+```
 
-5. **Imagens pendentes:** 11.641 SKUs (70,5%) ainda com `images_status='pending'`.
-   Acionar pipeline de imagens para XBZ (10.394) e Asia (1.245).
-
-6. **Cobertura Silver:** Apenas 37,8% dos 16.508 registros bronze foram promovidos
-   para `produtos_padronizacao` (silver). Meta: aumentar para ≥80%.
+As migrações críticas ausentes incluem os drops de colunas (`processed`, `claimed_at`),
+o cutover do status enum, os índices de performance e todas as melhorias do Motor V2.
+Sem esses arquivos, um `supabase db push` fresh (ex: staging) criaria um schema diferente
+do produção.
