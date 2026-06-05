@@ -23,6 +23,7 @@ interface QuickAddToQuoteProps {
   labelOverride?: string;
   iconOverride?: 'cart' | 'plus';
   buttonSize?: 'default' | 'sm' | 'lg' | 'xl' | 'icon';
+  disabled?: boolean;
 }
 
 export function QuickAddToQuote({
@@ -37,6 +38,7 @@ export function QuickAddToQuote({
   labelOverride,
   iconOverride,
   buttonSize,
+  disabled = false,
 }: QuickAddToQuoteProps) {
   const [quantity, setQuantity] = useState(minQuantity);
   const [isOpen, setIsOpen] = useState(false);
@@ -72,6 +74,7 @@ export function QuickAddToQuote({
   };
 
   const handleOpenChange = (open: boolean) => {
+    if (disabled) return;
     setIsOpen(open);
     if (!open) {
       setSelectedVariant(undefined);
@@ -112,6 +115,7 @@ export function QuickAddToQuote({
                 variant="secondary"
                 size="icon"
                 aria-label="Adicionar ao Carrinho"
+                disabled={disabled}
                 className={cn(
                   'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
                   'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
@@ -125,7 +129,12 @@ export function QuickAddToQuote({
             <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
           </Tooltip>
         ) : (
-          <Button size={buttonSize} className={cn(className)} onClick={(e) => e.stopPropagation()}>
+          <Button
+            size={buttonSize}
+            disabled={disabled}
+            className={cn(className)}
+            onClick={(e) => e.stopPropagation()}
+          >
             {iconOverride === 'cart' ? (
               <ShoppingCart className="h-4 w-4" />
             ) : iconOverride === 'plus' ? (
