@@ -34,7 +34,7 @@ const CATALOG_VALID_SORT_VALUES = new Set(SORT_OPTIONS.map((o) => o.value));
 function sanitizeSortBy(val: unknown): SortOption {
   return typeof val === 'string' && CATALOG_VALID_SORT_VALUES.has(val)
     ? (val as SortOption)
-    : 'name';
+    : 'newest';
 }
 
 export function useCatalogPreferences() {
