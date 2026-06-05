@@ -27,7 +27,7 @@ const CATALOG_VALID_SORT_VALUES = new Set(SORT_OPTIONS.map((o) => o.value));
 
 /**
  * BUG-PREF-01 FIX: Sanitiza um valor de sortBy antes de aplicar ao state.
- * Retorna 'name' para qualquer valor inválido, null ou ausente.
+ * Retorna 'newest' para qualquer valor inválido, null ou ausente.
  * Previne que localStorage/cloud stale (ex: 'relevance' de versão anterior)
  * quebre o catálogo ou entre no state sem validação.
  */
