@@ -310,9 +310,9 @@ html[data-scroll-locked] body {
     --gradient-card: linear-gradient(180deg, hsl(var(--card-elevated)) 0%, hsl(var(--card)) 100%);
 
     /* 13. Product Swatches Tokens */
-    --swatch-size-xs: 16px;
-    --swatch-size-sm: 20px;
-    --swatch-size-md: 25px;
+    --swatch-size-xs: 18px;
+    --swatch-size-sm: 23px;
+    --swatch-size-md: 29px;
     --swatch-gap-x: 6px;
     --swatch-gap-y: 6px;
   }

@@ -122,7 +122,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   return (
     <div
       className={cn(
-        'flex h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden',
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden py-1',
         className,
       )}
       role="group"
