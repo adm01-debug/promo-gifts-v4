@@ -1,6 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, act, waitFor } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
+import {
+  render as rtlRender,
+  fireEvent,
+  act,
+  waitFor,
+  type RenderOptions,
+} from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { PromoFlixPlayer } from './PromoFlixPlayer';
+
+/**
+ * O PromoFlixPlayer renderiza controles com Radix `Tooltip`, que exigem um
+ * `TooltipProvider` ancestral (fornecido em produção por App.tsx). O render
+ * padrão do testing-library não o inclui, então envolvemos aqui para que os
+ * testes reproduzam o contexto real do app.
+ */
+const render = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <TooltipProvider>{children}</TooltipProvider>
+    ),
+    ...options,
+  });
 
 /** Forma do objeto-instância retornado pelo mock de hls.js. */
 interface MockHlsInstance {
