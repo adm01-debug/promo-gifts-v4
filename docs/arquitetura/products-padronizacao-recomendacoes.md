@@ -3,7 +3,9 @@
 > Avaliação arquitetural (DBA) da tabela `public.products` e da camada de
 > padronização/de-para de fornecedores no projeto Supabase `doufsxqlfjyuvxuezpln`.
 > Data: 2026-06-05. Base inspecionada ao vivo (não é estimativa).
-> PostgreSQL 17.6 — testado exaustivamente em 2026-06-05 (v2, com correções de bugs).
+> PostgreSQL 17.6 — testado exaustivamente em 2026-06-05 (v3: índices de
+> `active` reconfirmados ao vivo — a divisão `active`/`is_active` é real;
+> pré-requisitos de migração ampliados para funções de ingestão e índices de sort).
 
 ---
 
@@ -27,7 +29,7 @@ de fonte de verdade** e risco de *drift*.
 | Índices em `products` | 30 |
 | `distinct supplier_id` | 5 fornecedores |
 | `external_id` preenchido | **0 / 6.123 (0%)** — porém tem índice UNIQUE |
-| `active` vs `is_active` | ambos 100% preenchidos, 0 divergências hoje |
+| `active` vs `is_active` | ambos 100% preenchidos, 0 divergências hoje — **índices divididos: 4 sobre `active` + 4 sobre `is_active`** |
 | `supplier_id` / `supplier_reference` | 100% / 100% |
 | `ncm_code` (varchar) / `ncm_id` (FK) | 100% / 99,98% |
 | `category_id` / `main_category_id` | 100% / 100% — mas **136 produtos divergem** entre si |
@@ -73,19 +75,29 @@ colunas JSONB como *deprecated* e congelar escrita.
 
 ### P0 — `active` **e** `is_active` (flag duplicada)
 Dois booleanos de "ativo", ambos plain `boolean` com default `true`, ambos
-100% preenchidos, 0 divergências atuais. Os **4 índices ativos** existentes
-(`idx_products_active`, `idx_products_org_active`,
-`idx_products_org_active_name`, `idx_products_seo_listing`) usam todos
-`is_active` — a coluna `active` não tem índice dedicado.
+100% preenchidos, 0 divergências atuais. **Os índices estão de fato
+divididos entre as duas colunas** (8 índices ao todo):
 
-O risco **não** é a divisão de índices (que não existe), mas sim que dois
-caminhos de escrita independentes podem atualizar apenas um dos dois flags e
-silenciosamente divergirem. Sem constraint ou trigger, a consistência
-depende de disciplina de código.
+- **4 índices sobre `active`** (sort de catálogo, migração
+  `20260604120000_add_catalog_sort_indexes.sql`): `idx_products_active_sale_price`,
+  `idx_products_active_created_at`, `idx_products_active_stock_quantity`,
+  `idx_products_active_name_sort` — todos com `WHERE active = true`.
+- **4 índices sobre `is_active`**: `idx_products_active`,
+  `idx_products_org_active`, `idx_products_org_active_name`,
+  `idx_products_seo_listing` — todos com `WHERE is_active = true`.
 
-**Ação:** consolidar em `is_active`. Adicionar coluna gerada
-`active BOOLEAN GENERATED ALWAYS AS (is_active) STORED` como alias de
-compatibilidade temporária; depois dropar quando todos os callers migrarem.
+É um **bug latente real**: basta um caminho de escrita atualizar só um dos
+flags para os dois conjuntos de índices passarem a refletir verdades
+diferentes. Além disso, o filtro padrão do catálogo usa `active = true`
+(`src/lib/external-db/products.ts`), enquanto a camada de org/admin usa
+`is_active` — os dois mundos coexistem.
+
+**Ação:** consolidar em `is_active`, mas o `DROP COLUMN active` é **mais
+caro do que um simples alias** — ver pré-requisitos no §6(a): há índices,
+uma view e escritores (form admin **e** funções de ingestão) dependentes de
+`active`. Os 4 índices de sort de catálogo precisam ser **recriados sobre
+`is_active`** (ou sobre a coluna gerada), senão o caminho quente de
+ordenação do catálogo perde os índices.
 
 ### P1 — Identidade de fornecedor dentro de `products` é redundante
 `supplier_id` (FK 1:1) + `supplier_reference` + `manufacturer_sku` +
@@ -135,9 +147,13 @@ indexação), centralizada em `product_physical` (1:1). Demais colunas viram
 
 **Ação:** eleger `product_category_assignments` (N:N) + coluna `primary_category_id`
 como fonte canônica; investigar os 136 divergentes antes de dropar `category_id`
-ou `main_category_id`. Para NCM: `ncm_id` (FK) como verdade, mas implementar
-como **view** `v_products_ncm` ou coluna `ncm_code` com `CHECK` em vez de
-`GENERATED ALWAYS AS` (safe fallback para o outlier).
+ou `main_category_id`. Para NCM: `ncm_id` (FK) como verdade, servido por uma
+**view** `v_products_ncm` (LEFT JOIN + COALESCE) **ou** por um **trigger de
+sincronização** — o repo já tem esse padrão (`trg_sync_ncm_id`, migração
+`20260513000000_reconcile_orphan_functions_from_prod.sql`). **Não** usar
+`CHECK`: constraints CHECK no PostgreSQL não podem consultar `ncm_codes` para
+comparar o `code` do FK, então não garantiriam a invariante (drift continuaria
+possível). Também evitar `GENERATED ALWAYS AS` enquanto houver o outlier sem FK.
 
 ### P2 — *God table*: extrair blocos coesos para satélites 1:1
 Grandes blocos temáticos inflam toda leitura de catálogo:
@@ -235,7 +251,7 @@ Tudo atrás de *views* de compatibilidade (`v_products_complete`,
 |---|---|---|
 | 0 | Adicionar `COMMENT ON COLUMN` marcando colunas *deprecated*; congelar escrita nos JSONB | Nulo |
 | 1 | **Quick wins** de performance: dropar `unused_index`, indexar FKs quentes, corrigir `auth_rls_initplan` com `(SELECT auth.uid())`, consolidar policies | Baixo |
-| 2 | Consolidar `active`→`is_active`: DROP + ADD GENERATED ALWAYS AS — todos os índices já usam `is_active` | Baixo (requer rewrite; janela de manutenção) |
+| 2 | Consolidar `active`→`is_active`: parar escritores (form admin **+ funções de ingestão**), recriar view e os 4 índices de sort sobre `is_active`, então DROP + ADD GENERATED ALWAYS AS | **Médio** (rewrite + índices/view/funções dependentes; janela de manutenção) |
 | 3 | Popular/validar `external_id` (chave canônica); reduzir dependência de `sku`/`supplier_reference` | Médio |
 | 4 | Extrair satélites: `product_seo`, `product_ai`, `product_packaging` (criar + backfill + view) | Médio |
 | 5 | Migrar dimensões para `product_physical` (unidade única) + colunas geradas | Médio |
@@ -250,16 +266,26 @@ Tudo atrás de *views* de compatibilidade (`v_products_complete`,
 > Apenas sugestões. **Nada foi executado** no banco. Validar em branch/staging.
 
 ```sql
--- (a) Consolidar flag de ativo — requer 3 pré-requisitos antes do DDL:
+-- (a) Consolidar flag de ativo — requer 5 pré-requisitos antes do DDL:
 --
--- PRÉ-REQUISITO 1 (código): remover 'active' do payload de escrita.
+-- PRÉ-REQUISITO 1 (código TS): remover 'active' do payload de escrita.
 --   src/pages/admin/AdminProductFormPage.tsx:269 escreve:
 --     active: data.is_active   ← REMOVER esta linha antes do DROP COLUMN
 --   Qualquer INSERT/UPDATE que ainda forneça 'active' explicitamente vai
 --   falhar com "cannot insert a non-DEFAULT value into column 'active'"
 --   após a coluna virar GENERATED ALWAYS.
 --
--- PRÉ-REQUISITO 2 (view): recriar v_products_public sem depender de 'active'.
+-- PRÉ-REQUISITO 2 (funções de banco): as funções de ingestão também escrevem
+--   'active'. Ex.: fn_process_raw_v2 faz
+--     INSERT INTO products (... active, is_active ...) VALUES (... true, true ...)
+--   (supabase/migrations/20260604234507_fix_fn_process_raw_v2_status_column.sql:128-132).
+--   TODOS os escritores de 'active' (form admin + funções/triggers de ETL)
+--   precisam parar de escrever 'active' antes do GENERATED ALWAYS, senão a
+--   ingestão de fornecedores quebra. Auditar com:
+--     SELECT proname FROM pg_proc
+--     WHERE prosrc ILIKE '%active%' AND prosrc ILIKE '%products%';
+--
+-- PRÉ-REQUISITO 3 (view): recriar v_products_public sem depender de 'active'.
 --   v_products_public seleciona 'active AS active' de products.active
 --   (supabase/migrations/20260602120000_…:78-98). PostgreSQL recusa
 --   DROP COLUMN se uma view depende da coluna. Recriar a view primeiro:
@@ -273,13 +299,25 @@ CREATE OR REPLACE VIEW public.v_products_public AS
   FROM public.products;
 -- (ajustar colunas conforme definição vigente)
 --
--- PRÉ-REQUISITO 3 (callers): migrar filtros de 'active' para 'is_active'.
---   src/lib/external-db/products.ts:82-85 usa { active: true } como filtro
---   padrão. WHERE active = true não aproveita os índices parciais em
---   is_active — migrar para { is_active: true } antes de depender dos
---   índices de is_active para performance.
+-- PRÉ-REQUISITO 4 (índices): há 4 índices PARCIAIS com WHERE active = true
+--   (sort de catálogo, migração 20260604120000). O DROP COLUMN active vai
+--   DROPAR esses índices em cascata. Recriar sobre is_active ANTES (ou logo
+--   após) para não deixar o caminho de ordenação do catálogo sem índice:
+--     CREATE INDEX CONCURRENTLY idx_products_isactive_sale_price
+--       ON public.products (sale_price)        WHERE is_active = true;
+--     CREATE INDEX CONCURRENTLY idx_products_isactive_created_at
+--       ON public.products (created_at DESC)   WHERE is_active = true;
+--     CREATE INDEX CONCURRENTLY idx_products_isactive_stock_quantity
+--       ON public.products (stock_quantity DESC) WHERE is_active = true;
+--     CREATE INDEX CONCURRENTLY idx_products_isactive_name_sort
+--       ON public.products (name)              WHERE is_active = true;
 --
--- Somente após os 3 pré-requisitos acima:
+-- PRÉ-REQUISITO 5 (callers): migrar filtros de 'active' para 'is_active'.
+--   src/lib/external-db/products.ts:82-85 usa { active: true } como filtro
+--   padrão. WHERE active = true precisa virar { is_active: true } para casar
+--   com os índices recriados acima.
+--
+-- Somente após os 5 pré-requisitos acima:
 ALTER TABLE public.products DROP COLUMN active;
 ALTER TABLE public.products
   ADD COLUMN active boolean
@@ -333,10 +371,13 @@ COMMENT ON COLUMN public.products.tags      IS 'DEPRECATED: usar product_tags.';
 COMMENT ON COLUMN public.products.images    IS 'DEPRECATED: usar product_images.';
 COMMENT ON COLUMN public.products.ncm_code  IS 'DEPRECATED: derivar de ncm_id (FK ncm_codes). Exceção: SKU 15426 tem ncm_code sem ncm_id — tratar antes de remover.';
 
--- (d) NCM — NÃO usar GENERATED ALWAYS AS diretamente:
---   1 produto (SKU 15426, "Mochila em couro") tem ncm_id NULL → a expressão
---   GENERATED falharia na reescrita da tabela.
---   Alternativa segura: view ou coluna com default NULL e trigger de sync.
+-- (d) NCM — NÃO usar GENERATED ALWAYS AS nem CHECK:
+--   - GENERATED ALWAYS AS falharia: SKU 15426 tem ncm_id NULL.
+--   - CHECK não pode consultar ncm_codes (constraints não fazem lookup em
+--     outra tabela) → não garante a invariante; drift continua possível.
+--   Alternativa segura: view (abaixo) OU trigger de sync. O repo já tem o
+--   padrão de trigger (trg_sync_ncm_id, migração
+--   20260513000000_reconcile_orphan_functions_from_prod.sql) — reusar.
 -- CREATE VIEW v_products_ncm AS
 --   SELECT p.id, COALESCE(n.code, p.ncm_code) AS ncm_code_resolved
 --   FROM public.products p
