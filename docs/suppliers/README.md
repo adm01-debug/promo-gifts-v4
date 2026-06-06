@@ -1,1 +1,52 @@
-IyBQaXBlbGluZXMgZGUgRm9ybmVjZWRvcmVzCgpEb2N1bWVudGHDp8OjbyBkb3MgcGlwZWxpbmVzIGRlIGluZ2VzdMOjbyBkZSBkYWRvcyBkZSBjYWRhIGZvcm5lY2Vkb3IgYXRpdm8gbmEgcGxhdGFmb3JtYSBQcm9tbyBHaWZ0cy4KCiMjIEFycXVpdGV0dXJhIGdlcmFsIGRlIGluZ2VzdMOjbwoKYGBgCltGb250ZSBkZSBkYWRvcyBkbyBmb3JuZWNlZG9yXQogICAgICAgIOKUggogICAgICAgIOKWvApbc3VwcGxpZXJfcHJvZHVjdHNfcmF3XSAgIOKGkCBCUk9OWkUgKHJhd19kYXRhIEpTT05CKQogICAgICAgIOKUggogICAgICAgIOKWvApbZm5fcHJvY2Vzc19zdGFnZWRfcHJvZHVjdCAvIGZuX3Byb2Nlc3NfcmF3X3YyXQogICAgICAgIOKUggogICAgICAgIOKWvApbcHJvZHVjdHMgKyBwcm9kdWN0X3ZhcmlhbnRzXSAgIOKGkCBHT0xECmBgYAoKIyMgRm9ybmVjZWRvcmVzIGF0aXZvcwoKfCBGb3JuZWNlZG9yIHwgc3VwcGxpZXJfaWQgfCBQcm9jZXNzYWRvciB8IEZvbnRlcyB8IFN0YXR1cyB8CnwtLS18LS0tfC0tLXw6LS0tOnwtLS18CnwgW1hCWiBCcmluZGVzXSguL3hiei1mb250ZXMtZGUtZGFkb3MubWQpIHwgYGQ2NzE4YTI5LeKApmAgfCBgZm5fcHJvY2Vzc19zdGFnZWRfcHJvZHVjdGAgfCAqKjQqKiB8IOKchSBBdGl2byB8CnwgW1Nwb3QgLyBTdHJpY2tlcl0oLi9zcG90LWZvbnRlcy1kZS1kYWRvcy5tZCkgfCBgYmNmYzBkMDIt4oCmYCB8IGBmbl9wcm9jZXNzX3Jhd192MmAgfCAqKjMqKiB8IOKchSBBdGl2byB8CnwgU8OzIE1hcmNhcyB8IOKAlCB8IGBmbl9wcm9jZXNzX3N0YWdlZF9wcm9kdWN0YCB8IDEgfCDinIUgQXRpdm8gfAp8IEFzaWEgSW1wb3J0IHwg4oCUIHwgYGZuX3Byb2Nlc3Nfc3RhZ2VkX3Byb2R1Y3RgIHwgMSB8IOKPsyBBZ3VhcmRhbmRvIHJlLWluZ2VzdMOjbyB8CnwgODggQnJpbmRlcyB8IOKAlCB8IOKAlCB8IOKAlCB8IOKdjCBGb3JhIGRlIGVzY29wbyAobWFudWFsKSB8CgojIyBDb252ZW7Dp8OjbyBkZSBgc291cmNlX2NoYW5uZWxgCgpPIGNhbXBvIGBzb3VyY2VfY2hhbm5lbGAgZW0gYHN1cHBsaWVyX3Byb2R1Y3RzX3Jhd2AgaWRlbnRpZmljYSBhIG9yaWdlbSBkZSBjYWRhIGxpbmhhOgoKfCBWYWxvciB8IE9yaWdlbSB8CnwtLS18LS0tfAp8IGBhcGlfY2xpZW50ZXNgIHwgQVBJIG9maWNpYWwgYC9hcGkvY2xpZW50ZXMvYCAoWEJaKSB8CnwgYGFwaV9ydWl6YCB8IFBvcnRhbCBgL2FwaS9ydWl6L2AgKFhCWikgfAp8IGBhcGlfY2FycmluaG9gIHwgUG9ydGFsIGAvYXBpL2NhcnJpbmhvL2AgKFhCWikgfAp8IGBzaXRlX3NjcmFwaW5nYCB8IFNjcmFwaW5nIGhlYWRsZXNzIHZpYSBKaW5hIEFJIHwKfCBgYXBpX3htbGAgfCBXZWJzZXJ2aWNlIFNTTCBkZSBjYXTDoWxvZ28gKFNwb3QpIHwKfCBgYXBpX3Jlc3RgIHwgQVBJIFJFU1QgZ2Vuw6lyaWNhIHwKfCBgZmlsZV91cGxvYWRgIHwgVXBsb2FkIG1hbnVhbCB8CnwgYG44bl93b3JrZmxvd2AgfCBXb3JrZmxvdyBuOG4gYXV0b21hdGl6YWRvIHwKfCBgZWRnZV9mdW5jdGlvbmAgfCBFZGdlIEZ1bmN0aW9uIFN1cGFiYXNlIHwKCiMjIEFycXVpdm9zIGRlIGRvY3VtZW50YcOnw6NvCgp8IEFycXVpdm8gfCBGb3JuZWNlZG9yIHwgQ29udGXDumRvIHwKfC0tLXwtLS18LS0tfAp8IFt4YnotZm9udGVzLWRlLWRhZG9zLm1kXSguL3hiei1mb250ZXMtZGUtZGFkb3MubWQpIHwgWEJaIEJyaW5kZXMgfCA0IGZvbnRlcyBkZSBkYWRvczogQVBJcywgcG9ydGFsIGUgc2NyYXBpbmcgfAp8IFtzcG90LWZvbnRlcy1kZS1kYWRvcy5tZF0oLi9zcG90LWZvbnRlcy1kZS1kYWRvcy5tZCkgfCBTcG90IC8gU3RyaWNrZXIgfCAzIGNhbmFpczogV2Vic2VydmljZSBBUEkgKDYgZmVlZHMpLCBwb3J0YWwgcMO6YmxpY28gZSBwb3J0YWwgYXV0ZW50aWNhZG8gfAo=
+# Pipelines de Fornecedores
+
+Documentação dos pipelines de ingestão de dados de cada fornecedor ativo na plataforma Promo Gifts.
+
+## Arquitetura geral de ingestão
+
+```
+[Fonte de dados do fornecedor]
+       │
+       ▼
+[supplier_products_raw]   → BRONZE (raw_data JSONB)
+       │
+       ▼
+[fn_process_staged_product / fn_process_raw_v2]
+       │
+       ▼
+[products + product_variants]   → GOLD
+```
+
+## Fornecedores ativos
+
+| Fornecedor | supplier_id | Processador | Fontes | Status |
+|---|---|---|:---:|---|
+| [XBZ Brindes](./xbz-fontes-de-dados.md) | `d6718a29-…` | `fn_process_staged_product` | **4** | ✅ Ativo |
+| [Spot / Stricker](./spot-fontes-de-dados.md) | `bcfc0d02-…` | `fn_process_raw_v2` | **3** | ✅ Ativo |
+| Só Marcas | — | `fn_process_staged_product` | 1 | ✅ Ativo |
+| [Asia Import](./asia-import-fontes-de-dados.md) | `d2734e23-…` | `fn_process_staged_product` | **5** | ⚠️ Parcial (C1 inativo) |
+| 88 Brindes | — | — | — | ❌ Fora de escopo (manual) |
+
+## Convenção de `source_channel`
+
+O campo `source_channel` em `supplier_products_raw` identifica a origem de cada linha:
+
+| Valor | Origem |
+|---|---|
+| `api_clientes` | API oficial `/api/clientes/` (XBZ) |
+| `api_ruiz` | Portal `/api/ruiz/` (XBZ) |
+| `api_carrinho` | Portal `/api/carrinho/` (XBZ) |
+| `site_scraping` | Scraping headless via Jina AI |
+| `api_xml` | Webservice SSL de catálogo (Spot) |
+| `api_rest` | API REST genérica |
+| `file_upload` | Upload manual |
+| `n8n_workflow` | Workflow n8n automatizado |
+| `edge_function` | Edge Function Supabase |
+
+## Arquivos de documentação
+
+| Arquivo | Fornecedor | Conteúdo |
+|---|---|---|
+| [xbz-fontes-de-dados.md](./xbz-fontes-de-dados.md) | XBZ Brindes | 4 fontes de dados: APIs, portal e scraping |
+| [spot-fontes-de-dados.md](./spot-fontes-de-dados.md) | Spot / Stricker | 3 canais: Webservice API (6 feeds), portal público e portal autenticado |
+| [asia-import-fontes-de-dados.md](./asia-import-fontes-de-dados.md) | Asia Import | 5 canais: API pública, portal WooCommerce, hg/products, hg/atributes e hg/bisa |
