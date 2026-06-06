@@ -68,7 +68,7 @@ function emit(
   const isDev = import.meta.env.DEV;
   const tag = `[${scope}:${event}]`;
   if (isDev) {
-    const fn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.warn;
+    const fn = level === 'error' ? console.error : console.warn;
     fn(tag, payload);
   } else {
     const json = JSON.stringify(payload);

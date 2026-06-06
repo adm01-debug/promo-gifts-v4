@@ -83,7 +83,7 @@ describe('structuredLogger.ts', () => {
 
     child.info('event');
     expect(consoleSpy.warn).toHaveBeenCalled();
-    const payload = JSON.parse(JSON.stringify(consoleSpy.warn.mock.calls[0][1]));
+    const payload = consoleSpy.warn.mock.calls[0][1] as Record<string, unknown>;
     expect(payload.scope).toBe('parent.child');
     expect(payload.extra).toBe('data');
   });

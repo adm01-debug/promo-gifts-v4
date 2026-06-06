@@ -85,12 +85,12 @@
 
 ### 2.3 Categorização
 
-| Campo | Tipo | Exemplo (caneta) | Exemplo (garrafa) |
-|---|---|---|---|
-| `Type` | string | `"Escrita"` | `"Squeezes & Copos"` |
-| `TypeCode` | string | `"0031"` | `"10"` |
-| `SubType` | string | `"Esferográficas em Plástico"` | `"Garrafas"` |
-| `SubTypeCode` | string | `"0134"` | `"1010"` |
+| Campo | Tipo | Exemplo (caneta) | Exemplo (garrafa) | Obs |
+|---|---|---|---|---|
+| `Type` | string | `"Escrita"` | `"Squeezes & Copos"` | |
+| `TypeCode` | string | `"0031"` | `"10"` | |
+| `SubType` | string | `"Esferográficas em Plástico"` | `"Garrafas"` | |
+| `SubTypeCode` | string | `"0134"` | `"1010"` | |
 | `Catalogs` | string | `"Stockout,Stockout"` | — | Catálogos em que o produto aparece |
 | `IsSeasonal` | bool | `false` | — | |
 | `SeasonalOccasion` | string | `""` | — | Ex: "Natal", "Dia dos Pais" |
@@ -146,7 +146,7 @@
 | Campo | Tipo | Exemplo | Obs |
 |---|---|---|---|
 | `Certificates` | string | `"MSDS"` | Nome(s) dos certificados |
-| `CertificateFiles` | array/null | `null` | Links dos arquivos (geralmente null) |
+| `CertificateFiles` | string/null | `null` | Nome do arquivo de certificado (ex: `"cert_30511.zip"`); geralmente null |
 
 ### 2.9 Campos Específicos por Tipo de Produto
 
@@ -233,7 +233,7 @@
 | Campo | Tipo | Obs |
 |---|---|---|
 | `RelatedReferences` | string | Referências de produtos relacionados (CSV) |
-| `CertificateFiles` | null | Links de arquivos de certificado |
+| `CertificateFiles` | string/null | Nome do arquivo de certificado; geralmente null |
 | `NoReplenishment` | bool | `false` = haverá reposição; `true` = descontinuado |
 
 ---
@@ -377,7 +377,7 @@ Para cada local de impressão (numerado 1 a 8):
 
 O `productsTree` retorna a estrutura aninhada completa:
 
-```
+```text
 produto
 └── Components[]                     ← componentes imprimíveis
     ├── Name (ex: "Esferográfica")
@@ -427,6 +427,8 @@ produto
 |---|---|---|
 | `PDP1` | Tampografia | Impressão por pressão; até 5 cores; preço por cor |
 | `SRC1` | Silk Screen Circular | Serigrafia em superfícies circulares; até 3 cores |
+| `TRS1` | Transfer | Validado em têxteis (ex: 30511 GOIABA WOMEN) |
+| `TXP5` | Silk Screen Têxtil | Serigrafia específica para têxteis; validado em 30511 |
 | — | Bordado | Suportado via `MaxStitches` + `AditionalStitches` |
 | — | Gravação a Laser | Aparece em outros produtos do catálogo |
 | — | Digital (UV/DTG) | Aparece em outros produtos do catálogo |
@@ -537,7 +539,7 @@ Preços base por técnica (sem vínculo a produto específico):
 
 ### Estrutura de Nomenclatura de Imagens (convenção)
 
-```
+```text
 {ref}_set.jpg               — foto do set/produto geral
 {ref}_{colorCode}.jpg       — produto na cor (ex: 51102_103.jpg = preto)
 {ref}_{colorCode}_C{N}.png  — componente N na cor
@@ -948,7 +950,7 @@ Preços base por técnica (sem vínculo a produto específico):
 | **Peso em gramas** | `WeightGr` sempre vazio | Usar `Weight` (número em gramas) |
 | **País de origem** | `CountryOfOrigin` frequentemente vazio | Verificar `Description` |
 | **Composição do material** | `Composition` frequentemente vazio | Verificar `Materials` + `Description` |
-| **Certificados (arquivo PDF)** | `CertificateFiles` = null | Apenas nome em `Certificates` |
+| **Certificados (arquivo)** | `CertificateFiles` = string filename ou null; `Certificates` = nome do cert | Validado: `"cert_30511.zip"` em têxtil; null em outros |
 | **Estoque por armazém** | Requer sessão logada | Usar `spot_ws_stocks` (quantidade total) |
 | **Personalização HTML (overlay visual)** | Requer sessão logada (`prod` ID interno) | Usar `customizationOptions` com `HotSpot*` |
 | **2ª cor na variante** | `ColorDesc2`/`ColorHex2` raramente preenchidos | — |
@@ -974,7 +976,7 @@ Preços base por técnica (sem vínculo a produto específico):
 
 ## 18. Mapa Completo de Campos (Síntese)
 
-```
+```text
 PRODUTO (chave: ProdReference)
 │
 ├── IDENTIDADE
@@ -1157,7 +1159,7 @@ CATEGORIAS (feed productTypes — 31 tipos)
 
 ### Estratégia de Sincronização Recomendada
 
-```
+```text
 DIÁRIO (madrugada):
   1. spot_ws_download(optionalscomplete, json)  → sincroniza tudo
   2. spot_ws_canceled_products                  → marca removidos
