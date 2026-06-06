@@ -1,89 +1,112 @@
-# Relatório de Testes V5 — Pipeline Silver
+# Relatório de Testes V5 — Esteira de Estoque SPOT
 
-## Data: 2026-06-06 | 23 testes em 7 blocos | **23/23 PASS**
+**Data:** 2026-06-06  
+**Sessão:** Diagnóstico e correção do bug de estoque no Medallion  
+**Resultado:** ✅ APROVADO
 
 ---
 
-## Bug 6 Encontrado e Corrigido
+## 1. Bug Identificado e Corrigido
 
-### Bug 6 — `fn_standardize_raw` sobrescrevia `tags` e `materials` com NULL
+### fn_promote_variants_of_parent — COALESCE(stock, 0) destrutivo
 
-**Detectado em**: V6-T04 — ASIA em `produtos_padronizacao` resetava para 0% materiais após `fn_bronze_to_silver_all`
-
-**Causa**: O ON CONFLICT DO UPDATE usava `tags=EXCLUDED.tags, materials=EXCLUDED.materials`. Como ASIA não possui mapeamento nos `supplier_field_mappings` para essas colunas, os valores `v_tags` e `v_materials` são NULL durante o processamento ASIA, e a instrução sobrescrevia os dados existentes com NULL.
-
-**Correção**:
+**Causa raiz:**
 ```sql
--- ANTES (sobrescrevia):
-tags=EXCLUDED.tags, materials=EXCLUDED.materials, meta_keywords=EXCLUDED.meta_keywords,
+-- ANTES (bug): no INSERT do VSS
+quantity = COALESCE(pv.stock_quantity, 0),  -- quando Silver=NULL → EXCLUDED=0
+stock_main_warehouse = COALESCE(pv.stock_quantity, 0),
+-- ON CONFLICT: COALESCE(0, existente) = 0 → DESTROÍA o estoque!
 
--- DEPOIS (preserva se novo é NULL):
-tags=COALESCE(EXCLUDED.tags, pad.tags),
-materials=COALESCE(EXCLUDED.materials, pad.materials),
-meta_keywords=COALESCE(EXCLUDED.meta_keywords, pad.meta_keywords),
+-- DEPOIS (correto):
+quantity = pv.stock_quantity,  -- quando Silver=NULL → EXCLUDED=NULL
+stock_main_warehouse = pv.stock_quantity,
+-- ON CONFLICT: COALESCE(NULL, existente) = existente → PRESERVA ✅
 ```
 
-**Validado**: 3 execuções consecutivas de `fn_standardize_raw` sobre produto ASIA com material definido → material preservado em todas.
+**Impacto:** Qualquer execução do pipeline com Bronze sem stock_data zeraria
+o estoque Gold de todos os refs processados.
+
+**Migration aplicada:** `fix_promote_variants_stock_coalesce_zero`
 
 ---
 
-## Scorecard Final V5 — 23/23 PASS
+## 2. Funções Criadas
 
-| Bloco | Categoria | Resultado |
-|-------|-----------|----------|
-| T01 | COALESCE Fix: fn_standardize_raw protege tags/materials | PASS |
-| T01 | Inventário: 21 funções, zero debug, utilitários ok | PASS |
-| T02 | Bug1: zero plástica/inox sem material | PASS |
-| T02 | Bug2: ASIA SKU único, CAD003=12 cores, batch=0 | PASS |
-| T02 | Bug3: fn_xbz_to_silver fallback ILIKE plástica | PASS |
-| T02 | Bug4: fn_asia_to_silver fallback ILIKE plástica | PASS |
-| T02 | Bug5: fn_normalize_silver_all 10 rodadas = zero | PASS |
-| T02 | Bug6: fn_standardize_raw COALESCE materials preservados | PASS |
-| T03 | fn_normalize_ncm: 18/18 PASS | PASS |
-| T03 | fn_clean_spot_name: 14/14 PASS | PASS |
-| T04 | PP ALLCAPS: zero em todos | PASS |
-| T04 | PP NCM: 100% válido em STRICKER/SM/ASIA | PASS |
-| T04 | PP Materials: STRICKER 94.5%, SM 90.9%, XBZ 86.1%, ASIA 57.3% | PASS |
-| T04 | PP Tags: STRICKER 99.9%, SM 99.4%, XBZ 100%, ASIA 99.8% | PASS |
-| T05 | SP NCM: STRICKER/ASIA/SM 100%; XBZ 99.0% | PASS |
-| T05 | SP Categoria: STRICKER 98%, ASIA 90.9%, SM 89.7%, XBZ 82.6% | PASS |
-| T05 | SP Material: STRICKER 95.6%, ASIA 95.9%, SM 90.9%, XBZ 87.3% | PASS |
-| T05 | SP Cor: STRICKER 100%, XBZ 98.7%, ASIA 99.7% | PASS |
-| T05 | SP Confiança: STRICKER 0.987, SM 0.961, XBZ 0.906, ASIA 0.874 | PASS |
-| T05 | SP ALLCAPS: zero em todos | PASS |
-| T06 | Integridade: 15/15 checks FK + unicidade + orphan = zero | PASS |
-| T07 | Pipeline: fn_bronze_to_silver_all: 0 proc, 0 erros | PASS |
-| T07 | Gold: fn_silver_batch_to_gold ASIA: 3 promovidos, 0 erros | PASS |
+### fn_upsert_stock_to_bronze(supplier_id, items[])
+- Recebe array de itens do feed `spot_ws_stocks`
+- Grava em `supplier_products_raw.stock_data` (Bronze)
+- Retorna `{updated, not_found, total}`
+- **NUNCA escreve em Silver ou Gold**
+
+### fn_sync_stock_bronze_to_gold(supplier_id, parent_ref)
+- Lê `stock_data` do Bronze
+- Atualiza Silver: `stock_quantity`, `next_quantity_1..3`, `next_date_1..3`
+- Propaga para Gold VSS: `quantity`, `stock_main_warehouse`, `next_quantity_1..3`
+- Retorna `{silver_updated, gold_updated}`
+- **Caminho canônico: Bronze → Silver → Gold**
 
 ---
 
-## Estado Final dos Dois Pipelines
+## 3. Restauração de Dados
 
-### Pipeline Silver (`silver_products`)
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| Gold qty > 0 | 3199 (mas muitos errados) | 3220 ✅ |
+| Gold qty = 0 | 400+ | 394 |
+| Gold qty NULL | 22 | 22 |
 
-| Fornecedor | Produtos | Variantes | NCM | Cat | Mat | Cor | Conf |
-|------------|----------|-----------|-----|-----|-----|-----|------|
-| STRICKER | 1.200 | 3.612 | **100%** | **98.0%** | **95.6%** | **100%** | **0.987** |
-| SOMARCAS | 1.215 | 1.215 | **100%** | **89.7%** | **90.9%** | N/A | **0.961** |
-| XBZ | **5.183** | **11.374** | **99.0%** | **82.6%** | **87.3%** | **98.7%** | **0.906** |
-| ASIA | 515 | 1.340 | **100%** | **90.9%** | **95.9%** | **99.7%** | **0.874** |
+Restaurados 3199 registros via `raw_data` que preservava os valores reais.
 
-### Pipeline Canônico (`produtos_padronizacao`)
+---
 
-| Fornecedor | Produtos | ALLCAPS | NCM | Materials | Tags |
-|------------|----------|---------|-----|-----------|------|
-| STRICKER | 1.200 | **0** | **100%** | **94.5%** | **99.9%** |
-| SOMARCAS | 1.215 | **0** | **100%** | **90.9%** | **99.4%** |
-| XBZ | 3.747 | **0** | **98.2%** | **86.1%** | **100%** |
-| ASIA | 433 | **0** | **100%** | **57.3%** | **99.8%** |
+## 4. Teste de Esteira Completa
 
-### Funções Atualizadas nesta sessão
-- `fn_standardize_raw`: COALESCE para `tags`, `materials`, `meta_keywords` no ON CONFLICT (Bug 6)
+**SKU:** `11110-105`
 
-### Total acumulado de Bugs corrigidos: 6
-1. Bug1: extract_xbz_material_primary sem formas adjetivas
-2. Bug2: ASIA batch loop infinito + SKU não-único (referencia|COR)
-3. Bug3: fn_xbz_to_silver sem ILIKE fallback
-4. Bug4: fn_normalize_silver_all sem ILIKE fallback
-5. Bug5: fn_normalize_silver_all loop 406/rodada (CASE incompleto)
-6. Bug6: fn_standardize_raw sobrescrevia tags/materials com NULL (COALESCE)
+| Camada | Campo | Valor |
+|--------|-------|-------|
+| Bronze | `stock_data->>'Quantity'` | 1862 ✅ |
+| Silver | `stock_quantity` | 1862 ✅ |
+| Gold | `quantity` | 1862 ✅ |
+| Gold | `source` | `silver` ✅ |
+
+**Pipeline completo (`fn_spot_process_ref('11110')`):** estoque preservado após execução ✅
+
+---
+
+## 5. Diagnóstico da Bronze (stock_data)
+
+| Métrica | Valor |
+|---------|-------|
+| Total SKUs Bronze | 3612 |
+| SKUs com stock_data | 1 (apenas 11110-105, testado agora) |
+| SKUs sem stock_data | 3611 |
+
+**Causa:** O feed `spot_ws_stocks` nunca foi ingerido na Bronze de forma sistemática.
+`fn_import_stock_from_spot` escreve diretamente no Gold (violação da arquitetura Medallion).
+
+---
+
+## 6. Pendências
+
+1. **n8n ING-SPOT-STOCK:** Implementar workflow que chama `spot_ws_stocks` →
+   `fn_upsert_stock_to_bronze()` → `fn_sync_stock_bronze_to_gold()` a cada 30min.
+2. **Carga inicial completa:** Buscar estoque de todos os 3612 SKUs via SPOT API
+   e popular Bronze completamente.
+3. **fn_import_stock_from_spot:** Deprecar como caminho primário. Manter apenas
+   como recuperação emergencial.
+
+---
+
+## 7. Arquitetura Canônica de Estoque (implementada)
+
+```
+spot_ws_stocks feed
+  → fn_upsert_stock_to_bronze(supplier_id, items[])   [Bronze]
+    → supplier_products_raw.stock_data
+      → fn_sync_stock_bronze_to_gold(supplier_id, ref)  [Silver → Gold]
+        → produtos_padronizacao_variantes.stock_quantity  [Silver]
+          → variant_supplier_sources.quantity              [Gold]
+```
+
+**Invariante:** Nenhum dado vai direto ao Gold. Bronze → Silver → Gold.
