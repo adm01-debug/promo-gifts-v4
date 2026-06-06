@@ -108,7 +108,7 @@ export default function ResetPassword() {
         toast({
           variant: 'destructive',
           title: 'Erro ao redefinir senha',
-          description: error.message,
+          description: 'Não foi possível redefinir sua senha. O link pode ter expirado.',
         });
         return;
       }

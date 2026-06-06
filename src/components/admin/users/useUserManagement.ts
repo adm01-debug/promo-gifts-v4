@@ -160,7 +160,7 @@ export function useUserManagement() {
     } catch (error: unknown) {
       console.error('Error deleting user:', error);
       toast.error('Erro ao excluir usuário', {
-        description: error instanceof Error ? error.message : String(error),
+        description: 'Não foi possível excluir o usuário.',
       });
       return false;
     }
@@ -198,7 +198,7 @@ export function useUserManagement() {
     } catch (error: unknown) {
       console.error('Error updating user:', error);
       toast.error('Erro ao atualizar usuário', {
-        description: error instanceof Error ? error.message : String(error),
+        description: 'Não foi possível atualizar o usuário.',
       });
       return false;
     }
@@ -227,7 +227,7 @@ export function useUserManagement() {
     } catch (error: unknown) {
       console.error('Error uploading avatar:', error);
       toast.error('Erro ao enviar foto', {
-        description: error instanceof Error ? error.message : String(error),
+        description: 'Não foi possível enviar a foto de perfil.',
       });
       return null;
     }

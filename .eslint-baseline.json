@@ -1,18 +1,5 @@
 {
-  "generatedAt": "2026-06-04T21:18:37.531Z",
+  "generatedAt": "2026-06-05T18:39:33.931Z",
   "totalErrors": 0,
-  "counts": {
-    "src/components/ThemeInitializer.test.tsx": {
-      "@typescript-eslint/no-explicit-any": 3
-    },
-    "src/components/products/ProductCard.tsx": {
-      "react-hooks/exhaustive-deps": 1
-    },
-    "src/hooks/products/useCatalogPrefetch.test.ts": {
-      "@typescript-eslint/no-explicit-any": 3
-    },
-    "src/hooks/ui/useMobileSidebarFix.ts": {
-      "react-hooks/exhaustive-deps": 1
-    }
-  }
+  "counts": {}
 }

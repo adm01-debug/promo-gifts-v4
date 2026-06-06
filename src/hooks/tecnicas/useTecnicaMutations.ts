@@ -29,8 +29,8 @@ export function useTecnicaMutations() {
       queryClient.invalidateQueries({ queryKey: TECNICAS_QUERY_KEYS.all });
       toast.success(ativo ? 'Técnica ativada!' : 'Técnica desativada!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+    onError: () => {
+      toast.error('Erro ao alterar status da técnica');
     },
   });
 
@@ -47,8 +47,8 @@ export function useTecnicaMutations() {
       queryClient.invalidateQueries({ queryKey: TECNICAS_QUERY_KEYS.all });
       toast.success('Técnica criada!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao criar: ${error.message}`);
+    onError: () => {
+      toast.error('Erro ao criar técnica');
     },
   });
 
@@ -66,8 +66,8 @@ export function useTecnicaMutations() {
       queryClient.invalidateQueries({ queryKey: TECNICAS_QUERY_KEYS.all });
       toast.success('Técnica atualizada!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao atualizar: ${error.message}`);
+    onError: () => {
+      toast.error('Erro ao atualizar técnica');
     },
   });
 
@@ -84,8 +84,8 @@ export function useTecnicaMutations() {
       queryClient.invalidateQueries({ queryKey: TECNICAS_QUERY_KEYS.all });
       toast.success('Técnica removida!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao remover: ${error.message}`);
+    onError: () => {
+      toast.error('Erro ao remover técnica');
     },
   });
 

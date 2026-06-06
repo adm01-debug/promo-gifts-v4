@@ -138,9 +138,9 @@ export function RoleMigrationPanel() {
               current_roles: rolesByUser.get(p.userId) ?? [],
             })),
         );
-      } catch (e) {
+      } catch {
         toast.error('Falha ao carregar usuários', {
-          description: e instanceof Error ? e.message : String(e),
+          description: 'Não foi possível carregar a lista de usuários.',
         });
       } finally {
         if (!cancelled) setLoadingProfiles(false);
@@ -198,9 +198,9 @@ export function RoleMigrationPanel() {
       if (!dryRun) {
         setSelected(new Set());
       }
-    } catch (e) {
+    } catch {
       toast.error('Falha ao executar lote', {
-        description: e instanceof Error ? e.message : String(e),
+        description: 'Não foi possível executar o lote de migração.',
       });
     }
   };
@@ -210,9 +210,9 @@ export function RoleMigrationPanel() {
     setLoadingItems(true);
     try {
       setOpenItems(await fetchItems(b.id));
-    } catch (e) {
+    } catch {
       toast.error('Falha ao carregar itens', {
-        description: e instanceof Error ? e.message : String(e),
+        description: 'Não foi possível carregar os itens do lote.',
       });
     } finally {
       setLoadingItems(false);

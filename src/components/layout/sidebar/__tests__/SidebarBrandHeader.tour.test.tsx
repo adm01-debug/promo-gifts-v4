@@ -41,7 +41,7 @@ describe('SidebarBrandHeader — logo click', () => {
   it('navega para "/" e NÃO chama restartTour (expanded)', () => {
     restartTour.mockClear();
     renderAt('/catalogo');
-    const logo = screen.getByText('Promo Brindes');
+    const logo = screen.getByText('PROMO BRINDES');
     fireEvent.click(logo);
     expect(screen.getByTestId('loc').textContent).toBe('/');
     expect(restartTour).not.toHaveBeenCalled();

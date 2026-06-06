@@ -117,12 +117,14 @@ export function FullOpDiagnosticsPanel() {
       }
       const { data, error } = await supabase.functions.invoke('full-op-diagnostics', { body });
       if (error) {
-        toast.error('Falha ao executar diagnóstico', { description: error.message });
+        toast.error('Falha ao executar diagnóstico', {
+          description: 'Não foi possível conectar ao serviço.',
+        });
         return;
       }
       setResult(data as DiagnosticsResponse);
-    } catch (e) {
-      toast.error('Erro inesperado', { description: e instanceof Error ? e.message : String(e) });
+    } catch {
+      toast.error('Erro inesperado', { description: 'Não foi possível executar o diagnóstico.' });
     } finally {
       setLoading(false);
     }

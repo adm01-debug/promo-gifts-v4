@@ -140,8 +140,8 @@ export function useProductVariants(productId: string, productName?: string, prod
       toast.success('Variação criada com sucesso');
       setIsCreating(false);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar variação');
+    } catch {
+      toast.error('Erro ao criar variação');
     } finally {
       setIsSaving(false);
     }
@@ -154,8 +154,8 @@ export function useProductVariants(productId: string, productName?: string, prod
       toast.success('Variação atualizada');
       setEditingId(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+    } catch {
+      toast.error('Erro ao atualizar');
     } finally {
       setIsSaving(false);
     }
@@ -169,8 +169,8 @@ export function useProductVariants(productId: string, productName?: string, prod
       toast.success('Variação removida');
       setDeleteTarget(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover');
+    } catch {
+      toast.error('Erro ao remover');
     } finally {
       setIsSaving(false);
     }
@@ -196,8 +196,8 @@ export function useProductVariants(productId: string, productName?: string, prod
             : 'atualizadas';
         toast.success(`${action.variantIds.length} variações ${label}`);
         invalidate();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro na operação em lote');
+      } catch {
+        toast.error('Erro na operação em lote');
       } finally {
         setIsBulkLoading(false);
       }

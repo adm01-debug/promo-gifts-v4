@@ -76,9 +76,9 @@ export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: 
       toast.success('Resumo executivo copiado!', {
         description: 'Cole no WhatsApp, e-mail ou CRM.',
       });
-    } catch (e) {
+    } catch {
       toast.error('Erro ao copiar', {
-        description: e instanceof Error ? e.message : 'Tente novamente.',
+        description: 'Não foi possível copiar o resumo. Tente novamente.',
       });
     } finally {
       setBusy(null);
@@ -104,7 +104,7 @@ export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: 
     } catch (e) {
       console.error(e);
       toast.error('Falha ao gerar PPTX', {
-        description: e instanceof Error ? e.message : 'Tente novamente.',
+        description: 'Não foi possível gerar o arquivo. Tente novamente.',
       });
     } finally {
       setBusy(null);

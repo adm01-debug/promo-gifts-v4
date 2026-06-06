@@ -50,8 +50,8 @@ export function ComponentMediaManager({
       await deleteComponentMedia(item.id);
       toast.success('Mídia removida');
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover');
+    } catch {
+      toast.error('Erro ao remover');
     }
   };
 
@@ -66,8 +66,8 @@ export function ComponentMediaManager({
       await updateComponentMedia(item.id, { is_cover: true });
       toast.success('Capa definida');
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao definir capa');
+    } catch {
+      toast.error('Erro ao definir capa');
     }
   };
 

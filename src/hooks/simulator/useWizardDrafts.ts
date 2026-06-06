@@ -75,8 +75,8 @@ export function useWizardDrafts() {
       queryClient.invalidateQueries({ queryKey: ['wizard-drafts'] });
       toast.success('Rascunho salvo!');
     },
-    onError: (err) => {
-      toast.error(`Erro ao salvar: ${err.message}`);
+    onError: () => {
+      toast.error('Erro ao salvar rascunho');
     },
   });
 
