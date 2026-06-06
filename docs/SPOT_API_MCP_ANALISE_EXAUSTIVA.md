@@ -1,9 +1,12 @@
 # Análise Exaustiva — API/MCP Spot (Stricker)
 
 > **Gerado em:** 2026-06-06  
+> **Última validação:** 2026-06-06 (exaustiva — todos os tipos de produto)  
 > **Produtos de exemplo usados:**  
 > - `51102` — KISO (caneta esferográfica em plástico)  
 > - `94550` — SHOW (garrafa térmica aço inox 510 mL)  
+> - `30511` — GOIABA WOMEN WH (camiseta feminina têxtil)  
+> - `66190` — SPECT A5 (agenda em tecido poliéster)  
 > **Status API:** Conectada ✅  
 > **Limite diário:** 22 chamadas/dia (feeds gerais) | 96 chamadas/dia (stocks)
 
@@ -25,9 +28,11 @@
 12. [Exemplo Real — Caneta KISO 51102](#12-exemplo-real--caneta-kiso-51102)
 13. [Exemplo Real — Garrafa SHOW 94550](#13-exemplo-real--garrafa-show-94550)
 14. [Exemplo Real — Preços de Personalização](#14-exemplo-real--preços-de-personalização-51102)
-15. [Limitações e Campos Ausentes](#15-limitações-e-campos-ausentes)
-16. [Mapa Completo de Campos](#16-mapa-completo-de-campos-síntese)
-17. [Recomendações de Uso](#17-recomendações-de-uso)
+15. [Exemplo Real — Têxtil GOIABA WOMEN 30511](#15-exemplo-real--têxtil-goiaba-women-30511)
+16. [Exemplo Real — Agenda SPECT A5 66190](#16-exemplo-real--agenda-spect-a5-66190)
+17. [Limitações e Campos Ausentes](#17-limitações-e-campos-ausentes)
+18. [Mapa Completo de Campos](#18-mapa-completo-de-campos-síntese)
+19. [Recomendações de Uso](#19-recomendações-de-uso)
 
 ---
 
@@ -149,15 +154,15 @@
 |---|---|---|---|
 | `Capacitys` | Garrafas/Copos | `"510 mL"` / `"560 mL"` | Capacidades disponíveis no produto-pai |
 | `Sizes` | Têxteis | `"S, M, L, XL"` | Tamanhos disponíveis |
-| `CapacityMah` | Baterias/Power Banks | `"10000"` | Capacidade em mAh |
-| `CapacityGB` | USB / Flash | `"32"` | Capacidade em GB |
+| `CapacityMah` | Baterias/Power Banks | `""` | Capacidade em mAh — **campo existe mas pode estar vazio** |
+| `CapacityGB` | USB / Flash | `"0"` | Capacidade em GB — valor `"0"` quando não aplicável |
 | `RefillType` | Canetas | `""` | Tipo de recarga |
 | `BatteryType` | Eletrônicos | `""` | Tipo de bateria |
 | `InkColor` | Canetas | `""` | Cor da tinta |
-| `PaperSize` | Agendas/Blocos | `""` | Tamanho do papel |
-| `PaperGramage` | Agendas/Blocos | `""` | Gramagem do papel |
+| `PaperSize` | Agendas/Blocos | `""` | ⚠️ **Sempre vazio na prática** — ver `Description`/`Properties` |
+| `PaperGramage` | Agendas/Blocos | `""` | ⚠️ **Sempre vazio na prática** — gramagem está na `Description` ("70 g/m²") |
 | `OtherDetails` | Todos | `""` | Detalhes adicionais |
-| `Gender` | Têxteis | `""` | Gênero (M/F/U) |
+| `Gender` | Têxteis | `""` | ⚠️ **Campo sempre vazio** mesmo em têxteis femininos — não confiável |
 
 ### 2.10 Flags de Variação
 
@@ -237,11 +242,16 @@
 
 ### 3.1 Identificação da Variante
 
-| Campo | Tipo | Exemplo | Obs |
-|---|---|---|---|
-| `Sku` | string | `"51102-103"` | SKU completo da variante |
-| `WebSku` | string | `"51102-103"` | SKU web (geralmente igual ao `Sku`) |
-| `ProdReference` | string | `"51102"` | Referência do produto-pai |
+| Campo | Tipo | Exemplo (regular) | Exemplo (têxtil) | Obs |
+|---|---|---|---|---|
+| `Sku` | string | `"51102-103"` | `"30511-106-G"` | SKU completo da variante |
+| `WebSku` | string | `"51102-103"` | `"30511-106-G"` | SKU web (geralmente igual ao `Sku`) |
+| `ProdReference` | string | `"51102"` | `"30511"` | Referência do produto-pai |
+
+> ⚠️ **FORMATO DO SKU É DIFERENTE POR TIPO:**  
+> - **Produtos regulares:** `{ProdReference}-{ColorCode}` → ex: `"51102-103"`  
+> - **Têxteis** (`IsTextil=true`): `{ProdReference}-{ColorCode}-{Size}` → ex: `"30511-106-G"`  
+> O mesmo padrão de 3 partes aparece no feed `stocks`. **Crucial para o JOIN entre feeds.**
 
 ### 3.2 Cor (até 2 cores por variante)
 
@@ -255,13 +265,17 @@
 
 ### 3.3 Tamanho e Capacidade
 
-| Campo | Tipo | Exemplo (caneta) | Exemplo (garrafa) | Obs |
-|---|---|---|---|---|
-| `Size` | string | `""` | `""` | Tamanho (têxteis: "S", "M", "L", "XL") |
-| `Capacity` | string | `""` | `"510 mL"` | **Capacidade da variante** |
-| `SizeLengthCM` | number/null | `null` | `null` | Comprimento em cm (quando aplicável) |
-| `SizeWidthCM` | number/null | `null` | `null` | Largura em cm (quando aplicável) |
-| `CombinedSizes` | string | `"ø11 x 136 mm"` | `"ø67 x 255 mm..."` | Herdado do pai |
+| Campo | Tipo | Exemplo (caneta) | Exemplo (garrafa) | Exemplo (têxtil) | Obs |
+|---|---|---|---|---|---|
+| `Size` | string | `""` | `""` | `"G"` / `"M"` / `"P"` / `"GG"` | Tamanho; preenchido em `IsTextil=true` |
+| `Capacity` | string | `""` | `"510 mL"` | `""` | **Capacidade da variante** (garrafas/copos) |
+| `SizeLengthCM` | number/null | `null` | `null` | `64` (tamanho G) | **Comprimento em cm — preenchido em têxteis** |
+| `SizeWidthCM` | number/null | `null` | `null` | `47` (tamanho G) | **Largura em cm — preenchido em têxteis** |
+| `CombinedSizes` | string | `"ø11 x 136 mm"` | `"ø67 x 255 mm..."` | `"Tamanhos: P, M, G, GG"` | Herdado do pai; em têxteis lista tamanhos |
+
+> **Medidas por tamanho (têxtil 30511-GOIABA):**  
+> P = 60×41 cm | M = 62×44 cm | G = 64×47 cm | GG = 66×50 cm  
+> Cada variante-tamanho tem seus próprios valores de `SizeLengthCM`/`SizeWidthCM`.
 
 ### 3.4 Preços da Variante (até 10 faixas)
 
@@ -795,7 +809,139 @@ Preços base por técnica (sem vínculo a produto específico):
 
 ---
 
-## 15. Limitações e Campos Ausentes
+## 15. Exemplo Real — Têxtil GOIABA WOMEN 30511
+
+> Validado em 2026-06-06 via `spot_ws_optionals_complete?ref=30511` e `spot_ws_stocks?ref=30511`
+
+### Dados do Produto
+
+| Campo | Valor |
+|---|---|
+| `ProdReference` | `"30511"` |
+| `Name` | `"GOIABA WOMEN WH. Camiseta feminina"` |
+| `SEOName` | `"GOIABA WOMEN WH"` |
+| `IsTextil` | `true` |
+| `HasColors` | `true` |
+| `HasSizes` | `true` |
+| `HasCapacitys` | `false` |
+| `Type` / `SubType` | `"SUCO"` / `"T-Shirts"` |
+| `Brand` | `"hi!dea™"` |
+| `CountryOfOrigin` | `"Brasil"` |
+| `Materials` | `"100% algodão"` |
+| `Certificates` | `"ABVTEX"` |
+| `CertificateFiles` | `"cert_30511.zip"` |
+| `Weight` | `1` (g — unitário) |
+| `BoxWeightKG` | `8.4` (50 unid) |
+| `BoxQuantity` | `50` |
+| `BoxInnerQuantity` | `25` |
+| `Repacking` | `"Polybag"` |
+| `Gender` | `""` (vazio mesmo sendo feminina!) |
+| `CustomizationTypes` | `"Transfer, Silk screen têxtil"` |
+| `CustomizationDefaultType` | `"Silk screen têxtil"` |
+
+### Variantes — SKU de 3 partes
+
+| SKU | Cor | Tamanho | `SizeLengthCM` | `SizeWidthCM` | Estoque |
+|---|---|---|---|---|---|
+| `30511-106-P` | Branco (#FFFFFF) | P | 60 | 41 | 1.928 |
+| `30511-106-M` | Branco (#FFFFFF) | M | 62 | 44 | 2.867 |
+| `30511-106-G` | Branco (#FFFFFF) | G | 64 | 47 | 1 |
+| `30511-106-GG` | Branco (#FFFFFF) | GG | 66 | 50 | 0 |
+
+> ⚠️ **SKU têxtil = `{ProdReference}-{ColorCode}-{Size}`** — 3 segmentos, não 2!
+
+### Preços (€) — 4 faixas
+
+| Qtd mín | Preço/unid |
+|---|---|
+| 1 | €15,84 |
+| 105 | €15,52 |
+| 255 | €15,05 |
+| 1.050 | €14,75 |
+
+### Personalização
+
+- **13 localizações de impressão** (Peito, Verso Superior, Verso Inferior, Costas, Mangas, Barras laterais, etc.)
+- **Técnicas:** Transfer (TRS1) + Silk screen têxtil (TXP5)
+- **Área padrão (Peito):** 240 × 200 mm
+- **`DefaultCustomizationPrintingLines`:** `"30511_1_1_1.png"`
+
+### Imagens
+
+- `AllImageList`: `"30511_106.jpg, 30511_106-a.jpg, 30511_106-b.jpg, 30511_106-c.jpg"`
+- Imagem por componente: `"30511_106_C1.png"` (mesma para todos os tamanhos de uma cor)
+- Imagem por localização: `"30511_106_C1_L1.png"` (Peito), `"30511_106_C1_L10.png"` (Verso Superior), etc.
+- Overlay da área: `"30511_1_1_1.png, 30511_1_1_2.png"` (duas variações de overlay para Peito)
+
+---
+
+## 16. Exemplo Real — Agenda SPECT A5 66190
+
+> Validado em 2026-06-06 via `spot_ws_optionals_complete?ref=66190`
+
+### Dados do Produto
+
+| Campo | Valor |
+|---|---|
+| `ProdReference` | `"66190"` |
+| `Name` | `"SPECT A5. Agenda A5"` |
+| `SEOName` | `"SPECT A5"` |
+| `Description` | `"Agenda A5 em tecido poliéster... (70 g/m²). 145 x 212 mm"` |
+| `IsTextil` | `false` |
+| `HasSizes` | `false` |
+| `HasCapacitys` | `false` |
+| `Type` / `SubType` | `"Últimas Chegadas"` / `"Agendas"` |
+| `SubTypeCode` | `"162"` |
+| `Brand` | `"hi!dea™"` |
+| `CountryOfOrigin` | `"China"` |
+| `Materials` | `"Tecido em poliéster"` |
+| `Weight` | `446` (g) |
+| `BoxQuantity` | `30` |
+| `BoxInnerQuantity` | `1` |
+| `AvailableGross` | `true` |
+| `NewProduct` | `true` |
+| `PaperSize` | `""` ⚠️ **vazio** — info na `Description` ("145 x 212 mm") |
+| `PaperGramage` | `""` ⚠️ **vazio** — gramagem na `Description` ("70 g/m²") |
+| `Properties` | `"Tamanho A5, Folhas pautadas, Miolo de agenda a 2 cores"` |
+| `CombinedSizes` | `"145 x 212 mm"` |
+| `Catalogs` | `"Últimas Chegadas,Agendas 2026,Novidades"` |
+| `RelatedReferences` | `"66114, 66116"` |
+| `CustomizationTypes` | `"Transfer"` |
+
+### Variantes
+
+| SKU | Cor | Hex |
+|---|---|---|
+| `66190-105` | Vermelho | `#DD2A34` |
+| `66190-119` | Verde claro | `#C0E000` |
+| `66190-124` | Azul claro | `#58B2FF` |
+
+### Preços (€) — 4 faixas
+
+| Qtd mín | Preço/unid |
+|---|---|
+| 1 | €21,92 |
+| 50 | €21,26 |
+| 255 | €21,04 |
+| 1.050 | €20,80 |
+
+### Personalização
+
+- **1 localização:** Agenda - Frente (85 × 140 mm)
+- **Técnica:** Transfer apenas (TRS1)
+- Imagem do componente: `"66190_105_C1.png"`
+- Imagem de localização: `"66190_105_C1_L1.png"`
+- Overlay: `"66190_1_1_1.png"`
+
+### Imagens
+
+- `MainImage` (grupo): `"66190_set.jpg"`
+- Imagens extras genéricas: `"66190_c.jpg, 66190_amb.jpg, 66190_a.jpg"`
+- Por cor: `"66190_105.jpg, 66190_105-a.jpg, 66190_105-b.jpg"` | `"66190_119.jpg, ..."` | `"66190_124.jpg, ..."`
+
+---
+
+## 17. Limitações e Campos Ausentes
 
 | Campo / Informação | Status | Alternativa |
 |---|---|---|
@@ -806,9 +952,9 @@ Preços base por técnica (sem vínculo a produto específico):
 | **Estoque por armazém** | Requer sessão logada | Usar `spot_ws_stocks` (quantidade total) |
 | **Personalização HTML (overlay visual)** | Requer sessão logada (`prod` ID interno) | Usar `customizationOptions` com `HotSpot*` |
 | **2ª cor na variante** | `ColorDesc2`/`ColorHex2` raramente preenchidos | — |
-| **Previsão de reposição** | `NextDate{1..6}` frequentemente vazio (stockout permanente) | `NoReplenishment=false` indica que haverá reposição |
+| **Previsão de reposição** | `NextDate{1..6}` frequentemente vazio (sem reposição agendada) | `NoReplenishment=false` indica que haverá reposição no futuro |
 | **Vídeos** | `Video360`, `VideoLink`, `VideoLinkVimeo` raramente preenchidos | — |
-| **Tags estruturadas** | Apenas `KeyWords` (string CSV) sem taxonomia formal | Parsear via virgula |
+| **Tags estruturadas** | Apenas `KeyWords` (string CSV) sem taxonomia formal | Parsear via vírgula |
 | **Preço de venda sugerido ao consumidor final** | Não disponível na API | Calcular via markup interno |
 | **Descrição em PT-BR** | Descrições em português de Portugal | Adaptar localização |
 | **Embalagem individual para canetas** | `Packing` vazio em muitos produtos | Verificar `ShortDescription` |
@@ -816,10 +962,17 @@ Preços base por técnica (sem vínculo a produto específico):
 | **Feed `optionalscomplete` = ~27 MB** | Muito grande para chamada MCP | Usar `spot_ws_download` com ext=json/csv/xml |
 | **Feed `customizationOptions` = ~46 MB** | Muito grande para chamada MCP | Usar `spot_ws_download` com ext=json |
 | **CORS imagens** | `spotgifts.com.br` bloqueia CORS direto | Usar proxy (ex: Supabase Edge Function) |
+| **`Gender` (têxteis)** | ⚠️ Campo sempre vazio mesmo em produtos com corte feminino | Inferir via `Name`/`SubType` ("feminina", "masculina") |
+| **`PaperSize` (agendas)** | ⚠️ Campo sempre vazio — validado em SPECT A5 (66190) | Extrair de `Description` ou `CombinedSizes` |
+| **`PaperGramage` (agendas)** | ⚠️ Campo sempre vazio — gramagem aparece em `Description` ("70 g/m²") | Parsear `Description` com regex |
+| **`CapacityMah` (baterias)** | Não confirmado — refs testadas (97162, 97941) retornaram erro ou vazio | Campo existe na estrutura mas sem validação positiva |
+| **`CapacityGB` (USB)** | Ref 97529 retornou count=0; campo existe com valor `"0"` em não-USB | Campo existe mas validação positiva pendente |
+| **Feed `canceledproducts`** | Erro código 2 (erro interno) na validação | Pode ser instabilidade transitória; testar novamente |
+| **SKU têxtil = 3 partes** | ⚠️ `{ref}-{color}-{size}` — diferente de produtos regulares (`{ref}-{color}`) | JOIN entre feeds deve respeitar o formato correto por IsTextil |
 
 ---
 
-## 16. Mapa Completo de Campos (Síntese)
+## 18. Mapa Completo de Campos (Síntese)
 
 ```
 PRODUTO (chave: ProdReference)
@@ -906,6 +1059,8 @@ PRODUTO (chave: ProdReference)
     │
     ├── IDENTIDADE
     │   ├── Sku / WebSku     → SKU da variante
+    │   │                       Regular: {ref}-{color}
+    │   │                       Têxtil:  {ref}-{color}-{size}  ⚠️
     │   └── ProdReference    → Link ao pai
     │
     ├── COR
@@ -916,7 +1071,9 @@ PRODUTO (chave: ProdReference)
     │   └── ColorHex2        → Hex cor 2
     │
     ├── TAMANHO/CAPACIDADE
-    │   ├── Size             → Tamanho (têxteis)
+    │   ├── Size             → Tamanho (têxteis): "P"/"M"/"G"/"GG"
+    │   ├── SizeLengthCM     → Comprimento em cm (populado em têxteis)
+    │   ├── SizeWidthCM      → Largura em cm (populado em têxteis)
     │   └── Capacity         → Capacidade (garrafas)
     │
     ├── IMAGENS DA VARIANTE
@@ -982,7 +1139,7 @@ CATEGORIAS (feed productTypes — 31 tipos)
 
 ---
 
-## 17. Recomendações de Uso
+## 19. Recomendações de Uso
 
 ### Qual feed usar para cada propósito?
 
@@ -1023,10 +1180,13 @@ MENSAL:
 | Tipo de produto | Campo no pai | Campo na variante |
 |---|---|---|
 | Garrafas / Copos | `Capacitys` (ex: "510 mL") | `Capacity` (ex: "510 mL") |
-| Têxteis | `Sizes` (ex: "S, M, L, XL") | `Size` (ex: "M") |
-| Baterias | `CapacityMah` (ex: "10000") | — |
-| USB / Flash | `CapacityGB` (ex: "32") | — |
-| Dimensões físicas | `CombinedSizes` (ex: "ø11 x 136 mm") | herdado do pai |
+| Têxteis | `Sizes` (ex: "P, M, G, GG") | `Size` (ex: "G") + `SizeLengthCM`/`SizeWidthCM` por variante |
+| Baterias | `CapacityMah` (campo existe, validação pendente) | — |
+| USB / Flash | `CapacityGB` (campo existe, `"0"` em não-USB) | — |
+| Dimensões físicas | `CombinedSizes` (ex: "ø11 x 136 mm" / "145 x 212 mm") | herdado do pai |
+| Agenda — tamanho papel | `PaperSize` ⚠️ sempre vazio | Parsear `Description` ou `CombinedSizes` |
+| Agenda — gramagem | `PaperGramage` ⚠️ sempre vazio | Parsear `Description` (ex: "70 g/m²") |
+| Têxtil — gênero | `Gender` ⚠️ sempre vazio | Inferir de `Name`/`SubType` |
 
 ### Conversão de Preços (€ → R$)
 
@@ -1037,5 +1197,6 @@ Os preços da Spot estão em **euros (€)**. O sistema interno aplica:
 
 ---
 
-*Documento gerado com base em análise exaustiva de todos os feeds e ferramentas disponíveis no MCP da Spot (Stricker).*  
-*Última atualização dos dados reais: 2026-06-06*
+*Documento gerado e validado com base em análise exaustiva de todos os feeds e ferramentas disponíveis no MCP da Spot (Stricker).*  
+*Geração inicial: 2026-06-06 | Validação exaustiva (têxteis, agendas, estoque): 2026-06-06*  
+*Total de chamadas API utilizadas na análise: 22/22 (other) + 4/96 (stocks)*
