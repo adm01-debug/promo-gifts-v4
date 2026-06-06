@@ -68,13 +68,13 @@ function emit(
   const isDev = import.meta.env.DEV;
   const tag = `[${scope}:${event}]`;
   if (isDev) {
-    const fn = level === 'warn' ? console.warn : level === 'error' ? console.error : console.warn;
+    const fn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
     fn(tag, payload);
   } else {
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
     else if (level === 'warn') console.warn(json);
-    else console.warn(json);
+    else console.log(json);
   }
 
   // Sentry forwarding
