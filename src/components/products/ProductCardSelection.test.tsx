@@ -130,13 +130,8 @@ describe('ProductCard Selection Isolation', () => {
     );
 
     // Seleciona Vermelho no Produto 1
-    const product1 = screen.getByText('Produto 1').closest('article');
-    // As bolinhas de cor no ProductColorSwatches usam botões.
-    // Vamos procurar pelo título ou aria-label "Vermelho"
-    const colorRed = screen.getAllByRole('button').find(b => 
-      b.getAttribute('aria-label')?.includes('Vermelho') || 
-      b.getAttribute('title')?.includes('Vermelho')
-    );
+    // Usamos data-testid que existe no componente ProductColorSwatches
+    const colorRed = screen.getByTestId('color-swatch-vermelho');
     
     if (colorRed) {
       fireEvent.click(colorRed);
