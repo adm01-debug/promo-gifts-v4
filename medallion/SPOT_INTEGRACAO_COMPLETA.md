@@ -1,5 +1,5 @@
 # SPOT/Stricker — Integração Completa
-**Data:** 2026-06-07 | **Revisão:** v4.0
+**Data:** 2026-06-07 | **Revisão:** v4.1
 
 ## Workflows em produção (TODOS no projeto Atomica BR `K1sOP2Gf9sQt2U7P`)
 
@@ -10,7 +10,7 @@
 | ING-SPOT-FULL | AF0p45RVqCQZvGTC | Diário 06:00 | products + stock + mark_absent |
 | ING-SPOT-SUPPLEMENTS | bhoevJqxei1DsqGN | Semanal Dom 05:00 | customization + colors |
 | ING-SPOT-CUSTOMIZATION-OPTIONS | 1uKqFK3xbAWf8ycU | Mensal dia 1 04:30 | customization_options (HotSpots) |
-| OP-SPOT-ORDERS | 2PvnD15sj7AhsOgB | Manual on-demand (não publicável) | OrdersV1 |
+| SPOT - GESTÃO DE PEDIDOS | 2PvnD15sj7AhsOgB | Manual on-demand (não publicável) | OrdersV1 |
 
 > **Nota de projeto/credencial (CRÍTICO):** a credencial Supabase `kite` (`SIoFliQ0FzfJBD0Z` → doufsxqlfjyuvxuezpln) pertence só ao projeto **Atomica BR** (`K1sOP2Gf9sQt2U7P`). Workflows criados via MCP caem no projeto **pessoal** (`RfQyNbnUYI7xnBrM`) por padrão e **não** enxergam a `kite` — seus crons falham silenciosamente. **Sempre criar com `projectId: K1sOP2Gf9sQt2U7P`.**
 >
@@ -21,7 +21,7 @@
 - **ING-SPOT-CUSTOMIZATION-OPTIONS criado e validado** — último feed de PRODUTO faltante. 1 chamada bulk (~46MB) → lotes de 400 → `supplier_customization_options_raw`. **35.936 processadas / 35.832 únicas / 1.197 produtos / 100% com HotSpot / 0 erros / 42s.** Captura HotSpots do editor visual.
 - **Correção de projeto (SUPPLEMENTS e ORDERS):** descobertos no projeto pessoal (crons quebrados). Recriados no Atomica BR e validados:
   - SUPPLEMENTS: customization 8 → **309**, colors 49 → **52** (run `ok`).
-  - ORDERS: testado on-demand, consolidação robusta via `$('nó').first()` (não mais `pairedItem`). 1 pedido PROCESSING retornado corretamente.
+  - ORDERS: testado on-demand, consolidação robusta via `$('nó').first()` (não mais `pairedItem`). 1 pedido PROCESSING retornado corretamente. Renomeado para **SPOT - GESTÃO DE PEDIDOS**.
 - **Cobertura de dados de PRODUTO do site: 100%.**
 
 ## Mapa 51 endpoints SPOT
@@ -34,7 +34,7 @@
 - Colors: ativo — ING-SPOT-SUPPLEMENTS
 - CanceledProducts: ativo via mark_absent — ING-SPOT-FULL
 - CustomizationOptions: ativo — ING-SPOT-CUSTOMIZATION-OPTIONS (bulk 46MB, mensal)
-- OrdersV1: ativo — OP-SPOT-ORDERS
+- OrdersV1: ativo — SPOT - GESTÃO DE PEDIDOS
 - Products / Optionals / OptionalsPrice / ProductsTree: SKIP (subconjunto de OptionalsComplete)
 - ProductTypes: Phase 2 (referencia estatica, baixa prioridade)
 - OrderV1 / ServiceOrderV1 / CancelOrderV1 / OrderDetailsV1: Phase 2 (design Bitrix24)
@@ -70,5 +70,5 @@
 
 1. OrderV1 + CancelOrderV1 — fluxo completo Bitrix24
 2. ServiceOrderV1 — envio de arte base64
-3. OrderDetailsV1 — complemento OP-SPOT-ORDERS
+3. OrderDetailsV1 — complemento SPOT - GESTÃO DE PEDIDOS
 4. ProductTypes — referencia estatica (baixa prioridade)
