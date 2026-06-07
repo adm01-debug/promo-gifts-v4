@@ -180,10 +180,13 @@ export const ProductCard = memo(
         const urlParams =
           typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         const urlColor = urlParams?.get('cor');
+        const urlProductId = urlParams?.get('pid');
 
-        // Prioridade: URL > Seleção manual > Filtro ativo
+        // Prioridade: URL (se o pid coincidir) > Seleção manual > Filtro ativo
         const targetColor =
-          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          (urlProductId === product.id ? urlColor : null) ||
+          selectedColorFromStore ||
+          getActiveColorName(product, activeColorFilter);
 
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
@@ -462,8 +465,8 @@ export const ProductCard = memo(
           if (currentVariant?.name) {
             const params = new URLSearchParams();
             params.set('cor', currentVariant.name);
+            params.set('pid', product.id);
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
-            if (currentVariant.hex) params.set('hex', currentVariant.hex.replace('#', ''));
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
             navigate(`/produto/${product.id}`);
@@ -595,6 +598,7 @@ export const ProductCard = memo(
                 // Persiste a cor na URL sem forçar navegação completa
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('cor', c.name);
+                currentUrl.searchParams.set('pid', product.id);
                 window.history.replaceState({}, '', currentUrl.toString());
               }
             }}
