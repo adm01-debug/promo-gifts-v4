@@ -381,7 +381,7 @@ export default function AdminProductFormPage() {
         const refreshed = await fetchPromobrindProductById(product.id);
         if (refreshed) setProduct(refreshed);
       } else {
-        let newProduct: PromobrindProduct;
+        let newProduct: PromobrindProduct | null;
         try {
           newProduct = await dbInvokeSingle<PromobrindProduct>({
             table: 'products',

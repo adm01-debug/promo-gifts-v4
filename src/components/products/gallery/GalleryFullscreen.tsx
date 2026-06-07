@@ -40,7 +40,7 @@ export function GalleryFullscreen({
   allMedia,
   selectedIndex,
   productName,
-  _imageCount,
+  imageCount: _imageCount,
   isVideo,
   zoom,
   pan,

@@ -68,7 +68,7 @@ export function useAdminKitTemplates() {
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('kit_templates')
-        .update({ isActive } as never)
+        .update({ is_active: isActive } as never)
         .eq('id', id);
       if (error) throw error;
     },

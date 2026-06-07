@@ -27,18 +27,14 @@ export function useProfileRoles() {
 
         // Fetch profile and roles in parallel
         const [profileResult, rolesResult] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url, email, organization_id')
-            .eq('id', userId)
-            .maybeSingle(),
+          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
           authService.queryRoles(userId),
         ]);
 
         if (profileResult.error) {
           authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
         } else {
-          setProfile(profileResult.data);
+          setProfile(profileResult.data as Profile | null);
         }
 
         if (rolesResult.error) {

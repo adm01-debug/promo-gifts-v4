@@ -71,13 +71,22 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
       {/* Urgency badge */}
       {urgencyType && urgencyText && (
         <div className="absolute left-3 top-3 z-20 animate-fade-in">
-          <ProductStatusBadge
-            type="urgency"
-            urgencyType={urgencyType}
-            value={urgencyText}
-            size="sm"
-            onClick={() => onStatusClick?.('urgency', urgencyType)}
-          />
+          {urgencyType === 'out-of-stock' ? (
+            <ProductStatusBadge
+              type="out-of-stock"
+              value={urgencyText}
+              size="sm"
+              onClick={() => onStatusClick?.('urgency', urgencyType)}
+            />
+          ) : (
+            <ProductStatusBadge
+              type="urgency"
+              urgencyType={urgencyType}
+              value={urgencyText}
+              size="sm"
+              onClick={() => onStatusClick?.('urgency', urgencyType)}
+            />
+          )}
         </div>
       )}
 

@@ -19,7 +19,7 @@ export function EfficiencyGrid({
   byTrigger,
   byFetch,
   fetchesByTtlWindow,
-  _coalescingByTrigger,
+  coalescingByTrigger: _coalescingByTrigger,
 }: EfficiencyGridProps) {
   const ttlWithinPct =
     fetches === 0 ? 0 : Math.round((fetchesByTtlWindow.withinTtl / fetches) * 100);

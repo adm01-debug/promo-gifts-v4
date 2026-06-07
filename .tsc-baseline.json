@@ -1,127 +1,12 @@
 {
-  "generatedAt": "2026-06-04T21:14:18.748Z",
-  "totalErrors": 103,
+  "generatedAt": "2026-06-07T02:10:06.104Z",
+  "totalErrors": 20,
   "counts": {
-    "src/components/admin/ProductPersonalizationManager.tsx": {
-      "TS2345": 1,
-      "TS2551": 1
-    },
-    "src/components/admin/personalization-manager/ProductPersonalizationManager.tsx": {
-      "TS2345": 1
-    },
-    "src/components/admin/personalization-manager/usePersonalizationManager.ts": {
-      "TS2551": 1,
-      "TS2561": 2
-    },
-    "src/components/admin/personalization/GroupInheritance.tsx": {
-      "TS2551": 1
-    },
-    "src/components/admin/personalization/usePersonalizationData.ts": {
-      "TS2561": 1
-    },
-    "src/components/admin/products/image-gallery/ImagePreviewDialog.tsx": {
-      "TS2339": 16
-    },
-    "src/components/admin/security/role-migration/RoleMigrationPanel.tsx": {
-      "TS2322": 1,
-      "TS2339": 6,
-      "TS2551": 1
-    },
-    "src/components/notifications/badge-stats/EfficiencyGrid.tsx": {
-      "TS2339": 1
-    },
-    "src/components/novelties/NoveltyCards.tsx": {
-      "TS2339": 1
-    },
-    "src/components/pdf/proposal/ProposalFooter.tsx": {
-      "TS2339": 2
-    },
-    "src/components/products/EnhancedProductCard.tsx": {
-      "TS2322": 1
-    },
     "src/components/products/ProductGrid.tsx": {
       "TS2322": 1
     },
-    "src/components/products/ProductInfoBar.tsx": {
-      "TS2339": 1
-    },
-    "src/components/products/ProductIntelligence.tsx": {
-      "TS2339": 1
-    },
-    "src/components/products/ProductTableView.tsx": {
-      "TS2339": 1
-    },
-    "src/components/products/SimilarProducts.tsx": {
-      "TS2339": 1
-    },
-    "src/components/products/gallery/GalleryFullscreen.tsx": {
-      "TS2339": 1
-    },
-    "src/components/quotes/QuoteBuilderSummaryColumn.tsx": {
-      "TS2339": 1
-    },
     "src/components/quotes/QuoteProductCustomization.tsx": {
       "TS2322": 1
-    },
-    "src/components/quotes/QuoteVersionCompare.tsx": {
-      "TS2339": 1
-    },
-    "src/components/quotes/company-contact/CompanySearchDropdown.tsx": {
-      "TS18046": 3,
-      "TS2339": 2
-    },
-    "src/components/ramo-atividade/RamoAtividadeGroupAccordion.tsx": {
-      "TS2339": 1
-    },
-    "src/components/search/GlobalSearchPalette.tsx": {
-      "TS2604": 1,
-      "TS2786": 1
-    },
-    "src/components/search/voice/VoiceOverlaySections.tsx": {
-      "TS2339": 3
-    },
-    "src/components/security/useSecurityData.ts": {
-      "TS2345": 1
-    },
-    "src/components/simulator/TechniqueCard.tsx": {
-      "TS2339": 1
-    },
-    "src/components/simulator/wizard/ComparisonCard.tsx": {
-      "TS2339": 1
-    },
-    "src/components/simulator/wizard/StepComparison.tsx": {
-      "TS2339": 3
-    },
-    "src/hooks/auth/useProfileRoles.ts": {
-      "TS2345": 1
-    },
-    "src/hooks/products/useProductSupplierSources.ts": {
-      "TS2339": 1
-    },
-    "src/lib/feature-flags.ts": {
-      "TS2322": 1,
-      "TS2352": 1
-    },
-    "src/lib/notifications-metrics.ts": {
-      "TS2741": 1
-    },
-    "src/pages/admin/AdminCadastrosPage.tsx": {
-      "TS2322": 1
-    },
-    "src/pages/admin/AdminProductFormPage.tsx": {
-      "TS2322": 2
-    },
-    "src/pages/admin/AdminTemasPage.tsx": {
-      "TS2367": 1
-    },
-    "src/pages/admin/KitTemplatesAdminPage.tsx": {
-      "TS2561": 1
-    },
-    "src/pages/admin/RolePermissionsPage.tsx": {
-      "TS2322": 1
-    },
-    "src/pages/admin/StorageTestPage.tsx": {
-      "TS18046": 11
     },
     "src/pages/products/FavoritesPage.tsx": {
       "TS2322": 2

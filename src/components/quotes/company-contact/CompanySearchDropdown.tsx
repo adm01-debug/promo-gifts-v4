@@ -14,6 +14,12 @@ import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { CompanyAvatar, type CompanyOption } from './shared-types';
 import { useSearchHistory } from '@/hooks/common';
 
+interface CompanyMeta {
+  cnpj?: string | null;
+  razao_social?: string | null;
+  logo_url?: string | null;
+}
+
 interface CompanySearchDropdownProps {
   companyId: string;
   selectedCompany: CompanyOption | null;
@@ -113,18 +119,20 @@ export function CompanySearchDropdown({
     // 1. History (always add to 'seen' to avoid duplicates, only add to 'merged' if searching)
     if (term || history.length > 0) {
       const historyItems = term
-        ? history.filter(
-            (h) =>
+        ? history.filter((h) => {
+            const meta = (h.metadata || {}) as CompanyMeta;
+            return (
               h.label.toLowerCase().includes(term) ||
-              ((h.metadata as unknown)?.cnpj || '').includes(term) ||
-              ((h.metadata as unknown)?.razao_social || '').toLowerCase().includes(term),
-          )
+              (meta.cnpj || '').includes(term) ||
+              (meta.razao_social || '').toLowerCase().includes(term)
+            );
+          })
         : history;
 
       for (const h of historyItems) {
         if (!seen.has(h.id)) {
           if (term) {
-            const meta = (h.metadata || {}) as unknown;
+            const meta = (h.metadata || {}) as CompanyMeta;
             merged.push({
               id: h.id,
               name: h.label,

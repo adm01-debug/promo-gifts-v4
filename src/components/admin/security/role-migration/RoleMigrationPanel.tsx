@@ -116,26 +116,26 @@ export function RoleMigrationPanel() {
       setLoadingProfiles(true);
       try {
         const [{ data: profs, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-          supabase.from('profiles').select('userId, email, full_name').order('email'),
-          supabase.from('user_roles').select('userId, role'),
+          supabase.from('profiles').select('user_id, email, full_name').order('email'),
+          supabase.from('user_roles').select('user_id, role'),
         ]);
         if (pErr) throw pErr;
         if (rErr) throw rErr;
         if (cancelled) return;
         const rolesByUser = new Map<string, AppRole[]>();
         for (const r of roles ?? []) {
-          const arr = rolesByUser.get(r.userId) ?? [];
+          const arr = rolesByUser.get(r.user_id) ?? [];
           arr.push(r.role as AppRole);
-          rolesByUser.set(r.userId, arr);
+          rolesByUser.set(r.user_id, arr);
         }
         setProfiles(
           (profs ?? [])
-            .filter((p): p is typeof p & { userId: string } => p.userId !== null)
+            .filter((p): p is typeof p & { user_id: string } => p.user_id !== null)
             .map((p) => ({
-              userId: p.userId,
+              userId: p.user_id,
               email: p.email,
               full_name: p.full_name,
-              current_roles: rolesByUser.get(p.userId) ?? [],
+              current_roles: rolesByUser.get(p.user_id) ?? [],
             })),
         );
       } catch {
@@ -170,7 +170,7 @@ export function RoleMigrationPanel() {
   };
 
   const buildItems = (): MigrationItemInput[] =>
-    Array.from(selected).map((userId) => ({ userId, to_role: toRole, operation }));
+    Array.from(selected).map((userId) => ({ user_id: userId, to_role: toRole, operation }));
 
   const submit = async (dryRun: boolean) => {
     if (selected.size === 0) {
@@ -501,7 +501,7 @@ export function RoleMigrationPanel() {
                           </Badge>
                           <div className="min-w-0 flex-1">
                             <div className="truncate">
-                              <span className="font-medium">{it.user_email ?? it.userId}</span>
+                              <span className="font-medium">{it.user_email ?? it.user_id}</span>
                               <span className="text-muted-foreground"> · {it.operation} </span>
                               <code className="text-xs">
                                 {it.from_role ?? '—'} → {it.to_role}
