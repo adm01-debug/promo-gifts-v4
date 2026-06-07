@@ -180,10 +180,13 @@ export const ProductCard = memo(
         const urlParams =
           typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         const urlColor = urlParams?.get('cor');
+        const urlProductId = urlParams?.get('pid');
 
-        // Prioridade: URL > Seleção manual > Filtro ativo
+        // Prioridade: URL (se o pid coincidir) > Seleção manual > Filtro ativo
         const targetColor =
-          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          (urlProductId === product.id ? urlColor : null) ||
+          selectedColorFromStore ||
+          getActiveColorName(product, activeColorFilter);
 
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
