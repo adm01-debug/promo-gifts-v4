@@ -1,5 +1,5 @@
 # SPOT/Stricker — Integração Completa
-**Data:** 2026-06-07 | **Revisão:** v4.1
+**Data:** 2026-06-07 | **Revisão:** v4.2
 
 ## Workflows em produção (TODOS no projeto Atomica BR `K1sOP2Gf9sQt2U7P`)
 
@@ -9,19 +9,18 @@
 | ING-SPOT-PRICES | CHPGOgPxGnyeQCfJ | 1h 07:05–19:05 | products |
 | ING-SPOT-FULL | AF0p45RVqCQZvGTC | Diário 06:00 | products + stock + mark_absent |
 | ING-SPOT-SUPPLEMENTS | bhoevJqxei1DsqGN | Semanal Dom 05:00 | customization + colors |
-| ING-SPOT-CUSTOMIZATION-OPTIONS | 1uKqFK3xbAWf8ycU | Mensal dia 1 04:30 | customization_options (HotSpots) |
+| SPOT - GESTÃO DE PERSONALIZAÇÃO | 1uKqFK3xbAWf8ycU | Mensal dia 1 04:30 | customization_options (HotSpots) |
 | SPOT - GESTÃO DE PEDIDOS | 2PvnD15sj7AhsOgB | Manual on-demand (não publicável) | OrdersV1 |
 
 > **Nota de projeto/credencial (CRÍTICO):** a credencial Supabase `kite` (`SIoFliQ0FzfJBD0Z` → doufsxqlfjyuvxuezpln) pertence só ao projeto **Atomica BR** (`K1sOP2Gf9sQt2U7P`). Workflows criados via MCP caem no projeto **pessoal** (`RfQyNbnUYI7xnBrM`) por padrão e **não** enxergam a `kite` — seus crons falham silenciosamente. **Sempre criar com `projectId: K1sOP2Gf9sQt2U7P`.**
 >
-> **Órfãos a apagar manualmente (UI):** `ddARcGMBeMyjGuNR` (CUSTOMIZATION-OPTIONS antigo), `FaHmF8iQbGHc3GTV` (SUPPLEMENTS antigo), `YpN6XVVEJFR4UDmg` (ORDERS antigo) — todos no projeto pessoal, despublicados/inertes. Não há tool de delete via MCP.
+> **Órfãos a apagar manualmente (UI):** `ddARcGMBeMyjGuNR`, `FaHmF8iQbGHc3GTV`, `YpN6XVVEJFR4UDmg` — todos no projeto pessoal, despublicados/inertes.
 
 ## Novidades 2026-06-07
 
-- **ING-SPOT-CUSTOMIZATION-OPTIONS criado e validado** — último feed de PRODUTO faltante. 1 chamada bulk (~46MB) → lotes de 400 → `supplier_customization_options_raw`. **35.936 processadas / 35.832 únicas / 1.197 produtos / 100% com HotSpot / 0 erros / 42s.** Captura HotSpots do editor visual.
-- **Correção de projeto (SUPPLEMENTS e ORDERS):** descobertos no projeto pessoal (crons quebrados). Recriados no Atomica BR e validados:
-  - SUPPLEMENTS: customization 8 → **309**, colors 49 → **52** (run `ok`).
-  - ORDERS: testado on-demand, consolidação robusta via `$('nó').first()` (não mais `pairedItem`). 1 pedido PROCESSING retornado corretamente. Renomeado para **SPOT - GESTÃO DE PEDIDOS**.
+- **SPOT - GESTÃO DE PERSONALIZAÇÃO** (ex-ING-SPOT-CUSTOMIZATION-OPTIONS) — ingestão mensal do mapa completo de personalização (~46MB, ~36k linhas, HotSpots do editor visual). **35.832 combinações únicas / 1.197 produtos / 100% com HotSpot / 0 erros / 42s.**
+- **ING-SPOT-SUPPLEMENTS corrigido:** estava no projeto pessoal (cron quebrado). Recriado no Atomica BR — customization 8 → **309**, colors 49 → **52**.
+- **SPOT - GESTÃO DE PEDIDOS** (ex-OP-SPOT-ORDERS) — consulta on-demand de pedidos em aberto (PROCESSING / WAITING_STOCK / SHIPPED). Consolidação robusta via `$('nó').first()`.
 - **Cobertura de dados de PRODUTO do site: 100%.**
 
 ## Mapa 51 endpoints SPOT
@@ -33,7 +32,7 @@
 - CustomizationTables: ativo — ING-SPOT-SUPPLEMENTS
 - Colors: ativo — ING-SPOT-SUPPLEMENTS
 - CanceledProducts: ativo via mark_absent — ING-SPOT-FULL
-- CustomizationOptions: ativo — ING-SPOT-CUSTOMIZATION-OPTIONS (bulk 46MB, mensal)
+- CustomizationOptions: ativo — SPOT - GESTÃO DE PERSONALIZAÇÃO (bulk 46MB, mensal)
 - OrdersV1: ativo — SPOT - GESTÃO DE PEDIDOS
 - Products / Optionals / OptionalsPrice / ProductsTree: SKIP (subconjunto de OptionalsComplete)
 - ProductTypes: Phase 2 (referencia estatica, baixa prioridade)
@@ -56,7 +55,7 @@
 
 - Dia normal: other≈14/22, stocks≈53/96
 - Domingo (+SUPPLEMENTS): other≈16/22
-- Dia 1 do mês (+CustomizationOptions): other≈15/22
+- Dia 1 do mês (+Gestão de Personalização): other≈15/22
 - OBS: `spot_ws_status` (MCP) só conta chamadas via MCP; chamadas do n8n vão diretas e não aparecem nesse contador (o limite server-side é compartilhado).
 
 ## Tabelas Bronze SPOT
