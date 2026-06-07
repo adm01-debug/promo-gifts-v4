@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductCard } from './ProductCard';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +12,20 @@ vi.mock('@/components/ui/sonner', () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+vi.mock('@/contexts/SellerCartContext', () => ({
+  useSellerCartContext: () => ({
+    isInAnyCart: () => false,
+    addToCart: vi.fn(),
+  }),
+}));
+
+vi.mock('@/contexts/CollectionsContext', () => ({
+  useCollectionsContext: () => ({
+    collections: [],
+    addToCollection: vi.fn(),
+  }),
 }));
 
 vi.mock('@/hooks/ui/useReducedMotion', () => ({
