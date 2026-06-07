@@ -555,17 +555,24 @@ export const ProductCard = memo(
             />
           )}
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span className="flex max-w-[120px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs">
+          <div className="flex min-w-0 items-center justify-between gap-1.5">
+            <div className="flex min-w-0 shrink-1 items-center gap-1">
+              <span 
+                className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                title={`Fornecedor: ${product.supplier.name}`}
+              >
                 <Building2
                   className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier.name).text)}
+                  aria-hidden="true"
                 />
-                {product.supplier.name}
+                <span className="truncate">{product.supplier.name}</span>
               </span>
               <GenderBadge gender={product.gender} size="sm" />
             </div>
-            <span className="font-mono text-[11.5px] tracking-tighter text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 sm:text-[13.8px]">
+            <span 
+              className="shrink-0 font-mono text-[11.5px] font-medium tracking-tighter text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100 sm:text-[13.8px]"
+              aria-label={`Código do produto: ${product.sku}`}
+            >
               {product.sku}
             </span>
           </div>
