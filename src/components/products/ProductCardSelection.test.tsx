@@ -36,6 +36,27 @@ vi.mock('@/hooks/products/useProductLeafCategories', () => ({
   useLeafCategory: () => ({ id: 'cat-1', name: 'Categoria Teste' }),
 }));
 
+// Mock sub-components that are causing issues in test environment
+vi.mock('@/components/collections/AddToCollectionModal', () => ({
+  AddToCollectionModal: () => <div data-testid="mock-collection-modal" />
+}));
+
+vi.mock('@/components/products/ProductQuickView', () => ({
+  ProductQuickView: () => <div data-testid="mock-quick-view" />
+}));
+
+vi.mock('@/components/products/share/SharePreviewDialog', () => ({
+  SharePreviewDialog: () => <div data-testid="mock-share-dialog" />
+}));
+
+vi.mock('@/components/products/VariantPickerDialog', () => ({
+  VariantPickerDialog: () => <div data-testid="mock-variant-picker" />
+}));
+
+vi.mock('@/components/products/QuickAddToQuote', () => ({
+  QuickAddToQuote: () => <div data-testid="mock-quick-quote" />
+}));
+
 // Mock color matching to simplify logic
 vi.mock('@/utils/color-variant-carousel', () => ({
   resolveAllMatchingColors: (colors: any) => colors.map((c: any) => ({
