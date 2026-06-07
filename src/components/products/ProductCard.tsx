@@ -556,18 +556,18 @@ export const ProductCard = memo(
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[10px] tracking-tighter text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 sm:text-xs">
-              {product.sku}
-            </span>
             <div className="flex shrink-0 items-center gap-1.5">
-              <GenderBadge gender={product.gender} size="sm" />
               <span className="flex max-w-[120px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs">
                 <Building2
                   className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier.name).text)}
                 />
                 {product.supplier.name}
               </span>
+              <GenderBadge gender={product.gender} size="sm" />
             </div>
+            <span className="font-mono text-[11.5px] tracking-tighter text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 sm:text-[13.8px]">
+              {product.sku}
+            </span>
           </div>
 
           <h3
