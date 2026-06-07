@@ -1,73 +1,165 @@
-# SPOT/Stricker — Integração Completa
-**Data:** 2026-06-07 | **Revisão:** v4.2
+# SPOT / Stricker — Integração Completa v5.0
 
-## Workflows em produção (TODOS no projeto Atomica BR `K1sOP2Gf9sQt2U7P`)
+**Arquitetura:** Lambda Architecture (Batch + Speed Layer)
+**Supplier ID:** `bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0`
+**Atualizado em:** 2026-06-07
+**Decisão arquitetural aprovada por:** Pink e Cerébro
 
-| Workflow | ID | Cadência | Feeds |
+---
+
+## Visão Geral da Arquitetura Lambda
+
+```
+BATCH LAYER (madrugada 04:00)            SPEED LAYER (horário comercial)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
+(Medallion completo — produtos,          */60min: OptionalsComplete → Gold direto
+ estoque, mark_absent,                   
+ customizações, cores)
+```
+
+**Princípio:** O Sync Full de madrugada estabelece a linha de base. Os hot-paths intraday mantêm estoque e preços frescos sem pressionar o Medallion. O Sync Full reconcilia tudo a cada 24h.
+
+---
+
+## Workflows Ativos
+
+| Workflow | ID | Cron | Função |
 |---|---|---|---|
-| ING-SPOT-STOCK | dppXHdvrBhA8UXKk | 15min 07:05–19:50 | stock |
-| ING-SPOT-PRICES | CHPGOgPxGnyeQCfJ | 1h 07:05–19:05 | products |
-| ING-SPOT-FULL | AF0p45RVqCQZvGTC | Diário 06:00 | products + stock + mark_absent |
-| ING-SPOT-SUPPLEMENTS | bhoevJqxei1DsqGN | Semanal Dom 05:00 | customization + colors |
-| SPOT - GESTÃO DE PERSONALIZAÇÃO | 1uKqFK3xbAWf8ycU | Mensal dia 1 04:30 | customization_options (HotSpots) |
-| SPOT - GESTÃO DE PEDIDOS | 2PvnD15sj7AhsOgB | Manual on-demand (não publicável) | OrdersV1 |
+| **SPOT - Sync Full** | `AF0p45RVqCQZvGTC` | `0 0 4 * * *` (04:00) | Medallion completo: produtos+estoque+mark_absent+customizações+cores |
+| **SPOT - Sync Estoque** | `xOzV2EOv3uJUgKyJ` | `0,15,30,45 * * * *` | Hot-path: Stocks → `fn_spot_direct_stock_gold` |
+| **SPOT - Sync Precos** | `8Cjg3eY2neYBH4Yb` | `0 * * * *` | Hot-path: OptionalsComplete → `fn_spot_direct_prices_gold` |
 
-> **Nota de projeto/credencial (CRÍTICO):** a credencial Supabase `kite` (`SIoFliQ0FzfJBD0Z` → doufsxqlfjyuvxuezpln) pertence só ao projeto **Atomica BR** (`K1sOP2Gf9sQt2U7P`). Workflows criados via MCP caem no projeto **pessoal** (`RfQyNbnUYI7xnBrM`) por padrão e **não** enxergam a `kite` — seus crons falham silenciosamente. **Sempre criar com `projectId: K1sOP2Gf9sQt2U7P`.**
->
-> **Órfãos a apagar manualmente (UI):** `ddARcGMBeMyjGuNR`, `FaHmF8iQbGHc3GTV`, `YpN6XVVEJFR4UDmg` — todos no projeto pessoal, despublicados/inertes.
+### Workflows Operacionais (mantidos)
 
-## Novidades 2026-06-07
+| Workflow | ID | Tipo |
+|---|---|---|
+| SPOT - GESTÃO DE PERSONALIZAÇÃO | `1uKqFK3xbAWf8ycU` | Manual / on-demand |
+| SPOT - GESTÃO DE PEDIDOS | `2PvnD15sj7AhsOgB` | Manual / on-demand |
 
-- **SPOT - GESTÃO DE PERSONALIZAÇÃO** (ex-ING-SPOT-CUSTOMIZATION-OPTIONS) — ingestão mensal do mapa completo de personalização (~46MB, ~36k linhas, HotSpots do editor visual). **35.832 combinações únicas / 1.197 produtos / 100% com HotSpot / 0 erros / 42s.**
-- **ING-SPOT-SUPPLEMENTS corrigido:** estava no projeto pessoal (cron quebrado). Recriado no Atomica BR — customization 8 → **309**, colors 49 → **52**.
-- **SPOT - GESTÃO DE PEDIDOS** (ex-OP-SPOT-ORDERS) — consulta on-demand de pedidos em aberto (PROCESSING / WAITING_STOCK / SHIPPED). Consolidação robusta via `$('nó').first()`.
-- **Cobertura de dados de PRODUTO do site: 100%.**
+### Workflows Desativados (legado)
 
-## Mapa 51 endpoints SPOT
+| Workflow | ID | Substituído por |
+|---|---|---|
+| ING-SPOT-PRICES | `CHPGOgPxGnyeQCfJ` | SPOT - Sync Precos |
+| ING-SPOT-STOCK | `dppXHdvrBhA8UXKk` | SPOT - Sync Estoque |
+| ING-SPOT-SUPPLEMENTS | `bhoevJqxei1DsqGN` | Absorvido pelo Sync Full |
 
-### Canal A REST (19)
-- AuthenticateClient: ativo (todos os workflows)
-- OptionalsComplete: ativo — ING-SPOT-PRICES, ING-SPOT-FULL
-- Stocks: ativo — ING-SPOT-STOCK, ING-SPOT-FULL
-- CustomizationTables: ativo — ING-SPOT-SUPPLEMENTS
-- Colors: ativo — ING-SPOT-SUPPLEMENTS
-- CanceledProducts: ativo via mark_absent — ING-SPOT-FULL
-- CustomizationOptions: ativo — SPOT - GESTÃO DE PERSONALIZAÇÃO (bulk 46MB, mensal)
-- OrdersV1: ativo — SPOT - GESTÃO DE PEDIDOS
-- Products / Optionals / OptionalsPrice / ProductsTree: SKIP (subconjunto de OptionalsComplete)
-- ProductTypes: Phase 2 (referencia estatica, baixa prioridade)
-- OrderV1 / ServiceOrderV1 / CancelOrderV1 / OrderDetailsV1: Phase 2 (design Bitrix24)
-- ValidateSession / CloseSession: utilitarios, nao necessarios
+---
 
-### Estruturas reais descobertas (via curl / execução)
-- **CustomizationOptions**: resposta OBJETO `{"CustomizationOptions":[...]}` (não array nu); `ref` é IGNORADO (sempre bulk ~36k); HotSpot vem em `HotSpot1Type/OriginX/OriginY/Top/Left/Width/Height` (+HotSpot2*), montados em jsonb; `TableMaxAreaCM2` usa vírgula decimal (`9980,01`) → `replace(',','.')`.
-- **OrdersV1**: resposta `{"OrdersDetails":[...], "Count":N, ...}` — a lista vem em `OrdersDetails` (não `Orders`).
+## Funções PostgreSQL do Hot-Path
 
-### Canal A — protocolos alternativos
-- SOAP: SKIP (REST superior)
-- Download direto XML/JSON: FALLBACK apenas (cota esgotada)
-- Download direto CSV: SKIP
+### `fn_spot_direct_stock_gold(p_items jsonb)`
 
-### Canal B — portal publico (4): SKIP (redundante)
-### Canal C — portal auth (28): SKIP (web session fragil)
+**Propósito:** Atualiza estoque direto no Gold sem passar pelo Medallion.
 
-## Consumo cota
+**Tabelas escritas:**
+- `variant_supplier_sources`: `quantity`, `stock_main_warehouse`, `next_quantity_1..6`, `next_date_1..6`, `source='hot_path_stock'`, `last_synced_at`
+- `product_variants`: `stock_quantity`, `last_sync_at`
 
-- Dia normal: other≈14/22, stocks≈53/96
-- Domingo (+SUPPLEMENTS): other≈16/22
-- Dia 1 do mês (+Gestão de Personalização): other≈15/22
-- OBS: `spot_ws_status` (MCP) só conta chamadas via MCP; chamadas do n8n vão diretas e não aparecem nesse contador (o limite server-side é compartilhado).
+**Join:** `variant_supplier_sources.supplier_sku = Sku AND supplier_id = STRICKER`
 
-## Tabelas Bronze SPOT
+**Fallback:** se não encontrar na VSS, tenta `product_variants.supplier_sku`
 
-- supplier_products_raw: 3612 rows — diaria
-- supplier_customization_raw: **309 rows** — semanal
-- supplier_colors: **52 rows** — semanal
-- supplier_customization_options_raw: **35.832 rows** (1.197 produtos, 100% HotSpot) — mensal
+**Guard:** Sku null/vazio → skip; Sku sem match Gold → skip (produto novo aguarda próximo Sync Full)
 
-## Phase 2 (pendente, requer design)
+**Retorna:** `{feed, supplier, updated, skipped, errors, error_samples, updated_at}`
 
-1. OrderV1 + CancelOrderV1 — fluxo completo Bitrix24
-2. ServiceOrderV1 — envio de arte base64
-3. OrderDetailsV1 — complemento SPOT - GESTÃO DE PEDIDOS
-4. ProductTypes — referencia estatica (baixa prioridade)
+**Segurança:** `SECURITY DEFINER`, somente `service_role`
+
+---
+
+### `fn_spot_direct_prices_gold(p_items jsonb)`
+
+**Propósito:** Atualiza faixas de preço direto no Gold sem passar pelo Medallion.
+
+**Tabelas escritas:**
+- `variant_supplier_sources`: `cost_price` (= Price1), `cost_price_1..5`, `min_qty_1..5`, `your_price` (COALESCE preserva se ausente), `price_updated_at`, `source='hot_path_prices'`, `last_synced_at`
+
+**Guard obrigatório:** `Price1 IS NULL` → skip (não atualiza preço zero ou ausente)
+
+**COALESCE pattern:** campos ausentes no feed preservam valor existente (nunca apaga com NULL)
+
+**Retorna:** `{feed, supplier, updated, skipped, errors, error_samples, updated_at}`
+
+**Segurança:** `SECURITY DEFINER`, somente `service_role`
+
+---
+
+## Fases do Sync Full (04:00)
+
+```
+Fase 1 — PRODUTOS
+  OptionalsComplete (27MB) → batches de 500 → fn_ingest_bronze_batch('products')
+  
+Fase 2 — ESTOQUE  
+  Stocks (~3.6k items) → fn_ingest_bronze_batch('stock')
+
+Fase 3 — MARK ABSENT (guarded)
+  Guard: IF Agregar Produtos.fetched >= 3000 → fn_bronze_mark_absent
+  Guard FALSE → log skip, continua pipeline (catálogo protegido)
+
+Fase 4 — CUSTOMIZAÇÕES (novo em v5.0)
+  CustomizationOptions (46MB) → batches de 500 → fn_ingest_bronze_batch('customization')
+
+Fase 5 — CORES (novo em v5.0)
+  Colors (~52 items) → fn_ingest_bronze_batch('colors')
+```
+
+---
+
+## Cota SPOT API (validada)
+
+| Categoria | Limite diário | Uso atual |
+|---|---|---|
+| Stocks | 96/dia | ~53/dia (1 Full + ~52 hot-path) |
+| Other (todos demais) | 22/dia | ~16/dia (1 OptionalsComplete Full + 12 hot-path preços + 2 custom/colors + 1 auth) |
+
+**Margem de segurança:** Stocks 55%, Other 27%
+
+---
+
+## Estrutura de Dados — variant_supplier_sources
+
+Tabela central de preços e estoque por fornecedor. Campos SPOT:
+
+| Campo | Fonte | Hot-path |
+|---|---|---|
+| `quantity` | Stocks.Quantity | ✅ Sync Estoque |
+| `stock_main_warehouse` | Stocks.Quantity | ✅ Sync Estoque |
+| `next_quantity_1..6` / `next_date_1..6` | Stocks.NextQuantity/NextDate | ✅ Sync Estoque |
+| `cost_price` | OptionalsComplete.Price1 | ✅ Sync Precos |
+| `cost_price_1..5` / `min_qty_1..5` | OptionalsComplete.Price1..5 | ✅ Sync Precos |
+| `your_price` | OptionalsComplete.YourPrice | ✅ Sync Precos |
+| `source` | 'hot_path_stock' / 'hot_path_prices' / 'silver' | — |
+| `last_synced_at` | now() | — |
+| `price_updated_at` | now() | — |
+
+---
+
+## Variáveis de Ambiente
+
+- `SPOT_ACCESS_KEY` — Supabase Vault (`efa0d6b9`), acessado via `fn_get_spot_access_key()` (SECURITY DEFINER)
+- Credencial n8n: `kite` (`SIoFliQ0FzfJBD0Z`) no projeto Atomica BR (`K1sOP2Gf9sQt2U7P`)
+
+---
+
+## Invariantes de Qualidade
+
+1. **Medallion não violado:** hot-path escreve em `variant_supplier_sources` (layer de fornecedor), não nos campos canônicos de produto
+2. **COALESCE-to-zero banido:** nunca `COALESCE(silver_value, 0)` — preservar NULL existente
+3. **Mark absent guarded:** só roda se `fetched >= 3000` — evita wipe do catálogo em falha de API
+4. **process-pending-products removido:** `medallion-promote-tick` (jobid=59, */10min) é o único driver ativo
+5. **Reconciliação garantida:** Sync Full 04:00 sempre reconcilia hot-path com dados frescos da API
+
+---
+
+## Histórico de Versões
+
+| Versão | Data | Mudança |
+|---|---|---|
+| v1.0 | 2026-01-xx | Pipeline inicial Bronze→Silver→Gold |
+| v2.0 | 2026-03-xx | fn_upsert_stock_to_bronze, fn_sync_stock_bronze_to_gold |
+| v3.0 | 2026-06-06 | COALESCE bug fix, VSS FASE 9 |
+| v4.0 | 2026-06-06 | ING-SPOT-FULL criado, ING-SPOT-STOCK separado |
+| **v5.0** | **2026-06-07** | **Lambda Architecture: hot-path direto ao Gold (estoque 15min, preços 1h), Sync Full absorve customizações+cores, guard mark_absent** |
