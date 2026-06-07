@@ -145,7 +145,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 className={cn(
                   'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   isSelected
-                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 shadow-md ring-[var(--swatch-ring-width)] ring-primary ring-offset-1'
+                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 [box-shadow:var(--swatch-selected-glow)]'
                     : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
                   SIZE_CLASS[size],
                 )}
