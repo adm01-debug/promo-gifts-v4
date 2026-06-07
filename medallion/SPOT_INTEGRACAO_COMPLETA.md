@@ -1,4 +1,4 @@
-# SPOT / Stricker — Integração Completa v5.1
+# SPOT / Stricker — Integração Completa v5.2
 
 **Arquitetura:** Lambda Architecture (Batch + Speed Layer)
 **Supplier ID:** `bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0`
@@ -28,7 +28,7 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 |---|---|---|---|
 | **SPOT - GESTÃO DE PRODUTOS** | `AF0p45RVqCQZvGTC` | `0 0 4 * * *` (04:00) | Medallion completo: produtos+estoque+mark_absent+customizações+cores |
 | **SPOT - Sync Estoque** | `xOzV2EOv3uJUgKyJ` | `0,15,30,45 * * * *` | Hot-path: Stocks → `fn_spot_direct_stock_gold` |
-| **SPOT - Sync Precos** | `8Cjg3eY2neYBH4Yb` | `0 * * * *` | Hot-path: OptionalsComplete → `fn_spot_direct_prices_gold` |
+| **SPOT - ATUALIZAÇÃO PREÇOS** | `8Cjg3eY2neYBH4Yb` | `0 * * * *` | Hot-path: OptionalsComplete → `fn_spot_direct_prices_gold` |
 
 ### Workflows Operacionais (mantidos)
 
@@ -41,7 +41,7 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 
 | Workflow | ID | Substituído por |
 |---|---|---|
-| ING-SPOT-PRICES | `CHPGOgPxGnyeQCfJ` | SPOT - Sync Precos |
+| ING-SPOT-PRICES | `CHPGOgPxGnyeQCfJ` | SPOT - ATUALIZAÇÃO PREÇOS |
 | ING-SPOT-STOCK | `dppXHdvrBhA8UXKk` | SPOT - Sync Estoque *(excluído)* |
 | ING-SPOT-SUPPLEMENTS | `bhoevJqxei1DsqGN` | Absorvido pelo SPOT - GESTÃO DE PRODUTOS |
 
@@ -113,7 +113,7 @@ Fase 5 — CORES (novo em v5.0)
 | Categoria | Limite diário | Uso atual |
 |---|---|---|
 | Stocks | 96/dia | ~53/dia (1 GESTÃO DE PRODUTOS + ~52 hot-path) |
-| Other (todos demais) | 22/dia | ~16/dia (1 OptionalsComplete Full + 12 hot-path preços + 2 custom/colors + 1 auth) |
+| Other (todos demais) | 22/dia | ~16/dia (1 OptionalsComplete Full + 12 ATUALIZAÇÃO PREÇOS + 2 custom/colors + 1 auth) |
 
 **Margem de segurança:** Stocks 55%, Other 27%
 
@@ -128,9 +128,9 @@ Tabela central de preços e estoque por fornecedor. Campos SPOT:
 | `quantity` | Stocks.Quantity | ✅ Sync Estoque |
 | `stock_main_warehouse` | Stocks.Quantity | ✅ Sync Estoque |
 | `next_quantity_1..6` / `next_date_1..6` | Stocks.NextQuantity/NextDate | ✅ Sync Estoque |
-| `cost_price` | OptionalsComplete.Price1 | ✅ Sync Precos |
-| `cost_price_1..5` / `min_qty_1..5` | OptionalsComplete.Price1..5 | ✅ Sync Precos |
-| `your_price` | OptionalsComplete.YourPrice | ✅ Sync Precos |
+| `cost_price` | OptionalsComplete.Price1 | ✅ ATUALIZAÇÃO PREÇOS |
+| `cost_price_1..5` / `min_qty_1..5` | OptionalsComplete.Price1..5 | ✅ ATUALIZAÇÃO PREÇOS |
+| `your_price` | OptionalsComplete.YourPrice | ✅ ATUALIZAÇÃO PREÇOS |
 | `source` | 'hot_path_stock' / 'hot_path_prices' / 'silver' | — |
 | `last_synced_at` | now() | — |
 | `price_updated_at` | now() | — |
@@ -164,3 +164,4 @@ Tabela central de preços e estoque por fornecedor. Campos SPOT:
 | v4.0 | 2026-06-06 | ING-SPOT-FULL criado, ING-SPOT-STOCK separado |
 | **v5.0** | **2026-06-07** | **Lambda Architecture: hot-path direto ao Gold (estoque 15min, preços 1h), Sync Full absorve customizações+cores, guard mark_absent** |
 | **v5.1** | **2026-06-07** | **Renomeação: SPOT - Sync Full → SPOT - GESTÃO DE PRODUTOS. ING-SPOT-STOCK excluído definitivamente.** |
+| **v5.2** | **2026-06-07** | **Renomeação: SPOT - Sync Precos → SPOT - ATUALIZAÇÃO PREÇOS** |
