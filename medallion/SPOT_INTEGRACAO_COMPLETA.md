@@ -1,4 +1,4 @@
-# SPOT / Stricker — Integração Completa v5.0
+# SPOT / Stricker — Integração Completa v5.1
 
 **Arquitetura:** Lambda Architecture (Batch + Speed Layer)
 **Supplier ID:** `bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0`
@@ -14,11 +14,11 @@ BATCH LAYER (madrugada 04:00)            SPEED LAYER (horário comercial)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 (Medallion completo — produtos,          */60min: OptionalsComplete → Gold direto
- estoque, mark_absent,                   
+ estoque, mark_absent,
  customizações, cores)
 ```
 
-**Princípio:** O Sync Full de madrugada estabelece a linha de base. Os hot-paths intraday mantêm estoque e preços frescos sem pressionar o Medallion. O Sync Full reconcilia tudo a cada 24h.
+**Princípio:** O SPOT - GESTÃO DE PRODUTOS de madrugada estabelece a linha de base. Os hot-paths intraday mantêm estoque e preços frescos sem pressionar o Medallion. O SPOT - GESTÃO DE PRODUTOS reconcilia tudo a cada 24h.
 
 ---
 
@@ -26,7 +26,7 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 
 | Workflow | ID | Cron | Função |
 |---|---|---|---|
-| **SPOT - Sync Full** | `AF0p45RVqCQZvGTC` | `0 0 4 * * *` (04:00) | Medallion completo: produtos+estoque+mark_absent+customizações+cores |
+| **SPOT - GESTÃO DE PRODUTOS** | `AF0p45RVqCQZvGTC` | `0 0 4 * * *` (04:00) | Medallion completo: produtos+estoque+mark_absent+customizações+cores |
 | **SPOT - Sync Estoque** | `xOzV2EOv3uJUgKyJ` | `0,15,30,45 * * * *` | Hot-path: Stocks → `fn_spot_direct_stock_gold` |
 | **SPOT - Sync Precos** | `8Cjg3eY2neYBH4Yb` | `0 * * * *` | Hot-path: OptionalsComplete → `fn_spot_direct_prices_gold` |
 
@@ -37,13 +37,13 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 | SPOT - GESTÃO DE PERSONALIZAÇÃO | `1uKqFK3xbAWf8ycU` | Manual / on-demand |
 | SPOT - GESTÃO DE PEDIDOS | `2PvnD15sj7AhsOgB` | Manual / on-demand |
 
-### Workflows Desativados (legado)
+### Workflows Desativados / Excluídos (legado)
 
 | Workflow | ID | Substituído por |
 |---|---|---|
 | ING-SPOT-PRICES | `CHPGOgPxGnyeQCfJ` | SPOT - Sync Precos |
-| ING-SPOT-STOCK | `dppXHdvrBhA8UXKk` | SPOT - Sync Estoque |
-| ING-SPOT-SUPPLEMENTS | `bhoevJqxei1DsqGN` | Absorvido pelo Sync Full |
+| ING-SPOT-STOCK | `dppXHdvrBhA8UXKk` | SPOT - Sync Estoque *(excluído)* |
+| ING-SPOT-SUPPLEMENTS | `bhoevJqxei1DsqGN` | Absorvido pelo SPOT - GESTÃO DE PRODUTOS |
 
 ---
 
@@ -61,7 +61,7 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 
 **Fallback:** se não encontrar na VSS, tenta `product_variants.supplier_sku`
 
-**Guard:** Sku null/vazio → skip; Sku sem match Gold → skip (produto novo aguarda próximo Sync Full)
+**Guard:** Sku null/vazio → skip; Sku sem match Gold → skip (produto novo aguarda próximo SPOT - GESTÃO DE PRODUTOS)
 
 **Retorna:** `{feed, supplier, updated, skipped, errors, error_samples, updated_at}`
 
@@ -86,13 +86,13 @@ SPOT API → Bronze → Silver → Gold        */15min: Stocks → Gold direto
 
 ---
 
-## Fases do Sync Full (04:00)
+## Fases do SPOT - GESTÃO DE PRODUTOS (04:00)
 
 ```
 Fase 1 — PRODUTOS
   OptionalsComplete (27MB) → batches de 500 → fn_ingest_bronze_batch('products')
-  
-Fase 2 — ESTOQUE  
+
+Fase 2 — ESTOQUE
   Stocks (~3.6k items) → fn_ingest_bronze_batch('stock')
 
 Fase 3 — MARK ABSENT (guarded)
@@ -112,7 +112,7 @@ Fase 5 — CORES (novo em v5.0)
 
 | Categoria | Limite diário | Uso atual |
 |---|---|---|
-| Stocks | 96/dia | ~53/dia (1 Full + ~52 hot-path) |
+| Stocks | 96/dia | ~53/dia (1 GESTÃO DE PRODUTOS + ~52 hot-path) |
 | Other (todos demais) | 22/dia | ~16/dia (1 OptionalsComplete Full + 12 hot-path preços + 2 custom/colors + 1 auth) |
 
 **Margem de segurança:** Stocks 55%, Other 27%
@@ -150,7 +150,7 @@ Tabela central de preços e estoque por fornecedor. Campos SPOT:
 2. **COALESCE-to-zero banido:** nunca `COALESCE(silver_value, 0)` — preservar NULL existente
 3. **Mark absent guarded:** só roda se `fetched >= 3000` — evita wipe do catálogo em falha de API
 4. **process-pending-products removido:** `medallion-promote-tick` (jobid=59, */10min) é o único driver ativo
-5. **Reconciliação garantida:** Sync Full 04:00 sempre reconcilia hot-path com dados frescos da API
+5. **Reconciliação garantida:** SPOT - GESTÃO DE PRODUTOS 04:00 sempre reconcilia hot-path com dados frescos da API
 
 ---
 
@@ -163,3 +163,4 @@ Tabela central de preços e estoque por fornecedor. Campos SPOT:
 | v3.0 | 2026-06-06 | COALESCE bug fix, VSS FASE 9 |
 | v4.0 | 2026-06-06 | ING-SPOT-FULL criado, ING-SPOT-STOCK separado |
 | **v5.0** | **2026-06-07** | **Lambda Architecture: hot-path direto ao Gold (estoque 15min, preços 1h), Sync Full absorve customizações+cores, guard mark_absent** |
+| **v5.1** | **2026-06-07** | **Renomeação: SPOT - Sync Full → SPOT - GESTÃO DE PRODUTOS. ING-SPOT-STOCK excluído definitivamente.** |
