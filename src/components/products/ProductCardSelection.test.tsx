@@ -131,7 +131,12 @@ describe('ProductCard Selection Isolation', () => {
 
     // Seleciona Vermelho no Produto 1
     const product1 = screen.getByText('Produto 1').closest('article');
-    const colorRed = product1?.querySelector('[aria-label="Selecionar cor Vermelho"]');
+    // As bolinhas de cor no ProductColorSwatches usam botões.
+    // Vamos procurar pelo título ou aria-label "Vermelho"
+    const colorRed = screen.getAllByRole('button').find(b => 
+      b.getAttribute('aria-label')?.includes('Vermelho') || 
+      b.getAttribute('title')?.includes('Vermelho')
+    );
     
     if (colorRed) {
       fireEvent.click(colorRed);
