@@ -32,6 +32,7 @@ import {
   LifeBuoy,
   AlertCircle,
   Info,
+  type LucideIcon,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -76,7 +77,7 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-const commandIconMap: Record<string, unknown> = {
+const commandIconMap: Record<string, LucideIcon> = {
   Sun,
   Moon,
   LogOut,

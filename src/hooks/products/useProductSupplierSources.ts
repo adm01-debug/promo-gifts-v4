@@ -94,7 +94,7 @@ export function useProductSupplierSources(productId?: string) {
         limit: 100,
         orderBy: { column: 'is_preferred', ascending: false },
       });
-      const records = (result.data?.records || result.records || []) as SupplierSource[];
+      const records = (result.data?.records ?? []) as SupplierSource[];
       records.sort((a, b) => {
         if (a.is_preferred !== b.is_preferred) return a.is_preferred ? -1 : 1;
         return (a.sale_price ?? 0) - (b.sale_price ?? 0);

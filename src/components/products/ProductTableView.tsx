@@ -137,7 +137,7 @@ export const ProductTableView = memo(function ProductTableView({
   totalEstimate,
   filteredCount,
   loadMoreRef,
-  _itemsPerPage,
+  itemsPerPage: _itemsPerPage,
   onLoadMore,
 }: ProductTableViewProps) {
   const navigate = useNavigate();
