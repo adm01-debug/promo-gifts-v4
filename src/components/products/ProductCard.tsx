@@ -598,6 +598,7 @@ export const ProductCard = memo(
                 // Persiste a cor na URL sem forçar navegação completa
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('cor', c.name);
+                currentUrl.searchParams.set('pid', product.id);
                 window.history.replaceState({}, '', currentUrl.toString());
               }
             }}
