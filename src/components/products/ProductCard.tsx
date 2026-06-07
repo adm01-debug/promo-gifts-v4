@@ -465,8 +465,8 @@ export const ProductCard = memo(
           if (currentVariant?.name) {
             const params = new URLSearchParams();
             params.set('cor', currentVariant.name);
+            params.set('pid', product.id);
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
-            if (currentVariant.hex) params.set('hex', currentVariant.hex.replace('#', ''));
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
             navigate(`/produto/${product.id}`);
