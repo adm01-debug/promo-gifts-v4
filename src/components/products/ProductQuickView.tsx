@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
-import { ColorSelector } from '@/components/products/ColorSelector';
+import { ProductColorSelector } from '@/components/products/ProductColorSelector';
 import { QuantitySelector } from '@/components/products/QuantitySelector';
 import { type PromobrindProduct } from '@/lib/external-db/product-types';
 import { type ProductColor } from '@/types/product';
@@ -321,10 +321,10 @@ export const ProductQuickView = React.memo(
                   <p className="mb-2 text-sm font-medium">
                     Cor{selectedColorId ? ': ' + (productColors.find(c => c.id === selectedColorId)?.name || '') : ''}
                   </p>
-                  <ColorSelector
+                  <ProductColorSelector
                     colors={productColors}
                     selectedColorId={selectedColorId}
-                    onColorSelect={setSelectedColorId}
+                    onColorSelect={(color) => setSelectedColorId(color.id ?? null)}
                     size="md"
                   />
                 </div>
