@@ -2,7 +2,7 @@
  * Shared types and constants for ProductImageGallery
  */
 
-import { Star, ImageIcon, ZoomIn, Eye, Layers, Package, Film, Type, Palette, Tag, Crop } from 'lucide-react';
+import { Star, ImageIcon, ZoomIn, Eye, Layers, Package, Film, Type, Palette, Tag, Crop, Archive } from 'lucide-react';
 
 export interface ExternalImage {
   id: string;
@@ -36,6 +36,7 @@ export const IMAGE_TYPES = [
   { value: 'ambient', label: 'Ambientada', icon: Eye, color: 'text-sky-500' },
   { value: 'component', label: 'Componente', icon: Layers, color: 'text-primary' },
   { value: 'box', label: 'Embalagem', icon: Package, color: 'text-brand-primary' },
+  { value: 'pouch', label: 'Bolsa', icon: Archive, color: 'text-slate-400' },
   { value: 'mockup', label: 'Mockup', icon: Eye, color: 'text-primary' },
   { value: 'location', label: 'Posicionamento', icon: Crop, color: 'text-slate-400' },
   { value: 'area', label: 'Área de gravação', icon: Tag, color: 'text-slate-400' },
