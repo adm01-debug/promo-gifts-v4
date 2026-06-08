@@ -7,10 +7,9 @@ import { toast } from 'sonner';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
 import { ProductColorSelector } from '@/components/products/ProductColorSelector';
-import { QuantitySelector } from '@/components/products/QuantitySelector';
 import { type PromobrindProduct } from '@/lib/external-db/product-types';
 import { type ProductColor } from '@/types/product';
-import { sortByColorGroup } from '@/lib/color-sort';
+import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
 
 interface ProductQuickViewProps {
@@ -333,12 +332,27 @@ export const ProductQuickView = React.memo(
               {/* Quantity */}
               <div>
                 <p className="mb-2 text-sm font-medium">Quantidade</p>
-                <QuantitySelector
-                  value={quantity}
-                  onChange={setQuantity}
-                  min={product.minQuantity || 1}
-                  step={product.minQuantity || 1}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setQuantity(q => Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)))}
+                    aria-label="Diminuir quantidade"
+                  >
+                    <span className="text-lg leading-none">−</span>
+                  </Button>
+                  <span className="w-12 text-center font-medium tabular-nums">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setQuantity(q => q + (product.minQuantity || 1))}
+                    aria-label="Aumentar quantidade"
+                  >
+                    <span className="text-lg leading-none">+</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Short description */}
