@@ -1,63 +1,48 @@
-import { useState, useMemo, useEffect, forwardRef } from 'react';
-// framer-motion removido — transição via CSS animate-fade-in
-import {
-  Heart,
-  GitCompare,
-  Share2,
-  ShoppingCart,
-  Package,
-  Truck,
-  ExternalLink,
-  Plus,
-  Minus,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Heart, ShoppingCart, ZoomIn, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { VisuallyHidden } from '@/components/a11y/VisuallyHidden';
-import { cn } from '@/lib/utils';
-import { useProductImages } from '@/hooks/products/useProductImages';
-import type { Product } from '@/types/product-catalog';
-import { ProductCategoryBadges } from './ProductCategoryBadges';
-import { QuickViewGallery } from './quick-view/QuickViewGallery';
-import { ProductColorSelector, type ProductColor } from './ProductColorSelector';
-import { sortByColorGroup } from '@/utils/colorSorting';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
-import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { useProductImages } from '@/hooks/products/useProductImages';
+import { ColorSelector } from '@/components/products/ColorSelector';
+import { QuantitySelector } from '@/components/products/QuantitySelector';
+import { type PromobrindProduct } from '@/lib/external-db/product-types';
+import { type ProductColor } from '@/types/product';
+import { sortByColorGroup } from '@/lib/color-sort';
+import { cn } from '@/lib/utils';
 
 interface ProductQuickViewProps {
-  product: Product | null;
+  product: PromobrindProduct | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
-  onShare?: (product: Product) => void;
+  canAddToCompare?: boolean;
+  onToggleCompare?: (productId: string) => void;
+  onAddToCart?: (productId: string, quantity: number, colorId?: string) => void;
+  onNavigateToProduct?: (productId: string) => void;
 }
 
-export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps>(
-  (
-    {
-      product,
-      open,
-      onOpenChange,
-      isFavorited = false,
-      onToggleFavorite,
-      isInCompare = false,
-      onToggleCompare,
-      onShare,
-    },
-    _ref,
-  ) => {
-    const navigate = useNavigate();
+export const ProductQuickView = React.memo(
+  ({
+    product,
+    open,
+    onOpenChange,
+    isFavorited = false,
+    onToggleFavorite,
+    isInCompare = false,
+    canAddToCompare = true,
+    onToggleCompare,
+    onAddToCart,
+    onNavigateToProduct,
+  }: ProductQuickViewProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-    // imageLoaded removido — transição instantânea sem skeleton intermediário
+// imageLoaded removido — transição instantânea sem skeleton intermediário
     const [_imageError, setImageError] = useState(false);
 
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
@@ -84,7 +69,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
         image_type: img.image_type,
         is_primary: img.is_primary,
         is_og_image: img.is_og_image || false,
-        applies_to_color: img.supplier_code ? true : null,
+        applies_to_color: img.applies_to_color ?? null,
         supplier_code: img.supplier_code || null,
         alt_text: img.alt_text,
         title_text: img.title_text,
@@ -198,263 +183,227 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
 
     const handleCompare = () => {
       if (onToggleCompare) {
-        const result = onToggleCompare(product.id);
-        if (result.isFull) {
-          toast.error('Limite de 4 produtos para comparação atingido');
-        } else {
-          toast.success(
-            result.added
-              ? `"${product.name}" adicionado à comparação`
-              : `"${product.name}" removido da comparação`,
-          );
-        }
+        onToggleCompare(product.id);
       }
     };
 
-    const handleViewDetails = () => {
-      onOpenChange(false);
-      // Pass selected color to product detail page with full context (cor + hex + grupo)
-      if (selectedColorId && product.colors?.length) {
-        const selectedColor = product.colors.find((c) => c.code === selectedColorId);
-        if (selectedColor) {
-          const params = new URLSearchParams();
-          params.set('cor', selectedColor.name);
-          if (selectedColor.hex) params.set('hex', selectedColor.hex);
-          if ('groupSlug' in selectedColor && selectedColor.groupSlug)
-            params.set('grupo', String(selectedColor.groupSlug));
-          navigate(`/produto/${product.id}?${params.toString()}`);
-          return;
-        }
+    const handleAddToCart = () => {
+      if (onAddToCart) {
+        onAddToCart(product.id, quantity, selectedColorId || undefined);
+        toast.success(`${product.name} adicionado ao carrinho`);
       }
-      navigate(`/produto/${product.id}`);
     };
 
-    const handleColorSelect = (color: ProductColor) => {
-      const newId = color.id || null;
-      setSelectedColorId((prev) => (prev === newId ? null : newId));
+    const handleNavigate = () => {
+      if (onNavigateToProduct) {
+        onNavigateToProduct(product.id);
+        onOpenChange(false);
+      }
     };
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-4xl gap-0 overflow-hidden border-border bg-card p-0"
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
+          className={cn(
+            'max-h-[90vh] w-full max-w-4xl overflow-y-auto p-0',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          )}
         >
-          <VisuallyHidden>
-            <DialogTitle>Visualização rápida: {product.name}</DialogTitle>
-          </VisuallyHidden>
+          <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background">
+            <X className="h-4 w-4" />
+          </DialogClose>
 
-          <div className="grid gap-0 md:grid-cols-2">
-            {/* Image Gallery */}
-            <QuickViewGallery
-              productName={product.name}
-              images={product.images}
-              displayImages={displayImages}
-              currentImageIndex={currentImageIndex}
-              onIndexChange={(idx) => {
-                setCurrentImageIndex(idx);
-              }}
-              featured={product.featured}
-              newArrival={product.newArrival}
-              isKit={product.isKit}
-            />
-
-            {/* Product Info */}
-            <div className="flex flex-col p-6">
-              {/* Header */}
-              <div className="space-y-3">
-                {/* Category Badges - Ícones das categorias */}
-                <ProductCategoryBadges
-                  category={product.category}
-                  groups={product.groups}
-                  categoryUuid={product.category_id}
-                />
-
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                    {product.supplier.name}
-                  </span>
-                </div>
-
-                <h2
-                  data-testid="product-quickview-name"
-                  className="font-display text-2xl font-bold leading-tight text-foreground"
-                >
-                  {product.name}
-                </h2>
-
-                <p className="text-sm text-muted-foreground">SKU: {product.sku}</p>
-              </div>
-
-              <Separator className="my-4" />
-
-              {/* Price & Stock */}
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="mb-1 text-xs text-muted-foreground">A partir de</p>
-                  <span className="font-display text-3xl font-bold text-foreground">
-                    {formatPrice(product.price)}
-                  </span>
-                  <div className="mt-1.5">
-                    <PriceFreshnessBadge
-                      priceUpdatedAt={product.priceUpdatedAt}
-                      thresholdDays={product.priceFreshnessThresholdDays}
-                      variant="inline"
-                      alwaysShow
-                    />
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {/* Image Section */}
+            <div className="relative bg-muted/30 p-6">
+              <div className="relative aspect-square overflow-hidden rounded-lg bg-background">
+                {currentImage ? (
+                  <img
+                    src={_currentImageUrl}
+                    srcSet={_currentImageSrcSet}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    alt={_currentAlt}
+                    className="h-full w-full object-contain transition-opacity duration-300"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-muted-foreground">
+                    <ZoomIn className="h-12 w-12 opacity-20" />
                   </div>
-                </div>
-                <div
-                  className={cn('flex items-center gap-2 rounded-full px-3 py-1.5', stockInfo.bg)}
-                >
-                  <Package className={cn('h-4 w-4', stockInfo.color)} />
-                  <span className={cn('text-sm font-medium', stockInfo.color)}>
-                    {stockInfo.label}
-                  </span>
-                </div>
+                )}
+
+                {displayImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={_handlePrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background"
+                      aria-label="Imagem anterior"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={_handleNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background"
+                      aria-label="Próxima imagem"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
               </div>
 
-              <Separator className="my-4" />
+              {/* Thumbnail strip */}
+              {displayImages.length > 1 && (
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {displayImages.slice(0, 8).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => { setCurrentImageIndex(idx); setImageError(false); }}
+                      className={cn(
+                        'h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 transition-colors',
+                        idx === currentImageIndex
+                          ? 'border-primary'
+                          : 'border-transparent hover:border-muted-foreground/30',
+                      )}
+                    >
+                      <img
+                        src={getCdnUrl(img.url_cdn, 'thumbnail')}
+                        alt={img.alt_text || `Imagem ${idx + 1}`}
+                        className="h-full w-full object-contain"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              {/* Colors - Usando o sistema hierárquico com filtragem de imagens */}
+            {/* Info Section */}
+            <div className="flex flex-col gap-4 p-6">
+              {/* Header */}
+              <div>
+                {product.brand && (
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {product.brand}
+                  </p>
+                )}
+                <h2 className="mt-1 text-xl font-semibold leading-tight">{product.name}</h2>
+                {product.sku && (
+                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">SKU: {product.sku}</p>
+                )}
+              </div>
+
+              {/* Price */}
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">
+                  {product.price ? formatPrice(product.price) : 'Consulte'}
+                </span>
+                {product.onSale && product.comparePrice && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatPrice(product.comparePrice)}
+                  </span>
+                )}
+              </div>
+
+              {/* Stock status */}
+              <div className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium', stockInfo.bg, stockInfo.color)}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {stockInfo.label}
+                {product.stockQuantity != null && product.stockQuantity > 0 && (
+                  <span className="opacity-70">({product.stockQuantity} un.)</span>
+                )}
+              </div>
+
+              {/* Colors */}
               {productColors.length > 0 && (
-                <ProductColorSelector
-                  colors={productColors}
-                  selectedColorId={selectedColorId}
-                  onColorSelect={handleColorSelect}
-                  maxVisible={8}
-                  size="md"
-                />
+                <div>
+                  <p className="mb-2 text-sm font-medium">
+                    Cor{selectedColorId ? ': ' + (productColors.find(c => c.id === selectedColorId)?.name || '') : ''}
+                  </p>
+                  <ColorSelector
+                    colors={productColors}
+                    selectedColorId={selectedColorId}
+                    onColorSelect={setSelectedColorId}
+                    size="md"
+                  />
+                </div>
               )}
 
               {/* Quantity */}
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-foreground">Quantidade</p>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Remover"
-                    className="h-9 w-9"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-12 text-center text-lg font-semibold">{quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Adicionar"
-                    className="h-9 w-9"
-                    onClick={() => setQuantity(quantity + 1)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    = {formatPrice(product.price * quantity)}
-                  </span>
-                </div>
+              <div>
+                <p className="mb-2 text-sm font-medium">Quantidade</p>
+                <QuantitySelector
+                  value={quantity}
+                  onChange={setQuantity}
+                  min={product.minQuantity || 1}
+                  step={product.minQuantity || 1}
+                />
               </div>
 
-              {/* Delivery info */}
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/30 p-3">
-                <Truck className="h-5 w-5 text-muted-foreground" />
-                <div className="text-sm">
-                  <p className="font-medium text-foreground">Entrega estimada</p>
-                  <p className="text-muted-foreground">3-5 dias úteis após aprovação</p>
-                </div>
-              </div>
-
-              {/* Spacer */}
-              <div className="min-h-4 flex-1" />
+              {/* Short description */}
+              {product.shortDescription && (
+                <p className="text-sm text-muted-foreground line-clamp-3">{product.shortDescription}</p>
+              )}
 
               {/* Actions */}
-              <div className="mt-4 space-y-3">
-                <div className="flex gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={cn(
-                          'h-11 w-11',
-                          isFavorited && 'border-destructive/30 bg-destructive/10 text-destructive',
-                        )}
-                        onClick={handleFavorite}
-                        data-testid="product-favorite"
-                        aria-pressed={isFavorited}
-                        aria-label="Favoritar"
-                      >
-                        <Heart className={cn('h-5 w-5', isFavorited && 'fill-current')} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={cn(
-                          'h-11 w-11',
-                          isInCompare && 'border-primary/30 bg-primary/10 text-primary',
-                        )}
-                        onClick={handleCompare}
-                        aria-label="Comparar"
-                      >
-                        <GitCompare className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isInCompare ? 'Remover da comparação' : 'Adicionar à comparação'}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Compartilhar"
-                        className="h-11 w-11"
-                        onClick={() => onShare?.(product)}
-                      >
-                        <Share2 className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Compartilhar</TooltipContent>
-                  </Tooltip>
-
+              <div className="mt-auto flex flex-col gap-2 pt-2">
+                {onAddToCart && (
                   <Button
-                    data-testid="product-quickview-add-to-quote"
-                    variant="orange"
-                    className="h-11 flex-1"
-                    onClick={() => {
-                      onOpenChange(false);
-                      const params = new URLSearchParams({
-                        product_id: product.id,
-                        product_name: product.name || '',
-                        product_sku: product.sku || '',
-                        product_price: String(product.price ?? 0),
-                      });
-                      if (product.images?.[0]) params.set('product_image', product.images[0]);
-                      navigate(`/orcamentos/novo?${params.toString()}`);
-                    }}
+                    onClick={handleAddToCart}
+                    disabled={product.stockStatus === 'out-of-stock'}
+                    className="w-full"
+                    size="lg"
                   >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Adicionar ao Orçamento
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Adicionar ao carrinho
                   </Button>
-                </div>
+                )}
 
-                <Button variant="outline" className="h-11 w-full" onClick={handleViewDetails}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Ver Detalhes Completos
-                </Button>
+                <div className="flex gap-2">
+                  {onToggleFavorite && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleFavorite}
+                      className={cn('flex-shrink-0', isFavorited && 'text-red-500 border-red-200 bg-red-50')}
+                      aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                    >
+                      <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
+                    </Button>
+                  )}
+
+                  {onToggleCompare && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCompare}
+                      disabled={!isInCompare && !canAddToCompare}
+                      className={cn('flex-shrink-0', isInCompare && 'text-primary border-primary/30 bg-primary/5')}
+                      aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                    >
+                      <BarChart2 className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {onNavigateToProduct && (
+                    <Button
+                      variant="outline"
+                      onClick={handleNavigate}
+                      className="flex-1"
+                    >
+                      Ver produto completo
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-1">
+                {product.newArrival && <Badge variant="secondary">Novidade</Badge>}
+                {product.onSale && <Badge variant="destructive">Promoção</Badge>}
+                {product.featured && <Badge variant="outline">Destaque</Badge>}
+                {product.isKit && <Badge variant="outline">Kit</Badge>}
               </div>
             </div>
           </div>
@@ -463,4 +412,5 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
     );
   },
 );
+
 ProductQuickView.displayName = 'ProductQuickView';
