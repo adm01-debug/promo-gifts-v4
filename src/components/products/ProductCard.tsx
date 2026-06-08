@@ -380,8 +380,8 @@ export const ProductCard = memo(
         if (matchedImg) return matchedImg;
       }
 
-      // Fallback
-      return product.og_image_url || product.images[0] || null;
+      // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
+      return product.primary_image_url || product.og_image_url || product.images[0] || null;
     }, [product, activeColorFilter, currentVariant, activeColorName]);
 
     // Caso de fallback para quando a imagem da cor não existe
@@ -395,7 +395,7 @@ export const ProductCard = memo(
 
     const cardSrcSet =
       effectiveImageUrl !== '/placeholder.svg' &&
-      (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
+      (effectiveImageUrl === product.primary_image_url || effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
         ? getSrcSet(effectiveImageUrl)
         : undefined;
 
@@ -510,7 +510,7 @@ export const ProductCard = memo(
               productId={product.id}
               productName={product.name}
               productSku={product.sku}
-              productImageUrl={product.og_image_url || product.images[0]}
+              productImageUrl={product.primary_image_url || product.og_image_url || product.images[0]}
               productPrice={product.price}
               productMinQuantity={product.minQuantity || 1}
               isFavorited={isFavorited}
