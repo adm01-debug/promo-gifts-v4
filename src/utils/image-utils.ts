@@ -4,9 +4,12 @@
  * CDN: Cloudflare Images (100% funcional, HTTP 200 confirmado)
  * Variantes: public, large, medium, card, small, thumbnail
  *
- * REGRA CRÍTICA:
- *   is_primary = true  → imagem SET (todas as cores juntas) → Hero PDP
- *   is_og_image = true → imagem MAIN (cor individual)       → Cards, OG tags
+ * SEMÂNTICA DOS FLAGS:
+ *   is_primary = true  → imagem principal de destaque do produto (predominantemente
+ *                         image_type='main'). Usada como hero da PDP e fallback de card.
+ *   is_og_image = true → imagem preferida para card de catálogo e tags OG/SEO.
+ *                         Tipicamente image_type='main', cor individual.
+ *   Nota: is_primary=true é encontrado em 5.553 imagens 'main' e apenas 1 'set'.
  */
 
 import { getProxiedImageUrl } from '@/utils/imageProxy';
@@ -26,8 +29,6 @@ export type ImageTypeCode =
   | 'detail'
   | 'box'
   | 'pouch'
-  | 'vitrine_pessoa'
-  | 'vitrine_ambiente'
   | 'component'
   | 'location'
   | 'area'
@@ -52,7 +53,7 @@ export interface ProductImageMeta {
 }
 
 export interface CategorizedImages {
-  hero: ProductImageMeta | null; // is_primary (set — todas as cores)
+  hero: ProductImageMeta | null; // imagem com is_primary=true (predominantemente type='main')
   main: ProductImageMeta[]; // image_type=main
   gallery: ProductImageMeta[]; // image_type=gallery
   logo: ProductImageMeta[]; // image_type=logo (com gravação)
@@ -123,7 +124,7 @@ export function getImageSizes(context: 'card' | 'gallery' | 'hero' | 'thumb'): s
 
 /**
  * Para CARD de produto (listagem/grid).
- * Prioridade: is_og_image (MAIN, cor individual) → qualquer main → is_primary (SET) → primeira
+ * Prioridade: is_og_image → qualquer main → is_primary → primeira
  */
 export function getCardImage(images: ProductImageMeta[]): ProductImageMeta | null {
   return (
@@ -137,7 +138,7 @@ export function getCardImage(images: ProductImageMeta[]): ProductImageMeta | nul
 
 /**
  * Para HERO da página de produto (sem cor selecionada).
- * Prioridade: is_primary (SET, todas as cores) → is_og_image → primeira
+ * Prioridade: is_primary (imagem de destaque) → is_og_image → primeira
  */
 export function getHeroImage(images: ProductImageMeta[]): ProductImageMeta | null {
   return images.find((i) => i.is_primary) || images.find((i) => i.is_og_image) || images[0] || null;
@@ -237,18 +238,19 @@ export function categorizeImages(images: ProductImageMeta[]): CategorizedImages 
 export const CF_ACCOUNT_HASH = 'vKMs9Ow8bA_enuhLXZ2HAw';
 export const CF_BASE_URL = `https://imagedelivery.net/${CF_ACCOUNT_HASH}`;
 
-/** Tipos que aparecem na galeria pública */
+/**
+ * Tipos que aparecem na galeria pública do produto.
+ * Não inclui tipos técnicos (box, pouch, location, area, component) —
+ * esses são filtrados por TECHNICAL_IMAGE_TYPES em products.ts.
+ */
 export const GALLERY_TYPES: ImageTypeCode[] = [
   'main',
   'gallery',
   'set',
+  'product',
   'logo',
   'ambient',
   'detail',
-  'box',
-  'pouch',
-  'vitrine_pessoa',
-  'vitrine_ambiente',
 ];
 
 /** Tipos específicos de cor */
@@ -257,8 +259,6 @@ export const COLOR_SPECIFIC_TYPES: ImageTypeCode[] = ['main', 'gallery', 'detail
 /** Ordem de prioridade de exibição por tipo */
 export const IMAGE_TYPE_PRIORITY: Record<string, number> = {
   main: 10,
-  vitrine_pessoa: 12,
-  vitrine_ambiente: 13,
   set: 15,
   gallery: 20,
   ambient: 25,
