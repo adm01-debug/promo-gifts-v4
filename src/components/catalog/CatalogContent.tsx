@@ -222,7 +222,7 @@ export const CatalogContent = memo(function CatalogContent({
 
       {hasMoreProducts && (
         <div ref={loadMoreRef} className="flex justify-center py-8">
-          {isLoadingMore ? (
+          {isLoadingMore && (
             <div className="flex flex-col items-center gap-3">
               <div className="flex gap-1.5">
                 <Skeleton
@@ -241,12 +241,6 @@ export const CatalogContent = memo(function CatalogContent({
               <p className="animate-pulse text-xs font-medium text-muted-foreground">
                 Carregando mais produtos...
               </p>
-            </div>
-          ) : (
-            <div className="text-center text-sm text-muted-foreground">
-              Exibindo{' '}
-              {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de{' '}
-              {totalEstimate || filteredProducts.length} produtos
             </div>
           )}
         </div>
