@@ -13,7 +13,11 @@ export interface PromobrindProduct {
   image_url?: string | null;
   images: string[] | null;
   primary_image_url: string | null;
-  /** URL de fallback (url_original da imagem primária). Populado pelo enrichProducts(). */
+  /** URL fallback persistida no banco Gold (url_original do fornecedor).
+   * Disponível em TODOS os fetches — lightweight, full, search, >500 produtos.
+   * Populada pelo trigger fn_sync_product_images_to_products. */
+  primary_image_fallback_url?: string | null;
+  /** Alias camelCase de primary_image_fallback_url — preenchido pelo mapper. */
   primaryImageFallbackUrl?: string | null;
   og_image_url?: string | null;
   category_id: string | null;
@@ -85,6 +89,7 @@ export interface PromobrindProduct {
     height_mm: number | null; width_mm: number | null; length_mm: number | null;
     weight_g: number | null; notes: string | null;
   }> | null;
+  lead_time_days?: number | null;
 }
 
 export function getProductImageUrl(product: PromobrindProduct): string | null {
@@ -112,7 +117,8 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ' +
+  'primary_image_fallback_url';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY =
   'id, name, sku, cost_price, images, primary_image_url, ' +
@@ -122,7 +128,8 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ' +
+  'primary_image_fallback_url';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
@@ -132,7 +139,8 @@ export const PRODUCT_SELECT_FIELDS_DETAIL =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ' +
+  'primary_image_fallback_url';
 
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {
