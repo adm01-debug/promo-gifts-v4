@@ -546,9 +546,9 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        // No timeout here for better UX, or a shorter one
-        setIsLoadingMore(false);
         setTimeout(() => {
+          isUpdatingRef.current = false;
+        }, 50);
       });
     } else {
       // Virtual loading for local products
