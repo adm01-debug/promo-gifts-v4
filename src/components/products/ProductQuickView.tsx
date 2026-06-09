@@ -76,17 +76,32 @@ export const ProductQuickView = React.memo(
       }));
     }, [productImages]);
 
-    // Determinar imagens a exibir com base na cor selecionada
+    // Determinar imagens a exibir com base na cor selecionada.
+    // A imagem type='main' (is_primary=true) é a imagem principal do produto e deve
+    // sempre aparecer em primeiro lugar, independentemente de display_order ou filtro de cor.
     const displayImages = useMemo(() => {
       if (!product) return [];
 
-      // Se temos imagens do hook useProductImages, usar elas
       if (imageMetas.length > 0) {
+        // Tipos técnicos nunca aparecem na galeria (ADR-001)
+        const TECHNICAL = new Set(['box', 'pouch', 'location', 'area', 'component']);
+        const galleryMetas = imageMetas.filter((img) => !TECHNICAL.has(img.image_type));
+
+        // Hero: main com is_primary=true → qualquer main → primeiro por display_order
+        const hero = galleryMetas.find((img) => img.image_type === 'main' && img.is_primary)
+                  ?? galleryMetas.find((img) => img.image_type === 'main');
+
         if (selectedColorId) {
-          const filtered = getColorImages(imageMetas, selectedColorId);
-          return filtered.length > 0 ? filtered : imageMetas;
+          // getColorImages garante: hero primeiro, color-specific depois, sem técnicos
+          const filtered = getColorImages(galleryMetas, selectedColorId);
+          if (filtered.length > 0) return filtered;
+          // Fallback: hero + todas não-técnicas quando cor não tem match
+          return hero ? [hero, ...galleryMetas.filter((img) => img !== hero)] : galleryMetas;
         }
-        return imageMetas;
+
+        // Sem cor: hero primeiro, depois restante por display_order
+        if (hero) return [hero, ...galleryMetas.filter((img) => img !== hero)];
+        return galleryMetas;
       }
 
       // Fallback: usar imagens do product.images (legado)

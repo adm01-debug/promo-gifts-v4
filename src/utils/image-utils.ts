@@ -181,15 +181,14 @@ export function groupImages(images: ProductImageMeta[]): GroupedImages {
  * Obtém imagens para a galeria de um produto com filtro de cor.
  *
  * Comportamento (ADR-001):
- *   - A imagem type='main' (is_primary=true) é a imagem PRINCIPAL do produto.
+ *   - A imagem type='main' é a imagem PRINCIPAL do produto.
  *     Deve SEMPRE aparecer em primeiro lugar na galeria, mesmo quando uma cor
  *     está activa — ela é o hero do produto, não uma variante de cor.
  *   - Tipos técnicos (box, pouch, location, area, component) são excluídos.
- *   - Quando colorCode é fornecido: hero main primeiro, depois imagens da cor.
- *   - Sem colorCode: hero main primeiro, depois restante por display_order.
+ *   - hero sempre primeiro; specific da cor depois; deduplicado.
  *
  * @param images     Lista completa de ProductImageMeta do produto
- * @param colorCode  supplier_code da cor seleccionada (ou null/undefined)
+ * @param colorCode  supplier_code da cor seleccionada
  */
 export function getColorImages(images: ProductImageMeta[], colorCode: string): ProductImageMeta[] {
   // Tipos técnicos nunca aparecem na galeria de produto (ADR-001)
@@ -200,20 +199,16 @@ export function getColorImages(images: ProductImageMeta[], colorCode: string): P
     (i) => i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
   );
 
-  // 2) Imagem hero do produto: main com is_primary=true, ou qualquer main (não é cor-específica)
+  // 2) Hero: main com is_primary=true, ou qualquer main sem applies_to_color
   //    A main é a imagem principal do produto e deve sempre aparecer, mesmo com cor activa.
   const hero = images.find((i) => i.image_type === 'main' && i.is_primary)
              ?? images.find((i) => i.image_type === 'main' && !i.applies_to_color);
 
-  // 3) Se a cor já tem uma main específica (applies_to_color=true), ela lidera os specific — não duplicar
-  const heroAlreadyInSpecific = hero && specific.some((i) => i.id === hero.id);
-
-  // Resultado: hero primeiro (se não já em specific), depois color-specific, sem técnicos
+  // 3) Hero sempre primeiro; deduplicar os specific (remover hero se vier na lista)
   const result: ProductImageMeta[] = [];
-  if (hero && !heroAlreadyInSpecific) result.push(hero);
+  if (hero) result.push(hero);
   result.push(...specific.filter((i) => i.id !== hero?.id));
 
-  // Deduplicar e retornar
   return result;
 }
 
