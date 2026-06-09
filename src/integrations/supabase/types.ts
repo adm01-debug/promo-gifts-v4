@@ -7029,45 +7029,102 @@ export type Database = {
       v_products_public: {
         Row: {
           category_id: string | null
-          cost_price: string | null
+          category_name: string | null
+          colors: Json | null
+          created_at: string | null
           description: string | null
+          external_id: string | null
+          featured: boolean | null
           id: string | null
+          images: string[] | null
           is_active: boolean | null
           is_kit: boolean | null
+          kit_items: Json | null
+          materials: string[] | null
+          metadata: Json | null
           name: string | null
+          new_arrival: boolean | null
+          on_sale: boolean | null
           price: number | null
+          price_freshness_threshold_days: number | null
           sku: string | null
+          stock: number | null
           stock_quantity: number | null
+          stock_status: string | null
+          subcategory: string | null
           supplier_id: string | null
+          supplier_name: string | null
+          synced_at: string | null
+          tags: Json | null
           updated_at: string | null
+          variations: Json | null
+          video_url: string | null
         }
         Insert: {
           category_id?: string | null
-          cost_price?: never
+          category_name?: string | null
+          colors?: Json | null
+          created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
           id?: string | null
+          images?: string[] | null
           is_active?: boolean | null
           is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
           name?: string | null
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
           price?: number | null
+          price_freshness_threshold_days?: number | null
           sku?: string | null
+          stock?: number | null
           stock_quantity?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
           supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string | null
+          tags?: Json | null
           updated_at?: string | null
+          variations?: Json | null
+          video_url?: string | null
         }
         Update: {
           category_id?: string | null
-          cost_price?: never
+          category_name?: string | null
+          colors?: Json | null
+          created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
           id?: string | null
+          images?: string[] | null
           is_active?: boolean | null
           is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
           name?: string | null
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
           price?: number | null
+          price_freshness_threshold_days?: number | null
           sku?: string | null
+          stock?: number | null
           stock_quantity?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
           supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string | null
+          tags?: Json | null
           updated_at?: string | null
+          variations?: Json | null
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -7075,6 +7132,7 @@ export type Database = {
         Row: {
           active: boolean | null
           code: string | null
+          created_at: string | null
           id: string | null
           is_engraving_supplier: boolean | null
           is_product_supplier: boolean | null
@@ -7082,11 +7140,13 @@ export type Database = {
           name: string | null
           state_uf: string | null
           trading_name: string | null
+          updated_at: string | null
           website: string | null
         }
         Insert: {
           active?: boolean | null
           code?: string | null
+          created_at?: string | null
           id?: string | null
           is_engraving_supplier?: boolean | null
           is_product_supplier?: boolean | null
@@ -7094,11 +7154,13 @@ export type Database = {
           name?: string | null
           state_uf?: string | null
           trading_name?: string | null
+          updated_at?: string | null
           website?: string | null
         }
         Update: {
           active?: boolean | null
           code?: string | null
+          created_at?: string | null
           id?: string | null
           is_engraving_supplier?: boolean | null
           is_product_supplier?: boolean | null
@@ -7106,6 +7168,7 @@ export type Database = {
           name?: string | null
           state_uf?: string | null
           trading_name?: string | null
+          updated_at?: string | null
           website?: string | null
         }
         Relationships: []
