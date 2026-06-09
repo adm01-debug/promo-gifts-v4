@@ -408,7 +408,9 @@ export const ProductCard = memo(
 
     const cardSrcSet =
       effectiveImageUrl !== '/placeholder.svg' &&
-      (effectiveImageUrl === product.primary_image_url || effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
+      (effectiveImageUrl === product.primary_image_url ||
+        effectiveImageUrl === product.og_image_url ||
+        effectiveImageUrl === product.images[0])
         ? getSrcSet(effectiveImageUrl)
         : undefined;
 
@@ -483,8 +485,8 @@ export const ProductCard = memo(
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
-              const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
-              navigate(`/produto/${product.id}${colorParam}`);
+            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            navigate(`/produto/${product.id}${colorParam}`);
           }
         }}
       >
@@ -572,7 +574,7 @@ export const ProductCard = memo(
 
           <div className="flex min-w-0 items-center justify-between gap-1.5">
             <div className="flex min-w-0 shrink-1 items-center gap-1">
-              <span 
+              <span
                 className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
                 title={`Fornecedor: ${product.supplier.name}`}
               >
@@ -584,7 +586,7 @@ export const ProductCard = memo(
               </span>
               <GenderBadge gender={product.gender} size="sm" />
             </div>
-            <span 
+            <span
               className="shrink-0 font-mono text-[11.5px] font-medium tracking-tighter text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100 sm:text-[13.8px]"
               aria-label={`Código do produto: ${product.sku}`}
             >
