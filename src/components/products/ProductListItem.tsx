@@ -573,7 +573,7 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Price column — right-aligned, always visible */}
-        <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
+        <div className="min-w-[80px] shrink-0 pr-4 text-right sm:min-w-[100px]">
           <div className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
             {formatPrice(product.price)}
           </div>
