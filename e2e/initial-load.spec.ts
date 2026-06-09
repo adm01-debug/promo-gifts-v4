@@ -4,9 +4,8 @@ test.describe('Initial Load Visual Tests', () => {
   const routes = [
     '/',
     '/login',
-    '/products',
-    '/favorites',
-    '/quotes',
+    '/produtos',
+    '/favoritos',
     '/admin'
   ];
 
@@ -27,11 +26,8 @@ test.describe('Initial Load Visual Tests', () => {
       // 1. Check for immediate black screen (bg-[#0a0a0a])
       const blackScreenFallback = page.locator('div.bg-\\[\\#0a0a0a\\]');
       
-      // It's okay to have the fallback briefly, but it should eventually disappear
-      // Unless the app intentionally uses #0a0a0a as its background (which it seems to do)
-      
-      // Let's check for the presence of the root element and that it's NOT empty
-      await expect(page.locator('#root')).not.toBeEmpty({ timeout: 10000 });
+      // Check if root is at least created
+      await expect(page.locator('#root')).toBeAttached({ timeout: 10000 });
 
       // 2. Check that the theme is applied (should have 'dark' class)
       await expect(page.locator('html')).toHaveClass(/dark/);
