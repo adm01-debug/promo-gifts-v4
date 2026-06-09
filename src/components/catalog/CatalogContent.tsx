@@ -153,7 +153,7 @@ export const CatalogContent = memo(function CatalogContent({
   return (
     <div
       className={cn(
-        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
+        'relative space-y-8 pb-12 duration-500 animate-in fade-in px-4 sm:px-6',
         isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >

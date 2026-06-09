@@ -546,18 +546,19 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
+        // No timeout here for better UX, or a shorter one
+        setIsLoadingMore(false);
         setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
       });
     } else {
+      // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
         setTimeout(() => {
           isUpdatingRef.current = false;
-        }, 100);
-      }, 150);
+        }, 50);
+      }, 50);
     }
   }, [
     isLoading,
@@ -581,7 +582,7 @@ export function useCatalogState() {
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: '200px' },
+      { threshold: 0.1, rootMargin: '800px' },
     );
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
