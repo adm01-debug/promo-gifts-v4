@@ -46,6 +46,17 @@ const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverl
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
 
+// GAP-1 FIX (PR #689 review): labels para valores internos de sortBy que são
+// válidos no pipeline (VALID_SORT_VALUES do useFiltersPageState) mas não
+// aparecem em SORT_OPTIONS (UI). Antes, qualquer valor fora de SORT_OPTIONS
+// caía no fallback 'Relevância de cor' — incorreto para popularity/name-asc/etc.
+const INTERNAL_SORT_LABELS: Readonly<Record<string, string>> = {
+  'color-match': 'Relevância de cor',
+  popularity: 'Popularidade',
+  'name-asc': 'Nome (A-Z)',
+  'name-desc': 'Nome (Z-A)',
+};
+
 export default function FiltersPage() {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoritesStore();
@@ -368,9 +379,11 @@ export default function FiltersPage() {
                     <TooltipContent>
                       {state.sortBy !== DEFAULT_SORT_VALUE
                         ? `Ordenado por: ${
-                            // Fallback para sortBy fora de SORT_OPTIONS (ex: 'color-match')
+                            // GAP-1 FIX: labels determinísticos para sorts internos
+                            // (color-match, popularity, name-asc/desc) + fallback genérico
                             SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label ??
-                            'Relevância de cor'
+                            INTERNAL_SORT_LABELS[state.sortBy] ??
+                            'Ordenação personalizada'
                           }`
                         : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
                     </TooltipContent>

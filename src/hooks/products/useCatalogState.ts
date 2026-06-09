@@ -117,7 +117,7 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
-  const [lastNonTransitionedProducts, _setLastNonTransitionedProducts] = useState<Product[]>([]);
+  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
@@ -452,6 +452,18 @@ export function useCatalogState() {
   useEffect(() => {
     filteredProductsRef.current = filteredProducts;
   }, [filteredProducts]);
+
+  // GAP-2 FIX (PR #689 review): snapshot dos produtos exibidos enquanto NÃO há
+  // transição. Antes, lastNonTransitionedProducts ficava [] para sempre (setter
+  // nunca era chamado) e displayFilteredProducts virava lista vazia durante
+  // qualquer transição de sort — flash de empty state. Agora o snapshot é
+  // atualizado a cada render estável e congela durante isTransitioning=true,
+  // mantendo a lista anterior visível até o novo sort aplicar.
+  useEffect(() => {
+    if (!isTransitioning) {
+      setLastNonTransitionedProducts(filteredProducts);
+    }
+  }, [isTransitioning, filteredProducts]);
 
   const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
