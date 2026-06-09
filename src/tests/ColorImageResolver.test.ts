@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveColorImage } from '../color-image-resolver';
+import { resolveColorImage } from '@/utils/color-image-resolver';
 import type { Product } from '@/types/product-catalog';
 
 const mockProduct: Product = {
