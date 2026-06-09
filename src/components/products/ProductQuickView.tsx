@@ -171,8 +171,12 @@ export const ProductQuickView = React.memo(
     // PromobrindProduct (snake_case: stock_quantity) nem no objeto runtime
     // vindo do product-mapper (que popula `stock`). Resultado: o badge NUNCA
     // renderizava. Lê os dois campos reais com fallback explícito.
-    const stockQty =
-      product.stock_quantity ?? (product as unknown as { stock?: number | null }).stock ?? null;
+    // Review follow-up (Copilot): normaliza na origem — qualquer valor
+    // não-numérico (string, null, undefined) vira null aqui, sem depender
+    // do typeof no JSX nem do cast propagar tipo errado.
+    const rawStock: unknown =
+      product.stock_quantity ?? (product as unknown as { stock?: unknown }).stock;
+    const stockQty: number | null = typeof rawStock === 'number' ? rawStock : null;
 
     // Obter URL atual da imagem com variante CDN
     const currentImage = displayImages[currentImageIndex] || displayImages[0];
@@ -344,7 +348,7 @@ export const ProductQuickView = React.memo(
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {stockInfo.label}
-                {typeof stockQty === 'number' && stockQty > 0 && (
+                {stockQty !== null && stockQty > 0 && (
                   <span className="opacity-70">({stockQty} un.)</span>
                 )}
               </div>

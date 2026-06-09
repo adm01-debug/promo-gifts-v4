@@ -117,7 +117,10 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
+  // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
+  // dispara render extra (ref não re-renderiza) e a escrita via effect é
+  // concurrent-safe. O valor só é LIDO quando isTransitioning=true.
+  const lastNonTransitionedProductsRef = useRef<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
@@ -454,18 +457,20 @@ export function useCatalogState() {
   }, [filteredProducts]);
 
   // GAP-2 FIX (PR #689 review): snapshot dos produtos exibidos enquanto NÃO há
-  // transição. Antes, lastNonTransitionedProducts ficava [] para sempre (setter
-  // nunca era chamado) e displayFilteredProducts virava lista vazia durante
-  // qualquer transição de sort — flash de empty state. Agora o snapshot é
-  // atualizado a cada render estável e congela durante isTransitioning=true,
-  // mantendo a lista anterior visível até o novo sort aplicar.
+  // transição. Antes, o snapshot ficava [] para sempre e displayFilteredProducts
+  // virava lista vazia durante transições de sort — flash de empty state.
+  // Timing: o effect roda APÓS cada render estável (ref = última lista estável);
+  // quando setIsTransitioning(true) dispara o render seguinte, o display lê o
+  // ref congelado (effects deste render não escrevem pois isTransitioning=true).
   useEffect(() => {
     if (!isTransitioning) {
-      setLastNonTransitionedProducts(filteredProducts);
+      lastNonTransitionedProductsRef.current = filteredProducts;
     }
   }, [isTransitioning, filteredProducts]);
 
-  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
+  const displayFilteredProducts = isTransitioning
+    ? lastNonTransitionedProductsRef.current
+    : filteredProducts;
 
   const rawPaginatedProducts = useMemo(
     () => displayFilteredProducts.slice(0, displayCount),
