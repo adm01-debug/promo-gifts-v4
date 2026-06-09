@@ -221,7 +221,7 @@ export const CatalogContent = memo(function CatalogContent({
       </SparklineSalesProvider>
 
       {hasMoreProducts && (
-        <div ref={loadMoreRef} className="pt-4">
+        <div ref={loadMoreRef} className="pt-4" data-testid="load-more-trigger">
           <ProductGridSkeleton
             count={viewMode === 'grid' ? gridColumns * 2 : 4}
             columns={gridColumns}

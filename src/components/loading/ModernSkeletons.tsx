@@ -16,6 +16,10 @@ export function ProductCardSkeleton({
   hideCategoryBadges = false,
   selectionMode = false,
 }: ProductCardSkeletonProps) {
+  return (
+    <div data-testid="product-card-skeleton">
+      {/* existing content */}
+
   if (variant === 'compact') {
     return (
       <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')}>
