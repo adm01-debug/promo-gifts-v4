@@ -136,10 +136,12 @@ export function VirtualizedProductGrid({
     return () => element.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Reset loadingMore when products change
+  // Reset loadingMore and scroll when products change (e.g. filter/sort)
   useEffect(() => {
     setLoadingMore(false);
-  }, [products.length]);
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [products]);
+
 
   const scrollToTop = () => {
     parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
