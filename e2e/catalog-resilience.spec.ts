@@ -20,9 +20,14 @@ test.describe("Catalog Stress & Resilience", () => {
   });
 
   const viewports = [
+    { name: 'Desktop_Large', width: 2560, height: 1440 },
     { name: 'Desktop', width: 1920, height: 1080 },
-    { name: 'Tablet', width: 834, height: 1194 },
-    { name: 'Mobile', width: 390, height: 844 }
+    { name: 'Laptop', width: 1366, height: 768 },
+    { name: 'Tablet_Landscape', width: 1194, height: 834 },
+    { name: 'Tablet_Portrait', width: 834, height: 1194 },
+    { name: 'Mobile_Large', width: 428, height: 926 },
+    { name: 'Mobile', width: 390, height: 844 },
+    { name: 'Mobile_Small', width: 320, height: 568 }
   ];
 
   for (const vp of viewports) {
