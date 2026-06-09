@@ -117,7 +117,7 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
+  const [lastNonTransitionedProducts, _setLastNonTransitionedProducts] = useState<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';

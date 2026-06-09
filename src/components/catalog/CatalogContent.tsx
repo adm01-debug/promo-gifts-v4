@@ -2,8 +2,6 @@ import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { cn } from '@/lib/utils';
 
-import { ProductGrid } from '@/components/products/ProductGrid';
-import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
 import {
@@ -70,9 +68,9 @@ export const CatalogContent = memo(function CatalogContent({
   loadMoreRef,
   itemsPerPage: _itemsPerPage,
   navigate,
-  handleViewProduct,
+  handleViewProduct: _handleViewProduct,
   handleShareProduct,
-  handleFavoriteProduct,
+  handleFavoriteProduct: _handleFavoriteProduct,
   isFavorite,
   toggleFavorite,
   isInCompare,
@@ -200,7 +198,7 @@ export const CatalogContent = memo(function CatalogContent({
   return (
     <div
       className={cn(
-        'relative space-y-8 pb-12 duration-500 animate-in fade-in px-4 sm:px-6',
+        'relative space-y-8 px-4 pb-12 duration-500 animate-in fade-in sm:px-6',
         isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >
@@ -240,4 +238,3 @@ export const CatalogContent = memo(function CatalogContent({
     </div>
   );
 });
-
