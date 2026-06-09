@@ -101,14 +101,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
       );
     }
     return (
-      <span
-        className="flex min-h-[var(--swatch-size-sm)] items-center text-[10px] italic text-muted-foreground/60"
+      <div
+        className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
       >
-        Cores indisponíveis
-      </span>
+        <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
+        <span className="text-[9px] font-medium tracking-tight">N/A</span>
+      </div>
     );
   }
 
