@@ -1,6 +1,6 @@
 /**
  * Product Catalog Types (Runtime/UI)
- *
+ * 
  * These are the runtime types used throughout the UI.
  * Distinct from src/types/product.ts which holds DB-oriented types.
  */
@@ -24,16 +24,9 @@ export interface Product {
   category_name?: string | null;
   price: number;
   image_url?: string;
-  /**
-   * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.
-   * Sem sufixo de variante — concatenar "/public" para exibição.
-   * Quando presente, usada como imagem de hover no catálogo (crossfade CSS).
-   * null/undefined = produto não tem set → card mostra imagem estática.
-   * Fontes: SPOT (image_type=set original) + XBZ (d1 reclassificado, 2026-06-02).
-   */
-  set_image_url?: string | null;
   og_image_url?: string;
-  primary_image_url?: string | null;
+  /** URL de fallback (CDN do fornecedor / url_original da imagem primária). Usado pelo OptimizedImage quando CF Images falha. */
+  primaryImageFallbackUrl?: string | null;
   images: string[];
   sku: string;
   stock: number;
@@ -58,9 +51,6 @@ export interface Product {
   packingType?: string | null;
   packingClassification?: string | null;
   hasCommercialPackaging?: boolean | null;
-  /** BUG-15c: adicionado para suportar filtro hasPersonalization no Super Filtro e Catálogo.
-   *  Mapeado do campo has_personalization na DB (via product mapper). */
-  hasPersonalization?: boolean | null;
   repackingType?: string | null;
   packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
   boxImage?: string | null;
@@ -71,7 +61,7 @@ export interface Product {
   boxQuantity?: number | null;
   boxVolumeCm3?: number | null;
 
-  stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
+  stockStatus: "in-stock" | "low-stock" | "out-of-stock";
   featured: boolean;
   newArrival: boolean;
   onSale: boolean;
@@ -92,23 +82,13 @@ export interface Product {
   variations?: ProductVariation[];
   kitItems?: KitComponent[];
 
+  /** ISO timestamp of the last price update at the supplier (SSOT: external DB). */
   priceUpdatedAt?: string | null;
+  /** Per-product override (in days) for the "stale price" alert threshold. Default = 60. */
   priceFreshnessThresholdDays?: number | null;
+
+  /** Raw metadata blob (legacy fields like height_mm, width_mm, etc — JSONB on DB). */
   metadata?: { height_mm?: number | null; width_mm?: number | null; [key: string]: unknown } | null;
-  leadTimeDays?: number | null;
-  video?: string | null;
-  productVideos?: Array<{
-    id: string;
-    url_stream: string | null;
-    url_hls: string | null;
-    url_thumbnail: string | null;
-    url_original: string | null;
-    source_youtube_id: string | null;
-    video_type: string | null;
-    display_order: number;
-    is_primary: boolean;
-    title: string | null;
-  }>;
 }
 
 export interface KitComponent {
@@ -145,7 +125,7 @@ export interface KitComponent {
     display_order: number;
     is_primary: boolean;
     title: string | null;
-  }>;
+    }>;
 }
 
 export interface ProductVariation {
@@ -175,25 +155,11 @@ export interface ProductVariation {
 
 export interface ProductFilters {
   category?: string;
-  categoryId?: string | number;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
   limit?: number;
-  // União das opções de ambos os lados do merge (main + PR) — `| string` mantém
-  // permissivo, mas preservamos todos os literais para autocomplete/intenção.
-  sortBy?:
-    | 'price-asc'
-    | 'price-desc'
-    | 'newest'
-    | 'stock'
-    | 'best-seller-supplier'
-    | 'best-seller-promo'
-    | 'name'
-    | 'name-asc'
-    | 'name-desc'
-    | string;
 }
 
 export interface ProductLightweight {
