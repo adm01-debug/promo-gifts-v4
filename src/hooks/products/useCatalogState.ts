@@ -393,8 +393,8 @@ export function useCatalogState() {
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-    // Adicionado hasActiveCatalogConstraints como dep para resetar ao mudar filtros/busca
-  }, [filters, sortBy, debouncedSearch, hasActiveCatalogConstraints]);
+  }, [filters, sortBy, debouncedSearch]);
+
 
 
   const activeFiltersCount = useMemo(() => {
@@ -512,7 +512,11 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+  const hasActiveCatalogConstraints = useMemo(
+    () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
+    [activeFiltersCount, searchQuery],
+  );
+
 
   // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
   // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
