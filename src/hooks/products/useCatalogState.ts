@@ -117,6 +117,7 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
+  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
@@ -443,12 +444,6 @@ export function useCatalogState() {
     filteredProductsRef.current = filteredProducts;
   }, [filteredProducts]);
 
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
-  useEffect(() => {
-    if (!isTransitioning) {
-      setLastNonTransitionedProducts(filteredProducts);
-    }
-  }, [filteredProducts, isTransitioning]);
 
   const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
