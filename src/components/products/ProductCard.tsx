@@ -75,6 +75,12 @@ export interface ProductCardProps {
   activeColorFilter?: ActiveColorFilter | null;
   priority?: boolean;
   onStatusClick?: (type: string, value?: string | number) => void;
+  /**
+   * FIX ISSUE-02 2026-06-09: Imagem real da variante de cor via useColorEnrichment (ProductGrid).
+   * Injetada quando filtro de cor ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
+   * Evita exibir primary_image_url genérica quando filtro de cor está ativo.
+   */
+  colorEnrichmentImage?: string | null;
 }
 
 export const ProductCard = memo(
@@ -97,6 +103,7 @@ export const ProductCard = memo(
       activeColorFilter,
       priority = false,
       onStatusClick,
+      colorEnrichmentImage,
     },
     ref,
   ) {
@@ -367,6 +374,12 @@ export const ProductCard = memo(
       // Prioridade 1: Imagem da variante atual do carrossel/seleção
       if (currentVariant?.image) return currentVariant.image;
 
+      // Prioridade 1.5: Imagem do batch enrichment de cor (useColorEnrichment via ProductGrid).
+      // Ativado apenas quando filtro de cor ativo — resolve imagem real da variante de cor
+      // sem depender de product.colors[].images (ausentes no catálogo lightweight).
+      // FIX ISSUE-02 2026-06-09
+      if (colorEnrichmentImage && activeColorFilter) return colorEnrichmentImage;
+
       // Prioridade 2: Resolver por filtro de cor (se houver)
       const filteredImg = resolveColorImage(product, activeColorFilter);
       if (filteredImg) return filteredImg;
@@ -382,7 +395,7 @@ export const ProductCard = memo(
 
       // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
       return product.primary_image_url || product.og_image_url || product.images[0] || null;
-    }, [product, activeColorFilter, currentVariant, activeColorName]);
+    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage]);
 
     // Caso de fallback para quando a imagem da cor não existe
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
