@@ -90,7 +90,7 @@ function getPersistedViewMode(): ViewMode {
   return 'grid';
 }
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 100;
 
 export function useCatalogState() {
   const navigate = useNavigate();
@@ -519,8 +519,8 @@ export function useCatalogState() {
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
   const hasMoreProducts = useMemo(() => {
-    return paginatedProducts.length < filteredProducts.length || !!hasNextPage;
-  }, [paginatedProducts, filteredProducts, hasNextPage]);
+    return filteredProducts.length > displayCount || !!hasNextPage;
+  }, [filteredProducts.length, displayCount, hasNextPage]);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
