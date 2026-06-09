@@ -1,15 +1,16 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Package } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { Product } from '@/types/product-catalog';
-import { useQuery } from '@tanstack/react-query';
-import { productService } from '@/services/productService';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { getCdnUrl } from '@/utils/image-utils';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Product } from "@/types/product-catalog";
+import { useQuery } from "@tanstack/react-query";
+import { productService } from "@/services/productService";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { getCdnUrl } from "@/utils/image-utils";
+import { deriveOriginalUrl } from "@/utils/imageProxy";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 interface RelatedProductsProps {
   currentProduct: Product;
@@ -17,33 +18,34 @@ interface RelatedProductsProps {
 }
 
 function ProductMiniCard({ product, onClick }: { product: Product; onClick: () => void }) {
-  const formatPrice = (price: number) =>
+  const formatPrice = (price: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
   return (
     <div
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card',
-        'h-full cursor-pointer transition-all duration-300',
-        'hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5',
+        "group relative flex flex-col rounded-xl bg-card border border-border/50 overflow-hidden",
+        "transition-all duration-300 cursor-pointer h-full",
+        "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
       )}
       onClick={onClick}
     >
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-muted/30">
         <OptimizedImage
-          src={getCdnUrl(product.images[0] || '/placeholder.svg', 'card')}
+          src={getCdnUrl(product.images[0] || "/placeholder.svg", "card")}
           alt={product.name}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+          urlOriginal={product.primaryImageFallbackUrl ?? deriveOriginalUrl(product.images[0])}
         />
-        <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
           {product.newArrival && (
-            <Badge className="bg-primary/90 px-1.5 py-0 text-[9px] text-primary-foreground">
+            <Badge className="bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0">
               Novo
             </Badge>
           )}
           {product.isKit && (
-            <Badge className="bg-warning/90 px-1.5 py-0 text-[9px] text-warning-foreground">
+            <Badge className="bg-warning/90 text-warning-foreground text-[9px] px-1.5 py-0">
               Kit
             </Badge>
           )}
@@ -51,47 +53,42 @@ function ProductMiniCard({ product, onClick }: { product: Product; onClick: () =
       </div>
 
       {/* Info */}
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="p-3 flex flex-col flex-1 gap-1.5">
+        <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
           {product.category?.name || 'Catálogo'}
         </p>
-        <h4 className="line-clamp-2 flex-1 text-xs font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-sm">
+        <h4 className="font-semibold text-xs sm:text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors flex-1">
           {product.name}
         </h4>
-
-        <div className="flex flex-col gap-1 border-t border-border/50 pt-2">
+        
+        <div className="pt-2 border-t border-border/50 flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <span className="font-display text-sm font-bold text-foreground sm:text-base">
+             <span className="font-display font-bold text-sm sm:text-base text-foreground">
               {formatPrice(product.price)}
             </span>
             <div className="flex -space-x-1">
               {product.colors.slice(0, 3).map((color, idx) => (
-                <Tooltip key={`${color.name}-${idx}`}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className="h-3 w-3 rounded-full border border-background ring-1 ring-border/30"
-                      style={{ backgroundColor: color.hex }}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>{color.name}</TooltipContent>
-                </Tooltip>
+                <div
+                  key={idx}
+                  className="w-3 h-3 rounded-full border border-background ring-1 ring-border/30"
+                  style={{ backgroundColor: color.hex }}
+                  title={color.name}
+                />
               ))}
               {product.colors.length > 3 && (
-                <div className="flex h-3 w-3 items-center justify-center rounded-full border border-background bg-muted">
-                  <span className="text-[6px] text-muted-foreground">
-                    +{product.colors.length - 3}
-                  </span>
+                <div className="w-3 h-3 rounded-full bg-muted border border-background flex items-center justify-center">
+                  <span className="text-[6px] text-muted-foreground">+{product.colors.length - 3}</span>
                 </div>
               )}
             </div>
           </div>
-
-          <div className="flex items-center justify-between text-[9px] font-medium text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Package className="h-2 w-2" />
-              Min. {product.minQuantity}
-            </span>
-            <span className="max-w-[60px] truncate">{product.supplier?.name}</span>
+          
+          <div className="flex items-center justify-between text-[9px] text-muted-foreground font-medium">
+             <span className="flex items-center gap-1">
+               <Package className="h-2 w-2" />
+               Min. {product.minQuantity}
+             </span>
+             <span className="truncate max-w-[60px]">{product.supplier?.name}</span>
           </div>
         </div>
       </div>
@@ -106,9 +103,9 @@ function RelatedProductsSkeleton() {
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-8 w-24" />
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="aspect-[3/4] overflow-hidden rounded-xl border border-border/50">
+          <div key={i} className="aspect-[3/4] rounded-xl overflow-hidden border border-border/50">
             <Skeleton className="h-full w-full" />
           </div>
         ))}
@@ -133,13 +130,13 @@ export function RelatedProducts({ currentProduct, maxItems = 4 }: RelatedProduct
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-foreground sm:text-xl">
+        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">
           Produtos Relacionados
         </h2>
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 text-muted-foreground hover:text-primary"
+          className="text-muted-foreground hover:text-primary h-8"
           onClick={() => navigate(`/?category=${currentProduct.category?.id}`)}
         >
           <span className="hidden sm:inline">Ver mais</span>
@@ -147,14 +144,17 @@ export function RelatedProducts({ currentProduct, maxItems = 4 }: RelatedProduct
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {relatedProducts.map((product, index) => (
           <div
             key={product.id}
             className="animate-fade-in"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <ProductMiniCard product={product} onClick={() => navigate(`/produto/${product.id}`)} />
+            <ProductMiniCard
+              product={product}
+              onClick={() => navigate(`/produto/${product.id}`)}
+            />
           </div>
         ))}
       </div>
