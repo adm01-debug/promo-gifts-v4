@@ -277,7 +277,6 @@ export const SortableCartItem = memo(function SortableCartItem({
               data-testid="cart-item-color"
               className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full border border-border/50 bg-card/90 px-2.5 py-1 shadow-sm backdrop-blur-md"
             >
-              {/* Only show circle if color_hex is available, but don't show hex code text */}
               <div
                 className="h-3.5 w-3.5 rounded-full border border-border/50 shadow-inner"
                 style={{ backgroundColor: item.color_hex || 'transparent' }}
@@ -367,7 +366,7 @@ export const SortableCartItem = memo(function SortableCartItem({
                 value={item.quantity}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                  const val = parseInt(e.target.value, 10);
                   if (!isNaN(val) && val > 0) onUpdateQuantity(item.id, val);
                 }}
                 className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
