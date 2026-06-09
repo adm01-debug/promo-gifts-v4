@@ -208,8 +208,26 @@ export const ProductListItem = memo(function ProductListItem({
     [variantPickerMode, product, favStore, compStore, navigate],
   );
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  const formatPrice = (price: number) => {
+    const formatted = new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+    
+    // Separar o símbolo do valor para estilização refinada
+    const parts = formatted.split(/\s/);
+    if (parts.length >= 2) {
+      return (
+        <span className="flex items-baseline justify-end gap-1">
+          <span className="text-[10px] font-medium text-muted-foreground/70 sm:text-xs">R$</span>
+          <span>{parts[parts.length - 1]}</span>
+        </span>
+      );
+    }
+    return formatted;
+  };
 
   const getStockColor = (status: string) => {
     switch (status) {
@@ -357,7 +375,7 @@ export const ProductListItem = memo(function ProductListItem({
             <img
               src={thumbUrl}
               alt={product.name}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
               loading="lazy"
               onError={(e) => {
                 const img = e.currentTarget;
@@ -433,113 +451,132 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Info — main content block */}
-        <div className="min-w-0 flex-1 py-0.5">
-          {/* Top meta row */}
-          <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
-            {product.featured && (
-              <ProductStatusBadge
-                type="featured"
-                size="sm"
-                onClick={() => handleStatusClick('featured')}
-              />
-            )}
-            {isNovelty && noveltyDaysRemaining !== undefined && (
-              <NoveltyBadge
-                daysRemaining={noveltyDaysRemaining}
-                size="sm"
-                onClick={() => handleStatusClick('novelty')}
-              />
-            )}
-            {product.onSale && (
-              <ProductStatusBadge
-                type="promotion"
-                size="sm"
-                onClick={() => handleStatusClick('promotion')}
-              />
-            )}
-            {product.isKit && (
-              <ProductStatusBadge type="kit" size="sm" onClick={() => handleStatusClick('kit')} />
-            )}
-            {product.hasCommercialPackaging && (
-              <ProductStatusBadge
-                type="packaging"
-                size="sm"
-                value="Embalagem"
-                packagingMetadata={{
-                  packingType: product.packingType,
-                  boxWidthMm: product.boxWidthMm,
-                  boxHeightMm: product.boxHeightMm,
-                  boxLengthMm: product.boxLengthMm,
-                  packagingContext: product.packagingContext,
-                }}
-                onClick={() => handleStatusClick('packaging')}
-              />
-            )}
-            <span className="max-w-[120px] truncate">
-              {product.category?.name || 'Sem categoria'}
-            </span>
-            <span className="text-border">•</span>
-            <span
-              className={cn(
-                'flex shrink-0 items-center gap-0.5',
-                getSupplierColors(product.supplier.name).text,
+        <div className="min-w-0 flex-1 py-1">
+          {/* Top meta row — Melhoria de hierarquia e legibilidade */}
+          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground/80 sm:text-xs">
+            <div className="flex items-center gap-1.5">
+              {product.featured && (
+                <ProductStatusBadge
+                  type="featured"
+                  size="sm"
+                  onClick={() => handleStatusClick('featured')}
+                />
               )}
-            >
-              <Building2 className="h-2.5 w-2.5" />
-              <span className="max-w-[80px] truncate">{product.supplier.name}</span>
-            </span>
-            <GenderBadge gender={product.gender} size="sm" />
+              {isNovelty && noveltyDaysRemaining !== undefined && (
+                <NoveltyBadge
+                  daysRemaining={noveltyDaysRemaining}
+                  size="sm"
+                  onClick={() => handleStatusClick('novelty')}
+                />
+              )}
+              {product.onSale && (
+                <ProductStatusBadge
+                  type="promotion"
+                  size="sm"
+                  onClick={() => handleStatusClick('promotion')}
+                />
+              )}
+              {product.isKit && (
+                <ProductStatusBadge type="kit" size="sm" onClick={() => handleStatusClick('kit')} />
+              )}
+              {product.hasCommercialPackaging && (
+                <ProductStatusBadge
+                  type="packaging"
+                  size="sm"
+                  value="Embalagem"
+                  packagingMetadata={{
+                    packingType: product.packingType,
+                    boxWidthMm: product.boxWidthMm,
+                    boxHeightMm: product.boxHeightMm,
+                    boxLengthMm: product.boxLengthMm,
+                    packagingContext: product.packagingContext,
+                  }}
+                  onClick={() => handleStatusClick('packaging')}
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="max-w-[140px] truncate font-medium tracking-tight">
+                {product.category?.name || 'Sem categoria'}
+              </span>
+              <span className="text-border/40">•</span>
+              <span
+                className={cn(
+                  'flex shrink-0 items-center gap-1 font-semibold tracking-tight',
+                  getSupplierColors(product.supplier.name).text,
+                )}
+              >
+                <Building2 className="h-2.5 w-2.5 opacity-70" />
+                <span className="max-w-[100px] truncate">{product.supplier.name}</span>
+              </span>
+              <GenderBadge gender={product.gender} size="sm" />
+            </div>
           </div>
 
-          {/* Product name */}
+          {/* Product name — Aumentado para melhor scanability */}
           <h3
             data-testid="product-list-name"
-            className="line-clamp-1 font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
+            className="line-clamp-1 font-display text-sm font-bold leading-tight text-foreground transition-colors group-hover:text-primary sm:text-base"
           >
             {product.name}
           </h3>
 
-          {/* Active color badge */}
+          {/* Active color badge — Visual mais refinado */}
           {activeColorName && (
-            <Badge
-              variant="outline"
-              className="mt-0.5 h-4 w-fit border-primary/30 px-1.5 py-0 text-[9px] text-primary/80"
-            >
-              {activeColorName}
-            </Badge>
+            <div className="mt-1 flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="h-4 w-fit border-primary/20 bg-primary/5 px-1.5 py-0 text-[9px] font-semibold text-primary/90"
+              >
+                {activeColorName}
+              </Badge>
+            </div>
           )}
 
-          {/* Stock + SKU row */}
-          <div className="mt-0.5 flex items-center gap-2">
-            <span
-              className={cn(
-                'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
-                getStockColor(displayStatus),
-              )}
-            >
-              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-              {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
-            </span>
-            {product.sku && (
-              <span className="hidden font-mono text-[10px] text-muted-foreground/50 sm:inline">
-                {product.sku}
+          {/* Stock + SKU + Colors row — Reestruturado para clareza B2B */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  'flex items-center gap-1.5 text-[10px] font-bold tracking-tight sm:text-xs',
+                  getStockColor(displayStatus),
+                )}
+              >
+                <div className={cn("h-1.5 w-1.5 rounded-full", 
+                  displayStatus === 'in-stock' ? 'bg-success animate-pulse' : 
+                  displayStatus === 'low-stock' ? 'bg-warning' : 'bg-destructive'
+                )} />
+                {getStockLabel(displayStatus)} 
+                <span className="font-mono opacity-80">({displayStock.toLocaleString('pt-BR')})</span>
               </span>
-            )}
-            {/* Inline color dots */}
-            <ProductColorSwatches
-              colors={product.colors}
-              max={5}
-              size="xs"
-              hideWhenEmpty={false}
-              className="ml-1 hidden md:flex"
-            />
+              
+              {product.sku && (
+                <span className="hidden rounded bg-muted/50 px-1 font-mono text-[9px] font-medium text-muted-foreground/60 sm:inline">
+                  {product.sku}
+                </span>
+              )}
+            </div>
+
+            {/* Color swatches — Agora mais integradas e visíveis */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium text-muted-foreground/40 hidden sm:inline">Cores:</span>
+              <ProductColorSwatches
+                colors={product.colors}
+                max={8}
+                size="xs"
+                hideWhenEmpty={false}
+                className="flex items-center"
+              />
+            </div>
           </div>
         </div>
 
         {/* Price column — right-aligned, always visible */}
-        <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
-          <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
+        <div className="min-w-[80px] shrink-0 pr-4 text-right sm:min-w-[100px]">
+          <div className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
             {formatPrice(product.price)}
+          </div>
           </span>
           <div className="mt-0.5 flex justify-end">
             <PriceFreshnessBadge
