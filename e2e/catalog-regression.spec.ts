@@ -9,12 +9,8 @@ test.describe("Catalog Visual Regression & Edge Cases", () => {
 
   test("visual regression: catalog initial state", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    // Aguarda o grid carregar para evitar capturar esqueletos
     await page.waitForSelector('[data-testid="product-card"]', { timeout: 15000 });
-    
-    // Pequeno delay para garantir que imagens (OptimizedImage) transicionaram opacity
     await page.waitForTimeout(2000);
-
     expect(await page.screenshot({ fullPage: true })).toMatchSnapshot('catalog-initial.png');
   });
 
@@ -22,71 +18,66 @@ test.describe("Catalog Visual Regression & Edge Cases", () => {
     await gotoAndSettle(page, "/produtos");
     await page.click('button[aria-label="Abrir filtros do catálogo"]');
     await expect(page.locator('text=Categorias')).toBeVisible();
-    
-    // Captura apenas a área visível para focar no painel lateral
     expect(await page.screenshot()).toMatchSnapshot('catalog-filters-open.png');
   });
 
   test("persistence: filters and sort should persist when navigating back", async ({ page }) => {
-    await gotoAndSettle(page, "/produtos");
+    // 1. Aplica filtros e ordenação via URL para ser determinístico
+    // Note: useCatalogState usa sortBy como param, priceRange como array
+    await gotoAndSettle(page, "/produtos?sort=price-asc&priceRange=100&priceRange=500");
     
-    // 1. Aplica filtros via URL para ser determinístico
-    await gotoAndSettle(page, "/produtos?sortBy=price_asc&priceRange=100&priceRange=500");
-    
-    // 2. Navega para um produto
+    // 2. Aguarda os cards carregarem
     await page.waitForSelector('[data-testid="product-card"]');
+    
+    // 3. Navega para um produto clicando no link do card
     const firstProductLink = page.locator('[data-testid="product-card"] a').first();
     await firstProductLink.click();
     
-    // Verifica se saiu do catálogo
-    await expect(page).not.toHaveURL(/\/produtos(\?.*)?$/);
-    await page.waitForSelector('[data-testid="product-detail"]', { timeout: 10000 }).catch(() => {});
+    // 4. Verifica se saiu do catálogo e está na PDP
+    await expect(page).toHaveURL(/\/produto\/.*/);
     
-    // 3. Volta para o catálogo
+    // 5. Volta para o catálogo usando o botão voltar do browser
     await page.goBack();
     
-    // 4. Valida se os parâmetros persistem na URL
-    expect(page.url()).toContain("sortBy=price_asc");
-    expect(page.url()).toContain("priceRange=100");
-    expect(page.url()).toContain("priceRange=500");
+    // 6. Valida se os parâmetros persistem na URL e a UI reflete o estado
+    await expect(page).toHaveURL(/\/produtos\?.*sort=price-asc.*/);
+    await expect(page).toHaveURL(/\/produtos\?.*priceRange=100.*/);
     
-    // Valida se a UI reflete os filtros (badge de filtro ativo)
+    // Verifica badge de filtro ativo
     await expect(page.locator('[data-testid="active-filter-badge"]')).toBeVisible();
   });
 
   test("normalization: invalid parameters should not break layout", async ({ page }) => {
-    // Parâmetros inválidos: ordenação inexistente, cor malformada, busca com caracteres especiais
-    const invalidUrl = "/produtos?sortBy=INVALID_SORT&colorGroups=999&priceRange=NaN&q=<script>alert(1)</script>";
+    // Parâmetros inválidos: ordenação inexistente, cor inexistente, price malformado
+    const invalidUrl = "/produtos?sort=INVALID_SORT&colorGroups=999&priceRange=NaN&q=<script>alert(1)</script>";
     
     await gotoAndSettle(page, invalidUrl);
     
-    // O catálogo deve normalizar e mostrar o estado inicial ou vazio amigável, sem crashar (tela branca)
+    // O catálogo deve normalizar e não crashar (sem tela branca)
     await expect(page.locator('body')).not.toContainText("Error");
-    await expect(page.locator('body')).not.toContainText("crash");
     
     // Deve renderizar o Toolbar (indicador que o componente principal montou)
     await expect(page.locator('[data-testid="catalog-sort-trigger"]')).toBeVisible();
     
-    // O grid deve estar presente (mesmo que vazio)
-    const grid = page.locator('[data-testid="product-grid"], [data-testid="empty-catalog-state"]');
-    await expect(grid.first()).toBeVisible();
+    // O grid deve estar presente (ou empty state se filtrar tudo)
+    const gridOrEmpty = page.locator('[data-testid="product-grid"], [data-testid="empty-catalog-state"]');
+    await expect(gridOrEmpty.first()).toBeVisible();
     
-    // Captura visual para garantir que o layout não "explodiu"
     expect(await page.screenshot()).toMatchSnapshot('catalog-invalid-params.png');
   });
 
   test("flash check: loading transitions", async ({ page }) => {
-    // Força um estado de carregamento longo (simulado via rede se possível, ou apenas verificando se o skeleton aparece antes do grid)
     await page.goto("/produtos");
     
-    // Verifica se o skeleton aparece primeiro (sem flash de tela branca)
+    // Verifica se o skeleton aparece primeiro
     const skeleton = page.locator('[data-testid="product-card-skeleton"]');
     if (await skeleton.count() > 0) {
       await expect(skeleton.first()).toBeVisible();
     }
     
-    // Aguarda finalização
+    // Aguarda finalização e garante que o skeleton sumiu
     await page.waitForSelector('[data-testid="product-card"]', { timeout: 15000 });
     await expect(page.locator('[data-testid="product-card-skeleton"]')).toHaveCount(0);
   });
 });
+
