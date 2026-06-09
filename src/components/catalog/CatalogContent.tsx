@@ -1,1 +1,242 @@
-aW1wb3J0IHsgbWVtbywgdXNlTWVtbywgdXNlQ2FsbGJhY2ssIHR5cGUgUmVmT2JqZWN0IH0gZnJvbSAncmVhY3QnOwppbXBvcnQgdHlwZSB7IEFjdGl2ZUNvbG9yRmlsdGVyIH0gZnJvbSAnQC91dGlscy9jb2xvci1pbWFnZS1yZXNvbHZlcic7CmltcG9ydCB7IGNuIH0gZnJvbSAnQC9saWIvdXRpbHMnOwoKaW1wb3J0IHsgUHJvZHVjdFRhYmxlVmlldyB9IGZyb20gJ0AvY29tcG9uZW50cy9wcm9kdWN0cy9Qcm9kdWN0VGFibGVWaWV3JzsKaW1wb3J0IHsgVmlydHVhbGl6ZWRQcm9kdWN0R3JpZCB9IGZyb20gJ0AvY29tcG9uZW50cy9wcm9kdWN0cy9WaXJ0dWFsaXplZFByb2R1Y3RHcmlkJzsKaW1wb3J0IHsKICBQcm9kdWN0Q2FyZFNrZWxldG9uLAogIFByb2R1Y3RHcmlkU2tlbGV0b24sCiAgUHJvZHVjdFRhYmxlU2tlbGV0b24sCn0gZnJvbSAnQC9jb21wb25lbnRzL2xvYWRpbmcvTW9kZXJuU2tlbGV0b25zJzsKaW1wb3J0IHsgRW1wdHlTdGF0ZSB9IGZyb20gJ0AvY29tcG9uZW50cy9jb21tb24vRW1wdHlTdGF0ZSc7CmltcG9ydCB7IENhdGFsb2dCdWxrTW9kYWxzIH0gZnJvbSAnLi9DYXRhbG9nQnVsa01vZGFscyc7CmltcG9ydCB7IHVzZUNhdGFsb2dTZWxlY3Rpb24gfSBmcm9tICcuL3VzZUNhdGFsb2dTZWxlY3Rpb24nOwppbXBvcnQgdHlwZSB7IFByb2R1Y3QgfSBmcm9tICdAL3R5cGVzL3Byb2R1Y3QtY2F0YWxvZyc7CmltcG9ydCB0eXBlIHsgVmlld01vZGUgfSBmcm9tICdAL2hvb2tzL3Byb2R1Y3RzL3VzZUNhdGFsb2dTdGF0ZSc7CmltcG9ydCB0eXBlIHsgQ29sdW1uQ291bnQgfSBmcm9tICdAL2NvbXBvbmVudHMvcHJvZHVjdHMvQ29sdW1uU2VsZWN0b3InOwppbXBvcnQgeyBTcGFya2xpbmVTYWxlc1Byb3ZpZGVyIH0gZnJvbSAnQC9ob29rcy9pbnRlbGxpZ2VuY2UvdXNlU3BhcmtsaW5lU2FsZXMnOwppbXBvcnQgeyBQcm9kdWN0TGVhZkNhdGVnb3J5UHJvdmlkZXIgfSBmcm9tICdAL2hvb2tzL3Byb2R1Y3RzL3VzZVByb2R1Y3RMZWFmQ2F0ZWdvcmllcyc7CgppbnRlcmZhY2UgQ2F0YWxvZ0NvbnRlbnRQcm9wcyB7CiAgdmlld01vZGU6IFZpZXdNb2RlOwogIHNob3VsZFNob3dDYXRhbG9nU2tlbGV0b246IGJvb2xlYW47CiAgc2hvdWxkU2hvd0VtcHR5U3RhdGU6IGJvb2xlYW47CiAgaGFzQWN0aXZlQ2F0YWxvZ0NvbnN0cmFpbnRzOiBib29sZWFuOwogIHBhZ2luYXRlZFByb2R1Y3RzOiBQcm9kdWN0W107CiAgZmlsdGVyZWRQcm9kdWN0czogUHJvZHVjdFtdOwogIGdyaWRDb2x1bW5zOiBDb2x1bW5Db3VudDsKICBoYXNNb3JlUHJvZHVjdHM6IGJvb2xlYW47CiAgaXNMb2FkaW5nTW9yZTogYm9vbGVhbjsKICB0b3RhbEVzdGltYXRlOiBudW1iZXIgfCBudWxsOwogIGxvYWRNb3JlUmVmOiBSZWZPYmplY3Q8SFRNTERpdkVsZW1lbnQ+OwogIGl0ZW1zUGVyUGFnZTogbnVtYmVyOwogIG5hdmlnYXRlOiAocGF0aDogc3RyaW5nKSA9PiB2b2lkOwogIGhhbmRsZVZpZXdQcm9kdWN0OiAocDogUHJvZHVjdCkgPT4gdm9pZDsKICBoYW5kbGVTaGFyZVByb2R1Y3Q6IChwOiBQcm9kdWN0KSA9PiB2b2lkOwogIGhhbmRsZUZhdm9yaXRlUHJvZHVjdDogKHA6IFByb2R1Y3QpID0+IHZvaWQ7CiAgaXNGYXZvcml0ZTogKGlkOiBzdHJpbmcpID0+IGJvb2xlYW47CiAgdG9nZ2xlRmF2b3JpdGU6IChpZDogc3RyaW5nKSA9PiB2b2lkOwogIGlzSW5Db21wYXJlOiAoaWQ6IHN0cmluZykgPT4gYm9vbGVhbjsKICBvblRvZ2dsZUNvbXBhcmU6IChpZDogc3RyaW5nKSA9PiB7IGFkZGVkOiBib29sZWFuOyBpc0Z1bGw6IGJvb2xlYW4gfTsKICBjYW5BZGRUb0NvbXBhcmU6IGJvb2xlYW47CiAgb25Mb2FkTW9yZT86ICgpID0+IHZvaWQ7CiAgb25SZXNldEZpbHRlcnM/OiAoKSA9PiB2b2lkOwogIHNlbGVjdGlvbk1vZGU/OiBib29sZWFuOwogIG9uU2VsZWN0ZWRDb3VudENoYW5nZT86IChjb3VudDogbnVtYmVyKSA9PiB2b2lkOwogIGFjdGl2ZUNvbG9yRmlsdGVyPzogQWN0aXZlQ29sb3JGaWx0ZXIgfCBudWxsOwogIGFjdGl2ZVByb2R1Y3RJZD86IHN0cmluZyB8IG51bGw7CiAgc2V0QWN0aXZlUHJvZHVjdElkPzogKGlkOiBzdHJpbmcgfCBudWxsKSA9PiB2b2lkOwogIGhpZGVDYXRlZ29yeUJhZGdlcz86IGJvb2xlYW47CiAgLy8gTm92YXMgcHJvcHMgcGFyYSBjb250cm9sZSBkZSBmaWx0cm8gZSBzb3J0IHZpbmRvcyBkbyBjYXRhbG9nIHN0YXRlCiAgc29ydEJ5Pzogc3RyaW5nOwogIG9uU29ydENoYW5nZT86ICh2OiBzdHJpbmcpID0+IHZvaWQ7CiAgb25PcGVuRmlsdGVycz86ICgpID0+IHZvaWQ7CiAgYWN0aXZlRmlsdGVyc0NvdW50PzogbnVtYmVyOwp9CgpleHBvcnQgY29uc3QgQ2F0YWxvZ0NvbnRlbnQgPSBtZW1vKGZ1bmN0aW9uIENhdGFsb2dDb250ZW50KHsKICB2aWV3TW9kZSwKICBzaG91bGRTaG93Q2F0YWxvZ1NrZWxldG9uLAogIHNob3VsZFNob3dFbXB0eVN0YXRlLAogIGhhc0FjdGl2ZUNhdGFsb2dDb25zdHJhaW50cywKICBwYWdpbmF0ZWRQcm9kdWN0cywKICBmaWx0ZXJlZFByb2R1Y3RzLAogIGdyaWRDb2x1bW5zLAogIGhhc01vcmVQcm9kdWN0cywKICBpc0xvYWRpbmdNb3JlLAogIHRvdGFsRXN0aW1hdGUsCiAgbG9hZE1vcmVSZWYsCiAgaXRlbXNQZXJQYWdlOiBfaXRlbXNQZXJQYWdlLAogIG5hdmlnYXRlLAogIGhhbmRsZVZpZXdQcm9kdWN0OiBfaGFuZGxlVmlld1Byb2R1Y3QsCiAgaGFuZGxlU2hhcmVQcm9kdWN0LAogIGhhbmRsZUZhdm9yaXRlUHJvZHVjdDogX2hhbmRsZUZhdm9yaXRlUHJvZHVjdCwKICBpc0Zhdm9yaXRlLAogIHRvZ2dsZUZhdm9yaXRlLAogIGlzSW5Db21wYXJlLAogIG9uVG9nZ2xlQ29tcGFyZSwKICBjYW5BZGRUb0NvbXBhcmUsCiAgb25Mb2FkTW9yZSwKICBvblJlc2V0RmlsdGVycywKICBzZWxlY3Rpb25Nb2RlLAogIG9uU2VsZWN0ZWRDb3VudENoYW5nZSwKICBhY3RpdmVDb2xvckZpbHRlciwKICBhY3RpdmVQcm9kdWN0SWQ6IF9hY3RpdmVQcm9kdWN0SWQsCiAgc2V0QWN0aXZlUHJvZHVjdElkOiBfc2V0QWN0aXZlUHJvZHVjdElkLAogIGhpZGVDYXRlZ29yeUJhZGdlcyA9IGZhbHNlLAogIHNvcnRCeSA9ICduYW1lJywKICBvblNvcnRDaGFuZ2UsCiAgb25PcGVuRmlsdGVycywKICBhY3RpdmVGaWx0ZXJzQ291bnQgPSAwLAp9OiBDYXRhbG9nQ29udGVudFByb3BzKSB7CiAgY29uc3Qgc2VsZWN0aW9uID0gdXNlQ2F0YWxvZ1NlbGVjdGlvbihwYWdpbmF0ZWRQcm9kdWN0cywgc2VsZWN0aW9uTW9kZSwgb25TZWxlY3RlZENvdW50Q2hhbmdlKTsKICBjb25zdCB7IHNlbGVjdGVkSWRzLCB0b2dnbGVTZWxlY3Q6IG9uVG9nZ2xlU2VsZWN0IH0gPSBzZWxlY3Rpb247CgogIGNvbnN0IGhhbmRsZVByb2R1Y3RDbGljayA9IHVzZUNhbGxiYWNrKChwaWQ6IHN0cmluZykgPT4gbmF2aWdhdGUoYC9wcm9kdXRvLyR7cGlkfWApLCBbbmF2aWdhdGVdKTsKCiAgY29uc3QgcHJvZHVjdElkcyA9IHVzZU1lbW8oKCkgPT4gcGFnaW5hdGVkUHJvZHVjdHMubWFwKChwKSA9PiBwLmlkKSwgW3BhZ2luYXRlZFByb2R1Y3RzXSk7CgogIGlmIChzaG91bGRTaG93Q2F0YWxvZ1NrZWxldG9uKSB7CiAgICBpZiAodmlld01vZGUgPT09ICdsaXN0JykgewogICAgICByZXR1cm4gKAogICAgICAgIDxkaXYgY2xhc3NOYW1lPSJzcGFjZS15LTIiIGRhdGEtdGVzdGlkPSJjYXRhbG9nLWxpc3Qtc2tlbGV0b24iPgogICAgICAgICAge0FycmF5LmZyb20oeyBsZW5ndGg6IDggfSkubWFwKChfLCBpKSA9PiAoCiAgICAgICAgICAgIDxkaXYKICAgICAgICAgICAgICBrZXk9e2l9CiAgICAgICAgICAgICAgY2xhc3NOYW1lPSJkdXJhdGlvbi0zMDAgYW5pbWF0ZS1pbiBmYWRlLWluIHNsaWRlLWluLWZyb20tbGVmdC0yIgogICAgICAgICAgICAgIHN0eWxlPXt7IGFuaW1hdGlvbkRlbGF5OiBgJHtpICogMzB9bXNgIH19CiAgICAgICAgICAgID4KICAgICAgICAgICAgICA8UHJvZHVjdENhcmRTa2VsZXRvbiB2YXJpYW50PSJjb21wYWN0IiBzZWxlY3Rpb25Nb2RlPXtzZWxlY3Rpb25Nb2RlfSAvPgogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICkpfQogICAgICAgIDwvZGl2PgogICAgICApOwogICAgfQogICAgaWYgKHZpZXdNb2RlID09PSAndGFibGUnKSB7CiAgICAgIHJldHVybiAoCiAgICAgICAgPGRpdiBkYXRhLXRlc3RpZD0iY2F0YWxvZy10YWJsZS1za2VsZXRvbiI+CiAgICAgICAgICA8UHJvZHVjdFRhYmxlU2tlbGV0b24gcm93cz17MTB9IHNlbGVjdGlvbk1vZGU9e3NlbGVjdGlvbk1vZGV9IC8+CiAgICAgICAgPC9kaXY+CiAgICAgICk7CiAgICB9CiAgICByZXR1cm4gKAogICAgICA8ZGl2IGRhdGEtdGVzdGlkPSJjYXRhbG9nLWdyaWQtc2tlbGV0b24iPgogICAgICAgIDxQcm9kdWN0R3JpZFNrZWxldG9uCiAgICAgICAgICBjb3VudD17MTJ9CiAgICAgICAgICBjb2x1bW5zPXtncmlkQ29sdW1uc30KICAgICAgICAgIHZhcmlhbnQ9ImRlZmF1bHQiCiAgICAgICAgICBoaWRlQ2F0ZWdvcnlCYWRnZXM9e2hpZGVDYXRlZ29yeUJhZGdlc30KICAgICAgICAgIHNlbGVjdGlvbk1vZGU9e3NlbGVjdGlvbk1vZGV9CiAgICAgICAgLz4KICAgICAgPC9kaXY+CiAgICApOwogIH0KCiAgaWYgKHNob3VsZFNob3dFbXB0eVN0YXRlKSB7CiAgICByZXR1cm4gKAogICAgICA8RW1wdHlTdGF0ZQogICAgICAgIHZhcmlhbnQ9InByb2R1Y3RzIgogICAgICAgIHRpdGxlPSJOZW5odW0gcHJvZHV0byBlbmNvbnRyYWRvIgogICAgICAgIGRlc2NyaXB0aW9uPXsKICAgICAgICAgIGhhc0FjdGl2ZUNhdGFsb2dDb25zdHJhaW50cwogICAgICAgICAgICA/ICdUZW50ZSBhanVzdGFyIHNldXMgZmlsdHJvcyBwYXJhIHZlciBtYWlzIHJlc3VsdGFkb3MuJwogICAgICAgICAgICA6ICdFeHBsb3JlIG5vc3NvIGNhdMOhbG9nbyBjb21wbGV0byBwYXJhIGVuY29udHJhciBvIHF1ZSBwcm9jdXJhLicKICAgICAgICB9CiAgICAgICAgYWN0aW9uPXsKICAgICAgICAgIG9uUmVzZXRGaWx0ZXJzCiAgICAgICAgICAgID8gewogICAgICAgICAgICAgICAgbGFiZWw6ICdMaW1wYXIgdG9kb3Mgb3MgZmlsdHJvcycsCiAgICAgICAgICAgICAgICBvbkNsaWNrOiBvblJlc2V0RmlsdGVycywKICAgICAgICAgICAgICB9CiAgICAgICAgICAgIDogdW5kZWZpbmVkCiAgICAgICAgfQogICAgICAvPgogICAgKTsKICB9CgogIC8vIFNlIGVzdGl2ZXJtb3MgZW0gdW0gZGVzdGVzIG1vZG9zLCB1c2Ftb3MgbyBncmlkIHZpcnR1YWxpemFkbyBwYXJhIG1lbGhvciBwZXJmb3JtYW5jZQogIGlmICh2aWV3TW9kZSA9PT0gJ2dyaWQnIHx8IHZpZXdNb2RlID09PSAnbGlzdCcpIHsKICAgIHJldHVybiAoCiAgICAgIDxTcGFya2xpbmVTYWxlc1Byb3ZpZGVyIHByb2R1Y3RJZHM9e3Byb2R1Y3RJZHN9PgogICAgICAgIDxQcm9kdWN0TGVhZkNhdGVnb3J5UHJvdmlkZXIgcHJvZHVjdElkcz17cHJvZHVjdElkc30+CiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iaC1bY2FsYygxMDB2aC0yODBweCldIG1pbi1oLVs2MDBweF0gdy1mdWxsIj4KICAgICAgICAgICAgPFZpcnR1YWxpemVkUHJvZHVjdEdyaWQKICAgICAgICAgICAgICBwcm9kdWN0cz17cGFnaW5hdGVkUHJvZHVjdHN9CiAgICAgICAgICAgICAgaXNMb2FkaW5nPXtpc0xvYWRpbmdNb3JlfQogICAgICAgICAgICAgIGhhc01vcmU9e2hhc01vcmVQcm9kdWN0c30KICAgICAgICAgICAgICBvbkxvYWRNb3JlPXtvbkxvYWRNb3JlfQogICAgICAgICAgICAgIGNvbHVtbnM9e2dyaWRDb2x1bW5zfQogICAgICAgICAgICAgIHZpZXdNb2RlPXt2aWV3TW9kZX0KICAgICAgICAgICAgICBvblByb2R1Y3RDbGljaz17aGFuZGxlUHJvZHVjdENsaWNrfQogICAgICAgICAgICAgIGlzRmF2b3JpdGVkPXtpc0Zhdm9yaXRlfQogICAgICAgICAgICAgIG9uVG9nZ2xlRmF2b3JpdGU9e3RvZ2dsZUZhdm9yaXRlfQogICAgICAgICAgICAgIGlzSW5Db21wYXJlPXtpc0luQ29tcGFyZX0KICAgICAgICAgICAgICBvblRvZ2dsZUNvbXBhcmU9e29uVG9nZ2xlQ29tcGFyZX0KICAgICAgICAgICAgICBjYW5BZGRUb0NvbXBhcmU9e2NhbkFkZFRvQ29tcGFyZX0KICAgICAgICAgICAgICBvblNoYXJlPXtoYW5kbGVTaGFyZVByb2R1Y3R9CiAgICAgICAgICAgICAgYWN0aXZlQ29sb3JGaWx0ZXI9e2FjdGl2ZUNvbG9yRmlsdGVyfQogICAgICAgICAgICAgIHNlbGVjdGlvbk1vZGU9e3NlbGVjdGlvbk1vZGV9CiAgICAgICAgICAgICAgc2VsZWN0ZWRJZHM9e3NlbGVjdGVkSWRzfQogICAgICAgICAgICAgIG9uVG9nZ2xlU2VsZWN0PXtvblRvZ2dsZVNlbGVjdH0KICAgICAgICAgICAgICBzb3J0Qnk9e3NvcnRCeX0KICAgICAgICAgICAgICBvblNvcnRDaGFuZ2U9e29uU29ydENoYW5nZX0KICAgICAgICAgICAgICBvbk9wZW5GaWx0ZXJzPXtvbk9wZW5GaWx0ZXJzfQogICAgICAgICAgICAgIG9uQ2xlYXJGaWx0ZXJzPXtvblJlc2V0RmlsdGVyc30KICAgICAgICAgICAgICBzaG93RmlsdGVyQmFyPXt0cnVlfQogICAgICAgICAgICAgIGFjdGl2ZUZpbHRlcnNDb3VudD17YWN0aXZlRmlsdGVyc0NvdW50fQogICAgICAgICAgICAvPgogICAgICAgICAgPC9kaXY+CiAgICAgICAgICA8Q2F0YWxvZ0J1bGtNb2RhbHMKICAgICAgICAgICAgc2VsPXtzZWxlY3Rpb259CiAgICAgICAgICAgIHNlbGVjdGlvbk1vZGU9e3NlbGVjdGlvbk1vZGV9CiAgICAgICAgICAgIHRvdGFsQ291bnQ9e3RvdGFsRXN0aW1hdGUgfHwgZmlsdGVyZWRQcm9kdWN0cy5sZW5ndGh9CiAgICAgICAgICAvPgogICAgICAgIDwvUHJvZHVjdExlYWZDYXRlZ29yeVByb3ZpZGVyPgogICAgICA8L1NwYXJrbGluZVNhbGVzUHJvdmlkZXI+CiAgICApOwogIH0KCiAgcmV0dXJuICgKICAgIDxkaXYKICAgICAgY2xhc3NOYW1lPXtjbigKICAgICAgICAncmVsYXRpdmUgc3BhY2UteS04IHB4LTQgcGItMTIgZHVyYXRpb24tNTAwIGFuaW1hdGUtaW4gZmFkZS1pbiBzbTpweC02JywKICAgICAgICBpc0xvYWRpbmdNb3JlICYmICdvcGFjaXR5LTgwIHRyYW5zaXRpb24tb3BhY2l0eScsCiAgICAgICl9CiAgICA+CiAgICAgIDxTcGFya2xpbmVTYWxlc1Byb3ZpZGVyIHByb2R1Y3RJZHM9e3Byb2R1Y3RJZHN9PgogICAgICAgIDxQcm9kdWN0TGVhZkNhdGVnb3J5UHJvdmlkZXIgcHJvZHVjdElkcz17cHJvZHVjdElkc30+CiAgICAgICAgICB7dmlld01vZGUgPT09ICd0YWJsZScgJiYgKAogICAgICAgICAgICA8UHJvZHVjdFRhYmxlVmlldwogICAgICAgICAgICAgIHByb2R1Y3RzPXtwYWdpbmF0ZWRQcm9kdWN0c30KICAgICAgICAgICAgICBpc0xvYWRpbmc9e2lzTG9hZGluZ01vcmV9CiAgICAgICAgICAgICAgb25Qcm9kdWN0Q2xpY2s9e2hhbmRsZVByb2R1Y3RDbGlja30KICAgICAgICAgICAgICBvblNoYXJlUHJvZHVjdD17aGFuZGxlU2hhcmVQcm9kdWN0fQogICAgICAgICAgICAgIGlzRmF2b3JpdGU9e2lzRmF2b3JpdGV9CiAgICAgICAgICAgICAgb25Ub2dnbGVGYXZvcml0ZT17dG9nZ2xlRmF2b3JpdGV9CiAgICAgICAgICAgICAgaXNJbkNvbXBhcmU9e2lzSW5Db21wYXJlfQogICAgICAgICAgICAgIG9uVG9nZ2xlQ29tcGFyZT17b25Ub2dnbGVDb21wYXJlfQogICAgICAgICAgICAgIGNhbkFkZFRvQ29tcGFyZT17Y2FuQWRkVG9Db21wYXJlfQogICAgICAgICAgICAgIGFjdGl2ZUNvbG9yRmlsdGVyPXthY3RpdmVDb2xvckZpbHRlcn0KICAgICAgICAgICAgICBzZWxlY3Rpb25Nb2RlPXtzZWxlY3Rpb25Nb2RlfQogICAgICAgICAgICAgIHNlbGVjdGVkSWRzPXtzZWxlY3RlZElkc30KICAgICAgICAgICAgICBvblRvZ2dsZVNlbGVjdD17b25Ub2dnbGVTZWxlY3R9CiAgICAgICAgICAgIC8+CiAgICAgICAgICApfQogICAgICAgIDwvUHJvZHVjdExlYWZDYXRlZ29yeVByb3ZpZGVyPgogICAgICA8L1NwYXJrbGluZVNhbGVzUHJvdmlkZXI+CgogICAgICB7aGFzTW9yZVByb2R1Y3RzICYmIHZpZXdNb2RlID09PSAndGFibGUnICYmICgKICAgICAgICA8ZGl2IHJlZj17bG9hZE1vcmVSZWZ9IGNsYXNzTmFtZT0icHQtNCIgZGF0YS10ZXN0aWQ9ImxvYWQtbW9yZS10cmlnZ2VyIj4KICAgICAgICAgIDxQcm9kdWN0VGFibGVTa2VsZXRvbiByb3dzPXs1fSBzZWxlY3Rpb25Nb2RlPXtzZWxlY3Rpb25Nb2RlfSAvPgogICAgICAgIDwvZGl2PgogICAgICApfQoKICAgICAgPENhdGFsb2dCdWxrTW9kYWxzCiAgICAgICAgc2VsPXtzZWxlY3Rpb259CiAgICAgICAgc2VsZWN0aW9uTW9kZT17c2VsZWN0aW9uTW9kZX0KICAgICAgICB0b3RhbENvdW50PXt0b3RhbEVzdGltYXRlIHx8IGZpbHRlcmVkUHJvZHVjdHMubGVuZ3RofQogICAgICAvPgogICAgPC9kaXY+CiAgKTsKfSk7Cg==
+import { memo, useMemo, useCallback, type RefObject } from 'react';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { cn } from '@/lib/utils';
+
+import { ProductTableView } from '@/components/products/ProductTableView';
+import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
+import {
+  ProductCardSkeleton,
+  ProductGridSkeleton,
+  ProductTableSkeleton,
+} from '@/components/loading/ModernSkeletons';
+import { EmptyState } from '@/components/common/EmptyState';
+import { CatalogBulkModals } from './CatalogBulkModals';
+import { useCatalogSelection } from './useCatalogSelection';
+import type { Product } from '@/types/product-catalog';
+import type { ViewMode } from '@/hooks/products/useCatalogState';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
+import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
+
+interface CatalogContentProps {
+  viewMode: ViewMode;
+  shouldShowCatalogSkeleton: boolean;
+  shouldShowEmptyState: boolean;
+  hasActiveCatalogConstraints: boolean;
+  paginatedProducts: Product[];
+  filteredProducts: Product[];
+  gridColumns: ColumnCount;
+  hasMoreProducts: boolean;
+  isLoadingMore: boolean;
+  totalEstimate: number | null;
+  loadMoreRef: RefObject<HTMLDivElement>;
+  itemsPerPage: number;
+  navigate: (path: string) => void;
+  handleViewProduct: (p: Product) => void;
+  handleShareProduct: (p: Product) => void;
+  handleFavoriteProduct: (p: Product) => void;
+  isFavorite: (id: string) => boolean;
+  toggleFavorite: (id: string) => void;
+  isInCompare: (id: string) => boolean;
+  onToggleCompare: (id: string) => { added: boolean; isFull: boolean };
+  canAddToCompare: boolean;
+  onLoadMore?: () => void;
+  onResetFilters?: () => void;
+  selectionMode?: boolean;
+  onSelectedCountChange?: (count: number) => void;
+  activeColorFilter?: ActiveColorFilter | null;
+  activeProductId?: string | null;
+  setActiveProductId?: (id: string | null) => void;
+  hideCategoryBadges?: boolean;
+  // Novas props para controle de filtro e sort vindos do catalog state
+  sortBy?: string;
+  onSortChange?: (v: string) => void;
+  onOpenFilters?: () => void;
+  activeFiltersCount?: number;
+}
+
+export const CatalogContent = memo(function CatalogContent({
+  viewMode,
+  shouldShowCatalogSkeleton,
+  shouldShowEmptyState,
+  hasActiveCatalogConstraints,
+  paginatedProducts,
+  filteredProducts,
+  gridColumns,
+  hasMoreProducts,
+  isLoadingMore,
+  totalEstimate,
+  loadMoreRef,
+  itemsPerPage: _itemsPerPage,
+  navigate,
+  handleViewProduct: _handleViewProduct,
+  handleShareProduct,
+  handleFavoriteProduct: _handleFavoriteProduct,
+  isFavorite,
+  toggleFavorite,
+  isInCompare,
+  onToggleCompare,
+  canAddToCompare,
+  onLoadMore,
+  onResetFilters,
+  selectionMode,
+  onSelectedCountChange,
+  activeColorFilter,
+  activeProductId: _activeProductId,
+  setActiveProductId: _setActiveProductId,
+  hideCategoryBadges = false,
+  sortBy = 'name',
+  onSortChange,
+  onOpenFilters,
+  activeFiltersCount = 0,
+}: CatalogContentProps) {
+  const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
+  const { selectedIds, toggleSelect: onToggleSelect } = selection;
+
+  const handleProductClick = useCallback((pid: string) => navigate(`/produto/${pid}`), [navigate]);
+
+  const productIds = useMemo(() => paginatedProducts.map((p) => p.id), [paginatedProducts]);
+
+  if (shouldShowCatalogSkeleton) {
+    if (viewMode === 'list') {
+      return (
+        <div className="space-y-2" data-testid="catalog-list-skeleton">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="duration-300 animate-in fade-in slide-in-from-left-2"
+              style={{ animationDelay: `${i * 30}ms` }}
+            >
+              <ProductCardSkeleton variant="compact" selectionMode={selectionMode} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (viewMode === 'table') {
+      return (
+        <div data-testid="catalog-table-skeleton">
+          <ProductTableSkeleton rows={10} selectionMode={selectionMode} />
+        </div>
+      );
+    }
+    return (
+      <div data-testid="catalog-grid-skeleton">
+        <ProductGridSkeleton
+          count={12}
+          columns={gridColumns}
+          variant="default"
+          hideCategoryBadges={hideCategoryBadges}
+          selectionMode={selectionMode}
+        />
+      </div>
+    );
+  }
+
+  if (shouldShowEmptyState) {
+    return (
+      <EmptyState
+        variant="products"
+        title="Nenhum produto encontrado"
+        description={
+          hasActiveCatalogConstraints
+            ? 'Tente ajustar seus filtros para ver mais resultados.'
+            : 'Explore nosso catálogo completo para encontrar o que procura.'
+        }
+        action={
+          onResetFilters
+            ? {
+                label: 'Limpar todos os filtros',
+                onClick: onResetFilters,
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
+  // Se estivermos em um destes modos, usamos o grid virtualizado para melhor performance
+  if (viewMode === 'grid' || viewMode === 'list') {
+    return (
+      <SparklineSalesProvider productIds={productIds}>
+        <ProductLeafCategoryProvider productIds={productIds}>
+          <div className="h-[calc(100vh-280px)] min-h-[600px] w-full">
+            <VirtualizedProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              hasMore={hasMoreProducts}
+              onLoadMore={onLoadMore}
+              columns={gridColumns}
+              viewMode={viewMode}
+              onProductClick={handleProductClick}
+              isFavorited={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              onShare={handleShareProduct}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+              sortBy={sortBy}
+              onSortChange={onSortChange}
+              onOpenFilters={onOpenFilters}
+              onClearFilters={onResetFilters}
+              showFilterBar={true}
+              activeFiltersCount={activeFiltersCount}
+            />
+          </div>
+          <CatalogBulkModals
+            sel={selection}
+            selectionMode={selectionMode}
+            totalCount={totalEstimate || filteredProducts.length}
+          />
+        </ProductLeafCategoryProvider>
+      </SparklineSalesProvider>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'relative space-y-8 px-4 pb-12 duration-500 animate-in fade-in sm:px-6',
+        isLoadingMore && 'opacity-80 transition-opacity',
+      )}
+    >
+      <SparklineSalesProvider productIds={productIds}>
+        <ProductLeafCategoryProvider productIds={productIds}>
+          {viewMode === 'table' && (
+            <ProductTableView
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={handleProductClick}
+              onShareProduct={handleShareProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
+        </ProductLeafCategoryProvider>
+      </SparklineSalesProvider>
+
+      {hasMoreProducts && viewMode === 'table' && (
+        <div ref={loadMoreRef} className="pt-4" data-testid="load-more-trigger">
+          <ProductTableSkeleton rows={5} selectionMode={selectionMode} />
+        </div>
+      )}
+
+      <CatalogBulkModals
+        sel={selection}
+        selectionMode={selectionMode}
+        totalCount={totalEstimate || filteredProducts.length}
+      />
+    </div>
+  );
+});

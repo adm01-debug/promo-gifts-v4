@@ -221,12 +221,10 @@ export const ProductGrid = memo(function ProductGrid({
   // Quando não há filtro ativo, productIds=[] desabilita as queries internas do hook.
   const hasActiveColorFilter = !!(
     activeColorFilter &&
-    ((activeColorFilter.groups?.length ?? 0) > 0 ||
-      (activeColorFilter.variations?.length ?? 0) > 0)
+    ((activeColorFilter.groups?.length ?? 0) > 0 || (activeColorFilter.variations?.length ?? 0) > 0)
   );
   const allProductIds = useMemo(
     () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [products, hasActiveColorFilter],
   );
   const { data: colorEnrichmentMap } = useColorEnrichment({
