@@ -81,7 +81,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ThemeInitializer />
-        <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
           <AccessibilityProvider>
           <AriaLiveProvider>
             <TooltipProvider delayDuration={400} skipDelayDuration={200}>
