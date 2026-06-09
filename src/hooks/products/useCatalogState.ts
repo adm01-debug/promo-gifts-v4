@@ -310,6 +310,7 @@ export function useCatalogState() {
     if (realProducts.length > 0) registerProducts(realProducts);
   }, [realProducts, registerProducts]);
 
+
   const { suggestions, quickSuggestions, history, addToHistory, clearHistory } =
     useSearch(realProducts);
 
