@@ -394,8 +394,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+const FALLBACK_AUTH: AuthContextType = {
+  user: null,
+  session: null,
+  profile: null,
+  isLoading: false,
+  roles: [],
+  role: null,
+  isDev: false,
+  isSupervisor: false,
+  isAgente: false,
+  isSupervisorOrAbove: false,
+  isAdmin: false,
+  isManager: false,
+  isSeller: false,
+  canManage: false,
+  isAuthenticated: false,
+  currentAAL: null,
+  nextAAL: null,
+  hasMFA: false,
+  mfaRequired: false,
+  rolesLoaded: false,
+  refreshAAL: async () => {},
+  signIn: async () => ({ error: { message: 'AuthProvider indisponível' }, data: null }),
+  signOut: async () => {},
+  refreshProfile: async () => {},
+  refreshSession: async () => {},
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[AuthContext] useAuth called outside AuthProvider — using safe fallback. ' +
+          'This usually indicates an HMR module-duplication race; a full reload should fix it.',
+      );
+    }
+    return FALLBACK_AUTH;
+  }
   return context;
 };
