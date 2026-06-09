@@ -66,8 +66,25 @@ interface ProductTableViewProps {
 type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+const formatPrice = (price: number) => {
+  const formatted = new Intl.NumberFormat('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price);
+  
+  const parts = formatted.split(/\s/);
+  if (parts.length >= 2) {
+    return (
+      <span className="flex items-baseline justify-end gap-1">
+        <span className="text-[9px] font-medium text-muted-foreground/50">R$</span>
+        <span>{parts[parts.length - 1]}</span>
+      </span>
+    );
+  }
+  return formatted;
+};
 
 const stockColor = (status: string) => {
   if (status === 'in-stock') return 'text-success';
