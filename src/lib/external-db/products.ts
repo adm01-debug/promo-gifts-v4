@@ -357,8 +357,11 @@ async function enrichProducts(
       if (primaryImage) {
         product.primary_image_url = primaryImage.url;
         product.image_url = primaryImage.url;
-        /** Fallback URL para OptimizedImage: url_original do fornecedor. Usado quando CF Images falha. */
-        product.primaryImageFallbackUrl = primaryImage.urlOriginal ?? null;
+        // COALESCE: banco Gold (disponível mesmo sem enrich) → runtime urlOriginal → null
+        // primary_image_fallback_url é coluna denormalizada mantida por trigger
+        // cobre todos os 5 fornecedores em 100% dos fetches (lightweight, full, search)
+        product.primaryImageFallbackUrl =
+          product.primary_image_fallback_url ?? primaryImage.urlOriginal ?? null;
       }
       const ogImage = mainImages.find(img => img.isOgImage) || mainImages.find(img => img.type === 'main') || primaryImage;
       if (ogImage) product.og_image_url = ogImage.url;
