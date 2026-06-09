@@ -159,7 +159,7 @@
     "@sentry/react": "^8.45.0",
     "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-query": "^5.100.10",
-    "@tanstack/react-virtual": "^3.0.0",
+    "@tanstack/react-virtual": "^3.14.2",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
     "@vitest/coverage-v8": "^4.1.8",
