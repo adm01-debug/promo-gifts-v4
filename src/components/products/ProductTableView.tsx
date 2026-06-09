@@ -8,7 +8,7 @@
  * ✅ PERFORMANCE 10/10: Virtualização implementada para suportar 15.000+ itens.
  */
 import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown, Package, Loader2 } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableRowActions } from './table-view/TableRowActions';
@@ -67,13 +67,13 @@ type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
 
 const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
+  const formatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
     currency: 'BRL',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(price);
-  
+
   const parts = formatted.split(/\s/);
   if (parts.length >= 2) {
     return (
@@ -456,7 +456,12 @@ export const ProductTableView = memo(function ProductTableView({
 
             // primary_image_url (é a imagem com is_primary=true, campo canônico) — exibida primeiro
             const colorSpecificImage = resolveColorImage(product, activeColorFilter);
-            const rawImg = colorSpecificImage || product.primary_image_url || product.og_image_url || product.images[0] || null;
+            const rawImg =
+              colorSpecificImage ||
+              product.primary_image_url ||
+              product.og_image_url ||
+              product.images[0] ||
+              null;
             const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
             const colorStock = resolveColorStock(product, activeColorFilter);
             const displayStock = colorStock?.stock ?? product.stock;
@@ -550,7 +555,9 @@ export const ProductTableView = memo(function ProductTableView({
                               style={{ backgroundColor: c.hex }}
                             />
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="text-[10px] font-bold">{c.name}</TooltipContent>
+                          <TooltipContent side="top" className="text-[10px] font-bold">
+                            {c.name}
+                          </TooltipContent>
                         </Tooltip>
                       ))
                   ) : (
@@ -577,10 +584,16 @@ export const ProductTableView = memo(function ProductTableView({
                     stockColor(displayStatus),
                   )}
                 >
-                  <div className={cn("h-1.5 w-1.5 rounded-full", 
-                    displayStatus === 'in-stock' ? 'bg-success animate-pulse' : 
-                    displayStatus === 'low-stock' ? 'bg-warning' : 'bg-destructive'
-                  )} />
+                  <div
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full',
+                      displayStatus === 'in-stock'
+                        ? 'animate-pulse bg-success'
+                        : displayStatus === 'low-stock'
+                          ? 'bg-warning'
+                          : 'bg-destructive',
+                    )}
+                  />
                   {(displayStock || 0).toLocaleString('pt-BR')}
                 </div>
 
