@@ -33,6 +33,7 @@ export interface Product {
    */
   set_image_url?: string | null;
   og_image_url?: string;
+  primary_image_url?: string | null;
   images: string[];
   sku: string;
   stock: number;
