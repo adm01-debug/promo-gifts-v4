@@ -92,7 +92,7 @@ export interface ExternalProductVariant {
   length_cm?: number;
   weight_g?: number;
   images?: unknown[];
-
+  
   selected_thumbnail?: string;
   selected_videos?: unknown[];
   bitrix_product_id?: number;
@@ -124,6 +124,7 @@ export interface ExternalProductKitComponent {
   secondary_material_type_id?: string;
   color?: string;
   primary_image_url?: string;
+  primaryImageFallbackUrl?: string | null;
   images?: unknown[];
   allowed_variant_ids?: string[];
   supplier_component_code?: string;
