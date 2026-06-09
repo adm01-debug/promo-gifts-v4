@@ -41,7 +41,7 @@ export const ProductQuickView = React.memo(
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-// imageLoaded removido — transição instantânea sem skeleton intermediário
+    // imageLoaded removido — transição instantânea sem skeleton intermediário
     const [_imageError, setImageError] = useState(false);
 
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
@@ -88,8 +88,9 @@ export const ProductQuickView = React.memo(
         const galleryMetas = imageMetas.filter((img) => !TECHNICAL.has(img.image_type));
 
         // Hero: main com is_primary=true → qualquer main → primeiro por display_order
-        const hero = galleryMetas.find((img) => img.image_type === 'main' && img.is_primary)
-                  ?? galleryMetas.find((img) => img.image_type === 'main');
+        const hero =
+          galleryMetas.find((img) => img.image_type === 'main' && img.is_primary) ??
+          galleryMetas.find((img) => img.image_type === 'main');
 
         if (selectedColorId) {
           // getColorImages garante: hero primeiro, color-specific depois, sem técnicos
@@ -274,7 +275,10 @@ export const ProductQuickView = React.memo(
                   {displayImages.slice(0, 8).map((img, idx) => (
                     <button
                       key={idx}
-                      onClick={() => { setCurrentImageIndex(idx); setImageError(false); }}
+                      onClick={() => {
+                        setCurrentImageIndex(idx);
+                        setImageError(false);
+                      }}
                       className={cn(
                         'h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 transition-colors',
                         idx === currentImageIndex
@@ -304,7 +308,9 @@ export const ProductQuickView = React.memo(
                 )}
                 <h2 className="mt-1 text-xl font-semibold leading-tight">{product.name}</h2>
                 {product.sku && (
-                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">SKU: {product.sku}</p>
+                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                    SKU: {product.sku}
+                  </p>
                 )}
               </div>
 
@@ -321,10 +327,16 @@ export const ProductQuickView = React.memo(
               </div>
 
               {/* Stock status */}
-              <div className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium', stockInfo.bg, stockInfo.color)}>
+              <div
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
+                  stockInfo.bg,
+                  stockInfo.color,
+                )}
+              >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {stockInfo.label}
-                {product.stockQuantity != null && product.stockQuantity > 0 && (
+                {product.stockQuantity !== null && product.stockQuantity > 0 && (
                   <span className="opacity-70">({product.stockQuantity} un.)</span>
                 )}
               </div>
@@ -333,7 +345,10 @@ export const ProductQuickView = React.memo(
               {productColors.length > 0 && (
                 <div>
                   <p className="mb-2 text-sm font-medium">
-                    Cor{selectedColorId ? ': ' + (productColors.find(c => c.id === selectedColorId)?.name || '') : ''}
+                    Cor
+                    {selectedColorId
+                      ? ': ' + (productColors.find((c) => c.id === selectedColorId)?.name || '')
+                      : ''}
                   </p>
                   <ProductColorSelector
                     colors={productColors}
@@ -352,7 +367,11 @@ export const ProductQuickView = React.memo(
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => setQuantity(q => Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)))}
+                    onClick={() =>
+                      setQuantity((q) =>
+                        Math.max(product.minQuantity || 1, q - (product.minQuantity || 1)),
+                      )
+                    }
                     aria-label="Diminuir quantidade"
                   >
                     <span className="text-lg leading-none">−</span>
@@ -362,7 +381,7 @@ export const ProductQuickView = React.memo(
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => setQuantity(q => q + (product.minQuantity || 1))}
+                    onClick={() => setQuantity((q) => q + (product.minQuantity || 1))}
                     aria-label="Aumentar quantidade"
                   >
                     <span className="text-lg leading-none">+</span>
@@ -372,7 +391,9 @@ export const ProductQuickView = React.memo(
 
               {/* Short description */}
               {product.shortDescription && (
-                <p className="text-sm text-muted-foreground line-clamp-3">{product.shortDescription}</p>
+                <p className="line-clamp-3 text-sm text-muted-foreground">
+                  {product.shortDescription}
+                </p>
               )}
 
               {/* Actions */}
@@ -395,7 +416,10 @@ export const ProductQuickView = React.memo(
                       variant="outline"
                       size="icon"
                       onClick={handleFavorite}
-                      className={cn('flex-shrink-0', isFavorited && 'text-red-500 border-red-200 bg-red-50')}
+                      className={cn(
+                        'flex-shrink-0',
+                        isFavorited && 'border-red-200 bg-red-50 text-red-500',
+                      )}
                       aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                     >
                       <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
@@ -408,7 +432,10 @@ export const ProductQuickView = React.memo(
                       size="icon"
                       onClick={handleCompare}
                       disabled={!isInCompare && !canAddToCompare}
-                      className={cn('flex-shrink-0', isInCompare && 'text-primary border-primary/30 bg-primary/5')}
+                      className={cn(
+                        'flex-shrink-0',
+                        isInCompare && 'border-primary/30 bg-primary/5 text-primary',
+                      )}
                       aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
                     >
                       <BarChart2 className="h-4 w-4" />
@@ -416,11 +443,7 @@ export const ProductQuickView = React.memo(
                   )}
 
                   {onNavigateToProduct && (
-                    <Button
-                      variant="outline"
-                      onClick={handleNavigate}
-                      className="flex-1"
-                    >
+                    <Button variant="outline" onClick={handleNavigate} className="flex-1">
                       Ver produto completo
                     </Button>
                   )}
