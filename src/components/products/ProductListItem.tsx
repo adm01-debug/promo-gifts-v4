@@ -375,7 +375,7 @@ export const ProductListItem = memo(function ProductListItem({
             <img
               src={thumbUrl}
               alt={product.name}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
               loading="lazy"
               onError={(e) => {
                 const img = e.currentTarget;
