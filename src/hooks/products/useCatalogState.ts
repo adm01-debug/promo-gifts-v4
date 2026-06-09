@@ -393,7 +393,8 @@ export function useCatalogState() {
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-  }, [filters, sortBy, debouncedSearch]);
+  }, [filters, sortBy, debouncedSearch, hasActiveCatalogConstraints]);
+
 
 
 
