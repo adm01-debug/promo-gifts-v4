@@ -406,7 +406,7 @@ export function usePersonalizationManager() {
       component_location_id: selectedLocationId,
       technique_id: newTechniqueId,
       composed_code: composedCode,
-      max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+      max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
     });
   };
 
