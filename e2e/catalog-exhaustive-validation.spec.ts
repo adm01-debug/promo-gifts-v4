@@ -1,6 +1,6 @@
-import { test, expect } from "../fixtures/test-base";
-import { gotoAndSettle } from "../helpers/nav";
-import { loginAs } from "../helpers/auth";
+import { test, expect } from "./fixtures/test-base";
+import { gotoAndSettle } from "./helpers/nav";
+import { loginAs } from "./helpers/auth";
 
 test.describe("Catalog Exhaustive Validation", () => {
   test.beforeEach(async ({ page }) => {
