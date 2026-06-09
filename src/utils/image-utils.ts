@@ -187,6 +187,11 @@ export function groupImages(images: ProductImageMeta[]): GroupedImages {
  *   - Tipos técnicos (box, pouch, location, area, component) são excluídos.
  *   - hero sempre primeiro; specific da cor depois; deduplicado.
  *
+ * Prioridade de hero:
+ *   1. main com is_primary=true (hero canônico)
+ *   2. main genérico (!applies_to_color) — não ligado a nenhuma cor
+ *   3. main da cor seleccionada em specific — último recurso quando só existem mains por cor
+ *
  * @param images     Lista completa de ProductImageMeta do produto
  * @param colorCode  supplier_code da cor seleccionada
  */
@@ -199,10 +204,12 @@ export function getColorImages(images: ProductImageMeta[], colorCode: string): P
     (i) => i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
   );
 
-  // 2) Hero: main com is_primary=true, ou qualquer main sem applies_to_color
+  // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
+  //    → main cor-específica da cor seleccionada (último recurso: produto só tem mains por cor)
   //    A main é a imagem principal do produto e deve sempre aparecer, mesmo com cor activa.
   const hero = images.find((i) => i.image_type === 'main' && i.is_primary)
-             ?? images.find((i) => i.image_type === 'main' && !i.applies_to_color);
+             ?? images.find((i) => i.image_type === 'main' && !i.applies_to_color)
+             ?? specific.find((i) => i.image_type === 'main');
 
   // 3) Hero sempre primeiro; deduplicar os specific (remover hero se vier na lista)
   const result: ProductImageMeta[] = [];
