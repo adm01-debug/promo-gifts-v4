@@ -42,6 +42,10 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 
 const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverlayConnected'));
 
+// DEFAULT_SORT_VALUE derivado do SSOT (SORT_OPTIONS) — evita hardcodar 'name'.
+// Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
+const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
+
 export default function FiltersPage() {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoritesStore();
@@ -321,49 +325,68 @@ export default function FiltersPage() {
                     </div>
                   </SheetContent>
                 </Sheet>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Select value={state.sortBy} onValueChange={state.setSortBy}>
-                      <SelectTrigger
-                        className={cn(
-                          'w-44 shrink-0 transition-all sm:w-52',
-                          state.sortBy !== 'name' &&
-                            'border-primary bg-primary/5 ring-1 ring-primary/20',
-                        )}
-                        aria-label="Ordenar produtos"
-                        data-testid="catalog-sort-trigger"
-                      >
-                        <ArrowUpDown
+                {/* IMPROVEMENT 1-4 FIX: Select fica FORA, Tooltip DENTRO.
+                    Antes: TooltipTrigger asChild envolvia o <Select> inteiro —
+                    o Radix Slot mesclava handlers do Tooltip (onPointerEnter/Leave/Focus)
+                    diretamente no Select composto, causando conflito de eventos e o
+                    dropdown alternando entre opções sem parar.
+                    Depois: padrão idêntico ao CatalogToolbar.tsx (BUG-G7 FIX):
+                      Select > Tooltip > TooltipTrigger asChild > span.relative.inline-flex
+                      > SelectTrigger — Tooltip só toca o span, Select mantém evento limpo.
+                    dot indicator movido para span (não SelectTrigger) com span.relative
+                    como containing block correto. DEFAULT_SORT_VALUE do SSOT evita 'name' hardcoded. */}
+                <Select value={state.sortBy} onValueChange={state.setSortBy}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {/* span.relative.inline-flex = containing block para o dot mobile */}
+                      <span className="relative inline-flex">
+                        <SelectTrigger
                           className={cn(
-                            'mr-2 h-4 w-4',
-                            state.sortBy !== 'name' ? 'text-primary' : 'text-muted-foreground',
+                            'w-44 shrink-0 transition-all sm:w-52',
+                            state.sortBy !== DEFAULT_SORT_VALUE &&
+                              'border-primary bg-primary/5 ring-1 ring-primary/20',
                           )}
-                        />
-                        <SelectValue placeholder="Ordenar" />
-                        {/* BUG-G7: Mobile indicator when sorted */}
-                        {state.sortBy !== 'name' && (
+                          aria-label="Ordenar produtos"
+                          data-testid="catalog-sort-trigger"
+                        >
+                          <ArrowUpDown
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              state.sortBy !== DEFAULT_SORT_VALUE
+                                ? 'text-primary'
+                                : 'text-muted-foreground',
+                            )}
+                          />
+                          <SelectValue placeholder="Ordenar" />
+                        </SelectTrigger>
+                        {/* BUG-G7 FIX: dot posicionado corretamente via span.relative pai */}
+                        {state.sortBy !== DEFAULT_SORT_VALUE && (
                           <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
                         )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SORT_OPTIONS.map((option) => (
-                          <SelectItem
-                            key={option.value}
-                            value={option.value}
-                            data-testid={`catalog-sort-item-${option.value}`}
-                          >
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {state.sortBy !== 'name'
-                      ? `Ordenado por: ${SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label}`
-                      : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
-                  </TooltipContent>
-                </Tooltip>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {state.sortBy !== DEFAULT_SORT_VALUE
+                        ? `Ordenado por: ${
+                            // Fallback para sortBy fora de SORT_OPTIONS (ex: 'color-match')
+                            SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label ??
+                            'Relevância de cor'
+                          }`
+                        : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
+                    </TooltipContent>
+                  </Tooltip>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        data-testid={`catalog-sort-item-${option.value}`}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center">
