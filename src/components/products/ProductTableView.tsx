@@ -538,22 +538,26 @@ export const ProductTableView = memo(function ProductTableView({
                   {product.supplier?.name}
                 </div>
 
-                <div className="hidden w-32 items-center gap-0.5 px-3 sm:flex">
-                  {product.colors
-                    .slice(0, 5)
-                    .map((c: NonNullable<typeof product.colors>[number], i: number) => (
-                      <Tooltip key={i}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="h-3.5 w-3.5 rounded-full border border-border/50"
-                            style={{ backgroundColor: c.hex }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent side="top">{c.name}</TooltipContent>
-                      </Tooltip>
-                    ))}
+                <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
+                  {product.colors.length > 0 ? (
+                    product.colors
+                      .slice(0, 5)
+                      .map((c: NonNullable<typeof product.colors>[number], i: number) => (
+                        <Tooltip key={i}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="h-3 w-3 rounded-full border border-border/40 shadow-sm"
+                              style={{ backgroundColor: c.hex }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-[10px] font-bold">{c.name}</TooltipContent>
+                        </Tooltip>
+                      ))
+                  ) : (
+                    <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
+                  )}
                   {product.colors.length > 5 && (
-                    <span className="ml-0.5 text-[9px] text-muted-foreground">
+                    <span className="text-[9px] font-bold text-muted-foreground/60">
                       +{product.colors.length - 5}
                     </span>
                   )}
@@ -569,11 +573,15 @@ export const ProductTableView = memo(function ProductTableView({
 
                 <div
                   className={cn(
-                    'flex w-32 items-center justify-end gap-1 px-3 text-right text-xs font-medium',
+                    'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
                     stockColor(displayStatus),
                   )}
                 >
-                  <Package className="h-3 w-3" /> {(displayStock || 0).toLocaleString('pt-BR')}
+                  <div className={cn("h-1.5 w-1.5 rounded-full", 
+                    displayStatus === 'in-stock' ? 'bg-success animate-pulse' : 
+                    displayStatus === 'low-stock' ? 'bg-warning' : 'bg-destructive'
+                  )} />
+                  {(displayStock || 0).toLocaleString('pt-BR')}
                 </div>
 
                 <div className="w-48 px-3">
