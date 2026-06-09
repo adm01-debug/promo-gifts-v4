@@ -80,6 +80,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <div className="fixed inset-0 z-[-10] bg-[#030508]" />
         <ThemeInitializer />
         <Suspense fallback={<div className="min-h-screen bg-[#030508]" />}>
           <AccessibilityProvider>
