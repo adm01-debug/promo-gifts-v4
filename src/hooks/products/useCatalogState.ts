@@ -117,6 +117,7 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
+  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
@@ -443,12 +444,6 @@ export function useCatalogState() {
     filteredProductsRef.current = filteredProducts;
   }, [filteredProducts]);
 
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
-  useEffect(() => {
-    if (!isTransitioning) {
-      setLastNonTransitionedProducts(filteredProducts);
-    }
-  }, [filteredProducts, isTransitioning]);
 
   const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
@@ -548,16 +543,17 @@ export function useCatalogState() {
         setIsLoadingMore(false);
         setTimeout(() => {
           isUpdatingRef.current = false;
-        }, 100);
+        }, 50);
       });
     } else {
+      // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
         setTimeout(() => {
           isUpdatingRef.current = false;
-        }, 100);
-      }, 150);
+        }, 50);
+      }, 50);
     }
   }, [
     isLoading,
@@ -581,7 +577,7 @@ export function useCatalogState() {
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: '200px' },
+      { threshold: 0.1, rootMargin: '800px' },
     );
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);

@@ -53,7 +53,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   }, []);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {/* Reset / Home button — visible when search or filters are active */}
         {hasActiveConstraints && onReset && (

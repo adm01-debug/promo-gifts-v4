@@ -153,7 +153,7 @@ export const CatalogContent = memo(function CatalogContent({
   return (
     <div
       className={cn(
-        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
+        'relative space-y-8 pb-12 duration-500 animate-in fade-in px-4 sm:px-6',
         isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >
@@ -221,28 +221,15 @@ export const CatalogContent = memo(function CatalogContent({
       </SparklineSalesProvider>
 
       {hasMoreProducts && (
-        <div ref={loadMoreRef} className="flex justify-center py-8">
-          {isLoadingMore && (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex gap-1.5">
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '300ms' }}
-                />
-              </div>
-              <p className="animate-pulse text-xs font-medium text-muted-foreground">
-                Carregando mais produtos...
-              </p>
-            </div>
-          )}
+        <div ref={loadMoreRef} className="pt-4">
+          <ProductGridSkeleton
+            count={viewMode === 'grid' ? gridColumns * 2 : 4}
+            columns={gridColumns}
+            variant={viewMode === 'list' ? 'compact' : 'default'}
+            hideCategoryBadges={hideCategoryBadges}
+            selectionMode={selectionMode}
+            animate={true}
+          />
         </div>
       )}
 
