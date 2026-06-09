@@ -127,7 +127,9 @@ export default function Index() {
             onToggleSelectionMode={catalog.toggleSelectionMode}
             selectedCount={catalog.selectedCount}
             isTransitioning={catalog.isTransitioning}
+            showLayoutControlsOnly={catalog.viewMode !== 'table'}
           />
+
         </div>
 
         {/* Active filter badges */}
@@ -167,7 +169,11 @@ export default function Index() {
           selectionMode={catalog.selectionMode}
           onSelectedCountChange={catalog.setSelectedCount}
           activeColorFilter={activeColorFilter}
+          sortBy={catalog.sortBy}
+          onSortChange={catalog.setSortBy}
+          onOpenFilters={() => catalog.setFilterSheetOpen(true)}
         />
+
       </div>
 
       <FloatingCompareBar />
