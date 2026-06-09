@@ -72,9 +72,9 @@ export function ProductCardSkeleton({
       )}
 
       {/* Image Section - Matches ProductCardImage: white product canvas + 4/5 ratio */}
-      <div className="product-img-container relative aspect-[4/5] w-full overflow-hidden">
+      <div className="product-img-container relative aspect-[4/5] w-full overflow-hidden bg-white">
         <Skeleton
-          className="absolute inset-0 h-full w-full rounded-none bg-muted/30"
+          className="absolute inset-0 h-full w-full rounded-none bg-muted/20"
           animate={animate}
         />
       </div>
