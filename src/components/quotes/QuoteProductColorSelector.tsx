@@ -5,10 +5,11 @@
  */
 
 import { useMemo } from 'react';
+import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Check, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
 
@@ -24,11 +25,7 @@ interface QuoteProductColorSelectorProps {
   onBack: () => void;
 }
 
-export function QuoteProductColorSelector({
-  product,
-  onSelect,
-  onBack,
-}: QuoteProductColorSelectorProps) {
+export function QuoteProductColorSelector({ product, onSelect, onBack }: QuoteProductColorSelectorProps) {
   const { data: variants, isLoading } = useExternalVariantStock(product.id);
 
   const sortedVariants = useMemo(() => {
@@ -56,10 +53,10 @@ export function QuoteProductColorSelector({
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-20 rounded-lg" />
           ))}
@@ -79,30 +76,28 @@ export function QuoteProductColorSelector({
       {/* Header com info do produto */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{product.name}</p>
-          <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{product.name}</p>
+          <p className="text-xs text-muted-foreground font-mono">{product.sku}</p>
         </div>
-        <Badge variant="outline" className="gap-1 text-xs">
+        <Badge variant="outline" className="text-xs gap-1">
           <Package className="h-3 w-3" />
           {formatStock(totalStock)} total
         </Badge>
       </div>
 
       {/* Opção sem cor específica */}
-      <button
-        data-testid="product-add-without-color"
-        onClick={() => onSelect(null)}
-        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50"
+      <button data-testid="product-add-without-color" onClick={() => onSelect(null)}
+        className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors text-left text-sm text-muted-foreground"
       >
-        <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-gradient-to-br from-destructive/80 via-success/80 to-info/80" />
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-destructive/80 via-success/80 to-info/80 border border-border shrink-0" />
         <span>Adicionar sem cor específica</span>
       </button>
 
       {/* Grid de cores */}
-      <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
           const isOutOfStock = stock === 0;
@@ -113,9 +108,11 @@ export function QuoteProductColorSelector({
               key={variant.id}
               onClick={() => onSelect(variant)}
               className={cn(
-                'relative flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all',
+                'relative flex items-center gap-2.5 p-3 rounded-lg border transition-all text-left',
                 'hover:border-primary/50 hover:bg-accent',
-                isOutOfStock ? 'border-border bg-muted/30 opacity-60' : 'border-border bg-card',
+                isOutOfStock
+                  ? 'opacity-60 border-border bg-muted/30'
+                  : 'border-border bg-card'
               )}
             >
               {/* Thumbnail ou swatch */}
@@ -123,11 +120,19 @@ export function QuoteProductColorSelector({
                 <img
                   src={`${variant.selected_thumbnail}/thumbnail`}
                   alt={variant.color_name ?? ''}
-                  className="h-10 w-10 shrink-0 rounded-md border border-border object-cover"
+                  className="w-10 h-10 rounded-md object-cover border border-border shrink-0"
                   onError={(e) => {
                     const t = e.currentTarget;
-                    if (t.src.includes('/thumbnail')) {
-                      t.src = variant.selected_thumbnail ?? '';
+                    const stage = t.dataset.fs ?? '0';
+                    if (stage === '0') {
+                      // thumbnail failed → try /public
+                      t.dataset.fs = '1';
+                      t.src = variant.selected_thumbnail!;
+                    } else if (stage === '1') {
+                      // /public failed → try supplier origin
+                      const origin = deriveOriginalUrl(variant.selected_thumbnail!);
+                      if (origin) { t.dataset.fs = '2'; t.src = origin; }
+                      else t.style.display = 'none';
                     } else {
                       t.style.display = 'none';
                     }
@@ -135,32 +140,30 @@ export function QuoteProductColorSelector({
                 />
               ) : (
                 <div
-                  className="h-10 w-10 shrink-0 rounded-md border border-border"
+                  className="w-10 h-10 rounded-md border border-border shrink-0"
                   style={{ backgroundColor: variant.color_hex || '#CCC' }}
                 />
               )}
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">
                   {variant.color_name || 'Sem nome'}
                   {variant.size_code && (
-                    <span className="ml-1 text-muted-foreground">— {variant.size_code}</span>
+                    <span className="text-muted-foreground ml-1">— {variant.size_code}</span>
                   )}
                 </p>
-                <div className="mt-0.5 flex items-center gap-1">
+                <div className="flex items-center gap-1 mt-0.5">
                   {isOutOfStock ? (
-                    <span className="flex items-center gap-0.5 text-[10px] text-destructive">
+                    <span className="text-[10px] text-destructive flex items-center gap-0.5">
                       <AlertTriangle className="h-2.5 w-2.5" />
                       Sem estoque
                     </span>
                   ) : (
-                    <span
-                      className={cn(
-                        'text-[10px] font-medium',
-                        isLowStock ? 'text-warning' : 'text-success',
-                      )}
-                    >
-                      <Package className="mr-0.5 inline h-2.5 w-2.5" />
+                    <span className={cn(
+                      'text-[10px] font-medium',
+                      isLowStock ? 'text-warning' : 'text-success'
+                    )}>
+                      <Package className="h-2.5 w-2.5 inline mr-0.5" />
                       {formatStock(stock)} un
                     </span>
                   )}
