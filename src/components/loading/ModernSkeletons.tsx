@@ -16,13 +16,9 @@ export function ProductCardSkeleton({
   hideCategoryBadges = false,
   selectionMode = false,
 }: ProductCardSkeletonProps) {
-  return (
-    <div data-testid="product-card-skeleton">
-      {/* existing content */}
-
   if (variant === 'compact') {
     return (
-      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')}>
+      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')} data-testid="product-card-skeleton">
         {selectionMode && (
           <div className="flex-shrink-0">
             <Skeleton className="h-5 w-5 rounded" animate={animate} />
@@ -64,6 +60,7 @@ export function ProductCardSkeleton({
 
   return (
     <div
+      data-testid="product-card-skeleton"
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card sm:rounded-2xl',
         className,
