@@ -536,16 +536,10 @@ export function useCatalogState() {
   }, [filteredProducts.length, displayCount, hasNextPage]);
 
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const isUpdatingRef = useRef(false);
-
   const loadMore = useCallback(() => {
-    if (isUpdatingRef.current) return;
     if (isLoading || isLoadingMore || isFetchingNextPage) return;
     if (!hasMoreProducts) return;
 
-    isUpdatingRef.current = true;
     setIsLoadingMore(true);
 
     const nextDisplayCount = displayCount + ITEMS_PER_PAGE;
@@ -555,18 +549,12 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 50);
       });
     } else {
       // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 50);
       }, 50);
     }
   }, [
@@ -580,25 +568,6 @@ export function useCatalogState() {
     fetchNextPage,
   ]);
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMoreProducts && !isLoadingMore && !isUpdatingRef.current) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1, rootMargin: '800px' },
-    );
-
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
 
   const statBadges = useMemo(() => {
     const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
