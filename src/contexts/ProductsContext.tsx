@@ -46,7 +46,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<Error | null>(null);
   const [key, setKey] = useState(0);
-  const [initError, setInitError] = useState<boolean>(false);
+  const [initError, _setInitError] = useState<boolean>(false); // setter reservado para futura lógica de erro de init
 
   // HMR Recovery: If we detect a duplicate module via Global Symbol, force a re-mount
   useEffect(() => {
