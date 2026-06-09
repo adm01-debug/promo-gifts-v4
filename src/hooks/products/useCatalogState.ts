@@ -175,12 +175,9 @@ export function useCatalogState() {
       if (s === sortBy) return;
       setIsTransitioning(true);
       setSortByState(s);
-      // Reset scroll position via any testable way if needed, 
-      // but VirtualizedProductGrid already handles reset on products change if implementation is correct.
     },
     [sortBy],
   );
-
 
   // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics)
   // into a single effect reactive to sortBy changes.
@@ -300,11 +297,15 @@ export function useCatalogState() {
           });
         });
       } else {
-        setTimeout(() => {
+        const prefetchTimer = setTimeout(() => {
           fetchNextPage().finally(() => {
             prefetchScheduledRef.current = false;
           });
         }, 1000);
+        return () => {
+          clearTimeout(prefetchTimer);
+          prefetchScheduledRef.current = false;
+        };
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -312,7 +313,6 @@ export function useCatalogState() {
   useEffect(() => {
     if (realProducts.length > 0) registerProducts(realProducts);
   }, [realProducts, registerProducts]);
-
 
   const { suggestions, quickSuggestions, history, addToHistory, clearHistory } =
     useSearch(realProducts);
@@ -393,10 +393,7 @@ export function useCatalogState() {
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-  }, [filters, sortBy, debouncedSearch, hasActiveCatalogConstraints]);
-
-
-
+  }, [filters, sortBy, debouncedSearch]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -450,7 +447,6 @@ export function useCatalogState() {
   useEffect(() => {
     filteredProductsRef.current = filteredProducts;
   }, [filteredProducts]);
-
 
   const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
@@ -518,7 +514,6 @@ export function useCatalogState() {
     [activeFiltersCount, searchQuery],
   );
 
-
   // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
   // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
   // visível até o novo sort processar.
@@ -534,7 +529,6 @@ export function useCatalogState() {
     // Se for maior ou igual, dependemos de hasNextPage no servidor.
     return filteredProducts.length > displayCount || !!hasNextPage;
   }, [filteredProducts.length, displayCount, hasNextPage]);
-
 
   const loadMore = useCallback(() => {
     if (isLoading || isLoadingMore || isFetchingNextPage) return;
@@ -567,7 +561,6 @@ export function useCatalogState() {
     hasNextPage,
     fetchNextPage,
   ]);
-
 
   const statBadges = useMemo(() => {
     const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
@@ -703,12 +696,14 @@ export function useCatalogState() {
     handleFavoriteProductRef.current = handleFavoriteProduct;
   }, [handleFavoriteProduct]);
 
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = useCallback(
     (query: string) => {
       setIsSearching(true);
       setSearchQuery(query);
       if (query) addToHistory(query);
-      setTimeout(() => setIsSearching(false), 300);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => setIsSearching(false), 300);
     },
     [addToHistory],
   );
