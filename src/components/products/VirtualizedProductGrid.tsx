@@ -99,11 +99,11 @@ export function VirtualizedProductGrid({
     count: hasMore ? rowCount + 1 : rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
-      // O loader row pode ter altura diferente
       if (hasMore && index === rowCount) return 80;
       return estimatedRowHeight;
     },
-    overscan: viewMode === 'list' ? 10 : 5,
+    overscan: viewMode === 'list' ? 15 : 8,
+    scrollMargin: 0,
   });
 
   const virtualItems = virtualizer.getVirtualItems();

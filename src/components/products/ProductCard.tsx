@@ -439,7 +439,8 @@ export const ProductCard = memo(
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            navigate(`/produto/${product.id}`);
+            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            navigate(`/produto/${product.id}${colorParam}`);
           } else if (e.key.toLowerCase() === 'q') {
             e.preventDefault();
             setQuickViewOpen(true);
@@ -469,7 +470,8 @@ export const ProductCard = memo(
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
-            navigate(`/produto/${product.id}`);
+              const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+              navigate(`/produto/${product.id}${colorParam}`);
           }
         }}
       >
