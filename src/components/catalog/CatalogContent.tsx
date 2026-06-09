@@ -1,11 +1,11 @@
 import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
+import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
 import {
   ProductCardSkeleton,
   ProductGridSkeleton,
@@ -19,9 +19,7 @@ import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
 import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
-import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
-// Diagnostic counter
 interface CatalogContentProps {
   viewMode: ViewMode;
   shouldShowCatalogSkeleton: boolean;
@@ -52,6 +50,10 @@ interface CatalogContentProps {
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
   hideCategoryBadges?: boolean;
+  // Novas props para controle de filtro e sort vindos do catalog state
+  sortBy?: string;
+  onSortChange?: (v: string) => void;
+  onOpenFilters?: () => void;
 }
 
 export const CatalogContent = memo(function CatalogContent({
@@ -76,7 +78,7 @@ export const CatalogContent = memo(function CatalogContent({
   isInCompare,
   onToggleCompare,
   canAddToCompare,
-  onLoadMore: _onLoadMore,
+  onLoadMore,
   onResetFilters,
   selectionMode,
   onSelectedCountChange,
@@ -84,6 +86,9 @@ export const CatalogContent = memo(function CatalogContent({
   activeProductId: _activeProductId,
   setActiveProductId: _setActiveProductId,
   hideCategoryBadges = false,
+  sortBy = 'name',
+  onSortChange,
+  onOpenFilters,
 }: CatalogContentProps) {
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
@@ -150,6 +155,48 @@ export const CatalogContent = memo(function CatalogContent({
     );
   }
 
+  // Se estivermos em um destes modos, usamos o grid virtualizado para melhor performance
+  if (viewMode === 'grid' || viewMode === 'list') {
+    return (
+      <SparklineSalesProvider productIds={productIds}>
+        <ProductLeafCategoryProvider productIds={productIds}>
+          <div className="h-[calc(100vh-280px)] min-h-[600px] w-full">
+            <VirtualizedProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              hasMore={hasMoreProducts}
+              onLoadMore={onLoadMore}
+              columns={gridColumns}
+              viewMode={viewMode}
+              onProductClick={handleProductClick}
+              isFavorited={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              onShare={handleShareProduct}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+              sortBy={sortBy}
+              onSortChange={onSortChange}
+              onOpenFilters={onOpenFilters}
+              onClearFilters={onResetFilters}
+              showFilterBar={true}
+              activeFiltersCount={activeFiltersCount}
+            />
+          </div>
+          <CatalogBulkModals
+            sel={selection}
+            selectionMode={selectionMode}
+            totalCount={totalEstimate || filteredProducts.length}
+          />
+        </ProductLeafCategoryProvider>
+      </SparklineSalesProvider>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -159,47 +206,6 @@ export const CatalogContent = memo(function CatalogContent({
     >
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
-          {viewMode === 'grid' && (
-            <ProductGrid
-              products={paginatedProducts}
-              isLoading={isLoadingMore}
-              onProductClick={handleProductClick}
-              onViewProduct={handleViewProduct}
-              onShareProduct={handleShareProduct}
-              onFavoriteProduct={handleFavoriteProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              columns={gridColumns}
-              activeColorFilter={activeColorFilter}
-              selectionMode={selectionMode}
-              selectedIds={selectedIds}
-              onToggleSelect={onToggleSelect}
-            />
-          )}
-
-          {viewMode === 'list' && (
-            <ProductList
-              products={paginatedProducts}
-              isLoading={isLoadingMore}
-              onProductClick={handleProductClick}
-              onViewProduct={handleViewProduct}
-              onShareProduct={handleShareProduct}
-              onFavoriteProduct={handleFavoriteProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              activeColorFilter={activeColorFilter}
-              selectionMode={selectionMode}
-              externalSelectedIds={selectedIds}
-              onToggleSelect={onToggleSelect}
-            />
-          )}
-
           {viewMode === 'table' && (
             <ProductTableView
               products={paginatedProducts}
@@ -220,16 +226,9 @@ export const CatalogContent = memo(function CatalogContent({
         </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
 
-      {hasMoreProducts && (
+      {hasMoreProducts && viewMode === 'table' && (
         <div ref={loadMoreRef} className="pt-4" data-testid="load-more-trigger">
-          <ProductGridSkeleton
-            count={viewMode === 'grid' ? gridColumns * 2 : 4}
-            columns={gridColumns}
-            variant={viewMode === 'list' ? 'compact' : 'default'}
-            hideCategoryBadges={hideCategoryBadges}
-            selectionMode={selectionMode}
-            animate={true}
-          />
+          <ProductTableSkeleton rows={5} selectionMode={selectionMode} />
         </div>
       )}
 
@@ -238,8 +237,7 @@ export const CatalogContent = memo(function CatalogContent({
         selectionMode={selectionMode}
         totalCount={totalEstimate || filteredProducts.length}
       />
-
-      <ScrollToTopButton className="fixed bottom-6 right-6 z-[60]" />
     </div>
   );
 });
+

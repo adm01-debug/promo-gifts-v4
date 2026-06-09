@@ -90,7 +90,7 @@ function getPersistedViewMode(): ViewMode {
   return 'grid';
 }
 
-const ITEMS_PER_PAGE = 100;
+const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
   const navigate = useNavigate();
@@ -175,9 +175,12 @@ export function useCatalogState() {
       if (s === sortBy) return;
       setIsTransitioning(true);
       setSortByState(s);
+      // Reset scroll position via any testable way if needed, 
+      // but VirtualizedProductGrid already handles reset on products change if implementation is correct.
     },
     [sortBy],
   );
+
 
   // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics)
   // into a single effect reactive to sortBy changes.
@@ -310,6 +313,7 @@ export function useCatalogState() {
     if (realProducts.length > 0) registerProducts(realProducts);
   }, [realProducts, registerProducts]);
 
+
   const { suggestions, quickSuggestions, history, addToHistory, clearHistory } =
     useSearch(realProducts);
 
@@ -389,7 +393,10 @@ export function useCatalogState() {
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-  }, [filters, sortBy, debouncedSearch]);
+  }, [filters, sortBy, debouncedSearch, hasActiveCatalogConstraints]);
+
+
+
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -506,7 +513,11 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+  const hasActiveCatalogConstraints = useMemo(
+    () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
+    [activeFiltersCount, searchQuery],
+  );
+
 
   // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
   // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
@@ -519,19 +530,16 @@ export function useCatalogState() {
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
   const hasMoreProducts = useMemo(() => {
+    // BUG-CS-02: Se displayCount for menor que filteredProducts, temos mais localmente.
+    // Se for maior ou igual, dependemos de hasNextPage no servidor.
     return filteredProducts.length > displayCount || !!hasNextPage;
   }, [filteredProducts.length, displayCount, hasNextPage]);
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const isUpdatingRef = useRef(false);
 
   const loadMore = useCallback(() => {
-    if (isUpdatingRef.current) return;
     if (isLoading || isLoadingMore || isFetchingNextPage) return;
     if (!hasMoreProducts) return;
 
-    isUpdatingRef.current = true;
     setIsLoadingMore(true);
 
     const nextDisplayCount = displayCount + ITEMS_PER_PAGE;
@@ -541,18 +549,12 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 50);
       });
     } else {
       // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 50);
       }, 50);
     }
   }, [
@@ -566,25 +568,6 @@ export function useCatalogState() {
     fetchNextPage,
   ]);
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMoreProducts && !isLoadingMore && !isUpdatingRef.current) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1, rootMargin: '800px' },
-    );
-
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
 
   const statBadges = useMemo(() => {
     const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
