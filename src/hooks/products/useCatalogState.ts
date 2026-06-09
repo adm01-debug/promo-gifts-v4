@@ -175,9 +175,12 @@ export function useCatalogState() {
       if (s === sortBy) return;
       setIsTransitioning(true);
       setSortByState(s);
+      // Reset scroll position via any testable way if needed, 
+      // but VirtualizedProductGrid already handles reset on products change if implementation is correct.
     },
     [sortBy],
   );
+
 
   // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics)
   // into a single effect reactive to sortBy changes.
