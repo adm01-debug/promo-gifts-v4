@@ -208,8 +208,26 @@ export const ProductListItem = memo(function ProductListItem({
     [variantPickerMode, product, favStore, compStore, navigate],
   );
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  const formatPrice = (price: number) => {
+    const formatted = new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+    
+    // Separar o símbolo do valor para estilização refinada
+    const parts = formatted.split(/\s/);
+    if (parts.length >= 2) {
+      return (
+        <span className="flex items-baseline justify-end gap-1">
+          <span className="text-[10px] font-medium text-muted-foreground/70 sm:text-xs">R$</span>
+          <span>{parts[parts.length - 1]}</span>
+        </span>
+      );
+    }
+    return formatted;
+  };
 
   const getStockColor = (status: string) => {
     switch (status) {
