@@ -277,12 +277,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading) return;
     const timer = window.setTimeout(() => {
-      console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
+      const log = createClientLogger('auth.watchdog');
+      log.warn('isLoading_stalled_forcing_false', { duration: '8s' });
       setIsLoading(false);
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
-    }, 12000);
+    }, 8000);
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);
 

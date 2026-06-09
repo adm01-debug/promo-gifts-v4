@@ -129,9 +129,10 @@ export const ProductCard = memo(
 
     // Efeito para simular loading ao trocar de cor
     useEffect(() => {
-      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento
+      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento.
+      // 100ms é o suficiente para percepção de mudança sem parecer lento.
       setIsUpdatingColor(true);
-      const timer = setTimeout(() => setIsUpdatingColor(false), 350);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 100);
       return () => clearTimeout(timer);
     }, [activeVariantIdx]);
 
@@ -284,9 +285,8 @@ export const ProductCard = memo(
           });
           if (variant?.color_name) params.set('color_name', variant.color_name);
           if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-          if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-          if (product.images?.[0])
-            params.set('product_image', variant?.selected_thumbnail || product.images[0]);
+          const productImg = product.images?.[0] || '/placeholder.svg';
+          params.set('product_image', variant?.selected_thumbnail || productImg);
           setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
         } else if (variantPickerMode === 'share') {
           setShareVariant(
