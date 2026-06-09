@@ -90,7 +90,7 @@ function getPersistedViewMode(): ViewMode {
   return 'grid';
 }
 
-const ITEMS_PER_PAGE = 100;
+const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
   const navigate = useNavigate();
@@ -389,7 +389,9 @@ export function useCatalogState() {
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-  }, [filters, sortBy, debouncedSearch]);
+    // Adicionado hasActiveCatalogConstraints como dep para resetar ao mudar filtros/busca
+  }, [filters, sortBy, debouncedSearch, hasActiveCatalogConstraints]);
+
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
