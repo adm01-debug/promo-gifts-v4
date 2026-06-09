@@ -530,8 +530,11 @@ export function useCatalogState() {
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
   const hasMoreProducts = useMemo(() => {
+    // BUG-CS-02: Se displayCount for menor que filteredProducts, temos mais localmente.
+    // Se for maior ou igual, dependemos de hasNextPage no servidor.
     return filteredProducts.length > displayCount || !!hasNextPage;
   }, [filteredProducts.length, displayCount, hasNextPage]);
+
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
