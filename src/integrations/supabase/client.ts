@@ -22,7 +22,7 @@ const CANONICAL_ANON_KEY =
 // ATENÇÃO: esta lista é de negação e pode ficar desatualizada se Lovable criar
 // novos projetos Cloud. O check positivo abaixo (envPointsToCanonical) é a
 // proteção primária — esta lista é defesa em profundidade.
-const FORBIDDEN_REFS = ["pqpdolkaeqlyzpdpbizo", "hncgwjbzdajfdgtqgefe"];
+const FORBIDDEN_REFS = ["hncgwjbzdajfdgtqgefe"];
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
