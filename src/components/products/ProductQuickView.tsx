@@ -179,16 +179,9 @@ export const ProductQuickView = React.memo(
 
     const stockInfo = getStockStatusInfo(product.stockStatus);
 
-    // GAP-4 FIX (PR #689 review follow-up): o badge de unidades lia
-    // `product.stockQuantity` (camelCase) — campo que não existe nem no tipo
-    // PromobrindProduct (snake_case: stock_quantity) nem no objeto runtime
-    // vindo do product-mapper (que popula `stock`). Resultado: o badge NUNCA
-    // renderizava. Lê os dois campos reais com fallback explícito.
-    // Review follow-up (Copilot): normaliza na origem — qualquer valor
-    // não-numérico (string, null, undefined) vira null aqui, sem depender
-    // do typeof no JSX nem do cast propagar tipo errado.
-    const rawStock: unknown = product.stock;
-    const stockQty: number | null = typeof rawStock === 'number' ? rawStock : null;
+    // O badge de unidades usa product.stock (number no tipo de catálogo). Guarda
+    // leve apenas para o caso de o runtime trazer um valor não-numérico do mapper.
+    const stockQty: number | null = typeof product.stock === 'number' ? product.stock : null;
 
     // Obter URL atual da imagem com variante CDN
     const currentImage = displayImages[currentImageIndex] || displayImages[0];

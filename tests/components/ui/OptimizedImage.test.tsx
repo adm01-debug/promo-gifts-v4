@@ -6,15 +6,13 @@ import React from 'react';
 // Mock IntersectionObserver — vitest exige `class` p/ algo instanciado com `new`.
 // O callback do construtor é capturado em module-scope p/ os testes dispararem
 // intersecção manualmente (substitui o antigo mockImplementation((cb)=>...)).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let lastIntersectCallback: any;
+let lastIntersectCallback: IntersectionObserverCallback | undefined;
 class MockIntersectionObserver {
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(cb: any) {
+  constructor(cb: IntersectionObserverCallback) {
     lastIntersectCallback = cb;
   }
 }
@@ -41,8 +39,13 @@ describe('OptimizedImage', () => {
   it('shows the image after entering view and loading', async () => {
     render(<OptimizedImage {...defaultProps} />);
 
+    // Guarda diagnóstica: se o setup do mock mudar, a falha aponta o callback.
+    expect(lastIntersectCallback).toBeTypeOf('function');
     act(() => {
-      lastIntersectCallback([{ isIntersecting: true }]);
+      lastIntersectCallback?.(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
     });
 
     const img = screen.getByRole('img', { name: /test image/i });

@@ -84,3 +84,5 @@ CREATE POLICY vsf_select_own_or_admin ON public.visual_search_feedback
 
 CREATE INDEX IF NOT EXISTS idx_vsf_created_at ON public.visual_search_feedback(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_vsf_product_id ON public.visual_search_feedback(product_id);
+-- user_id é filtrado pela policy vsf_select_own_or_admin → índice evita full-scan.
+CREATE INDEX IF NOT EXISTS idx_vsf_user_id ON public.visual_search_feedback(user_id);
