@@ -87,7 +87,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 w-full">
       <div className="flex flex-shrink-0 items-center gap-1.5">
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
@@ -198,8 +198,16 @@ export const CatalogToolbar = memo(function CatalogToolbar({
         )}
       </div>
 
+      <div className="flex items-center gap-1.5 ml-auto">
+        {deferredIsTransitioning && (
+          <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2 sm:flex">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+            <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground">
+              Otimizando...
+            </span>
+          </div>
+        )}
 
-      <div className="flex items-center gap-1.5">
         {/* Selecionar / Cancelar toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -238,23 +246,12 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </TooltipContent>
         </Tooltip>
 
-        <div className="hidden items-center gap-2 sm:flex">
-          {deferredIsTransitioning && (
-            <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground">
-                Otimizando...
-              </span>
-            </div>
-          )}
-
-          <LayoutPopover
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            gridColumns={gridColumns}
-            setGridColumns={setGridColumns}
-          />
-        </div>
+        <LayoutPopover
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          gridColumns={gridColumns}
+          setGridColumns={setGridColumns}
+        />
       </div>
     </div>
   );
