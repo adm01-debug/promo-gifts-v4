@@ -69,3 +69,26 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
   },
 });
+
+// Logs e Métricas de Autenticação
+const authLog = log.child('auth');
+
+// Hook para monitorar estado da sessão e identificar conexão com projeto errado
+supabase.auth.onAuthStateChange((event, session) => {
+  const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+  
+  authLog.info('state_change', { 
+    event, 
+    user_id: session?.user?.id,
+    project_id: projectId,
+    is_canonical: projectId === CURRENT_PROJECT_ID
+  });
+
+  if (projectId !== CURRENT_PROJECT_ID) {
+    authLog.error('wrong_project_detected', { 
+      current: projectId, 
+      expected: CURRENT_PROJECT_ID 
+    });
+  }
+});
+
