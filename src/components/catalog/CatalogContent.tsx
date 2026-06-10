@@ -185,7 +185,7 @@ export const CatalogContent = memo(function CatalogContent({
               onSortChange={onSortChange}
               onOpenFilters={onOpenFilters}
               onClearFilters={onResetFilters}
-              showFilterBar={true}
+              showFilterBar={false}
               activeFiltersCount={activeFiltersCount}
               onViewModeChange={onViewModeChange}
             />
