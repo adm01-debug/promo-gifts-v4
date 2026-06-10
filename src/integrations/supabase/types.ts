@@ -7243,6 +7243,7 @@ export type Database = {
       can_view_connections: { Args: { _user_id?: string }; Returns: boolean }
       can_view_telemetry: { Args: { _user_id?: string }; Returns: boolean }
       check_ai_quota: { Args: { _user_id: string }; Returns: Json }
+      check_auth_config_status: { Args: never; Returns: Json }
       check_auth_throttling: {
         Args: { _email: string; _ip: string }
         Returns: {
