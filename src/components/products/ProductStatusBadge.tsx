@@ -102,10 +102,10 @@ export function ProductStatusBadge({
       case 'novelty': {
         const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
         if (daysElapsed <= 5) {
-          return 'bg-success text-success-foreground shadow-[0_0_0_1px_hsl(var(--success)/0.3),0_2px_8px_hsl(var(--success)/0.25)]';
+          return 'bg-[#00D166] text-white shadow-[0_0_0_1px_rgba(0,209,102,0.3),0_2px_8px_rgba(0,209,102,0.25)]';
         }
         if (daysElapsed <= 15) {
-          return 'bg-success/80 text-success-foreground';
+          return 'bg-[#00D166]/80 text-white';
         }
         if (daysElapsed <= 23) {
           return 'bg-warning/80 text-warning-foreground';

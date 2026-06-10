@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { forceReleaseScrollLock } from '@/lib/dom/scroll-lock';
 
 /**
  * RouteScrollReset
@@ -27,7 +27,8 @@ export function RouteScrollReset() {
 
   useEffect(() => {
     // Libera scroll-lock residual do Radix em toda troca de rota.
-    releaseScrollLockIfIdle();
+    forceReleaseScrollLock();
+
 
     if (isFirstMount.current) {
       isFirstMount.current = false;

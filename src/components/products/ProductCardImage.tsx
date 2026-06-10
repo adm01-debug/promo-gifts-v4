@@ -204,72 +204,84 @@ export const ProductCardImage = memo(function ProductCardImage({
         />
       )}
 
-      {/* Badges - Top Left */}
-      <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
-        {featured && (
-          <ProductStatusBadge
-            type="featured"
-            size="sm"
-            onClick={() => onStatusClick?.('featured')}
-          />
-        )}
+      {/* Badges - Top Area */}
+      <div className="absolute inset-x-0 top-2 z-10 flex px-2 sm:top-3 sm:px-3">
+        {/* Left side badges */}
+        <div className="flex flex-col items-start gap-1 sm:gap-1.5">
+          {featured && (
+            <ProductStatusBadge
+              type="featured"
+              size="sm"
+              onClick={() => onStatusClick?.('featured')}
+            />
+          )}
 
-        {isNovelty && noveltyDaysRemaining !== undefined ? (
-          <ProductStatusBadge
-            type="novelty"
-            daysRemaining={noveltyDaysRemaining}
-            size="sm"
-            onClick={() => onStatusClick?.('novelty')}
-          />
-        ) : (
-          newArrival && (
+          {isNovelty && noveltyDaysRemaining !== undefined ? (
             <ProductStatusBadge
               type="novelty"
-              value="Novo"
+              daysRemaining={noveltyDaysRemaining}
               size="sm"
               onClick={() => onStatusClick?.('novelty')}
             />
-          )
-        )}
+          ) : (
+            newArrival && (
+              <ProductStatusBadge
+                type="novelty"
+                value="Novo"
+                size="sm"
+                onClick={() => onStatusClick?.('novelty')}
+              />
+            )
+          )}
 
-        {isKit && (
-          <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
-        )}
+          {isKit && (
+            <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
+          )}
 
-        {onSale && (
-          <ProductStatusBadge
-            type="promotion"
-            size="sm"
-            onClick={() => onStatusClick?.('promotion')}
-          />
-        )}
+          {onSale && (
+            <ProductStatusBadge
+              type="promotion"
+              size="sm"
+              onClick={() => onStatusClick?.('promotion')}
+            />
+          )}
 
-        {hasPackaging && (
-          <ProductStatusBadge
-            type="packaging"
-            size="sm"
-            packagingMetadata={{
-              packingType: product.packingType,
-              boxWidthMm: product.boxWidthMm,
-              boxHeightMm: product.boxHeightMm,
-              boxLengthMm: product.boxLengthMm,
-              packagingContext: product.packagingContext,
-            }}
-            onClick={() => onStatusClick?.('packaging')}
-          />
-        )}
+          {hasPackaging && (
+            <ProductStatusBadge
+              type="packaging"
+              size="sm"
+              packagingMetadata={{
+                packingType: product.packingType,
+                boxWidthMm: product.boxWidthMm,
+                boxHeightMm: product.boxHeightMm,
+                boxLengthMm: product.boxLengthMm,
+                packagingContext: product.packagingContext,
+              }}
+              onClick={() => onStatusClick?.('packaging')}
+            />
+          )}
+        </div>
 
-        {/* Stock status badge removed from here as requested - keeping only the bottom one */}
-
-        {stockStatus === 'low' && (
-          <ProductStatusBadge
-            type="urgency"
-            urgencyType="limited-stock"
-            value="Baixo"
-            size="sm"
-            onClick={() => onStatusClick?.('urgency')}
-          />
-        )}
+        {/* Right side badges - to avoid overlapping when many are present */}
+        <div className="ml-auto flex flex-col items-end gap-1 sm:gap-1.5">
+          {stockStatus === 'unavailable' && (
+            <ProductStatusBadge
+              type="out-of-stock"
+              size="sm"
+              onClick={() => onStatusClick?.('out-of-stock')}
+            />
+          )}
+          
+          {stockStatus === 'low' && (
+            <ProductStatusBadge
+              type="urgency"
+              urgencyType="limited-stock"
+              value="Baixo"
+              size="sm"
+              onClick={() => onStatusClick?.('urgency')}
+            />
+          )}
+        </div>
       </div>
 
       {/* SKU badge - bottom right */}
