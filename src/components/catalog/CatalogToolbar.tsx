@@ -87,8 +87,8 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between md:gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
             <Tooltip>
@@ -198,7 +198,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+      <div className="flex items-center gap-2 ml-auto sm:ml-0">
         {deferredIsTransitioning && (
           <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2 sm:flex">
             <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
