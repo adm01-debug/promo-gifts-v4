@@ -123,6 +123,8 @@ export default function Index() {
               selectedCount={catalog.selectedCount}
               isTransitioning={catalog.isTransitioning}
               showLayoutControlsOnly={false}
+              onReset={catalog.resetFilters}
+              hasActiveConstraints={catalog.hasActiveCatalogConstraints}
             />
           }
         />
