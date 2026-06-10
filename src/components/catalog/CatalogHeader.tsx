@@ -56,7 +56,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   }, []);
 
   return (
-    <div className="flex flex-col gap-4 px-4 sm:px-6">
+    <div className="flex flex-col gap-3 px-4 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {/* Reset / Home button — visible when search or filters are active */}
@@ -103,7 +103,7 @@ export const CatalogHeader = memo(function CatalogHeader({
 
             {/* Render Toolbar below title if provided */}
             {toolbar && (
-              <div className="mt-2 animate-in fade-in slide-in-from-left-2 duration-300">
+              <div className="mt-1 animate-in fade-in slide-in-from-left-2 duration-300">
                 {toolbar}
               </div>
             )}
