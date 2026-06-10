@@ -18,7 +18,7 @@ interface CatalogHeaderProps {
   activeFiltersCount?: number;
   searchHistory?: string[];
   onClearHistory?: () => void;
-  // Nova prop para renderizar o toolbar inline
+  // Prop to render toolbar
   toolbar?: React.ReactNode;
 }
 
@@ -39,7 +39,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   const searchRef = useRef<HTMLDivElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // "/" shortcut to focus search (standard pattern: Notion, GitHub, Figma)
+  // "/" shortcut to focus search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -57,128 +57,131 @@ export const CatalogHeader = memo(function CatalogHeader({
 
   return (
     <div className="flex flex-col gap-3 px-4 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          {/* Reset / Home button — visible when search or filters are active */}
-          {hasActiveConstraints && onReset && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onReset}
-                  className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
-                  aria-label="Voltar ao início"
-                >
-                  <Home className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Voltar ao catálogo completo</TooltipContent>
-            </Tooltip>
-          )}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex items-center gap-3">
+            {/* Reset / Home button — visible when search or filters are active */}
+            {hasActiveConstraints && onReset && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onReset}
+                    className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
+                    aria-label="Voltar ao início"
+                  >
+                    <Home className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Voltar ao catálogo completo</TooltipContent>
+              </Tooltip>
+            )}
 
-          <div className="flex flex-col gap-1">
             <h1
               data-testid="page-title-produtos"
               className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
             >
               Catálogo de Produtos
             </h1>
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground sm:text-base">
-              {shouldShowCatalogSkeleton ? (
-                'Carregando catálogo...'
-              ) : hasActiveConstraints ? (
-                <>
-                  <span className="font-semibold text-primary">
-                    {filteredCount.toLocaleString('pt-BR')}
-                  </span>
-                  {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
-                </>
-              ) : totalEstimate ? (
-                `${totalEstimate.toLocaleString('pt-BR')} itens`
-              ) : (
-                `${filteredCount.toLocaleString('pt-BR')} itens`
-              )}
-            </div>
+          </div>
 
-            {/* Render Toolbar below title if provided */}
-            {toolbar && (
-              <div className="mt-1 animate-in fade-in slide-in-from-left-2 duration-300">
-                {toolbar}
-              </div>
-            )}
+          {/* Search inline next to title on desktop */}
+          <div className="hidden flex-1 items-center gap-2 sm:flex max-w-[40rem]" ref={searchRef}>
+            <SmartSearchInput
+              inputId="search-desktop"
+              placeholder="Buscar produtos…  /"
+              onSelect={onSelect}
+              className="flex-1"
+            />
+
+            <div className="flex items-center gap-2">
+              {searchHistory.length > 0 && (
+                <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="group relative h-11 w-11 shrink-0 rounded-lg border-muted-foreground/20 hover:border-primary/50"
+                            aria-label="Histórico de buscas recentes"
+                          >
+                            <Clock className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                            <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm">
+                              {searchHistory.length}
+                            </Badge>
+                          </Button>
+                        </PopoverTrigger>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Histórico de buscas recentes ({searchHistory.length})
+                    </TooltipContent>
+                  </Tooltip>
+                  <PopoverContent className="w-64 p-2" align="end">
+                    <div className="mb-2 flex items-center justify-between border-b border-border/50 px-2 pb-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Histórico
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClearHistory}
+                        className="h-6 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" /> Limpar
+                      </Button>
+                    </div>
+                    <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
+                      {searchHistory.map((term, i) => (
+                        <button
+                          key={term}
+                          className="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                          onClick={() => {
+                            onSelect({ type: 'history', id: `hist-${i}`, label: term });
+                            setHistoryOpen(false);
+                          }}
+                        >
+                          <Search className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
+                          <span className="flex-1 truncate">{term}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+
+              <RecentlyViewedPopover maxVisible={10} />
+            </div>
           </div>
         </div>
 
-        {/* Search inline next to product count on desktop */}
-        <div className="hidden w-80 items-center gap-2 sm:flex lg:w-[28rem]" ref={searchRef}>
-          <SmartSearchInput
-            inputId="search-desktop"
-            placeholder="Buscar produtos…  /"
-            onSelect={onSelect}
-            className="flex-1"
-          />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-normal text-muted-foreground sm:text-base">
+          <div>
+            {shouldShowCatalogSkeleton ? (
+              'Carregando catálogo...'
+            ) : hasActiveConstraints ? (
+              <>
+                <span className="font-semibold text-primary">
+                  {filteredCount.toLocaleString('pt-BR')}
+                </span>
+                {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
+              </>
+            ) : totalEstimate ? (
+              `${totalEstimate.toLocaleString('pt-BR')} itens`
+            ) : (
+              `${filteredCount.toLocaleString('pt-BR')} itens`
+            )}
+          </div>
 
-          {searchHistory.length > 0 && (
-            <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="group relative h-11 w-11 shrink-0 rounded-lg border-muted-foreground/20 hover:border-primary/50"
-                        aria-label="Histórico de buscas recentes"
-                      >
-                        <Clock className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                        <Badge className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm">
-                          {searchHistory.length}
-                        </Badge>
-                      </Button>
-                    </PopoverTrigger>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Histórico de buscas recentes ({searchHistory.length})
-                </TooltipContent>
-              </Tooltip>
-              <PopoverContent className="w-64 p-2" align="end">
-                <div className="mb-2 flex items-center justify-between border-b border-border/50 px-2 pb-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Histórico
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClearHistory}
-                    className="h-6 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-3 w-3" /> Limpar
-                  </Button>
-                </div>
-                <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
-                  {searchHistory.map((term, i) => (
-                    <button
-                      key={i}
-                      className="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
-                      onClick={() => {
-                        onSelect({ type: 'history', id: `hist-${i}`, label: term });
-                        setHistoryOpen(false);
-                      }}
-                    >
-                      <Search className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
-                      <span className="flex-1 truncate">{term}</span>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+          {/* Render Toolbar inline if provided */}
+          {toolbar && (
+            <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+              {toolbar}
+            </div>
           )}
-        </div>
-
-        <div className="hidden sm:block">
-          <RecentlyViewedPopover maxVisible={10} />
         </div>
       </div>
 
