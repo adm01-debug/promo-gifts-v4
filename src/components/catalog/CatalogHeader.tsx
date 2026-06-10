@@ -103,7 +103,7 @@ export const CatalogHeader = memo(function CatalogHeader({
 
             {/* Render Toolbar below title if provided */}
             {toolbar && (
-              <div className="mt-2 animate-in fade-in slide-in-from-left-2 duration-300">
+              <div className="mt-1 animate-in fade-in slide-in-from-left-2 duration-300">
                 {toolbar}
               </div>
             )}
