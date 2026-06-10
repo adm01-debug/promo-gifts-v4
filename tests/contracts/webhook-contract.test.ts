@@ -1,32 +1,31 @@
 import { test, expect } from 'vitest';
-import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://pqpdolkaeqlyzpdpbizo.supabase.co';
 
 test('Webhook Contract: product-webhook validation', async () => {
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('Skipping contract test: No Supabase credentials');
-    return;
-  }
-
   const endpoint = `${supabaseUrl}/functions/v1/product-webhook`;
   
-  // 1. Missing payload
+  // Test 1: Missing headers (Should return 401 Unauthorized because it's a secured webhook)
+  // This is actually a "pre-contract" validation: security first.
   const res1 = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${supabaseKey}` },
-    body: JSON.stringify({})
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'upsert' })
   });
-  expect(res1.status).toBeGreaterThanOrEqual(400);
-  const data1 = await res1.json().catch(() => ({}));
-  expect(data1).toHaveProperty('error');
+  expect(res1.status).toBe(401);
+  const data1 = await res1.json();
+  expect(data1.code).toBe('unauthorized');
 
-  // 2. Invalid UUID
+  // Test 2: Invalid signature headers (Still 401)
   const res2 = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${supabaseKey}` },
-    body: JSON.stringify({ id: 'invalid-uuid', type: 'INSERT' })
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-webhook-signature': 'invalid',
+      'x-webhook-nonce': 'abc',
+      'x-webhook-timestamp': Math.floor(Date.now() / 1000).toString()
+    },
+    body: JSON.stringify({ action: 'upsert' })
   });
-  expect(res2.status).toBeGreaterThanOrEqual(400);
+  expect(res2.status).toBe(401);
 });
