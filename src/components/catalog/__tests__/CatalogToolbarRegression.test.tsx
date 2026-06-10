@@ -3,6 +3,7 @@ import { CatalogToolbar } from '../CatalogToolbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
+import type { FilterState } from '@/components/filters/FilterPanel';
 
 // Mock components
 vi.mock('@/components/products/StatsPopover', () => ({
@@ -19,7 +20,7 @@ vi.mock('@/components/filters/FilterPanel', () => ({
 }));
 
 const mockProps = {
-  filters: {},
+  filters: {} as unknown as FilterState,
   setFilters: vi.fn(),
   activeFiltersCount: 0,
   filterSheetOpen: false,

@@ -3,6 +3,7 @@ import { CatalogToolbar } from '../CatalogToolbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
+import { defaultFilters } from '@/components/filters/FilterPanel';
 
 // Mock components that might cause issues in a unit test environment
 vi.mock('@/components/products/StatsPopover', () => ({
@@ -14,7 +15,7 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 }));
 
 const mockProps = {
-  filters: {},
+  filters: defaultFilters,
   setFilters: vi.fn(),
   activeFiltersCount: 0,
   filterSheetOpen: false,
