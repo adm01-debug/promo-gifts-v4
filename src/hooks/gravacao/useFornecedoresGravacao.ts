@@ -1,5 +1,5 @@
 /**
- * @deprecated Tabela `fornecedor_gravacao` não existe em doufsxqlfjyuvxuezpln.
+ * @deprecated Tabela `fornecedor_gravacao` não existe em pqpdolkaeqlyzpdpbizo.
  * Este hook retorna dados vazios. Funcionalidade removida na migração REST nativo (2026-05-31).
  * TODO: Remover este arquivo e a linha correspondente em hooks/gravacao/index.ts
  * quando nenhum componente importar.

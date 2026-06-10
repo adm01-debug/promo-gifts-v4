@@ -6,7 +6,7 @@ describe('Supabase Client Contract', () => {
 
   it('should point to the correct project URL', () => {
     expect(SUPABASE_URL).toContain(CURRENT_PROJECT_ID);
-    expect(SUPABASE_URL).not.toContain('doufsxqlfjyuvxuezpln');
+    expect(SUPABASE_URL).not.toContain('pqpdolkaeqlyzpdpbizo');
     expect(SUPABASE_URL).not.toContain('pqpdolkaeqlyzpdpbizo.supabase.co.supabase.co'); // common double-suffix error
   });
 
