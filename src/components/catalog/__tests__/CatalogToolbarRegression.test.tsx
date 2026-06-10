@@ -18,7 +18,7 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 vi.mock('@/components/filters/FilterPanel', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as object),
     FilterPanel: () => <div data-testid="filter-panel">Filter Panel</div>,
   };
 });
