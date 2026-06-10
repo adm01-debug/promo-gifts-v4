@@ -1,11 +1,14 @@
-import { useRef, useEffect, useState, memo } from 'react';
+import { useRef, useEffect, useState, memo, useCallback } from 'react';
 import { SmartSearchInput } from '@/components/search';
 import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopover';
-import { Search, Clock, Trash2, LayoutGrid } from 'lucide-react';
+import { Search, Clock, Trash2, LayoutGrid, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useNavigate } from 'react-router-dom';
+import { useNavigationAnalytics } from '@/hooks/useNavigationAnalytics';
+import { cn } from '@/lib/utils';
 
 interface CatalogHeaderProps {
   shouldShowCatalogSkeleton: boolean;
@@ -34,7 +37,16 @@ export const CatalogHeader = memo(function CatalogHeader({
   onClearHistory,
   toolbar,
 }: CatalogHeaderProps) {
+  const navigate = useNavigate();
+  const { trackNavigationClick } = useNavigationAnalytics();
   const hasActiveConstraints = searchQuery.trim().length > 0 || activeFiltersCount > 0;
+
+  const handleTeleport = useCallback(() => {
+    trackNavigationClick('Teletransporte', '/');
+    if (onReset) onReset();
+    navigate('/', { replace: true });
+  }, [navigate, onReset, trackNavigationClick]);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -62,12 +74,32 @@ export const CatalogHeader = memo(function CatalogHeader({
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <LayoutGrid className="h-6 w-6" />
             </div>
-            <h1
-              data-testid="page-title-produtos"
-              className="whitespace-nowrap font-display text-2xl font-bold sm:text-3xl lg:text-4xl"
-            >
-              Catálogo de Produtos
-            </h1>
+            <div className="flex flex-col">
+              <h1
+                data-testid="page-title-produtos"
+                className="whitespace-nowrap font-display text-2xl font-bold sm:text-3xl lg:text-4xl"
+              >
+                Catálogo de Produtos
+              </h1>
+              {hasActiveConstraints && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleTeleport}
+                        className="group flex h-6 items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-400/5 px-2.5 text-[10px] font-bold text-sky-400 transition-all hover:bg-sky-400/10 active:scale-95 sm:h-7 sm:px-3 sm:text-xs"
+                      >
+                        <Zap className="h-3 w-3 animate-pulse text-sky-400" />
+                        <span>Teletransporte</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      Limpar tudo e voltar ao início do catálogo
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-1 items-center gap-2 max-w-[48rem]" ref={searchRef}>
