@@ -192,7 +192,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </div>
         )}
         {!showLayoutControlsOnly && (
-          <div className="hidden sm:block">
+          <div className="block">
             <StatsPopover stats={statBadges} isFiltered={activeFiltersCount > 0} />
           </div>
         )}
