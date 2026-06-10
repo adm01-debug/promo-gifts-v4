@@ -87,8 +87,8 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 w-full">
-      <div className="flex flex-shrink-0 items-center gap-1.5">
+    <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
             <Tooltip>
