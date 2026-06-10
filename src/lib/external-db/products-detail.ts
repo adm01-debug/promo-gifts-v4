@@ -71,25 +71,6 @@ export async function fetchPromobrindProductById(
     product.description = product.meta_description;
   }
 
-  // ─────────────────────────────────────────────────────────────────────
-  // Paralelização: as 4 famílias de fetch dependem só de `productId` (e do
-  // próprio `product` já carregado), então podem ir juntas em vez de em
-  // série. Cada chamada continua propagando seu próprio request-id via
-  // dbInvoke / dbBatch — a rastreabilidade no painel de
-  // telemetria fica preservada (1 req_id por linha do timeline).
-  //
-  // Etapas:
-  //   A) product_images
-  //   B) batch enrichment (categories + suppliers + product_materials)
-  //   C) product_variants
-  //   D) product_videos
-  //   E) product_kit_components (apenas se is_kit)
-  //
-  // material_types continua em série, pois depende do resultado de (B).
-  // O pós-processamento de variants depende de (A) p/ resolver imagens por
-  // color_code → fazemos o merge depois do Promise.all.
-  // ─────────────────────────────────────────────────────────────────────
-
   type ProductImage = {
     url_cdn: string;
     url_original: string | null;
@@ -104,10 +85,6 @@ export async function fetchPromobrindProductById(
     supplier_code: string | null;
   };
 
-  // ─── (A) Imagens ─────────────────────────────────────────────────────
-  // Limite reduzido de 200 → 80: cobre folgadamente cores (1 supplier_code ×
-  // poucas fotos) + galeria geral. Se atingir o teto, fazemos uma 2ª página
-  // sob demanda (raro). Payload típico cai ~60% para produtos com muitas cores.
   const IMAGES_PAGE = 80;
   const imagesPromise = dbInvoke<ProductImage>({
     table: 'product_images',
@@ -124,7 +101,6 @@ export async function fetchPromobrindProductById(
       return [] as ProductImage[];
     });
 
-  // ─── (B) Enrichment (cat/supplier/materials) em batch + cache ────────
   const categoryId = product.category_id || product.main_category_id;
   const needsCategory = !!categoryId && !product.category_name;
   const needsSupplier = !!product.supplier_id;
@@ -218,17 +194,6 @@ export async function fetchPromobrindProductById(
             return { materialIds: [] };
           });
 
-  // ─── (C) Variantes (cores) ───────────────────────────────────────────
-  // ─── (C) Variantes (cores) ───────────────────────────────────────────
-  // Fetch ENXUTO: NÃO traz `images` (text[] potencialmente grande) nem
-  // `selected_thumbnail` por padrão — esses campos só são necessários como
-  // FALLBACK para variantes cujas imagens não foram cobertas por
-  // `supplier_code` em `product_images` (caso atípico). Buscamos esses
-  // campos sob demanda em UMA chamada extra (id=in.(...)) só para quem
-  // realmente precisar, depois do merge inicial.
-  //
-  // Limite 100 → 60: dedupe por color_name raramente excede 20–30; 60
-  // dá folga para kits sem inflar payload.
   type Variant = {
     id: string;
     color_name: string | null;
@@ -250,7 +215,6 @@ export async function fetchPromobrindProductById(
       return [] as Variant[];
     });
 
-  // ─── (D) Vídeos ──────────────────────────────────────────────────────
   type Video = {
     id: string;
     url_stream: string | null;
@@ -279,7 +243,6 @@ export async function fetchPromobrindProductById(
       return [] as Video[];
     });
 
-  // ─── (E) Componentes do kit (condicional) ────────────────────────────
   type KitComponent = {
     id: string;
     component_name: string | null;
@@ -317,7 +280,6 @@ export async function fetchPromobrindProductById(
         })
     : Promise.resolve([]);
 
-  // Dispara TUDO em paralelo
   const [allProductImages, enrichment, variants, videos, kitComponents] = await Promise.all([
     imagesPromise,
     enrichmentPromise,
@@ -326,11 +288,6 @@ export async function fetchPromobrindProductById(
     kitPromise,
   ]);
 
-  // ─── Pós-processamento (ordem importa apenas localmente) ─────────────
-
-  // Imagens → primary/og/lista
-  // Se atingimos exatamente o teto da página, complementa com 1 página extra
-  // (raríssimo). Mantém a quebra suave sem trazer 200 por padrão.
   let imagesAll: ProductImage[] = allProductImages;
   if (allProductImages.length === IMAGES_PAGE) {
     try {
@@ -350,11 +307,16 @@ export async function fetchPromobrindProductById(
     }
   }
   if (imagesAll.length > 0) {
+    // Tipos técnicos que NÃO devem aparecer na galeria do produto.
+    // Alinhado com products.ts (TECHNICAL_IMAGE_TYPES) e ADR-001.
+    const TECHNICAL_IMAGE_TYPES_PDP = new Set([
+      'box', 'pouch', 'location', 'area', 'component',
+    ]);
     const colorImages = imagesAll
-      .filter((img) => img.supplier_code && img.image_type !== 'box')
+      .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const generalImages = imagesAll
-      .filter((img) => !img.supplier_code && img.image_type !== 'box')
+      .filter((img) => !img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const mainImages = [...colorImages, ...generalImages];
     const primaryImage = mainImages.find((img) => img.is_primary) || mainImages[0];
@@ -370,7 +332,6 @@ export async function fetchPromobrindProductById(
     product.images = mainImages.map((img) => img.url_cdn);
   }
 
-  // material_types — depende do enrichment, em série (1 chamada extra ou cache)
   if (enrichment.materialIds.length > 0) {
     try {
       const nameById = await getCachedByIds<{ id: string; name: string }>(
@@ -386,10 +347,6 @@ export async function fetchPromobrindProductById(
     }
   }
 
-  // Variants → cores únicas. byCode (via product_images.supplier_code) cobre o
-  // caso comum SEM precisar dos campos pesados do variant. Para variantes
-  // sem cobertura, fazemos 1 ÚNICO fetch lazy buscando `images` +
-  // `selected_thumbnail` apenas dos ids necessários.
   if (variants.length > 0) {
     type ColorEntry = {
       name: string;
@@ -433,12 +390,8 @@ export async function fetchPromobrindProductById(
       }
     });
 
-    // Fallback lazy: busca images/selected_thumbnail só dos variants que
-    // realmente ficaram sem cobertura por supplier_code (caso atípico).
     if (fallbackVariantIds.length > 0) {
       try {
-        // FIX: passar array diretamente -> dbInvoke usa .in('id', fallbackVariantIds)
-        // ANTES: const inFilter = `in.(${...})` + { id: inFilter } -> .eq('id', string) -> URL: id=eq.in.(...) -> 400 Bad Request
         const fb = await dbInvoke<{
           id: string;
           images: string[] | null;
@@ -470,7 +423,6 @@ export async function fetchPromobrindProductById(
     }
   }
 
-  // Videos
   if (videos.length > 0) {
     product.product_videos = videos
       .filter((v) => !v.cloudflare_status || v.cloudflare_status === 'ready')
@@ -488,7 +440,6 @@ export async function fetchPromobrindProductById(
       }));
   }
 
-  // Kit components
   if (kitComponents.length > 0) {
     product.kit_components = kitComponents;
   }
@@ -532,7 +483,6 @@ export async function fetchPromobrindCategories(): Promise<{ id: string; name: s
       orderBy: { column: 'name', ascending: true },
       countMode: 'none',
     });
-    // Popula cache de imutáveis: economiza chamadas posteriores em telas de detalhe.
     for (const c of result.records) {
       if (c?.id && c?.name) putInCacheSafe('categories', { id: c.id, name: c.name });
     }

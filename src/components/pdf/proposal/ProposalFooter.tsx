@@ -8,7 +8,12 @@ interface Props {
   totalPages: number;
 }
 
-export function ProposalFooter({ _data, _isLastPage, pageNumber, totalPages }: Props) {
+export function ProposalFooter({
+  data: _data,
+  isLastPage: _isLastPage,
+  pageNumber,
+  totalPages,
+}: Props) {
   const printDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',

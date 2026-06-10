@@ -29,7 +29,7 @@ export function RamoAtividadeGroupAccordion({
   onRamoToggle,
   onSegmentoToggle,
   defaultOpen = false,
-  _showProductCounts = true,
+  showProductCounts: _showProductCounts = true,
   compact = false,
   productCountsByRamo,
 }: RamoAtividadeGroupAccordionProps) {

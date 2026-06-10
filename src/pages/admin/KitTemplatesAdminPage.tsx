@@ -224,7 +224,7 @@ export default function KitTemplatesAdminPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => toggleActive({ id: t.id, is_active: !t.is_active })}
+                          onClick={() => toggleActive({ id: t.id, isActive: !t.is_active })}
                           aria-label={t.is_active ? 'Desativar' : 'Ativar'}
                         >
                           {t.is_active ? (

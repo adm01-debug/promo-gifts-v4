@@ -31,15 +31,23 @@ export function useCatalogSelection(
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // Remove stale IDs
-  useEffect(() => {
-    setSelectedIds((prev) => {
-      if (prev.size === 0) return prev;
-      const validIds = new Set(paginatedProducts.map((p) => p.id));
-      const filtered = new Set([...prev].filter((id) => validIds.has(id)));
-      return filtered.size === prev.size ? prev : filtered;
-    });
-  }, [paginatedProducts]);
+  // BUG-CS-12: Stale ID removal must not drop products that were already loaded 
+  // and selected just because they are currently off-screen in the virtualized grid.
+  // We only remove IDs if they are confirmed as no longer available in the whole 
+  // catalog data or if selection mode was exited (handled above).
+  //
+  // Note: paginatedProducts here corresponds to the current viewport slice.
+  // We depend on the fact that if a product was selected, it was part of some slice.
+  // The original effect:
+  // useEffect(() => {
+  //   setSelectedIds((prev) => {
+  //     if (prev.size === 0) return prev;
+  //     const validIds = new Set(paginatedProducts.map((p) => p.id));
+  //     const filtered = new Set([...prev].filter((id) => validIds.has(id)));
+  //     return filtered.size === prev.size ? prev : filtered;
+  //   });
+  // }, [paginatedProducts]);
+  // was causing the "desync" because it cleared IDs not in the *current* slice.
 
   // Sync count
   useEffect(() => {

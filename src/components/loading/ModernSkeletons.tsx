@@ -18,7 +18,7 @@ export function ProductCardSkeleton({
 }: ProductCardSkeletonProps) {
   if (variant === 'compact') {
     return (
-      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')}>
+      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')} data-testid="product-card-skeleton">
         {selectionMode && (
           <div className="flex-shrink-0">
             <Skeleton className="h-5 w-5 rounded" animate={animate} />
@@ -60,6 +60,7 @@ export function ProductCardSkeleton({
 
   return (
     <div
+      data-testid="product-card-skeleton"
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card sm:rounded-2xl',
         className,
@@ -72,9 +73,9 @@ export function ProductCardSkeleton({
       )}
 
       {/* Image Section - Matches ProductCardImage: white product canvas + 4/5 ratio */}
-      <div className="product-img-container relative aspect-[4/5] w-full overflow-hidden">
+      <div className="product-img-container relative aspect-[4/5] w-full overflow-hidden bg-white">
         <Skeleton
-          className="absolute inset-0 h-full w-full rounded-none bg-muted/30"
+          className="absolute inset-0 h-full w-full rounded-none bg-muted/20"
           animate={animate}
         />
       </div>
