@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       endTime: "",
       consistencyChecks: { passed: 0, failed: 0 },
       latencies: [] as number[],
+      pendingLogs: [] as any[],
     };
 
     const { data: simEndpoint } = await supabase
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
         report.latencies.push(latency);
         
         if (run?.id) {
-          await supabase.from("simulation_logs").insert({
+          report.pendingLogs.push({
             run_id: run.id,
             fn_name: fnName,
             status_code: status,
@@ -134,7 +135,7 @@ Deno.serve(async (req) => {
         report.failures++;
         report.totalScenarios++;
         if (run?.id) {
-          await supabase.from("simulation_logs").insert({
+          report.pendingLogs.push({
             run_id: run.id,
             fn_name: fnName,
             error_message: String(err),
@@ -209,6 +210,13 @@ Deno.serve(async (req) => {
       }
       
       await Promise.all(promises);
+      
+      // Batch insert pending logs after each promise batch
+      if (report.pendingLogs.length > 0) {
+        await supabase.from("simulation_logs").insert(report.pendingLogs);
+        report.pendingLogs = [];
+      }
+
       if (performance.now() - startTime > 55000) break;
     }
 
