@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { CompareItem } from '@/stores/useComparisonStore';
 
+import { logger } from '@/lib/logger';
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -80,7 +81,7 @@ export function ShareComparisonDialog({
       toast.success('Link público gerado e copiado!');
       setTimeout(() => setCopied(false), 2500);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Erro ao gerar link');
     } finally {
       setGenerating(false);

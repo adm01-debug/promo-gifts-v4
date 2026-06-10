@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProductAnalytics, type Product } from '@/hooks/products';
 
+import { logger } from '@/lib/logger';
 const STORAGE_KEY = 'product-comparison';
 const MAX_COMPARE_ITEMS = 4;
 
@@ -34,7 +35,7 @@ export function useComparison(options?: UseComparisonOptions) {
         setCompareIds(JSON.parse(stored));
       }
     } catch (e) {
-      console.error('Error loading comparison:', e);
+      logger.error('Error loading comparison:', e);
     }
     setIsLoaded(true);
   }, []);

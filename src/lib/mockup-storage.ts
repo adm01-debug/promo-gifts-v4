@@ -7,6 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 /**
  * Upload a base64 image to the mockup-assets bucket.
  * Returns the public URL of the uploaded file.
@@ -42,7 +43,7 @@ export async function uploadLogoToStorage(
       });
 
     if (uploadError) {
-      console.error('[mockup-storage] Upload error:', uploadError);
+      logger.error('[mockup-storage] Upload error:', uploadError);
       return null;
     }
 
@@ -50,7 +51,7 @@ export async function uploadLogoToStorage(
 
     return urlData?.publicUrl || null;
   } catch (err) {
-    console.error('[mockup-storage] Exception during upload:', err);
+    logger.error('[mockup-storage] Exception during upload:', err);
     return null;
   }
 }
@@ -80,7 +81,7 @@ export async function downloadImageFromUrl(url: string, fileName: string): Promi
     // Cleanup blob URL after short delay
     setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   } catch (err) {
-    console.error('[mockup-storage] Download error:', err);
+    logger.error('[mockup-storage] Download error:', err);
     // Fallback: open in new tab
     window.open(url, '_blank');
   }
@@ -141,7 +142,7 @@ export async function downloadImageAsPdfFromUrl(url: string, fileName: string): 
     const pdfFileName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
     pdf.save(pdfFileName);
   } catch (err) {
-    console.error('[mockup-storage] PDF download error:', err);
+    logger.error('[mockup-storage] PDF download error:', err);
     window.open(url, '_blank');
   }
 }

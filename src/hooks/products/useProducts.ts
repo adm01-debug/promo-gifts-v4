@@ -9,6 +9,7 @@ import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { productService } from '@/services/productService';
 import type { Product, ProductFilters } from '@/types/product-catalog';
 
+import { logger } from '@/lib/logger';
 // Re-export types for backward compatibility
 export type { Product, ProductColor, ProductFilters } from '@/types/product-catalog';
 export { findKnownHex } from '@/utils/product-colors';
@@ -27,7 +28,7 @@ export function useProducts(
       try {
         return await productService.fetchProducts(filters);
       } catch (error) {
-        console.error('[useProducts] Error fetching products:', error);
+        logger.error('[useProducts] Error fetching products:', error);
         throw error;
       }
     },

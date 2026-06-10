@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { hasOpenOverlay, isRootInert, forceRootInteractive } from '@/lib/dom/scroll-lock';
 
+import { logger } from '@/lib/logger';
 /**
  * RootInteractivityGuard - last-resort watchdog that guarantees the app never
  * gets stuck completely unclickable.
@@ -163,7 +164,7 @@ export function RootInteractivityGuard() {
       const key = reason + JSON.stringify(extra);
       if (key === lastLog) return;
       lastLog = key;
-      console.warn(`[InteractivityGuard] recovered: ${reason}`, extra);
+      logger.warn(`[InteractivityGuard] recovered: ${reason}`, extra);
       setRecoveries((n) => n + 1);
     };
 

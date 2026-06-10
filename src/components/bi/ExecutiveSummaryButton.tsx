@@ -26,6 +26,7 @@ import { useIndustryCategoryTrends } from '@/hooks/bi/useIndustryCategoryTrends'
 // import { generateBIPptx } from '@/lib/bi/pptxGenerator';
 import { buildCategorySection } from '@/lib/bi/executive-summary';
 
+import { logger } from '@/lib/logger';
 interface Props {
   clientId: string;
   clientName: string;
@@ -102,7 +103,7 @@ export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: 
       });
       toast.success('PPTX gerado!', { description: 'Arquivo baixado.' });
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Falha ao gerar PPTX', {
         description: 'Não foi possível gerar o arquivo. Tente novamente.',
       });

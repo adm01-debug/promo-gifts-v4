@@ -43,6 +43,7 @@ import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
 import type { PromobrindProduct } from '@/lib/external-db';
 
+import { logger } from '@/lib/logger';
 interface Product {
   id: string;
   name: string;
@@ -430,7 +431,7 @@ export function useQuoteBuilderState() {
             try {
               setDeliveryDate(new Date(saved.deliveryTime.slice(5) + 'T12:00:00'));
             } catch (e) {
-              console.warn('Failed to restore delivery date', e);
+              logger.warn('Failed to restore delivery date', e);
             }
           } else {
             setDeliveryMode('prazo');
@@ -696,7 +697,7 @@ export function useQuoteBuilderState() {
           return;
         }
       } catch {
-        console.warn('Failed to parse items[] params');
+        logger.warn('Failed to parse items[] params');
       }
     }
 

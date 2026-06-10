@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export interface QuoteComment {
   id: string;
   quote_id: string;
@@ -87,7 +88,7 @@ export function useQuoteComments(quoteId: string | undefined) {
 
       setComments(topLevel);
     } catch (err) {
-      console.error('Error fetching comments:', err);
+      logger.error('Error fetching comments:', err);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +115,7 @@ export function useQuoteComments(quoteId: string | undefined) {
       toast.success('Comentário adicionado');
       await fetchComments();
     } catch (err) {
-      console.error('Error adding comment:', err);
+      logger.error('Error adding comment:', err);
       toast.error('Erro ao adicionar comentário');
     }
   };
@@ -130,7 +131,7 @@ export function useQuoteComments(quoteId: string | undefined) {
       toast.success('Comentário atualizado');
       await fetchComments();
     } catch (err) {
-      console.error('Error updating comment:', err);
+      logger.error('Error updating comment:', err);
       toast.error('Erro ao atualizar comentário');
     }
   };
@@ -143,7 +144,7 @@ export function useQuoteComments(quoteId: string | undefined) {
       toast.success('Comentário removido');
       await fetchComments();
     } catch (err) {
-      console.error('Error deleting comment:', err);
+      logger.error('Error deleting comment:', err);
       toast.error('Erro ao remover comentário');
     }
   };

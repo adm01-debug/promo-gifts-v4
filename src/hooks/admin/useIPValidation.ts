@@ -21,7 +21,7 @@ export function useIPValidation() {
       const supabase = await getSupabaseClient();
       const { data, error } = await supabase.functions.invoke('get-visitor-info');
       if (error || !data?.ip) {
-        console.warn('Fallback to secondary IP identification');
+        logger.warn('Fallback to secondary IP identification');
         const response = await fetch('https://api.ipify.org?format=json').catch(() => null);
         if (response) {
           const data = await response.json();

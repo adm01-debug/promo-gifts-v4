@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
+import { logger } from '@/lib/logger';
 export interface WorkspaceNotification {
   id: string;
   user_id: string;
@@ -258,7 +259,7 @@ export function useWorkspaceNotifications() {
           });
         }
       } catch (err) {
-        console.error('Error fetching notifications:', err);
+        logger.error('Error fetching notifications:', err);
       } finally {
         if (silent) setIsRefetching(false);
         else setIsLoading(false);

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // =====================================================
 // THEME PRESETS SYSTEM — buildPreset() factory
 // Covers ALL CSS vars from index.css for DEEP theming
@@ -989,7 +990,7 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) {
     if (import.meta.env.DEV) {
-      console.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
+      logger.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
     }
     const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
     if (!fallback) return;

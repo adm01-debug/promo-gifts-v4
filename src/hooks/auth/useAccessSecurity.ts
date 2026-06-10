@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
+import { logger } from '@/lib/logger';
 export interface IpWhitelistEntry {
   id: string;
   ip_address: string;
@@ -109,7 +110,7 @@ export function useAccessSecurity() {
       if (logsRes.data) setBlockedLogs(logsRes.data as AccessBlockedLog[]);
     } catch (error) {
       if (!mountedRef.current) return;
-      console.error('Erro ao carregar configurações de acesso:', error);
+      logger.error('Erro ao carregar configurações de acesso:', error);
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }

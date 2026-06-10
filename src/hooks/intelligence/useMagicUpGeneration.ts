@@ -31,6 +31,7 @@ import {
 } from '@/pages/magic-up/magicUpStrategy';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
+import { logger } from '@/lib/logger';
 const toJson = (value: unknown): Json => value as Json;
 const toJsonRecord = (value: Json | null | undefined): Record<string, Json> =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -246,7 +247,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
               .single();
             if (insertError) {
               toast.warning('Imagem gerada, mas não foi salva no histórico.');
-              console.error('Magic Up history insert error:', insertError);
+              logger.error('Magic Up history insert error:', insertError);
             }
             if (inserted) genId = inserted.id;
             queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });

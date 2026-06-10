@@ -35,6 +35,7 @@ import type {
 } from '@/types/advancedFilters';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
+import { logger } from '@/lib/logger';
 // ============================================
 // HOOK PRINCIPAL
 // ============================================
@@ -95,7 +96,7 @@ export function useAdvancedFilters() {
           fetchRefsRef.current.tagsFetch({ limit: 200 }),
         ]);
       } catch (error) {
-        console.error('Erro ao carregar opcoes de filtros:', error);
+        logger.error('Erro ao carregar opcoes de filtros:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);

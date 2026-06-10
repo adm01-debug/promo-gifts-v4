@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 
+import { logger } from '@/lib/logger';
 interface BreachCheckResult {
   isBreached: boolean;
   count: number | null;
@@ -74,7 +75,7 @@ export function usePasswordBreachCheck() {
       });
       return false;
     } catch (error) {
-      console.error('Erro ao verificar senha vazada:', error);
+      logger.error('Erro ao verificar senha vazada:', error);
       setResult({
         isBreached: false,
         count: null,

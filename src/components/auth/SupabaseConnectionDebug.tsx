@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
+import { logger } from '@/lib/logger';
 export const SupabaseConnectionDebug = () => {
   const [info, setInfo] = useState<{
     url: string;
@@ -42,7 +43,7 @@ export const SupabaseConnectionDebug = () => {
           clientReady: !!client,
         });
       } catch (e) {
-        console.error('Debug check failed', e);
+        logger.error('Debug check failed', e);
       }
     };
     check();

@@ -13,6 +13,7 @@ import { Download, FileText, Image as ImageIcon, FileSpreadsheet, Loader2 } from
 import { toast } from 'sonner';
 import type { Product } from '@/types/product-catalog';
 
+import { logger } from '@/lib/logger';
 interface Props {
   products: Product[];
   targetSelector?: string; // CSS selector for PNG capture
@@ -71,7 +72,7 @@ export function ExportComparisonButton({
         toast.success('PNG exportado');
       });
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Falha ao exportar PNG');
     } finally {
       setBusy(false);
@@ -124,7 +125,7 @@ export function ExportComparisonButton({
       pdf.save(`comparacao-${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success('PDF exportado');
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Falha ao exportar PDF');
     } finally {
       setBusy(false);

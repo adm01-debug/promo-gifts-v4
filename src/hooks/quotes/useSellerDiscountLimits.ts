@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export interface SellerDiscountLimit {
   id: string;
   user_id: string;
@@ -41,7 +42,7 @@ export function useSellerDiscountLimits() {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) {
-      console.error('Error fetching discount limits:', error);
+      logger.error('Error fetching discount limits:', error);
     } else {
       setLimits((data || []) as SellerDiscountLimit[]);
     }
@@ -66,7 +67,7 @@ export function useSellerDiscountLimits() {
         toast.success('Limite de desconto atualizado!');
         return true;
       } catch (err) {
-        console.error('Error setting discount limit:', err);
+        logger.error('Error setting discount limit:', err);
         toast.error('Erro ao definir limite de desconto');
         return false;
       }
@@ -82,7 +83,7 @@ export function useSellerDiscountLimits() {
       toast.success('Limite removido');
       return true;
     } catch (err) {
-      console.error('Error deleting limit:', err);
+      logger.error('Error deleting limit:', err);
       toast.error('Erro ao remover limite');
       return false;
     }

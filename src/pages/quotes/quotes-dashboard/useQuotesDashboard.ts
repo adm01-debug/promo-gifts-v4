@@ -11,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 // exportToPdf, mantendo ~bibliotecas pesadas fora do chunk da rota de orçamentos.
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 
+import { logger } from '@/lib/logger';
 interface Client {
   id: string;
   name: string;
@@ -52,7 +53,7 @@ export function useQuotesDashboard() {
         });
         setClients(data.map((c: Client) => ({ id: c.id, name: c.nome_fantasia || c.id })));
       } catch (err) {
-        console.error('Error fetching clients:', err);
+        logger.error('Error fetching clients:', err);
       }
       setLoadingClients(false);
     })();

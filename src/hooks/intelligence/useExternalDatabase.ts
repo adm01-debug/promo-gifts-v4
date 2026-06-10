@@ -100,7 +100,7 @@ function isBridgeRelatedError(err: unknown, message: string): boolean {
 
 export function useExternalDatabase<T = Record<string, unknown>>(tableName: ExternalTable) {
   if (!tableName || typeof tableName !== 'string') {
-    console.error(`[useExternalDatabase] Invalid tableName: ${JSON.stringify(tableName)}`);
+    logger.error(`[useExternalDatabase] Invalid tableName: ${JSON.stringify(tableName)}`);
   }
 
   const [state, setState] = useState<ExternalDatabaseState<T>>({
@@ -254,7 +254,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
         toast.success('Registro excluído com sucesso!');
         return true;
       } catch (err) {
-        console.error('Error deleting:', err);
+        logger.error('Error deleting:', err);
         toast.error('Erro ao excluir registro');
         return false;
       }

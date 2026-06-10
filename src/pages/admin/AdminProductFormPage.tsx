@@ -28,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { PageSEO } from '@/components/seo/PageSEO';
 
+import { logger } from '@/lib/logger';
 const ProductFormFullscreen = lazyWithRetry(() =>
   import('@/components/admin/products/ProductFormFullscreen').then((m) => ({
     default: m.ProductFormFullscreen,
@@ -422,7 +423,7 @@ export default function AdminProductFormPage() {
               await engravingFlushRef.current(newProduct.id);
             } catch (flushErr) {
               // Non-fatal: log and continue — user can re-add areas in edit mode
-              console.error('[AdminProductFormPage] Failed to flush engraving areas:', flushErr);
+              logger.error('[AdminProductFormPage] Failed to flush engraving areas:', flushErr);
               toast.warning(
                 'Produto criado, mas algumas áreas de gravação não puderam ser salvas. Verifique na aba de Gravação.',
               );
@@ -437,7 +438,7 @@ export default function AdminProductFormPage() {
         navigate('/admin/cadastros');
       }
     } catch (error: unknown) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product:', error);
       toast.error('Erro ao salvar produto');
     } finally {
       setIsSaving(false);

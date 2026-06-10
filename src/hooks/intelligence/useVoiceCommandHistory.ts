@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 
+import { logger } from '@/lib/logger';
 export interface VoiceCommandRecord {
   id: string;
   command: string;
@@ -74,7 +75,7 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
         );
       }
     } catch (error) {
-      console.error('Error loading voice command history:', error);
+      logger.error('Error loading voice command history:', error);
     }
     return [];
   });
@@ -84,7 +85,7 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('Error saving voice command history:', error);
+      logger.error('Error saving voice command history:', error);
     }
   }, [history]);
 

@@ -260,12 +260,12 @@ export function useSupplierFiscalData(
               variantId = createResult.data[0].id;
             }
           } catch (err) {
-            console.error('[saveFiscalOverride] Failed to create default variant:', err);
+            logger.error('[saveFiscalOverride] Failed to create default variant:', err);
           }
         }
 
         if (!variantId) {
-          console.error('[saveFiscalOverride] No variant ID available even after creation attempt');
+          logger.error('[saveFiscalOverride] No variant ID available even after creation attempt');
           return false;
         }
 
@@ -321,7 +321,7 @@ export function useSupplierFiscalData(
         await queryClient.invalidateQueries({ queryKey });
         return true;
       } catch (err) {
-        console.error('[saveFiscalOverride] Failed to save fiscal override:', err);
+        logger.error('[saveFiscalOverride] Failed to save fiscal override:', err);
         return false;
       }
     },
@@ -353,7 +353,7 @@ export function useSupplierFiscalData(
       await queryClient.invalidateQueries({ queryKey });
       return true;
     } catch (err) {
-      console.error('[revertToInherited] Failed:', err);
+      logger.error('[revertToInherited] Failed:', err);
       return false;
     }
   }, [productId, supplierId, query.data, queryClient, queryKey]);

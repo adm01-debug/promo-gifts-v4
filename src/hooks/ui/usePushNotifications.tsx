@@ -78,7 +78,7 @@ export function usePushNotifications() {
 
         return notification;
       } catch (error) {
-        console.error('Error showing notification:', error);
+        logger.error('Error showing notification:', error);
         return null;
       }
     },

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
+import { logger } from '@/lib/logger';
 // SSOT: O projeto canônico do app é doufsxqlfjyuvxuezpln.
 // O .env é auto-gerado pelo Lovable e pode apontar para um projeto Lovable Cloud
 // vazio (ex.: pqpdolkaeqlyzpdpbizo). Por isso, o canônico SEMPRE vence em produção
@@ -47,12 +48,12 @@ export const SUPABASE_PUBLISHABLE_KEY = envPointsToCanonical
   : (envPointsToForbidden || !envKey ? CANONICAL_ANON_KEY : envKey);
 
 if (envPointsToForbidden && typeof console !== "undefined") {
-  console.warn(
+  logger.warn(
     `[supabase/client] VITE_SUPABASE_URL aponta para projeto proibido (${envUrl}). ` +
       "Forçando uso do banco canônico doufsxqlfjyuvxuezpln."
   );
 } else if (!envUrl && typeof console !== "undefined") {
-  console.warn(
+  logger.warn(
     "[supabase/client] VITE_SUPABASE_URL não encontrada - usando banco canônico doufsxqlfjyuvxuezpln."
   );
 }

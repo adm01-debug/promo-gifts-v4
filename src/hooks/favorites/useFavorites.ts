@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProductAnalytics, type Product } from '@/hooks/products';
 
+import { logger } from '@/lib/logger';
 const STORAGE_KEY = 'product-favorites';
 
 export interface FavoriteItem {
@@ -31,7 +32,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
         setFavorites(JSON.parse(stored));
       }
     } catch (e) {
-      console.error('Error loading favorites:', e);
+      logger.error('Error loading favorites:', e);
     }
     setIsLoaded(true);
   }, []);

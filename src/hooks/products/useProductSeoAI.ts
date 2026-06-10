@@ -5,6 +5,7 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 
+import { logger } from '@/lib/logger';
 interface SeoAIResult {
   meta_title: string;
   meta_description: string;
@@ -68,7 +69,7 @@ export function useProductSeoAI(
 
       toast.success('Campos SEO e marketing preenchidos com IA!');
     } catch (err) {
-      console.error('SEO AI error:', err);
+      logger.error('SEO AI error:', err);
       toast.error('Erro ao gerar conteúdo com IA', { description: sanitizeError(err) });
     } finally {
       setIsGenerating(false);

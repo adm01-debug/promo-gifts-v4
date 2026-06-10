@@ -12,6 +12,7 @@ import { quoteService } from '@/services/quoteService';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 export type {
   Quote,
   QuoteItem,
@@ -299,7 +300,7 @@ export function useQuotes() {
     try {
       await quoteService.logHistory(quoteId, user.id, action, description, options);
     } catch (err) {
-      console.error('Error logging history:', err);
+      logger.error('Error logging history:', err);
     }
   };
 

@@ -10,6 +10,7 @@ import { Upload, FileText, Trash2, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+import { logger } from '@/lib/logger';
 const ACCEPTED_EXTENSIONS = ['.ai', '.eps', '.pdf', '.svg', '.cdr'];
 const ACCEPTED_MIME = [
   'application/postscript',
@@ -96,7 +97,7 @@ export function ArtFileUpload({
           });
 
         if (upErr) {
-          console.error('[ArtFileUpload] upload error', upErr);
+          logger.error('[ArtFileUpload] upload error', upErr);
           toast.error(`Falha ao enviar ${file.name}`);
           continue;
         }
@@ -122,7 +123,7 @@ export function ArtFileUpload({
           .single();
 
         if (insErr || !row) {
-          console.error('[ArtFileUpload] db insert error', insErr);
+          logger.error('[ArtFileUpload] db insert error', insErr);
           toast.error(`Falha ao registrar ${file.name}`);
           await supabase.storage.from('mockup-art-files').remove([path]);
           continue;

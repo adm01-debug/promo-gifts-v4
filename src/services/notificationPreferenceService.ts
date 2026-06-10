@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 export interface UserNotificationPreference {
   id: string;
   user_id: string;
@@ -15,7 +16,7 @@ export const notificationPreferenceService = {
     const { data, error } = await supabase.from('user_notification_preferences').select('*');
 
     if (error) {
-      console.error('[notificationPreferenceService] getPreferences error:', error.message);
+      logger.error('[notificationPreferenceService] getPreferences error:', error.message);
       return [];
     }
 
@@ -40,7 +41,7 @@ export const notificationPreferenceService = {
     );
 
     if (error) {
-      console.error('[notificationPreferenceService] updatePreference error:', error.message);
+      logger.error('[notificationPreferenceService] updatePreference error:', error.message);
       return false;
     }
 

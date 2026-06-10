@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 
+import { logger } from '@/lib/logger';
 /**
  * AppBootstrap — shell global com fallback de manutenção sem bloquear o boot público.
  */
@@ -22,7 +23,7 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (error) {
-          console.error('[AppBootstrap] Failed to fetch maintenance mode:', error);
+          logger.error('[AppBootstrap] Failed to fetch maintenance mode:', error);
           return;
         }
 
@@ -30,7 +31,7 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
           setMaintenanceMode(true);
         }
       } catch (e) {
-        console.error('[AppBootstrap] Error during maintenance check:', e);
+        logger.error('[AppBootstrap] Error during maintenance check:', e);
       }
     };
 

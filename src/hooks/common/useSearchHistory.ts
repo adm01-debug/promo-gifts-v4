@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import { logger } from '@/lib/logger';
 export type HistoryType = 'product' | 'company' | 'general';
 
 export interface HistoryItem {
@@ -31,7 +32,7 @@ export function useSearchHistory(type?: HistoryType) {
         }
       }
     } catch (e) {
-      console.error('Failed to load search history', e);
+      logger.error('Failed to load search history', e);
     }
   }, [type]);
 
@@ -80,7 +81,7 @@ export function useSearchHistory(type?: HistoryType) {
         // Dispatch custom event for same-tab updates
         window.dispatchEvent(new Event('search-history-update'));
       } catch (e) {
-        console.error('Failed to save search history', e);
+        logger.error('Failed to save search history', e);
       }
     },
     [type],
@@ -99,7 +100,7 @@ export function useSearchHistory(type?: HistoryType) {
 
       window.dispatchEvent(new Event('search-history-update'));
     } catch (e) {
-      console.error('Failed to remove search history', e);
+      logger.error('Failed to remove search history', e);
     }
   }, []);
 
@@ -118,7 +119,7 @@ export function useSearchHistory(type?: HistoryType) {
       }
       window.dispatchEvent(new Event('search-history-update'));
     } catch (e) {
-      console.error('Failed to clear search history', e);
+      logger.error('Failed to clear search history', e);
     }
   }, [type]);
 

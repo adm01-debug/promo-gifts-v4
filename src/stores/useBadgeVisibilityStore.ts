@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 interface ThemeSettings {
   light: boolean;
   dark: boolean;
@@ -75,7 +76,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
             if (updateError) throw updateError;
             return true;
           } catch (err) {
-            console.error('[BadgeVisibilityStore] Sync failed:', err);
+            logger.error('[BadgeVisibilityStore] Sync failed:', err);
             set({
               syncError:
                 'Erro ao sincronizar prefer\u00eancias com o servidor. As altera\u00e7\u00f5es foram salvas apenas localmente.',
@@ -119,7 +120,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
             if (updateError) throw updateError;
             return true;
           } catch (err) {
-            console.error('[BadgeVisibilityStore] Sync failed:', err);
+            logger.error('[BadgeVisibilityStore] Sync failed:', err);
             set({ syncError: 'Erro ao salvar altera\u00e7\u00f5es no servidor.' });
             return false;
           }

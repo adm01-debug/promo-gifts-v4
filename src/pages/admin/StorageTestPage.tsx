@@ -20,6 +20,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+import { logger } from '@/lib/logger';
 interface StorageFile {
   id: string | null;
   name: string;
@@ -54,7 +55,7 @@ export default function StorageTestPage() {
       setFiles(data || []);
     } catch (error: unknown) {
       if (isCancelled()) return;
-      console.error('Error fetching files:', error);
+      logger.error('Error fetching files:', error);
       toast({
         title: 'Erro ao buscar arquivos',
         description: 'Não foi possível carregar a lista de arquivos.',
