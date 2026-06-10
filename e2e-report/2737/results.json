@@ -1,0 +1,2745 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+        "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+      },
+      "gitCommit": {
+        "shortHash": "d808dcd",
+        "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+        "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+        "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781096136000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781096136000
+        },
+        "branch": "main"
+      },
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d808dcdec765e377d56685a47ab37d952f71867d",
+            "commitHash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27277752082"
+          },
+          "gitCommit": {
+            "shortHash": "d808dcd",
+            "hash": "d808dcdec765e377d56685a47ab37d952f71867d",
+            "subject": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)",
+            "body": "test(image-utils): bateria fuzz de regressão para CdnVariant/'card' e invariantes de galeria (#699)\n\n* feat(silver): normalização de variante 100% de-para — fecha follow-up do ADR 0007\n\nTraz toda a normalização/padronização hardcoded para a Silver de-para\n(supplier_field_mappings + fn_apply_transform), eliminando os blocos\nIF supplier_id='<uuid>' que restavam no pipeline:\n\n- silver_depara_01: fn_apply_transform ganha resolver custom\n  fn_extract_color_from_title (cor Só Marcas via título); aditivo.\n- silver_depara_02: helper genérico fn_sm_hex_from_similares (hex da\n  rede produtos_similares de Só Marcas).\n- silver_depara_03: seed do de-para de VARIANTE (target_table=\n  product_variants) p/ SPOT/XBZ/ASIA/SM — sku, supplier_sku, cor\n  (code/api_id/name/hex), estoque, custo e regra do pai\n  (parent_reference c/ fallback identity|strip_hyphen_suffix|\n  asia_hyphen_or_suffix_P; sentinela _none p/ NOT NULL).\n- silver_depara_04: fn_derive_parent_ref config-driven (lê a regra do\n  de-para; IMMUTABLE→STABLE, sem uso em índice/coluna gerada).\n- silver_depara_05: fn_standardize_variant 100% data-driven — mesmo\n  motor do pai (fn_standardize_raw); cor/coerções/UPSERT idênticos.\n- silver_depara_06: fn_parity_standardize_variant(limit) read-only,\n  compara extração antiga vs nova campo a campo (esperado: 0 linhas).\n\nDocs: ADR 0008 (decisão), ADR 0007 (follow-up resolvido),\nmedallion/README.md (aviso atualizado).\n\nNão aplicado ao banco vivo: somente migrations p/ revisão. Rodar a\nparidade antes de deixar o cron usar a nova função em produção.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): ressincroniza package-lock.json com package.json (@tanstack/react-virtual 3.14.2)\n\nA main atualizou @tanstack/react-virtual para ^3.14.2 sem regenerar o\nlockfile (travado em 3.13.24/virtual-core 3.14.0), quebrando `npm ci`\nem TODOS os jobs de CI deste PR (e de qualquer PR contra a main).\nRegenerado via `npm install --package-lock-only`; validado com\n`npm ci --dry-run`. Inclui merge da origin/main na branch.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* chore(ci): retrigger Vercel preview (deploy anterior falhou sem iniciar build)\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(types): reconcilia tipos de produto/imagem herdados da main (gate TS 48→5)\n\nErros pré-existentes na main que bloqueavam o Gate 1 (TS baseline 48 vs 20),\ntodos em componentes de catálogo — sem relação com as migrations Silver.\nCorreções de raiz (zero mudança de comportamento em runtime):\n\n- image-utils: restaura o tipo exportado CdnVariant e a variante Cloudflare\n  '/card' (400×400), removidos por refactor sem atualizar 10+ consumidores\n  (ProductCard/ListItem/CardImage/TableView/RelatedProducts/SmartRecommendations/\n  ProductLinkRenderer/SearchResultGroups/ProductPreviewPanel/ImageWithFallback).\n- ProductQuickView: tipa a prop product como @/types/product-catalog Product\n  (que tem stockStatus/onSale/newArrival/isKit/minQuantity/images), corrige o\n  import de ProductColor (ProductColorSelector), leitura defensiva de stock e\n  prop opcional onShare. Resolve 26 erros internos + 3 dos chamadores.\n- product-catalog Product: +comparePrice?/+shortDescription? (opcionais).\n- useWorkspaceNotifications: importa createClientLogger (faltava).\n- GalleryTitleAudit.test: completa mocks com campos obrigatórios de ProductImageMeta.\n\nRestam 5 erros, todos já no baseline (zero regressões). Lint e build OK.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* test(image-utils): bateria fuzz de regressão — CdnVariant/'card' e invariantes de galeria\n\n~1.100 casos determinísticos (PRNG semeado): variantes CDN × formas de URL,\nidempotência de getCdnUrl, consistência getSrcSet↔getCdnUrl, prioridade de\nOG/primary, partição de groupImages, invariantes ADR-001 de getColorImages e\nseletores de cor. Pegaria na hora uma futura remoção da variante 'card' ou do\ntipo CdnVariant (causa-raiz dos 48 erros de TS corrigidos no #698).\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n* fix(ci): destrava lint forEach+expect no teste fuzz e restaura 6 tabelas dropadas do types.ts\n\n1) T-FIX-5b: troca forEach()+expect() por for...of nos 3 pontos apontados\n   pelo guardrail (arrays não-vazios já garantidos pelas asserções vizinhas).\n2) types.ts: a regeneração de hoje na main dropou kit_component_print_areas,\n   product_images, product_kit_components, product_materials, product_tags e\n   product_videos — todas EXISTEM no banco (verificado) e são chamadas via\n   untypedFrom(). Restaura os blocos da última versão íntegra (d015784, PR #695),\n   mesmo precedente dos PRs #680/#695. Gates locais: untypedFrom ✅, tsc ✅ (5,\n   todos baseline), eslint ✅ 0.\n\nhttps://claude.ai/code/session_01Pc4Dfu4KpGywSUpJ1sScMi\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781096136000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781096136000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 2
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "flows/20-all-features-smoke.spec.ts",
+      "file": "flows/20-all-features-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Funcionalidades principais (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 187,
+          "column": 6,
+          "specs": [
+            {
+              "title": "00 · Sessão autenticada carregada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 291,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:42.631Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-8c9fb14f2e83317f491b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 191,
+              "column": 3
+            },
+            {
+              "title": "01 · Dashboard inicial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 230,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:43.271Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f801d6ecc787a925aeb6",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "02 · Dashboard customizável",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 291,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:43.534Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-1aa5e3ad483ce45b1c6c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "03 · Catálogo de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 342,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:43.883Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-253ae362bd5626789659",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "04 · Filtros avançados",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 507,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:44.283Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-110dc0fa032becab6640",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "05 · Novidades",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 506,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:44.848Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e4a6d737d328021a651e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "06 · Tendências",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 503,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:45.398Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-3ae39b2c3b877a418e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "07 · Favoritos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 577,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:45.946Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2268b4d3c0df46d58d59",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "08 · Coleções",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 364,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:46.558Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-829cb350ddf82e3baf1c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "09 · Comparador de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 502,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:46.978Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-6b1e8a70fa62e09c373b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "10 · Carrinhos do vendedor",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 330,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:47.506Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f7bd8da36df3637213d8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "11 · Lista de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 214,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:47.862Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0f5dcc37061bad34985f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "12 · Dashboard de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 299,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:48.100Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-53ac0053bfd2f95b6d91",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "13 · Funil (Kanban) de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 287,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:48.420Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7649c21e1516aceb28db",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "14 · Templates de orçamento",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 350,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:48.738Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4731c12b152112bd3b3e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "15 · Criar novo orçamento (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 358,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:49.158Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c88b4c904ba629ff2573",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "16 · Simulador (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 250,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:49.540Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c0e6d498102b3493ec79",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "17 · Simulador de preços",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 238,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:49.807Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-037ec93935b1f9277e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "18 · Busca avançada de preço",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 284,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:50.071Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2305ee06071100aeefc3",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "19 · Estoque",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 261,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:50.390Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ce9bf6a79e01ecc158e2",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "20 · Reposição",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 227,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:50.667Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-974a4e17211e71aacc48",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "21 · Kit Builder",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:50.914Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e0aeef09f232cccff716",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "22 · Meus Kits",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 256,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:51.137Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-271a34e5be2dd1a0e443",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "23 · Gerador de Mockup",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 206,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:51.414Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-574111961ec59afa7b2f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "24 · Histórico de Mockups",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 197,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:51.648Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-641280ed64c247121f5d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "25 · Magic Up (publicidade IA)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:51.860Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0456e8e3b51a0bdd9c81",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "26 · Inteligência comercial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 227,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:52.077Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ae86d5b42aba66c9a0b8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "27 · Business Intelligence",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 200,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:52.320Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d015393694fb525997c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "28 · BI — Comparador de clientes",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:52.544Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-a261e495e711a6b68ef7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "29 · Match de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 232,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:52.749Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4f2e19b9d60114026065",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "30 · Dropbox browser",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 197,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:52.995Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d7243934391105bc8dde",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "99 · Cobertura smoke ↔ catálogo está sincronizada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 186,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:53.205Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d4c42fcdd8509d36ce89",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 225,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke Rotas públicas (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 249,
+          "column": 6,
+          "specs": [
+            {
+              "title": "90 · Tela de login renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2436,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:53.407Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7a93262fd723f9d058b7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 253,
+              "column": 3
+            },
+            {
+              "title": "91 · Reset de senha renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1881,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:55.862Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-48906e3ad28c0353437f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "92 · 404 (rota inexistente)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4331,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:57.779Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b9916301819a96e1e50f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 271,
+              "column": 3
+            },
+            {
+              "title": "93 · Login com credenciais inválidas permanece em /login",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 312,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:02:02.142Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 312,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-407ad34c5a77e84f494d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 312,
+              "column": 8
+            },
+            {
+              "title": "95 · /reset-password sem token não habilita reset",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "interrupted",
+                      "duration": 262,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:02:02.142Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-20-all-features-smok-fdde1-em-token-não-habilita-reset-chromium-smoke/video.webm"
+                        },
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-20-all-features-smok-fdde1-em-token-não-habilita-reset-chromium-smoke/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-20-all-features-smok-fdde1-em-token-não-habilita-reset-chromium-smoke/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d508e0a40eec76592d9",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 355,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke RLS guard (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 381,
+          "column": 6,
+          "specs": [
+            {
+              "title": "94 · RLS bloqueia leitura de tabelas sensíveis para o usuário comum",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b4bf3c4a225eb5b5ad18",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 386,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/22-google-oauth-smoke.spec.ts",
+      "file": "flows/22-google-oauth-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Google OAuth — wiring até /auth/callback",
+          "file": "flows/22-google-oauth-smoke.spec.ts",
+          "line": 85,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clique em 'Continuar com Google' dispara authorize com provider=google",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 88,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:42.021Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 88,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-06371fe6855e2b192a1d",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 88,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com code válido troca por sessão e autentica usuário",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 118,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:42.022Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 118,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-970819a4f207fc57f2cc",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 118,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com ?error= mostra hint detalhado e código do erro",
+              "ok": false,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 18670,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('social-login-error-title')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('social-login-error-title')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('social-login-error-title')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('social-login-error-title')\u001b[22m\n\n    at /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts:187:64",
+                        "location": {
+                          "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                          "column": 64,
+                          "line": 187
+                        },
+                        "snippet": "  185 |     await expect.poll(() => new URL(page.url()).pathname, { timeout: 8_000 }).toBe('/login');\n  186 |\n> 187 |     await expect(page.getByTestId('social-login-error-title')).toBeVisible();\n      |                                                                ^\n  188 |     await expect(page.getByTestId('social-login-error-code')).toContainText('provider_not_enabled');\n  189 |     await expect(page.getByTestId('social-login-error-hint')).toContainText(/Administrador|admin/i);\n  190 |   });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "column": 64,
+                            "line": 187
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('social-login-error-title')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('social-login-error-title')\u001b[22m\n\n\n  185 |     await expect.poll(() => new URL(page.url()).pathname, { timeout: 8_000 }).toBe('/login');\n  186 |\n> 187 |     await expect(page.getByTestId('social-login-error-title')).toBeVisible();\n      |                                                                ^\n  188 |     await expect(page.getByTestId('social-login-error-code')).toContainText('provider_not_enabled');\n  189 |     await expect(page.getByTestId('social-login-error-hint')).toContainText(/Administrador|admin/i);\n  190 |   });\n    at /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts:187:64"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-10T13:01:42.627Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-22-google-oauth-smok-dac6c--detalhado-e-código-do-erro-chromium-smoke/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-22-google-oauth-smok-dac6c--detalhado-e-código-do-erro-chromium-smoke/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-22-google-oauth-smok-dac6c--detalhado-e-código-do-erro-chromium-smoke/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results/flows-22-google-oauth-smok-dac6c--detalhado-e-código-do-erro-chromium-smoke/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "column": 64,
+                        "line": 187
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-3a52cd50c12072728a6c",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 175,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/25-password-reset-smoke.spec.ts",
+      "file": "flows/25-password-reset-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Fluxo: Password Reset UI",
+          "file": "flows/25-password-reset-smoke.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "mostra erro para link inválido (sem token)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-279ebe32f4b48ce5696b",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "renderiza formulário quando há token no hash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-0fd2f43979b2c88c09c3",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 15,
+              "column": 3
+            },
+            {
+              "title": "valida força da senha e critérios em tempo real",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-2afc28e8ca65b7b9eed8",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 30,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "message": "Testing stopped early after 1 maximum allowed failures."
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-10T13:01:37.580Z",
+    "duration": 24893.718,
+    "expected": 3,
+    "skipped": 40,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
