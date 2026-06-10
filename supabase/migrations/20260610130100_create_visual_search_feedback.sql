@@ -63,9 +63,18 @@ BEGIN
   SELECT data_type INTO col_type FROM information_schema.columns
     WHERE table_schema='public' AND table_name='visual_search_feedback' AND column_name='search_terms';
   IF col_type = 'text' THEN
+    -- PARSEIA o texto como JSON (search_terms::jsonb), não serializa: to_jsonb()
+    -- envolveria a string num JSON string ("[\"foo\"]"), destoando do contrato.
+    -- Seguro: no banco vivo já é jsonb (guard acima pula) e em DB fresco a tabela
+    -- está vazia, então não há linha a converter.
     ALTER TABLE public.visual_search_feedback
       ALTER COLUMN search_terms TYPE jsonb
-      USING (CASE WHEN search_terms IS NULL OR search_terms = '' THEN NULL ELSE to_jsonb(search_terms) END);
+      USING (
+        CASE
+          WHEN search_terms IS NULL OR btrim(search_terms) = '' THEN NULL
+          ELSE search_terms::jsonb
+        END
+      );
   END IF;
 END $$;
 
