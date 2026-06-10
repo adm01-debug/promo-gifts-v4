@@ -1117,8 +1117,10 @@ export default function VisualSearchPage() {
                                   </div>
                                 </div>
                                 <p className="italic text-foreground/80 leading-snug">{product.matchRationale}</p>
-                                
-                                <div className="mt-3 space-y-2 border-t border-primary/5 pt-2">
+                              </div>
+                            )}
+                            
+                            <div className="mt-3 space-y-2 border-t border-primary/5 pt-2">
                                   {results?.analysis.visualEvidence && (
                                     <div className="flex flex-col gap-1.5">
                                       <div className="flex items-center gap-2">
