@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
-
 const Select = SelectPrimitive.Root;
 
 const SelectGroup = SelectPrimitive.Group;
@@ -71,7 +70,7 @@ const SelectContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
 >(({ className, children, position = 'popper', onCloseAutoFocus, ...props }, ref) => {
   const { handleClose } = useOverlayInteractivity();
-  
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -90,23 +89,23 @@ const SelectContent = React.forwardRef<
           e.preventDefault();
           handleClose();
         }}
-
-      {...props}
-    >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
-        className={cn(
-          'p-1',
-          position === 'popper' &&
-            'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
-        )}
+        {...props}
       >
-        {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
+        <SelectScrollUpButton />
+        <SelectPrimitive.Viewport
+          className={cn(
+            'p-1',
+            position === 'popper' &&
+              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
+          )}
+        >
+          {children}
+        </SelectPrimitive.Viewport>
+        <SelectScrollDownButton />
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  );
+});
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectLabel = React.forwardRef<
