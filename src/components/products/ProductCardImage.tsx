@@ -204,10 +204,10 @@ export const ProductCardImage = memo(function ProductCardImage({
         />
       )}
 
-      {/* Badges - Top Area */}
-      <div className="absolute inset-x-0 top-2 z-10 flex px-2 sm:top-3 sm:px-3">
-        {/* Left side badges */}
-        <div className="flex flex-col items-start gap-1 sm:gap-1.5">
+      {/* Badges - Dynamic layout to prevent overlapping */}
+      <div className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-start justify-between gap-1 p-2 sm:p-3">
+        {/* Left-aligned badges (Novelty, Featured, etc.) */}
+        <div className="flex flex-1 flex-wrap items-start gap-1 sm:gap-1.5">
           {featured && (
             <ProductStatusBadge
               type="featured"
@@ -262,8 +262,8 @@ export const ProductCardImage = memo(function ProductCardImage({
           )}
         </div>
 
-        {/* Right side badges - to avoid overlapping when many are present */}
-        <div className="ml-auto flex flex-col items-end gap-1 sm:gap-1.5">
+        {/* Right-aligned badges (Stock Status) */}
+        <div className="flex shrink-0 flex-col items-end gap-1 sm:gap-1.5">
           {stockStatus === 'unavailable' && (
             <ProductStatusBadge
               type="out-of-stock"
