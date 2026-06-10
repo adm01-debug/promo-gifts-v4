@@ -57,7 +57,8 @@ describe('CatalogToolbar Alignment and Responsiveness', () => {
     // Right group
     const rightGroup = mainContainer.lastChild as HTMLElement;
     expect(rightGroup.className).toContain('ml-auto');
-    expect(rightGroup.className).toContain('sm:ml-0');
+    // ml-auto ensures it stays on the right even in column mode or flex-row
+    expect(rightGroup.className).toContain('ml-auto');
     expect(screen.getByLabelText(/Selecionar vários produtos/i)).toBeInTheDocument();
     expect(screen.getByTestId('layout-popover')).toBeInTheDocument();
   });
