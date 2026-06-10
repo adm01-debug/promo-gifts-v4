@@ -346,7 +346,8 @@ export default function FiltersPage() {
                       > SelectTrigger — Tooltip só toca o span, Select mantém evento limpo.
                     dot indicator movido para span (não SelectTrigger) com span.relative
                     como containing block correto. DEFAULT_SORT_VALUE do SSOT evita 'name' hardcoded. */}
-                <Select value={state.sortBy} onValueChange={state.setSortBy}>
+                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <Select value={state.sortBy} onValueChange={state.setSortBy}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       {/* span.relative.inline-flex = containing block para o dot mobile */}
