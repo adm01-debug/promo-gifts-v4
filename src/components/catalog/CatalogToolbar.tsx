@@ -1,6 +1,6 @@
-import React, { Suspense, useDeferredValue, memo } from 'react';
+import React, { Suspense, useDeferredValue, memo, useCallback } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
-import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
+import { Filter, ArrowUpDown, CheckSquare, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -56,6 +56,8 @@ interface CatalogToolbarProps {
   selectedCount?: number;
   isTransitioning?: boolean;
   showLayoutControlsOnly?: boolean;
+  onReset?: () => void;
+  hasActiveConstraints?: boolean;
 }
 
 
@@ -82,13 +84,38 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   selectedCount = 0,
   isTransitioning = false,
   showLayoutControlsOnly = false,
+  onReset,
+  hasActiveConstraints = false,
 }: CatalogToolbarProps) {
 
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between md:gap-4">
+    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between md:gap-4 bg-muted/20 backdrop-blur-sm p-2 rounded-xl border border-border/40">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {onReset && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onReset}
+                className={cn(
+                  "h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9",
+                  hasActiveConstraints 
+                    ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
+                    : "border-border/40 text-muted-foreground hover:bg-muted"
+                )}
+                aria-label="Voltar ao início do catálogo"
+              >
+                <RefreshCcw className={cn("h-4 w-4", hasActiveConstraints && "animate-pulse")} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {hasActiveConstraints ? "Limpar filtros e busca" : "Recarregar catálogo"}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
             <Tooltip>
@@ -215,7 +242,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'relative h-8 gap-1.5 transition-all sm:h-9 bg-card/40 backdrop-blur-sm',
+                'relative h-8 gap-1.5 transition-all sm:h-9',
                 selectionMode
                   ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                   : 'hover:border-primary/50',
