@@ -338,7 +338,6 @@ export default function FiltersPage() {
                 </Sheet>
                 <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
                   <Select value={state.sortBy} onValueChange={state.setSortBy}>
-                  <Select value={state.sortBy} onValueChange={state.setSortBy}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       {/* span.relative.inline-flex = containing block para o dot mobile */}
@@ -403,7 +402,7 @@ export default function FiltersPage() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
-                </div>
+                </Tooltip>
                 {/* Selection toggle & Layout */}
                 <div className="flex items-center gap-2 ml-auto">
                   <Tooltip>
