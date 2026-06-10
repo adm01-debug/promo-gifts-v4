@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, memo } from 'react';
 import { SmartSearchInput } from '@/components/search';
 import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopover';
-import { Home, Search, Clock, Trash2 } from 'lucide-react';
+import { Search, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,6 @@ export const CatalogHeader = memo(function CatalogHeader({
   hasNextPage: _hasNextPage,
   onSelect,
   searchQuery = '',
-  onReset,
   activeFiltersCount = 0,
   searchHistory = [],
   onClearHistory,
@@ -56,46 +55,50 @@ export const CatalogHeader = memo(function CatalogHeader({
   }, []);
 
   return (
-    <div className="flex flex-col gap-3 px-4 sm:px-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+    <div className="flex flex-col gap-4 px-4 sm:px-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            {/* Reset / Home button — visible when search or filters are active */}
-            {hasActiveConstraints && onReset && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onReset}
-                    className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
-                    aria-label="Voltar ao início"
-                  >
-                    <Home className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Voltar ao catálogo completo</TooltipContent>
-              </Tooltip>
-            )}
-
             <h1
               data-testid="page-title-produtos"
-              className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
+              className="whitespace-nowrap font-display text-2xl font-bold sm:text-3xl lg:text-4xl"
             >
               Catálogo de Produtos
             </h1>
           </div>
 
-          {/* Search inline next to title on desktop */}
-          <div className="hidden flex-1 items-center gap-2 sm:flex max-w-[40rem]" ref={searchRef}>
-            <SmartSearchInput
-              inputId="search-desktop"
-              placeholder="Buscar produtos…  /"
-              onSelect={onSelect}
-              className="flex-1"
-            />
+          <div className="flex flex-1 items-center gap-2 max-w-[48rem]" ref={searchRef}>
+            <div className="relative flex-1">
+              <SmartSearchInput
+                inputId="search-catalog"
+                placeholder="Buscar produtos...  /"
+                onSelect={onSelect}
+                className="w-full"
+              />
+            </div>
 
             <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center rounded-lg border border-border/40 bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50">
+                    {shouldShowCatalogSkeleton ? (
+                      <span className="animate-pulse">Carregando...</span>
+                    ) : (
+                      <>
+                        <span className="font-bold text-foreground">
+                          {filteredCount.toLocaleString('pt-BR')}
+                        </span>
+                        {totalEstimate && hasActiveConstraints && (
+                          <span className="ml-1 opacity-70">de {totalEstimate.toLocaleString('pt-BR')}</span>
+                        )}
+                        <span className="ml-1">itens</span>
+                      </>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Total de itens encontrados</TooltipContent>
+              </Tooltip>
+
               {searchHistory.length > 0 && (
                 <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
                   <Tooltip>
@@ -158,89 +161,11 @@ export const CatalogHeader = memo(function CatalogHeader({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-normal text-muted-foreground sm:text-base">
-          <div>
-            {shouldShowCatalogSkeleton ? (
-              'Carregando catálogo...'
-            ) : hasActiveConstraints ? (
-              <>
-                <span className="font-semibold text-primary">
-                  {filteredCount.toLocaleString('pt-BR')}
-                </span>
-                {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
-              </>
-            ) : totalEstimate ? (
-              `${totalEstimate.toLocaleString('pt-BR')} itens`
-            ) : (
-              `${filteredCount.toLocaleString('pt-BR')} itens`
-            )}
+        {toolbar && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            {toolbar}
           </div>
-
-          {/* Render Toolbar inline if provided */}
-          {toolbar && (
-            <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-              {toolbar}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Search and history full-width on mobile */}
-      <div className="flex w-full items-center gap-2 sm:hidden">
-        <SmartSearchInput
-          inputId="search-mobile"
-          placeholder="Buscar produtos..."
-          onSelect={onSelect}
-          className="flex-1"
-        />
-        {searchHistory.length > 0 && (
-          <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="relative h-11 w-11 shrink-0"
-                aria-label="Abrir histórico de buscas"
-              >
-                <Clock className="h-4 w-4" />
-                <Badge className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-primary p-0 text-[8px]">
-                  {searchHistory.length}
-                </Badge>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[calc(100vw-2rem)] p-2" align="end">
-              <div className="mb-2 flex items-center justify-between border-b border-border/50 px-2 pb-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Histórico
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClearHistory}
-                  className="h-6 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" /> Limpar
-                </Button>
-              </div>
-              <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
-                {searchHistory.map((term, i) => (
-                  <button
-                    key={term}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
-                    onClick={() => {
-                      onSelect({ type: 'history', id: `hist-mob-${i}`, label: term });
-                      setHistoryOpen(false);
-                    }}
-                  >
-                    <Search className="h-3 w-3 text-muted-foreground" />
-                    <span className="flex-1 truncate">{term}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
         )}
-        <RecentlyViewedPopover maxVisible={5} />
       </div>
     </div>
   );
