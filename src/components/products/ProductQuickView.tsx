@@ -6,14 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
-import { ProductColorSelector } from '@/components/products/ProductColorSelector';
-import { type PromobrindProduct } from '@/lib/external-db/product-types';
-import { type ProductColor } from '@/types/product';
+import { ProductColorSelector, type ProductColor } from '@/components/products/ProductColorSelector';
+import { type Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
 
 interface ProductQuickViewProps {
-  product: PromobrindProduct | null;
+  product: Product | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isFavorited?: boolean;
@@ -23,6 +22,7 @@ interface ProductQuickViewProps {
   onToggleCompare?: (productId: string) => void;
   onAddToCart?: (productId: string, quantity: number, colorId?: string) => void;
   onNavigateToProduct?: (productId: string) => void;
+  onShare?: (product: Product) => void;
 }
 
 export const ProductQuickView = React.memo(
@@ -175,7 +175,7 @@ export const ProductQuickView = React.memo(
     // não-numérico (string, null, undefined) vira null aqui, sem depender
     // do typeof no JSX nem do cast propagar tipo errado.
     const rawStock: unknown =
-      product.stock_quantity ?? (product as unknown as { stock?: unknown }).stock;
+      (product as unknown as { stock_quantity?: unknown }).stock_quantity ?? product.stock;
     const stockQty: number | null = typeof rawStock === 'number' ? rawStock : null;
 
     // Obter URL atual da imagem com variante CDN
