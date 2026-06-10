@@ -106,9 +106,9 @@ describe('getSrcSet — consistência com getCdnUrl', () => {
         expect(out).toBeDefined();
         const entries = out!.split(', ');
         expect(entries).toHaveLength(5);
-        WIDTHS.forEach(([variant, w], i) => {
+        for (const [i, [variant, w]] of WIDTHS.entries()) {
           expect(entries[i]).toBe(`${getCdnUrl(url, variant)} ${w}w`);
-        });
+        }
       }
     }
   });
@@ -205,10 +205,10 @@ describe('getColorImages — invariantes ADR-001 sob 200 conjuntos aleatórios',
         imgs.find((i) => i.image_type === 'main' && !i.applies_to_color);
       if (heroCanonico) expect(out[0]).toBe(heroCanonico);
       // 4) todo não-hero é específico da cor
-      out.slice(out[0] === heroCanonico ? 1 : 0).forEach((i) => {
+      for (const i of out.slice(out[0] === heroCanonico ? 1 : 0)) {
         if (i !== heroCanonico)
           expect(i.applies_to_color === true && i.supplier_code === color).toBe(true);
-      });
+      }
     }
   });
 });
@@ -220,7 +220,7 @@ describe('getAvailableColors / getColorThumbnail / getColorHeroImage — 100 con
       const imgs = randomSet(r, Math.floor(r() * 15));
       const colors = getAvailableColors(imgs);
       expect(colors).toEqual([...new Set(colors)].sort());
-      colors.forEach((c) => expect(c).toMatch(/^\d+$/));
+      for (const c of colors) expect(c).toMatch(/^\d+$/);
 
       for (const c of colors) {
         const ofColor = imgs.filter((i) => i.supplier_code === c && i.applies_to_color === true);
