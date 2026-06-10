@@ -124,7 +124,7 @@ export default function VisualSearchPage() {
 
     recognition.onresult = (event: any) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      console.log("Voice command:", command);
+      // Voice command processing
       handleVoiceCommand(command);
     };
 

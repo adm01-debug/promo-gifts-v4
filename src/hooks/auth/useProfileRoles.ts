@@ -56,10 +56,10 @@ export function useProfileRoles() {
         log.error('exception', { error });
       } finally {
         fetchPromiseRef.current = null;
-        if (!fetchCancelledRef.current) {
-          setIsLoading(false);
-          setRolesLoaded(true);
-        }
+        // BUG-FIX: Ensure loading is ALWAYS disabled after first attempt
+        // to prevent white-screen of death if DB calls fail.
+        setIsLoading(false);
+        setRolesLoaded(true);
       }
     };
 
