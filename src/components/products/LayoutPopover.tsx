@@ -32,7 +32,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-md"
+                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-sm sm:h-9"
                     aria-label="Alterar layout"
                     data-testid="layout-popover-trigger"
                   >
