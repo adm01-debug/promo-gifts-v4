@@ -21,6 +21,9 @@ export interface Product {
   name: string;
   description?: string | null;
   /** Descrição curta opcional (blurb) usada no QuickView. */
+  shortDescription?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
   comparePrice?: number | null;
   image_url?: string;
   /**
