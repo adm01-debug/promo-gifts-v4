@@ -217,33 +217,32 @@ export default function FiltersPage() {
                   className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
                 >
                   Super Filtro
-                  <span className="ml-2 inline-flex items-center gap-1.5 text-sm font-normal text-muted-foreground sm:text-base">
-                    ·{' '}
-                    <span className="tabular-nums">
-                      {state.isLoadingProducts && state.realProducts.length === 0
-                        ? 'carregando...'
-                        : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
-                    </span>
-                    {!state.isFullyLoaded &&
-                      state.loadingProgress > 0 &&
-                      state.loadingProgress < 100 &&
-                      state.activeFiltersCount === 0 && (
-                        <span className="ml-1 inline-flex items-center gap-1">
-                          <span className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle">
-                            <motion.span
-                              className="block h-full rounded-full bg-primary/60"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${state.loadingProgress}%` }}
-                              transition={{ duration: 0.4, ease: 'easeOut' }}
-                            />
-                          </span>
-                          <span className="text-[10px] tabular-nums opacity-60">
-                            {state.loadingProgress}%
-                          </span>
-                        </span>
-                      )}
-                  </span>
                 </h1>
+                <div className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground sm:text-base">
+                  <span className="tabular-nums">
+                    {state.isLoadingProducts && state.realProducts.length === 0
+                      ? 'carregando...'
+                      : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
+                  </span>
+                  {!state.isFullyLoaded &&
+                    state.loadingProgress > 0 &&
+                    state.loadingProgress < 100 &&
+                    state.activeFiltersCount === 0 && (
+                      <span className="ml-1 inline-flex items-center gap-1">
+                        <span className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle">
+                          <motion.span
+                            className="block h-full rounded-full bg-primary/60"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${state.loadingProgress}%` }}
+                            transition={{ duration: 0.4, ease: 'easeOut' }}
+                          />
+                        </span>
+                        <span className="text-[10px] tabular-nums opacity-60">
+                          {state.loadingProgress}%
+                        </span>
+                      </span>
+                    )}
+                </div>
               </div>
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <SmartSearchInput

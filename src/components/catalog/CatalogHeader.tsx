@@ -18,6 +18,8 @@ interface CatalogHeaderProps {
   activeFiltersCount?: number;
   searchHistory?: string[];
   onClearHistory?: () => void;
+  // Nova prop para renderizar o toolbar inline
+  toolbar?: React.ReactNode;
 }
 
 export const CatalogHeader = memo(function CatalogHeader({
@@ -31,6 +33,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   activeFiltersCount = 0,
   searchHistory = [],
   onClearHistory,
+  toolbar,
 }: CatalogHeaderProps) {
   const hasActiveConstraints = searchQuery.trim().length > 0 || activeFiltersCount > 0;
   const searchRef = useRef<HTMLDivElement>(null);
@@ -53,49 +56,59 @@ export const CatalogHeader = memo(function CatalogHeader({
   }, []);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        {/* Reset / Home button — visible when search or filters are active */}
-        {hasActiveConstraints && onReset && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onReset}
-                className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
-                aria-label="Voltar ao início"
-              >
-                <Home className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Voltar ao catálogo completo</TooltipContent>
-          </Tooltip>
-        )}
+    <div className="flex flex-col gap-4 px-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {/* Reset / Home button — visible when search or filters are active */}
+          {hasActiveConstraints && onReset && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onReset}
+                  className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
+                  aria-label="Voltar ao início"
+                >
+                  <Home className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Voltar ao catálogo completo</TooltipContent>
+            </Tooltip>
+          )}
 
-        <h1
-          data-testid="page-title-produtos"
-          className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
-        >
-          Catálogo de Produtos
-          <span className="ml-2 text-sm font-normal text-muted-foreground sm:text-base">
-            ·{' '}
-            {shouldShowCatalogSkeleton ? (
-              'Carregando catálogo...'
-            ) : hasActiveConstraints ? (
-              <>
-                <span className="font-semibold text-primary">
-                  {filteredCount.toLocaleString('pt-BR')}
-                </span>
-                {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
-              </>
-            ) : totalEstimate ? (
-              `${totalEstimate.toLocaleString('pt-BR')} itens`
-            ) : (
-              `${filteredCount.toLocaleString('pt-BR')} itens`
+          <div className="flex flex-col gap-1">
+            <h1
+              data-testid="page-title-produtos"
+              className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
+            >
+              Catálogo de Produtos
+            </h1>
+            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground sm:text-base">
+              {shouldShowCatalogSkeleton ? (
+                'Carregando catálogo...'
+              ) : hasActiveConstraints ? (
+                <>
+                  <span className="font-semibold text-primary">
+                    {filteredCount.toLocaleString('pt-BR')}
+                  </span>
+                  {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
+                </>
+              ) : totalEstimate ? (
+                `${totalEstimate.toLocaleString('pt-BR')} itens`
+              ) : (
+                `${filteredCount.toLocaleString('pt-BR')} itens`
+              )}
+            </div>
+
+            {/* Render Toolbar below title if provided */}
+            {toolbar && (
+              <div className="mt-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                {toolbar}
+              </div>
             )}
-          </span>
-        </h1>
+          </div>
+        </div>
 
         {/* Search inline next to product count on desktop */}
         <div className="hidden w-80 items-center gap-2 sm:flex lg:w-[28rem]" ref={searchRef}>
