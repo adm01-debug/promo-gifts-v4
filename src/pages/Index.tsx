@@ -122,7 +122,7 @@ export default function Index() {
               onToggleSelectionMode={catalog.toggleSelectionMode}
               selectedCount={catalog.selectedCount}
               isTransitioning={catalog.isTransitioning}
-              showLayoutControlsOnly={catalog.viewMode !== 'table'}
+              showLayoutControlsOnly={false}
             />
           }
         />

@@ -156,7 +156,7 @@ export function VirtualizedProductGrid({
           style={{ contain: 'strict' }}
         >
           {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-            <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+            <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
               <InlineFilterBar
                 activeFiltersCount={activeFiltersCount}
                 totalProducts={0}
@@ -210,7 +210,7 @@ export function VirtualizedProductGrid({
       >
         {/* Barra de filtros sticky DENTRO do container de scroll */}
         {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-          <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+          <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
             <InlineFilterBar
               activeFiltersCount={activeFiltersCount}
               totalProducts={products.length}
