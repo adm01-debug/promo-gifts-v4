@@ -106,14 +106,14 @@ const SheetContent = React.forwardRef<
   return (
     <SheetPortal>
       <SheetOverlay />
-      <SheetPrimitive.Content 
+    <SheetPrimitive.Content 
         ref={ref} 
+        {...props}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           requestAnimationFrame(releaseScrollLockIfIdle);
         }}
         className={cn(sheetVariants({ side }), className)} 
-        {...props}
       >
         {!hasTitle && (
           <SheetPrimitive.Title className="sr-only" aria-hidden={false}>
