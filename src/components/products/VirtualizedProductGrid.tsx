@@ -65,7 +65,7 @@ export function VirtualizedProductGrid({
   onClearFilters,
   viewMode = 'grid',
   onViewModeChange,
-  showFilterBar = true,
+  showFilterBar = false,
   activeColorFilter,
   columnSelector,
   selectionMode = false,
