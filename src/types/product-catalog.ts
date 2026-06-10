@@ -24,6 +24,7 @@ export interface Product {
   shortDescription?: string | null;
   category_id?: string | null;
   category_name?: string | null;
+  price: number;
   comparePrice?: number | null;
   image_url?: string;
   /**
