@@ -53,6 +53,7 @@ interface CatalogContentProps {
   onSortChange?: (v: string) => void;
   onOpenFilters?: () => void;
   activeFiltersCount?: number;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export const CatalogContent = memo(function CatalogContent({
@@ -89,6 +90,7 @@ export const CatalogContent = memo(function CatalogContent({
   onSortChange,
   onOpenFilters,
   activeFiltersCount = 0,
+  onViewModeChange,
 }: CatalogContentProps) {
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
@@ -185,6 +187,7 @@ export const CatalogContent = memo(function CatalogContent({
               onClearFilters={onResetFilters}
               showFilterBar={true}
               activeFiltersCount={activeFiltersCount}
+              onViewModeChange={onViewModeChange}
             />
           </div>
           <CatalogBulkModals

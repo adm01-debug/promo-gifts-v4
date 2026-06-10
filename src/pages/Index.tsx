@@ -172,6 +172,7 @@ export default function Index() {
           onSortChange={catalog.setSortBy}
           onOpenFilters={() => catalog.setFilterSheetOpen(true)}
           activeFiltersCount={catalog.activeFiltersCount}
+          onViewModeChange={catalog.setViewMode}
         />
       </div>
 
