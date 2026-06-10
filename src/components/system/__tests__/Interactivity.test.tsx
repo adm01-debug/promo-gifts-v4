@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import React from 'react';
 import * as scrollLock from '@/lib/dom/scroll-lock';
 import { RootInteractivityGuard } from '@/components/system/RootInteractivityGuard';
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom';
@@ -10,7 +9,6 @@ vi.mock('@/lib/dom/scroll-lock', async () => {
   const actual = await vi.importActual<typeof scrollLock>('@/lib/dom/scroll-lock');
   return {
     ...actual,
-    releaseScrollLockIfIdle: vi.fn(actual.releaseScrollLockIfIdle),
     forceRootInteractive: vi.fn(actual.forceRootInteractive),
     hasOpenOverlay: vi.fn(actual.hasOpenOverlay),
     isRootInert: vi.fn(actual.isRootInert),
