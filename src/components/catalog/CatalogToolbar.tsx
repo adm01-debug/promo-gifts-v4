@@ -1,6 +1,6 @@
 import React, { Suspense, useDeferredValue, memo, useCallback } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
-import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
+import { Filter, ArrowUpDown, CheckSquare, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -93,20 +93,27 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   return (
     <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between md:gap-4 bg-muted/20 backdrop-blur-sm p-2 rounded-xl border border-border/40">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {onReset && hasActiveConstraints && (
+        {onReset && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={onReset}
-                className="h-8 w-8 shrink-0 border-primary/40 text-primary hover:bg-primary/10 sm:h-9 sm:w-9"
-                aria-label="Limpar todos os filtros e busca"
+                className={cn(
+                  "h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9",
+                  hasActiveConstraints 
+                    ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
+                    : "border-border/40 text-muted-foreground hover:bg-muted"
+                )}
+                aria-label="Voltar ao início do catálogo"
               >
-                <Filter className="h-4 w-4" />
+                <RefreshCcw className={cn("h-4 w-4", hasActiveConstraints && "animate-pulse")} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Limpar filtros e busca</TooltipContent>
+            <TooltipContent>
+              {hasActiveConstraints ? "Limpar filtros e busca" : "Recarregar catálogo"}
+            </TooltipContent>
           </Tooltip>
         )}
         {!showLayoutControlsOnly && (

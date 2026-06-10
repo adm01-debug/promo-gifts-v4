@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, memo } from 'react';
 import { SmartSearchInput } from '@/components/search';
 import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopover';
-import { Search, Clock, Trash2 } from 'lucide-react';
+import { Search, Clock, Trash2, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,9 @@ export const CatalogHeader = memo(function CatalogHeader({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <LayoutGrid className="h-6 w-6" />
+            </div>
             <h1
               data-testid="page-title-produtos"
               className="whitespace-nowrap font-display text-2xl font-bold sm:text-3xl lg:text-4xl"
