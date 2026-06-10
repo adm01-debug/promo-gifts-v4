@@ -1,12 +1,57 @@
 {
-  "generatedAt": "2026-06-07T02:10:06.104Z",
-  "totalErrors": 20,
+  "generatedAt": "2026-06-10T11:29:57.754Z",
+  "totalErrors": 63,
   "counts": {
+    "src/components/admin/products/ProductPreviewPanel.tsx": {
+      "TS2345": 2
+    },
+    "src/components/common/ImageWithFallback.tsx": {
+      "TS2305": 1
+    },
+    "src/components/expert/ProductLinkRenderer.tsx": {
+      "TS2345": 1
+    },
+    "src/components/products/ProductCard.tsx": {
+      "TS2322": 1,
+      "TS2345": 1
+    },
+    "src/components/products/ProductCardImage.tsx": {
+      "TS2345": 1
+    },
     "src/components/products/ProductGrid.tsx": {
       "TS2322": 1
     },
+    "src/components/products/ProductListItem.tsx": {
+      "TS2322": 1,
+      "TS2345": 1
+    },
+    "src/components/products/ProductQuickView.tsx": {
+      "TS18047": 1,
+      "TS2322": 1,
+      "TS2339": 18,
+      "TS2551": 6
+    },
+    "src/components/products/ProductTableView.tsx": {
+      "TS2345": 1,
+      "TS2739": 1
+    },
+    "src/components/products/RelatedProducts.tsx": {
+      "TS2345": 1
+    },
+    "src/components/products/SmartRecommendations.tsx": {
+      "TS2345": 1
+    },
+    "src/components/products/__tests__/GalleryTitleAudit.test.tsx": {
+      "TS2739": 2
+    },
     "src/components/quotes/QuoteProductCustomization.tsx": {
       "TS2322": 1
+    },
+    "src/components/search/SearchResultGroups.tsx": {
+      "TS2345": 1
+    },
+    "src/hooks/ui/useWorkspaceNotifications.tsx": {
+      "TS2304": 1
     },
     "src/pages/products/FavoritesPage.tsx": {
       "TS2322": 2
