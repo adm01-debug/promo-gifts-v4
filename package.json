@@ -113,7 +113,10 @@
     "test:freight:fuzz": "TZ=America/Sao_Paulo vitest run tests/fuzz/freight-quest-fuzzer.test.ts --reporter=verbose",
     "test:freight:coverage": "TZ=America/Sao_Paulo vitest run tests/unit/freight-quest/ tests/integration/freight-quest/ --coverage --coverage.include=src/components/kit-builder/FreightEstimator.tsx --coverage.include=src/components/quotes/ --coverage.reporter=text --coverage.reporter=json-summary",
     "test:freight:load": "node scripts/freight-quest-load-test.mjs",
-    "test:e2e:freight": "npx playwright test e2e/flows/freight-quest-complete-flow.spec.ts --project=chromium-public"
+    "test:e2e:freight": "npx playwright test e2e/flows/freight-quest-complete-flow.spec.ts --project=chromium-public",
+    "test:replenishment:full": "npm run test:replenishment:contract && npm run test:replenishment:e2e && node scripts/ci-replenishment-gates.mjs",
+    "test:replenishment:contract": "vitest run tests/fuzz/replenishment-contract-fuzz.test.ts tests/integration/replenishment-idempotency.test.ts",
+    "test:replenishment:e2e": "npx playwright test e2e/replenishment-flows.spec.ts"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
