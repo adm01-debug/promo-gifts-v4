@@ -8,16 +8,7 @@ import React from 'react';
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn().mockImplementation((table) => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: vi.fn().mockResolvedValue({ data: [], error: null }),
-      in: vi.fn().mockResolvedValue({ data: [], error: null }),
-      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-    })),
-
+    from: vi.fn(),
   },
 }));
 
@@ -37,41 +28,50 @@ describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
   beforeEach(() => {
     queryClient.clear();
     vi.clearAllMocks();
-  });
-
-  it('should fetch different ranges correctly for pagination', async () => {
-    const mockDataPage1 = [
-      { id: '1', name: 'P1', updated_at: new Date().toISOString(), created_at: new Date(Date.now() - 90000000).toISOString() },
-    ];
     
-    const fromSpy = vi.spyOn(supabase, 'from');
-    
-    // Page 1
-    (supabase.from as any).mockImplementation(() => ({
+    // Default mock implementation
+    (supabase.from as any).mockImplementation((table: string) => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       gte: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
-      range: vi.fn().mockResolvedValue({ data: mockDataPage1, error: null }),
+      range: vi.fn().mockResolvedValue({ data: [], error: null }),
+      in: vi.fn().mockResolvedValue({ data: [], error: null }),
+      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }));
+  });
+
+  it('should fetch different ranges correctly for pagination', async () => {
+    const now = Date.now();
+    const mockDataPage1 = [
+      { id: '1', name: 'P1', updated_at: new Date(now).toISOString(), created_at: new Date(now - 90000000).toISOString(), sku: 'S1', primary_image_url: null, sale_price: 10, category_id: null, supplier_id: null, stock_quantity: 20, min_quantity: 10 },
+    ];
+    
+    const rangeMock = vi.fn().mockResolvedValue({ data: mockDataPage1, error: null });
+    
+    (supabase.from as any).mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: rangeMock,
+      in: vi.fn().mockResolvedValue({ data: [], error: null }),
+      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
     }));
 
-    const { result, rerender } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), { wrapper });
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), { wrapper });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
     
-    // Verify range was 0-9
-    const lastCall = (supabase.from('v_products_public') as any).range.mock.calls[0];
-    expect(lastCall).toEqual([0, 9]);
+    expect(rangeMock).toHaveBeenCalledWith(0, 9);
+    expect(result.current.data).toHaveLength(1);
   });
 
   it('should maintain consistency during concurrent updates (simulated)', async () => {
-    // This test simulates the logic of pagination with cursor or timestamp
-    // In our implementation, we use order('updated_at', { ascending: false })
-    
     const now = Date.now();
     const mockData = [
-      { id: '1', name: 'P1', updated_at: new Date(now).toISOString(), created_at: new Date(now - 90000000).toISOString() },
-      { id: '2', name: 'P2', updated_at: new Date(now - 1000).toISOString(), created_at: new Date(now - 90001000).toISOString() },
+      { id: '1', name: 'P1', updated_at: new Date(now).toISOString(), created_at: new Date(now - 90000000).toISOString(), sku: 'S1', primary_image_url: null, sale_price: 10, category_id: null, supplier_id: null, stock_quantity: 20, min_quantity: 10 },
+      { id: '2', name: 'P2', updated_at: new Date(now - 1000).toISOString(), created_at: new Date(now - 90001000).toISOString(), sku: 'S2', primary_image_url: null, sale_price: 20, category_id: null, supplier_id: null, stock_quantity: 5, min_quantity: 10 },
     ];
 
     (supabase.from as any).mockImplementation(() => ({
@@ -80,11 +80,15 @@ describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
       gte: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       range: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+      in: vi.fn().mockResolvedValue({ data: [], error: null }),
+      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
     }));
 
     const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 2 }), { wrapper });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
     expect(result.current.data).toHaveLength(2);
+    expect(result.current.data?.[0].product_name).toBe('P1');
+    expect(result.current.data?.[1].stock_status).toBe('low-stock');
   });
 });
