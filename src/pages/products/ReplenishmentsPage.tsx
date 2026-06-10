@@ -42,7 +42,9 @@ export default function ReplenishmentsPage() {
             <ReplenishmentProductGrid />
           </main>
           <aside className="order-1 xl:sticky xl:top-4 xl:order-2 xl:self-start">
-            <RecentReplenishmentsWidget />
+            <EnhancedErrorBoundary>
+              <RecentReplenishmentsWidget />
+            </EnhancedErrorBoundary>
           </aside>
         </div>
       </div>
