@@ -98,7 +98,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
       const result = (data as { result: RepairResult }).result;
       return result;
     } catch (e) {
-      logger.error('Unhandled error', e);
+      logger.error('Ownership repair failed', e);
       toast.error(`Falha no reparo: ${(e as Error).message}`);
       return null;
     } finally {

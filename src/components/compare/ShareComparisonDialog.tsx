@@ -81,7 +81,7 @@ export function ShareComparisonDialog({
       toast.success('Link público gerado e copiado!');
       setTimeout(() => setCopied(false), 2500);
     } catch (e) {
-      logger.error('Unhandled error', e);
+      logger.error('Failed to generate share link', e);
       toast.error('Erro ao gerar link');
     } finally {
       setGenerating(false);

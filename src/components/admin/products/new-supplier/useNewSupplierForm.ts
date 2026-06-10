@@ -487,15 +487,26 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
               const { data: urlData } = supabase.storage
                 .from('supplier-logos')
                 .getPublicUrl(canonicalPath);
-              await dbInvokeSingle({
-                table: 'suppliers',
-                operation: 'update',
-                filters: { id: result.id },
-                data: { logo_url: urlData.publicUrl },
-              });
+              try {
+                await dbInvokeSingle({
+                  table: 'suppliers',
+                  operation: 'update',
+                  filters: { id: result.id },
+                  data: { logo_url: urlData.publicUrl },
+                });
+              } catch (updateErr) {
+                // File was moved but the DB still points at the temp path —
+                // roll the move back so the stored logo_url stays valid.
+                await supabase.storage
+                  .from('supplier-logos')
+                  .move(canonicalPath, tempPath)
+                  .catch(() => undefined);
+                throw updateErr;
+              }
             }
-          } catch {
-            // logo rename is best-effort; supplier was created successfully
+          } catch (logoErr) {
+            // Logo rename is best-effort; supplier was created successfully.
+            logger.warn('Supplier logo rename failed; keeping temp logo URL', logoErr);
           }
         }
         onCreated(result.id);

@@ -54,7 +54,7 @@ export default function SimulationPage() {
       setReport(data);
       toast.success(`Simulação de ${mode} concluída!`);
     } catch (err) {
-      logger.error('Unhandled error', err);
+      logger.error('Freight simulation failed', err);
       toast.error('Falha ao executar simulação');
     } finally {
       setLoading(false);
