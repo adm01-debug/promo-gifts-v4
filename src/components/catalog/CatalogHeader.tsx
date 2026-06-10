@@ -182,7 +182,7 @@ export const CatalogHeader = memo(function CatalogHeader({
         </div>
       </div>
 
-      {/* Search full-width on mobile */}
+      {/* Search and history full-width on mobile */}
       <div className="flex w-full items-center gap-2 sm:hidden">
         <SmartSearchInput
           inputId="search-mobile"
@@ -191,15 +191,53 @@ export const CatalogHeader = memo(function CatalogHeader({
           className="flex-1"
         />
         {searchHistory.length > 0 && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 shrink-0"
-            onClick={() => setHistoryOpen(!historyOpen)}
-          >
-            <Clock className="h-4 w-4" />
-          </Button>
+          <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative h-11 w-11 shrink-0"
+                aria-label="Abrir histórico de buscas"
+              >
+                <Clock className="h-4 w-4" />
+                <Badge className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-primary p-0 text-[8px]">
+                  {searchHistory.length}
+                </Badge>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] p-2" align="end">
+              <div className="mb-2 flex items-center justify-between border-b border-border/50 px-2 pb-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Histórico
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearHistory}
+                  className="h-6 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-3 w-3" /> Limpar
+                </Button>
+              </div>
+              <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
+                {searchHistory.map((term, i) => (
+                  <button
+                    key={term}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                    onClick={() => {
+                      onSelect({ type: 'history', id: `hist-mob-${i}`, label: term });
+                      setHistoryOpen(false);
+                    }}
+                  >
+                    <Search className="h-3 w-3 text-muted-foreground" />
+                    <span className="flex-1 truncate">{term}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
+        <RecentlyViewedPopover maxVisible={5} />
       </div>
     </div>
   );
