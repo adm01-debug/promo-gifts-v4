@@ -67,14 +67,21 @@ function emit(
 
   const isDev = import.meta.env.DEV;
   const tag = `[${scope}:${event}]`;
+
+  // BUG-1 FIX: usar o método correto do console por nível.
+  // Antes, debug/info/warn iam todos pro console.warn, poluindo o
+  // DevTools com warnings falsos e mascarando warns reais.
   if (isDev) {
-    const fn = level === 'error' ? console.error : console.warn;
-    fn(tag, payload);
+    if (level === 'error') console.error(tag, payload);
+    else if (level === 'warn') console.warn(tag, payload);
+    else if (level === 'info') console.info(tag, payload);
+    else console.debug(tag, payload);
   } else {
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
     else if (level === 'warn') console.warn(json);
-    else console.warn(json);
+    else if (level === 'info') console.log(json);
+    else console.debug(json);
   }
 
   // Sentry forwarding
