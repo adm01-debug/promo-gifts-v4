@@ -478,7 +478,12 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
             if (tempPath && tempPath.startsWith('suppliers/new-')) {
               const ext = tempPath.split('.').pop() || 'png';
               const canonicalPath = `suppliers/${result.id}.${ext}`;
-              await supabase.storage.from('supplier-logos').move(tempPath, canonicalPath);
+              const { error: moveError } = await supabase.storage
+                .from('supplier-logos')
+                .move(tempPath, canonicalPath);
+              // Only point logo_url at the canonical path if the move actually succeeded;
+              // otherwise keep the (valid) temp URL.
+              if (moveError) throw moveError;
               const { data: urlData } = supabase.storage
                 .from('supplier-logos')
                 .getPublicUrl(canonicalPath);

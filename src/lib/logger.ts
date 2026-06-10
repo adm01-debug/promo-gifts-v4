@@ -12,8 +12,14 @@ const isDev = import.meta.env.DEV;
 
 const SENSITIVE_KEY_RE = /(token|secret|password|authorization|cookie|api[_-]?key|jwt)/i;
 
+/** Error properties are non-enumerable; serialize explicitly so logs keep message/stack. */
+function serializeError(err: Error): Record<string, unknown> {
+  return { name: err.name, message: err.message, stack: err.stack };
+}
+
 function redactValue(value: unknown): unknown {
   if (value === null || value === undefined) return value;
+  if (value instanceof Error) return serializeError(value);
   if (Array.isArray(value)) return value.map((item) => redactValue(item));
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {};
@@ -47,15 +53,13 @@ function formatEntry(level: LogLevel, message: string, data?: Record<string, unk
 
 function extractData(args: unknown[]): Record<string, unknown> | undefined {
   if (args.length === 0) return undefined;
-  if (
-    args.length === 1 &&
-    typeof args[0] === 'object' &&
-    args[0] !== null &&
-    !(args[0] instanceof Error)
-  ) {
+  if (args.length === 1 && args[0] instanceof Error) {
+    return { error: serializeError(args[0]) };
+  }
+  if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
     return args[0] as Record<string, unknown>;
   }
-  return { details: args };
+  return { details: args.map((a) => (a instanceof Error ? serializeError(a) : a)) };
 }
 
 export const logger = {

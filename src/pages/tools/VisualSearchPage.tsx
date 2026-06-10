@@ -265,8 +265,14 @@ export default function VisualSearchPage() {
       setResults(data);
       saveToHistory(base64, data.analysis.productType);
       toast.success('Análise concluída com sucesso!');
-    } catch (err: unknown) {
-      logger.error('Visual search error:', err);
+    } catch (rawErr: unknown) {
+      logger.error('Visual search error:', rawErr);
+      const err = rawErr as {
+        message?: string;
+        name?: string;
+        status?: number;
+        context?: { json?: () => Promise<{ error?: string; step?: string; requestId?: string }> };
+      };
       
       let friendlyMessage = 'Ocorreu um problema na análise da imagem.';
       let tip = 'Tente novamente com outra foto ou verifique sua conexão.';

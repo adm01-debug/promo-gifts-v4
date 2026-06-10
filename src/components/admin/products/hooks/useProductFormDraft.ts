@@ -2,7 +2,7 @@
  * useProductFormDraft — Auto-save / restore form drafts from localStorage
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type UseFormSetValue } from 'react-hook-form';
+import { type UseFormSetValue, type Path, type PathValue } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { ProductFormData } from '../ProductFormSchema';
 
@@ -37,9 +37,14 @@ export function useProductFormDraft(
         return;
       }
       const keys = Object.keys(draft.formData) as (keyof ProductFormData)[];
-      keys.forEach(<K extends keyof ProductFormData>(key: K) => {
+      keys.forEach((key) => {
         const val = draft.formData[key];
-        if (val !== undefined) setValue(key, val as ProductFormData[K]);
+        if (val !== undefined) {
+          setValue(
+            key as Path<ProductFormData>,
+            val as PathValue<ProductFormData, Path<ProductFormData>>,
+          );
+        }
       });
       if (draft.images?.length) setImages(draft.images);
       if (typeof draft.stepIndex === 'number') setStepIndex(draft.stepIndex);

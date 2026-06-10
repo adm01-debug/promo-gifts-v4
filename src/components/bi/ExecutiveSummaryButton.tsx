@@ -103,7 +103,7 @@ export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: 
       });
       toast.success('PPTX gerado!', { description: 'Arquivo baixado.' });
     } catch (e) {
-      logger.error(e);
+      logger.error('Unhandled error', e);
       toast.error('Falha ao gerar PPTX', {
         description: 'Não foi possível gerar o arquivo. Tente novamente.',
       });

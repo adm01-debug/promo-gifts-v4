@@ -72,7 +72,7 @@ export function ExportComparisonButton({
         toast.success('PNG exportado');
       });
     } catch (e) {
-      logger.error(e);
+      logger.error('Unhandled error', e);
       toast.error('Falha ao exportar PNG');
     } finally {
       setBusy(false);
@@ -125,7 +125,7 @@ export function ExportComparisonButton({
       pdf.save(`comparacao-${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success('PDF exportado');
     } catch (e) {
-      logger.error(e);
+      logger.error('Unhandled error', e);
       toast.error('Falha ao exportar PDF');
     } finally {
       setBusy(false);
