@@ -78,9 +78,13 @@ export function forceReleaseScrollLock(): void {
   setTimeout(() => {
     // If a new modal was opened immediately on the new page, respect it.
     if (hasOpenOverlay()) return;
-    releaseScrollLock();
-  }, 50);
+    
+    // forceRootInteractive clears everything AND sets pointer-events: auto 
+    // as a fallback if something still looks stuck.
+    forceRootInteractive();
+  }, 60);
 }
+
 
 
 /**
