@@ -207,7 +207,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'relative h-8 gap-1.5 transition-all',
+                'relative h-8 gap-1.5 transition-all sm:h-9',
                 selectionMode
                   ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                   : 'hover:border-primary/50',
