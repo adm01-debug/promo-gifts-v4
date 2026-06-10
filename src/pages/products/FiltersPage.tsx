@@ -210,7 +210,8 @@ export default function FiltersPage() {
 
           {/* Content */}
           <div className="min-w-0 flex-1 space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
               <div className="flex-shrink-0">
                 <h1
                   data-testid="page-title-produtos"
