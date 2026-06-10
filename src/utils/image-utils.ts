@@ -209,15 +209,17 @@ export function getColorImages(images: ProductImageMeta[], colorCode: string): P
 
   // 1) Imagens específicas desta cor (não-técnicas)
   const specific = images.filter(
-    (i) => i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
+    (i) =>
+      i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
   );
 
   // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
   //    → main cor-específica da cor seleccionada (último recurso: produto só tem mains por cor)
   //    A main é a imagem principal do produto e deve sempre aparecer, mesmo com cor activa.
-  const hero = images.find((i) => i.image_type === 'main' && i.is_primary)
-             ?? images.find((i) => i.image_type === 'main' && !i.applies_to_color)
-             ?? specific.find((i) => i.image_type === 'main');
+  const hero =
+    images.find((i) => i.image_type === 'main' && i.is_primary) ??
+    images.find((i) => i.image_type === 'main' && !i.applies_to_color) ??
+    specific.find((i) => i.image_type === 'main');
 
   // 3) Hero sempre primeiro; deduplicar os specific (remover hero se vier na lista)
   const result: ProductImageMeta[] = [];

@@ -1,12 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Heart, ShoppingCart, ZoomIn, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react';
+import {
+  X,
+  Heart,
+  ShoppingCart,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  BarChart2,
+  Share2,
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
-import { ProductColorSelector, type ProductColor } from '@/components/products/ProductColorSelector';
+import {
+  ProductColorSelector,
+  type ProductColor,
+} from '@/components/products/ProductColorSelector';
 import { type Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
@@ -37,6 +49,7 @@ export const ProductQuickView = React.memo(
     onToggleCompare,
     onAddToCart,
     onNavigateToProduct,
+    onShare,
   }: ProductQuickViewProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -174,8 +187,7 @@ export const ProductQuickView = React.memo(
     // Review follow-up (Copilot): normaliza na origem — qualquer valor
     // não-numérico (string, null, undefined) vira null aqui, sem depender
     // do typeof no JSX nem do cast propagar tipo errado.
-    const rawStock: unknown =
-      (product as unknown as { stock_quantity?: unknown }).stock_quantity ?? product.stock;
+    const rawStock: unknown = product.stock;
     const stockQty: number | null = typeof rawStock === 'number' ? rawStock : null;
 
     // Obter URL atual da imagem com variante CDN
@@ -451,6 +463,18 @@ export const ProductQuickView = React.memo(
                       aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
                     >
                       <BarChart2 className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {onShare && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onShare(product)}
+                      className="flex-shrink-0"
+                      aria-label="Compartilhar"
+                    >
+                      <Share2 className="h-4 w-4" />
                     </Button>
                   )}
 

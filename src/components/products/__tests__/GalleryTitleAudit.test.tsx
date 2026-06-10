@@ -55,19 +55,19 @@ describe('Gallery Components - Tooltip Regression Audit', () => {
     const displayImages: ProductImageMeta[] = [
       {
         url_cdn: mockImages[0],
-        url_original: null,
+        url_original: mockImages[0],
         alt_text: 'Alt 1',
         title_text: null,
         image_type: 'main',
         is_primary: true,
-        is_og_image: false,
+        is_og_image: true,
         applies_to_color: null,
         supplier_code: null,
         display_order: 0,
       },
       {
         url_cdn: mockImages[1],
-        url_original: null,
+        url_original: mockImages[1],
         alt_text: 'Alt 2',
         title_text: null,
         image_type: 'main',
