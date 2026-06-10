@@ -20,8 +20,12 @@ export interface Product {
   id: string;
   name: string;
   description?: string | null;
-  /** Descrição curta opcional (blurb) usada no QuickView. */
+  shortDescription?: string | null;
+  price: number;
+  /** Preço de comparação / preço original antes do desconto. */
   comparePrice?: number | null;
+  category_id?: string | null;
+  category_name?: string | null;
   image_url?: string;
   /**
    * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.

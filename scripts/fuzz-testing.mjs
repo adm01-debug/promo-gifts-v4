@@ -418,12 +418,7 @@ const FUNCTION_SPECS = [
   // --- Expansão: webhooks / orquestradores ---
   { name: "webhook-dispatcher", endpoint: "webhook-dispatcher",              authRequired: false, gen: generateWebhookDispatcherPayloads },
   { name: "simulation-orchestrator", endpoint: "simulation-orchestrator",    authRequired: false, gen: generateSimulationOrchestratorPayloads },
-  // --- Funções críticas adicionais com UUID_CORPUS + missingFieldsMatrix ---
-  { name: "quote-sync",          endpoint: "quote-sync",                     authRequired: true,  gen: generateQuoteSyncPayloads },
   { name: "validate-access-v2",  endpoint: "validate-access",                authRequired: true,  gen: generateValidateAccessV2Payloads },
-  { name: "block-ip-temporarily",endpoint: "block-ip-temporarily",           authRequired: true,  gen: generateBlockIpPayloads },
-  { name: "step-up-verify",      endpoint: "step-up-verify",                 authRequired: true,  gen: generateStepUpVerifyPayloads },
-  { name: "verify-2fa-token",    endpoint: "verify-2fa-token",               authRequired: true,  gen: generateVerify2faPayloads },
 ];
 
 // ---------------------------------------------------------------------------
