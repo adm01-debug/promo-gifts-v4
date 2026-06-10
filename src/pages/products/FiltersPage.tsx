@@ -466,6 +466,7 @@ export default function FiltersPage() {
                     gridColumns={state.gridColumns}
                     setGridColumns={state.setGridColumns}
                   />
+                  </div>
                 </div>
               </div>
               {state.activeFiltersSummary.length > 0 && (
