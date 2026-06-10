@@ -1,6 +1,8 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ProductCardImage } from '../ProductCardImage';
 import { ProductStatusBadge } from '../ProductStatusBadge';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -31,21 +33,25 @@ const mockProduct: Product = {
 describe('Product Badges Layout and Overlap Simulation', () => {
   it('should render multiple badges without overlapping in a flex container', () => {
     const { container } = render(
-      <TooltipProvider>
-        <ProductCardImage
-          product={mockProduct}
-          cardImageUrl="/test.jpg"
-          imageLoaded={true}
-          isHovered={false}
-          computedImageScale={1}
-          isNovelty={true}
-          noveltyDaysRemaining={25}
-          allMatchingVariants={[]}
-          hasMultipleVariants={false}
-          safeVariantIdx={0}
-          onVariantChange={() => {}}
-        />
-      </TooltipProvider>
+      <MemoryRouter>
+        <ThemeProvider>
+          <TooltipProvider>
+            <ProductCardImage
+              product={mockProduct}
+              cardImageUrl="/test.jpg"
+              imageLoaded={true}
+              isHovered={false}
+              computedImageScale={1}
+              isNovelty={true}
+              noveltyDaysRemaining={25}
+              allMatchingVariants={[]}
+              hasMultipleVariants={false}
+              safeVariantIdx={0}
+              onVariantChange={() => {}}
+            />
+          </TooltipProvider>
+        </ThemeProvider>
+      </MemoryRouter>
     );
 
     // Find the badge container
@@ -70,19 +76,23 @@ describe('Product Badges Layout and Overlap Simulation', () => {
   it('should handle out-of-stock badge on the right side', () => {
     const oosProduct = { ...mockProduct, stockStatus: 'out-of-stock' as const };
     render(
-      <TooltipProvider>
-        <ProductCardImage
-          product={oosProduct}
-          cardImageUrl="/test.jpg"
-          imageLoaded={true}
-          isHovered={false}
-          computedImageScale={1}
-          allMatchingVariants={[]}
-          hasMultipleVariants={false}
-          safeVariantIdx={0}
-          onVariantChange={() => {}}
-        />
-      </TooltipProvider>
+      <MemoryRouter>
+        <ThemeProvider>
+          <TooltipProvider>
+            <ProductCardImage
+              product={oosProduct}
+              cardImageUrl="/test.jpg"
+              imageLoaded={true}
+              isHovered={false}
+              computedImageScale={1}
+              allMatchingVariants={[]}
+              hasMultipleVariants={false}
+              safeVariantIdx={0}
+              onVariantChange={() => {}}
+            />
+          </TooltipProvider>
+        </ThemeProvider>
+      </MemoryRouter>
     );
 
     expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
@@ -94,9 +104,13 @@ describe('ProductStatusBadge Color Contrast', () => {
     // This is more of a logic check since we can't easily test visual contrast in JSDOM
     // But we can verify the class is applied correctly
     const { container } = render(
-      <TooltipProvider>
-        <ProductStatusBadge type="novelty" daysRemaining={25} />
-      </TooltipProvider>
+      <MemoryRouter>
+        <ThemeProvider>
+          <TooltipProvider>
+            <ProductStatusBadge type="novelty" daysRemaining={25} />
+          </TooltipProvider>
+        </ThemeProvider>
+      </MemoryRouter>
     );
     
     const badge = container.querySelector('.bg-\\[\\#00D166\\]');
