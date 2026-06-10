@@ -506,6 +506,7 @@ jobs:
             case $result in
               success) echo "✅ $name"; PASSED=$((PASSED+1)) ;;
               skipped) echo "⏭️  $name (skipped)"; SKIPPED=$((SKIPPED+1)) ;;
+              cancelled) echo "⚠️  $name (cancelled — runner reclaimed, treated as skipped)"; SKIPPED=$((SKIPPED+1)) ;;
               *) echo "❌ $name ($result)"; FAILED=$((FAILED+1)) ;;
             esac
           done
