@@ -412,11 +412,11 @@ export default function FiltersPage() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
-                </Tooltip>
-
-                {/* Selection toggle */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                </div>
+                {/* Selection toggle & Layout */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                     <Button
                       variant={state.selectionMode ? 'default' : 'outline'}
                       size="sm"
