@@ -336,17 +336,8 @@ export default function FiltersPage() {
                     </div>
                   </SheetContent>
                 </Sheet>
-                {/* IMPROVEMENT 1-4 FIX: Select fica FORA, Tooltip DENTRO.
-                    Antes: TooltipTrigger asChild envolvia o <Select> inteiro —
-                    o Radix Slot mesclava handlers do Tooltip (onPointerEnter/Leave/Focus)
-                    diretamente no Select composto, causando conflito de eventos e o
-                    dropdown alternando entre opções sem parar.
-                    Depois: padrão idêntico ao CatalogToolbar.tsx (BUG-G7 FIX):
-                      Select > Tooltip > TooltipTrigger asChild > span.relative.inline-flex
-                      > SelectTrigger — Tooltip só toca o span, Select mantém evento limpo.
-                    dot indicator movido para span (não SelectTrigger) com span.relative
-                    como containing block correto. DEFAULT_SORT_VALUE do SSOT evita 'name' hardcoded. */}
-                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <Select value={state.sortBy} onValueChange={state.setSortBy}>
                   <Select value={state.sortBy} onValueChange={state.setSortBy}>
                   <Tooltip>
                     <TooltipTrigger asChild>
