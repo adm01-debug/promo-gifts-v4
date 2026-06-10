@@ -42,6 +42,13 @@ export function useProfileRoles() {
 
         if (profileResult.error) {
           log.error('profile_error', { error: profileResult.error });
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (profileResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar perfil', {
+              description: 'O sistema não conseguiu ler seus dados básicos. Contate o suporte.',
+            });
+          }
         } else {
           setProfile(profileResult.data as Profile | null);
         }
@@ -49,6 +56,13 @@ export function useProfileRoles() {
         if (rolesResult.error) {
           log.error('roles_error', { error: rolesResult.error });
           setUserRoles([]);
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (rolesResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar permissões', {
+              description: 'O sistema não conseguiu verificar seus acessos. Contate o suporte.',
+            });
+          }
         } else {
           const mapped = (rolesResult.data ?? []).map(
             (row: { role: string }) => row.role,
