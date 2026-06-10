@@ -10,12 +10,13 @@ console.log('\u{1F680} Validating Supabase Project Connection Configuration...')
 try {
   const content = readFileSync(CLIENT_PATH, 'utf-8');
 
-  // 1. Check if the canonical URL constant matches the CURRENT project
-  const hasCanonicalUrl = content.includes(CANONICAL_URL);
-  if (!hasCanonicalUrl) {
-    console.error(`\u274C ERROR: Project URL "${CANONICAL_URL}" not found in ${CLIENT_PATH}. This might mean the app is pointing to an external project.`);
+  // 1. Check if the canonical project ID constant matches
+  const hasProjectId = content.includes(`const CURRENT_PROJECT_ID = "pqpdolkaeqlyzpdpbizo"`) || content.includes(`const CURRENT_PROJECT_ID = 'pqpdolkaeqlyzpdpbizo'`);
+  if (!hasProjectId) {
+    console.error(`\u274C ERROR: Project ID "${CANONICAL_PROJECT_ID}" not found as CURRENT_PROJECT_ID in ${CLIENT_PATH}.`);
     process.exit(1);
   }
+
 
   // 2. Check for boot validation logic
   const hasValidationLogic = content.includes('validateEnv') && content.includes('CURRENT_PROJECT_ID');
