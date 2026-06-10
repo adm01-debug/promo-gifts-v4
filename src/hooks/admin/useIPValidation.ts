@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
@@ -30,7 +31,7 @@ export function useIPValidation() {
       }
       return data.ip;
     } catch (error) {
-      console.error('Error fetching current IP:', error);
+      logger.error('Error fetching current IP:', error);
       return null;
     }
   }, []);
@@ -84,7 +85,7 @@ export function useIPValidation() {
         });
 
         if (error) {
-          console.error('Error calling validate-access:', error);
+          logger.error('Error calling validate-access:', error);
           // Em caso de erro na validação, permitir acesso (fail-open)
           return {
             isAllowed: true,
@@ -132,7 +133,7 @@ export function useIPValidation() {
           hasRestrictions: result.reason !== 'no_settings',
         };
       } catch (error: unknown) {
-        console.error('Error in IP validation:', error);
+        logger.error('Error in IP validation:', error);
         // Fail-open: se não conseguir validar, permite
         return {
           isAllowed: true,
@@ -170,7 +171,7 @@ export function useIPValidation() {
           },
         });
       } catch (error) {
-        console.error('Error logging login attempt:', error);
+        logger.error('Error logging login attempt:', error);
       }
     },
     [fetchCurrentIP],

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
@@ -43,7 +44,7 @@ export function useAllowedIPs(targetUserId?: string) {
     } catch (error) {
       // AbortError é esperado no unmount — silenciar
       if (error instanceof Error && error.name === 'AbortError') return;
-      console.error('Error fetching current IP:', error);
+      logger.error('Error fetching current IP:', error);
     }
   }, []); // mountedRef é estável (não precisa nas deps)
 
@@ -66,7 +67,7 @@ export function useAllowedIPs(targetUserId?: string) {
       if (error) throw error;
       setAllowedIPs((data || []) as AllowedIP[]);
     } catch (error) {
-      console.error('Error fetching allowed IPs:', error);
+      logger.error('Error fetching allowed IPs:', error);
     } finally {
       if (mountedRef.current) setIsLoading(false); // BUG-22 FIX: só se montado
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { type createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,13 +79,13 @@ export function useAuditLog() {
       } as never);
 
       if (error) {
-        console.error('Erro ao registrar audit log:', error);
+        logger.error('Erro ao registrar audit log:', error);
         return { success: false, error: new Error(error.message) };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao registrar audit log:', error);
+      logger.error('Erro ao registrar audit log:', error);
       return { success: false, error: error as Error };
     }
   };
@@ -225,7 +226,7 @@ export async function fetchAuditHistory(
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Erro ao buscar histórico de auditoria:', error);
+    logger.error('Erro ao buscar histórico de auditoria:', error);
     return [];
   }
 
@@ -278,7 +279,7 @@ export async function fetchAllAuditLogs(
   const { data, error } = await query;
 
   if (error) {
-    console.error('Erro ao buscar logs de auditoria:', error);
+    logger.error('Erro ao buscar logs de auditoria:', error);
     return [];
   }
 

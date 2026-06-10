@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
@@ -52,7 +53,7 @@ export function useGeoBlocking() {
     } catch (error) {
       // AbortError is expected on unmount — silence it
       if (error instanceof Error && error.name === 'AbortError') return;
-      console.error('Error fetching current country:', error);
+      logger.error('Error fetching current country:', error);
     }
   }, []);
 
@@ -81,7 +82,7 @@ export function useGeoBlocking() {
         setSettings(settingsResult.data.setting_value);
       }
     } catch (error) {
-      console.error('Error fetching geo blocking data:', error);
+      logger.error('Error fetching geo blocking data:', error);
     } finally {
       if (mountedRef.current) setIsLoading(false); // BUG-21 FIX: só atualiza se montado
     }

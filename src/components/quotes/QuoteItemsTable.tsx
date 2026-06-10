@@ -6,6 +6,7 @@ import { Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { formatCurrency } from '@/lib/format';
 
 /** Recalculate personalization total using rounded unit price to match UI display */
 function calcPersTotal(totalCost: number, qty: number): number {
@@ -14,11 +15,15 @@ function calcPersTotal(totalCost: number, qty: number): number {
   return Math.round(roundedUnit * qty * 100) / 100;
 }
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export interface QuotePersonalization {
+  id?: string;
+  technique_name?: string | null;
+  unit_cost?: number | null;
+  total_cost?: number | null;
+  [key: string]: unknown;
 }
 
-interface QuoteItem {
+export interface QuoteItem {
   id?: string;
   product_id?: string;
   product_name: string;
@@ -34,8 +39,7 @@ interface QuoteItem {
   price_updated_at?: string | null;
   /** Optional: per-product threshold (days) for the stale-price warning. */
   price_freshness_threshold_days?: number | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  personalizations?: any[];
+  personalizations?: QuotePersonalization[];
   [key: string]: unknown;
 }
 

@@ -2,6 +2,7 @@
  * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage
  */
 import { formatCurrency } from '@/lib/format';
+import type { QuoteItem } from './QuoteItemsTable';
 
 function calcPersTotal(totalCost: number, qty: number): number {
   if (qty <= 0) return totalCost;
@@ -10,8 +11,7 @@ function calcPersTotal(totalCost: number, qty: number): number {
 }
 
 interface QuoteTotalsSummaryProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  items: any[];
+  items: QuoteItem[];
   discountPercent?: number;
   discountAmount?: number;
   shippingType?: string | null;
@@ -29,9 +29,8 @@ export function QuoteTotalsSummary({
   const personalizationTotal = items.reduce((acc, item) => {
     return (
       acc +
-      (item.personalizations || []).reduce(
-        (pAcc: number, p: { total_cost?: number }) =>
-          pAcc + calcPersTotal(p.total_cost || 0, item.quantity),
+      (item.personalizations ?? []).reduce(
+        (pAcc, p) => pAcc + calcPersTotal(p.total_cost ?? 0, item.quantity),
         0,
       )
     );

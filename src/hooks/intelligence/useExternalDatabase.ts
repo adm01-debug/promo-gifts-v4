@@ -14,10 +14,10 @@ import { toast } from 'sonner';
 
 // Re-exportar tudo dos módulos para manter compatibilidade de imports
 export * from '@/lib/external-db/types';
-export * from '@/lib/external-db/tables';
 export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
+export type { ExternalTable } from '@/lib/external-db/rest-native';
 
-import type { ExternalTable } from '@/lib/external-db/tables';
+import type { ExternalTable } from '@/lib/external-db/rest-native';
 import { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';

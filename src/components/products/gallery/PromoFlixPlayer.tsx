@@ -9,6 +9,7 @@
  *  - Suporte HLS via hls.js (fallback nativo no Safari)
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 import type HlsType from 'hls.js';
 import {
   Camera,
@@ -164,9 +165,7 @@ export function PromoFlixPlayer({
   );
 
   const logTelemetry = useCallback((event: string, details?: unknown) => {
-    const timestamp = new Date().toISOString();
-    // eslint-disable-next-line no-console
-    console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
+    logger.debug(`[PromoFlix Telemetry] ${event}`, details);
   }, []);
 
   const flash = useCallback((label: string) => {
