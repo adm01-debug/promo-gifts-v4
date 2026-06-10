@@ -1,4 +1,4 @@
-import React, { Suspense, useDeferredValue, memo, useCallback } from 'react';
+import React, { Suspense, useDeferredValue, memo } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { Filter, ArrowUpDown, CheckSquare, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,6 @@ interface CatalogToolbarProps {
   hasActiveConstraints?: boolean;
 }
 
-
 // SORT_OPTIONS[0].value é o valor default ('name'). Derivar em vez de hardcodar
 // garante que qualquer futura mudança no SSOT seja refletida automaticamente.
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
@@ -87,11 +86,10 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   onReset,
   hasActiveConstraints = false,
 }: CatalogToolbarProps) {
-
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between md:gap-4 bg-muted/20 backdrop-blur-sm p-2 rounded-xl border border-border/40">
+    <div className="flex w-full flex-col gap-3 rounded-xl border border-border/40 bg-muted/20 p-2 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:gap-4">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {onReset && (
           <Tooltip>
@@ -101,18 +99,18 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                 size="icon"
                 onClick={onReset}
                 className={cn(
-                  "h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9",
-                  hasActiveConstraints 
-                    ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
-                    : "border-border/40 text-muted-foreground hover:bg-muted"
+                  'h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9',
+                  hasActiveConstraints
+                    ? 'border-primary/40 bg-primary/5 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)] hover:bg-primary/10'
+                    : 'border-border/40 text-muted-foreground hover:bg-muted',
                 )}
                 aria-label="Voltar ao início do catálogo"
               >
-                <RefreshCcw className={cn("h-4 w-4", hasActiveConstraints && "animate-pulse")} />
+                <RefreshCcw className={cn('h-4 w-4', hasActiveConstraints && 'animate-pulse')} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {hasActiveConstraints ? "Limpar filtros e busca" : "Recarregar catálogo"}
+              {hasActiveConstraints ? 'Limpar filtros e busca' : 'Recarregar catálogo'}
             </TooltipContent>
           </Tooltip>
         )}
@@ -125,7 +123,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 px-2.5 sm:px-3 sm:h-9"
+                      className="h-8 px-2.5 sm:h-9 sm:px-3"
                       aria-label="Abrir filtros do catálogo"
                     >
                       <Filter className="h-4 w-4 sm:mr-2" />
@@ -225,7 +223,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
         )}
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="ml-auto flex items-center gap-2">
         {deferredIsTransitioning && (
           <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2 sm:flex">
             <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />

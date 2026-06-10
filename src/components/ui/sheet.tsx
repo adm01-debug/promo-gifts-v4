@@ -4,9 +4,7 @@ import { X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
-
 
 const Sheet = SheetPrimitive.Root;
 
@@ -44,7 +42,9 @@ function childrenHaveType(
     if (found) return;
     if (!React.isValidElement(child)) return;
     const t = child.type as React.ElementType;
-    if (types.some((match) => match === t || (t as { displayName?: string }).displayName === match)) {
+    if (
+      types.some((match) => match === t || (t as { displayName?: string }).displayName === match)
+    ) {
       found = true;
       return;
     }
@@ -63,10 +63,7 @@ function childrenHaveType(
   return found;
 }
 
-const TITLE_TYPES: Array<React.ElementType | string> = [
-  SheetPrimitive.Title,
-  'SheetTitle',
-];
+const TITLE_TYPES: Array<React.ElementType | string> = [SheetPrimitive.Title, 'SheetTitle'];
 const DESCRIPTION_TYPES: Array<React.ElementType | string> = [
   SheetPrimitive.Description,
   'SheetDescription',
@@ -102,22 +99,21 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = 'right', className, children, onCloseAutoFocus, ...props }, ref) => {
-  const hasTitle       = childrenHaveType(children, TITLE_TYPES);
+  const hasTitle = childrenHaveType(children, TITLE_TYPES);
   const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
   const { handleClose } = useOverlayInteractivity();
 
   return (
     <SheetPortal>
       <SheetOverlay />
-    <SheetPrimitive.Content 
-        ref={ref} 
+      <SheetPrimitive.Content
+        ref={ref}
         {...props}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           handleClose();
         }}
-
-        className={cn(sheetVariants({ side }), className)} 
+        className={cn(sheetVariants({ side }), className)}
       >
         {!hasTitle && (
           <SheetPrimitive.Title className="sr-only" aria-hidden={false}>

@@ -20,12 +20,12 @@ const mockProps = {
   filterSheetOpen: false,
   setFilterSheetOpen: vi.fn(),
   resetFilters: vi.fn(),
-  sortBy: 'name' as any,
+  sortBy: 'name' as const,
   setSortBy: vi.fn(),
   statBadges: [],
-  viewMode: 'grid' as any,
+  viewMode: 'grid' as const,
   setViewMode: vi.fn(),
-  gridColumns: 3 as any,
+  gridColumns: 3 as const,
   setGridColumns: vi.fn(),
   selectionMode: false,
   onToggleSelectionMode: vi.fn(),
@@ -37,23 +37,23 @@ const renderToolbar = (props = {}) => {
       <TooltipProvider>
         <CatalogToolbar {...mockProps} {...props} />
       </TooltipProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
 describe('CatalogToolbar Alignment and Responsiveness', () => {
   it('should have filters on the left and actions on the right in desktop', () => {
     const { container } = renderToolbar();
-    
+
     // Main container should be justify-between in sm screens
     const mainContainer = container.firstChild as HTMLElement;
     expect(mainContainer.className).toContain('sm:justify-between');
-    
+
     // Left group
     const leftGroup = mainContainer.firstChild as HTMLElement;
     expect(leftGroup.className).toContain('flex-wrap');
     expect(screen.getByLabelText(/Abrir filtros/i)).toBeInTheDocument();
-    
+
     // Right group
     const rightGroup = mainContainer.lastChild as HTMLElement;
     expect(rightGroup.className).toContain('ml-auto');
@@ -66,10 +66,10 @@ describe('CatalogToolbar Alignment and Responsiveness', () => {
   it('should maintain accessibility and layout in mobile', () => {
     const { container } = renderToolbar();
     const mainContainer = container.firstChild as HTMLElement;
-    
+
     // flex-col on mobile
     expect(mainContainer.className).toContain('flex-col');
-    
+
     // Actions should still be accessible
     const rightGroup = mainContainer.lastChild as HTMLElement;
     expect(rightGroup.className).toContain('ml-auto'); // Pushes to right even in mobile if possible
