@@ -194,7 +194,6 @@ Deno.serve(async (req) => {
               }
             }
           })());
-          })());
         }
 
         // 3. Product Webhook (Data Integrity)
