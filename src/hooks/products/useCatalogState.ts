@@ -74,8 +74,16 @@ const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
  */
 export function validateSortOption(s: string | null | undefined): SortOption {
   if (!s) return 'newest';
-  // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
-  if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+  // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT.
+  // BUG-SORT-12 FIX (prototype pollution): NAO usar o operador `in` aqui — ele
+  // percorre a cadeia de prototipos, entao `?sort=toString`/`?sort=constructor`
+  // resolviam para Object.prototype.toString / Object (uma FUNCAO), que vazava
+  // para o state, URL sync e <Select value>. Object.hasOwn seria ideal mas e
+  // ES2022 e o tsconfig.app usa lib ES2020; hasOwnProperty.call e ES5, sempre
+  // tipado, e considera apenas chaves proprias do objeto literal.
+  if (Object.prototype.hasOwnProperty.call(SORT_ALIASES, s)) {
+    return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+  }
   if (VALID_SORT_VALUES.has(s)) return s as SortOption;
   return 'newest';
 }

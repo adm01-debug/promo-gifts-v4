@@ -189,6 +189,27 @@ describe('SORT-VAL — validateSortOption normaliza e protege o state', () => {
     }
   });
 
+  it('BUG-SORT-12 — chaves de Object.prototype NUNCA vazam (prototype pollution)', () => {
+    // O operador `in` percorre a cadeia de prototipos; `?sort=toString` resolvia
+    // para Object.prototype.toString (uma funcao). validateSortOption deve usar
+    // hasOwnProperty.call e devolver SEMPRE uma string canonica.
+    const protoKeys = [
+      'toString',
+      'constructor',
+      'hasOwnProperty',
+      'valueOf',
+      '__proto__',
+      'isPrototypeOf',
+      'propertyIsEnumerable',
+      'toLocaleString',
+    ];
+    for (const k of protoKeys) {
+      const r = validateSortOption(k);
+      expect(typeof r).toBe('string');
+      expect(r).toBe('newest');
+    }
+  });
+
   it('fuzz: 200 strings aleatorias nunca produzem valor fora do dominio SortOption', () => {
     const dominio = new Set([
       'name',
@@ -204,7 +225,9 @@ describe('SORT-VAL — validateSortOption normaliza e protege o state', () => {
       const rand = Math.random()
         .toString(36)
         .slice(2, 2 + (i % 14) + 1);
-      expect(dominio.has(validateSortOption(rand))).toBe(true);
+      const r = validateSortOption(rand);
+      expect(typeof r).toBe('string');
+      expect(dominio.has(r)).toBe(true);
     }
   });
 });
