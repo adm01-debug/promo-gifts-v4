@@ -459,7 +459,7 @@ export default function FiltersPage() {
                   </TooltipContent>
                 </Tooltip>
 
-                <div className="hidden shrink-0 sm:block">
+                <div className="shrink-0">
                   <LayoutPopover
                     viewMode={state.viewMode}
                     setViewMode={state.setViewMode}
