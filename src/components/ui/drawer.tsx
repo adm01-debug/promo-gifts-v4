@@ -53,6 +53,7 @@ const DrawerContent = React.forwardRef<
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
+  );
 });
 DrawerContent.displayName = 'DrawerContent';
 
