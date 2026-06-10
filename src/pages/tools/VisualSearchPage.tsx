@@ -1143,7 +1143,6 @@ export default function VisualSearchPage() {
                                       <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
                                     </div>
                                   )}
-                              </div>
                             )}
                             
                             <div className="flex items-center justify-between border-t border-border/50 pt-4 mt-auto">
