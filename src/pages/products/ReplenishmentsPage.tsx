@@ -3,6 +3,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { ReplenishmentStatsCards } from '@/components/replenishments/ReplenishmentStatsCards';
 import { ReplenishmentProductGrid } from '@/components/replenishments/ReplenishmentProductGrid';
 import { RecentReplenishmentsWidget } from '@/components/replenishments/RecentReplenishmentsWidget';
+import { EnhancedErrorBoundary } from '@/components/errors/EnhancedErrorBoundary';
 
 export default function ReplenishmentsPage() {
   return (

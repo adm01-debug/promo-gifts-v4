@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './integrations/supabase/lazy-client';
+import { getSupabaseClient } from '../../integrations/supabase/lazy-client';
 
 export async function runAuthAudit() {
   try {

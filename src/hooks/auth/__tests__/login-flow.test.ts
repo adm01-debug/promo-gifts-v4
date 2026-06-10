@@ -59,7 +59,7 @@ describe('Login Flow & Role Loading E2E Logic', () => {
     });
     
     const result = await authService.signIn('test@example.com', 'password');
-    expect(result.data.user.id).toBe('user_123');
+    expect(result.data.user!.id).toBe('user_123');
     
     // 2. Simulate Role Loading (what useProfileRoles does)
     mocks.queryRoles.mockResolvedValueOnce({
@@ -68,7 +68,7 @@ describe('Login Flow & Role Loading E2E Logic', () => {
     });
     
     const rolesResult = await authService.queryRoles('user_123');
-    expect(rolesResult.data[0].role).toBe('admin');
+    expect(rolesResult.data![0].role).toBe('admin');
   });
 
   it('should handle RLS errors gracefully during role loading', async () => {
@@ -81,7 +81,7 @@ describe('Login Flow & Role Loading E2E Logic', () => {
     });
     
     const rolesResult = await authService.queryRoles('user_123');
-    expect(rolesResult.error.code).toBe('42501');
-    expect(rolesResult.error.message).toContain('permission denied');
+    expect(rolesResult.error!.code).toBe('42501');
+    expect(rolesResult.error!.message).toContain('permission denied');
   });
 });
