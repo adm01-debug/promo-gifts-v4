@@ -2,7 +2,6 @@ import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@/lib/utils';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
 
@@ -37,7 +36,9 @@ const PopoverContent = React.forwardRef<
       {...props}
     />
   </PopoverPrimitive.Portal>
-));
+  );
+});
+
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 const PopoverClose = PopoverPrimitive.Close;
