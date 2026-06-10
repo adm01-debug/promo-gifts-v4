@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, memo, useCallback } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { SmartSearchInput } from '@/components/search';
 import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopover';
 import { Search, Clock, Trash2, LayoutGrid, Zap } from 'lucide-react';
@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNavigate } from 'react-router-dom';
 import { useNavigationAnalytics } from '@/hooks/useNavigationAnalytics';
-import { cn } from '@/lib/utils';
 
 interface CatalogHeaderProps {
   shouldShowCatalogSkeleton: boolean;
@@ -41,11 +40,11 @@ export const CatalogHeader = memo(function CatalogHeader({
   const { trackNavigationClick } = useNavigationAnalytics();
   const hasActiveConstraints = searchQuery.trim().length > 0 || activeFiltersCount > 0;
 
-  const handleTeleport = useCallback(() => {
+  const handleTeleport = () => {
     trackNavigationClick('Teletransporte', '/');
     if (onReset) onReset();
     navigate('/', { replace: true });
-  }, [navigate, onReset, trackNavigationClick]);
+  };
 
   const searchRef = useRef<HTMLDivElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -102,7 +101,7 @@ export const CatalogHeader = memo(function CatalogHeader({
             </div>
           </div>
 
-          <div className="flex flex-1 items-center gap-2 max-w-[48rem]" ref={searchRef}>
+          <div className="flex max-w-[48rem] flex-1 items-center gap-2" ref={searchRef}>
             <div className="relative flex-1">
               <SmartSearchInput
                 inputId="search-catalog"
@@ -124,7 +123,9 @@ export const CatalogHeader = memo(function CatalogHeader({
                           {filteredCount.toLocaleString('pt-BR')}
                         </span>
                         {totalEstimate && hasActiveConstraints && (
-                          <span className="ml-1 opacity-70">de {totalEstimate.toLocaleString('pt-BR')}</span>
+                          <span className="ml-1 opacity-70">
+                            de {totalEstimate.toLocaleString('pt-BR')}
+                          </span>
                         )}
                         <span className="ml-1">itens</span>
                       </>
@@ -197,9 +198,7 @@ export const CatalogHeader = memo(function CatalogHeader({
         </div>
 
         {toolbar && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-            {toolbar}
-          </div>
+          <div className="duration-300 animate-in fade-in slide-in-from-top-2">{toolbar}</div>
         )}
       </div>
     </div>

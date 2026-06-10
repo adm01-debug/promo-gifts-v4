@@ -25,12 +25,12 @@ const mockProps = {
   filterSheetOpen: false,
   setFilterSheetOpen: vi.fn(),
   resetFilters: vi.fn(),
-  sortBy: 'name' as any,
+  sortBy: 'name' as const,
   setSortBy: vi.fn(),
   statBadges: [],
-  viewMode: 'grid' as any,
+  viewMode: 'grid' as const,
   setViewMode: vi.fn(),
-  gridColumns: 3 as any,
+  gridColumns: 3 as const,
   setGridColumns: vi.fn(),
   selectionMode: false,
   onToggleSelectionMode: vi.fn(),
@@ -42,18 +42,18 @@ const renderToolbar = (props = {}) => {
       <TooltipProvider>
         <CatalogToolbar {...mockProps} {...props} />
       </TooltipProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
 describe('CatalogToolbar Visual Regression Scenarios', () => {
   it('should not break layout with many active filters', () => {
     const { container } = renderToolbar({ activeFiltersCount: 99 });
-    
+
     // Badge should be visible and not overflow
     const badge = screen.getByText('99');
     expect(badge).toBeInTheDocument();
-    
+
     const mainContainer = container.firstChild as HTMLElement;
     // Check that it's still a flex container and hasn't exploded
     expect(mainContainer.className).toContain('flex');
@@ -63,7 +63,7 @@ describe('CatalogToolbar Visual Regression Scenarios', () => {
     const { container } = renderToolbar();
     const mainContainer = container.firstChild as HTMLElement;
     const rightGroup = mainContainer.lastChild as HTMLElement;
-    
+
     // ml-auto ensures it stays right when space permits in a flex container
     expect(rightGroup.className).toContain('ml-auto');
   });
@@ -71,7 +71,7 @@ describe('CatalogToolbar Visual Regression Scenarios', () => {
   it('should have adequate spacing between groups to prevent overlap', () => {
     const { container } = renderToolbar();
     const mainContainer = container.firstChild as HTMLElement;
-    
+
     // gap-3 or gap-4 for spacing
     expect(mainContainer.className).toMatch(/gap-[34]/);
   });
