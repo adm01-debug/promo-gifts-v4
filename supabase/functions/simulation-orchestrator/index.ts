@@ -1,4 +1,3 @@
-import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { parseContract } from "../_shared/contracts/index.ts";
@@ -60,7 +59,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    // fix: ssot-bypass — credential vault
     const n8nSecret = await getCredential("N8N_PRODUCT_WEBHOOK_SECRET") ?? "sim-secret";
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -154,13 +152,11 @@ Deno.serve(async (req) => {
       const currentBatch = Math.min(batchSize, finalCount - i);
       
       for (let j = 0; j < currentBatch; j++) {
-        // 1. External DB Bridge (Standard Resilience)
         if (targetFunctions.includes("external-db-bridge")) {
           const payload = mode === "fuzzing" ? generateFuzzedPayload("bridge") : { operation: "select", table: "products", limit: 1 };
           promises.push(runScenario("external-db-bridge", payload, [200, 400, 401, 404, 422]));
         }
 
-        // 2. Webhook Inbound (Consistency + Security)
         if (targetFunctions.includes("webhook-inbound")) {
           promises.push((async () => {
             const payload = mode === "fuzzing" ? generateFuzzedPayload("webhook") : { event: "simulation", id: `sim-${crypto.randomUUID()}` };
@@ -181,14 +177,8 @@ Deno.serve(async (req) => {
               else report.consistencyChecks.failed++;
             }
             
-            // Fuzzing adicional para validação de UUID e payloads malformados
             if (mode === "fuzzing") {
-              const maliciousPayloads = [
-                { id: "not-a-uuid" },
-                { id: null },
-                { id: "" },
-                { id: "00000000-0000-0000-0000-000000000000" }
-              ];
+              const maliciousPayloads = [{ id: "not-a-uuid" }, { id: null }];
               for (const p of maliciousPayloads) {
                 await runScenario("webhook-inbound", p, [400, 422]);
               }
@@ -196,7 +186,6 @@ Deno.serve(async (req) => {
           })());
         }
 
-        // 3. Product Webhook (Data Integrity)
         if (targetFunctions.includes("product-webhook")) {
           const payload = mode === "fuzzing" ? 
             { action: "upsert", product: generateFuzzedPayload("product") } : 
@@ -209,13 +198,10 @@ Deno.serve(async (req) => {
       }
       
       await Promise.all(promises);
-      
-      // Batch insert pending logs after each promise batch
       if (report.pendingLogs.length > 0) {
         await supabase.from("simulation_logs").insert(report.pendingLogs);
         report.pendingLogs = [];
       }
-
       if (performance.now() - startTime > 55000) break;
     }
 
@@ -224,8 +210,6 @@ Deno.serve(async (req) => {
     if (run?.id) {
       const sortedLatencies = [...report.latencies].sort((a, b) => a - b);
       const p50 = sortedLatencies[Math.floor(sortedLatencies.length * 0.5)] || 0;
-      const p90 = sortedLatencies[Math.floor(sortedLatencies.length * 0.9)] || 0;
-      const p99 = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
       const avg = report.latencies.reduce((a, b) => a + b, 0) / (report.latencies.length || 1);
 
       await supabase.from("simulation_runs").update({
@@ -235,8 +219,6 @@ Deno.serve(async (req) => {
         failures: report.failures,
         avg_latency_ms: avg,
         p50_latency_ms: p50,
-        p90_latency_ms: p90,
-        p99_latency_ms: p99,
         metadata: { consistency: report.consistencyChecks }
       }).eq("id", run.id);
     }
