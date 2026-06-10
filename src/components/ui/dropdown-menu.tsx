@@ -4,6 +4,8 @@ import { Check, ChevronRight, Circle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
+
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
