@@ -6,13 +6,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // OptimizedImage's useEffect (priority=false path) throws on mount.
 // The previous assumption "mock is global in setupFiles" was fragile —
 // we make it explicit here so this file is self-contained.
-const mockIntersectionObserver = vi.fn();
-mockIntersectionObserver.mockReturnValue({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-});
-window.IntersectionObserver = mockIntersectionObserver;
+// JSDOM não implementa IntersectionObserver e o componente o instancia com `new`.
+// Vitest recente exige um construtor real (class), não vi.fn().mockReturnValue/arrow.
+class MockIntersectionObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  takeRecords = vi.fn(() => []);
+  constructor(_cb?: unknown) {}
+}
+window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
 describe('OptimizedImage', () => {
   const defaultProps = {

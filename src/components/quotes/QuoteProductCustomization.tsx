@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductCustomizationOptions } from '@/components/products/ProductCustomizationOptions';
 import type { QuoteItemPersonalization } from '@/hooks/quotes';
-import type { PersonalizationItem } from '@/types/customization';
+import type { PersonalizationItem, CustomizationPriceResponseV6 } from '@/types/customization';
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -130,7 +130,7 @@ export function QuoteProductCustomization({
             quantidade: quantity,
             num_cores: p.colors_count || 1,
             faixa: { qtd_min: 0, qtd_max: 9999 }, // Placeholder
-          } as unknown,
+          } satisfies CustomizationPriceResponseV6,
         }))}
         onSelectionChange={handleSelectionChange}
       />

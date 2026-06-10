@@ -182,7 +182,7 @@ export function FollowUpTimer({ createdAt }: { createdAt: string }) {
 interface ProductLike {
   id: string;
   name: string;
-  category_name?: string;
+  category_name?: string | null;
   category?: { name?: string };
   is_active?: boolean;
 }
