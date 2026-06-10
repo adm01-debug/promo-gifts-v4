@@ -20,6 +20,7 @@ export interface Product {
   id: string;
   name: string;
   description?: string | null;
+  /** Descrição curta opcional (blurb) usada no QuickView. */
   shortDescription?: string | null;
   price: number;
   /** Preço de comparação / preço original antes do desconto. */
