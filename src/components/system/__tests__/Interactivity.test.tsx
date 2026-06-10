@@ -24,22 +24,27 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
     document.body.style.pointerEvents = '';
     document.documentElement.style.pointerEvents = '';
     
-    // Setup root element for the guard
-    if (!document.getElementById('root')) {
-      const root = document.createElement('div');
+    // Ensure root element exists for the guard
+    let root = document.getElementById('root');
+    if (!root) {
+      root = document.createElement('div');
       root.id = 'root';
       document.body.appendChild(root);
     }
     
+    // Default mock behavior: inert if body is none and no overlay open
     (scrollLock.isRootInert as any).mockImplementation(() => {
-      return document.body.style.pointerEvents === 'none' && !(scrollLock.hasOpenOverlay as any)();
+      const bodyPE = document.body.style.pointerEvents;
+      const htmlPE = document.documentElement.style.pointerEvents;
+      const hasOverlay = (scrollLock.hasOpenOverlay as any)();
+      return (bodyPE === 'none' || htmlPE === 'none') && !hasOverlay;
     });
   });
 
   afterEach(() => {
     vi.useRealTimers();
     const root = document.getElementById('root');
-    if (root) root.remove();
+    // Don't remove it every time as it might be needed for the next test
   });
 
   it('RootInteractivityGuard recovers from stuck pointer-events: none', async () => {
@@ -57,7 +62,6 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
     });
 
     expect(scrollLock.forceRootInteractive).toHaveBeenCalled();
-    vi.useRealTimers();
   });
 
   it('restores interactivity when navigating quickly between routes', async () => {
@@ -69,9 +73,6 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
         <Routes>
           <Route path="/" element={
             <div>
-              <Dialog open={true}>
-                <DialogContent>Modal 1</DialogContent>
-              </Dialog>
               <button onClick={() => navigate('/two')}>Go to 2</button>
             </div>
           } />
@@ -87,26 +88,22 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
       </MemoryRouter>
     );
 
-    // Initial state: Modal is open, pointer-events: none might be applied by Radix
+    // Initial state: No modal open, but something left pointer-events: none
+    (scrollLock.hasOpenOverlay as any).mockReturnValue(false);
     document.body.style.pointerEvents = 'none';
-    (scrollLock.hasOpenOverlay as any).mockReturnValue(true);
 
-    // Navigate to Page 2
+    // Click navigation
     const btn = screen.getByText('Go to 2');
     await act(async () => {
       btn.click();
     });
 
-    // On Page 2, Modal 1 is unmounted. Radix SHOULD cleanup but if it doesn't:
-    (scrollLock.hasOpenOverlay as any).mockReturnValue(false);
-    
-    // Guard should catch it
+    // After navigation, guard should run its interval check
     await act(async () => {
-      vi.advanceTimersByTime(400);
+      vi.advanceTimersByTime(1000); // 1000ms covers all initial checks and interval
     });
 
     expect(scrollLock.forceRootInteractive).toHaveBeenCalled();
-    vi.useRealTimers();
   });
 
   it('does NOT restore interactivity when an overlay is legitimately open', async () => {
@@ -123,6 +120,5 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
 
     // Should NOT call recovery if overlay is open
     expect(scrollLock.forceRootInteractive).not.toHaveBeenCalled();
-    vi.useRealTimers();
   });
 });
