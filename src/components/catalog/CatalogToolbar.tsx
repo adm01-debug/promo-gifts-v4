@@ -98,7 +98,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="px-2.5 sm:px-3"
+                      className="h-8 px-2.5 sm:px-3 sm:h-9"
                       aria-label="Abrir filtros do catálogo"
                     >
                       <Filter className="h-4 w-4 sm:mr-2" />
