@@ -7046,7 +7046,9 @@ export type Database = {
           category_id: string | null
           category_name: string | null
           colors: Json | null
+          created_at: string | null
           description: string | null
+          external_id: string | null
           featured: boolean | null
           id: string | null
           images: string[] | null
@@ -7074,6 +7076,7 @@ export type Database = {
           supplier_name: string | null
           synced_at: string | null
           tags: Json | null
+          updated_at: string | null
           variations: Json | null
           video_url: string | null
         }
@@ -7081,7 +7084,9 @@ export type Database = {
           category_id?: string | null
           category_name?: string | null
           colors?: Json | null
+          created_at?: string | null
           description?: string | null
+          external_id?: string | null
           featured?: boolean | null
           id?: string | null
           images?: string[] | null
@@ -7109,6 +7114,7 @@ export type Database = {
           supplier_name?: string | null
           synced_at?: string | null
           tags?: Json | null
+          updated_at?: string | null
           variations?: Json | null
           video_url?: string | null
         }
@@ -7116,7 +7122,9 @@ export type Database = {
           category_id?: string | null
           category_name?: string | null
           colors?: Json | null
+          created_at?: string | null
           description?: string | null
+          external_id?: string | null
           featured?: boolean | null
           id?: string | null
           images?: string[] | null
@@ -7144,6 +7152,7 @@ export type Database = {
           supplier_name?: string | null
           synced_at?: string | null
           tags?: Json | null
+          updated_at?: string | null
           variations?: Json | null
           video_url?: string | null
         }
