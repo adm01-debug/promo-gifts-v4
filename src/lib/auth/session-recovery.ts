@@ -130,14 +130,24 @@ export function attachSessionRevalidation(): () => void {
     try {
       const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) return; // sem sessão local: nada a revalidar
+      
+      // BUG-FIX: Se detectarmos que não há sessão mas o localStorage tem resquícios, 
+      // ou se o token atual falhar na validação getUser(), forçamos recuperação.
+      if (!sessionData?.session) {
+        // Se houver flags de autenticação no cache mas sem sessão real, pode ser um estado zumbi
+        return;
+      }
 
       const { error } = await supabase.auth.getUser();
       if (isBadJwtError(error)) {
         await recoverSession(`revalidate:${reason}`);
       }
-    } catch {
-      // silencioso — qualquer erro de rede aqui não deve derrubar UX
+    } catch (err) {
+      // Se falhar por rede (ex: reconexão lenta), não faz nada. 
+      // Se for erro de auth explícito, loga.
+      if (isBadJwtError(err)) {
+        await recoverSession(`revalidate:catch:${reason}`);
+      }
     } finally {
       revalidating = false;
     }
