@@ -37,10 +37,9 @@ export function useProductFormDraft(
         return;
       }
       const keys = Object.keys(draft.formData) as (keyof ProductFormData)[];
-      keys.forEach((key) => {
+      keys.forEach(<K extends keyof ProductFormData>(key: K) => {
         const val = draft.formData[key];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (val !== undefined) setValue(key, val as any);
+        if (val !== undefined) setValue(key, val as ProductFormData[K]);
       });
       if (draft.images?.length) setImages(draft.images);
       if (typeof draft.stepIndex === 'number') setStepIndex(draft.stepIndex);

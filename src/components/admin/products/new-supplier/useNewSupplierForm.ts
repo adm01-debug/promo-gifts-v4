@@ -245,7 +245,6 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     setUploadingLogo(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-      // BUG-20 TODO: after creation, rename this file from new-{ts} to {id}.{ext}
       const filePath = `suppliers/new-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from('supplier-logos')
@@ -472,6 +471,28 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         data,
       });
       if (result?.id) {
+        // BUG-20 FIX: rename the logo from temp path to the canonical {id}.{ext} path
+        if (logoUrl) {
+          try {
+            const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
+            if (tempPath && tempPath.startsWith('suppliers/new-')) {
+              const ext = tempPath.split('.').pop() || 'png';
+              const canonicalPath = `suppliers/${result.id}.${ext}`;
+              await supabase.storage.from('supplier-logos').move(tempPath, canonicalPath);
+              const { data: urlData } = supabase.storage
+                .from('supplier-logos')
+                .getPublicUrl(canonicalPath);
+              await dbInvokeSingle({
+                table: 'suppliers',
+                operation: 'update',
+                filters: { id: result.id },
+                data: { logo_url: urlData.publicUrl },
+              });
+            }
+          } catch {
+            // logo rename is best-effort; supplier was created successfully
+          }
+        }
         onCreated(result.id);
         toast.success(`Fornecedor "${name.trim()}" criado com sucesso`);
         setOpen(false);

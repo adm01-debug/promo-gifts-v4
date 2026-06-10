@@ -37,9 +37,13 @@ export async function invokeExternalRpc<T>(
   rpcName: string,
   params: Record<string, unknown>,
 ): Promise<T> {
+  // supabase.rpc requires a generated function name; dynamic names go through unknown
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: T | null; error: { message: string } | null }>;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.rpc as any)(rpcName, params);
+    const { data, error } = await rpc(rpcName, params);
     if (!error) return data as T;
     const msg = error?.message || 'Erro na RPC';
     if (attempt < MAX_RETRIES && isRetryableError(msg)) {

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,7 +113,7 @@ export default function VisualSearchPage() {
       return;
     }
 
-    const recognition = new (window as any).webkitSpeechRecognition();
+    const recognition = new window.webkitSpeechRecognition();
     recognition.lang = 'pt-BR';
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -122,9 +123,8 @@ export default function VisualSearchPage() {
       toast.info("Ouvindo comandos...");
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      console.log("Voice command:", command);
       handleVoiceCommand(command);
     };
 
@@ -165,7 +165,7 @@ export default function VisualSearchPage() {
       try {
         setHistory(JSON.parse(savedHistory));
       } catch (e) {
-        console.error('Failed to parse search history');
+        logger.error('Failed to parse search history');
       }
     }
   }, []);
@@ -264,7 +264,7 @@ export default function VisualSearchPage() {
       saveToHistory(base64, data.analysis.productType);
       toast.success('Análise concluída com sucesso!');
     } catch (err: any) {
-      console.error('Visual search error:', err);
+      logger.error('Visual search error:', err);
       
       let friendlyMessage = 'Ocorreu um problema na análise da imagem.';
       let tip = 'Tente novamente com outra foto ou verifique sua conexão.';
@@ -343,7 +343,7 @@ export default function VisualSearchPage() {
       if (error) throw error;
       toast.success(isCorrect ? 'Obrigado pelo feedback!' : 'Feedback registrado. Isso ajudará a melhorar a IA.');
     } catch (err) {
-      console.error('Feedback error:', err);
+      logger.error('Feedback error:', err);
     }
   };
 
@@ -523,7 +523,7 @@ export default function VisualSearchPage() {
                       e.preventDefault();
                       setIsDragging(false);
                       const file = e.dataTransfer.files?.[0];
-                      if (file) handleFileUpload({ target: { files: [file] } } as any);
+                      if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
                     }}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -766,7 +766,7 @@ export default function VisualSearchPage() {
                   e.preventDefault();
                   setIsDragging(false);
                   const file = e.dataTransfer.files?.[0];
-                  if (file) handleFileUpload({ target: { files: [file] } } as any);
+                  if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
