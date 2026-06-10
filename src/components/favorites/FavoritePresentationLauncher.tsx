@@ -7,7 +7,7 @@ import {
   PresentationMode,
   type PresentationSlide,
 } from '@/components/presentation/PresentationMode';
-import type { Product } from '@/types/product';
+import type { Product } from '@/types/product-catalog';
 
 interface Props {
   products: Product[];
@@ -22,13 +22,11 @@ export function FavoritePresentationLauncher({ products, listName, curatorName, 
       products.map((p) => ({
         id: p.id,
         title: p.name,
-        // @ts-expect-error - category_name vem do enriched
         subtitle: p.category_name ?? p.brand ?? undefined,
         imageUrl: p.images?.[0] ?? null,
         description: p.description ?? null,
         details: [
           p.sku ? { label: 'SKU', value: p.sku } : null,
-          // @ts-expect-error - brand opcional
           p.brand ? { label: 'Marca', value: p.brand } : null,
         ].filter((x): x is { label: string; value: string } => !!x),
       })),
