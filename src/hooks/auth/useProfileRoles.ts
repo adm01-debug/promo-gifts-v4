@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { authService } from '@/services/authService';
-import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { type AppRole, type Profile } from '@/contexts/AuthContext';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export function useProfileRoles() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -20,8 +20,9 @@ export function useProfileRoles() {
 
     fetchCancelledRef.current = false;
 
+    const log = createClientLogger('useProfileRoles.fetchUserData');
     const doFetch = async () => {
-      authDebug('useProfileRoles.fetchUserData', 'start', { userId });
+      log.info('start', { userId });
       try {
         const supabase = await getSupabaseClient();
 
@@ -32,13 +33,13 @@ export function useProfileRoles() {
         ]);
 
         if (profileResult.error) {
-          authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
+          log.error('profile_error', { error: profileResult.error });
         } else {
           setProfile(profileResult.data as Profile | null);
         }
 
         if (rolesResult.error) {
-          authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
+          log.error('roles_error', { error: rolesResult.error });
           setUserRoles([]);
         } else {
           const mapped = (rolesResult.data ?? []).map(
@@ -47,12 +48,12 @@ export function useProfileRoles() {
           setUserRoles(mapped);
         }
 
-        authDebug('useProfileRoles.fetchUserData', 'done', {
+        log.info('done', {
           userId,
           roleCount: rolesResult.data?.length ?? 0,
         });
       } catch (error) {
-        authDebugError('useProfileRoles.fetchUserData', 'exception', error);
+        log.error('exception', { error });
       } finally {
         fetchPromiseRef.current = null;
         if (!fetchCancelledRef.current) {

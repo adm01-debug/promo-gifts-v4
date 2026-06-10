@@ -45,7 +45,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<Map<string, Product>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<Error | null>(null);
-  const [key, setKey] = useState(0); // Force re-mount key
+  const [key, setKey] = useState(0);
+  const [initError, _setInitError] = useState<boolean>(false); // setter reservado para futura lógica de erro de init
 
   // HMR Recovery: If we detect a duplicate module via Global Symbol, force a re-mount
   useEffect(() => {
@@ -194,6 +195,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   // Memoize the products array from cache
   const products = useMemo(() => [...cache.values()], [cache]);
+
+  if (initError) {
+    return <>{children}</>;
+  }
 
   return (
     <ProductsContext.Provider

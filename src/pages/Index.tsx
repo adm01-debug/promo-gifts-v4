@@ -90,7 +90,7 @@ export default function Index() {
         path="/"
         jsonLd={structuredData}
       />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
+      <div className="mx-auto w-full animate-fade-in space-y-4 py-3 sm:py-4 lg:py-6 print:pb-0">
         {/* Header: Title + Search */}
         <CatalogHeader
           shouldShowCatalogSkeleton={catalog.shouldShowCatalogSkeleton}
@@ -108,7 +108,7 @@ export default function Index() {
         {/* Toolbar: Filters + Sort + Stats + Layout — sticky abaixo do Header global.
                 Usa --header-h + --breadcrumb-h (definidos por Header/MainLayout) para
                 acompanhar a altura dinâmica em qualquer rota. */}
-        <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-4 border-b border-transparent bg-background/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 [&:not(:first-child)]:border-border/30">
+        <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 border-b border-transparent bg-background/95 px-4 py-2 backdrop-blur-md sm:px-6 [&:not(:first-child)]:border-border/30">
           <CatalogToolbar
             filters={catalog.filters}
             setFilters={catalog.setFilters}
@@ -127,15 +127,18 @@ export default function Index() {
             onToggleSelectionMode={catalog.toggleSelectionMode}
             selectedCount={catalog.selectedCount}
             isTransitioning={catalog.isTransitioning}
+            showLayoutControlsOnly={catalog.viewMode !== 'table'}
           />
         </div>
 
         {/* Active filter badges */}
-        <CatalogActiveFilters
-          filters={catalog.filters}
-          setFilters={catalog.setFilters}
-          activeFiltersCount={catalog.activeFiltersCount}
-        />
+        <div className="px-4 sm:px-6">
+          <CatalogActiveFilters
+            filters={catalog.filters}
+            setFilters={catalog.setFilters}
+            activeFiltersCount={catalog.activeFiltersCount}
+          />
+        </div>
 
         {/* Product grid/list content */}
         <CatalogContent
@@ -165,6 +168,11 @@ export default function Index() {
           selectionMode={catalog.selectionMode}
           onSelectedCountChange={catalog.setSelectedCount}
           activeColorFilter={activeColorFilter}
+          sortBy={catalog.sortBy}
+          onSortChange={catalog.setSortBy}
+          onOpenFilters={() => catalog.setFilterSheetOpen(true)}
+          activeFiltersCount={catalog.activeFiltersCount}
+          onViewModeChange={catalog.setViewMode}
         />
       </div>
 

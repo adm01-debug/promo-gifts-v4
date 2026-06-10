@@ -72,7 +72,7 @@ const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
  * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
  * de voice agent quebrem o Select UI e o URL sync loop.
  */
-function validateSortOption(s: string | null | undefined): SortOption {
+export function validateSortOption(s: string | null | undefined): SortOption {
   if (!s) return 'newest';
   // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
   if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
@@ -90,7 +90,7 @@ function getPersistedViewMode(): ViewMode {
   return 'grid';
 }
 
-const ITEMS_PER_PAGE = 36;
+const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
   const navigate = useNavigate();
@@ -117,6 +117,10 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
+  // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
+  // dispara render extra (ref não re-renderiza) e a escrita via effect é
+  // concurrent-safe. O valor só é LIDO quando isTransitioning=true.
+  const lastNonTransitionedProductsRef = useRef<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
@@ -170,10 +174,15 @@ export function useCatalogState() {
   }, [prefsLoaded, preferences.sortBy, searchParams]);
 
   const setSortBy = useCallback(
-    (s: SortOption) => {
-      if (s === sortBy) return;
+    (s: SortOption | string) => {
+      // Valida/normaliza na borda: aceita string de qualquer caller (FilterBar,
+      // voice agent, URL) e aplica apenas valores canônicos de SortOption.
+      // Resolve TS2322 em Index.tsx (onSortChange espera (v: string) => void)
+      // e protege o state contra valores inválidos em runtime.
+      const validated = validateSortOption(s);
+      if (validated === sortBy) return;
       setIsTransitioning(true);
-      setSortByState(s);
+      setSortByState(validated);
     },
     [sortBy],
   );
@@ -296,11 +305,15 @@ export function useCatalogState() {
           });
         });
       } else {
-        setTimeout(() => {
+        const prefetchTimer = setTimeout(() => {
           fetchNextPage().finally(() => {
             prefetchScheduledRef.current = false;
           });
         }, 1000);
+        return () => {
+          clearTimeout(prefetchTimer);
+          prefetchScheduledRef.current = false;
+        };
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -443,14 +456,21 @@ export function useCatalogState() {
     filteredProductsRef.current = filteredProducts;
   }, [filteredProducts]);
 
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
+  // GAP-2 FIX (PR #689 review): snapshot dos produtos exibidos enquanto NÃO há
+  // transição. Antes, o snapshot ficava [] para sempre e displayFilteredProducts
+  // virava lista vazia durante transições de sort — flash de empty state.
+  // Timing: o effect roda APÓS cada render estável (ref = última lista estável);
+  // quando setIsTransitioning(true) dispara o render seguinte, o display lê o
+  // ref congelado (effects deste render não escrevem pois isTransitioning=true).
   useEffect(() => {
     if (!isTransitioning) {
-      setLastNonTransitionedProducts(filteredProducts);
+      lastNonTransitionedProductsRef.current = filteredProducts;
     }
-  }, [filteredProducts, isTransitioning]);
+  }, [isTransitioning, filteredProducts]);
 
-  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
+  const displayFilteredProducts = isTransitioning
+    ? lastNonTransitionedProductsRef.current
+    : filteredProducts;
 
   const rawPaginatedProducts = useMemo(
     () => displayFilteredProducts.slice(0, displayCount),
@@ -511,7 +531,10 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+  const hasActiveCatalogConstraints = useMemo(
+    () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
+    [activeFiltersCount, searchQuery],
+  );
 
   // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
   // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
@@ -524,19 +547,15 @@ export function useCatalogState() {
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
   const hasMoreProducts = useMemo(() => {
-    return paginatedProducts.length < filteredProducts.length || !!hasNextPage;
-  }, [paginatedProducts, filteredProducts, hasNextPage]);
-
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const isUpdatingRef = useRef(false);
+    // BUG-CS-02: Se displayCount for menor que filteredProducts, temos mais localmente.
+    // Se for maior ou igual, dependemos de hasNextPage no servidor.
+    return filteredProducts.length > displayCount || !!hasNextPage;
+  }, [filteredProducts.length, displayCount, hasNextPage]);
 
   const loadMore = useCallback(() => {
-    if (isUpdatingRef.current) return;
     if (isLoading || isLoadingMore || isFetchingNextPage) return;
     if (!hasMoreProducts) return;
 
-    isUpdatingRef.current = true;
     setIsLoadingMore(true);
 
     const nextDisplayCount = displayCount + ITEMS_PER_PAGE;
@@ -546,18 +565,13 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
       });
     } else {
+      // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
-      }, 150);
+      }, 50);
     }
   }, [
     isLoading,
@@ -569,26 +583,21 @@ export function useCatalogState() {
     hasNextPage,
     fetchNextPage,
   ]);
-
+  // loadMoreRef: sentinel <div> que dispara loadMore() via IntersectionObserver
+  // quando o usuário rola até o final da lista de produtos.
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (isLoading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(
+    const el = loadMoreRef.current;
+    if (!el || !hasMoreProducts || isLoadingMore || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
       (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMoreProducts && !isLoadingMore && !isUpdatingRef.current) {
-          loadMore();
-        }
+        if (entries[0]?.isIntersecting) loadMore();
       },
-      { threshold: 0.1, rootMargin: '200px' },
+      { rootMargin: '200px', threshold: 0 },
     );
-
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMoreProducts, isLoadingMore, isFetchingNextPage, loadMore]);
 
   const statBadges = useMemo(() => {
     const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
@@ -724,12 +733,14 @@ export function useCatalogState() {
     handleFavoriteProductRef.current = handleFavoriteProduct;
   }, [handleFavoriteProduct]);
 
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = useCallback(
     (query: string) => {
       setIsSearching(true);
       setSearchQuery(query);
       if (query) addToHistory(query);
-      setTimeout(() => setIsSearching(false), 300);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => setIsSearching(false), 300);
     },
     [addToHistory],
   );

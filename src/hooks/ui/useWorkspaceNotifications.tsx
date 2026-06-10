@@ -59,8 +59,8 @@ function isDebugEnabled(): boolean {
 
 function debugLog(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  // eslint-disable-next-line no-console
-  console.log(`%c[notifications:${event}]`, 'color:#7c3aed;font-weight:600', payload);
+  const log = createClientLogger('notifications.' + event);
+  log.info('event', payload);
 }
 
 export function useWorkspaceNotifications() {

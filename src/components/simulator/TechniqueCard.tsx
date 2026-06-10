@@ -440,7 +440,7 @@ function InlineConfigForm({
           {colorOptions.length > 0 ? (
             <Select
               value={settings.colors.toString()}
-              onValueChange={(val) => onUpdateSetting('colors', parseInt(val))}
+              onValueChange={(val) => onUpdateSetting('colors', parseInt(val, 10))}
             >
               <SelectTrigger className="h-9" onClick={(e) => e.stopPropagation()}>
                 <SelectValue />
@@ -459,7 +459,7 @@ function InlineConfigForm({
               min={1}
               max={12}
               value={settings.colors}
-              onChange={(e) => onUpdateSetting('colors', parseInt(e.target.value) || 1)}
+              onChange={(e) => onUpdateSetting('colors', parseInt(e.target.value, 10) || 1)}
               className="h-9"
               onClick={(e) => e.stopPropagation()}
             />
@@ -501,7 +501,7 @@ function InlineConfigForm({
               type="number"
               min={1}
               value={settings.width}
-              onChange={(e) => onUpdateSetting('width', parseInt(e.target.value) || 1)}
+              onChange={(e) => onUpdateSetting('width', parseInt(e.target.value, 10) || 1)}
               className="h-9"
               onClick={(e) => e.stopPropagation()}
             />
@@ -512,7 +512,7 @@ function InlineConfigForm({
               type="number"
               min={1}
               value={settings.height}
-              onChange={(e) => onUpdateSetting('height', parseInt(e.target.value) || 1)}
+              onChange={(e) => onUpdateSetting('height', parseInt(e.target.value, 10) || 1)}
               className="h-9"
               onClick={(e) => e.stopPropagation()}
             />
@@ -538,7 +538,7 @@ function InlineConfigForm({
           min={1}
           max={10}
           value={settings.positions}
-          onChange={(e) => onUpdateSetting('positions', parseInt(e.target.value) || 1)}
+          onChange={(e) => onUpdateSetting('positions', parseInt(e.target.value, 10) || 1)}
           className="h-9"
           onClick={(e) => e.stopPropagation()}
         />
