@@ -83,24 +83,23 @@ export const CatalogHeader = memo(function CatalogHeader({
               className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
             >
               Catálogo de Produtos
-              <span className="ml-2 text-sm font-normal text-muted-foreground sm:text-base">
-                ·{' '}
-                {shouldShowCatalogSkeleton ? (
-                  'Carregando catálogo...'
-                ) : hasActiveConstraints ? (
-                  <>
-                    <span className="font-semibold text-primary">
-                      {filteredCount.toLocaleString('pt-BR')}
-                    </span>
-                    {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
-                  </>
-                ) : totalEstimate ? (
-                  `${totalEstimate.toLocaleString('pt-BR')} itens`
-                ) : (
-                  `${filteredCount.toLocaleString('pt-BR')} itens`
-                )}
-              </span>
             </h1>
+            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground sm:text-base">
+              {shouldShowCatalogSkeleton ? (
+                'Carregando catálogo...'
+              ) : hasActiveConstraints ? (
+                <>
+                  <span className="font-semibold text-primary">
+                    {filteredCount.toLocaleString('pt-BR')}
+                  </span>
+                  {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
+                </>
+              ) : totalEstimate ? (
+                `${totalEstimate.toLocaleString('pt-BR')} itens`
+              ) : (
+                `${filteredCount.toLocaleString('pt-BR')} itens`
+              )}
+            </div>
 
             {/* Render Toolbar below title if provided */}
             {toolbar && (
