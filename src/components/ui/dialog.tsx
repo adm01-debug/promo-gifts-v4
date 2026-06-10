@@ -123,6 +123,7 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
+        {...props}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           // Ensure scroll + interactivity are restored after the dialog closes.
@@ -141,7 +142,6 @@ const DialogContent = React.forwardRef<
         )}
         aria-modal="true"
         role="dialog"
-        {...props}
       >
         {/* Fallback visually-hidden title -- only rendered when no DialogTitle
             is present. Satisfies Radix's runtime assertion and gives screen

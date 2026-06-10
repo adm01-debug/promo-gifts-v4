@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 
 const Sheet = SheetPrimitive.Root;
 
@@ -19,7 +20,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-[hsl(var(--overlay-color)/var(--overlay-opacity))] backdrop-blur-[var(--overlay-blur)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
     )}
     {...props}
@@ -27,6 +28,49 @@ const SheetOverlay = React.forwardRef<
   />
 ));
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
+
+// ---------------------------------------------------------------------------
+// A11y helpers
+// ---------------------------------------------------------------------------
+
+function childrenHaveType(
+  children: React.ReactNode,
+  types: Array<React.ElementType | string>,
+): boolean {
+  let found = false;
+  React.Children.forEach(children, (child) => {
+    if (found) return;
+    if (!React.isValidElement(child)) return;
+    const t = child.type as React.ElementType;
+    if (types.some((match) => match === t || (t as { displayName?: string }).displayName === match)) {
+      found = true;
+      return;
+    }
+    const nested = (child.props as { children?: React.ReactNode }).children;
+    if (nested) {
+      React.Children.forEach(nested, (grandchild) => {
+        if (found) return;
+        if (!React.isValidElement(grandchild)) return;
+        const gt = grandchild.type as React.ElementType;
+        if (types.some((m) => m === gt || (gt as { displayName?: string }).displayName === m)) {
+          found = true;
+        }
+      });
+    }
+  });
+  return found;
+}
+
+const TITLE_TYPES: Array<React.ElementType | string> = [
+  SheetPrimitive.Title,
+  'SheetTitle',
+];
+const DESCRIPTION_TYPES: Array<React.ElementType | string> = [
+  SheetPrimitive.Description,
+  'SheetDescription',
+];
+
+// ---------------------------------------------------------------------------
 
 const sheetVariants = cva(
   'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
@@ -55,18 +99,41 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = 'right', className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      {children}
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+>(({ side = 'right', className, children, onCloseAutoFocus, ...props }, ref) => {
+  const hasTitle       = childrenHaveType(children, TITLE_TYPES);
+  const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
+
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+    <SheetPrimitive.Content 
+        ref={ref} 
+        {...props}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          requestAnimationFrame(releaseScrollLockIfIdle);
+        }}
+        className={cn(sheetVariants({ side }), className)} 
+      >
+        {!hasTitle && (
+          <SheetPrimitive.Title className="sr-only" aria-hidden={false}>
+            Navegação lateral
+          </SheetPrimitive.Title>
+        )}
+        {!hasDescription && (
+          <SheetPrimitive.Description className="sr-only">
+            Menu de navegação e filtros lateral
+          </SheetPrimitive.Description>
+        )}
+        {children}
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  );
+});
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
