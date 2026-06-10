@@ -210,7 +210,8 @@ export default function FiltersPage() {
 
           {/* Content */}
           <div className="min-w-0 flex-1 space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
               <div className="flex-shrink-0">
                 <h1
                   data-testid="page-title-produtos"
@@ -244,7 +245,7 @@ export default function FiltersPage() {
                     )}
                 </div>
               </div>
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                 <SmartSearchInput
                   placeholder="Buscar produtos..."
                   onSelect={(result) =>
@@ -335,17 +336,9 @@ export default function FiltersPage() {
                     </div>
                   </SheetContent>
                 </Sheet>
-                {/* IMPROVEMENT 1-4 FIX: Select fica FORA, Tooltip DENTRO.
-                    Antes: TooltipTrigger asChild envolvia o <Select> inteiro —
-                    o Radix Slot mesclava handlers do Tooltip (onPointerEnter/Leave/Focus)
-                    diretamente no Select composto, causando conflito de eventos e o
-                    dropdown alternando entre opções sem parar.
-                    Depois: padrão idêntico ao CatalogToolbar.tsx (BUG-G7 FIX):
-                      Select > Tooltip > TooltipTrigger asChild > span.relative.inline-flex
-                      > SelectTrigger — Tooltip só toca o span, Select mantém evento limpo.
-                    dot indicator movido para span (não SelectTrigger) com span.relative
-                    como containing block correto. DEFAULT_SORT_VALUE do SSOT evita 'name' hardcoded. */}
-                <Select value={state.sortBy} onValueChange={state.setSortBy}>
+                <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <Select value={state.sortBy} onValueChange={state.setSortBy}>
+                  <Select value={state.sortBy} onValueChange={state.setSortBy}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       {/* span.relative.inline-flex = containing block para o dot mobile */}
@@ -410,16 +403,16 @@ export default function FiltersPage() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
-                </Tooltip>
-
-                {/* Selection toggle */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                </div>
+                {/* Selection toggle & Layout */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                     <Button
                       variant={state.selectionMode ? 'default' : 'outline'}
                       size="sm"
                       className={cn(
-                        'relative h-8 gap-1.5 transition-all',
+                        'relative h-8 gap-1.5 transition-all bg-card/40 backdrop-blur-sm sm:h-9',
                         state.selectionMode
                           ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                           : 'hover:border-primary/50',
@@ -457,13 +450,14 @@ export default function FiltersPage() {
                   </TooltipContent>
                 </Tooltip>
 
-                <div className="hidden shrink-0 sm:block">
+                <div className="shrink-0">
                   <LayoutPopover
                     viewMode={state.viewMode}
                     setViewMode={state.setViewMode}
                     gridColumns={state.gridColumns}
                     setGridColumns={state.setGridColumns}
                   />
+                  </div>
                 </div>
               </div>
               {state.activeFiltersSummary.length > 0 && (
