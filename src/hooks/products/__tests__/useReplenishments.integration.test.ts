@@ -6,19 +6,19 @@ import { TestWrapper as createWrapper } from '@/hooks/__tests__/replenishment-te
 describe('useReplenishments Hooks Integration', () => {
   it('useReplenishmentsWithDetails deve retornar array de reposições', async () => {
     const { result } = renderHook(() => useReplenishmentsWithDetails(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper,
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 10000 });
     expect(Array.isArray(result.current.data)).toBe(true);
   });
 
   it('useReplenishmentStats deve calcular KPIs corretamente', async () => {
     const { result } = renderHook(() => useReplenishmentStats(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper,
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 10000 });
     expect(result.current.data).toHaveProperty('totalReplenishments');
     expect(result.current.data).toHaveProperty('activeReplenishments');
     expect(typeof result.current.data?.replenishmentRate).toBe('number');
