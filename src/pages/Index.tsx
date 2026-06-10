@@ -90,7 +90,7 @@ export default function Index() {
         path="/"
         jsonLd={structuredData}
       />
-      <div className="mx-auto w-full animate-fade-in space-y-4 py-3 sm:py-4 lg:py-6 print:pb-0">
+      <div className="mx-auto w-full animate-fade-in space-y-4 py-1 sm:py-2 lg:py-3 print:pb-0">
         {/* Header: Title + Search + Inline Toolbar */}
         <CatalogHeader
           shouldShowCatalogSkeleton={catalog.shouldShowCatalogSkeleton}
