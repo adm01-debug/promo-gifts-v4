@@ -146,7 +146,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                   <span className="relative inline-flex">
                     <SelectTrigger
                       className={cn(
-                        'relative h-9 w-10 text-xs font-medium transition-all sm:h-10 sm:w-52 sm:text-sm',
+                        'relative h-8 w-10 text-xs font-medium transition-all sm:h-9 sm:w-52 sm:text-sm',
                         sortBy !== DEFAULT_SORT_VALUE &&
                           'border-primary bg-primary/5 ring-1 ring-primary/20',
                       )}
