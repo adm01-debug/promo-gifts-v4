@@ -3,12 +3,15 @@ import { render, screen } from '@testing-library/react';
 import { ProductStatusBadge } from '../ProductStatusBadge';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
       <ThemeProvider>
-        {ui}
+        <TooltipProvider>
+          {ui}
+        </TooltipProvider>
       </ThemeProvider>
     </BrowserRouter>
   );
