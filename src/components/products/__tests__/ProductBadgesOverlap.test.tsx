@@ -1,8 +1,8 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { ProductCardImage } from './ProductCardImage';
-import { ProductStatusBadge } from './ProductStatusBadge';
+import { ProductCardImage } from '../ProductCardImage';
+import { ProductStatusBadge } from '../ProductStatusBadge';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Product } from '@/types/product-catalog';
 
