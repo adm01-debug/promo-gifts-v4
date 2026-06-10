@@ -6,12 +6,11 @@ describe('Supabase Client Contract', () => {
 
   it('should point to the correct project URL', () => {
     expect(SUPABASE_URL).toContain(CURRENT_PROJECT_ID);
-    expect(SUPABASE_URL).not.toContain('pqpdolkaeqlyzpdpbizo');
-    expect(SUPABASE_URL).not.toContain('pqpdolkaeqlyzpdpbizo.supabase.co.supabase.co'); // common double-suffix error
+    expect(SUPABASE_URL).not.toContain('doufsxqlfjyuvxuezpln');
   });
 
   it('should use a valid HTTPS protocol', () => {
-    expect(SUPABASE_URL).startsWith('https://');
+    expect(SUPABASE_URL.startsWith('https://')).toBe(true);
   });
 
   it('should have a project ID in the URL', () => {
