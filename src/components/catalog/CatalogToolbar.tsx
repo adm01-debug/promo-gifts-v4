@@ -87,8 +87,8 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-wrap items-center justify-start gap-2">
-      <div className="flex flex-shrink-0 items-center gap-2">
+    <div className="flex flex-wrap items-center justify-start gap-3">
+      <div className="flex flex-shrink-0 items-center gap-1.5">
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
             <Tooltip>
@@ -139,7 +139,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
         )}
 
         {!showLayoutControlsOnly && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -199,7 +199,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
       </div>
 
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Selecionar / Cancelar toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
