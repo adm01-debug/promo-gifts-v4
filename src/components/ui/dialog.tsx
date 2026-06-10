@@ -4,6 +4,8 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
+
 
 const Dialog = DialogPrimitive.Root;
 
@@ -115,6 +117,7 @@ const DialogContent = React.forwardRef<
 
   const hasTitle       = childrenHaveType(children, TITLE_TYPES);
   const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
+  const { handleClose } = useOverlayInteractivity();
 
   // Radix Dialog natively handles: focus trap, escape key, scroll lock.
   // We only add a lightweight cleanup on close to prevent stale scroll locks.
@@ -127,8 +130,9 @@ const DialogContent = React.forwardRef<
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           // Ensure scroll + interactivity are restored after the dialog closes.
-          requestAnimationFrame(releaseScrollLockIfIdle);
+          handleClose();
         }}
+
         className={cn(
           'duration-normal fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border-2 border-border bg-background p-6 shadow-xl ease-out',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',

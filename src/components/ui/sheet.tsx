@@ -5,6 +5,8 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
+
 
 const Sheet = SheetPrimitive.Root;
 
@@ -102,6 +104,7 @@ const SheetContent = React.forwardRef<
 >(({ side = 'right', className, children, onCloseAutoFocus, ...props }, ref) => {
   const hasTitle       = childrenHaveType(children, TITLE_TYPES);
   const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
+  const { handleClose } = useOverlayInteractivity();
 
   return (
     <SheetPortal>
@@ -111,8 +114,9 @@ const SheetContent = React.forwardRef<
         {...props}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
-          requestAnimationFrame(releaseScrollLockIfIdle);
+          handleClose();
         }}
+
         className={cn(sheetVariants({ side }), className)} 
       >
         {!hasTitle && (
