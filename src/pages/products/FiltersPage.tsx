@@ -669,6 +669,8 @@ export default function FiltersPage() {
           </div>
         </div>
       </div>
+        </div>
+      </div>
       {state.voiceOverlayOpen && (
         <Suspense fallback={null}>
           <LazyVoiceOverlay
