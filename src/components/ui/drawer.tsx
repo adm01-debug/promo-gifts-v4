@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
 import { cn } from '@/lib/utils';
+
 
 const Drawer = ({
   shouldScaleBackground = true,
