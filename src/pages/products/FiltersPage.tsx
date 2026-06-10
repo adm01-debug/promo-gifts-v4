@@ -421,7 +421,7 @@ export default function FiltersPage() {
                       variant={state.selectionMode ? 'default' : 'outline'}
                       size="sm"
                       className={cn(
-                        'relative h-8 gap-1.5 transition-all',
+                        'relative h-8 gap-1.5 transition-all bg-card/40 backdrop-blur-sm sm:h-9',
                         state.selectionMode
                           ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                           : 'hover:border-primary/50',
