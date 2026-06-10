@@ -8,7 +8,7 @@ const REPLENISHMENT_WINDOW_DAYS = 30;
 const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 
 const REPLENISHMENT_SELECT =
-  'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity, min_quantity' as const;
+  'id, name, sku, images, price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
 
 // ─── Date Utilities ──────────────────────────────────────────────
 
@@ -78,14 +78,14 @@ interface RawProduct {
   readonly id: string;
   readonly name: string;
   readonly sku: string | null;
-  readonly primary_image_url: string | null;
-  readonly sale_price: number | null;
+  readonly images: string[] | null;
+  readonly price: number | null;
   readonly category_id: string | null;
   readonly supplier_id: string | null;
   readonly created_at: string;
   readonly updated_at: string;
   readonly stock_quantity: number | null;
-  readonly min_quantity: number | null;
+  readonly min_quantity?: number | null;
 }
 
 // ─── Data Logic ──────────────────────────────────────────────────
@@ -117,7 +117,7 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
     new Date(p.updated_at).getTime() + REPLENISHMENT_WINDOW_DAYS * 86_400_000,
   ).toISOString();
   const stock = p.stock_quantity ?? 0;
-  const minQty = p.min_quantity ?? 10;
+  const minQty = 10; // Fallback since min_quantity is not in v_products_public
 
   return {
     replenishment_id: p.id,
@@ -125,8 +125,8 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
     product_sku: p.sku,
     product_name: p.name,
     product_description: null,
-    base_price: p.sale_price,
-    product_image: p.primary_image_url,
+    base_price: p.price,
+    product_image: p.images && p.images.length > 0 ? p.images[0] : null,
     category_id: p.category_id,
     category_name: null,
     supplier_code: null,
@@ -203,7 +203,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
       const { data, error } = await supabase
         .from('v_products_public')
         .select(REPLENISHMENT_SELECT)
-        .eq('is_active', true)
+        .is('is_active', true)
         .gte('updated_at', cutoff)
         .order('updated_at', { ascending: false })
         .range(0, limit - 1);
@@ -249,13 +249,13 @@ export function useReplenishmentStats() {
         supabase
           .from('v_products_public')
           .select('id, created_at, updated_at, supplier_id', { count: 'exact' })
-          .eq('is_active', true)
+          .is('is_active', true)
           .gte('updated_at', cutoff)
           .range(0, 499),
         supabase
           .from('v_products_public')
           .select('id', { count: 'exact' })
-          .eq('is_active', true)
+          .is('is_active', true)
           .limit(1),
       ]);
 
@@ -358,7 +358,7 @@ export function useReplenishmentCount() {
       const { data, error } = await supabase
         .from('v_products_public')
         .select('id, created_at, updated_at')
-        .eq('is_active', true)
+        .is('is_active', true)
         .gte('updated_at', cutoff)
         .limit(500);
 
