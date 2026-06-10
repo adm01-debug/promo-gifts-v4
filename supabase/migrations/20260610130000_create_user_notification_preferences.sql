@@ -22,3 +22,10 @@ CREATE POLICY unp_update_own_or_admin ON public.user_notification_preferences
 CREATE POLICY unp_delete_own_or_admin ON public.user_notification_preferences
   FOR DELETE USING (((SELECT auth.uid()) = user_id) OR is_admin_or_above((SELECT auth.uid())));
 CREATE INDEX IF NOT EXISTS idx_unp_user_id ON public.user_notification_preferences(user_id);
+
+-- Mantém updated_at coerente em UPDATEs (padrão do repo). O service também envia
+-- updated_at no upsert, mas o trigger garante a invariante mesmo p/ outros writers.
+DROP TRIGGER IF EXISTS trg_unp_updated_at ON public.user_notification_preferences;
+CREATE TRIGGER trg_unp_updated_at
+  BEFORE UPDATE ON public.user_notification_preferences
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
