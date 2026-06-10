@@ -63,8 +63,11 @@ describe('CatalogToolbar - Alignment and Responsiveness', () => {
     const { container } = renderToolbar();
     
     const toolbarRoot = container.firstChild as HTMLElement;
-    expect(toolbarRoot).toHaveClass('flex-row');
-    expect(toolbarRoot).toHaveClass('justify-between');
+    // On small screens it is flex-col, on sm: and up it is flex-row.
+    // JSDOM doesn't automatically apply sm: prefixes based on window.innerWidth 
+    // without manual mock, so we check the presence of classes.
+    expect(toolbarRoot).toHaveClass('sm:flex-row');
+    expect(toolbarRoot).toHaveClass('sm:justify-between');
 
     // Group 1 (Left): Filters, Sort, Stats
     const leftGroup = toolbarRoot.children[0];
@@ -72,7 +75,7 @@ describe('CatalogToolbar - Alignment and Responsiveness', () => {
     
     // Group 2 (Right): Selection, Layout
     const rightGroup = toolbarRoot.children[1];
-    expect(rightGroup).toHaveClass('ml-auto'); // Ensures it stays right even if justify-between is not enough
+    expect(rightGroup).toHaveClass('ml-auto'); 
   });
 
   it('maintains buttons on the right even on small screens using ml-auto', () => {
