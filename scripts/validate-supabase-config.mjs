@@ -13,7 +13,7 @@ try {
   // 1. Check if the canonical URL constant matches the CURRENT project
   const hasCanonicalUrl = content.includes(CANONICAL_URL);
   if (!hasCanonicalUrl) {
-    console.error(`\u274C ERROR: Project URL "${CANONICAL_URL}" not found in ${CLIENT_PATH}. This might mean the app is pointing to an external project like doufsxqlfjyuvxuezpln.`);
+    console.error(`\u274C ERROR: Project URL "${CANONICAL_URL}" not found in ${CLIENT_PATH}. This might mean the app is pointing to an external project.`);
     process.exit(1);
   }
 
@@ -24,21 +24,15 @@ try {
     process.exit(1);
   }
 
-  // 3. Ensure no mentions of the old project doufsxqlfjyuvxuezpln remain as fallbacks
+  // 3. Ensure no mentions of the old project remain as fallbacks
   const hasForbiddenRefs = content.includes('doufsxqlfjyuvxuezpln');
   if (hasForbiddenRefs) {
-    console.error(`\u274C ERROR: Hardcoded reference to EXTERNAL project "doufsxqlfjyuvxuezpln" found in ${CLIENT_PATH}. Only ${CANONICAL_PROJECT_ID} is allowed.`);
+    console.error(`\u274C ERROR: Hardcoded reference to EXTERNAL project found in ${CLIENT_PATH}.`);
     process.exit(1);
   }
 
   console.log('\u2705 Supabase connection is correctly pointing to the current project.');
 } catch (error) {
   console.error('\u274C Failed to validate Supabase configuration:', error.message);
-  process.exit(1);
-}
-
-  console.log('\u2705 Supabase Canonical Connection is strictly enforced.');
-} catch (error) {
-  console.error('\u274C Failed to read or validate Supabase client configuration:', error.message);
   process.exit(1);
 }
