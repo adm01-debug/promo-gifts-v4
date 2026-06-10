@@ -87,7 +87,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-wrap items-center justify-start gap-3">
+    <div className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-3">
       <div className="flex flex-shrink-0 items-center gap-1.5">
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
@@ -98,7 +98,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="px-2.5 sm:px-3"
+                      className="h-8 px-2.5 sm:px-3 sm:h-9"
                       aria-label="Abrir filtros do catálogo"
                     >
                       <Filter className="h-4 w-4 sm:mr-2" />
@@ -146,7 +146,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                   <span className="relative inline-flex">
                     <SelectTrigger
                       className={cn(
-                        'relative h-9 w-10 text-xs font-medium transition-all sm:h-10 sm:w-52 sm:text-sm',
+                        'relative h-8 w-10 text-xs font-medium transition-all sm:h-9 sm:w-52 sm:text-sm',
                         sortBy !== DEFAULT_SORT_VALUE &&
                           'border-primary bg-primary/5 ring-1 ring-primary/20',
                       )}
@@ -192,7 +192,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </div>
         )}
         {!showLayoutControlsOnly && (
-          <div className="hidden sm:block">
+          <div className="block">
             <StatsPopover stats={statBadges} isFiltered={activeFiltersCount > 0} />
           </div>
         )}
@@ -207,7 +207,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'relative h-8 gap-1.5 transition-all',
+                'relative h-8 gap-1.5 transition-all sm:h-9',
                 selectionMode
                   ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                   : 'hover:border-primary/50',

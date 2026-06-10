@@ -534,7 +534,7 @@ export default function FiltersPage() {
                       onClearFilters={state.handleReset}
                       viewMode={state.viewMode}
                       onViewModeChange={state.setViewMode}
-                      showFilterBar={false}
+                       showFilterBar={false}
                       activeColorFilter={
                         state.filters.colorGroups.length > 0 ||
                         state.filters.colorVariations.length > 0
