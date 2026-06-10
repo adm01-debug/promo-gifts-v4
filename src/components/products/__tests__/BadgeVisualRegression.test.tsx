@@ -42,7 +42,6 @@ describe('ProductStatusBadge Visual Regressions', () => {
 
     const badges = screen.getAllByRole('status');
     expect(badges).toHaveLength(4);
-    expect(badges.length).toBeGreaterThan(0);
     for (const badge of badges) {
       expect(badge).toHaveClass('truncate');
     }

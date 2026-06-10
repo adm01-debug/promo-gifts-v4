@@ -411,7 +411,6 @@ const FUNCTION_SPECS = [
   { name: "block-ip",          endpoint: "block-ip-temporarily",             authRequired: true,  gen: generateBlockIpPayloads },
   { name: "step-up-verify",    endpoint: "step-up-verify",                   authRequired: true,  gen: generateStepUpVerifyPayloads },
   { name: "verify-2fa",        endpoint: "verify-2fa-token",                 authRequired: true,  gen: generateVerify2faPayloads },
-];
   { name: "rate-limit-check",  endpoint: "rate-limit-check",                 authRequired: true,  gen: generateRateLimitCheckPayloads },
   { name: "log-login-attempt", endpoint: "log-login-attempt",                authRequired: true,  gen: generateLogLoginAttemptPayloads },
   { name: "expert-chat",       endpoint: "expert-chat",                      authRequired: true,  gen: generateExpertChatPayloads },

@@ -34,6 +34,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   activeFiltersCount = 0,
   searchHistory = [],
   onClearHistory,
+  onReset,
   toolbar,
 }: CatalogHeaderProps) {
   const navigate = useNavigate();
@@ -42,8 +43,11 @@ export const CatalogHeader = memo(function CatalogHeader({
 
   const handleTeleport = () => {
     trackNavigationClick('Teletransporte', '/');
-    if (onReset) onReset();
-    navigate('/', { replace: true });
+    if (onReset) {
+      onReset();
+    } else {
+      navigate('/', { replace: true });
+    }
   };
 
   const searchRef = useRef<HTMLDivElement>(null);
