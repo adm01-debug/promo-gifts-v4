@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-06-10T14:11:53.862Z",
+  "projects": "chromium-smoke",
+  "totals": {
+    "total": 44,
+    "passed": 3,
+    "failed": 1,
+    "skipped": 40,
+    "duration": 39934
+  },
+  "features": [
+    {
+      "feature": "uncategorized",
+      "total": 44,
+      "passed": 3,
+      "failed": 1,
+      "skipped": 40,
+      "duration": 39934,
+      "failures": [
+        {
+          "feature": "uncategorized",
+          "file": "flows/22-google-oauth-smoke.spec.ts",
+          "project": "chromium-smoke",
+          "title": "flows/22-google-oauth-smoke.spec.ts › @smoke Google OAuth — wiring até /auth/callback › /auth/callback com ?error= mostra hint detalhado e código do erro",
+          "status": "failed",
+          "duration": 19886,
+          "location": "flows/22-google-oauth-smoke.spec.ts:175",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed",
+          "e2eName": null
+        }
+      ]
+    }
+  ],
+  "e2eNames": []
+}
