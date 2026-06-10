@@ -27,7 +27,8 @@ export function RouteScrollReset() {
 
   useEffect(() => {
     // Libera scroll-lock residual do Radix em toda troca de rota.
-    releaseScrollLockIfIdle();
+    forceReleaseScrollLock();
+
 
     if (isFirstMount.current) {
       isFirstMount.current = false;
