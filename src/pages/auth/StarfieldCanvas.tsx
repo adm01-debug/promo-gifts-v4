@@ -122,7 +122,7 @@ export function StarfieldCanvas({
 
       for (const star of starsRef.current) {
         // Drift horizontal removido conforme solicitado
-        const driftX = 0;
+        const _driftX = 0;
 
         let x = star.x % width;
         if (x < 0) x += width;

@@ -57,7 +57,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
-  const [meteors, setMeteors] = useState<MeteorData[]>([]);
+  const [meteors, _setMeteors] = useState<MeteorData[]>([]);
   const [, setMousePos] = useState({ x: 0, y: 0 });
   const [, setScrollY] = useState(0);
 
@@ -133,7 +133,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     const rocketInterval = setInterval(() => spawnRocket(), 6000);
 
     // Meteor shower removido para eliminar linhas rápidas atravessando a tela
-    const meteorInterval = null;
+    const _meteorInterval = null;
 
     setPlanets(
       [...Array(5)].map((_, i) => ({
@@ -300,7 +300,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
           const translateY = 0;
 
           // Órbita circular suave (circularOrbit) — Sincronizada via delay negativo
-          const orbitDuration = 18 / config.speed;
+          const _orbitDuration = 18 / config.speed;
 
           return (
             <div
