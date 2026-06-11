@@ -50,6 +50,10 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   "connections-auto-test",
   "connections-health-check",
   "connections-hub-audit",
+  // Internal test orchestrators — never called from a browser, no OPTIONS needed.
+  "test-cart-concurrency",
+  "test-cart-limit",
+  "test-cart-rls",
 ]);
 
 function listFunctionDirs() {

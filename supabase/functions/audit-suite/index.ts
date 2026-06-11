@@ -1,10 +1,7 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
 
-// Manual CORS helper as we cannot easily import from _shared without knowing the exact structure
-const getCorsHeaders = () => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-});
+const getCorsHeaders = () => buildPublicCorsHeaders();
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -27,9 +24,8 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: getCorsHeaders() });
-  }
+  const preflight = handleCorsPreflight(req);
+  if (preflight) return preflight;
 
   const results: TestResult[] = [];
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
