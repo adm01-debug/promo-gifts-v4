@@ -3,6 +3,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 export type EmailEventType = 'quote_sent' | 'quote_approved' | 'quote_rejected' | 'order_created';
 
 interface SendEmailParams {
@@ -19,13 +20,13 @@ export async function sendTransactionalEmail(params: SendEmailParams) {
     });
 
     if (error) {
-      console.error('[TransactionalEmail] Error:', error);
+      logger.error('[TransactionalEmail] Error:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, data };
   } catch (err) {
-    console.error('[TransactionalEmail] Unexpected error:', err);
+    logger.error('[TransactionalEmail] Unexpected error:', err);
     return { success: false, error: 'Unexpected error' };
   }
 }

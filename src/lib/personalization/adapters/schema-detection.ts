@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Schema detection — Identifica a versão do payload de gravação.
  *
@@ -139,7 +140,7 @@ export function warnUnknownSchemaOnce(key: string, payload?: unknown): void {
   if (warnedKeys.has(key)) return;
   warnedKeys.add(key);
 
-  console.warn(
+  logger.warn(
     `[personalization/adapters] Payload com schema desconhecido (${key}). ` +
       'Verifique se o backend mudou a estrutura — adapter está caindo no fallback v6.x-flat.',
     payload,

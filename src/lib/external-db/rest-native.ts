@@ -788,3 +788,6 @@ export async function tryExecuteRestNativeWrite<T>(
     throw e;
   }
 }
+
+/** Alias for any table/view name accepted by the external DB REST layer. */
+export type ExternalTable = string;

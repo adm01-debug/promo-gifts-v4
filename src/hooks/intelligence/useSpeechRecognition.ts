@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+import { logger } from '@/lib/logger';
 interface UseSpeechRecognitionOptions {
   onResult?: (transcript: string) => void;
   onError?: (error: string) => void;
@@ -117,7 +118,7 @@ export function useSpeechRecognition({
         recognition.start();
       } catch (e) {
         // Recognition might already be started
-        console.error('Speech recognition error:', e);
+        logger.error('Speech recognition error:', e);
       }
     }
   }, [recognition, isListening]);

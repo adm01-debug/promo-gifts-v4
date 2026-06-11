@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export interface ExpertConversation {
   id: string;
   seller_id: string;
@@ -45,7 +46,7 @@ export function useExpertConversations(clientId?: string) {
       if (error) throw error;
       setConversations(data || []);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      logger.error('Error fetching conversations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +75,7 @@ export function useExpertConversations(clientId?: string) {
       setConversations((prev) => [data, ...prev]);
       return data.id;
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      logger.error('Error creating conversation:', error);
       toast.error('Erro ao criar conversa');
       return null;
     }
@@ -95,7 +96,7 @@ export function useExpertConversations(clientId?: string) {
         ),
       );
     } catch (error) {
-      console.error('Error updating conversation:', error);
+      logger.error('Error updating conversation:', error);
     }
   };
 
@@ -111,7 +112,7 @@ export function useExpertConversations(clientId?: string) {
       setConversations((prev) => prev.filter((c) => c.id !== conversationId));
       toast.success('Conversa excluída');
     } catch (error) {
-      console.error('Error deleting conversation:', error);
+      logger.error('Error deleting conversation:', error);
       toast.error('Erro ao excluir conversa');
     }
   };
@@ -127,7 +128,7 @@ export function useExpertConversations(clientId?: string) {
       if (error) throw error;
       return (data || []) as ExpertMessage[];
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      logger.error('Error fetching messages:', error);
       return [];
     }
   };
@@ -152,7 +153,7 @@ export function useExpertConversations(clientId?: string) {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', conversationId);
     } catch (error) {
-      console.error('Error saving message:', error);
+      logger.error('Error saving message:', error);
     }
   };
 

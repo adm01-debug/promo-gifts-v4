@@ -19,6 +19,7 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import type { ProductGroupMember, Technique } from './usePersonalizationData';
 
+import { logger } from '@/lib/logger';
 interface GroupInheritanceProps {
   productMembership: ProductGroupMember;
   selectedProduct: string;
@@ -117,7 +118,7 @@ export function GroupInheritance({
       queryClient.invalidateQueries({ queryKey: ['product-membership'] });
       toast.success('Regras do grupo copiadas!');
     } catch (error) {
-      console.error('Error copying rules:', error);
+      logger.error('Error copying rules:', error);
       toast.error('Erro ao copiar regras do grupo');
     } finally {
       setIsCopying(false);

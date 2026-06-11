@@ -9,6 +9,7 @@
  */
 import type * as SentryNS from '@sentry/react';
 
+import { logger } from '@/lib/logger';
 type SentryModule = typeof SentryNS;
 
 let sentryRef: SentryModule | null = null;
@@ -55,7 +56,7 @@ function shouldLoadSentry(): boolean {
   if (!dsn) return false;
   if (!isValidSentryDsn(dsn)) {
     if (import.meta.env.DEV) {
-      console.warn(
+      logger.warn(
         '[sentry] VITE_SENTRY_DSN tem formato inválido — Sentry não será inicializado. ' +
           'Formato esperado: https://<public_key>@<host>/<project_id> ' +
           '(public_key sem hífens — UUIDs do GlitchTip não são compatíveis com SDK Sentry 8.x). ' +

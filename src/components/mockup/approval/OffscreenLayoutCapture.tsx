@@ -110,7 +110,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
           .upload(storagePath, blob, { contentType: 'image/jpeg', upsert: true });
 
         if (uploadError) {
-          console.error('Layout auto-capture upload error:', uploadError);
+          logger.error('Layout auto-capture upload error:', uploadError);
           return;
         }
 
@@ -122,7 +122,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
           .eq('id', currentRecordId);
 
         if (updateError) {
-          console.error('Layout auto-capture DB update error:', updateError);
+          logger.error('Layout auto-capture DB update error:', updateError);
           return;
         }
 
@@ -131,7 +131,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
           onCaptured?.(currentRecordId);
         }
       } catch (err) {
-        console.error('Layout auto-capture error:', err);
+        logger.error('Layout auto-capture error:', err);
       } finally {
         if (mountedRef.current) setIsCapturing(false);
       }

@@ -30,6 +30,7 @@ import { PropostaComercialTailwind } from '@/components/pdf/PropostaComercialTai
 import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGenerator';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 type Stage = 'preview' | 'generating' | 'ready';
 
 interface PdfGenerationDialogProps {
@@ -111,7 +112,7 @@ export function PdfGenerationDialog({
       setStage('ready');
       toast.success('PDF gerado com sucesso!');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');
       setStage('preview');
       setProgressLabel(''); // FIX #5: resetar label — evita valor antigo ao reabrir

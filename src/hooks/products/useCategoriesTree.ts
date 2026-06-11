@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { dbInvoke } from '@/lib/db/postgrest';
 import { toTitleCase } from '@/lib/textUtils';
 
+import { logger } from '@/lib/logger';
 const HIDDEN_CATEGORIES = ['GRAVAÇÃO | MOCHILA', 'GRAVACAO | MOCHILA'];
 
 export interface CategoryTreeItem {
@@ -54,7 +55,7 @@ export function useCategoriesTree() {
       });
       setCategoryIcons(iconMap);
     } catch (err) {
-      console.error('Erro ao buscar ícones de categorias:', err);
+      logger.error('Erro ao buscar ícones de categorias:', err);
     }
   }, []);
 
@@ -79,7 +80,7 @@ export function useCategoriesTree() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(message);
-      console.error('Erro ao buscar árvore de categorias:', err);
+      logger.error('Erro ao buscar árvore de categorias:', err);
     } finally {
       setIsLoading(false);
     }

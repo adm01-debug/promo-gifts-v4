@@ -31,6 +31,7 @@ import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-sto
 import { toast } from 'sonner';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 
+import { logger } from '@/lib/logger';
 export interface Technique {
   id: string;
   name: string;
@@ -226,7 +227,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     if (error) throw error;
     return insertedRow?.id || null;
   } catch (error) {
-    console.error('Error saving to history:', error);
+    logger.error('Error saving to history:', error);
     return null;
   }
 }
@@ -343,7 +344,7 @@ export async function generateMockupApi(
       batchResults.push({ url, areaName: area.name });
     } catch (err) {
       failures += 1;
-      console.error(`[generateMockupApi] área "${area.name}" falhou:`, err);
+      logger.error(`[generateMockupApi] área "${area.name}" falhou:`, err);
     }
   }
 

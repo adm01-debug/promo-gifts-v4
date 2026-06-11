@@ -4,6 +4,7 @@ import { Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { MAX_ROWS, TARGET_FIELDS, TEMPLATE_EXAMPLES, ALIAS_MAP, type ColumnMapping } from './types';
 
+import { logger } from '@/lib/logger';
 interface StepUploadProps {
   onFileProcessed: (
     headers: string[],
@@ -127,7 +128,7 @@ export function StepUpload({ onFileProcessed }: StepUploadProps) {
         onFileProcessed(parsedHeaders, parsedRows, file.name, newMapping);
         toast.success(`${file.name} carregado — ${parsedRows.length.toLocaleString()} linhas`);
       } catch (error) {
-        console.error('Parse error:', error);
+        logger.error('Parse error:', error);
         toast.error('Erro ao ler o arquivo. Verifique o formato.');
       }
     },

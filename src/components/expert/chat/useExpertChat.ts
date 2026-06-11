@@ -21,6 +21,7 @@ import {
   getActiveFilterLabels,
 } from '../FlowFilterPanel';
 
+import { logger } from '@/lib/logger';
 export interface Message {
   id?: string;
   role: 'user' | 'assistant';
@@ -271,7 +272,7 @@ export function useExpertChat({
           /* empty */
         }
       } catch (error) {
-        console.error('Error fetching Flow filters:', error);
+        logger.error('Error fetching Flow filters:', error);
       }
     };
     fetchFilters();
@@ -374,7 +375,7 @@ export function useExpertChat({
           navigate(`/orcamentos/novo?edit=${quote.id}`);
         }, 800);
       } catch (err) {
-        console.error('Error saving quote draft:', err);
+        logger.error('Error saving quote draft:', err);
         toast.error('Erro ao criar rascunho de orçamento');
       } finally {
         setSavingQuoteId(null);
@@ -597,7 +598,7 @@ export function useExpertChat({
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') return;
-      console.error('Expert chat error:', error);
+      logger.error('Expert chat error:', error);
       const errorMessage =
         error instanceof Error
           ? `Desculpe, ocorreu um erro: ${error.message}`

@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { useToast } from '@/hooks/ui/use-toast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
+import { logger } from '@/lib/logger';
 export interface PasswordResetRequest {
   id: string;
   email: string;
@@ -35,7 +36,7 @@ export function usePasswordResetRequests() {
       setRequests((data as PasswordResetRequest[]) || []);
       setPendingCount(data?.filter((r) => r.status === 'pending').length || 0);
     } catch (error) {
-      console.error('Error fetching password reset requests:', error);
+      logger.error('Error fetching password reset requests:', error);
     } finally {
       setIsLoading(false);
     }

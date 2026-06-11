@@ -26,7 +26,7 @@ export function SkeletonMonitor({
   const isDev = isAdmin || isDevRole;
 
   useEffect(() => {
-    console.warn(`[Skeleton-Trace] Rendering: ${name} (Path: ${window.location.pathname})`);
+    logger.warn(`[Skeleton-Trace] Rendering: ${name} (Path: ${window.location.pathname})`);
   }, [name]);
 
   useEffect(() => {

@@ -83,7 +83,9 @@ function emit(
   } else {
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
-    else console.warn(json);
+    else if (level === 'warn') console.warn(json);
+    else if (level === 'info') console.log(json);
+    else console.debug(json);
   }
   /* eslint-enable no-console */
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { logger } from '@/lib/logger';
 export interface QuoteHistoryEntry {
   id: string;
   quote_id: string;
@@ -35,7 +36,7 @@ export function useQuoteHistory() {
       setHistory(entries);
       return entries;
     } catch (err) {
-      console.error('Error fetching history:', err);
+      logger.error('Error fetching history:', err);
       return [];
     } finally {
       setIsLoading(false);
@@ -68,7 +69,7 @@ export function useQuoteHistory() {
       });
       return true;
     } catch (err) {
-      console.error('Error adding history entry:', err);
+      logger.error('Error adding history entry:', err);
       return false;
     }
   };

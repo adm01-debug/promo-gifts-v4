@@ -4,6 +4,7 @@ import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { type Product } from '@/hooks/products';
 
+import { logger } from '@/lib/logger';
 const LEGACY_STORAGE_KEY = 'product-collections';
 
 export interface CollectionVariantInfo {
@@ -134,7 +135,7 @@ export function useCollections() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error loading collections:', error);
+      logger.error('Error loading collections:', error);
       setIsLoaded(true);
       return;
     }
@@ -233,7 +234,7 @@ export function useCollections() {
           }
         }
       } catch (e) {
-        console.error('Error migrating collections:', e);
+        logger.error('Error migrating collections:', e);
       }
 
       await loadCollections();

@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { releaseScrollLockIfIdle, isRootInert, forceRootInteractive } from '@/lib/dom/scroll-lock';
 
+import { logger } from '@/lib/logger';
 export function useScrollLockFix() {
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -16,7 +17,7 @@ export function useScrollLockFix() {
       requestAnimationFrame(() => {
         scheduled = false;
         if (isRootInert()) {
-          console.warn('[ScrollLockFix] Detected stuck inert root, forcing recovery');
+          logger.warn('[ScrollLockFix] Detected stuck inert root, forcing recovery');
           forceRootInteractive();
         } else {
           releaseScrollLockIfIdle();
@@ -62,7 +63,7 @@ export function useScrollLockFix() {
 
     const selfHeal = () => {
       if (isRootInert()) {
-        console.warn('[ScrollLockFix] Interactive click blocked by inert root — healing');
+        logger.warn('[ScrollLockFix] Interactive click blocked by inert root — healing');
         forceRootInteractive();
       }
     };

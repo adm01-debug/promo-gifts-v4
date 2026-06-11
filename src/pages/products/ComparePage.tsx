@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product-catalog';
+import { formatCurrency } from '@/lib/format';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,11 +92,7 @@ export default function ComparePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareItems, getProductsByIds, _cacheSignal]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const products = compareEntries.map((e) => e.product) as any[];
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const products: Product[] = compareEntries.map((e) => e.product);
 
   const getStockStatusLabel = (status: string) => {
     switch (status) {

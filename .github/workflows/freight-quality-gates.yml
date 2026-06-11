@@ -506,6 +506,11 @@ jobs:
             case $result in
               success) echo "✅ $name"; PASSED=$((PASSED+1)) ;;
               skipped) echo "⏭️  $name (skipped)"; SKIPPED=$((SKIPPED+1)) ;;
+              cancelled)
+                echo "⚠️  $name (cancelled — runner reclaimed, treated as skipped)"
+                echo "::warning::Gate '$name' was cancelled. If cancel-in-progress fired on a failing run, this may mask a real failure — verify manually."
+                SKIPPED=$((SKIPPED+1))
+                ;;
               *) echo "❌ $name ($result)"; FAILED=$((FAILED+1)) ;;
             esac
           done

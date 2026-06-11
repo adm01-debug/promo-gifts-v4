@@ -16,6 +16,7 @@ import { authDebug, authDebugError, summarizeSession } from './auth-debug';
 import type { Session } from '@supabase/supabase-js';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 
+import { logger } from '@/lib/logger';
 const STORAGE_KEY = '__sso_last_flow';
 const FLOW_PREFIX = '[AUTH-FLOW]';
 const AUTH_FLOW_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === 'true';
@@ -104,7 +105,7 @@ export class AuthFlowTracer {
       steps: [],
     };
     if (AUTH_FLOW_DEBUG_ENABLED) {
-      console.warn(
+      logger.warn(
         `${FLOW_PREFIX} flow=${this.flowId} START path=${this.snapshot.url.pathname} ` +
           `query=${this.snapshot.url.hasQuery} hash=${this.snapshot.url.hasHash}`,
       );
@@ -170,7 +171,7 @@ export class AuthFlowTracer {
 
     if (AUTH_FLOW_DEBUG_ENABLED) {
       const safeSnapshot = this.safeSnapshot();
-      console.warn(title, {
+      logger.warn(title, {
         ...safeSnapshot,
         steps: safeSnapshot.steps.map((s) => ({ t: s.t, phase: s.phase })),
       });

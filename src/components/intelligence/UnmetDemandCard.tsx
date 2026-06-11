@@ -38,8 +38,8 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
           lastSearchedAt: now,
         }));
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: rows, error } = await (supabase.from as any)('search_analytics')
+      const { data: rows, error } = await supabase
+        .from('search_analytics')
         .select('search_term, created_at')
         .eq('results_count', 0)
         .gte('created_at', since)

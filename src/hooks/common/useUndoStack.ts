@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useRef } from 'react';
 
+import { logger } from '@/lib/logger';
 export interface UndoEntry {
   id: string;
   label: string;
@@ -33,7 +34,7 @@ export function useUndoStack() {
       await top.undo();
       return true;
     } catch (e) {
-      console.warn('[useUndoStack] undo failed', e);
+      logger.warn('[useUndoStack] undo failed', e);
       return false;
     }
   }, []);

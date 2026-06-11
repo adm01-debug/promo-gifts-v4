@@ -10,7 +10,8 @@
  *   1. O tipo ExternalTable (usado por useExternalDatabase.ts)
  *   2. Compatibilidade com re-exports em external-db/index.ts
  *
- * TODO: Migrar ExternalTable para rest-native.ts e remover este arquivo.
+ * ExternalTable foi migrado para rest-native.ts (concluído). Arquivo mantido apenas para as
+ * constantes PRODUCT_TABLES / BRIDGE_ALIASES / PRODUCT_VIEWS usadas como documentação.
  */
 
 // ============================================

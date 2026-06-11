@@ -219,7 +219,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
         }
       },
       onError: (err) => {
-        console.error('[Voice] Web Speech fallback error:', err);
+        logger.error('[Voice] Web Speech fallback error:', err);
         isStartingRef.current = false;
         const message = friendlyErrorMessage(err);
         setError(message);

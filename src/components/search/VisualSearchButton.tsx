@@ -12,6 +12,7 @@ import {
 import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 interface ProductAnalysis {
   productType: string;
   material: string;
@@ -99,7 +100,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       onResultsFound(products, analysis);
       setIsOpen(false);
     } catch (error) {
-      console.error('Visual search error:', error);
+      logger.error('Visual search error:', error);
       toast({
         title: 'Erro na busca',
         description:

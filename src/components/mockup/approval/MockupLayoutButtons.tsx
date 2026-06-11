@@ -14,6 +14,7 @@ import type { MockupApprovalData } from '@/types/mockup-approval';
 import type { MockupClient } from '@/components/mockup/MockupConfigPanel';
 import type { DetectedColor } from '@/hooks/simulation';
 
+import { logger } from '@/lib/logger';
 interface MockupLayoutButtonsProps {
   /** The AI-generated mockup URL */
   generatedMockup: string | null;
@@ -290,7 +291,7 @@ export function MockupLayoutButtons({
       setApprovalData(data);
       setPreviewOpen(true);
     } catch (err) {
-      console.error('Static composition error:', err);
+      logger.error('Static composition error:', err);
       toast.error('Erro ao gerar composição estática. Verifique se as imagens estão acessíveis.');
     } finally {
       setIsGeneratingStatic(false);

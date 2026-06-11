@@ -11,6 +11,7 @@ export interface ExternalProduct {
   description?: string;
   short_description?: string;
   price?: number;
+  /** Alguns bridges expõem o preço de venda como sale_price em vez de price. */
   sale_price?: number;
   cost_price?: number;
   category_id?: string;

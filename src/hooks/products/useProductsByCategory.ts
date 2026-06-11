@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 interface UseProductsByCategoryOptions {
   categoryIds: string[];
   includeDescendants?: boolean;
@@ -84,7 +85,7 @@ export function useProductsByCategory({
       lastFetchedKey.current = categoryIdsKey;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('Erro ao buscar produtos por categoria:', err);
+      logger.error('Erro ao buscar produtos por categoria:', err);
       setError(message);
       setProductIds(new Set());
     } finally {
@@ -139,7 +140,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
           setDescendantIds(data.data || []);
         }
       } catch (err) {
-        console.error('Erro ao buscar descendentes:', err);
+        logger.error('Erro ao buscar descendentes:', err);
       } finally {
         setIsLoading(false);
       }

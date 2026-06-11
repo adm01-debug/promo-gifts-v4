@@ -9,6 +9,7 @@
  *  - Suporte HLS via hls.js (fallback nativo no Safari)
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 import type HlsType from 'hls.js';
 import {
   Camera,
@@ -164,9 +165,7 @@ export function PromoFlixPlayer({
   );
 
   const logTelemetry = useCallback((event: string, details?: unknown) => {
-    const timestamp = new Date().toISOString();
-    // eslint-disable-next-line no-console
-    console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
+    logger.debug(`[PromoFlix Telemetry] ${event}`, details);
   }, []);
 
   const flash = useCallback((label: string) => {
@@ -329,7 +328,7 @@ export function PromoFlixPlayer({
               }
             }
           } catch (err) {
-            console.warn('Falha ao carregar preferência de qualidade:', err);
+            logger.warn('Falha ao carregar preferência de qualidade:', err);
           }
           const v = videoRef.current;
           if (v) {
@@ -352,7 +351,7 @@ export function PromoFlixPlayer({
           if (!data.fatal) return;
           switch (data.type) {
             case hlsConstructor.ErrorTypes.NETWORK_ERROR: {
-              console.error('HLS Network Error:', data);
+              logger.error('HLS Network Error:', data);
               reconnectAttemptsRef.current += 1;
               if (reconnectAttemptsRef.current > 3) {
                 setHlsError(
@@ -374,7 +373,7 @@ export function PromoFlixPlayer({
               break;
             }
             case hlsConstructor.ErrorTypes.MEDIA_ERROR:
-              console.error('HLS Media Error:', data);
+              logger.error('HLS Media Error:', data);
               try {
                 hlsInstance.recoverMediaError();
               } catch {
@@ -390,7 +389,7 @@ export function PromoFlixPlayer({
               }
               break;
             default:
-              console.error('HLS Fatal Error:', data);
+              logger.error('HLS Fatal Error:', data);
               setHlsError('Falha ao carregar o vídeo. Tente novamente.');
               setIsLoading(false);
               setIsReconnecting(false);
@@ -412,7 +411,7 @@ export function PromoFlixPlayer({
       })
       .catch((err) => {
         if (myToken !== initTokenRef.current) return;
-        console.error('HLS loading error:', err);
+        logger.error('HLS loading error:', err);
         const v = videoRef.current;
         if (v) {
           v.src = src;

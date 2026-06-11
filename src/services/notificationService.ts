@@ -4,6 +4,7 @@
 // Criado do zero com CRUD completo sobre workspace_notifications via Supabase.
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 export interface WorkspaceNotification {
   id: string;
   user_id: string;
@@ -83,7 +84,7 @@ export async function getNotifications(
   const { data, error, count } = await query;
 
   if (error) {
-    console.error('[notificationService] getNotifications error:', error.message);
+    logger.error('[notificationService] getNotifications error:', error.message);
     throw error;
   }
 
@@ -105,7 +106,7 @@ export async function getUnreadCount(): Promise<number> {
     .eq('is_read', false);
 
   if (error) {
-    console.error('[notificationService] getUnreadCount error:', error.message);
+    logger.error('[notificationService] getUnreadCount error:', error.message);
     return 0;
   }
 
@@ -123,7 +124,7 @@ export async function markAsRead(notificationId: string): Promise<boolean> {
     .eq('id', notificationId);
 
   if (error) {
-    console.error('[notificationService] markAsRead error:', error.message);
+    logger.error('[notificationService] markAsRead error:', error.message);
     return false;
   }
 
@@ -142,7 +143,7 @@ export async function markAllAsRead(): Promise<number> {
     .select('id');
 
   if (error) {
-    console.error('[notificationService] markAllAsRead error:', error.message);
+    logger.error('[notificationService] markAllAsRead error:', error.message);
     return -1;
   }
 
@@ -160,7 +161,7 @@ export async function deleteNotification(notificationId: string): Promise<boolea
     .eq('id', notificationId);
 
   if (error) {
-    console.error('[notificationService] deleteNotification error:', error.message);
+    logger.error('[notificationService] deleteNotification error:', error.message);
     return false;
   }
 
@@ -175,8 +176,8 @@ export async function deleteNotification(notificationId: string): Promise<boolea
  *
  * @example
  * const unsubscribe = subscribeToNotifications(
- *   (n) => console.log('Nova notificação:', n),
- *   (n) => console.log('Notificação atualizada:', n),
+ *   (n) => logger.log('Nova notificação:', n),
+ *   (n) => logger.log('Notificação atualizada:', n),
  * );
  * // Na desmontagem do componente:
  * unsubscribe();

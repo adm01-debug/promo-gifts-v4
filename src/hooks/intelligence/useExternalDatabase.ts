@@ -14,10 +14,10 @@ import { toast } from 'sonner';
 
 // Re-exportar tudo dos módulos para manter compatibilidade de imports
 export * from '@/lib/external-db/types';
-export * from '@/lib/external-db/tables';
 export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
+export type { ExternalTable } from '@/lib/external-db/rest-native';
 
-import type { ExternalTable } from '@/lib/external-db/tables';
+import type { ExternalTable } from '@/lib/external-db/rest-native';
 import { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';
@@ -100,7 +100,7 @@ function isBridgeRelatedError(err: unknown, message: string): boolean {
 
 export function useExternalDatabase<T = Record<string, unknown>>(tableName: ExternalTable) {
   if (!tableName || typeof tableName !== 'string') {
-    console.error(`[useExternalDatabase] Invalid tableName: ${JSON.stringify(tableName)}`);
+    logger.error(`[useExternalDatabase] Invalid tableName: ${JSON.stringify(tableName)}`);
   }
 
   const [state, setState] = useState<ExternalDatabaseState<T>>({
@@ -254,7 +254,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
         toast.success('Registro excluído com sucesso!');
         return true;
       } catch (err) {
-        console.error('Error deleting:', err);
+        logger.error('Error deleting:', err);
         toast.error('Erro ao excluir registro');
         return false;
       }

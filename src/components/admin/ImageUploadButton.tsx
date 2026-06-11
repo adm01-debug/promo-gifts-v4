@@ -6,6 +6,7 @@ import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { validateFile } from '@/lib/security/file-validation';
 
+import { logger } from '@/lib/logger';
 interface ImageUploadButtonProps {
   currentImageUrl: string | null;
   onUpload: (url: string) => void;
@@ -90,7 +91,7 @@ export function ImageUploadButton({
           retryCount++;
           if (retryCount < maxRetries) {
             const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s
-            console.warn(
+            logger.warn(
               `Tentativa ${retryCount} falhou. Tentando novamente em ${delay}ms...`,
               error,
             );
@@ -103,7 +104,7 @@ export function ImageUploadButton({
         throw lastError;
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast.error('Erro ao enviar imagem');
     } finally {
       setIsUploading(false);
@@ -126,7 +127,7 @@ export function ImageUploadButton({
       onRemove();
       toast.success('Imagem removida!');
     } catch (error) {
-      console.error('Remove error:', error);
+      logger.error('Remove error:', error);
       toast.error('Erro ao remover imagem');
     }
   };

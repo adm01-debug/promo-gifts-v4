@@ -34,32 +34,35 @@ export interface Supplier {
   is_product_supplier: boolean;
   is_engraving_supplier: boolean;
   logo_url: string | null;
-  contacts: string | null;
   inscricao_estadual: string | null;
   tax_regime: string | null;
   state_uf: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  linkedin: string | null;
-  youtube: string | null;
-  tiktok: string | null;
-  // Endereço estruturado
-  tipo_logradouro: string | null;
-  logradouro: string | null;
-  numero: string | null;
-  complemento: string | null;
-  bairro: string | null;
-  cidade: string | null;
-  estado: string | null;
-  cep: string | null;
-  pais: string | null;
-  ponto_referencia: string | null;
-  google_maps_url: string | null;
-  google_place_id: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  horario_funcionamento: string | null;
-  instrucoes_entrega: string | null;
+  // Campos SEM coluna dedicada em public.suppliers (derivados de `notes`
+  // ou pendentes de migração) — opcionais: o fetch paginado seleciona
+  // apenas colunas reais e não os retorna.
+  contacts?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  linkedin?: string | null;
+  youtube?: string | null;
+  tiktok?: string | null;
+  // Endereço estruturado (idem: sem colunas dedicadas)
+  tipo_logradouro?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cep?: string | null;
+  pais?: string | null;
+  ponto_referencia?: string | null;
+  google_maps_url?: string | null;
+  google_place_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  horario_funcionamento?: string | null;
+  instrucoes_entrega?: string | null;
   created_at: string;
   updated_at: string;
   // Dynamic fields from JSON parsing

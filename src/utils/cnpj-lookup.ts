@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 export interface CnpjData {
   razao_social: string | null;
   nome_fantasia: string | null;
@@ -29,7 +30,7 @@ export async function fetchCnpjData(cnpj: string): Promise<CnpjData | null> {
   });
 
   if (error) {
-    console.error('[CNPJ-Lookup] Error:', error);
+    logger.error('[CNPJ-Lookup] Error:', error);
     throw new Error(error.message || 'Erro ao consultar CNPJ');
   }
 

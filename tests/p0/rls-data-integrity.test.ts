@@ -108,19 +108,28 @@ describe("P0 — RLS e integridade", () => {
   });
 
   // ─── mcp_keys (segurança crítica) ─────────────────────────────────────
-  it.skip("mcp_keys: NUNCA retorna `secret_key` em SELECT após o INSERT inicial", async () => {
-    // TODO(P0): cobrir mem://features/mcp-keys-audit.
-    expect(true).toBe(true);
-  });
-
-  it.skip("mcp_keys: revogação automática quando emissor perde role 'dev'", async () => {
-    // TODO(P0): mem://features/mcp-keys-auto-revocation — trigger + cron.
-    expect(true).toBe(true);
+  // 2026-06-11: a tabela mcp_keys foi REMOVIDA (fase 1.1, substituída por
+  // integration_credentials). Os testes antigos de secret_key/auto-revogação
+  // tornaram-se obsoletos; o contrato agora é garantir que o DROP esteja
+  // presente para que a tabela legada nunca volte a existir com dados.
+  it("mcp_keys: tabela legada foi dropada (substituída por integration_credentials)", () => {
+    expect(
+      /DROP TABLE IF EXISTS public\.mcp_keys CASCADE/i.test(migrationCorpus),
+      "Falta DROP TABLE public.mcp_keys (fase 1.1 — legado Lovable)",
+    ).toBe(true);
   });
 
   // ─── workspace_notifications ──────────────────────────────────────────
-  it.skip("workspace_notifications: usuário só lê notificações do próprio workspace", async () => {
-    expect(true).toBe(true);
+  it("workspace_notifications: policy de SELECT restringe ao próprio usuário (user_id = auth.uid())", () => {
+    const re =
+      /CREATE POLICY "Users can read own notifications"[\s\S]{0,200}ON public\.workspace_notifications FOR SELECT[\s\S]{0,200}USING \(user_id = auth\.uid\(\)\)/i;
+    expect(re.test(migrationCorpus)).toBe(true);
+  });
+
+  it("workspace_notifications: policy de UPDATE exige user_id = auth.uid() em USING e WITH CHECK", () => {
+    const re =
+      /CREATE POLICY "Users can update own notifications"[\s\S]{0,200}ON public\.workspace_notifications FOR UPDATE[\s\S]{0,200}USING \(user_id = auth\.uid\(\)\)[\s\S]{0,100}WITH CHECK \(user_id = auth\.uid\(\)\)/i;
+    expect(re.test(migrationCorpus)).toBe(true);
   });
 
   // ─── realtime ──────────────────────────────────────────────────────────
@@ -134,8 +143,18 @@ describe("P0 — RLS e integridade", () => {
     expect(true).toBe(true);
   });
 
-  it.skip("ownership-repair: dry-run NÃO modifica dados", async () => {
-    // TODO(P0): mem://features/ownership-repair-tooling.
-    expect(true).toBe(true);
+  it("ownership-repair: repair_ownership_orphans tem _dry_run=true por default e guarda IF NOT _dry_run em cada mutação", () => {
+    // Camada 1: contrato sobre a migration. Garante que (a) o default é dry-run
+    // e (b) DELETE/UPDATE só executam dentro de `IF NOT _dry_run`.
+    const fnDef = migrationCorpus.match(
+      /CREATE OR REPLACE FUNCTION public\.repair_ownership_orphans\([\s\S]{0,20000}?\n\$\$;/i,
+    )?.[0];
+    expect(fnDef, "Função repair_ownership_orphans não encontrada nas migrations").toBeTruthy();
+    expect(fnDef).toMatch(/_dry_run boolean DEFAULT true/i);
+    // Toda mutação destrutiva deve estar protegida pelo guard.
+    const mutations = fnDef!.match(/EXECUTE format\('(?:DELETE FROM|UPDATE) /gi) ?? [];
+    const guards = fnDef!.match(/IF NOT _dry_run THEN/gi) ?? [];
+    expect(mutations.length).toBeGreaterThan(0);
+    expect(guards.length).toBeGreaterThanOrEqual(mutations.length);
   });
 });

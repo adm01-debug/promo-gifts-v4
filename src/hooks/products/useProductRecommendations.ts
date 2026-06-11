@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PromobrindProduct } from '@/lib/external-db';
 
+import { logger } from '@/lib/logger';
 // Re-export extracted hooks for backwards compatibility
 export { useProductInsights } from '@/hooks/products/useProductInsights';
 export { useClientTopProducts } from '@/hooks/crm/useClientTopProducts';
@@ -151,7 +152,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
           .slice(0, 6)
           .map((p) => mapProduct(p, 80, 'Baseado no seu histórico'));
       } catch (error) {
-        console.error('Error fetching recommendations:', error);
+        logger.error('Error fetching recommendations:', error);
         return [];
       }
     },
@@ -217,7 +218,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
           };
         });
       } catch (error) {
-        console.error('Error fetching trending products:', error);
+        logger.error('Error fetching trending products:', error);
         return [];
       }
     },

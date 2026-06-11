@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -71,7 +72,7 @@ export function useSavedFilters<T = Record<string, unknown>>(storageKey: string)
         );
       }
     } catch (e) {
-      console.error('Failed to load saved filters:', e);
+      logger.error('Failed to load saved filters:', e);
     }
   }, [storageKey]);
 
@@ -81,7 +82,7 @@ export function useSavedFilters<T = Record<string, unknown>>(storageKey: string)
       try {
         localStorage.setItem(`filters_${storageKey}`, JSON.stringify(filters));
       } catch (e) {
-        console.error('Failed to save filters:', e);
+        logger.error('Failed to save filters:', e);
       }
     },
     [storageKey],

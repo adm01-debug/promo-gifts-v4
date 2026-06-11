@@ -18,12 +18,12 @@ export function useProfileRoles() {
     const fetchPromise = new Promise<void>((resolve) => {
       resolvePromise = resolve;
     });
-    
+
     if (fetchPromiseRef.current) {
       await fetchPromiseRef.current;
       return;
     }
-    
+
     fetchPromiseRef.current = fetchPromise;
 
     fetchCancelledRef.current = false;
