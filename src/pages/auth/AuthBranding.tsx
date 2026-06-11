@@ -96,9 +96,10 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     if (config.reducedMotion) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Reduzido a intensidade do movimento horizontal (e.clientX) e vertical
       setMousePos({
-        x: (e.clientX / window.innerWidth - 0.5) * 20 * config.parallaxIntensity,
-        y: (e.clientY / window.innerHeight - 0.5) * 20 * config.parallaxIntensity,
+        x: (e.clientX / window.innerWidth - 0.5) * 8 * config.parallaxIntensity,
+        y: (e.clientY / window.innerHeight - 0.5) * 8 * config.parallaxIntensity,
       });
     };
     const handleScroll = () => {
@@ -134,7 +135,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       id,
       left: Math.random() * 80 + 10,
       size: 30 + Math.random() * 40,
-      duration: 5 + Math.random() * 3,
+      // Aumentado o tempo de subida (duration) para os foguetes ficarem mais devagar
+      duration: 12 + Math.random() * 5,
       rotation: Math.random() * 10 - 5,
       scale: 0.8 + Math.random() * 0.4,
     };
@@ -145,7 +147,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, []);
 
   useEffect(() => {
-    const rocketInterval = setInterval(() => spawnRocket(), 2000);
+    // Aumentado o intervalo entre os lançamentos de foguetes (de 2000ms para 6000ms)
+    const rocketInterval = setInterval(() => spawnRocket(), 6000);
 
     // Meteor shower interval
     const meteorInterval = setInterval(() => {
