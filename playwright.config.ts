@@ -2,6 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  // Specs E2E são *.spec.ts. O default do Playwright também carregaria
+  // *.test.ts — o que puxa e2e/scripts/__tests__/*.test.ts (vitest) e quebra
+  // o runner inteiro com "Cannot redefine Symbol($$jest-matchers-object)".
+  testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
