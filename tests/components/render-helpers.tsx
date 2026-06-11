@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
+import { SellerCartProvider } from "@/contexts/SellerCartContext";
 import { vi } from "vitest";
 
 // --- Supabase mock ---
@@ -186,7 +187,9 @@ export function renderWithProviders(
         <QueryClientProvider client={queryClient}>
           <MemoryRouter initialEntries={[route]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <TooltipProvider>
-              {children}
+              <SellerCartProvider>
+                {children}
+              </SellerCartProvider>
             </TooltipProvider>
           </MemoryRouter>
         </QueryClientProvider>
