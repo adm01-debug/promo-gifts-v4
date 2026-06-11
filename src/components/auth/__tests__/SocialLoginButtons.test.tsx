@@ -16,6 +16,9 @@ import { SocialLoginButtons } from '../SocialLoginButtons';
 const signInWithOAuthMock = vi.fn();
 const toastMock = vi.fn();
 
+// useToast is imported from the direct subpath; cover both aliases.
+const mockUseToast = vi.hoisted(() => vi.fn());
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
@@ -25,7 +28,11 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 vi.mock('@/hooks/ui', () => ({
-  useToast: () => ({ toast: toastMock }),
+  useToast: mockUseToast,
+}));
+
+vi.mock('@/hooks/ui/use-toast', () => ({
+  useToast: mockUseToast,
 }));
 
 vi.mock('@/lib/auth/auth-debug', () => ({
@@ -41,6 +48,7 @@ describe('SocialLoginButtons (Google)', () => {
   beforeEach(() => {
     signInWithOAuthMock.mockReset();
     toastMock.mockReset();
+    mockUseToast.mockReturnValue({ toast: toastMock });
     sessionStorage.clear();
   });
 
