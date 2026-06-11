@@ -25,6 +25,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline
 
+      # GATE 0: SSOT Supabase — bloqueia se project ID errado estiver em client.ts
+      # Previne reincidência do incidente 401 de produção (2026-06-11).
+      # Lovable reverteu CURRENT_PROJECT_ID 6+ vezes em 10 min → este gate bloqueia.
+      - name: Gate 0 — SSOT Supabase (bloqueante)
+        run: node scripts/validate-supabase-config.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
       # GATE 1: TypeScript — zero regressions vs baseline
       - name: TypeScript gate (zero regressions)
         run: node scripts/check-tsc-baseline.mjs
