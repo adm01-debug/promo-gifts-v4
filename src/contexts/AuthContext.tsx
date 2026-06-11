@@ -339,7 +339,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSupabaseClient()
       .then(async (supabase) => {
-        const { error: invokeError } = await supabase.functions.invoke('log-login-attempt', {
+        const isDev = import.meta.env.DEV;
+        if (isDev) {
+          console.groupCollapsed('%c[Auth Debug] Invoking log-login-attempt', 'color: #3ecf8e; font-weight: bold;');
+          console.log('Payload:', { email, user_id: data?.user?.id, success: !error });
+          console.groupEnd();
+        }
+
+        const { error: invokeError, data: invokeData } = await supabase.functions.invoke('log-login-attempt', {
           body: {
             email,
             user_id: data?.user?.id,
@@ -349,6 +356,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
           headers: log.headers(),
         });
+
+        if (isDev) {
+          console.groupCollapsed('%c[Auth Debug] log-login-attempt result', 'color: #3ecf8e; font-weight: bold;');
+          console.log('Error:', invokeError);
+          console.log('Data:', invokeData);
+          console.groupEnd();
+        }
 
         if (invokeError) {
           log.error('log_login_attempt_failed', {
