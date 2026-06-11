@@ -26,6 +26,13 @@ export interface ExternalProduct {
   is_kit?: boolean;
   min_quantity?: number;
   stock?: number;
+  // Colunas reais do products no CRM (sem alias no rest-native):
+  // unit_price/stock_qty são o que o PostgREST devolve de fato.
+  unit_price?: number;
+  stock_qty?: number;
+  margin_pct?: number;
+  min_stock?: number;
+  category?: string;
   lead_time_days?: number;
   created_at?: string;
   updated_at?: string;

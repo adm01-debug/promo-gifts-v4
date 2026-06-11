@@ -20,8 +20,8 @@ export default defineConfig({
   },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 5 : 1, // Increased retries for chaos tests
-  workers: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 5 : 1,
+  workers: 1,
   reporter: [
     ['html', { open: 'never' }],
     ['list'],

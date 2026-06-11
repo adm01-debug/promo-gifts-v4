@@ -72,6 +72,7 @@ function emit(
   // PROD: apenas warn/error — o build de produção stripa console.log/info/debug
   // (vite.config esbuild.pure), então info/debug em PROD precisam sair via warn
   // ou o JSON nunca chega aos collectors.
+  /* eslint-disable no-console */
   if (isDev) {
     if (level === 'error') console.error(tag, payload);
     else if (level === 'warn') console.warn(tag, payload);
@@ -84,6 +85,7 @@ function emit(
     if (level === 'error') console.error(json);
     else console.warn(json);
   }
+  /* eslint-enable no-console */
 
   // Sentry forwarding
   if (level === 'error') {
