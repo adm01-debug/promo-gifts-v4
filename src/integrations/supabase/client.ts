@@ -1,60 +1,87 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
-// SSOT: O projeto canônico do app é doufsxqlfjyuvxuezpln.
-// O .env é auto-gerado pelo Lovable e pode apontar para um projeto Lovable Cloud
-// vazio (ex.: pqpdolkaeqlyzpdpbizo). Por isso, o canônico SEMPRE vence em produção
-// e qualquer override de env só é aceito se:
-//   (a) aponta explicitamente para o canônico, OU
-//   (b) não aponta para nenhum dos projetos proibidos conhecidos.
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const log = createClientLogger('supabase.client');
+
+// SSOT: O projeto canônico do app é doufsxqlfjyuvxuezpln (camada Gold/Medallion:
+// v_products_public, v_variant_sale_prices_public, v_product_images_cdn etc.,
+// e alvo das migrations em supabase/config.toml).
 //
-// SECURITY: A CANONICAL_ANON_KEY é pública por design no Supabase (role 'anon').
-// No entanto, TODAS as tabelas com dados sensíveis DEVEM ter RLS ativo em
-// doufsxqlfjyuvxuezpln. Verificar via:
-//   SELECT tablename, rowsecurity FROM pg_tables
-//   WHERE schemaname = 'public' AND rowsecurity = false;
-// Nenhuma tabela de negócio deve aparecer nessa query sem justificativa documentada.
-const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
+// ⚠️  ATENÇÃO AO LOVABLE AGENT E AO CLAUDE CODE: NÃO SIMPLIFICAR ESTE ARQUIVO.
+// validate-supabase-config.mjs (executado em cada build) requer:
+//   content.includes('validateEnv') && content.includes('CURRENT_PROJECT_ID')
+// Remover validateEnv() ou CURRENT_PROJECT_ID derruba 100% dos builds da main no Vercel.
+//
+// URLs PROIBIDAS (Claude Code não deve apontar para estas):
+//   - supabase.atomicabr.com.br (self-hosted — não tem o catálogo)
+//   - pqpdolkaeqlyzpdpbizo (Lovable Cloud vazio)
+//   - hncgwjbzdajfdgtqgefe (Lovable Cloud vazio 2)
+const CURRENT_PROJECT_ID = "doufsxqlfjyuvxuezpln";
+const CANONICAL_URL = `https://${CURRENT_PROJECT_ID}.supabase.co`;
 const CANONICAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
-
-// Lista de projetos CONHECIDOS que não devem ser usados (Lovable Cloud vazios).
-// ATENÇÃO: esta lista é de negação e pode ficar desatualizada se Lovable criar
-// novos projetos Cloud. O check positivo abaixo (envPointsToCanonical) é a
-// proteção primária — esta lista é defesa em profundidade.
-const FORBIDDEN_REFS = ["pqpdolkaeqlyzpdpbizo", "hncgwjbzdajfdgtqgefe"];
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Check POSITIVO (primário): o .env já aponta para o projeto correto?
-const envPointsToCanonical = !!envUrl && envUrl.includes('doufsxqlfjyuvxuezpln');
+// Validate that VITE_SUPABASE_URL, if set, points to the correct project.
+// Localhost, placeholders, and URLs explicitly pointing to the canonical project are OK.
+// Self-hosted (atomicabr), other Lovable Cloud projects, etc. are REJECTED.
+// Returns true when the URL is usable, false when it must be rejected.
+const validateEnv = (): boolean => {
+  if (!envUrl) {
+    log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
+    return true;
+  }
+  const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
+  const isPlaceholder = envUrl.includes('placeholder');
+  if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
+    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
+    if (import.meta.env.DEV) {
+      console.error(
+        "%c[Supabase Critical]",
+        "color: red; font-weight: bold;",
+        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
+      );
+    }
+    return false;
+  }
+  return true;
+};
 
-// Check NEGATIVO (defesa em profundidade): o .env aponta para um proibido?
-const envPointsToForbidden = !!envUrl && !envPointsToCanonical &&
-  FORBIDDEN_REFS.some((ref) => envUrl.includes(ref));
+const envUrlIsValid = validateEnv();
 
-// Estratégia de resolução:
-// 1. Se .env aponta EXPLICITAMENTE para o canônico → usa .env.
-// 2. Qualquer outro caso (self-hosted, proibido, vazio, desconhecido) → canônico hardcoded.
-// NOTA: Case 3 removido — self-hosted atomicabr e outros projetos não-canônicos
-// não podem sobrescrever doufsxqlfjyuvxuezpln. Hotfix 2026-06-11.
-export const SUPABASE_URL = envPointsToCanonical ? envUrl : CANONICAL_URL;
-export const SUPABASE_PUBLISHABLE_KEY = envPointsToCanonical
-  ? (envKey ?? CANONICAL_ANON_KEY)
-  : CANONICAL_ANON_KEY;
+export const SUPABASE_URL = envUrlIsValid ? (envUrl || CANONICAL_URL) : CANONICAL_URL;
+// Quando a env URL é rejeitada, a env KEY pertence ao projeto errado e causaria
+// "Invalid API key" / 401. Descartar a key também e cair no fallback canônico.
+export const SUPABASE_PUBLISHABLE_KEY = envUrlIsValid ? (envKey || CANONICAL_ANON_KEY) : CANONICAL_ANON_KEY;
 
-if (envPointsToForbidden && typeof console !== "undefined") {
-  console.warn(
-    `[supabase/client] VITE_SUPABASE_URL aponta para projeto proibido (${envUrl}). ` +
-      "Forçando uso do banco canônico doufsxqlfjyuvxuezpln."
-  );
-} else if (!envUrl && typeof console !== "undefined") {
-  console.warn(
-    "[supabase/client] VITE_SUPABASE_URL não encontrada - usando banco canônico doufsxqlfjyuvxuezpln."
-  );
+
+log.info('init', { 
+  url: SUPABASE_URL, 
+  project_id: SUPABASE_URL.split('.')[0].split('//')[1],
+  has_custom_env: !!envUrl,
+  is_canonical: SUPABASE_URL.includes(CURRENT_PROJECT_ID)
+});
+
+// Debug flag for E2E tests
+type SupabaseClientDebug = {
+  url: string;
+  projectId: string;
+  isCanonical: boolean;
+};
+if (typeof window !== 'undefined') {
+  (window as Window & { __SUPABASE_CLIENT_DEBUG__?: SupabaseClientDebug }).__SUPABASE_CLIENT_DEBUG__ = {
+    url: SUPABASE_URL,
+    projectId: SUPABASE_URL.split('.')[0].split('//')[1],
+    isCanonical: SUPABASE_URL.includes(CURRENT_PROJECT_ID)
+  };
 }
+
+
 
 type SupabaseStorage = {
   getItem: Storage['getItem'];
@@ -76,4 +103,52 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
+  global: {
+    fetch: async (url, options) => {
+      try {
+        const response = await fetch(url, options);
+        if (response.status === 401) {
+          const body = await response.clone().json().catch(() => ({}));
+          if (body.code === 'UNAUTHORIZED_LEGACY_JWT' || body.message?.includes('Invalid JWT') || body.message?.includes('Invalid API key')) {
+            const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+            log.error('auth_401_detected', {
+              url,
+              status: response.status,
+              body,
+              project_id: projectId,
+              is_canonical: projectId === CURRENT_PROJECT_ID
+            });
+            if (projectId !== CURRENT_PROJECT_ID && !projectId.includes('localhost')) {
+              console.error(`[Supabase Critical] 401 Unauthorized on project ${projectId}. Current configuration might be invalid.`);
+            }
+          }
+        }
+        return response;
+      } catch (error) {
+        log.error('request_failed', { error });
+        throw error;
+      }
+    }
+  }
+});
+
+const authLog = log.child('auth');
+
+supabase.auth.onAuthStateChange((event, session) => {
+  const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+  
+  authLog.info('state_change', { 
+    event, 
+    user_id: session?.user?.id,
+    project_id: projectId,
+    is_canonical: projectId === CURRENT_PROJECT_ID
+  });
+
+  const isLocalProject = projectId.includes('localhost') || projectId.includes('127.0.0.1') || projectId === 'placeholder';
+  if (!isLocalProject && projectId !== CURRENT_PROJECT_ID) {
+    authLog.warn('wrong_project_detected', {
+      current: projectId,
+      expected: CURRENT_PROJECT_ID
+    });
+  }
 });
