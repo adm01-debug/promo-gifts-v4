@@ -491,7 +491,7 @@ export default function FiltersPage() {
                 </div>
 
                 {/* Products */}
-                <div className="relative min-h-[calc(100vh-10rem)]">
+                <div className="relative h-[calc(100vh-10rem)] min-h-[500px]">
                   {state.isFiltering && (
                     <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center rounded-xl bg-background/50 pt-32 backdrop-blur-[1px] transition-opacity duration-200">
                       <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
