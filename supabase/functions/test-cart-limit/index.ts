@@ -1,9 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: getCorsHeaders(req) });
+  }
+
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const seller_id = "7b565451-7eb6-4063-a74b-8ce4dca8703d";
 
@@ -34,5 +39,5 @@ Deno.serve(async (req) => {
     errors: results.map(r => r.error?.message).filter(Boolean),
     final_count: finalCarts?.length,
     limit_enforced: finalCarts?.length === 3
-  }), { headers: { "Content-Type": "application/json" } });
+  }), { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
 });

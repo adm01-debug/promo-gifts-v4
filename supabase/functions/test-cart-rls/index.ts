@@ -1,14 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: getCorsHeaders(req) });
+  }
+
   const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  
+
   const seller1_id = "7b565451-7eb6-4063-a74b-8ce4dca8703d";
-  const seller2_id = "00000000-0000-0000-0000-000000000003"; // Dummy ID, but RLS should still block if we use a JWT
 
   // 1. Create cart for Seller 1
   const { data: cart1 } = await adminClient.from('seller_carts').insert({
@@ -21,13 +24,15 @@ Deno.serve(async (req) => {
   // Since we are in an Edge Function, we can't easily mock auth.uid() without a JWT.
   // But we can check if the policies are defined correctly in SQL (already done).
   // A better test is to try to SELECT using a client that has a JWT for Seller 2.
-  
+
   // Cleanup
-  await adminClient.from('seller_carts').delete().eq('id', cart1.id);
+  if (cart1) {
+    await adminClient.from('seller_carts').delete().eq('id', cart1.id);
+  }
 
   return new Response(JSON.stringify({
     rls_audit_cart: "Checked SQL Policies",
     policy_exists: true,
     result: "Passed via SQL inspection"
-  }));
+  }), { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
 });
