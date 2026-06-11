@@ -76,17 +76,13 @@ function emit(
   if (isDev) {
     if (level === 'error') console.error(tag, payload);
     else if (level === 'warn') console.warn(tag, payload);
-    // eslint-disable-next-line no-console -- branch DEV-only; PROD roteia via warn
     else if (level === 'info') console.info(tag, payload);
-    // eslint-disable-next-line no-console -- branch DEV-only; PROD roteia via warn
     else console.debug(tag, payload);
   } else {
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
     else if (level === 'warn') console.warn(json);
-    // eslint-disable-next-line no-console
     else if (level === 'info') console.log(json);
-    // eslint-disable-next-line no-console
     else console.debug(json);
   }
   /* eslint-enable no-console */
