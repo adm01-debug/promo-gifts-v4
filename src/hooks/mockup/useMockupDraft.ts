@@ -104,11 +104,14 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         if (upsertError) {
           if (upsertError.code === '23503' || upsertError.code === '409') {
             // BUG-H FIX: log warning so devs can diagnose FK mismatches in devtools.
-            logger.warn('[useMockupDraft] FK violation on draft save — falling back to null IDs.', {
-              productId: safeProductId,
-              techniqueId: safeTechniqueId,
-              clientId: safeClientId,
-            });
+            console.warn(
+              '[useMockupDraft] FK violation on draft save — falling back to null IDs.',
+              {
+                productId: safeProductId,
+                techniqueId: safeTechniqueId,
+                clientId: safeClientId,
+              },
+            );
             const { error: updateError } = await supabase
               .from('mockup_drafts')
               .update({
