@@ -31,7 +31,6 @@ import { LegalFooter } from '@/components/auth/LegalFooter';
 
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
-import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
@@ -125,24 +124,6 @@ export default function Auth() {
     emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-  const handleSocialError = useCallback(
-    (message: string, opts?: { autoFallback?: boolean }) => {
-      const copy = resolveOAuthError(message);
-      setSocialError(copy);
-      // Fallback automático em falhas recuperáveis (timeout/silencioso):
-      // o usuário não precisa clicar — o foco vai direto pro e-mail.
-      if (opts?.autoFallback && !copy.isConfig) {
-        toast({
-          title: 'Login com Google indisponível',
-          description: 'Mudamos para entrada com e-mail e senha automaticamente.',
-        });
-        setTimeout(() => focusEmailFallback(), 50);
-        return;
-      }
-      setTimeout(() => emailInputRef.current?.focus(), 50);
-    },
-    [toast, focusEmailFallback],
-  );
 
   // Fetch visitor IP and geolocation
   useEffect(() => {
@@ -784,18 +765,6 @@ export default function Auth() {
                       )}
                     </button>
 
-                    <div className="relative py-2">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-white/10" />
-                      </div>
-                      <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                        <span className="rounded-full border border-white/5 bg-black/80 px-4 text-white/30">
-                          ou
-                        </span>
-                      </div>
-                    </div>
-
-                    <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
                   </form>
                 </CardContent>
               </div>
