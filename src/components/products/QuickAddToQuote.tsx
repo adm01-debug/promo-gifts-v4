@@ -25,6 +25,7 @@ interface QuickAddToQuoteProps {
   labelOverride?: string;
   iconOverride?: 'cart' | 'plus';
   buttonSize?: 'default' | 'sm' | 'lg' | 'xl' | 'icon';
+  onSuccess?: (variant: ExternalVariantStock | null) => void;
 }
 
 export function QuickAddToQuote({
@@ -40,6 +41,7 @@ export function QuickAddToQuote({
   labelOverride,
   iconOverride,
   buttonSize,
+  onSuccess,
 }: QuickAddToQuoteProps) {
   const [quantity, setQuantity] = useState(minQuantity);
   const [isOpen, setIsOpen] = useState(false);
@@ -77,6 +79,7 @@ export function QuickAddToQuote({
 
     setIsAdded(true);
     setShowSelector(false);
+    onSuccess?.(selectedVariant || null);
     setTimeout(() => {
       setIsAdded(false);
       setIsOpen(false);

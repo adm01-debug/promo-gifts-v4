@@ -1,5 +1,12 @@
 # Integração Frontend ↔ Arquitetura Medallion (Bronze → Prata → Ouro)
 
+> **Documento irmão:** `docs/INTEGRACAO_MEDALLION_FRONT.md` (PR #721) cobre o
+> hardening do CONTRATO PÚBLICO das views Gold (M1–M6: filtro `is_active`,
+> preço de venda em `v_variant_sale_prices_public`/`v_products_min_price`,
+> DEFINER em `v_print_area_techniques_public`, P0 `mcp_sessions`, REVOKE de
+> escrita em Bronze/Prata). Este documento cobre a outra metade: aliases de
+> leitura, ACLs de RPCs admin, realtime, relações fantasma e observabilidade.
+
 _Auditoria exaustiva e integração executadas em 2026-06-11 contra o SSOT
 `doufsxqlfjyuvxuezpln` (PR desta data). Metodologia: extração de TODAS as
 relações/RPCs referenciadas em `src/` e `supabase/functions/` (via `.from()`,

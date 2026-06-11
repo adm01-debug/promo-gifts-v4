@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRBAC } from '@/hooks/auth/useRBAC';
 
 export interface CommandDefinition {
   id: string;
@@ -10,12 +11,14 @@ export interface CommandDefinition {
   icon: string; // lucide icon name
   action: () => void | Promise<void>;
   keywords?: string[];
+  devOnly?: boolean;
 }
 
 export function useSlashCommands(onClose: () => void) {
   const navigate = useNavigate();
   const { setTheme: _setTheme } = useTheme();
   const { signOut } = useAuth();
+  const { isDev } = useRBAC();
 
   const commands: CommandDefinition[] = [
     {
@@ -91,7 +94,20 @@ export function useSlashCommands(onClose: () => void) {
       },
       keywords: ['ajuda', 'ticket', 'duvida'],
     },
-  ];
+    {
+      id: 'status',
+      command: '/status',
+      label: 'Status do Sistema',
+      description: 'Verificar saúde do backend e APIs',
+      icon: 'Activity',
+      action: () => {
+        navigate('/admin/status');
+        onClose();
+      },
+      keywords: ['saúde', 'health', 'diagnostico'],
+      devOnly: true,
+    },
+  ].filter((cmd) => !cmd.devOnly || isDev);
 
   return { commands };
 }

@@ -338,8 +338,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     getSupabaseClient()
-      .then((supabase) =>
-        supabase.functions.invoke('log-login-attempt', {
+      .then(async (supabase) => {
+        const { error: invokeError } = await supabase.functions.invoke('log-login-attempt', {
           body: {
             email,
             user_id: data?.user?.id,
@@ -348,9 +348,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user_agent: navigator.userAgent,
           },
           headers: log.headers(),
-        }),
-      )
-      .catch(() => {});
+        });
+
+        if (invokeError) {
+          const invokeStatus = (invokeError as { status?: number }).status;
+          log.error('log_login_attempt_failed', {
+            error: invokeError.message,
+            status: invokeStatus,
+            requestId: log.requestId,
+          });
+
+          if (isBadJwtError(invokeError) || invokeStatus === 401) {
+            toast.error(
+              'Erro de autenticação na função de auditoria. Verifique a conexão com o projeto canônico.',
+              {
+                description: `Request ID: ${log.requestId}`,
+              },
+            );
+          }
+        } else {
+          log.info('log_login_attempt_ok', { requestId: log.requestId });
+        }
+      })
+      .catch((err) => {
+        log.error('log_login_attempt_exception', { err: String(err) });
+      });
 
     return { error, data };
   }, []);

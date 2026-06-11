@@ -23,7 +23,7 @@ async function performTechnicalAudit() {
       session ? `Sessão ativa: ${session.user.email}` : 'Nenhuma sessão ativa',
     );
 
-    const { data: _tableData, error: tableError } = await supabase
+    const { error: tableError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
     if (tableError) throw tableError;
