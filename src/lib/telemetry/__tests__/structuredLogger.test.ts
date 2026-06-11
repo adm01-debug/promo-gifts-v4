@@ -16,6 +16,7 @@ vi.mock('../requestId', () => ({
 describe('structuredLogger.ts', () => {
   const consoleSpy = {
     log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    info: vi.spyOn(console, 'info').mockImplementation(() => {}),
     warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
     error: vi.spyOn(console, 'error').mockImplementation(() => {}),
   };
@@ -35,14 +36,12 @@ describe('structuredLogger.ts', () => {
     expect(log.headers()).toEqual({ 'X-Request-Id': 'test-request-id' });
   });
 
-  it('should log info messages to console.warn (project no-console rule only allows warn/error)', () => {
+  it('should log info messages to console.info in DEV (PROD routes via warn — esbuild strips info)', () => {
     const log = createClientLogger('test.scope');
     log.info('test_event', { key: 'value' });
 
-    expect(consoleSpy.warn).toHaveBeenCalled();
-    const _lastCall = consoleSpy.warn.mock.calls[0];
-    // In dev mode, it uses formatted output. In prod, it uses JSON stringify.
-    // Both paths route info/debug through console.warn per the project ESLint no-console rule.
+    // Vitest roda com import.meta.env.DEV=true → branch DEV → console.info.
+    expect(consoleSpy.info).toHaveBeenCalled();
   });
 
   it('should forward errors to Sentry', () => {
@@ -82,8 +81,8 @@ describe('structuredLogger.ts', () => {
     expect(child.requestId).toBe('test-request-id'); // Same request ID
 
     child.info('event');
-    expect(consoleSpy.warn).toHaveBeenCalled();
-    const payload = consoleSpy.warn.mock.calls[0][1] as Record<string, unknown>;
+    expect(consoleSpy.info).toHaveBeenCalled();
+    const payload = consoleSpy.info.mock.calls[0][1] as Record<string, unknown>;
     expect(payload.scope).toBe('parent.child');
     expect(payload.extra).toBe('data');
   });
