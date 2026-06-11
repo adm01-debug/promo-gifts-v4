@@ -1,5 +1,11 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { config } from 'dotenv';
+
+// Load .env file into process.env to catch variables that are not explicitly passed but exist in the project root
+if (existsSync('.env')) {
+  config();
+}
 
 const CLIENT_PATH = join(process.cwd(), 'src/integrations/supabase/client.ts');
 // SSOT: projeto Gold/Medallion de produção (doufsxqlfjyuvxuezpln).
@@ -10,7 +16,7 @@ console.log('🚀 Validating Supabase Project Connection Configuration...');
 try {
   const content = readFileSync(CLIENT_PATH, 'utf-8');
 
-  // 1. Check if the canonical project ID constant matches
+  // 1. Check if the canonical project ID constant matches in the code
   const hasProjectId = content.includes(`const CURRENT_PROJECT_ID = "doufsxqlfjyuvxuezpln"`) || 
                       content.includes(`const CURRENT_PROJECT_ID = 'doufsxqlfjyuvxuezpln'`);
   if (!hasProjectId) {
@@ -26,7 +32,6 @@ try {
   }
 
   // 3. Ensure the old Lovable Cloud project is not used as a fallback in executable code.
-  // Strip single-line comments before checking so historical incident notes don't trip the guard.
   const codeOnly = content.replace(/\/\/.*$/gm, '');
   const hasForbiddenRefs = codeOnly.includes('pqpdolkaeqlyzpdpbizo');
   if (hasForbiddenRefs) {
@@ -34,27 +39,23 @@ try {
     process.exit(1);
   }
 
-  // 4. Validate VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY consistency (if they exist in env)
+  // 4. Validate current environment variables consistency
   const envUrl = process.env.VITE_SUPABASE_URL;
-  const envKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1') && !envUrl.includes('placeholder')) {
-    if (!envUrl.includes(CANONICAL_PROJECT_ID)) {
-      console.error(`❌ ERROR: VITE_SUPABASE_URL points to a different project: ${envUrl}. Expected: ${CANONICAL_PROJECT_ID}`);
+  
+  if (envUrl) {
+    const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
+    const isPlaceholder = envUrl.includes('placeholder');
+    
+    if (!isLocal && !isPlaceholder && !envUrl.includes(CANONICAL_PROJECT_ID)) {
+      console.error(`❌ ERROR: VITE_SUPABASE_URL (from environment or .env) points to a different project: ${envUrl}. Expected: ${CANONICAL_PROJECT_ID}`);
       process.exit(1);
     }
-    
-    if (envKey) {
-      // Basic check for JWT consistency if we have a way to decode it or match reference
-      // The client.ts already has CANONICAL_ANON_KEY, we could compare if envKey is significantly different
-      // but the main goal is ensuring the URL matches the SSOT project.
-    }
+    console.log(`✅ VITE_SUPABASE_URL is consistent with ${CANONICAL_PROJECT_ID}`);
   } else {
-    console.log('⚠️  No VITE_SUPABASE_URL found in environment, falling back to CANONICAL_URL validation.');
+    console.log('⚠️  No VITE_SUPABASE_URL found in environment, the client will fallback to CANONICAL_URL.');
   }
 
-
-  console.log('✅ Supabase connection is correctly pointing to the current project.');
+  console.log('✅ Supabase configuration validation passed.');
 } catch (error) {
   console.error('❌ Failed to validate Supabase configuration:', error.message);
   process.exit(1);
