@@ -36,7 +36,7 @@ export function useProfileRoles() {
 
         // Fetch profile and roles in parallel
         const [profileResult, rolesResult] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
           authService.queryRoles(userId),
         ]);
 
