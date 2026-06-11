@@ -18,7 +18,7 @@ const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domMa
 
 export function MotionProvider({ children }: { children: ReactNode }) {
   return (
-    <LazyMotion features={loadMotionFeatures} strict>
+    <LazyMotion features={loadMotionFeatures}>
       {children}
     </LazyMotion>
   );
