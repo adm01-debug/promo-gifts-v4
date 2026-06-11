@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 describe('Supabase Client Contract', () => {
-  const CURRENT_PROJECT_ID = 'pqpdolkaeqlyzpdpbizo';
+  const CURRENT_PROJECT_ID = 'doufsxqlfjyuvxuezpln';
 
   // Em CI/dev o VITE_SUPABASE_URL pode apontar para um override local
   // (ex.: http://localhost:54321). O contrato de projeto só se aplica
@@ -12,7 +12,7 @@ describe('Supabase Client Contract', () => {
   it('should point to the correct project URL', () => {
     if (!isSupabaseHosted) return;
     expect(SUPABASE_URL).toContain(CURRENT_PROJECT_ID);
-    expect(SUPABASE_URL).not.toContain('doufsxqlfjyuvxuezpln');
+    expect(SUPABASE_URL).not.toContain('pqpdolkaeqlyzpdpbizo');
   });
 
   it('should use a valid HTTPS protocol', () => {

@@ -31,8 +31,8 @@ export const SupabaseConnectionDebug = () => {
         const url = (client as unknown as { supabaseUrl?: string }).supabaseUrl || 'N/A';
         const envUrl = import.meta.env.VITE_SUPABASE_URL || 'N/A';
         const projectRef = url.split('//')[1]?.split('.')[0] || 'N/A';
-        const isCanonical = projectRef === 'pqpdolkaeqlyzpdpbizo';
-        const isFallbackActive = isCanonical && !envUrl.includes('pqpdolkaeqlyzpdpbizo');
+        const isCanonical = projectRef === 'doufsxqlfjyuvxuezpln';
+        const isFallbackActive = isCanonical && !envUrl.includes('doufsxqlfjyuvxuezpln');
 
         setInfo({
           url,
