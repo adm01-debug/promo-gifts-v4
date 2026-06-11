@@ -1,0 +1,173 @@
+name: Production Health Check
+
+# Verifica a saúde do projeto após merge em main.
+# Objetivo: detectar IMEDIATAMENTE se o estado do repositório está inconsistente
+# após um merge — especialmente se o Lovable reverteu arquivos SSOT.
+#
+# Este workflow NÃO substitui os deploy gates (que rodam em PR).
+# Ele é a última linha de defesa: roda APÓS o merge e alerta se algo escapou.
+#
+# Motivação: incidente 401 em produção (2026-06-11) — não havia nenhum check
+# pós-merge que detectasse que o CURRENT_PROJECT_ID estava errado.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    name: Verificação de saúde pós-merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # CHECK 1: SSOT Supabase — o mais crítico
+      # Se o Lovable reverteu client.ts, este step falha imediatamente
+      - name: Check 1 — SSOT Supabase (project ID canônico)
+        id: ssot-check
+        run: node scripts/validate-supabase-config.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # CHECK 2: Product type fields — campos críticos do catálogo
+      - name: Check 2 — Product type fields (price, shortDescription, category_id)
+        id: product-fields-check
+        run: node scripts/check-product-type-fields.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # CHECK 3: Verifica se o arquivo .lovableignore está íntegro
+      # (não foi apagado ou esvaziado pelo Lovable)
+      - name: Check 3 — .lovableignore protege arquivos SSOT
+        id: lovableignore-check
+        run: |
+          set -euo pipefail
+          IGNORE_FILE=".lovableignore"
+          
+          if [ ! -f "$IGNORE_FILE" ]; then
+            echo "❌ .lovableignore não encontrado!"
+            echo "Este arquivo é essencial para prevenir que o Lovable sobrescreva arquivos SSOT."
+            exit 1
+          fi
+          
+          # Verifica se os arquivos críticos estão no .lovableignore
+          CRITICAL_FILES=(
+            "src/integrations/supabase/client.ts"
+            "scripts/validate-supabase-config.mjs"
+          )
+          
+          MISSING=()
+          for f in "${CRITICAL_FILES[@]}"; do
+            if ! grep -qF "$f" "$IGNORE_FILE"; then
+              MISSING+=("$f")
+            fi
+          done
+          
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ Arquivos críticos ausentes do .lovableignore:"
+            printf '  - %s\n' "${MISSING[@]}"
+            echo "Execute: echo 'arquivo' >> .lovableignore"
+            exit 1
+          fi
+          
+          echo "✅ .lovableignore protege todos os arquivos SSOT críticos"
+
+      # CHECK 4: Verifica se CODEOWNERS inclui arquivos SSOT
+      - name: Check 4 — CODEOWNERS protege arquivos SSOT
+        id: codeowners-check
+        run: |
+          set -euo pipefail
+          CODEOWNERS_FILE=".github/CODEOWNERS"
+          
+          if [ ! -f "$CODEOWNERS_FILE" ]; then
+            echo "⚠️ .github/CODEOWNERS não encontrado — proteção de revisão ausente"
+            echo "::warning::CODEOWNERS ausente — PRs que alteram arquivos SSOT não precisarão de aprovação"
+            exit 0  # Não bloqueante — CODEOWNERS depende de branch protection estar ativa
+          fi
+          
+          if ! grep -q "src/integrations/supabase/" "$CODEOWNERS_FILE"; then
+            echo "⚠️ CODEOWNERS não cobre src/integrations/supabase/"
+            echo "::warning::Adicione 'src/integrations/supabase/ @adm01-debug' ao CODEOWNERS"
+          else
+            echo "✅ CODEOWNERS cobre src/integrations/supabase/"
+          fi
+
+      # SUMÁRIO: Status consolidado de todos os checks
+      - name: Step Summary — Consolidado
+        if: always()
+        run: |
+          {
+            echo "## 🏥 Production Health Check — $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo ""
+            echo "### Commit analisado"
+            echo "\`${{ github.sha }}\` — ${{ github.event.head_commit.message || 'workflow_dispatch' }}"
+            echo ""
+            echo "### Resultados"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            
+            if [ "${{ steps.ssot-check.outcome }}" == "success" ]; then
+              echo "| 1. SSOT Supabase (client.ts aponta para doufsxqlfjyuvxuezpln) | ✅ OK |"
+            else
+              echo "| 1. SSOT Supabase (client.ts aponta para doufsxqlfjyuvxuezpln) | ❌ FALHOU |"
+            fi
+            
+            if [ "${{ steps.product-fields-check.outcome }}" == "success" ]; then
+              echo "| 2. Product type fields (price, shortDescription, category_id) | ✅ OK |"
+            else
+              echo "| 2. Product type fields (price, shortDescription, category_id) | ❌ FALHOU |"
+            fi
+            
+            if [ "${{ steps.lovableignore-check.outcome }}" == "success" ]; then
+              echo "| 3. .lovableignore protege arquivos SSOT | ✅ OK |"
+            else
+              echo "| 3. .lovableignore protege arquivos SSOT | ❌ FALHOU |"
+            fi
+            
+            if [ "${{ steps.codeowners-check.outcome }}" == "success" ]; then
+              echo "| 4. CODEOWNERS cobre src/integrations/supabase/ | ✅ OK |"
+            else
+              echo "| 4. CODEOWNERS cobre src/integrations/supabase/ | ⚠️ AVISO |"
+            fi
+            
+            echo ""
+            echo "### Como responder a uma falha"
+            echo ""
+            echo "1. Identificar qual commit reverteu o arquivo:"
+            echo "   \`git log --oneline -5 -- src/integrations/supabase/client.ts\`"
+            echo "2. Reverter o commit específico:"
+            echo "   \`git revert <sha> && git push origin main\`"
+            echo "3. Verificar se o Gate 0 do quality-gate passou no PR anterior"
+            echo ""
+            echo "Documentação: [CLAUDE.md](CLAUDE.md) | [.lovableignore](.lovableignore)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ALERTA: Notificação Slack opcional em falha
+      - name: Notificação Slack em falha
+        if: failure() && env.SENTINEL_SLACK_WEBHOOK != ''
+        env:
+          SENTINEL_SLACK_WEBHOOK: ${{ secrets.SENTINEL_SLACK_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          PAYLOAD=$(printf '{"text":"🚨 *Production Health Check FALHOU* em %s\n• Commit: `%s`\n• Run: %s\n• Ação necessária: verificar SSOT Supabase"}' \
+                    "$REPO" "${SHA:0:7}" "$RUN_URL")
+          curl -sS -X POST -H 'Content-Type: application/json' \
+               --data "$PAYLOAD" \
+               "$SENTINEL_SLACK_WEBHOOK" || echo "Slack notify falhou (não bloqueante)"
