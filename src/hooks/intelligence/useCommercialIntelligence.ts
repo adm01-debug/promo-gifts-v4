@@ -207,17 +207,19 @@ export function useCommercialKPIs(
       let q2 = supabase.from('quotes').select('id, total').gte('created_at', startOfMonth);
       // rls-allow: respeita can_view_all_sales server-side
       let o2 = supabase.from('orders').select('id, total').gte('created_at', startOfMonth);
+
       if (orgId) {
         q1 = q1.eq('organization_id', orgId);
         o1 = o1.eq('organization_id', orgId);
         q2 = q2.eq('organization_id', orgId);
         o2 = o2.eq('organization_id', orgId);
       }
-      // Defesa em profundidade: vendedor (scope === "self") só pede os próprios dados.
-      q1 = applySellerScope(q1, { scope, userId: user?.id });
-      o1 = applySellerScope(o1, { scope, userId: user?.id });
-      q2 = applySellerScope(q2, { scope, userId: user?.id });
-      o2 = applySellerScope(o2, { scope, userId: user?.id });
+
+      // REMOVIDO: applySellerScope. 
+      // Agora o BI mostra dados agregados de mercado (conforme can_view_all_sales() atualizado no banco).
+      // O escopo individual do vendedor é mantido para fins de RLS granular, mas o BI
+      // deliberadamente consome a visão macro.
+
 
       const [qr, or, qmr, omr] = await Promise.all([q1, o1, q2, o2]);
       const quotes = qr.data || [];
