@@ -1,9 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   
   // 1. Create a dummy seller and cart
@@ -19,7 +23,7 @@ Deno.serve(async (req) => {
     .select()
     .single();
     
-  if (cartErr) return new Response(JSON.stringify(cartErr), { status: 500 });
+  if (cartErr) return new Response(JSON.stringify(cartErr), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   // 2. Simulate 10 simultaneous additions of the same item
   const item = {
@@ -52,5 +56,5 @@ Deno.serve(async (req) => {
     failed_inserts: results.filter(r => r.error).length,
     final_count: finalItems?.length,
     duplicate_bug_prevented: finalItems?.length === 1
-  }), { headers: { "Content-Type": "application/json" } });
+  }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

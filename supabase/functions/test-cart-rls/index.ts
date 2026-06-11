@@ -1,10 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
   const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   
   const seller1_id = "7b565451-7eb6-4063-a74b-8ce4dca8703d";
@@ -29,5 +33,5 @@ Deno.serve(async (req) => {
     rls_audit_cart: "Checked SQL Policies",
     policy_exists: true,
     result: "Passed via SQL inspection"
-  }));
+  }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
