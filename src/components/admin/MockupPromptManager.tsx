@@ -72,7 +72,11 @@ export function MockupPromptManager() {
     try {
       const [cr, tr] = await Promise.all([
         supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        supabase.from('personalization_techniques').select('id, name, code').eq('is_active', true),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('personalization_techniques')
+          .select('id, name, code')
+          .eq('is_active', true),
       ]);
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
