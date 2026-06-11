@@ -86,15 +86,17 @@ export function CatalogHeader({
               'Carregando catálogo...'
             ) : hasActiveConstraints ? (
               <>
-                <span className="font-semibold text-primary">
+                <span className="font-semibold tabular-nums text-primary">
                   {filteredCount.toLocaleString('pt-BR')}
                 </span>
-                {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
+                <span className="tabular-nums">
+                  {totalEstimate ? ` de ${totalEstimate.toLocaleString('pt-BR')}` : ''} itens
+                </span>
               </>
             ) : totalEstimate ? (
-              `${totalEstimate.toLocaleString('pt-BR')} itens`
+              <span className="tabular-nums">{`${totalEstimate.toLocaleString('pt-BR')} itens`}</span>
             ) : (
-              `${filteredCount.toLocaleString('pt-BR')} itens`
+              <span className="tabular-nums">{`${filteredCount.toLocaleString('pt-BR')} itens`}</span>
             )}
           </span>
         </h1>
