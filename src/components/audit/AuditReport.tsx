@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface AuditResult {
   name: string;
@@ -29,7 +30,7 @@ export function AuditReport() {
       setReport(data);
       toast.success('Auditoria concluída com sucesso');
     } catch (err: unknown) {
-      toast.error('Falha na auditoria: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('Falha ao executar auditoria', { description: sanitizeError(err) });
     } finally {
       setLoading(false);
     }
