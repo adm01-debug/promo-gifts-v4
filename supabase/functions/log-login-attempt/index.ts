@@ -29,6 +29,14 @@ Deno.serve(async (req) => {
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
+  // DIAGNOSTIC: Check project ID consistency in Edge Runtime
+  const envUrl = Deno.env.get("SUPABASE_URL") || "";
+  const CANONICAL_ID = "doufsxqlfjyuvxuezpln";
+  if (!envUrl.includes(CANONICAL_ID)) {
+    console.error(`[CRITICAL] Edge Function Project Mismatch: Environment URL is ${envUrl}, expected ID ${CANONICAL_ID}`);
+    log.error("project_mismatch", { current_url: envUrl, expected_id: CANONICAL_ID });
+  }
+
   try {
     // Rate limit by IP
     const rateLimitResponse = await applyRateLimit(req, loginLogLimiter);
