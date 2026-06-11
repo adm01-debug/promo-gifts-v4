@@ -5,7 +5,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const seller_id = "00000000-0000-0000-0000-000000000002";
+  const seller_id = "7b565451-7eb6-4063-a74b-8ce4dca8703d";
 
   // 1. Try to create 4 carts
   const results = [];
