@@ -1,5 +1,10 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
+
+// Manual CORS helper as we cannot easily import from _shared without knowing the exact structure
+const getCorsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+});
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -12,13 +17,6 @@ interface TestResult {
   logs: string[];
 }
 
-function jsonResponse(body: unknown, status: number, cors: Record<string, string>) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...cors, "Content-Type": "application/json" },
-  });
-}
-
 async function signInClient(email: string, password: string): Promise<SupabaseClient> {
   const c = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -29,9 +27,9 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 }
 
 Deno.serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-  const preflight = handleCorsPreflightIfNeeded(req);
-  if (preflight) return preflight;
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: getCorsHeaders() });
+  }
 
   const results: TestResult[] = [];
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -48,7 +46,7 @@ Deno.serve(async (req) => {
     const createS1 = await admin.auth.admin.createUser({ email: seller1Email, password, email_confirm: true });
     const createS2 = await admin.auth.admin.createUser({ email: seller2Email, password, email_confirm: true });
     
-    if (createS1.error || createS2.error) throw new Error("Failed to create test users");
+    if (createS1.error || createS2.error) throw new Error("Failed to create test users: " + (createS1.error?.message || createS2.error?.message));
     
     const s1Id = createS1.data.user!.id;
     const s2Id = createS2.data.user!.id;
@@ -136,13 +134,16 @@ Deno.serve(async (req) => {
     await admin.auth.admin.deleteUser(s1Id);
     await admin.auth.admin.deleteUser(s2Id);
 
-    return jsonResponse({
+    return new Response(JSON.stringify({
       status: results.every(r => r.passed) ? "PASSED" : "FAILED",
       timestamp: new Date().toISOString(),
       results
-    }, 200, corsHeaders);
+    }), { status: 200, headers: { ...getCorsHeaders(), "Content-Type": "application/json" } });
 
   } catch (e) {
-    return jsonResponse({ error: (e as Error).message }, 500, corsHeaders);
+    return new Response(JSON.stringify({ error: (e as Error).message }), { 
+      status: 500, 
+      headers: { ...getCorsHeaders(), "Content-Type": "application/json" } 
+    });
   }
 });
