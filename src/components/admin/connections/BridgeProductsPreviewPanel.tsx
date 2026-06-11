@@ -341,9 +341,9 @@ export function BridgeProductsPreviewPanel() {
                       <td className="px-3 py-2 font-mono text-xs">{p.sku ?? '—'}</td>
                       <td className="px-3 py-2 text-xs">{p.brand ?? '—'}</td>
                       <td className="px-3 py-2 text-right tabular-nums">
-                        {fmtCurrency(p.sale_price ?? p.price)}
+                        {fmtCurrency(p.sale_price ?? p.unit_price)}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{p.stock ?? '—'}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{p.stock_qty ?? '—'}</td>
                       <td className="px-3 py-2 text-center">
                         {p.is_active === true ? (
                           <Badge variant="default" className="text-[10px]">

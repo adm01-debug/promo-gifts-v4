@@ -9,7 +9,9 @@ import {
   BarChart2,
   Share2,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -56,6 +58,8 @@ export const ProductQuickView = React.memo(
     const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
     // imageLoaded removido — transição instantânea sem skeleton intermediário
     const [_imageError, setImageError] = useState(false);
+    const [selectorOpen, setSelectorOpen] = useState(false);
+    const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
 
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
@@ -219,10 +223,32 @@ export const ProductQuickView = React.memo(
       }
     };
 
-    const handleAddToCart = () => {
+    const handleAddToCart = (cartId?: string) => {
+      // Se temos múltiplos carrinhos e nenhum foi explicitamente passado, mostramos o seletor
+      if (!cartId && carts.length > 1 && !selectorOpen) {
+        setSelectorOpen(true);
+        return;
+      }
+
+      const selectedColor = productColors.find((c) => c.id === selectedColorId);
+
+      addToActiveCart(
+        {
+          product_id: product.id,
+          product_name: product.name,
+          product_sku: product.sku || undefined,
+          product_image_url: displayImages[currentImageIndex]?.url_cdn || product.images?.[0],
+          product_price: product.price ?? 0,
+          quantity,
+          color_name: selectedColor?.name || undefined,
+          color_hex: selectedColor?.hex || undefined,
+        },
+        cartId,
+      );
+
+      setSelectorOpen(false);
       if (onAddToCart) {
         onAddToCart(product.id, quantity, selectedColorId || undefined);
-        toast.success(`${product.name} adicionado ao carrinho`);
       }
     };
 
@@ -246,6 +272,19 @@ export const ProductQuickView = React.memo(
           <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background">
             <X className="h-4 w-4" />
           </DialogClose>
+
+          <DialogTitle className="sr-only">{product.name}</DialogTitle>
+          <DialogDescription className="sr-only">Visualização rápida do produto {product.name}</DialogDescription>
+
+          <CartSelectorDialog
+            open={selectorOpen}
+            onOpenChange={setSelectorOpen}
+            carts={carts}
+            productName={product.name}
+            canCreateMore={canCreateCart}
+            onSelect={(id) => handleAddToCart(id)}
+            onCreateNew={() => setSelectorOpen(false)}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Image Section */}
