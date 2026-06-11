@@ -168,31 +168,7 @@ export function useSellerCarts() {
       const colorName = item.color_name ?? null;
       const quantityToAdd = item.quantity || 1;
 
-      // 1. Tenta atualizar se já existe (Atômico p/ quantidade)
-      // Nota: RPC seria ideal p/ atomicidade total, mas o constraint de unicidade
-      // já garante que não teremos duplicatas mesmo em race conditions.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let _updateQuery = (supabase as unknown as any)
-        .from('seller_cart_items')
-        .update({
-          // @ts-expect-error: increment_cart_item_quantity not in generated RPC types; row_id is the pk column ref
-          quantity: supabase.rpc('increment_cart_item_quantity', {
-            row_id: 'id',
-            amount: quantityToAdd,
-          }),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('cart_id', cartId)
-        .eq('product_id', item.product_id);
-
-      _updateQuery =
-        colorName === null
-          ? _updateQuery.is('color_name', null)
-          : _updateQuery.eq('color_name', colorName);
-
-      // Como o SDK não suporta increment nativo no .update() facilmente sem RPC,
-      // vamos manter a lógica de lookup + update/insert mas com o UNIQUE CONSTRAINT protegendo.
-
+      // Lookup + update/insert protegido pelo UNIQUE CONSTRAINT contra race conditions.
       const { data: existing } = await (
         colorName === null
           ? supabase
