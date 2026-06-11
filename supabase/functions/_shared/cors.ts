@@ -15,8 +15,9 @@
 
 const EXACT_ALLOWED_ORIGINS = new Set([
   // BUG-08 FIX: pqpdolkaeqlyzpdpbizo.supabase.co removed (FORBIDDEN project).
-  // Canonical project is pqpdolkaeqlyzpdpbizo — it never needs to call its own
-  // edge functions from a browser context; Supabase SDK handles that internally.
+  // That project is the old Lovable Cloud instance with no catalog. The canonical
+  // production project is doufsxqlfjyuvxuezpln (Gold/Medallion); its origins are
+  // listed below (promogifts.com.br, vercel.app previews, lovable.app, localhost).
   'https://criar-together-now.lovable.app',
   'https://id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
   'https://1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
