@@ -121,11 +121,10 @@ export function StarfieldCanvas({
       // Black bg ja eh herdado do body parent
 
       for (const star of starsRef.current) {
-        // Drift horizontal
-        const driftX = reducedMotion ? 0 : (elapsed / 1000) * star.driftSpeed;
+        // Drift horizontal removido conforme solicitado
+        const driftX = 0;
 
-        // Wrapping logic com margem para não piscar
-        let x = (star.x + driftX) % width;
+        let x = star.x % width;
         if (x < 0) x += width;
 
         let y = star.y % height;
