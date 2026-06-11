@@ -32,11 +32,14 @@ async function performTechnicalAudit() {
   }
 
   // 2. Verificação de Tabelas Essenciais
+  // Audit checks a known list of base tables; cast bypasses Supabase's view-only from() overloads.
+  type AuditTable = Parameters<(typeof supabase)['from']>[0];
   const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
-      // @ts-expect-error: string table name causes excessive generic depth in Supabase types
-      const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+      const { error } = await supabase
+        .from(table as AuditTable)
+        .select('count', { count: 'exact', head: true });
       if (error) console.warn(`⚠️ Tabela ${table}: Erro ou Acesso Negado (${error.code})`);
       else console.log(`✅ Tabela ${table}: Acessível`);
     } catch (err) {
@@ -55,5 +58,6 @@ async function performTechnicalAudit() {
 }
 
 // Para rodar no console do devtools se necessário
-(window as unknown as { performTechnicalAudit: () => Promise<void> }).performTechnicalAudit =
-  performTechnicalAudit;
+(
+  window as unknown as Window & { performTechnicalAudit: () => Promise<void> }
+).performTechnicalAudit = performTechnicalAudit;
