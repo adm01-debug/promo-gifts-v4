@@ -9,6 +9,7 @@ import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { cn } from '@/lib/utils';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 
 export interface ProductGridProps {
   products: Product[];
@@ -214,6 +215,24 @@ export const ProductGrid = memo(function ProductGrid({
   );
   const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
 
+  // FIX ISSUE-02 2026-06-09: useColorEnrichment — resolve imagem real da variante de cor
+  // quando filtro de cor está ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
+  // RULES-OF-HOOKS: chamado incondicionalmente ANTES dos early returns abaixo.
+  // Quando não há filtro ativo, productIds=[] desabilita as queries internas do hook.
+  const hasActiveColorFilter = !!(
+    activeColorFilter &&
+    ((activeColorFilter.groups?.length ?? 0) > 0 || (activeColorFilter.variations?.length ?? 0) > 0)
+  );
+  const allProductIds = useMemo(
+    () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
+    [products, hasActiveColorFilter],
+  );
+  const { data: colorEnrichmentMap } = useColorEnrichment({
+    productIds: allProductIds,
+    colorGroups: activeColorFilter?.groups ?? [],
+    colorVariations: activeColorFilter?.variations ?? [],
+  });
+
   useEffect(() => {
     if (colorsError) {
       console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
@@ -290,14 +309,21 @@ export const ProductGrid = memo(function ProductGrid({
             const batchColors =
               !p.colors || p.colors.length === 0 ? colorsByProduct?.get(p.id) : undefined;
 
-            const enriched = {
+            const enriched: Product = {
               ...p,
+              // Durante hydration as cores ainda não chegaram → [] (o card trata
+              // colors vazio/ausente defensivamente; populam ao re-renderizar).
               colors: isHydrating
-                ? undefined
+                ? []
                 : batchColors && batchColors.length > 0
                   ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
                   : p.colors,
             };
+
+            // FIX ISSUE-02: imagem real da variante de cor via useColorEnrichment
+            const enrichmentData = hasActiveColorFilter ? colorEnrichmentMap?.get(p.id) : null;
+            const colorEnrichmentImage = enrichmentData?.image ?? null;
+
             return (
               <ProductCardWrapper
                 key={p.id}
@@ -321,6 +347,7 @@ export const ProductGrid = memo(function ProductGrid({
                 selectedIds={selectedIds}
                 onToggleSelect={onToggleSelect}
                 onStatusClick={onStatusClick}
+                colorEnrichmentImage={colorEnrichmentImage}
               />
             );
           })()

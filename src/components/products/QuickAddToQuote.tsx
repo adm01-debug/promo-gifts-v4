@@ -231,7 +231,7 @@ export function QuickAddToQuote({
                   min={minQuantity}
                   value={quantity}
                   onChange={(e) =>
-                    setQuantity(Math.max(minQuantity, parseInt(e.target.value) || minQuantity))
+                    setQuantity(Math.max(minQuantity, parseInt(e.target.value, 10) || minQuantity))
                   }
                   className="h-8 text-center"
                 />

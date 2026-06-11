@@ -336,16 +336,13 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     // Duplicate checks
     if (cnpjDigits.length === 14) {
       try {
-        const { dbInvoke } = await import('@/lib/db/postgrest');
-        const existing = await dbInvoke<{ id: string; name: string; cnpj: string }>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id,name,cnpj',
-          filters: { cnpj: cnpj.trim() },
-          limit: 1,
-        });
-        if (existing.records && existing.records.length > 0) {
-          toast.error(`Já existe um fornecedor com este CNPJ: "${existing.records[0].name}".`);
+        const { untypedFrom } = await import('@/lib/supabase-untyped');
+        const { data: existingRecords } = await untypedFrom<{ id: string; name: string; cnpj: string }>('suppliers')
+          .select('id,name,cnpj')
+          .eq('cnpj', cnpj.trim())
+          .limit(1);
+        if (existingRecords && existingRecords.length > 0) {
+          toast.error(`Já existe um fornecedor com este CNPJ: "${existingRecords[0].name}".`);
           setSaving(false);
           return;
         }

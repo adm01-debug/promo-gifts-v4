@@ -86,7 +86,7 @@ export function useFiltersPageState() {
     // FIX-28: validar NaN e fazer clamp (min<=max). Valores inválidos na URL
     // (?priceMin=abc, min>max) caíam como NaN e zeravam a lista sem feedback.
     if (pMin || pMax) {
-      const PRICE_MAX = 9999;
+      const PRICE_MAX = 99999; // Aumentado limite máximo
       const parsedMin = pMin ? parseFloat(pMin) : 0;
       const parsedMax = pMax ? parseFloat(pMax) : PRICE_MAX;
       let min = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : 0;

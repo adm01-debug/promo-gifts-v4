@@ -287,7 +287,7 @@ export function NoveltyTableView({
   selectionMode = false,
   selectedIds = [],
   onSelect,
-  _onStatusClick,
+  onStatusClick: _onStatusClick,
   colorsByProduct,
 }: {
   products: NoveltyWithDetails[];

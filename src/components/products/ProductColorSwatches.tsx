@@ -101,14 +101,15 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
       );
     }
     return (
-      <span
-        className="flex min-h-[var(--swatch-size-sm)] items-center text-[10px] italic text-muted-foreground/60"
+      <div
+        className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
         role="status"
         aria-live="polite"
         data-testid="colors-unavailable"
       >
-        Cores indisponíveis
-      </span>
+        <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
+        <span className="text-[9px] font-medium tracking-tight">N/A</span>
+      </div>
     );
   }
 
@@ -145,7 +146,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
                 className={cn(
                   'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   isSelected
-                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 shadow-md ring-[var(--swatch-ring-width)] ring-primary ring-offset-1'
+                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
                     : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
                   SIZE_CLASS[size],
                 )}

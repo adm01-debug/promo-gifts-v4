@@ -110,7 +110,7 @@ function CatalogSkeletonBody() {
 
 function AppShellCatalogSkeletonBody() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#030508]">
       <div className="flex">
         <div className="hidden h-screen w-64 shrink-0 border-r border-sidebar-border/10 bg-sidebar/5 lg:block" />
         <div className="min-w-0 flex-1">

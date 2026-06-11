@@ -2,7 +2,8 @@ import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@/lib/utils';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
+
 
 const Popover = PopoverPrimitive.Root;
 
@@ -11,19 +12,23 @@ const PopoverTrigger = PopoverPrimitive.Trigger;
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = 'center', sideOffset = 4, onCloseAutoFocus, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      // Prevent Popover from locking page scroll via react-remove-scroll, and
-      // release any stuck body lock (incl. pointer-events: none) on close.
-      onCloseAutoFocus={(e) => {
-        onCloseAutoFocus?.(e);
-        e.preventDefault();
-        requestAnimationFrame(releaseScrollLockIfIdle);
-      }}
+>(({ className, align = 'center', sideOffset = 4, onCloseAutoFocus, ...props }, ref) => {
+  const { handleClose } = useOverlayInteractivity();
+
+  return (
+    <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Content
+        ref={ref}
+        align={align}
+        sideOffset={sideOffset}
+        // Prevent Popover from locking page scroll via react-remove-scroll, and
+        // release any stuck body lock (incl. pointer-events: none) on close.
+        onCloseAutoFocus={(e) => {
+          onCloseAutoFocus?.(e);
+          e.preventDefault();
+          handleClose();
+        }}
+
       className={cn(
         'z-50 w-72 rounded-xl border-2 bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         className,
@@ -31,7 +36,9 @@ const PopoverContent = React.forwardRef<
       {...props}
     />
   </PopoverPrimitive.Portal>
-));
+  );
+});
+
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 const PopoverClose = PopoverPrimitive.Close;

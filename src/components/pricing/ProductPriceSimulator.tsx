@@ -124,12 +124,11 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
         color_code: string | null;
         size_code: string | null;
         stock_quantity: number | null;
-        sale_price: number | null;
         sku: string | null;
       }>({
         table: 'product_variants',
         operation: 'select',
-        select: 'id, color_name, color_hex, color_code, size_code, stock_quantity, sale_price, sku',
+        select: 'id, color_name, color_hex, color_code, size_code, stock_quantity, sku',
         filters: { product_id: selectedProduct.id, is_active: true },
         limit: 200,
         orderBy: { column: 'color_name', ascending: true },
@@ -148,7 +147,6 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
         hex: v.color_hex || undefined,
         stock: v.stock_quantity ?? undefined,
         size_code: v.size_code,
-        sale_price: v.sale_price,
       }));
     }
     if (!selectedProduct?.colors) return [];

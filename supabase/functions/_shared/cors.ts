@@ -15,7 +15,7 @@
 
 const EXACT_ALLOWED_ORIGINS = new Set([
   // BUG-08 FIX: pqpdolkaeqlyzpdpbizo.supabase.co removed (FORBIDDEN project).
-  // Canonical project is doufsxqlfjyuvxuezpln — it never needs to call its own
+  // Canonical project is pqpdolkaeqlyzpdpbizo — it never needs to call its own
   // edge functions from a browser context; Supabase SDK handles that internally.
   'https://criar-together-now.lovable.app',
   'https://id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',

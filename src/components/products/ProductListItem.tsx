@@ -311,7 +311,8 @@ export const ProductListItem = memo(function ProductListItem({
 
   const variantImage = currentVariant?.image;
   const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
-  const rawImageUrl = colorSpecificImage || product.og_image_url || product.images[0] || null;
+  // primary_image_url (is_primary=true) é a imagem capa canônica — deve ser a primeira exibida
+  const rawImageUrl = colorSpecificImage || product.primary_image_url || product.og_image_url || product.images[0] || null;
   const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
   const colorStock = resolveColorStock(product, activeColorFilter);

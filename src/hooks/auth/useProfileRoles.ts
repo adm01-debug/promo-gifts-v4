@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { authService } from '@/services/authService';
-import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { type AppRole, type Profile } from '@/contexts/AuthContext';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export function useProfileRoles() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -13,37 +13,56 @@ export function useProfileRoles() {
   const fetchCancelledRef = useRef(false);
 
   const fetchUserData = useCallback(async (userId: string) => {
+    // BUG-FIX: Previne race condition setando a Promise síncronamente
+    let resolvePromise: (value: void | PromiseLike<void>) => void;
+    const fetchPromise = new Promise<void>((resolve) => {
+      resolvePromise = resolve;
+    });
+    
     if (fetchPromiseRef.current) {
       await fetchPromiseRef.current;
       return;
     }
+    
+    fetchPromiseRef.current = fetchPromise;
 
     fetchCancelledRef.current = false;
 
+    const log = createClientLogger('useProfileRoles.fetchUserData');
     const doFetch = async () => {
-      authDebug('useProfileRoles.fetchUserData', 'start', { userId });
+      log.info('start', { userId });
       try {
         const supabase = await getSupabaseClient();
 
         // Fetch profile and roles in parallel
         const [profileResult, rolesResult] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url, email, organization_id')
-            .eq('id', userId)
-            .maybeSingle(),
+          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
           authService.queryRoles(userId),
         ]);
 
         if (profileResult.error) {
-          authDebugError('useProfileRoles.fetchUserData', 'profile error', profileResult.error);
+          log.error('profile_error', { error: profileResult.error });
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (profileResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar perfil', {
+              description: 'O sistema não conseguiu ler seus dados básicos. Contate o suporte.',
+            });
+          }
         } else {
-          setProfile(profileResult.data);
+          setProfile(profileResult.data as Profile | null);
         }
 
         if (rolesResult.error) {
-          authDebugError('useProfileRoles.fetchUserData', 'roles error', rolesResult.error);
+          log.error('roles_error', { error: rolesResult.error });
           setUserRoles([]);
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (rolesResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar permissões', {
+              description: 'O sistema não conseguiu verificar seus acessos. Contate o suporte.',
+            });
+          }
         } else {
           const mapped = (rolesResult.data ?? []).map(
             (row: { role: string }) => row.role,
@@ -51,24 +70,24 @@ export function useProfileRoles() {
           setUserRoles(mapped);
         }
 
-        authDebug('useProfileRoles.fetchUserData', 'done', {
+        log.info('done', {
           userId,
           roleCount: rolesResult.data?.length ?? 0,
         });
       } catch (error) {
-        authDebugError('useProfileRoles.fetchUserData', 'exception', error);
+        log.error('exception', { error });
       } finally {
         fetchPromiseRef.current = null;
-        if (!fetchCancelledRef.current) {
-          setIsLoading(false);
-          setRolesLoaded(true);
-        }
+        // BUG-FIX: Ensure loading is ALWAYS disabled after first attempt
+        // to prevent white-screen of death if DB calls fail.
+        setIsLoading(false);
+        setRolesLoaded(true);
+        if (resolvePromise!) resolvePromise();
       }
     };
 
-    const promise = doFetch();
-    fetchPromiseRef.current = promise;
-    await promise;
+    void doFetch();
+    await fetchPromise;
   }, []);
 
   const clearProfileRoles = useCallback(() => {

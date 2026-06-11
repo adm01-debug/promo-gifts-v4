@@ -6,7 +6,7 @@
  * usuário quer ver é a FOLHA — a mais específica em que o produto se encaixa
  * (filha/neta/bisneta…), derivada de `product_category_assignments`.
  *
- * Arquitetura: acesso PostgREST NATIVO ao banco oficial `doufsxqlfjyuvxuezpln`
+ * Arquitetura: acesso PostgREST NATIVO ao banco oficial `pqpdolkaeqlyzpdpbizo`
  * (EXTERNAL_PROMOBRIND_URL/external-db-bridge foi descontinuado — operamos direto no
  * banco para evitar latência). UMA query batch nos assignments + UMA nos metadados de
  * categoria, em vez de N+1 por card. O desempate de folha (≥2 categorias no mesmo nível

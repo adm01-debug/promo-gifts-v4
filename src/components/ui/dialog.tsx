@@ -3,7 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
 const Dialog = DialogPrimitive.Root;
 
@@ -46,7 +46,9 @@ function childrenHaveType(
     if (found) return;
     if (!React.isValidElement(child)) return;
     const t = child.type as React.ElementType;
-    if (types.some((match) => match === t || (t as { displayName?: string }).displayName === match)) {
+    if (
+      types.some((match) => match === t || (t as { displayName?: string }).displayName === match)
+    ) {
       found = true;
       return;
     }
@@ -67,10 +69,7 @@ function childrenHaveType(
 }
 
 // Display names Radix looks for internally
-const TITLE_TYPES: Array<React.ElementType | string> = [
-  DialogPrimitive.Title,
-  'DialogTitle',
-];
+const TITLE_TYPES: Array<React.ElementType | string> = [DialogPrimitive.Title, 'DialogTitle'];
 const DESCRIPTION_TYPES: Array<React.ElementType | string> = [
   DialogPrimitive.Description,
   'DialogDescription',
@@ -113,8 +112,9 @@ const DialogContent = React.forwardRef<
   // Dialogs that already have DialogTitle + DialogDescription are unaffected
   // (the scan short-circuits on the first match).
 
-  const hasTitle       = childrenHaveType(children, TITLE_TYPES);
+  const hasTitle = childrenHaveType(children, TITLE_TYPES);
   const hasDescription = childrenHaveType(children, DESCRIPTION_TYPES);
+  const { handleClose } = useOverlayInteractivity();
 
   // Radix Dialog natively handles: focus trap, escape key, scroll lock.
   // We only add a lightweight cleanup on close to prevent stale scroll locks.
@@ -123,10 +123,11 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
+        {...props}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           // Ensure scroll + interactivity are restored after the dialog closes.
-          requestAnimationFrame(releaseScrollLockIfIdle);
+          handleClose();
         }}
         className={cn(
           'duration-normal fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border-2 border-border bg-background p-6 shadow-xl ease-out',
@@ -141,7 +142,6 @@ const DialogContent = React.forwardRef<
         )}
         aria-modal="true"
         role="dialog"
-        {...props}
       >
         {/* Fallback visually-hidden title -- only rendered when no DialogTitle
             is present. Satisfies Radix's runtime assertion and gives screen

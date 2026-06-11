@@ -92,7 +92,7 @@ export default function RolePermissionsPage() {
   const hasPermission = (permissionId: string, role: AppRole): boolean => {
     const key = `${role}-${permissionId}`;
     if (pendingChanges.has(key)) {
-      return pendingChanges.get(key) as unknown;
+      return pendingChanges.get(key) ?? false;
     }
     return rolePermissions.some((rp) => rp.role === role && rp.permission_code === permissionId);
   };

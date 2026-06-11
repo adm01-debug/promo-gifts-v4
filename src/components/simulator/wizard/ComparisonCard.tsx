@@ -23,7 +23,7 @@ interface ComparisonCardProps {
 export function ComparisonCard({
   result,
   onSelect,
-  _quantity,
+  quantity: _quantity,
   isFirst,
   maxPrice,
   isSelected,

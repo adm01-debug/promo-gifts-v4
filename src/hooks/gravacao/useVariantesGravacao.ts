@@ -1,5 +1,5 @@
 /**
- * @deprecated Tabela `tecnica_gravacao_variante` não existe em doufsxqlfjyuvxuezpln.
+ * @deprecated Tabela `tecnica_gravacao_variante` não existe em pqpdolkaeqlyzpdpbizo.
  * Fase 2 adicionou alias → tabela_preco_gravacao_oficial, mas nenhum componente usa este hook.
  * TODO: Remover este arquivo e a linha correspondente em hooks/gravacao/index.ts.
  */

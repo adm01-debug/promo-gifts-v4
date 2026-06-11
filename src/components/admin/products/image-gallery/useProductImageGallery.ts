@@ -63,7 +63,7 @@ export function useProductImageGallery({
         const { records } = await dbInvoke<ExternalImage>({
           table: 'product_images',
           operation: 'select',
-          filters: { product_id: productId },
+          filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'display_order', ascending: true },
         });

@@ -359,7 +359,7 @@ export const SidebarReorganized = React.memo(
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      'h%8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
+                      'h-8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
                       'text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary',
                       'rounded-xl opacity-60 transition-all duration-300 hover:opacity-100',
                       !hasAnyGroupOpen && 'invisible',
@@ -375,7 +375,7 @@ export const SidebarReorganized = React.memo(
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    'h%8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
+                    'h-8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
                     'rounded-xl transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary',
                     isCollapsed && 'mx-auto',
                   )}

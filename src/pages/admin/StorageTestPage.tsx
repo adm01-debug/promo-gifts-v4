@@ -20,11 +20,17 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+interface StorageFile {
+  id: string | null;
+  name: string;
+  metadata?: { size?: number } | null;
+}
+
 export default function StorageTestPage() {
   const [uploading, setUploading] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [files, setFiles] = useState<unknown[]>([]);
+  const [files, setFiles] = useState<StorageFile[]>([]);
   const { toast } = useToast();
 
   const bucketName = 'test-external-storage';
@@ -308,7 +314,7 @@ export default function StorageTestPage() {
                             {file.name}
                           </span>
                           <span className="text-[10px] text-white/40">
-                            {(file.metadata?.size / 1024).toFixed(1)} KB
+                            {((file.metadata?.size ?? 0) / 1024).toFixed(1)} KB
                           </span>
                         </div>
                         <div className="flex items-center gap-1">

@@ -77,6 +77,10 @@ chamadores vivos; sem views/MVs dependentes). Candidatas a DROP em follow-up.
 - ✅ Cron drena a fila corretamente (validado em E2E: raw `pending` →
   `standardized` → `promoted` → `processed`).
 - ✅ Generalizado para os 5 fornecedores (`auto_sync_enabled`).
+- ✅ **RESOLVIDO em 2026-06-10 (ADR 0008):** `fn_standardize_variant` e
+  `fn_derive_parent_ref` agora são 100% data-driven pelo de-para
+  (`supplier_field_mappings`, `target_table='product_variants'`), sem branches
+  por UUID. Paridade via `fn_parity_standardize_variant`.
 - ⚠️ `fn_standardize_variant` ainda é hardcoded por fornecedor (vive na Fase 2,
   não viola as 3 fases). Conversão para de-para puro + preenchimento de lacunas
   (`variant_supplier_sources` p/ Asia/Só Marcas/88B, categorias, imagens) ficou

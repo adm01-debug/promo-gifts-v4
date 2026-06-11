@@ -1,11 +1,9 @@
 import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-import { ProductGrid } from '@/components/products/ProductGrid';
-import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
+import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
 import {
   ProductCardSkeleton,
   ProductGridSkeleton,
@@ -19,9 +17,7 @@ import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
 import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
-import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
-// Diagnostic counter
 interface CatalogContentProps {
   viewMode: ViewMode;
   shouldShowCatalogSkeleton: boolean;
@@ -52,6 +48,12 @@ interface CatalogContentProps {
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
   hideCategoryBadges?: boolean;
+  // Novas props para controle de filtro e sort vindos do catalog state
+  sortBy?: string;
+  onSortChange?: (v: string) => void;
+  onOpenFilters?: () => void;
+  activeFiltersCount?: number;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export const CatalogContent = memo(function CatalogContent({
@@ -68,15 +70,15 @@ export const CatalogContent = memo(function CatalogContent({
   loadMoreRef,
   itemsPerPage: _itemsPerPage,
   navigate,
-  handleViewProduct,
+  handleViewProduct: _handleViewProduct,
   handleShareProduct,
-  handleFavoriteProduct,
+  handleFavoriteProduct: _handleFavoriteProduct,
   isFavorite,
   toggleFavorite,
   isInCompare,
   onToggleCompare,
   canAddToCompare,
-  onLoadMore: _onLoadMore,
+  onLoadMore,
   onResetFilters,
   selectionMode,
   onSelectedCountChange,
@@ -84,6 +86,11 @@ export const CatalogContent = memo(function CatalogContent({
   activeProductId: _activeProductId,
   setActiveProductId: _setActiveProductId,
   hideCategoryBadges = false,
+  sortBy = 'name',
+  onSortChange,
+  onOpenFilters,
+  activeFiltersCount = 0,
+  onViewModeChange,
 }: CatalogContentProps) {
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
@@ -150,56 +157,58 @@ export const CatalogContent = memo(function CatalogContent({
     );
   }
 
+  // Se estivermos em um destes modos, usamos o grid virtualizado para melhor performance
+  if (viewMode === 'grid' || viewMode === 'list') {
+    return (
+      <SparklineSalesProvider productIds={productIds}>
+        <ProductLeafCategoryProvider productIds={productIds}>
+          <div className="h-[calc(100vh-280px)] min-h-[600px] w-full">
+            <VirtualizedProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              hasMore={hasMoreProducts}
+              onLoadMore={onLoadMore}
+              columns={gridColumns}
+              viewMode={viewMode}
+              onProductClick={handleProductClick}
+              isFavorited={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              onShare={handleShareProduct}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+              sortBy={sortBy}
+              onSortChange={onSortChange}
+              onOpenFilters={onOpenFilters}
+              onClearFilters={onResetFilters}
+              showFilterBar={false}
+              activeFiltersCount={activeFiltersCount}
+              onViewModeChange={onViewModeChange}
+            />
+          </div>
+          <CatalogBulkModals
+            sel={selection}
+            selectionMode={selectionMode}
+            totalCount={totalEstimate || filteredProducts.length}
+          />
+        </ProductLeafCategoryProvider>
+      </SparklineSalesProvider>
+    );
+  }
+
   return (
     <div
       className={cn(
-        'relative space-y-8 pb-12 duration-500 animate-in fade-in',
+        'relative space-y-8 px-4 pb-12 duration-500 animate-in fade-in sm:px-6',
         isLoadingMore && 'opacity-80 transition-opacity',
       )}
     >
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
-          {viewMode === 'grid' && (
-            <ProductGrid
-              products={paginatedProducts}
-              isLoading={isLoadingMore}
-              onProductClick={handleProductClick}
-              onViewProduct={handleViewProduct}
-              onShareProduct={handleShareProduct}
-              onFavoriteProduct={handleFavoriteProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              columns={gridColumns}
-              activeColorFilter={activeColorFilter}
-              selectionMode={selectionMode}
-              selectedIds={selectedIds}
-              onToggleSelect={onToggleSelect}
-            />
-          )}
-
-          {viewMode === 'list' && (
-            <ProductList
-              products={paginatedProducts}
-              isLoading={isLoadingMore}
-              onProductClick={handleProductClick}
-              onViewProduct={handleViewProduct}
-              onShareProduct={handleShareProduct}
-              onFavoriteProduct={handleFavoriteProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              activeColorFilter={activeColorFilter}
-              selectionMode={selectionMode}
-              externalSelectedIds={selectedIds}
-              onToggleSelect={onToggleSelect}
-            />
-          )}
-
           {viewMode === 'table' && (
             <ProductTableView
               products={paginatedProducts}
@@ -220,35 +229,9 @@ export const CatalogContent = memo(function CatalogContent({
         </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
 
-      {hasMoreProducts && (
-        <div ref={loadMoreRef} className="flex justify-center py-8">
-          {isLoadingMore ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex gap-1.5">
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <Skeleton
-                  className="h-2 w-2 animate-bounce rounded-full"
-                  style={{ animationDelay: '300ms' }}
-                />
-              </div>
-              <p className="animate-pulse text-xs font-medium text-muted-foreground">
-                Carregando mais produtos...
-              </p>
-            </div>
-          ) : (
-            <div className="text-center text-sm text-muted-foreground">
-              Exibindo{' '}
-              {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de{' '}
-              {totalEstimate || filteredProducts.length} produtos
-            </div>
-          )}
+      {hasMoreProducts && viewMode === 'table' && (
+        <div ref={loadMoreRef} className="pt-4" data-testid="load-more-trigger">
+          <ProductTableSkeleton rows={5} selectionMode={selectionMode} />
         </div>
       )}
 
@@ -257,8 +240,6 @@ export const CatalogContent = memo(function CatalogContent({
         selectionMode={selectionMode}
         totalCount={totalEstimate || filteredProducts.length}
       />
-
-      <ScrollToTopButton className="fixed bottom-6 right-6 z-[60]" />
     </div>
   );
 });

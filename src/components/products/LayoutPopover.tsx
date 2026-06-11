@@ -32,7 +32,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-md"
+                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-sm sm:h-9"
                     aria-label="Alterar layout"
                     data-testid="layout-popover-trigger"
                   >
@@ -46,7 +46,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
               Alterar visualização (grid, lista, tabela) e densidade de colunas
             </TooltipContent>
           </Tooltip>
-          <PopoverContent align="end" className="w-60 p-4" sideOffset={8}>
+          <PopoverContent align="end" className="w-60 p-4 shadow-2xl border-primary/10" sideOffset={8}>
             <div className="space-y-4">
               {/* View Mode */}
               <div>

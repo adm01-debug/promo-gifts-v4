@@ -311,14 +311,15 @@ html[data-scroll-locked] body {
 
     /* 13. Product Swatches Tokens */
     /* 13. Product Swatches Design Tokens (SSOT) */
-    --swatch-size-xs: 18px;
-    --swatch-size-sm: 22px;
-    --swatch-size-md: 26px;
+    --swatch-size-xs: 20px;
+    --swatch-size-sm: 24.2px;
+    --swatch-size-md: 28.6px;
     --swatch-gap-x: 6px;
     --swatch-gap-y: 6px;
     --swatch-scale-hover: 1.1;
-    --swatch-ring-width: 1.5px;
+    --swatch-ring-width: 2px;
     --swatch-container-py: 4px;
+    --swatch-selected-glow: 0 0 12px 2px hsl(var(--primary) / 0.5);
   }
 
   .dark {
