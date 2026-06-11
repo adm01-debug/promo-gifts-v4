@@ -1,7 +1,7 @@
-import { test, expect } from "./fixtures/test-base";
-import { Sel } from "./fixtures/selectors";
-import { gotoAndSettle } from "./helpers/nav";
-import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "./helpers/auth";
+import { test, expect } from "../fixtures/test-base";
+import { Sel } from "../fixtures/selectors";
+import { gotoAndSettle } from "../helpers/nav";
+import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "../helpers/auth";
 
 /**
  * Smoke Test: Fluxo Crítico de Autenticação @smoke
@@ -32,6 +32,7 @@ test.describe("Auth Critical Flow @smoke", () => {
     await expectAuthenticated(page);
     
     // Verifica se o Header do app carregou (sinal de que a sessão foi hidratada no context)
+    // O seletor app-header é usado no componente Header.tsx
     await expect(page.locator(Sel.app.header)).toBeVisible();
     
     console.log(`[Smoke] Login OK. URL atual: ${page.url()}`);
@@ -40,6 +41,8 @@ test.describe("Auth Critical Flow @smoke", () => {
   test("deve bloquear acesso a rotas protegidas quando deslogado", async ({ page }) => {
     // Tenta acessar /produtos diretamente
     console.log("[Smoke] Testando bloqueio de rota protegida");
+    // Em AppRoutes.tsx, as rotas protegidas estão sob <ProtectedRoute />
+    // /produtos (productRoutes) é protegida.
     await gotoAndSettle(page, "/produtos");
     
     // Deve redirecionar para /auth ou /login
