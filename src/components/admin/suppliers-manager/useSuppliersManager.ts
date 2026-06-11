@@ -157,7 +157,10 @@ export function useSuppliersManager() {
           .order('name', { ascending: true })
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
-        all.push(...records);
+        // O parser do select tipa a linha só com as 40 colunas listadas;
+        // os campos sociais/endereço do Supplier não são colunas do DB
+        // (preenchidos em runtime a partir dos JSONs address/contacts).
+        all.push(...(records as unknown as Supplier[]));
         if (records.length < pageSize) break; // last page
       }
       setSuppliers(all);
