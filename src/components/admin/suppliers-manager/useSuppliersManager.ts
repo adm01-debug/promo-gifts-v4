@@ -157,7 +157,10 @@ export function useSuppliersManager() {
           .order('name', { ascending: true })
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
-        all.push(...records);
+        // Cast necessário: select explícito de colunas faz supabase-js estreitar o tipo para as
+        // colunas listadas; campos não selecionados (ex: logradouro, instagram) ficam fora do
+        // tipo inferido mesmo sendo null no DB. Restaura contrato original de Supplier[].
+        all.push(...(records as unknown as Supplier[]));
         if (records.length < pageSize) break; // last page
       }
       setSuppliers(all);
@@ -345,7 +348,11 @@ export function useSuppliersManager() {
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const { data: existingRecords } = await untypedFrom<{ id: string; name: string; cnpj: string }>('suppliers')
+        const { data: existingRecords } = await untypedFrom<{
+          id: string;
+          name: string;
+          cnpj: string;
+        }>('suppliers')
           .select('id,name,cnpj')
           .eq('cnpj', editingSupplier.cnpj.trim())
           .limit(5);

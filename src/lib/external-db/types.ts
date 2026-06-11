@@ -11,6 +11,8 @@ export interface ExternalProduct {
   description?: string;
   short_description?: string;
   price?: number;
+  /** Alias used by some CRM adapters — same semantic as price */
+  sale_price?: number;
   cost_price?: number;
   category_id?: string;
   subcategory_id?: string;
