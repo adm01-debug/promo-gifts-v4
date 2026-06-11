@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { CatalogToolbar } from '../CatalogToolbar';
+import type { FilterState } from '@/components/filters/filter-panel/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
@@ -14,7 +15,7 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 }));
 
 const mockProps = {
-  filters: {},
+  filters: {} as unknown as FilterState,
   setFilters: vi.fn(),
   activeFiltersCount: 0,
   filterSheetOpen: false,

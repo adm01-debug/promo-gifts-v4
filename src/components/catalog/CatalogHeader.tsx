@@ -31,6 +31,7 @@ export const CatalogHeader = memo(function CatalogHeader({
   hasNextPage: _hasNextPage,
   onSelect,
   searchQuery = '',
+  onReset,
   activeFiltersCount = 0,
   searchHistory = [],
   onClearHistory,

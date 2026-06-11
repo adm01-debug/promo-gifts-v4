@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { CatalogToolbar } from './CatalogToolbar';
+import type { FilterState } from '@/components/filters/filter-panel/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import React from 'react';
 
@@ -27,7 +28,7 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 
 describe('CatalogToolbar - Alignment and Responsiveness', () => {
   const defaultProps = {
-    filters: {},
+    filters: {} as unknown as FilterState,
     setFilters: vi.fn(),
     activeFiltersCount: 0,
     filterSheetOpen: false,
