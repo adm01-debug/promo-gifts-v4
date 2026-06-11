@@ -471,8 +471,13 @@ function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQ
           .filter(Boolean),
       );
     }
-    case 'not':
-      return query.not(col, op, rest);
+    case 'not': {
+      const subDot = rest.indexOf('.');
+      if (subDot === -1) return query.not(col, 'eq', rest);
+      const subOp = rest.slice(0, subDot);
+      const subVal = rest.slice(subDot + 1);
+      return query.not(col, subOp, subVal);
+    }
     default:
       logger.warn(`[rest-native] Unknown PostgREST op '${op}' for '${col}', treating as eq`);
       return query.eq(col, raw);
