@@ -66,6 +66,8 @@ describe('NotificationBell', () => {
       prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
+      dateRange: {},
+      setDateRange: vi.fn(),
     });
 
     render(
@@ -95,6 +97,8 @@ describe('NotificationBell', () => {
       prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
+      dateRange: {},
+      setDateRange: vi.fn(),
     });
 
     render(
@@ -133,6 +137,8 @@ describe('NotificationBell', () => {
       prefetch: vi.fn().mockResolvedValue(undefined),
       setSearch: vi.fn(),
       setCategory: vi.fn(),
+      dateRange: {},
+      setDateRange: vi.fn(),
     });
 
     render(
