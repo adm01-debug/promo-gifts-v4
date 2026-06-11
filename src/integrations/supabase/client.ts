@@ -107,6 +107,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         if (isDev) {
           console.groupCollapsed(`%c[Supabase Response] ${response.status} ${url}`, response.ok ? 'color: #3ecf8e;' : 'color: #f87171;');
           console.log('Status:', response.status);
+          try {
+             const clone = response.clone();
+             const text = await clone.text();
+             console.log('Body:', text.substring(0, 1000));
+          } catch(e) { /* ignore */ }
           console.groupEnd();
         }
 
