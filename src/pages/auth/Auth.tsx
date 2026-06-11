@@ -32,6 +32,7 @@ import { LegalFooter } from '@/components/auth/LegalFooter';
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
@@ -124,6 +125,25 @@ export default function Auth() {
     emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
+  const handleSocialError = useCallback(
+    (message: string, opts?: { autoFallback?: boolean }) => {
+      logger.error('[AUTH_SOCIAL_FAILED] OAuth initialization failed:', { message });
+      const nextError = resolveOAuthError(message);
+      setSocialError({
+        ...nextError,
+        code: nextError.code ?? 'OAUTH_INIT_ERROR',
+      });
+
+      if (opts?.autoFallback) {
+        toast({
+          title: 'Google indisponível',
+          description: 'Não conseguimos conectar ao Google. Use seu e-mail para entrar.',
+        });
+        focusEmailFallback();
+      }
+    },
+    [toast, focusEmailFallback],
+  );
 
   // Fetch visitor IP and geolocation
   useEffect(() => {
@@ -644,6 +664,16 @@ export default function Auth() {
                       </div>
                     </div>
                   )}
+                  <div className="relative mb-6 mt-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-[#030508] px-2 text-white/30 backdrop-blur-xl">ou</span>
+                    </div>
+                  </div>
+
+                  <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
 
                   <form
                     onSubmit={loginForm.handleSubmit(handleLogin)}
