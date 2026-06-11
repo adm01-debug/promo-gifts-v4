@@ -664,6 +664,16 @@ export default function Auth() {
                       </div>
                     </div>
                   )}
+                  <div className="relative mb-6 mt-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-[#030508] px-2 text-white/30 backdrop-blur-xl">ou</span>
+                    </div>
+                  </div>
+
+                  <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
 
                   <form
                     onSubmit={loginForm.handleSubmit(handleLogin)}
