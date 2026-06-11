@@ -56,8 +56,19 @@ export const SUPABASE_PUBLISHABLE_KEY = envUrlIsValid ? (envKey || CANONICAL_ANO
 log.info('init', { 
   url: SUPABASE_URL, 
   project_id: SUPABASE_URL.split('.')[0].split('//')[1],
-  has_custom_env: !!envUrl 
+  has_custom_env: !!envUrl,
+  is_canonical: SUPABASE_URL.includes(CURRENT_PROJECT_ID)
 });
+
+// Debug flag for E2E tests
+if (typeof window !== 'undefined') {
+  (window as any).__SUPABASE_CLIENT_DEBUG__ = {
+    url: SUPABASE_URL,
+    projectId: SUPABASE_URL.split('.')[0].split('//')[1],
+    isCanonical: SUPABASE_URL.includes(CURRENT_PROJECT_ID)
+  };
+}
+
 
 
 type SupabaseStorage = {
