@@ -1,50 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
-
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('supabase.client');
 
 // Projeto canônico doufsxqlfjyuvxuezpln
 const CURRENT_PROJECT_ID = "doufsxqlfjyuvxuezpln";
-const CANONICAL_URL = `https://${CURRENT_PROJECT_ID}.supabase.co`;
-const CANONICAL_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Validate that VITE_SUPABASE_URL, if set, points to the correct project.
-// Localhost and placeholders are tolerated (dev/CI without secrets).
-// Returns true when the URL is usable, false when it must be rejected.
-const validateEnv = (): boolean => {
-  if (!envUrl) {
-    log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
-    return true;
-  }
-  const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
-  const isPlaceholder = envUrl.includes('placeholder');
-  if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
-    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
-    if (import.meta.env.DEV) {
-      console.error(
-        "%c[Supabase Critical]",
-        "color: red; font-weight: bold;",
-        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
-      );
-    }
-    return false;
-  }
-  return true;
-};
-
-const envUrlIsValid = validateEnv();
-
-export const SUPABASE_URL = envUrlIsValid ? (envUrl || CANONICAL_URL) : CANONICAL_URL;
-// Quando a env URL é rejeitada, a env KEY pertence ao projeto errado e causaria
-// "Invalid API key" / 401. Descartar a key também e cair no fallback canônico.
-export const SUPABASE_PUBLISHABLE_KEY = envUrlIsValid ? (envKey || CANONICAL_ANON_KEY) : CANONICAL_ANON_KEY;
-
+export const SUPABASE_URL = envUrl || `https://${CURRENT_PROJECT_ID}.supabase.co`;
+export const SUPABASE_PUBLISHABLE_KEY = envKey || '';
 
 log.info('init', { 
   url: SUPABASE_URL, 
