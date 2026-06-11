@@ -191,7 +191,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         style={{
           background:
             'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
-          animation: 'nebulaDrift 30s ease-in-out infinite alternate',
+          // Animação nebulaDrift removida para evitar movimento lateral
         }}
       />
 
@@ -199,7 +199,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         className="fixed inset-0 opacity-[0.03] blur-[120px]"
         style={{
           background: 'radial-gradient(circle at 60% 40%, #1e40af 0%, transparent 40%)',
-          animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse',
+          // Animação nebulaDrift removida para evitar movimento lateral
         }}
       />
 
@@ -214,7 +214,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               height: '1px',
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
-              animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
+              // Animação starDrift removida para evitar movimento lateral
               backgroundColor:
                 i % 5 === 0 ? '#3b82f6' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
               boxShadow: i % 5 === 0 ? '0 0 4px #3b82f6' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
@@ -242,8 +242,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               left: `${star.left}%`,
               width: `${star.size}px`,
               height: `${star.size}px`,
-              animation: `starDrift ${star.driftDur}s linear infinite alternate`,
-              willChange: 'transform, top, left',
+              // Animação starDrift removida para evitar movimento lateral
+              willChange: 'opacity',
             }}
           >
             <div
@@ -270,8 +270,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               height: `${p.size}px`,
               left: `${p.left}%`,
               top: `${p.top}%`,
-              animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
-              willChange: 'transform',
+              // Animação zigzagMovement removida para evitar movimento lateral
+              willChange: 'opacity',
               background:
                 p.type === 0
                   ? 'radial-gradient(circle at 30% 30%, #0B1E47, #000000)'
@@ -318,8 +318,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               <div
                 className="relative"
                 style={{
-                  // circularOrbit rotaciona e move
-                  animation: `circularOrbit ${orbitDuration}s linear infinite`,
+                  // Animações de movimento removidas
+                  animation: `none`,
                   animationDelay: `0s`,
                   // Rim lighting and glassmorphism effect (10/10)
                   filter: `brightness(0.65) drop-shadow(0 0 ${size / 8}px rgba(6, 135, 255, 0.2)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))`,
@@ -333,7 +333,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                     width: size,
                     height: size,
                     transform: `rotate(${a.rotation}deg)`,
-                    animationDuration: `${orbitDuration / 2}s`,
+                    animation: 'pulse 3s ease-in-out infinite',
                   }}
                 />
               </div>
