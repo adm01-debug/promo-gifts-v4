@@ -15,7 +15,9 @@ describe('contract: sync-external-db (Reposição Module)', () => {
     if (r.ok) {
       expect(r.version).toBe('1');
       expect(r.data.table).toBe('products');
-      expect(r.responseHeaders['Deprecation']).toBe('2026-11-30');
+      // RFC 8594: Deprecation é booleano; a data de corte vai no header Sunset
+      expect(r.responseHeaders['Deprecation']).toBe('true');
+      expect(r.responseHeaders['Sunset']).toContain('2026');
     }
   });
 

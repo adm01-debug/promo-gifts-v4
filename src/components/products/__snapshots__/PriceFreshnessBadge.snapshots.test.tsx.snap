@@ -10,7 +10,6 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -108,7 +107,6 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -201,7 +199,6 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
@@ -296,11 +293,10 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          aria-label="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
           class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -565,7 +561,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center justify-center text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
@@ -733,11 +729,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          aria-label="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
           class="inline-flex items-center justify-center text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -831,10 +827,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               points="12 6 12 12 16 14"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Atualizado há 31 dias
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 02/04/2026
             </span>
@@ -902,7 +900,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
           role="status"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
@@ -926,10 +924,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="m9 12 2 2 4-4"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Atualizado hoje
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 03/05/2026
             </span>
@@ -1017,10 +1017,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Preço pode estar defasado (há 61 dias)
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 03/03/2026
             </span>
@@ -1085,10 +1087,10 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          aria-label="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
           role="status"
-          title="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -1115,7 +1117,9 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Data de atualização não informada
           </span>
         </span>
@@ -1161,6 +1165,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
           role="status"
+          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -1257,6 +1262,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400"
           role="status"
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
@@ -1344,14 +1350,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
   <div>
     <div>
       <div>
-        <div
+        <span
           aria-label="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
-          class="inline-flex items-start gap-2.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100/80 px-3.5 py-2.5 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-200"
+          class="inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100"
           role="status"
+          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle mt-0.5 h-4 w-4 shrink-0"
+            class="lucide lucide-alert-triangle mt-0.5 h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1372,26 +1379,24 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <div
-            class="flex flex-col gap-0.5 leading-tight"
-          >
+          <span>
             <span
-              class="font-display text-sm font-semibold"
+              class="block"
             >
               Preço pode estar defasado
             </span>
             <span
-              class="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80"
+              class="block tabular-nums text-amber-900/80 dark:text-amber-200/80"
             >
               Última atualização em 03/03/2026 (há 61 dias)
             </span>
             <span
-              class="text-[11px] text-amber-800/80 dark:text-amber-200/70"
+              class="block text-[11px] font-normal text-amber-800 dark:text-amber-200"
             >
               Confirme com o fornecedor antes de fechar o orçamento.
             </span>
-          </div>
-        </div>
+          </span>
+        </span>
       </div>
       <div
         data-testid="tooltip-content"
@@ -1451,9 +1456,10 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento."
+          aria-label="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground"
           role="status"
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"

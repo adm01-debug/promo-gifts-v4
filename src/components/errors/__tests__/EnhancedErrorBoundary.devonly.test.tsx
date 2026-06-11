@@ -7,10 +7,17 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EnhancedErrorBoundary } from '../EnhancedErrorBoundary';
-import { useDevGate } from '@/hooks/admin';
+
+// DevOnly imports useDevGate from the direct path; share the same mock fn
+// across both module aliases so both import sites hit the same spy.
+const mockUseDevGate = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/admin', () => ({
-  useDevGate: vi.fn(),
+  useDevGate: mockUseDevGate,
+}));
+
+vi.mock('@/hooks/admin/useDevGate', () => ({
+  useDevGate: mockUseDevGate,
 }));
 
 // Silencia o report e o logger no boundary durante o catch
@@ -47,7 +54,7 @@ describe('EnhancedErrorBoundary — DevOnly gating', () => {
   });
 
   it('não vaza error.message nem "Detalhes técnicos" para usuário final (não-dev)', () => {
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: false });
+    mockUseDevGate.mockReturnValue({ isAllowed: false, isDev: false });
 
     renderBoundary();
 
@@ -66,7 +73,7 @@ describe('EnhancedErrorBoundary — DevOnly gating', () => {
     // DevOnly default usa `isAllowed`, então admin com isAllowed=true VERIA.
     // Validamos o contrato atual: nesse modo, admin vê. Se a política mudar,
     // este teste deve ser invertido junto.
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
+    mockUseDevGate.mockReturnValue({ isAllowed: true, isDev: false });
 
     renderBoundary();
 
@@ -76,7 +83,7 @@ describe('EnhancedErrorBoundary — DevOnly gating', () => {
   });
 
   it('renderiza mensagem + detalhes para dev (isDev=true)', () => {
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: true });
+    mockUseDevGate.mockReturnValue({ isAllowed: true, isDev: true });
 
     renderBoundary();
 

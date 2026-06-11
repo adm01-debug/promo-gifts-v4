@@ -80,10 +80,7 @@ const CDN_VARIANTS: Record<CdnVariant, string> = {
 /**
  * Gera URL do CDN com variante de tamanho.
  */
-export function getCdnUrl(
-  url: string | null | undefined,
-  variant: CdnVariant = 'public',
-): string {
+export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 'public'): string {
   if (!url) return '/placeholder.svg';
   if (url.includes('imagedelivery.net')) {
     // Remove variante existente e aplica a nova
@@ -137,6 +134,43 @@ export function getOgImageUrl(images: ProductImageMeta[]): string | null {
 }
 
 /**
+ * Retorna a imagem OG como objeto (para compatibilidade com testes).
+ * Prioridade: is_og_image → qualquer main → is_primary → primeira
+ */
+export function getOgImage(images: ProductImageMeta[]): ProductImageMeta | null {
+  return (
+    images.find((i) => i.is_og_image) ||
+    images.find((i) => i.image_type === 'main') ||
+    images.find((i) => i.is_primary) ||
+    images[0] ||
+    null
+  );
+}
+
+/**
+ * Retorna a imagem para exibição em cards de catálogo.
+ * Prioridade: is_og_image → main → is_primary → primeira
+ */
+export function getCardImage(images: ProductImageMeta[]): ProductImageMeta | null {
+  if (images.length === 0) return null;
+  return (
+    images.find((i) => i.is_og_image) ||
+    images.find((i) => i.image_type === 'main') ||
+    images.find((i) => i.is_primary) ||
+    images[0] ||
+    null
+  );
+}
+
+/**
+ * Retorna a imagem hero (principal) do produto.
+ * Prioridade: is_primary → is_og_image → primeira
+ */
+export function getHeroImage(images: ProductImageMeta[]): ProductImageMeta | null {
+  return images.find((i) => i.is_primary) || images.find((i) => i.is_og_image) || images[0] || null;
+}
+
+/**
  * Obtém URL da imagem principal do produto.
  * Prioridade: is_og_image → qualquer main → is_primary → primeira
  */
@@ -183,6 +217,11 @@ export function groupImages(images: ProductImageMeta[]): GroupedImages {
       (i) => i.image_type === 'location' || i.image_type === 'area' || i.image_type === 'component',
     ),
   };
+}
+
+/** Alias de groupImages para compatibilidade */
+export function categorizeImages(images: ProductImageMeta[]): GroupedImages {
+  return groupImages(images);
 }
 
 /**

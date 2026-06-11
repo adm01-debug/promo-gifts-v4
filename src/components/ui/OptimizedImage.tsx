@@ -111,13 +111,17 @@ export function OptimizedImage({
   const blurStyle: React.CSSProperties = {
     filter: `blur(${blurAmount}px)`,
     transform: `scale(${zoomAmount})`,
-    transition: `opacity ${duration}ms ease-out, filter ${duration}ms ease-out, transform ${duration}ms ease-out`,
+    transitionProperty: 'opacity, filter, transform',
+    transitionDuration: `${duration}ms`,
+    transitionTimingFunction: 'ease-out',
   };
 
   const loadedStyle: React.CSSProperties = {
-    filter: 'blur(0px)',
+    filter: 'none',
     transform: 'scale(1)',
-    transition: `opacity ${duration}ms ease-out, filter ${duration}ms ease-out, transform ${duration}ms ease-out`,
+    transitionProperty: 'opacity, filter, transform',
+    transitionDuration: `${duration}ms`,
+    transitionTimingFunction: 'ease-out',
   };
 
   return (
@@ -134,11 +138,12 @@ export function OptimizedImage({
       {error ? (
         <div
           className={cn(
-            'absolute inset-0 flex items-center justify-center bg-muted/20',
+            'absolute inset-0 flex flex-col items-center justify-center gap-1 bg-muted/20',
             fallbackClassName,
           )}
         >
           <ImageOff className="h-8 w-8 text-muted-foreground/40" />
+          <span className="text-xs text-muted-foreground/60">Erro ao carregar</span>
         </div>
       ) : (
         <>
@@ -174,7 +179,7 @@ export function OptimizedImage({
               className,
             )}
             style={{
-              ...loadedStyle,
+              ...(isLoaded ? loadedStyle : blurStyle),
               ...externalStyle,
             }}
             onLoad={(e) => {

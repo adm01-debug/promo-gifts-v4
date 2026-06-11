@@ -76,8 +76,8 @@ describe('ProductGrid Skeleton', () => {
       </Wrapper>,
     );
 
-    // Check for skeleton elements rendered by ProductCardSkeleton via Skeleton base component
-    const skeletons = document.querySelectorAll('[data-skeleton-id]');
+    // Check for skeleton elements rendered by ProductCardSkeleton
+    const skeletons = document.querySelectorAll('[data-testid="product-card-skeleton"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 

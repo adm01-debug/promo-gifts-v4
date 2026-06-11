@@ -298,8 +298,8 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       localSearch !== '' ||
       localCategory !== 'all' ||
       localUnreadOnly ||
-      localDateRange.from ||
-      localDateRange.to;
+      localDateRange?.from ||
+      localDateRange?.to;
 
     const handleExportCSV = useCallback(() => {
       if (notifications.length === 0) return;
@@ -494,6 +494,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
+                        aria-label="Exportar CSV"
                         onClick={handleExportCSV}
                       >
                         <Download className="h-4 w-4" />
@@ -596,7 +597,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                           size="sm"
                           className={cn(
                             'h-8 justify-start text-left text-xs font-normal',
-                            !localDateRange.from && 'text-muted-foreground',
+                            !localDateRange?.from && 'text-muted-foreground',
                           )}
                         >
                           <CalendarIcon className="mr-2 h-3 w-3" />

@@ -68,16 +68,17 @@ function emit(
   const isDev = import.meta.env.DEV;
   const tag = `[${scope}:${event}]`;
 
-  // BUG-1 FIX: usar o método correto do console por nível.
-  // Antes, debug/info/warn iam todos pro console.warn, poluindo o
-  // DevTools com warnings falsos e mascarando warns reais.
-  // Este dispatcher é o sink único de console do app; info/debug aqui
-  // são intencionais (no-console só permite warn/error no resto do código).
+  // DEV: console nativo por nível — info/debug não poluem o painel de warnings.
+  // PROD: apenas warn/error — o build de produção stripa console.log/info/debug
+  // (vite.config esbuild.pure), então info/debug em PROD precisam sair via warn
+  // ou o JSON nunca chega aos collectors.
   /* eslint-disable no-console */
   if (isDev) {
     if (level === 'error') console.error(tag, payload);
     else if (level === 'warn') console.warn(tag, payload);
+    // eslint-disable-next-line no-console -- branch DEV-only; PROD roteia via warn
     else if (level === 'info') console.info(tag, payload);
+    // eslint-disable-next-line no-console -- branch DEV-only; PROD roteia via warn
     else console.debug(tag, payload);
   } else {
     const json = JSON.stringify(payload);
