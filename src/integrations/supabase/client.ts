@@ -98,7 +98,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         if (response.status === 401) {
           // Clone avoid body consumption
           const body = await response.clone().json().catch(() => ({}));
-          if (body.code === 'UNAUTHORIZED_LEGACY_JWT' || body.message?.includes('Invalid JWT') || body.message?.includes('Invalid API key')) {
+          const isInvalidKey = body.code === 'UNAUTHORIZED_LEGACY_JWT' || 
+                             body.message?.includes('Invalid JWT') || 
+                             body.message?.includes('Invalid API key');
+                             
+          if (isInvalidKey) {
             const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
             log.error('auth_401_detected', {
               url,
