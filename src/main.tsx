@@ -6,12 +6,14 @@ import { registerServiceWorker } from '@/lib/sw-register';
 import { installGlobalErrorHandlers } from '@/lib/error-reporter';
 import { initSentry } from '@/lib/sentry';
 import { installSafeToast } from '@/lib/security/safeToast';
+import { validateSupabaseConfig } from '@/integrations/supabase/runtime-validator';
 import EnhancedErrorBoundary from '@/components/errors/EnhancedErrorBoundary';
 import App from './App.tsx';
 import './index.css';
 import './styles/brand-tokens.css';
 import './styles/missing-root-tokens.css';
 
+validateSupabaseConfig();
 initSentry();
 installGlobalErrorHandlers();
 installSafeToast();
