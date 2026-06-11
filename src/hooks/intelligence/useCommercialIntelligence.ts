@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentOrgId } from '@/hooks/common';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
-import { applySellerScope as _applySellerScope } from '@/lib/auth/apply-seller-scope';
 import { logger } from '@/lib/logger';
 import {
   getSinceDate,
