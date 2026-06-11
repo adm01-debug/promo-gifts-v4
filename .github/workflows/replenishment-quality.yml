@@ -27,6 +27,10 @@ jobs:
         
       - name: Run Module Tests (Unit & Integration)
         run: bunx vitest run src/hooks/products/__tests__/useReplenishments.integration.test.ts
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         
       - name: Run E2E Tests (Smoke)
         run: |

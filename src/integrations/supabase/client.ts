@@ -16,27 +16,21 @@ const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Validação de boot: garante que não estamos conectando ao projeto errado ou sem config.
+// Validação de boot: detecta uso do projeto errado em produção.
+// Localhost e placeholders são tolerados (dev/CI com Supabase local ou sem secrets).
 const validateEnv = () => {
-  if (envUrl && !envUrl.includes(CURRENT_PROJECT_ID)) {
-    const errorMsg = `Inconsistência de Configuração: VITE_SUPABASE_URL aponta para projeto externo (${envUrl}), mas o projeto atual é ${CURRENT_PROJECT_ID}.`;
-    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
-    throw new Error(errorMsg);
-  }
-  
   if (!envUrl) {
     log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
+    return;
+  }
+  const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
+  const isPlaceholder = envUrl.includes('placeholder');
+  if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
+    log.warn('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
   }
 };
 
-try {
-  validateEnv();
-} catch (err) {
-  // Fail loud in dev/CI, but allow fallback in prod if strictly necessary (or handle via UI)
-  if (import.meta.env.DEV) {
-    console.error("%c[Supabase Critical]", "color: red; font-weight: bold;", err);
-  }
-}
+validateEnv();
 
 export const SUPABASE_URL = envUrl || CANONICAL_URL;
 export const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
@@ -84,10 +78,11 @@ supabase.auth.onAuthStateChange((event, session) => {
     is_canonical: projectId === CURRENT_PROJECT_ID
   });
 
-  if (projectId !== CURRENT_PROJECT_ID) {
-    authLog.error('wrong_project_detected', { 
-      current: projectId, 
-      expected: CURRENT_PROJECT_ID 
+  const isLocalProject = projectId.includes('localhost') || projectId.includes('127.0.0.1') || projectId === 'placeholder';
+  if (!isLocalProject && projectId !== CURRENT_PROJECT_ID) {
+    authLog.warn('wrong_project_detected', {
+      current: projectId,
+      expected: CURRENT_PROJECT_ID
     });
   }
 });
