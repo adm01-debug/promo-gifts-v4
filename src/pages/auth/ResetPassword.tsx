@@ -136,7 +136,7 @@ export default function ResetPassword() {
 
   if (isCheckingToken) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#030508]">
+      <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[#030508]">
         <SpaceScene />
         <PageSEO
           title="Redefinir Senha"

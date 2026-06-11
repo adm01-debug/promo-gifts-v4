@@ -7,7 +7,7 @@ import { SpaceScene } from '@/pages/auth/AuthBranding';
 
 export default function TermsPage() {
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden bg-[#030508] text-white">
+    <main className="relative min-h-screen w-full overflow-hidden bg-[#030508] text-white">
       <SpaceScene />
       <PageSEO title="Termos de Uso" path="/termos" />
 
