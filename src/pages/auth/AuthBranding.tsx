@@ -91,29 +91,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Mouse e Scroll parallax tracker com clamp e suavização
+  // Parallax desativado conforme solicitado para evitar movimento lateral da tela
   useEffect(() => {
-    if (config.reducedMotion) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      // Reduzido a intensidade do movimento horizontal (e.clientX) e vertical
-      setMousePos({
-        x: (e.clientX / window.innerWidth - 0.5) * 8 * config.parallaxIntensity,
-        y: (e.clientY / window.innerHeight - 0.5) * 8 * config.parallaxIntensity,
-      });
-    };
-    const handleScroll = () => {
-      const rawScroll = window.scrollY;
-      const clampedScroll = Math.min(Math.max(rawScroll, 0), 1000);
-      setScrollY(clampedScroll * 0.05 * config.parallaxIntensity);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [config.parallaxIntensity, config.reducedMotion]);
+    setMousePos({ x: 0, y: 0 });
+    setScrollY(0);
+  }, []);
 
   if (starsRef.current.length === 0) {
     starsRef.current = [...Array(150)].map((_, i) => ({
