@@ -10,6 +10,8 @@ export async function runAuthAudit() {
       return { success: false, error: error.message };
     }
     
+    // Saída diagnóstica da ferramenta de auditoria (console é a interface dela).
+    // eslint-disable-next-line no-console
     console.log('[AuthAudit] Resultado:', data);
     return { success: true, data };
   } catch (err) {

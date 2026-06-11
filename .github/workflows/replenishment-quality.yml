@@ -20,7 +20,9 @@ jobs:
         run: bun run lint
         
       - name: Type check
-        run: bunx tsc --noEmit
+        # tsconfig raiz é solution file (references) e tropeça em d.ts de
+        # node_modules; o gate de tipos do repo é o tsconfig.app.json.
+        run: bunx tsc -p tsconfig.app.json --noEmit
         
       - name: Run Module Tests (Unit & Integration)
         run: bunx vitest run src/hooks/products/__tests__/useReplenishments.integration.test.ts

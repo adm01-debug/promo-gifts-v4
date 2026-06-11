@@ -82,7 +82,7 @@ export function useProfileRoles() {
         // to prevent white-screen of death if DB calls fail.
         setIsLoading(false);
         setRolesLoaded(true);
-        if (resolvePromise!) resolvePromise();
+        if (resolvePromise) resolvePromise();
       }
     };
 
