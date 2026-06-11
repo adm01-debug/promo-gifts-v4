@@ -14,14 +14,14 @@ export default defineConfig({
   // coleta de TODA a suíte de forma intermitente. Projetos com testMatch próprio
   // (setup, chromium-smoke) continuam com o seu.
   testMatch: '**/*.spec.ts',
-  timeout: 120 * 1000,
+  timeout: 60 * 1000,
   expect: {
-    timeout: 15 * 1000,
+    timeout: 10 * 1000,
   },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 5 : 1, // Increased retries for chaos tests
-  workers: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 3 : 1,
+  workers: 1, // Set to 1 to avoid resource issues
   reporter: [
     ['html', { open: 'never' }],
     ['list'],

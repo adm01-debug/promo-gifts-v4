@@ -44,7 +44,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     rpc: () => Promise.resolve({ data: null, error: null }),
     functions: { invoke: () => Promise.resolve({ data: null, error: null }) },
   },
-  SUPABASE_URL: 'https://doufsxqlfjyuvxuezpln.supabase.co',
+  SUPABASE_URL: 'https://pqpdolkaeqlyzpdpbizo.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'test-key',
 }));
 

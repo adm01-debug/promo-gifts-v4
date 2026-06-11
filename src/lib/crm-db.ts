@@ -184,7 +184,7 @@ export interface CanonicalDbHealthResult {
 }
 
 /**
- * Health check passivo do banco canônico (doufsxqlfjyuvxuezpln).
+ * Health check passivo do banco canônico (pqpdolkaeqlyzpdpbizo).
  *
  * Usa SELECT limit 1 em system_kill_switches (tabela leve, sem dados de negócio)
  * para verificar conectividade e latência do PostgREST. A query é rápida,

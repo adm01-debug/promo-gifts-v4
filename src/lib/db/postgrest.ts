@@ -55,7 +55,7 @@ const TABLE_ALIASES: Record<string, string> = {
 };
 
 // COLUMN_MAP: EN caller names -> real PT column names (for bridge-era PT-named tables)
-// Verified against information_schema.columns in doufsxqlfjyuvxuezpln.
+// Verified against information_schema.columns in pqpdolkaeqlyzpdpbizo.
 const COLUMN_MAP: Record<string, Record<string, string>> = {
   tabela_preco_gravacao_oficial: {
     // PT passthrough (idempotent)
