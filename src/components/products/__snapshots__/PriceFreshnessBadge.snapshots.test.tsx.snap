@@ -1013,10 +1013,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Preço pode estar defasado (há 61 dias)
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 03/03/2026
             </span>
@@ -1111,7 +1113,9 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Data de atualização não informada
           </span>
         </span>
