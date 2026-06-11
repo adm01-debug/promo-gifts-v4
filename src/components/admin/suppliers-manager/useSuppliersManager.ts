@@ -151,7 +151,9 @@ export function useSuppliersManager() {
       const maxPages = 10; // cap at 2000 to prevent runaway
       for (let page = 0; page < maxPages; page++) {
         const { data: records, error } = await untypedFrom<Supplier>('suppliers')
-          .select('*')
+          .select(
+            'id, name, code, cnpj, contact_name, email, phone, address, active, created_at, website, contact_person, payment_terms, delivery_time_days, minimum_order_value, notes, updated_at, organization_id, trading_name, api_type, api_base_url, min_order_value, shipping_terms, default_markup_percent, is_product_supplier, is_engraving_supplier, sync_enabled, sync_interval_minutes, last_full_sync_at, last_sync_status, last_sync_error, api_rate_limit_per_hour, priority, api_requests_current_hour, api_requests_reset_at, state_uf, tax_regime, inscricao_estadual, phone2, logo_url',
+          )
           .order('name', { ascending: true })
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
