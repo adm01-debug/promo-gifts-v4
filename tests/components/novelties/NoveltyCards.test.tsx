@@ -64,7 +64,9 @@ describe("NoveltyGridCard", () => {
   it("renders price in BRL format", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    expect(screen.getByText("R$ 12,99")).toBeInTheDocument();
+    // pt-BR Intl.NumberFormat uses narrow no-break space (U+202F) between
+    // currency symbol and number — use regex to match any whitespace variant
+    expect(screen.getByText(/R\$.*12,99/)).toBeInTheDocument();
   });
 
   it("shows dash when SKU is null", async () => {
