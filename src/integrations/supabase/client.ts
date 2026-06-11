@@ -5,12 +5,17 @@ import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('supabase.client');
 
-// SSOT: O projeto atual do app é pqpdolkaeqlyzpdpbizo.
-// Em produção ou CI, as variáveis de ambiente devem estar configuradas.
-const CURRENT_PROJECT_ID = "pqpdolkaeqlyzpdpbizo";
+// SSOT: O projeto canônico do app é doufsxqlfjyuvxuezpln (camada Gold/Medallion:
+// v_products_public, v_variant_sale_prices_public, v_product_images_cdn etc.,
+// e alvo das migrations em supabase/config.toml).
+// HOTFIX 2026-06-11 (INCIDENTE 401): commits de 2026-06-10 trocaram o SSOT para
+// pqpdolkaeqlyzpdpbizo (projeto Lovable Cloud, sem catálogo). Com a env do Vercel
+// apontando para doufsxq, validateEnv() rejeitava a env e forçava URL pqpdo com a
+// key do doufsxq → 401 "Invalid API key" em TODAS as chamadas de produção.
+const CURRENT_PROJECT_ID = "doufsxqlfjyuvxuezpln";
 const CANONICAL_URL = `https://${CURRENT_PROJECT_ID}.supabase.co`;
 const CANONICAL_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxcGRvbGthZXFseXpwZHBiaXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzEwNTcsImV4cCI6MjA5NDQ0NzA1N30.j9Kk_nu8J5OUn3pcDmRETLMwkhddXmtiSjgI-KCEnrc";
+  "sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU";
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
@@ -96,4 +101,3 @@ supabase.auth.onAuthStateChange((event, session) => {
     });
   }
 });
-
