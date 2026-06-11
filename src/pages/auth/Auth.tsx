@@ -824,6 +824,7 @@ export default function Auth() {
             </div>
           )}
 
+          {import.meta.env.DEV && <SupabaseConnectionDebug />}
           {/* Backend Status Widget removido a pedido do PO */}
 
           <LegalFooter />
