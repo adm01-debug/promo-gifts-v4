@@ -463,7 +463,7 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#030508] lg:flex-row"
+      className="relative flex min-h-screen flex-col overflow-hidden bg-[#030508] lg:flex-row"
       role="main"
       aria-label="Autenticação"
     >
