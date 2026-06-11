@@ -62,7 +62,7 @@ log.info('init', {
 
 // Debug flag for E2E tests
 if (typeof window !== 'undefined') {
-  (window as any).__SUPABASE_CLIENT_DEBUG__ = {
+  (window as Record<string, unknown>).__SUPABASE_CLIENT_DEBUG__ = {
     url: SUPABASE_URL,
     projectId: SUPABASE_URL.split('.')[0].split('//')[1],
     isCanonical: SUPABASE_URL.includes(CURRENT_PROJECT_ID)
