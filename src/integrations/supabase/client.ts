@@ -20,7 +20,7 @@ const log = createClientLogger('supabase.client');
 const CURRENT_PROJECT_ID = "doufsxqlfjyuvxuezpln";
 const CANONICAL_URL = `https://${CURRENT_PROJECT_ID}.supabase.co`;
 const CANONICAL_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNjI0NjUsImV4cCI6MjA2NDkzODQ2NX0.9mZ0pLAnUuD4Gf3Yv_qWjG9Ie6WpM1e9f9G7J7J7J7J";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
