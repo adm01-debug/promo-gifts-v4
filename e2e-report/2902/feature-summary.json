@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-06-11T14:37:56.422Z",
+  "projects": "chromium-smoke",
+  "totals": {
+    "total": 44,
+    "passed": 3,
+    "failed": 1,
+    "skipped": 40,
+    "duration": 37354
+  },
+  "features": [
+    {
+      "feature": "uncategorized",
+      "total": 44,
+      "passed": 3,
+      "failed": 1,
+      "skipped": 40,
+      "duration": 37354,
+      "failures": [
+        {
+          "feature": "uncategorized",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "project": "chromium-smoke",
+          "title": "flows/20-all-features-smoke.spec.ts › @smoke Rotas públicas (gate de CI) › 95 · /reset-password sem token não habilita reset",
+          "status": "failed",
+          "duration": 15989,
+          "location": "flows/20-all-features-smoke.spec.ts:355",
+          "error": "Error: recovery sem token deve negar acesso (mensagem inválido ou redirect /login)",
+          "e2eName": null
+        }
+      ]
+    }
+  ],
+  "e2eNames": []
+}
