@@ -81,7 +81,7 @@ interface AggregatedSearch {
 }
 
 export default function TrendsPage() {
-  const { user, canManage } = useAuth();
+  const { user: _user, canManage } = useAuth();
   const { toast } = useToast();
   const [dateRange, setDateRange] = useUrlState<DateRange>('range', '30d');
   const [activeTab, setActiveTab] = useUrlState<string>('tab', 'products');

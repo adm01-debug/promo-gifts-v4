@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentOrgId } from '@/hooks/common';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
-import { applySellerScope } from '@/lib/auth/apply-seller-scope';
+import { applySellerScope as _applySellerScope } from '@/lib/auth/apply-seller-scope';
 import { logger } from '@/lib/logger';
 import {
   getSinceDate,
@@ -215,11 +215,10 @@ export function useCommercialKPIs(
         o2 = o2.eq('organization_id', orgId);
       }
 
-      // REMOVIDO: applySellerScope. 
+      // REMOVIDO: applySellerScope.
       // Agora o BI mostra dados agregados de mercado (conforme can_view_all_sales() atualizado no banco).
       // O escopo individual do vendedor é mantido para fins de RLS granular, mas o BI
       // deliberadamente consome a visão macro.
-
 
       const [qr, or, qmr, omr] = await Promise.all([q1, o1, q2, o2]);
       const quotes = qr.data || [];
