@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils';
 import type { Product } from '@/hooks/products';
 import type { VariantActionMode } from '../VariantPickerDialog';
 import { showUndoToast } from '@/utils/undoToast';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { useState, useCallback } from 'react';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 
 interface TableRowActionsProps {
   product: Product;
@@ -31,6 +35,32 @@ export function TableRowActions({
   onOpenVariantPicker,
   onOpenQuickView,
 }: TableRowActionsProps) {
+  const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
+
+  const handleCartAdd = useCallback((variant: ExternalVariantStock | null) => {
+    if (carts.length > 1) {
+      setPendingVariant(variant);
+      setSelectorOpen(true);
+      return;
+    }
+
+    addToActiveCart(
+      {
+        product_id: product.id,
+        product_name: product.name,
+        product_sku: product.sku || undefined,
+        product_image_url: variant?.selected_thumbnail || product.images?.[0],
+        product_price: product.price ?? 0,
+        quantity: product.minQuantity || 1,
+        color_name: variant?.color_name || undefined,
+        color_hex: variant?.color_hex || undefined,
+      },
+      carts.length === 1 ? carts[0].id : undefined,
+    );
+  }, [carts, product, addToActiveCart]);
+
   return (
     <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 overflow-x-auto no-scrollbar max-w-full">
       {/* 1 - Carrinho */}
@@ -46,6 +76,7 @@ export function TableRowActions({
               minQuantity={product.minQuantity || 1}
               variant="icon"
               className="h-7 w-7"
+              onSuccess={(variant) => handleCartAdd(variant as any)}
             />
           </div>
         </TooltipTrigger>
@@ -184,6 +215,35 @@ export function TableRowActions({
         </TooltipTrigger>
         <TooltipContent side="top">Compartilhar</TooltipContent>
       </Tooltip>
+
+      <CartSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        carts={carts}
+        productName={product.name}
+        canCreateMore={canCreateCart}
+        onSelect={(cartId) => {
+          addToActiveCart(
+            {
+              product_id: product.id,
+              product_name: product.name,
+              product_sku: product.sku || undefined,
+              product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+              product_price: product.price ?? 0,
+              quantity: product.minQuantity || 1,
+              color_name: pendingVariant?.color_name || undefined,
+              color_hex: pendingVariant?.color_hex || undefined,
+            },
+            cartId,
+          );
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+        onCreateNew={() => {
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+      />
     </div>
   );
 }
