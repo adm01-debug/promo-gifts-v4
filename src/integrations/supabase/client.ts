@@ -91,6 +91,36 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
+  global: {
+    fetch: async (url, options) => {
+      try {
+        const response = await fetch(url, options);
+        if (response.status === 401) {
+          // Clone avoid body consumption
+          const body = await response.clone().json().catch(() => ({}));
+          if (body.code === 'UNAUTHORIZED_LEGACY_JWT' || body.message?.includes('Invalid JWT') || body.message?.includes('Invalid API key')) {
+            const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+            log.error('auth_401_detected', {
+              url,
+              status: response.status,
+              body,
+              project_id: projectId,
+              is_canonical: projectId === CURRENT_PROJECT_ID
+            });
+            
+            // If we're on a non-canonical project and getting 401, it's a critical config error
+            if (projectId !== CURRENT_PROJECT_ID && !projectId.includes('localhost')) {
+              console.error(`[Supabase Critical] 401 Unauthorized on project ${projectId}. Current configuration might be invalid.`);
+            }
+          }
+        }
+        return response;
+      } catch (error) {
+        log.error('request_failed', { error });
+        throw error;
+      }
+    }
+  }
 });
 
 // Logs e Métricas de Autenticação
