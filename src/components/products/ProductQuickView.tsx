@@ -9,7 +9,13 @@ import {
   BarChart2,
   Share2,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogClose,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { Button } from '@/components/ui/button';
@@ -274,7 +280,9 @@ export const ProductQuickView = React.memo(
           </DialogClose>
 
           <DialogTitle className="sr-only">{product.name}</DialogTitle>
-          <DialogDescription className="sr-only">Visualização rápida do produto {product.name}</DialogDescription>
+          <DialogDescription className="sr-only">
+            Visualização rápida do produto {product.name}
+          </DialogDescription>
 
           <CartSelectorDialog
             open={selectorOpen}
@@ -456,7 +464,7 @@ export const ProductQuickView = React.memo(
               <div className="mt-auto flex flex-col gap-2 pt-2">
                 {onAddToCart && (
                   <Button
-                    onClick={handleAddToCart}
+                    onClick={() => handleAddToCart()}
                     disabled={product.stockStatus === 'out-of-stock'}
                     className="w-full"
                     size="lg"

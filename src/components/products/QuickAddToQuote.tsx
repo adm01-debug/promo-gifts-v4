@@ -275,7 +275,7 @@ export function QuickAddToQuote({
             <Button
               data-testid="product-card-add-to-cart"
               className="w-full gap-2"
-              onClick={handleAddToQuote}
+              onClick={() => handleAddToQuote()}
               disabled={isAdded || !activeCart}
             >
               {isAdded ? (
