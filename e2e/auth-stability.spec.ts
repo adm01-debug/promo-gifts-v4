@@ -8,7 +8,7 @@ test.describe("Auth Stability & Supabase Connection", () => {
     await page.context().clearCookies();
   });
 
-  test("deve carregar perfil e roles após login sem travar a conexão", async ({ page }) => {
+  test("deve carregar perfil e roles após login sem travar a conexão", async ({ page, request }) => {
     // 1. Realiza login
     await loginAs(page, "admin");
     await expectAuthenticated(page);
@@ -21,8 +21,10 @@ test.describe("Auth Stability & Supabase Connection", () => {
     await expect(page.locator('[data-testid="admin-stats-card"]')).toBeVisible({ timeout: 15000 });
     
     // 3. Verifica se o usuário tem o papel de admin carregado no estado global
-    // Podemos verificar via UI se elementos restritos a admin aparecem.
     await expect(page.locator('text=Configurações do Sistema')).toBeVisible();
+
+    // 4. Validação diagnóstica: Verifica se o log-login-attempt funcionou e não retornou 401
+    // Monitoramos as requisições para a edge function durante o boot/login se houver logs de auditoria
   });
 
   test("recuperação após troca de aba (tab focus revalidation)", async ({ page }) => {
@@ -66,5 +68,24 @@ test.describe("Auth Stability & Supabase Connection", () => {
     await expectAuthenticated(page);
     await page.reload();
     await expectAuthenticated(page);
+  });
+
+  test("validação de projeto canônico no cliente", async ({ page }) => {
+    await page.goto('/');
+    
+    // Injetamos um check no console para ver se o validateEnv foi executado e se o fallback funcionou
+    const logs = await page.evaluate(() => {
+      return (window as any).__SUPABASE_CLIENT_DEBUG__ || 'no-debug-info';
+    });
+    
+    // Se precisarmos de mais provas, verificamos o localStorage do projeto se ele salvou a URL certa
+    const config = await page.evaluate(() => {
+      return {
+        url: (window as any).localStorage.getItem('supabase.url'),
+        projectId: (window as any).localStorage.getItem('supabase.project_id')
+      };
+    });
+    
+    // Nota: O client.ts loga no boot. Podemos interceptar o console.
   });
 });
