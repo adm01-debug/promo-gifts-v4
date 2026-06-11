@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { SupabaseConnectionDebug } from '@/components/auth/SupabaseConnectionDebug';
 import { LegalFooter } from '@/components/auth/LegalFooter';
 
 import { useDevGate } from '@/hooks/admin/useDevGate';
@@ -824,6 +825,7 @@ export default function Auth() {
             </div>
           )}
 
+          {import.meta.env.DEV && <SupabaseConnectionDebug />}
           {/* Backend Status Widget removido a pedido do PO */}
 
           <LegalFooter />
