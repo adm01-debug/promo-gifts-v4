@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const isValidCalendarDate = (val: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
+  const [y, m, d] = val.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() + 1 === m && date.getDate() === d;
+};
+
 export const salesGoalSchema = z
   .object({
     title: z
@@ -16,8 +23,14 @@ export const salesGoalSchema = z
     period: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly'], {
       required_error: 'Período é obrigatório',
     }),
-    start_date: z.string().min(1, 'Data de início é obrigatória'),
-    end_date: z.string().min(1, 'Data de fim é obrigatória'),
+    start_date: z
+      .string()
+      .min(1, 'Data de início é obrigatória')
+      .refine(isValidCalendarDate, 'Data de início inválida'),
+    end_date: z
+      .string()
+      .min(1, 'Data de fim é obrigatória')
+      .refine(isValidCalendarDate, 'Data de fim inválida'),
     notes: z
       .string()
       .max(500, 'Notas devem ter no máximo 500 caracteres')

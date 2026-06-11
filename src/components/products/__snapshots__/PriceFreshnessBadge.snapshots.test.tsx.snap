@@ -900,7 +900,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
           role="status"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
