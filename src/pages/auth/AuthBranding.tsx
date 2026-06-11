@@ -58,8 +58,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const [meteors, setMeteors] = useState<MeteorData[]>([]);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [scrollY, setScrollY] = useState(0);
+  const [, setMousePos] = useState({ x: 0, y: 0 });
+  const [, setScrollY] = useState(0);
 
   // Parâmetros controláveis expandidos
   const [config, setConfig] = useState({
