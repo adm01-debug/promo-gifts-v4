@@ -35,9 +35,10 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
-// Note: chromium-smoke project was merged into chromium-public.
+// Note: chromium-smoke project was merged into chromium-public, que por sua
+// vez foi consolidado no project `chromium` (playwright.config.ts atual).
 // We add --grep=/@smoke/ here to replicate the old project-level filter.
-const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium-public', '--workers=1'];
+const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium', '--workers=1'];
 
 if (tag && tag.trim()) {
   // Tag is intentionally treated as regex (see header: --tag "Catálogo|Busca").
