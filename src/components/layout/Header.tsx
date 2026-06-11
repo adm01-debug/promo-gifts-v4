@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils';
 import { RoleBadge } from '@/components/RoleBadge';
 import { AppLogo } from '@/components/layout/AppLogo';
 
+import { logger } from '@/lib/logger';
 interface HeaderProps {
   onMenuToggle: () => void;
   sidebarOpen: boolean;
@@ -148,7 +149,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
         description: 'Você saiu da sua conta com segurança.',
       });
     } catch (err) {
-      console.error('[Header] signOut error:', err);
+      logger.error('[Header] signOut error:', err);
       toast({
         variant: 'destructive',
         title: 'Aviso',

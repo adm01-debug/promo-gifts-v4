@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/ui/use-toast';
 // BUG-PREF-01 FIX: importar SORT_OPTIONS para validar sortBy ao carregar de storage.
 import { SORT_OPTIONS } from '@/constants/filters';
 
+import { logger } from '@/lib/logger';
 interface CatalogPreferences {
   sortBy: SortOption;
   lastSearchTerm?: string;
@@ -56,7 +57,7 @@ export function useCatalogPreferences() {
 
       if (error || !data?.preferences) {
         if (error) {
-          console.error('Error fetching catalog preferences:', error);
+          logger.error('Error fetching catalog preferences:', error);
           toast({
             title: 'Erro ao carregar preferências',
             description: 'Usando ordenação padrão do sistema.',
@@ -126,12 +127,12 @@ export function useCatalogPreferences() {
               };
               setPreferencesState((prev) => ({ ...prev, ...validatedParsed }));
             } catch (e) {
-              console.error('Error parsing catalog preferences', e);
+              logger.error('Error parsing catalog preferences', e);
             }
           }
         }
       } catch (err) {
-        console.error('Failed to load preferences', err);
+        logger.error('Failed to load preferences', err);
       }
     };
     loadPreferences();
@@ -146,13 +147,13 @@ export function useCatalogPreferences() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         } catch (e) {
-          console.warn('LocalStorage save failed', e);
+          logger.warn('LocalStorage save failed', e);
         }
 
         if (user) {
           saveToCloud(updated, {
             onError: (err) => {
-              console.warn('Cloud sync failed, will retry on next change', err);
+              logger.warn('Cloud sync failed, will retry on next change', err);
               toast({
                 title: 'Erro ao salvar preferência',
                 description:

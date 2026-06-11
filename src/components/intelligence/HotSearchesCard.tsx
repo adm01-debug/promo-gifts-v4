@@ -40,8 +40,8 @@ export function HotSearchesCard({ days }: HotSearchesCardProps) {
           delta: s.growth,
         }));
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: rows, error } = await (supabase.from as any)('search_analytics')
+      const { data: rows, error } = await supabase
+        .from('search_analytics')
         .select('search_term, created_at, results_count')
         .gt('results_count', 0)
         .gte('created_at', previousSince)

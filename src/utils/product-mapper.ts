@@ -114,6 +114,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     id: p.id,
     name: p.name,
     description: p.description || p.short_description || p.meta_description || null,
+    shortDescription: p.short_description ?? null,
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),

@@ -4,6 +4,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Home, ArrowLeft, Gift, FileText, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { logger } from '@/lib/logger';
 /**
  * NotFound — página 404 com sugestões de navegação contextuais.
  *
@@ -17,7 +18,7 @@ const NotFound = () => {
   useEffect(() => {
     // Log apenas em desenvolvimento para não poluir produção
     if (import.meta.env.DEV) {
-      console.warn('[404] Rota não encontrada:', location.pathname);
+      logger.warn('[404] Rota não encontrada:', location.pathname);
     }
   }, [location.pathname]);
 

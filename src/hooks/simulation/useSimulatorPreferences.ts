@@ -10,6 +10,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import type { TechniqueSettings } from '@/types/simulation';
 import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 interface SimulatorPreferences {
   lastQuantity: number;
   lastProductId: string | null;
@@ -93,7 +94,7 @@ export function useSimulatorPreferences() {
       if (error) throw error;
     },
     onError: (error) => {
-      console.error('Error saving preferences to cloud:', error);
+      logger.error('Error saving preferences to cloud:', error);
     },
   });
 
@@ -115,7 +116,7 @@ export function useSimulatorPreferences() {
           }
         }
       } catch (error) {
-        console.error('Error loading preferences:', error);
+        logger.error('Error loading preferences:', error);
       }
       setIsLoaded(true);
     };
@@ -133,7 +134,7 @@ export function useSimulatorPreferences() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         } catch (error) {
-          console.error('Error saving preferences to localStorage:', error);
+          logger.error('Error saving preferences to localStorage:', error);
         }
 
         // Save to cloud (debounced via mutation)

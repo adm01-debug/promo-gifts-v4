@@ -98,9 +98,10 @@ global.IntersectionObserver = class IntersectionObserver {
 // TODO: hook cresceu demais — cascata de imports (Supabase + ProductsContext +
 // favorites/comparison stores + intelligence) estoura memória do worker vitest
 // (ERR_WORKER_OUT_OF_MEMORY após 121s). Mockar TUDO é frágil. Para reabilitar:
-// extrair as deps via DI/injection no próprio hook OU rodar com
-// --pool=forks --poolOptions.forks.maxForks=1 isolado. Mantendo skip explícito
-// até refactor dedicado para não esconder sob baseline.
+// 2026-06-11: --pool=forks também foi testado e NÃO resolve (worker trava e é
+// terminado por timeout após ~254s). A única saída é extrair as deps via
+// DI/injection no próprio hook. Mantendo skip explícito até refactor dedicado
+// para não esconder sob baseline.
 describe.skip('useCatalogState', () => {
   let queryClient: QueryClient;
 

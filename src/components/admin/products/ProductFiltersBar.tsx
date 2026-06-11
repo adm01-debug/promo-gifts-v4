@@ -21,6 +21,7 @@ import { Filter, X, ChevronDown, RotateCcw, Boxes } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
+import { logger } from '@/lib/logger';
 export interface ProductFilters {
   category_id?: string;
   supplier_id?: string;
@@ -67,7 +68,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
       });
       setCategories(result.records || []);
     } catch (e) {
-      console.error('Erro ao carregar categorias:', e);
+      logger.error('Erro ao carregar categorias:', e);
     } finally {
       setLoadingCats(false);
     }
@@ -85,7 +86,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
       });
       setSuppliers(result.records || []);
     } catch (e) {
-      console.error('Erro ao carregar fornecedores:', e);
+      logger.error('Erro ao carregar fornecedores:', e);
     } finally {
       setLoadingSups(false);
     }

@@ -6,6 +6,7 @@ import { Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { formatCurrency } from '@/lib/format';
 
 /** Recalculate personalization total using rounded unit price to match UI display */
 function calcPersTotal(totalCost: number, qty: number): number {
@@ -14,11 +15,14 @@ function calcPersTotal(totalCost: number, qty: number): number {
   return Math.round(roundedUnit * qty * 100) / 100;
 }
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export interface QuotePersonalization {
+  id?: string;
+  technique_name?: string | null;
+  unit_cost?: number | null;
+  total_cost?: number | null;
 }
 
-interface QuoteItem {
+export interface QuoteItem {
   id?: string;
   product_id?: string;
   product_name: string;
@@ -34,9 +38,8 @@ interface QuoteItem {
   price_updated_at?: string | null;
   /** Optional: per-product threshold (days) for the stale-price warning. */
   price_freshness_threshold_days?: number | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  personalizations?: any[];
-  [key: string]: unknown;
+  notes?: string | null;
+  personalizations?: QuotePersonalization[];
 }
 
 interface QuoteItemsTableProps {
@@ -67,8 +70,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
     const personalizationCost = allPersonalizations.reduce(
-      (acc: number, p: { total_cost?: number }) =>
-        acc + calcPersTotal(p.total_cost || 0, item.quantity),
+      (acc: number, p: QuotePersonalization) =>
+        acc + calcPersTotal(p.total_cost ?? 0, item.quantity),
       0,
     );
     const itemTotal = item.quantity * item.unit_price + personalizationCost;
@@ -164,8 +167,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             <span>
               {formatCurrency(
                 item.unit_price +
-                  allPersonalizations.reduce((sum: number, p: { total_cost?: number }) => {
-                    const pTotal = p.total_cost || 0;
+                  allPersonalizations.reduce((sum: number, p: QuotePersonalization) => {
+                    const pTotal = p.total_cost ?? 0;
                     return (
                       sum +
                       (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
@@ -194,7 +197,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               quantity: item.quantity,
               unit_price: item.unit_price,
               notes: typeof item.notes === 'string' ? item.notes : undefined,
-              personalizations: item.personalizations,
+              personalizations: item.personalizations?.map((p) => ({
+                ...p,
+                technique_name: p.technique_name ?? undefined,
+                unit_cost: p.unit_cost ?? undefined,
+                total_cost: p.total_cost ?? undefined,
+              })),
             }}
           />
         </td>

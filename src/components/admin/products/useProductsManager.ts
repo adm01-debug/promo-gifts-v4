@@ -24,6 +24,7 @@ import { useAuditLog } from '@/hooks/admin';
 import type { ProductFilters } from '../products/ProductFiltersBar';
 import type { ExternalProduct } from '@/types/external-db';
 
+import { logger } from '@/lib/logger';
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export interface AdminProduct {
@@ -387,7 +388,7 @@ export function useProductsManager() {
       setIsDeleteOpen(false);
       fetchProducts(currentPage, pageSize, searchTerm);
     } catch (error: unknown) {
-      console.error('Error deleting product:', error);
+      logger.error('Error deleting product:', error);
       toast.error('Erro ao excluir produto');
     }
   };
@@ -441,7 +442,7 @@ export function useProductsManager() {
         setSelectedIds(new Set());
         fetchProducts(currentPage, pageSize, searchTerm);
       } catch (error: unknown) {
-        console.error('Bulk update error:', error);
+        logger.error('Bulk update error:', error);
         toast.error('Erro ao atualizar produtos em lote');
       } finally {
         setIsBulkUpdating(false);

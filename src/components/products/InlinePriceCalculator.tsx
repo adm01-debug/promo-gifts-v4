@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { PriceTiersTable } from './inline-price/PriceTiersTable';
 import { QuantityCalculator } from './inline-price/QuantityCalculator';
 
+import { logger } from '@/lib/logger';
 interface PriceTableRow {
   quantity: number;
   unitPrice: number;
@@ -135,7 +136,7 @@ export function InlinePriceCalculator({
           setPriceTiers([]);
         }
       } catch (error) {
-        console.error('Error fetching price tiers:', error);
+        logger.error('Error fetching price tiers:', error);
         setPriceTiers([]);
       } finally {
         setIsLoading(false);

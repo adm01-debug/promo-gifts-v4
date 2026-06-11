@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/ui';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 // ============================================
 // Types
 // ============================================
@@ -112,7 +113,7 @@ export function useQuoteTemplates() {
       if (qErr) throw new Error(qErr.message);
       setTemplates(transformTemplates(data || []));
     } catch (err) {
-      console.error('Error fetching quote templates:', err);
+      logger.error('Error fetching quote templates:', err);
       setError('Erro ao carregar templates');
     } finally {
       setLoading(false);
@@ -135,7 +136,7 @@ export function useQuoteTemplates() {
       if (qErr) throw new Error(qErr.message);
       setAllTemplates(transformTemplates(data || []));
     } catch (err) {
-      console.error('Error fetching all templates:', err);
+      logger.error('Error fetching all templates:', err);
     }
   }, [user, isAdmin]);
 
@@ -165,7 +166,7 @@ export function useQuoteTemplates() {
 
       setSellers(sellersWithInfo);
     } catch (err) {
-      console.error('Error fetching sellers:', err);
+      logger.error('Error fetching sellers:', err);
     }
   }, [user, isAdmin]);
 
@@ -220,7 +221,7 @@ export function useQuoteTemplates() {
         await fetchTemplates();
         return inserted?.[0] || null;
       } catch (err) {
-        console.error('Error creating template:', err);
+        logger.error('Error creating template:', err);
         toast({
           title: 'Erro',
           description: 'Não foi possível criar o template',
@@ -266,7 +267,7 @@ export function useQuoteTemplates() {
         await fetchTemplates();
         return result?.[0] ? transformTemplates([result[0]])[0] : null;
       } catch (err) {
-        console.error('Error updating template:', err);
+        logger.error('Error updating template:', err);
         toast({
           title: 'Erro',
           description: 'Não foi possível atualizar o template',
@@ -290,7 +291,7 @@ export function useQuoteTemplates() {
         await fetchTemplates();
         return true;
       } catch (err) {
-        console.error('Error deleting template:', err);
+        logger.error('Error deleting template:', err);
         toast({
           title: 'Erro',
           description: 'Não foi possível excluir o template',
@@ -381,7 +382,7 @@ export function useQuoteTemplates() {
         await fetchAllTemplates();
         return inserted?.[0] || null;
       } catch (err) {
-        console.error('Error cloning template:', err);
+        logger.error('Error cloning template:', err);
         toast({
           title: 'Erro',
           description: 'Não foi possível clonar o template',

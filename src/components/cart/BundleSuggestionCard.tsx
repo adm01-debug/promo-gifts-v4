@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Plus } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 
+import { logger } from '@/lib/logger';
 type BundleSuggestion =
   Database['public']['Functions']['get_bundle_suggestions']['Returns'][number];
 
@@ -29,7 +30,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
         _product_id: productId,
       });
       if (error) {
-        console.warn('get_bundle_suggestions error:', error);
+        logger.warn('get_bundle_suggestions error:', error);
         return [];
       }
       return data ?? [];

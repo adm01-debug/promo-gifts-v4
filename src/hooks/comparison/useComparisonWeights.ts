@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 export interface ComparisonWeights {
   price: number;
   stock: number;
@@ -82,7 +83,7 @@ export function useComparisonWeights() {
     );
 
     if (error) {
-      console.error('[useComparisonWeights] Failed to save weights:', error);
+      logger.error('[useComparisonWeights] Failed to save weights:', error);
     }
   }, []);
 

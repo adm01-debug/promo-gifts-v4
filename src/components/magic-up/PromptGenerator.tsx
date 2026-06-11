@@ -36,6 +36,7 @@ import { OBJECTIVES, TONES, AUDIENCES, SEASONS, getMoodColor } from './promptGen
 import type { PrintAreaWithTechniques } from '@/types/gravacao';
 import { PromptCustomizationPanel } from './PromptCustomizationPanel';
 
+import { logger } from '@/lib/logger';
 interface GeneratedPrompt {
   title: string;
   prompt: string;
@@ -208,7 +209,7 @@ export function PromptGenerator({
         throw new Error(data?.error || 'Nenhum prompt retornado');
       }
     } catch (err: unknown) {
-      console.error('Prompt generation error:', err);
+      logger.error('Prompt generation error:', err);
       toast.error('Erro ao gerar prompts', { description: sanitizeError(err) });
     } finally {
       setGenerating(false);

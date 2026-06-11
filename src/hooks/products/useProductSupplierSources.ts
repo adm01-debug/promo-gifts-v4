@@ -7,6 +7,7 @@ import { dbInvoke } from '@/lib/db/postgrest';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export interface SupplierSource {
   id: string;
   product_id: string;
@@ -101,7 +102,7 @@ export function useProductSupplierSources(productId?: string) {
       });
       setSources(records);
     } catch (err: unknown) {
-      console.error('Error fetching supplier sources:', err);
+      logger.error('Error fetching supplier sources:', err);
     } finally {
       setIsLoading(false);
     }

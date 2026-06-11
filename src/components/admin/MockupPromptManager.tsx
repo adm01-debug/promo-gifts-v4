@@ -4,8 +4,6 @@
  */
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const anySupabase = supabase as any;
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,10 +72,7 @@ export function MockupPromptManager() {
     try {
       const [cr, tr] = await Promise.all([
         supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        anySupabase
-          .from('personalization_techniques')
-          .select('id, name, code')
-          .eq('is_active', true),
+        supabase.from('personalization_techniques').select('id, name, code').eq('is_active', true),
       ]);
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;

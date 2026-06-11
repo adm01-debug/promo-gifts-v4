@@ -4,6 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export type ReportFrequency = 'daily' | 'weekly' | 'monthly';
 export type ReportType = 'sales' | 'quotes' | 'clients' | 'products' | 'orders';
 
@@ -62,7 +63,7 @@ export function useScheduledReports() {
       if (error) throw error;
       setReports((data || []) as unknown as ScheduledReport[]);
     } catch (err) {
-      console.error('Error fetching scheduled reports:', err);
+      logger.error('Error fetching scheduled reports:', err);
     } finally {
       setIsLoading(false);
     }

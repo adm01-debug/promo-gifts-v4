@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
+import { logger } from '@/lib/logger';
 export interface ProductColorDot {
   name: string;
   hex: string | null;
@@ -93,7 +94,7 @@ export function useProductsColorsBatch(productIds: string[]) {
             .range(0, 4999);
 
           if (error) {
-            console.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
+            logger.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
             handleQueryError('useProductsColorsBatch', 'product_variants', error);
             continue;
           }

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useQuotes, type Quote } from '@/hooks/quotes/useQuotes';
 
+import { logger } from '@/lib/logger';
 export interface QuoteVersion {
   id: string;
   quote_number: string;
@@ -84,7 +85,7 @@ export function useQuoteVersions(quoteId?: string) {
 
         setVersions(versionsWithCounts);
       } catch (err) {
-        console.error('Error fetching quote versions:', err);
+        logger.error('Error fetching quote versions:', err);
       } finally {
         setIsLoading(false);
       }

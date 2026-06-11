@@ -38,6 +38,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 interface RepairAction {
   table: string;
   owner_column: string;
@@ -97,7 +98,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
       const result = (data as { result: RepairResult }).result;
       return result;
     } catch (e) {
-      console.error(e);
+      logger.error('Ownership repair failed', e);
       toast.error(`Falha no reparo: ${(e as Error).message}`);
       return null;
     } finally {

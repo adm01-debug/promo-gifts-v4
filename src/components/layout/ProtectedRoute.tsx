@@ -8,6 +8,7 @@ import { checkAccess, type AccessPolicy } from '@/lib/access/access-policy';
 import { savePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
+import { logger } from '@/lib/logger';
 interface ProtectedRouteProps extends AccessPolicy {
   children?: ReactNode;
   /** @deprecated Use requiredRole="supervisor" */
@@ -73,7 +74,7 @@ export function ProtectedRoute({
   return (
     <EnhancedErrorBoundary
       onError={(error) => {
-        console.error('[ProtectedRoute] Critical render failure:', error);
+        logger.error('[ProtectedRoute] Critical render failure:', error);
       }}
       fallback={
         <div className="flex min-h-[60vh] items-center justify-center p-8">
@@ -81,14 +82,14 @@ export function ProtectedRoute({
             variant="error"
             title="Falha no Módulo"
             description="Ocorreu um erro inesperado ao carregar esta seção. O sistema tentará se recuperar automaticamente."
-            action={{ 
-              label: 'Recarregar Módulo', 
+            action={{
+              label: 'Recarregar Módulo',
               onClick: () => {
                 // Bust cache and reload
                 const url = new URL(window.location.href);
                 url.searchParams.set('t', Date.now().toString());
                 window.location.replace(url.toString());
-              } 
+              },
             }}
           />
         </div>

@@ -2,6 +2,7 @@ import { useContext, useEffect } from 'react';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { loadThemeConfig, applyThemePreset, applyRadius } from '@/lib/theme-presets';
 
+import { logger } from '@/lib/logger';
 /**
  * ThemeInitializer — mounted globally in App.tsx, OUTSIDE routes.
  * Restores the saved skin on every page load and when light/dark mode changes.
@@ -17,7 +18,7 @@ export function ThemeInitializer() {
     // Only run when context is actually available
     if (!ctx) {
       if (import.meta.env.DEV) {
-        console.warn('[ThemeInitializer] Waiting for ThemeContext to be mounted...');
+        logger.warn('[ThemeInitializer] Waiting for ThemeContext to be mounted...');
       }
       return;
     }

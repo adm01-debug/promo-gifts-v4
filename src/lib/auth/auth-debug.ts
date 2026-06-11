@@ -10,6 +10,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 
+import { logger } from '@/lib/logger';
 const PREFIX = '[AUTH-DEBUG]';
 const AUTH_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === 'true';
 
@@ -92,7 +93,7 @@ export function summarizeSession(session: Session | null | undefined) {
 export function authDebug(scope: string, message: string, data?: unknown): void {
   if (!AUTH_DEBUG_ENABLED) return;
   const ts = new Date().toISOString();
-  console.warn(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(data) ?? '');
+  logger.warn(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(data) ?? '');
 }
 
 export function authDebugError(scope: string, message: string, error: unknown): void {
@@ -107,7 +108,7 @@ export function authDebugError(scope: string, message: string, error: unknown): 
       : { value: error };
   const ts = new Date().toISOString();
 
-  console.error(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(normalized));
+  logger.error(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(normalized));
 }
 
 /** Loga o estado bruto da URL no callback (query, hash, error params). */

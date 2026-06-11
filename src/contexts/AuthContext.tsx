@@ -29,6 +29,7 @@ import {
   recoverSession,
 } from '@/lib/auth/session-recovery';
 
+import { logger } from '@/lib/logger';
 // Tipos de role conforme app_role enum no banco.
 export type AppRole =
   | 'dev'
@@ -94,11 +95,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // BUG-3 FIX: eventos que efetivamente alteram os dados do usuário (perfil +
 // roles). TOKEN_REFRESHED troca apenas o JWT, não os dados — não precisa
 // rebuscar profile/roles a cada refresh de ~5 min.
-const EVENTS_THAT_NEED_PROFILE_FETCH = new Set([
-  'SIGNED_IN',
-  'INITIAL_SESSION',
-  'USER_UPDATED',
-]);
+const EVENTS_THAT_NEED_PROFILE_FETCH = new Set(['SIGNED_IN', 'INITIAL_SESSION', 'USER_UPDATED']);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -459,7 +456,7 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     if (import.meta.env.DEV) {
-      console.warn(
+      logger.warn(
         '[AuthContext] useAuth called outside AuthProvider — using safe fallback. ' +
           'This usually indicates an HMR module-duplication race; a full reload should fix it.',
       );

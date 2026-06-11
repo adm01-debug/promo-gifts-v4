@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 
+import { logger } from '@/lib/logger';
 interface UpcomingDatesWidgetProps {
   daysAhead?: number;
   maxItems?: number;
@@ -34,7 +35,7 @@ export function UpcomingDatesWidget({
   };
 
   if (error) {
-    console.error('Erro ao carregar próximas datas:', error);
+    logger.error('Erro ao carregar próximas datas:', error);
     return null;
   }
 

@@ -16,6 +16,7 @@ import {
 } from '@/hooks/quotes/quoteHelpers';
 import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
+import { logger } from '@/lib/logger';
 export const quoteService = {
   async fetchQuotes(userId: string, scope: string) {
     let query = supabase
@@ -219,7 +220,7 @@ export const quoteService = {
     });
 
     if (error) {
-      console.error('[quoteService.logHistory] Failed to log history:', error);
+      logger.error('[quoteService.logHistory] Failed to log history:', error);
       // We don't necessarily want to crash the whole operation if history logging fails,
       // but we should at least log it. Other service methods throw errors.
       // throw error;

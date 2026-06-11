@@ -30,8 +30,6 @@ export default [
       '*.config.ts',
       '.eslintrc.cjs',
       '.eslintrc.json',
-      // Gerado pelo Lovable com brace imbalance — não parseável pelo TS/Prettier/ESLint
-      'src/pages/tools/VisualSearchPage.tsx',
     ],
   },
 

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { type PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 const LOCAL_STORAGE_KEY = 'mockup_draft_v1';
 const AUTO_SAVE_DELAY = 2000; // 2 segundos de debounce
 
@@ -37,7 +38,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
         localStorage.setItem(key, JSON.stringify(data));
       } catch (err) {
-        console.error('Erro ao salvar no localStorage:', err);
+        logger.error('Erro ao salvar no localStorage:', err);
       }
     },
     [user?.id, draftKey],
@@ -51,7 +52,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         return JSON.parse(stored);
       }
     } catch (err) {
-      console.error('Erro ao carregar do localStorage:', err);
+      logger.error('Erro ao carregar do localStorage:', err);
     }
     return null;
   }, [user?.id, draftKey]);
@@ -103,10 +104,11 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         if (upsertError) {
           if (upsertError.code === '23503' || upsertError.code === '409') {
             // BUG-H FIX: log warning so devs can diagnose FK mismatches in devtools.
-            console.warn(
-              '[useMockupDraft] FK violation on draft save — falling back to null IDs.',
-              { productId: safeProductId, techniqueId: safeTechniqueId, clientId: safeClientId },
-            );
+            logger.warn('[useMockupDraft] FK violation on draft save — falling back to null IDs.', {
+              productId: safeProductId,
+              techniqueId: safeTechniqueId,
+              clientId: safeClientId,
+            });
             const { error: updateError } = await supabase
               .from('mockup_drafts')
               .update({
@@ -135,7 +137,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         setError(null);
         return true;
       } catch (err: unknown) {
-        console.error('Erro ao salvar rascunho no backend:', err);
+        logger.error('Erro ao salvar rascunho no backend:', err);
         setError(err instanceof Error ? err.message : 'Erro ao salvar rascunho');
         return false;
       } finally {
@@ -194,7 +196,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         };
       }
     } catch (err) {
-      console.error('Erro ao carregar rascunho do backend:', err);
+      logger.error('Erro ao carregar rascunho do backend:', err);
     }
     return null;
   }, [user, draftKey]);
@@ -244,7 +246,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
       const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
       localStorage.removeItem(key);
     } catch (err) {
-      console.error('Erro ao limpar localStorage:', err);
+      logger.error('Erro ao limpar localStorage:', err);
     }
 
     if (user) {
@@ -255,7 +257,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           .eq('user_id', user.id)
           .eq('draft_key', draftKey);
       } catch (err) {
-        console.error('Erro ao limpar rascunho do backend:', err);
+        logger.error('Erro ao limpar rascunho do backend:', err);
       }
     }
 

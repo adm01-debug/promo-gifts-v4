@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -101,7 +102,7 @@ export function useDeviceDetection(targetUserId?: string) {
       });
 
       if (error) {
-        console.error('Error checking device:', error);
+        logger.error('Error checking device:', error);
         return { isNewDevice: false, isNewIP: false, error: error.message };
       }
 
@@ -110,7 +111,7 @@ export function useDeviceDetection(targetUserId?: string) {
         isNewIP: data.isNewIP || false,
       };
     } catch (error: unknown) {
-      console.error('Device detection error:', error);
+      logger.error('Device detection error:', error);
       return {
         isNewDevice: false,
         isNewIP: false,
@@ -128,7 +129,7 @@ export function useDeviceDetection(targetUserId?: string) {
       .order('last_seen_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching known devices:', error);
+      logger.error('Error fetching known devices:', error);
       return [];
     }
 
@@ -145,7 +146,7 @@ export function useDeviceDetection(targetUserId?: string) {
         .eq('user_id', effectiveUserId);
 
       if (error) {
-        console.error('Error removing device:', error);
+        logger.error('Error removing device:', error);
         return false;
       }
 
@@ -164,7 +165,7 @@ export function useDeviceDetection(targetUserId?: string) {
         .eq('user_id', effectiveUserId);
 
       if (error) {
-        console.error('Error trusting device:', error);
+        logger.error('Error trusting device:', error);
         return false;
       }
 

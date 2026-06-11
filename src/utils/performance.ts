@@ -1,5 +1,6 @@
 import { telemetryService } from '@/services/telemetryService';
 
+import { logger } from '@/lib/logger';
 /**
  * Utility for tracking application performance metrics.
  *
@@ -32,7 +33,7 @@ class PerformanceTracker {
         this.history = JSON.parse(stored);
       }
     } catch (e) {
-      console.error('[Performance] Error loading history', e);
+      logger.error('[Performance] Error loading history', e);
     }
   }
 
@@ -72,7 +73,7 @@ class PerformanceTracker {
         telemetryService.logPerformance(name, measure.duration);
 
         if (process.env.NODE_ENV === 'development') {
-          console.warn(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
+          logger.warn(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
         }
 
         return measure;

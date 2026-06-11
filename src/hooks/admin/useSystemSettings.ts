@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,7 +38,7 @@ export function useSystemSettings() {
       toast.success('Configuração atualizada com sucesso');
     },
     onError: (error) => {
-      console.error('Error updating system setting:', error);
+      logger.error('Error updating system setting:', error);
       toast.error('Erro ao atualizar configuração');
     },
   });

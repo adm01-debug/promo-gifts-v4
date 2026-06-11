@@ -7,6 +7,7 @@ import { useFavoriteLists } from '@/hooks/favorites';
 import type { Product } from '@/types/product';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 const LAST_LIST_KEY = 'favorites-last-used-list-id';
 
 /**
@@ -106,7 +107,7 @@ export function useFavoriteQuickAdd() {
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
       } catch (e) {
-        console.warn('[favoriteQuickAdd] remove failed', e);
+        logger.warn('[favoriteQuickAdd] remove failed', e);
         if (isFavorite(productId)) toggleFavorite(productId);
       }
     },

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { logRlsDenial } from '@/lib/security/rls-denial-logger';
 
+import { logger } from '@/lib/logger';
 export interface DiscountApprovalRequest {
   id: string;
   quote_id: string;
@@ -158,7 +159,7 @@ export function useDiscountApproval() {
         toast.success('Solicitação de aprovação enviada ao admin!');
         return true;
       } catch (err) {
-        console.error('Error requesting approval:', err);
+        logger.error('Error requesting approval:', err);
         toast.error('Erro ao solicitar aprovação');
         return false;
       }
@@ -224,10 +225,10 @@ export function useDiscountApproval() {
         ]);
 
         if (quoteUpdateResult.error) {
-          console.error('Failed to update quote status:', quoteUpdateResult.error);
+          logger.error('Failed to update quote status:', quoteUpdateResult.error);
         }
         if (historyResult.error) {
-          console.error('Failed to log quote history:', historyResult.error);
+          logger.error('Failed to log quote history:', historyResult.error);
         }
 
         // Notify the seller
@@ -245,7 +246,7 @@ export function useDiscountApproval() {
         toast.success(approved ? 'Desconto aprovado!' : 'Desconto rejeitado');
         return true;
       } catch (err) {
-        console.error('Error responding to approval:', err);
+        logger.error('Error responding to approval:', err);
         toast.error('Erro ao responder solicitação');
         return false;
       }
@@ -306,7 +307,7 @@ export function useDiscountApproval() {
 
       setPendingRequests(enriched);
     } catch (err) {
-      console.error('Error fetching approval requests:', err);
+      logger.error('Error fetching approval requests:', err);
     } finally {
       setIsLoading(false);
     }

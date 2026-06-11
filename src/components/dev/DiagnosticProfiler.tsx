@@ -67,7 +67,7 @@ export function DiagnosticProfiler({ id, children }: { id: string; children: Rea
 // Inicializa o tracker global de diagnóstico se solicitado via URL ?diagnostics=true
 if (typeof window !== 'undefined' && window.location.search.includes('diagnostics=true')) {
   window.__DIAGNOSTICS__ = [];
-  console.warn(
+  logger.warn(
     '🛠️ Modo de Diagnóstico Ativado. Acesse window.__DIAGNOSTICS__ para ver os logs de renderização.',
   );
 }

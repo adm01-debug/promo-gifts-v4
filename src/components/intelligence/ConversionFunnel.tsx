@@ -62,14 +62,12 @@ export function ConversionFunnel({ days }: ConversionFunnelProps) {
           orders: MOCK_FUNNEL.orders,
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supa = supabase as any;
       const [searches, views, quotes, orders] = await Promise.all([
-        supa
+        supabase
           .from('search_analytics')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', since),
-        supa
+        supabase
           .from('product_views')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', since),

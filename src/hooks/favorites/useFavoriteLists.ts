@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
+import { logger } from '@/lib/logger';
 export interface FavoriteList {
   id: string;
   user_id: string;
@@ -498,7 +499,7 @@ export function useLegacyFavoritesMigration() {
         toast.success(`${legacy.length} favoritos migrados para a nuvem`);
       }
     } catch (e) {
-      console.warn('[favorites-migration]', e);
+      logger.warn('[favorites-migration]', e);
     } finally {
       setMigrated(true);
     }

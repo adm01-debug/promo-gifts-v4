@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { MockupApprovalTemplate } from './MockupApprovalTemplate';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 
+import { logger } from '@/lib/logger';
 interface MockupApprovalPreviewProps {
   data: MockupApprovalData;
   open: boolean;
@@ -54,7 +55,7 @@ export function MockupApprovalPreview({
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         onLayoutCaptured(dataUrl);
       } catch (err) {
-        console.error('Layout capture error:', err);
+        logger.error('Layout capture error:', err);
       }
     }, 1500);
     return () => clearTimeout(timer);
@@ -110,7 +111,7 @@ export function MockupApprovalPreview({
       pdf.save(filename);
       toast.success('PDF exportado com sucesso!');
     } catch (err) {
-      console.error('PDF export error:', err);
+      logger.error('PDF export error:', err);
       toast.error('Erro ao exportar PDF. Tente novamente.');
     } finally {
       setIsExporting(false);

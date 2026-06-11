@@ -50,6 +50,7 @@ import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 
+import { logger } from '@/lib/logger';
 type ViewMode = 'grid' | 'list' | 'table';
 
 function getGridColsClass(cols: ColumnCount): string {
@@ -176,7 +177,7 @@ export function NoveltyProductGrid() {
     setSelectedCategory('all');
     setSearchQuery('');
   };
-  if (error) console.error('Erro ao carregar novidades:', error);
+  if (error) logger.error('Erro ao carregar novidades:', error);
 
   // Favorites & Compare stores for ProductListItem integration
   const { isFavorite, toggleFavorite } = useFavoritesStore();

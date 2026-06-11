@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,6 @@ import {
   AlertCircle,
   History,
   Trash2,
-  Maximize2,
   TrendingUp,
   Mic,
   MicOff,
@@ -112,7 +112,7 @@ export default function VisualSearchPage() {
       return;
     }
 
-    const recognition = new (window as any).webkitSpeechRecognition();
+    const recognition = new window.webkitSpeechRecognition();
     recognition.lang = 'pt-BR';
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -122,9 +122,8 @@ export default function VisualSearchPage() {
       toast.info("Ouvindo comandos...");
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      // Voice command processing
       handleVoiceCommand(command);
     };
 
@@ -144,7 +143,7 @@ export default function VisualSearchPage() {
     if (command.includes('alumínio') || command.includes('metal')) {
       // Find category or add to search terms
       toast.success("Filtrando por Alumínio...");
-      processImage(previewUrl!, "alumínio");
+      if (previewUrl) processImage(previewUrl, "alumínio");
     } else if (command.includes('90') || command.includes('noventa')) {
       toast.success("Mostrando apenas alta confiança...");
       setResults(prev => prev ? {
@@ -164,8 +163,8 @@ export default function VisualSearchPage() {
     if (savedHistory) {
       try {
         setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Failed to parse search history');
+      } catch {
+        logger.error('Failed to parse search history');
       }
     }
   }, []);
@@ -176,6 +175,9 @@ export default function VisualSearchPage() {
       // Automatic re-analysis when filters change
       processImage(previewUrl);
     }
+    // Intencionalmente dispara APENAS quando filtros mudam; incluir
+    // results/processImage causaria loop de re-análise.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryIds, colorSelection]);
 
   const saveToHistory = (imageUrl: string, productType: string) => {
@@ -263,8 +265,14 @@ export default function VisualSearchPage() {
       setResults(data);
       saveToHistory(base64, data.analysis.productType);
       toast.success('Análise concluída com sucesso!');
-    } catch (err: any) {
-      console.error('Visual search error:', err);
+    } catch (rawErr: unknown) {
+      logger.error('Visual search error:', rawErr);
+      const err = rawErr as {
+        message?: string;
+        name?: string;
+        status?: number;
+        context?: { json?: () => Promise<{ error?: string; step?: string; requestId?: string }> };
+      };
       
       let friendlyMessage = 'Ocorreu um problema na análise da imagem.';
       let tip = 'Tente novamente com outra foto ou verifique sua conexão.';
@@ -278,7 +286,7 @@ export default function VisualSearchPage() {
           if (errorData.step) debugInfo = ` [Passo: ${errorData.step}]`;
           if (errorData.requestId) debugInfo += ` [ID: ${errorData.requestId}]`;
         } catch (e) {
-          console.warn('Could not parse error context json', e);
+          logger.warn('Could not parse error context json', e);
         }
       } else if (err.message) {
         // Fallback para mensagens diretas
@@ -343,7 +351,7 @@ export default function VisualSearchPage() {
       if (error) throw error;
       toast.success(isCorrect ? 'Obrigado pelo feedback!' : 'Feedback registrado. Isso ajudará a melhorar a IA.');
     } catch (err) {
-      console.error('Feedback error:', err);
+      logger.error('Feedback error:', err);
     }
   };
 
@@ -523,7 +531,7 @@ export default function VisualSearchPage() {
                       e.preventDefault();
                       setIsDragging(false);
                       const file = e.dataTransfer.files?.[0];
-                      if (file) handleFileUpload({ target: { files: [file] } } as any);
+                      if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
                     }}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -646,13 +654,13 @@ export default function VisualSearchPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Produto</p>
-                        <p className="text-xs font-semibold leading-tight group cursor-pointer hover:text-primary transition-colors" onClick={() => processImage(previewUrl!, results.analysis.productType)}>
+                        <p className="text-xs font-semibold leading-tight group cursor-pointer hover:text-primary transition-colors" onClick={() => previewUrl && processImage(previewUrl, results.analysis.productType)}>
                           {results.analysis.productType}
                         </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Material</p>
-                        <p className="text-xs font-semibold leading-tight group cursor-pointer hover:text-primary transition-colors" onClick={() => processImage(previewUrl!, results.analysis.material)}>
+                        <p className="text-xs font-semibold leading-tight group cursor-pointer hover:text-primary transition-colors" onClick={() => previewUrl && processImage(previewUrl, results.analysis.material)}>
                           {results.analysis.material}
                         </p>
                       </div>
@@ -695,7 +703,7 @@ export default function VisualSearchPage() {
                           <Badge 
                             variant="secondary" 
                             className="h-5 cursor-pointer border-transparent bg-background/80 px-2 text-[9px] font-medium uppercase text-primary hover:bg-primary hover:text-white transition-all"
-                            onClick={() => processImage(previewUrl!, kw)}
+                            onClick={() => previewUrl && processImage(previewUrl, kw)}
                           >
                             {kw}
                           </Badge>
@@ -766,7 +774,7 @@ export default function VisualSearchPage() {
                   e.preventDefault();
                   setIsDragging(false);
                   const file = e.dataTransfer.files?.[0];
-                  if (file) handleFileUpload({ target: { files: [file] } } as any);
+                  if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(

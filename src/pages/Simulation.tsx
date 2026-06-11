@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 interface SimulationDetail {
   fnName: string;
   status: number;
@@ -57,7 +58,7 @@ export default function SimulationPage() {
       setReport(data);
       toast.success(`Simulação de ${mode} concluída!`);
     } catch (err) {
-      console.error(err);
+      logger.error('Freight simulation failed', err);
       toast.error('Falha ao executar simulação');
     } finally {
       setLoading(false);

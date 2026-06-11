@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
+import { logger } from '@/lib/logger';
 export interface TechniquePriceOption {
   id: string;
   tableCode: string;
@@ -120,7 +121,7 @@ export function useTechniquePricing(techniqueCode: string | null) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Erro desconhecido';
         setError(message);
-        console.error('Erro ao buscar opcoes de preco:', err);
+        logger.error('Erro ao buscar opcoes de preco:', err);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
