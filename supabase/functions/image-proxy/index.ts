@@ -18,7 +18,7 @@ const ALLOWED_DOMAINS = [
   // Cloudflare Images (imagedelivery.net is the CDN domain)
   'imagedelivery.net',
   // Supabase Storage (for locally cached/uploaded images)
-  'doufsxqlfjyuvxuezpln.supabase.co',
+  'pqpdolkaeqlyzpdpbizo.supabase.co',
   'supabase.co',
 ];
 

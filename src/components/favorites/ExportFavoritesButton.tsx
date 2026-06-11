@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import type { Product } from '@/types/product';
+import type { Product } from '@/types/product-catalog';
 import type { FavoriteListItem } from '@/hooks/favorites';
 import { formatCurrency } from '@/lib/format';
 

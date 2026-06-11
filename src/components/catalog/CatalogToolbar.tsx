@@ -1,6 +1,6 @@
 import React, { Suspense, useDeferredValue, memo } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
-import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
+import { Filter, ArrowUpDown, CheckSquare, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -56,8 +56,9 @@ interface CatalogToolbarProps {
   selectedCount?: number;
   isTransitioning?: boolean;
   showLayoutControlsOnly?: boolean;
+  onReset?: () => void;
+  hasActiveConstraints?: boolean;
 }
-
 
 // SORT_OPTIONS[0].value é o valor default ('name'). Derivar em vez de hardcodar
 // garante que qualquer futura mudança no SSOT seja refletida automaticamente.
@@ -82,13 +83,37 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   selectedCount = 0,
   isTransitioning = false,
   showLayoutControlsOnly = false,
+  onReset,
+  hasActiveConstraints = false,
 }: CatalogToolbarProps) {
-
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-shrink-0 items-center gap-2">
+    <div className="flex w-full flex-col gap-3 rounded-xl border border-border/40 bg-muted/20 p-2 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {onReset && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onReset}
+                className={cn(
+                  'h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9',
+                  hasActiveConstraints
+                    ? 'border-primary/40 bg-primary/5 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)] hover:bg-primary/10'
+                    : 'border-border/40 text-muted-foreground hover:bg-muted',
+                )}
+                aria-label="Voltar ao início do catálogo"
+              >
+                <RefreshCcw className={cn('h-4 w-4', hasActiveConstraints && 'animate-pulse')} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {hasActiveConstraints ? 'Limpar filtros e busca' : 'Recarregar catálogo'}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {!showLayoutControlsOnly && (
           <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
             <Tooltip>
@@ -98,7 +123,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="px-2.5 sm:px-3"
+                      className="h-8 px-2.5 sm:h-9 sm:px-3"
                       aria-label="Abrir filtros do catálogo"
                     >
                       <Filter className="h-4 w-4 sm:mr-2" />
@@ -139,14 +164,14 @@ export const CatalogToolbar = memo(function CatalogToolbar({
         )}
 
         {!showLayoutControlsOnly && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="relative inline-flex">
                     <SelectTrigger
                       className={cn(
-                        'relative h-9 w-10 text-xs font-medium transition-all sm:h-10 sm:w-52 sm:text-sm',
+                        'relative h-8 w-10 text-xs font-medium transition-all sm:h-9 sm:w-52 sm:text-sm',
                         sortBy !== DEFAULT_SORT_VALUE &&
                           'border-primary bg-primary/5 ring-1 ring-primary/20',
                       )}
@@ -192,14 +217,22 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </div>
         )}
         {!showLayoutControlsOnly && (
-          <div className="hidden sm:block">
+          <div className="block">
             <StatsPopover stats={statBadges} isFiltered={activeFiltersCount > 0} />
           </div>
         )}
       </div>
 
+      <div className="ml-auto flex items-center gap-2">
+        {deferredIsTransitioning && (
+          <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2 sm:flex">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+            <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground">
+              Otimizando...
+            </span>
+          </div>
+        )}
 
-      <div className="flex items-center gap-2">
         {/* Selecionar / Cancelar toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -207,7 +240,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'relative h-8 gap-1.5 transition-all',
+                'relative h-8 gap-1.5 transition-all sm:h-9',
                 selectionMode
                   ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                   : 'hover:border-primary/50',
@@ -238,23 +271,12 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </TooltipContent>
         </Tooltip>
 
-        <div className="hidden items-center gap-2 sm:flex">
-          {deferredIsTransitioning && (
-            <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground">
-                Otimizando...
-              </span>
-            </div>
-          )}
-
-          <LayoutPopover
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            gridColumns={gridColumns}
-            setGridColumns={setGridColumns}
-          />
-        </div>
+        <LayoutPopover
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          gridColumns={gridColumns}
+          setGridColumns={setGridColumns}
+        />
       </div>
     </div>
   );

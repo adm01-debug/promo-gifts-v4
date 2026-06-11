@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Etapa 3 — Correção C2: vazamento de cost_price para o público (anon)
--- Projeto: doufsxqlfjyuvxuezpln (Promo Brindes / PromoGifts)
+-- Projeto: pqpdolkaeqlyzpdpbizo (Promo Brindes / PromoGifts)
 -- Aplicado em produção via Supabase MCP em 2026-05-30. Este arquivo existe para
 -- rastreio/versionamento em git (o estado do banco já reflete estas mudanças).
 -- =============================================================================

@@ -248,7 +248,7 @@ BEGIN
   _url := public.get_edge_functions_base_url();
 
   _pattern := CASE lower(coalesce(_environment, ''))
-    WHEN 'prod' THEN '^https://doufsxqlfjyuvxuezpln\.supabase\.co$'
+    WHEN 'prod' THEN '^https://pqpdolkaeqlyzpdpbizo\.supabase\.co$'
     WHEN 'stage' THEN '^https://[a-z0-9-]+\.supabase\.co$'
     WHEN 'dev' THEN '^https://[a-z0-9-]+\.supabase\.co$'
     ELSE '^https://[a-z0-9-]+\.supabase\.co$'

@@ -210,15 +210,16 @@ export default function FiltersPage() {
 
           {/* Content */}
           <div className="min-w-0 flex-1 space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex-shrink-0">
-                <h1
-                  data-testid="page-title-produtos"
-                  className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
-                >
-                  Super Filtro
-                  <span className="ml-2 inline-flex items-center gap-1.5 text-sm font-normal text-muted-foreground sm:text-base">
-                    ·{' '}
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex-shrink-0">
+                  <h1
+                    data-testid="page-title-produtos"
+                    className="whitespace-nowrap font-display text-xl font-bold sm:text-2xl lg:text-3xl"
+                  >
+                    Super Filtro
+                  </h1>
+                  <div className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground sm:text-base">
                     <span className="tabular-nums">
                       {state.isLoadingProducts && state.realProducts.length === 0
                         ? 'carregando...'
@@ -242,437 +243,435 @@ export default function FiltersPage() {
                           </span>
                         </span>
                       )}
-                  </span>
-                </h1>
-              </div>
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <SmartSearchInput
-                  placeholder="Buscar produtos..."
-                  onSelect={(result) =>
-                    result.type === 'product'
-                      ? navigate(`/produto/${result.id}`)
-                      : state.handleFilterChange({ ...state.filters, search: result.label })
-                  }
-                  onSearch={(q) => state.handleFilterChange({ ...state.filters, search: q })}
-                  className="flex-1"
-                />
-                {(state.filters.search || state.searchParams.get('search')) && (
-                  <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
-                    {state.isLoadingProducts && state.realProducts.length === 0
-                      ? 'Carregando...'
-                      : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
-                  </Badge>
-                )}
-                <Sheet open={state.mobileFiltersOpen} onOpenChange={state.setMobileFiltersOpen}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                        <SheetTrigger asChild>
-                          <Button variant="outline" size="sm" className="shrink-0 lg:hidden">
-                            <Filter className="mr-2 h-4 w-4" />
-                            Filtros
-                            {state.activeFiltersCount > 0 && (
-                              <Badge variant="secondary" className="ml-2">
-                                {state.activeFiltersCount}
-                              </Badge>
-                            )}
-                          </Button>
-                        </SheetTrigger>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>Abrir painel de filtros detalhados</TooltipContent>
-                  </Tooltip>
-                  <SheetContent side="left" className="flex w-80 flex-col p-0">
-                    <SheetHeader className="px-6 pb-2 pt-6">
-                      <SheetTitle>Filtros</SheetTitle>
-                    </SheetHeader>
-                    <div className="relative flex-1 overflow-y-auto px-6 pb-4">
-                      <FilterPanel
-                        filters={state.filters}
-                        onFilterChange={state.handleFilterChange}
-                        onReset={state.handleReset}
-                        activeFiltersCount={state.activeFiltersCount}
-                        products={state.realProducts}
-                        filteredResultsCount={state.filteredProducts.length}
-                      />
-                      <div className="pointer-events-none sticky bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent" />
-                    </div>
-                    <div className="shrink-0 space-y-2 border-t border-border/40 bg-card px-4 py-3">
-                      {!state.isFullyLoaded &&
-                        state.loadingProgress > 0 &&
-                        state.loadingProgress < 100 && (
-                          <div className="h-1 w-full overflow-hidden rounded-full bg-muted/50">
-                            <motion.div
-                              className="h-full rounded-full bg-primary"
-                              animate={{ width: `${state.loadingProgress}%` }}
-                              transition={{ duration: 0.4 }}
-                            />
-                          </div>
-                        )}
-                      <div className="flex gap-2">
-                        {state.activeFiltersCount > 0 && (
+                  </div>
+                </div>
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+                  <SmartSearchInput
+                    placeholder="Buscar produtos..."
+                    onSelect={(result) =>
+                      result.type === 'product'
+                        ? navigate(`/produto/${result.id}`)
+                        : state.handleFilterChange({ ...state.filters, search: result.label })
+                    }
+                    onSearch={(q) => state.handleFilterChange({ ...state.filters, search: q })}
+                    className="flex-1"
+                  />
+                  {(state.filters.search || state.searchParams.get('search')) && (
+                    <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
+                      {state.isLoadingProducts && state.realProducts.length === 0
+                        ? 'Carregando...'
+                        : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
+                    </Badge>
+                  )}
+                  <Sheet open={state.mobileFiltersOpen} onOpenChange={state.setMobileFiltersOpen}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex">
+                          <SheetTrigger asChild>
+                            <Button variant="outline" size="sm" className="shrink-0 lg:hidden">
+                              <Filter className="mr-2 h-4 w-4" />
+                              Filtros
+                              {state.activeFiltersCount > 0 && (
+                                <Badge variant="secondary" className="ml-2">
+                                  {state.activeFiltersCount}
+                                </Badge>
+                              )}
+                            </Button>
+                          </SheetTrigger>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>Abrir painel de filtros detalhados</TooltipContent>
+                    </Tooltip>
+                    <SheetContent side="left" className="flex w-80 flex-col p-0">
+                      <SheetHeader className="px-6 pb-2 pt-6">
+                        <SheetTitle>Filtros</SheetTitle>
+                      </SheetHeader>
+                      <div className="relative flex-1 overflow-y-auto px-6 pb-4">
+                        <FilterPanel
+                          filters={state.filters}
+                          onFilterChange={state.handleFilterChange}
+                          onReset={state.handleReset}
+                          activeFiltersCount={state.activeFiltersCount}
+                          products={state.realProducts}
+                          filteredResultsCount={state.filteredProducts.length}
+                        />
+                        <div className="pointer-events-none sticky bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent" />
+                      </div>
+                      <div className="shrink-0 space-y-2 border-t border-border/40 bg-card px-4 py-3">
+                        {!state.isFullyLoaded &&
+                          state.loadingProgress > 0 &&
+                          state.loadingProgress < 100 && (
+                            <div className="h-1 w-full overflow-hidden rounded-full bg-muted/50">
+                              <motion.div
+                                className="h-full rounded-full bg-primary"
+                                animate={{ width: `${state.loadingProgress}%` }}
+                                transition={{ duration: 0.4 }}
+                              />
+                            </div>
+                          )}
+                        <div className="flex gap-2">
+                          {state.activeFiltersCount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={state.handleReset}
+                              className="shrink-0 text-xs"
+                            >
+                              Limpar ({state.activeFiltersCount})
+                            </Button>
+                          )}
                           <Button
-                            variant="outline"
                             size="sm"
-                            onClick={state.handleReset}
-                            className="shrink-0 text-xs"
+                            className="flex-1 tabular-nums"
+                            onClick={() => state.setMobileFiltersOpen(false)}
                           >
-                            Limpar ({state.activeFiltersCount})
+                            <Filter className="mr-1.5 h-3.5 w-3.5" />
+                            {state.isLoadingProducts && state.realProducts.length === 0
+                              ? 'Carregando...'
+                              : state.activeFiltersCount > 0
+                                ? `Ver ${state.filteredProducts.length.toLocaleString('pt-BR')} resultado${state.filteredProducts.length !== 1 ? 's' : ''}`
+                                : `${(state.totalEstimate ?? state.filteredProducts.length).toLocaleString('pt-BR')} produtos`}
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          className="flex-1 tabular-nums"
-                          onClick={() => state.setMobileFiltersOpen(false)}
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                  <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                    <Select value={state.sortBy} onValueChange={state.setSortBy}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {/* span.relative.inline-flex = containing block para o dot mobile */}
+                          <span className="relative inline-flex">
+                            <SelectTrigger
+                              className={cn(
+                                'w-44 shrink-0 transition-all sm:w-52',
+                                state.sortBy !== DEFAULT_SORT_VALUE &&
+                                  'border-primary bg-primary/5 ring-1 ring-primary/20',
+                              )}
+                              aria-label="Ordenar produtos"
+                              data-testid="catalog-sort-trigger"
+                            >
+                              <ArrowUpDown
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  state.sortBy !== DEFAULT_SORT_VALUE
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground',
+                                )}
+                              />
+                              <SelectValue placeholder="Ordenar" />
+                            </SelectTrigger>
+                            {/* BUG-G7 FIX: dot posicionado corretamente via span.relative pai */}
+                            {state.sortBy !== DEFAULT_SORT_VALUE && (
+                              <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
+                            )}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {state.sortBy !== DEFAULT_SORT_VALUE
+                            ? `Ordenado por: ${
+                                // GAP-1 FIX: labels determinísticos para sorts internos
+                                // (color-match, popularity, name-asc/desc) + fallback genérico
+                                SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label ??
+                                INTERNAL_SORT_LABELS[state.sortBy] ??
+                                'Ordenação personalizada'
+                              }`
+                            : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
+                        </TooltipContent>
+                      </Tooltip>
+                      <SelectContent>
+                        {SORT_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            data-testid={`catalog-sort-item-${option.value}`}
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center">
+                          <PresetsBar
+                            currentFilters={state.filters}
+                            onApplyPreset={(f, id) => state.handleApplyPreset(f, id)}
+                            activePresetId={state.activePresetId}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
+                    </Tooltip>
+                    {/* Selection toggle & Layout */}
+                    <div className="ml-auto flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={state.selectionMode ? 'default' : 'outline'}
+                            size="sm"
+                            className={cn(
+                              'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                              state.selectionMode
+                                ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                                : 'hover:border-primary/50',
+                            )}
+                            onClick={toggleSelectionMode}
+                            aria-label={
+                              state.selectionMode
+                                ? 'Cancelar seleção'
+                                : 'Ativar modo de seleção em massa'
+                            }
+                          >
+                            <CheckSquare className="h-3.5 w-3.5" />
+                            <span className="hidden text-xs sm:inline">
+                              {state.selectionMode ? 'Cancelar' : 'Selecionar'}
+                            </span>
+                            <AnimatePresence>
+                              {state.selectionMode && sel.selectedCount > 0 && (
+                                <motion.div
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                  className="absolute -right-2 -top-2"
+                                >
+                                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                                    {sel.selectedCount}
+                                  </Badge>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {state.selectionMode
+                            ? 'Sair do modo de seleção'
+                            : 'Selecionar vários produtos para ações em massa'}
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <div className="shrink-0">
+                        <LayoutPopover
+                          viewMode={state.viewMode}
+                          setViewMode={state.setViewMode}
+                          gridColumns={state.gridColumns}
+                          setGridColumns={state.setGridColumns}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {state.activeFiltersSummary.length > 0 && (
+                    <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
+                      {state.activeFiltersSummary.slice(0, 3).map((filter) => (
+                        <Badge
+                          key={filter.key}
+                          variant="secondary"
+                          className="cursor-pointer gap-1 px-2 py-0.5 text-xs hover:bg-destructive/20"
+                          onClick={() => state.clearSingleFilter(filter.key)}
                         >
-                          <Filter className="mr-1.5 h-3.5 w-3.5" />
-                          {state.isLoadingProducts && state.realProducts.length === 0
-                            ? 'Carregando...'
-                            : state.activeFiltersCount > 0
-                              ? `Ver ${state.filteredProducts.length.toLocaleString('pt-BR')} resultado${state.filteredProducts.length !== 1 ? 's' : ''}`
-                              : `${(state.totalEstimate ?? state.filteredProducts.length).toLocaleString('pt-BR')} produtos`}
+                          {filter.label}: {filter.value} <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                      {state.activeFiltersSummary.length > 3 && (
+                        <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                          +{state.activeFiltersSummary.length - 3}
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={state.handleReset}
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                      >
+                        Limpar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Products */}
+                <div className="relative min-h-[calc(100vh-10rem)]">
+                  {state.isFiltering && (
+                    <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center rounded-xl bg-background/50 pt-32 backdrop-blur-[1px] transition-opacity duration-200">
+                      <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        <span className="text-sm text-muted-foreground">Filtrando...</span>
+                      </div>
+                    </div>
+                  )}
+                  {(state.isLoadingProducts && state.realProducts.length === 0) ||
+                  state.filteredProducts.length > 0 ? (
+                    <>
+                      {state.viewMode === 'grid' ? (
+                        <VirtualizedProductGrid
+                          products={state.filteredProducts}
+                          isLoading={state.isLoadingProducts}
+                          onProductClick={(productId) =>
+                            state.selectionMode
+                              ? sel.toggleSelect(productId)
+                              : navigate(`/produto/${productId}`)
+                          }
+                          isFavorited={isFavorite}
+                          onToggleFavorite={toggleFavorite}
+                          isInCompare={isInCompare}
+                          onToggleCompare={toggleCompare}
+                          canAddToCompare={canAddMore}
+                          onShare={(product) => setShareProduct(product)}
+                          columns={state.gridColumns}
+                          columnSelector={
+                            <ColumnSelector
+                              value={state.gridColumns}
+                              onChange={state.setGridColumns}
+                            />
+                          }
+                          activeFiltersCount={state.activeFiltersCount}
+                          sortBy={state.sortBy}
+                          onSortChange={state.setSortBy}
+                          onOpenFilters={() => state.setMobileFiltersOpen(true)}
+                          onClearFilters={state.handleReset}
+                          viewMode={state.viewMode}
+                          onViewModeChange={state.setViewMode}
+                          showFilterBar={false}
+                          activeColorFilter={
+                            state.filters.colorGroups.length > 0 ||
+                            state.filters.colorVariations.length > 0
+                              ? {
+                                  groups: state.filters.colorGroups,
+                                  variations: state.filters.colorVariations,
+                                }
+                              : null
+                          }
+                          selectionMode={state.selectionMode}
+                          selectedIds={sel.selectedIds}
+                          onToggleSelect={sel.toggleSelect}
+                        />
+                      ) : state.viewMode === 'list' ? (
+                        <div className="scrollbar-products h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background p-4 shadow-sm">
+                          <ProductList
+                            products={state.filteredProducts}
+                            isLoading={state.isLoadingProducts}
+                            onProductClick={(productId) =>
+                              state.selectionMode
+                                ? sel.toggleSelect(productId)
+                                : navigate(`/produto/${productId}`)
+                            }
+                            onShareProduct={(product) => setShareProduct(product)}
+                            isFavorite={isFavorite}
+                            onToggleFavorite={toggleFavorite}
+                            isInCompare={isInCompare}
+                            onToggleCompare={toggleCompare}
+                            canAddToCompare={canAddMore}
+                            activeColorFilter={
+                              state.filters.colorGroups.length > 0 ||
+                              state.filters.colorVariations.length > 0
+                                ? {
+                                    groups: state.filters.colorGroups,
+                                    variations: state.filters.colorVariations,
+                                  }
+                                : null
+                            }
+                            selectionMode={state.selectionMode}
+                            externalSelectedIds={sel.selectedIds}
+                            onToggleSelect={sel.toggleSelect}
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm">
+                          <ProductTableView
+                            products={state.filteredProducts}
+                            isLoading={state.isLoadingProducts}
+                            onProductClick={(productId) =>
+                              state.selectionMode
+                                ? sel.toggleSelect(productId)
+                                : navigate(`/produto/${productId}`)
+                            }
+                            isFavorite={isFavorite}
+                            onToggleFavorite={toggleFavorite}
+                            isInCompare={isInCompare}
+                            onToggleCompare={toggleCompare}
+                            canAddToCompare={canAddMore}
+                            onShareProduct={(product) => setShareProduct(product)}
+                            activeColorFilter={
+                              state.filters.colorGroups.length > 0 ||
+                              state.filters.colorVariations.length > 0
+                                ? {
+                                    groups: state.filters.colorGroups,
+                                    variations: state.filters.colorVariations,
+                                  }
+                                : null
+                            }
+                            selectionMode={state.selectionMode}
+                            selectedIds={sel.selectedIds}
+                            onToggleSelect={sel.toggleSelect}
+                          />
+                        </div>
+                      )}
+
+                      {/* Bulk Action Bar */}
+                      {state.selectionMode && (
+                        <BulkActionBar
+                          selectedCount={sel.selectedIds.size}
+                          totalCount={state.filteredProducts.length}
+                          onSelectAll={sel.selectAll}
+                          onClearSelection={sel.clearSelection}
+                          onBulkFavorite={sel.handleBulkFavorite}
+                          onBulkCompare={sel.handleBulkCompare}
+                          onBulkCollection={sel.handleBulkCollection}
+                          onBulkQuote={sel.handleBulkQuote}
+                          onBulkCart={sel.handleBulkCart}
+                        />
+                      )}
+
+                      {sel.firstSelectedProduct && (
+                        <AddToCollectionModal
+                          open={sel.collectionModalOpen}
+                          onOpenChange={(open) => {
+                            sel.setCollectionModalOpen(open);
+                            if (!open) sel.clearSelection();
+                          }}
+                          productId={sel.firstSelectedId}
+                          productName={`${sel.selectedIds.size} produtos selecionados`}
+                        />
+                      )}
+                      <BulkAddToCartModal
+                        open={sel.cartModalOpen}
+                        onOpenChange={sel.setCartModalOpen}
+                        products={sel.bulkCartProducts}
+                        variantSelections={sel.wizardSelections}
+                        onDone={sel.clearSelection}
+                      />
+                      <BulkVariantWizard
+                        open={sel.variantWizardOpen}
+                        onOpenChange={sel.setVariantWizardOpen}
+                        products={sel.bulkCartProducts}
+                        mode={sel.wizardMode}
+                        onComplete={sel.handleWizardComplete}
+                      />
+                    </>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border/60 bg-gradient-to-b from-muted/20 to-muted/5 py-16 text-center">
+                      <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/40">
+                        <SearchX className="h-8 w-8 text-muted-foreground/60" />
+                      </div>
+                      <h3 className="font-display text-lg font-semibold text-foreground">
+                        Nenhum produto encontrado
+                      </h3>
+                      <p className="mx-auto mb-6 mt-1.5 max-w-sm text-sm text-muted-foreground">
+                        {state.activeFiltersCount > 1
+                          ? 'A combinação de filtros não retornou resultados. Tente remover algum filtro.'
+                          : 'Tente ajustar os filtros ou buscar por outro termo.'}
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button variant="outline" onClick={state.handleReset} className="gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Limpar filtros
                         </Button>
                       </div>
                     </div>
-                  </SheetContent>
-                </Sheet>
-                {/* IMPROVEMENT 1-4 FIX: Select fica FORA, Tooltip DENTRO.
-                    Antes: TooltipTrigger asChild envolvia o <Select> inteiro —
-                    o Radix Slot mesclava handlers do Tooltip (onPointerEnter/Leave/Focus)
-                    diretamente no Select composto, causando conflito de eventos e o
-                    dropdown alternando entre opções sem parar.
-                    Depois: padrão idêntico ao CatalogToolbar.tsx (BUG-G7 FIX):
-                      Select > Tooltip > TooltipTrigger asChild > span.relative.inline-flex
-                      > SelectTrigger — Tooltip só toca o span, Select mantém evento limpo.
-                    dot indicator movido para span (não SelectTrigger) com span.relative
-                    como containing block correto. DEFAULT_SORT_VALUE do SSOT evita 'name' hardcoded. */}
-                <Select value={state.sortBy} onValueChange={state.setSortBy}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      {/* span.relative.inline-flex = containing block para o dot mobile */}
-                      <span className="relative inline-flex">
-                        <SelectTrigger
-                          className={cn(
-                            'w-44 shrink-0 transition-all sm:w-52',
-                            state.sortBy !== DEFAULT_SORT_VALUE &&
-                              'border-primary bg-primary/5 ring-1 ring-primary/20',
-                          )}
-                          aria-label="Ordenar produtos"
-                          data-testid="catalog-sort-trigger"
-                        >
-                          <ArrowUpDown
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              state.sortBy !== DEFAULT_SORT_VALUE
-                                ? 'text-primary'
-                                : 'text-muted-foreground',
-                            )}
-                          />
-                          <SelectValue placeholder="Ordenar" />
-                        </SelectTrigger>
-                        {/* BUG-G7 FIX: dot posicionado corretamente via span.relative pai */}
-                        {state.sortBy !== DEFAULT_SORT_VALUE && (
-                          <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
-                        )}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {state.sortBy !== DEFAULT_SORT_VALUE
-                        ? `Ordenado por: ${
-                            // GAP-1 FIX: labels determinísticos para sorts internos
-                            // (color-match, popularity, name-asc/desc) + fallback genérico
-                            SORT_OPTIONS.find((o) => o.value === state.sortBy)?.label ??
-                            INTERNAL_SORT_LABELS[state.sortBy] ??
-                            'Ordenação personalizada'
-                          }`
-                        : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
-                    </TooltipContent>
-                  </Tooltip>
-                  <SelectContent>
-                    {SORT_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        data-testid={`catalog-sort-item-${option.value}`}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center">
-                      <PresetsBar
-                        currentFilters={state.filters}
-                        onApplyPreset={(f, id) => state.handleApplyPreset(f, id)}
-                        activePresetId={state.activePresetId}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
-                </Tooltip>
-
-                {/* Selection toggle */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={state.selectionMode ? 'default' : 'outline'}
-                      size="sm"
-                      className={cn(
-                        'relative h-8 gap-1.5 transition-all',
-                        state.selectionMode
-                          ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
-                          : 'hover:border-primary/50',
-                      )}
-                      onClick={toggleSelectionMode}
-                      aria-label={
-                        state.selectionMode ? 'Cancelar seleção' : 'Ativar modo de seleção em massa'
-                      }
-                    >
-                      <CheckSquare className="h-3.5 w-3.5" />
-                      <span className="hidden text-xs sm:inline">
-                        {state.selectionMode ? 'Cancelar' : 'Selecionar'}
-                      </span>
-                      <AnimatePresence>
-                        {state.selectionMode && sel.selectedCount > 0 && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                            className="absolute -right-2 -top-2"
-                          >
-                            <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                              {sel.selectedCount}
-                            </Badge>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {state.selectionMode
-                      ? 'Sair do modo de seleção'
-                      : 'Selecionar vários produtos para ações em massa'}
-                  </TooltipContent>
-                </Tooltip>
-
-                <div className="hidden shrink-0 sm:block">
-                  <LayoutPopover
-                    viewMode={state.viewMode}
-                    setViewMode={state.setViewMode}
-                    gridColumns={state.gridColumns}
-                    setGridColumns={state.setGridColumns}
-                  />
+                  )}
                 </div>
               </div>
-              {state.activeFiltersSummary.length > 0 && (
-                <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
-                  {state.activeFiltersSummary.slice(0, 3).map((filter) => (
-                    <Badge
-                      key={filter.key}
-                      variant="secondary"
-                      className="cursor-pointer gap-1 px-2 py-0.5 text-xs hover:bg-destructive/20"
-                      onClick={() => state.clearSingleFilter(filter.key)}
-                    >
-                      {filter.label}: {filter.value} <X className="h-3 w-3" />
-                    </Badge>
-                  ))}
-                  {state.activeFiltersSummary.length > 3 && (
-                    <Badge variant="outline" className="px-2 py-0.5 text-xs">
-                      +{state.activeFiltersSummary.length - 3}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={state.handleReset}
-                    className="h-6 px-2 text-xs text-muted-foreground"
-                  >
-                    Limpar
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Products */}
-            <div className="relative min-h-[calc(100vh-10rem)]">
-              {state.isFiltering && (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center rounded-xl bg-background/50 pt-32 backdrop-blur-[1px] transition-opacity duration-200">
-                  <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm text-muted-foreground">Filtrando...</span>
-                  </div>
-                </div>
-              )}
-              {(state.isLoadingProducts && state.realProducts.length === 0) ||
-              state.filteredProducts.length > 0 ? (
-                <>
-                  {state.viewMode === 'grid' ? (
-                    <VirtualizedProductGrid
-                      products={state.filteredProducts}
-                      isLoading={state.isLoadingProducts}
-                      onProductClick={(productId) =>
-                        state.selectionMode
-                          ? sel.toggleSelect(productId)
-                          : navigate(`/produto/${productId}`)
-                      }
-                      isFavorited={isFavorite}
-                      onToggleFavorite={toggleFavorite}
-                      isInCompare={isInCompare}
-                      onToggleCompare={toggleCompare}
-                      canAddToCompare={canAddMore}
-                      onShare={(product) => setShareProduct(product)}
-                      columns={state.gridColumns}
-                      columnSelector={
-                        <ColumnSelector value={state.gridColumns} onChange={state.setGridColumns} />
-                      }
-                      activeFiltersCount={state.activeFiltersCount}
-                      sortBy={state.sortBy}
-                      onSortChange={state.setSortBy}
-                      onOpenFilters={() => state.setMobileFiltersOpen(true)}
-                      onClearFilters={state.handleReset}
-                      viewMode={state.viewMode}
-                      onViewModeChange={state.setViewMode}
-                      showFilterBar={false}
-                      activeColorFilter={
-                        state.filters.colorGroups.length > 0 ||
-                        state.filters.colorVariations.length > 0
-                          ? {
-                              groups: state.filters.colorGroups,
-                              variations: state.filters.colorVariations,
-                            }
-                          : null
-                      }
-                      selectionMode={state.selectionMode}
-                      selectedIds={sel.selectedIds}
-                      onToggleSelect={sel.toggleSelect}
-                    />
-                  ) : state.viewMode === 'list' ? (
-                    <div className="scrollbar-products h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background p-4 shadow-sm">
-                      <ProductList
-                        products={state.filteredProducts}
-                        isLoading={state.isLoadingProducts}
-                        onProductClick={(productId) =>
-                          state.selectionMode
-                            ? sel.toggleSelect(productId)
-                            : navigate(`/produto/${productId}`)
-                        }
-                        onShareProduct={(product) => setShareProduct(product)}
-                        isFavorite={isFavorite}
-                        onToggleFavorite={toggleFavorite}
-                        isInCompare={isInCompare}
-                        onToggleCompare={toggleCompare}
-                        canAddToCompare={canAddMore}
-                        activeColorFilter={
-                          state.filters.colorGroups.length > 0 ||
-                          state.filters.colorVariations.length > 0
-                            ? {
-                                groups: state.filters.colorGroups,
-                                variations: state.filters.colorVariations,
-                              }
-                            : null
-                        }
-                        selectionMode={state.selectionMode}
-                        externalSelectedIds={sel.selectedIds}
-                        onToggleSelect={sel.toggleSelect}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm">
-                      <ProductTableView
-                        products={state.filteredProducts}
-                        isLoading={state.isLoadingProducts}
-                        onProductClick={(productId) =>
-                          state.selectionMode
-                            ? sel.toggleSelect(productId)
-                            : navigate(`/produto/${productId}`)
-                        }
-                        isFavorite={isFavorite}
-                        onToggleFavorite={toggleFavorite}
-                        isInCompare={isInCompare}
-                        onToggleCompare={toggleCompare}
-                        canAddToCompare={canAddMore}
-                        onShareProduct={(product) => setShareProduct(product)}
-                        activeColorFilter={
-                          state.filters.colorGroups.length > 0 ||
-                          state.filters.colorVariations.length > 0
-                            ? {
-                                groups: state.filters.colorGroups,
-                                variations: state.filters.colorVariations,
-                              }
-                            : null
-                        }
-                        selectionMode={state.selectionMode}
-                        selectedIds={sel.selectedIds}
-                        onToggleSelect={sel.toggleSelect}
-                      />
-                    </div>
-                  )}
-
-                  {/* Bulk Action Bar */}
-                  {state.selectionMode && (
-                    <BulkActionBar
-                      selectedCount={sel.selectedIds.size}
-                      totalCount={state.filteredProducts.length}
-                      onSelectAll={sel.selectAll}
-                      onClearSelection={sel.clearSelection}
-                      onBulkFavorite={sel.handleBulkFavorite}
-                      onBulkCompare={sel.handleBulkCompare}
-                      onBulkCollection={sel.handleBulkCollection}
-                      onBulkQuote={sel.handleBulkQuote}
-                      onBulkCart={sel.handleBulkCart}
-                    />
-                  )}
-
-                  {sel.firstSelectedProduct && (
-                    <AddToCollectionModal
-                      open={sel.collectionModalOpen}
-                      onOpenChange={(open) => {
-                        sel.setCollectionModalOpen(open);
-                        if (!open) sel.clearSelection();
-                      }}
-                      productId={sel.firstSelectedId}
-                      productName={`${sel.selectedIds.size} produtos selecionados`}
-                    />
-                  )}
-                  <BulkAddToCartModal
-                    open={sel.cartModalOpen}
-                    onOpenChange={sel.setCartModalOpen}
-                    products={sel.bulkCartProducts}
-                    variantSelections={sel.wizardSelections}
-                    onDone={sel.clearSelection}
-                  />
-                  <BulkVariantWizard
-                    open={sel.variantWizardOpen}
-                    onOpenChange={sel.setVariantWizardOpen}
-                    products={sel.bulkCartProducts}
-                    mode={sel.wizardMode}
-                    onComplete={sel.handleWizardComplete}
-                  />
-                </>
-              ) : (
-                <div className="rounded-xl border border-dashed border-border/60 bg-gradient-to-b from-muted/20 to-muted/5 py-16 text-center">
-                  <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/40">
-                    <SearchX className="h-8 w-8 text-muted-foreground/60" />
-                  </div>
-                  <h3 className="font-display text-lg font-semibold text-foreground">
-                    Nenhum produto encontrado
-                  </h3>
-                  <p className="mx-auto mb-6 mt-1.5 max-w-sm text-sm text-muted-foreground">
-                    {state.activeFiltersCount > 1
-                      ? 'A combinação de filtros não retornou resultados. Tente remover algum filtro.'
-                      : 'Tente ajustar os filtros ou buscar por outro termo.'}
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="outline" onClick={state.handleReset} className="gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Limpar filtros
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

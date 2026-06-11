@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export interface WorkspaceNotification {
   id: string;

@@ -20,7 +20,6 @@ interface VariantOption {
   color_code: string | null;
   sku: string | null;
   selected_thumbnail: string | null;
-  sale_price?: number | null;
   size_code?: string | null;
 }
 
@@ -70,7 +69,7 @@ export function VariantSelector({
         table: 'product_variants',
         operation: 'select',
         select:
-          'id, color_name, color_hex, color_code, sku, selected_thumbnail, sale_price, size_code',
+          'id, color_name, color_hex, color_code, sku, selected_thumbnail, size_code',
         filters: { id: allowedVariantIds, is_active: true },
         limit: 50,
       });
@@ -138,7 +137,7 @@ export function VariantSelector({
       size: variant.size_code || undefined,
       sku: variant.sku || undefined,
       imageUrl: variant.selected_thumbnail || undefined,
-      price: variant.sale_price ?? undefined,
+      price: undefined,
     });
     setOpen(false);
   };

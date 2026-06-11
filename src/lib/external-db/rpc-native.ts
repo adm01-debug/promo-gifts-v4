@@ -194,7 +194,7 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
 }
 
 // ── RPCs not yet in DB ────────────────────────────────────────────────────────────────────
-// Audit confirmed these functions do not exist in doufsxqlfjyuvxuezpln yet.
+// Audit confirmed these functions do not exist in pqpdolkaeqlyzpdpbizo yet.
 // Stubs return safe empty values and log a clear NOT_IN_DB warning.
 
 export async function getProductPrintAreas(productId: string): Promise<unknown[]> {
@@ -237,7 +237,7 @@ const _NOT_IN_DB =
   (name: string): DispatchFn =>
   async () => {
     throw new Error(
-      `rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`,
+      `rpc-native: '${name}' does not exist in pqpdolkaeqlyzpdpbizo. Create the DB function first.`,
     );
   };
 

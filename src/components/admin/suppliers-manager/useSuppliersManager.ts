@@ -1,4 +1,5 @@
 import { dbInvoke, dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { searchCrm } from '@/lib/crm-db';
@@ -149,15 +150,13 @@ export function useSuppliersManager() {
       const pageSize = 200;
       const maxPages = 10; // cap at 2000 to prevent runaway
       for (let page = 0; page < maxPages; page++) {
-        const result = await dbInvoke<Supplier>({
-          table: 'suppliers',
-          operation: 'select',
-          select: '*',
-          orderBy: { column: 'name', ascending: true },
-          limit: pageSize,
-          offset: page * pageSize,
-        });
-        const records = result.records || [];
+        const { data: records, error } = await untypedFrom<Supplier>('suppliers')
+          .select(
+            'id, name, code, cnpj, contact_name, email, phone, address, active, created_at, website, contact_person, payment_terms, delivery_time_days, minimum_order_value, notes, updated_at, organization_id, trading_name, api_type, api_base_url, min_order_value, shipping_terms, default_markup_percent, is_product_supplier, is_engraving_supplier, sync_enabled, sync_interval_minutes, last_full_sync_at, last_sync_status, last_sync_error, api_rate_limit_per_hour, priority, api_requests_current_hour, api_requests_reset_at, state_uf, tax_regime, inscricao_estadual, phone2, logo_url',
+          )
+          .order('name', { ascending: true })
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
         all.push(...records);
         if (records.length < pageSize) break; // last page
       }
@@ -346,14 +345,11 @@ export function useSuppliersManager() {
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const existing = await dbInvoke<{ id: string; name: string; cnpj: string }>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id,name,cnpj',
-          filters: { cnpj: editingSupplier.cnpj.trim() },
-          limit: 5,
-        });
-        const duplicate = existing.records?.find((r) => r.id !== editingSupplier.id);
+        const { data: existingRecords } = await untypedFrom<{ id: string; name: string; cnpj: string }>('suppliers')
+          .select('id,name,cnpj')
+          .eq('cnpj', editingSupplier.cnpj.trim())
+          .limit(5);
+        const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
         if (duplicate) {
           toast.error(`Já existe outro fornecedor com este CNPJ: "${duplicate.name}".`);
           setSaving(false);

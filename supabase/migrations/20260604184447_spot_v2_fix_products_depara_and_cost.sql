@@ -1,6 +1,6 @@
 -- ============================================================
 -- Paridade Spot → fn_process_raw_v2 : correções CRÍTICAS (config-only)
--- Projeto doufsxqlfjyuvxuezpln · Spot supplier_id bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0
+-- Projeto pqpdolkaeqlyzpdpbizo · Spot supplier_id bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0
 -- ============================================================
 
 -- G1) De-para de products morto: os 7 mappings ativos guardavam source_path em

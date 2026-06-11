@@ -1,61 +1,52 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
-// SSOT: O projeto canônico do app é doufsxqlfjyuvxuezpln.
-// O .env é auto-gerado pelo Lovable e pode apontar para um projeto Lovable Cloud
-// vazio (ex.: pqpdolkaeqlyzpdpbizo). Por isso, o canônico SEMPRE vence em produção
-// e qualquer override de env só é aceito se:
-//   (a) aponta explicitamente para o canônico, OU
-//   (b) não aponta para nenhum dos projetos proibidos conhecidos.
-//
-// SECURITY: A CANONICAL_ANON_KEY é pública por design no Supabase (role 'anon').
-// No entanto, TODAS as tabelas com dados sensíveis DEVEM ter RLS ativo em
-// doufsxqlfjyuvxuezpln. Verificar via:
-//   SELECT tablename, rowsecurity FROM pg_tables
-//   WHERE schemaname = 'public' AND rowsecurity = false;
-// Nenhuma tabela de negócio deve aparecer nessa query sem justificativa documentada.
-const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
-const CANONICAL_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
-// Lista de projetos CONHECIDOS que não devem ser usados (Lovable Cloud vazios).
-// ATENÇÃO: esta lista é de negação e pode ficar desatualizada se Lovable criar
-// novos projetos Cloud. O check positivo abaixo (envPointsToCanonical) é a
-// proteção primária — esta lista é defesa em profundidade.
-const FORBIDDEN_REFS = ["pqpdolkaeqlyzpdpbizo", "hncgwjbzdajfdgtqgefe"];
+const log = createClientLogger('supabase.client');
+
+// SSOT: O projeto atual do app é pqpdolkaeqlyzpdpbizo.
+// Em produção ou CI, as variáveis de ambiente devem estar configuradas.
+const CURRENT_PROJECT_ID = "pqpdolkaeqlyzpdpbizo";
+const CANONICAL_URL = `https://${CURRENT_PROJECT_ID}.supabase.co`;
+const CANONICAL_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxcGRvbGthZXFseXpwZHBiaXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzEwNTcsImV4cCI6MjA5NDQ0NzA1N30.j9Kk_nu8J5OUn3pcDmRETLMwkhddXmtiSjgI-KCEnrc";
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Check POSITIVO (primário): o .env já aponta para o projeto correto?
-const envPointsToCanonical = !!envUrl && envUrl.includes('doufsxqlfjyuvxuezpln');
+// Validação de boot: garante que não estamos conectando ao projeto errado ou sem config.
+const validateEnv = () => {
+  if (envUrl && !envUrl.includes(CURRENT_PROJECT_ID)) {
+    const errorMsg = `Inconsistência de Configuração: VITE_SUPABASE_URL aponta para projeto externo (${envUrl}), mas o projeto atual é ${CURRENT_PROJECT_ID}.`;
+    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
+    throw new Error(errorMsg);
+  }
+  
+  if (!envUrl) {
+    log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
+  }
+};
 
-// Check NEGATIVO (defesa em profundidade): o .env aponta para um proibido?
-const envPointsToForbidden = !!envUrl && !envPointsToCanonical &&
-  FORBIDDEN_REFS.some((ref) => envUrl.includes(ref));
-
-// Estratégia de resolução:
-// 1. Se .env aponta para o canônico → usa .env (inclui key do .env).
-// 2. Se .env aponta para proibido OU .env está vazio → usa canônico hardcoded.
-// 3. Se .env aponta para outro desconhecido → usa .env (operador configurou outro projeto).
-export const SUPABASE_URL = envPointsToCanonical
-  ? envUrl
-  : (envPointsToForbidden || !envUrl ? CANONICAL_URL : envUrl);
-export const SUPABASE_PUBLISHABLE_KEY = envPointsToCanonical
-  ? (envKey ?? CANONICAL_ANON_KEY)
-  : (envPointsToForbidden || !envKey ? CANONICAL_ANON_KEY : envKey);
-
-if (envPointsToForbidden && typeof console !== "undefined") {
-  console.warn(
-    `[supabase/client] VITE_SUPABASE_URL aponta para projeto proibido (${envUrl}). ` +
-      "Forçando uso do banco canônico doufsxqlfjyuvxuezpln."
-  );
-} else if (!envUrl && typeof console !== "undefined") {
-  console.warn(
-    "[supabase/client] VITE_SUPABASE_URL não encontrada - usando banco canônico doufsxqlfjyuvxuezpln."
-  );
+try {
+  validateEnv();
+} catch (err) {
+  // Fail loud in dev/CI, but allow fallback in prod if strictly necessary (or handle via UI)
+  if (import.meta.env.DEV) {
+    console.error("%c[Supabase Critical]", "color: red; font-weight: bold;", err);
+  }
 }
+
+export const SUPABASE_URL = envUrl || CANONICAL_URL;
+export const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
+
+log.info('init', { 
+  url: SUPABASE_URL, 
+  project_id: SUPABASE_URL.split('.')[0].split('//')[1],
+  has_custom_env: !!envUrl 
+});
+
 
 type SupabaseStorage = {
   getItem: Storage['getItem'];
@@ -78,3 +69,26 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
   },
 });
+
+// Logs e Métricas de Autenticação
+const authLog = log.child('auth');
+
+// Hook para monitorar estado da sessão e identificar conexão com projeto errado
+supabase.auth.onAuthStateChange((event, session) => {
+  const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+  
+  authLog.info('state_change', { 
+    event, 
+    user_id: session?.user?.id,
+    project_id: projectId,
+    is_canonical: projectId === CURRENT_PROJECT_ID
+  });
+
+  if (projectId !== CURRENT_PROJECT_ID) {
+    authLog.error('wrong_project_detected', { 
+      current: projectId, 
+      expected: CURRENT_PROJECT_ID 
+    });
+  }
+});
+

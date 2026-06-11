@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Replenishment Edge Function Error Snapshots > Internal error response should match snapshot 1`] = `
+{
+  "code": "internal_error",
+  "fields": [],
+  "message": "Unexpected database error",
+}
+`;
+
+exports[`Replenishment Edge Function Error Snapshots > Invalid payload response should match snapshot 1`] = `
+{
+  "code": "invalid_payload",
+  "fields": [
+    {
+      "message": "Invalid enum value",
+      "path": [
+        "action",
+      ],
+    },
+  ],
+  "message": "Validation failed",
+}
+`;
+
+exports[`Replenishment Edge Function Error Snapshots > Unauthorized response should match snapshot 1`] = `
+{
+  "code": "unauthorized",
+  "fields": [],
+  "message": "Unauthorized",
+}
+`;

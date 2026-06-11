@@ -13,10 +13,18 @@ export function useProfileRoles() {
   const fetchCancelledRef = useRef(false);
 
   const fetchUserData = useCallback(async (userId: string) => {
+    // BUG-FIX: Previne race condition setando a Promise síncronamente
+    let resolvePromise: (value: void | PromiseLike<void>) => void;
+    const fetchPromise = new Promise<void>((resolve) => {
+      resolvePromise = resolve;
+    });
+    
     if (fetchPromiseRef.current) {
       await fetchPromiseRef.current;
       return;
     }
+    
+    fetchPromiseRef.current = fetchPromise;
 
     fetchCancelledRef.current = false;
 
@@ -34,6 +42,13 @@ export function useProfileRoles() {
 
         if (profileResult.error) {
           log.error('profile_error', { error: profileResult.error });
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (profileResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar perfil', {
+              description: 'O sistema não conseguiu ler seus dados básicos. Contate o suporte.',
+            });
+          }
         } else {
           setProfile(profileResult.data as Profile | null);
         }
@@ -41,6 +56,13 @@ export function useProfileRoles() {
         if (rolesResult.error) {
           log.error('roles_error', { error: rolesResult.error });
           setUserRoles([]);
+          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
+          if (rolesResult.error.code === '42501') {
+            const { toast } = await import('sonner');
+            toast.error('Erro de permissão ao carregar permissões', {
+              description: 'O sistema não conseguiu verificar seus acessos. Contate o suporte.',
+            });
+          }
         } else {
           const mapped = (rolesResult.data ?? []).map(
             (row: { role: string }) => row.role,
@@ -56,16 +78,16 @@ export function useProfileRoles() {
         log.error('exception', { error });
       } finally {
         fetchPromiseRef.current = null;
-        if (!fetchCancelledRef.current) {
-          setIsLoading(false);
-          setRolesLoaded(true);
-        }
+        // BUG-FIX: Ensure loading is ALWAYS disabled after first attempt
+        // to prevent white-screen of death if DB calls fail.
+        setIsLoading(false);
+        setRolesLoaded(true);
+        if (resolvePromise!) resolvePromise();
       }
     };
 
-    const promise = doFetch();
-    fetchPromiseRef.current = promise;
-    await promise;
+    void doFetch();
+    await fetchPromise;
   }, []);
 
   const clearProfileRoles = useCallback(() => {

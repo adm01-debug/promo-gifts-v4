@@ -61,10 +61,17 @@ export interface GroupedImages {
   technical: ProductImageMeta[]; // location | area | component
 }
 
+/**
+ * Variantes de tamanho do Cloudflare Images.
+ * `card` (400×400) é usada nos cards de catálogo por dezenas de consumidores.
+ */
+export type CdnVariant = 'thumbnail' | 'small' | 'card' | 'medium' | 'large' | 'public';
+
 // CDN variant suffixes
-const CDN_VARIANTS: Record<string, string> = {
+const CDN_VARIANTS: Record<CdnVariant, string> = {
   thumbnail: '/thumbnail',
   small: '/small',
+  card: '/card',
   medium: '/medium',
   large: '/large',
   public: '/public',
@@ -75,12 +82,12 @@ const CDN_VARIANTS: Record<string, string> = {
  */
 export function getCdnUrl(
   url: string | null | undefined,
-  variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'public' = 'public',
+  variant: CdnVariant = 'public',
 ): string {
   if (!url) return '/placeholder.svg';
   if (url.includes('imagedelivery.net')) {
     // Remove variante existente e aplica a nova
-    const base = url.replace(/\/(thumbnail|small|medium|large|public)$/, '');
+    const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
     return `${base}${CDN_VARIANTS[variant]}`;
   }
   return url;
@@ -91,10 +98,11 @@ export function getCdnUrl(
  */
 export function getSrcSet(url: string | null | undefined): string | undefined {
   if (!url || !url.includes('imagedelivery.net')) return undefined;
-  const base = url.replace(/\/(thumbnail|small|medium|large|public)$/, '');
+  const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
   return [
     `${base}/thumbnail 150w`,
     `${base}/small 400w`,
+    `${base}/card 480w`,
     `${base}/medium 800w`,
     `${base}/large 1200w`,
   ].join(', ');
@@ -201,15 +209,17 @@ export function getColorImages(images: ProductImageMeta[], colorCode: string): P
 
   // 1) Imagens específicas desta cor (não-técnicas)
   const specific = images.filter(
-    (i) => i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
+    (i) =>
+      i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
   );
 
   // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
   //    → main cor-específica da cor seleccionada (último recurso: produto só tem mains por cor)
   //    A main é a imagem principal do produto e deve sempre aparecer, mesmo com cor activa.
-  const hero = images.find((i) => i.image_type === 'main' && i.is_primary)
-             ?? images.find((i) => i.image_type === 'main' && !i.applies_to_color)
-             ?? specific.find((i) => i.image_type === 'main');
+  const hero =
+    images.find((i) => i.image_type === 'main' && i.is_primary) ??
+    images.find((i) => i.image_type === 'main' && !i.applies_to_color) ??
+    specific.find((i) => i.image_type === 'main');
 
   // 3) Hero sempre primeiro; deduplicar os specific (remover hero se vier na lista)
   const result: ProductImageMeta[] = [];
