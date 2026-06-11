@@ -243,8 +243,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         <StarfieldCanvas
           density={isFull ? 300 : 100}
           className="pointer-events-none fixed inset-0 z-0 h-screen w-screen"
-          mousePos={mousePos}
-          scrollY={scrollY}
+          mousePos={{ x: 0, y: 0 }}
+          scrollY={0}
         />
       ) : (
         activeStars.map((star) => (
@@ -309,9 +309,9 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
           const opacity =
             (0.12 + a.depth * 0.2) * config.depthProfile * (a.individualOpacity ?? 1.0);
 
-          // Parallax Mouse + Scroll baseado na profundidade (com suavização adicional)
-          const translateX = mousePos.x * a.depth;
-          const translateY = (mousePos.y + scrollY) * a.depth;
+          // Parallax removido - valores estáticos
+          const translateX = 0;
+          const translateY = 0;
 
           // Órbita circular suave (circularOrbit) — Sincronizada via delay negativo
           const orbitDuration = 18 / config.speed;
