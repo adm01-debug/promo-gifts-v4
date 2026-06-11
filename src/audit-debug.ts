@@ -23,7 +23,7 @@ async function performTechnicalAudit() {
       session ? `Sessão ativa: ${session.user.email}` : 'Nenhuma sessão ativa',
     );
 
-    const { data: _tableData, error: tableError } = await supabase
+    const { error: tableError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
     if (tableError) throw tableError;
@@ -35,7 +35,7 @@ async function performTechnicalAudit() {
   // 2. Verificação de Tabelas Essenciais
   // Audit checks a known list of base tables; cast bypasses Supabase's view-only from() overloads.
   type AuditTable = Parameters<(typeof supabase)['from']>[0];
-  const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
+  const tables: AuditTable[] = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
       const { error } = await supabase
