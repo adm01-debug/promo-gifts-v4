@@ -17,9 +17,9 @@ describe.skipIf(isLocalSupabase)('useReplenishments Hooks Integration', () => {
       wrapper: TestWrapper,
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 15000 });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 25000 });
     expect(Array.isArray(result.current.data)).toBe(true);
-  });
+  }, 30000); // enrichment queries (categories + v_suppliers_public) may need multiple retries
 
   it('useReplenishmentStats deve calcular KPIs corretamente', async () => {
     const { result } = renderHook(() => useReplenishmentStats(), {
