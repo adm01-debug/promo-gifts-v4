@@ -571,7 +571,7 @@ export default function Auth() {
                       className="font-display text-[1.036rem] font-normal tracking-tight text-white"
                       id="auth-title"
                     >
-                      Entre com suas credenciais para Brilhar, você nasce para isso!
+                      Entre com suas credenciais para Brilhar, Você nasceu para isso!
                     </div>
                     <p className="text-[13px] text-white/50">Inicie sua jornada rumo ao sucesso</p>
                   </div>
