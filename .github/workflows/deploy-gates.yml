@@ -1,9 +1,10 @@
 name: Deploy Gates
 
 # Quality gates antes do deploy em main.
-# Rodam em paralelo. Se QUALQUER UM falhar, bloqueia o pipeline.
+# Rodam em paralelo onde possível. Se QUALQUER UM falhar, bloqueia o pipeline.
 #
-# Ordem dos gates (paralelo):
+# Ordem dos gates:
+#  0. ssot-gate      - SSOT Supabase (project ID canônico) — NOVO, bloqueia todos os outros
 #  1. lint+tsc       - codigo passa lint e typecheck
 #  2. unit-tests     - vitest passa
 #  3. e2e-smoke      - playwright smoke test (login + dashboard)
@@ -22,13 +23,34 @@ permissions:
   contents: read
 
 jobs:
+  # ============================================================
+  # GATE 0: SSOT Supabase — DEVE PASSAR antes de todos os outros
+  # Previne reincidência do incidente 401 de produção (2026-06-11).
+  # Lovable reverteu CURRENT_PROJECT_ID 6+ vezes sem que CI detectasse.
+  # ============================================================
+  ssot-gate:
+    name: Gate 0 - SSOT Supabase (project ID canônico)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Validate SSOT — client.ts deve apontar para doufsxqlfjyuvxuezpln
+        run: node scripts/validate-supabase-config.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
   lint-typecheck:
     name: Gate 1 - Lint + TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [ssot-gate]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -40,9 +62,10 @@ jobs:
     name: Gate 2 - Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    needs: [ssot-gate]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -60,9 +83,10 @@ jobs:
     name: Gate 3 - E2E Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [ssot-gate]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -88,12 +112,13 @@ jobs:
     name: Gate 4 - Lighthouse CI
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [ssot-gate]
     env:
       VITE_SUPABASE_URL: https://placeholder.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: lighthouse-placeholder-key
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -110,9 +135,10 @@ jobs:
     name: Gate 5 - SEO Sanity Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: [ssot-gate]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
       - name: Run SEO sanity check
@@ -124,8 +150,8 @@ jobs:
     timeout-minutes: 10
     needs: [lint-typecheck, seo-sanity]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
