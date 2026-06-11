@@ -1161,6 +1161,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
           role="status"
+          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -1257,6 +1258,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400"
           role="status"
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
