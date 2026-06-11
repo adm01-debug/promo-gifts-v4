@@ -1,11 +1,28 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { config } from 'dotenv';
 
-// Load .env file into process.env to catch variables that are not explicitly passed but exist in the project root
-if (existsSync('.env')) {
-  config();
+// Manual .env parsing to avoid dependency on 'dotenv' during build
+function loadEnv() {
+  if (existsSync('.env')) {
+    const content = readFileSync('.env', 'utf-8');
+    content.split('\n').forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        // Remove quotes if present
+        if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+          value = value.substring(1, value.length - 1);
+        } else if (value.length > 0 && value.charAt(0) === "'" && value.charAt(value.length - 1) === "'") {
+          value = value.substring(1, value.length - 1);
+        }
+        process.env[key] = value;
+      }
+    });
+  }
 }
+
+loadEnv();
 
 const CLIENT_PATH = join(process.cwd(), 'src/integrations/supabase/client.ts');
 // SSOT: projeto Gold/Medallion de produção (doufsxqlfjyuvxuezpln).
