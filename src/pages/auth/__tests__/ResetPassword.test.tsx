@@ -123,7 +123,9 @@ describe('ResetPassword page flow', () => {
         expect.objectContaining({
           variant: 'destructive',
           title: 'Erro ao redefinir senha',
-          description: 'Token expirado',
+          // Hardening a0fd9de: mensagens de erro do fornecedor não vazam no toast;
+          // o componente exibe copy genérica fixa.
+          description: 'Não foi possível redefinir sua senha. O link pode ter expirado.',
         }),
       );
     });
