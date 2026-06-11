@@ -125,6 +125,25 @@ export default function Auth() {
     emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
+  const handleSocialError = useCallback(
+    (message: string, opts?: { autoFallback?: boolean }) => {
+      logger.error('[AUTH_SOCIAL_FAILED] OAuth initialization failed:', { message });
+      const nextError = resolveOAuthError(message);
+      setSocialError({
+        ...nextError,
+        code: nextError.code ?? 'OAUTH_INIT_ERROR',
+      });
+
+      if (opts?.autoFallback) {
+        toast({
+          title: 'Google indisponível',
+          description: 'Não conseguimos conectar ao Google. Use seu e-mail para entrar.',
+        });
+        focusEmailFallback();
+      }
+    },
+    [toast, focusEmailFallback],
+  );
 
   // Fetch visitor IP and geolocation
   useEffect(() => {
