@@ -49,7 +49,10 @@ try {
       // The client.ts already has CANONICAL_ANON_KEY, we could compare if envKey is significantly different
       // but the main goal is ensuring the URL matches the SSOT project.
     }
+  } else {
+    console.log('⚠️  No VITE_SUPABASE_URL found in environment, falling back to CANONICAL_URL validation.');
   }
+
 
   console.log('✅ Supabase connection is correctly pointing to the current project.');
 } catch (error) {
