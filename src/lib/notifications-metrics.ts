@@ -25,6 +25,8 @@
  *   para evitar confusão de ordering e potenciais problemas futuros de refactoring.
  */
 
+import { logger } from '@/lib/logger';
+
 export type TriggerSource = 'hover' | 'focus' | 'drawer-open';
 export type FetchSource = 'initial' | 'polling' | 'prefetch' | 'mutation' | 'filter-change';
 export type BadgeRenderSource = 'cache' | 'network';
@@ -182,8 +184,7 @@ const throttleByEvent = new Map<string, ThrottleEntry>();
 
 function emit(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  // eslint-disable-next-line no-console
-  console.log(`%c[notifications-metrics:${event}]`, 'color:#0891b2;font-weight:600', payload);
+  logger.debug(`[notifications-metrics:${event}]`, payload);
 }
 
 function debugLog(event: string, payload: Record<string, unknown>) {
@@ -323,7 +324,7 @@ export const notificationsMetrics = {
     bucket.fetches += 1;
     if (!withinTtl) {
       state.triggerToFetchTtlBreaches += 1;
-      console.warn(
+      logger.warn(
         `[notifications-metrics] trigger→fetch exceeded TTL window (${totalMs}ms >= ${TRIGGER_TO_FETCH_TTL_MS}ms)`,
         full,
       );

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { logger } from '@/lib/logger';
 export interface OnboardingStep {
   id: string;
   title: string;
@@ -149,7 +150,7 @@ export function useOnboarding() {
           .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching onboarding:', error);
+          logger.error('Error fetching onboarding:', error);
           setIsLoading(false);
           return;
         }
@@ -186,7 +187,7 @@ export function useOnboarding() {
               .single();
 
             if (insertError) {
-              console.error('Error creating onboarding:', insertError);
+              logger.error('Error creating onboarding:', insertError);
             } else if (newData) {
               setOnboardingId(newData.id);
               setShowTour(true);
@@ -194,7 +195,7 @@ export function useOnboarding() {
           }
         }
       } catch (err) {
-        console.error('Error in onboarding:', err);
+        logger.error('Error in onboarding:', err);
       } finally {
         setIsLoading(false);
       }

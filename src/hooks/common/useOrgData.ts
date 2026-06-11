@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 type PublicTables = Database['public']['Tables'];
 type TableName = keyof PublicTables;
 type DynamicTableName = TableName | (string & {});
@@ -48,7 +49,7 @@ export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName
       const { data, error } = await query;
 
       if (error) {
-        console.error(`Error fetching ${tableName}:`, error);
+        logger.error(`Error fetching ${tableName}:`, error);
         throw error;
       }
 

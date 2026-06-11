@@ -11,6 +11,7 @@ import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 
+import { logger } from '@/lib/logger';
 export interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
@@ -235,7 +236,7 @@ export const ProductGrid = memo(function ProductGrid({
 
   useEffect(() => {
     if (colorsError) {
-      console.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
+      logger.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
     }
   }, [colorsError, idsNeedingColors]);
 

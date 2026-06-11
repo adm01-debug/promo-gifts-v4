@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
 import type { ExternalVariantStock } from '@/hooks/products';
 
@@ -43,28 +44,39 @@ export function QuickAddToQuote({
   const [quantity, setQuantity] = useState(minQuantity);
   const [isOpen, setIsOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [showSelector, setShowSelector] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ExternalVariantStock | null | undefined>(
     undefined,
   );
-  const { activeCart, addToActiveCart } = useSellerCartContext();
+  const { activeCart, carts, addToActiveCart, canCreateCart } = useSellerCartContext();
 
   const handleVariantSelect = (v: ExternalVariantStock | null) => {
     setSelectedVariant(v);
   };
 
-  const handleAddToQuote = () => {
-    addToActiveCart({
-      product_id: productId,
-      product_name: productName,
-      product_sku: productSku,
-      product_image_url: selectedVariant?.selected_thumbnail || productImageUrl,
-      product_price: productPrice,
-      quantity,
-      color_name: selectedVariant?.color_name || undefined,
-      color_hex: selectedVariant?.color_hex || undefined,
-    });
+  const handleAddToQuote = (cartId?: string) => {
+    // Se temos múltiplos carrinhos e nenhum foi explicitamente passado, mostramos o seletor
+    if (!cartId && carts.length > 1 && !showSelector) {
+      setShowSelector(true);
+      return;
+    }
+
+    addToActiveCart(
+      {
+        product_id: productId,
+        product_name: productName,
+        product_sku: productSku,
+        product_image_url: selectedVariant?.selected_thumbnail || productImageUrl,
+        product_price: productPrice,
+        quantity,
+        color_name: selectedVariant?.color_name || undefined,
+        color_hex: selectedVariant?.color_hex || undefined,
+      },
+      cartId,
+    );
 
     setIsAdded(true);
+    setShowSelector(false);
     setTimeout(() => {
       setIsAdded(false);
       setIsOpen(false);
@@ -153,6 +165,18 @@ export function QuickAddToQuote({
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
+        <CartSelectorDialog
+          open={showSelector}
+          onOpenChange={setShowSelector}
+          carts={carts}
+          productName={productName}
+          onSelect={(id) => handleAddToQuote(id)}
+          onCreateNew={() => {
+            setShowSelector(false);
+            setSelectedVariant(undefined);
+          }}
+          canCreateMore={canCreateCart}
+        />
         <button
           aria-label="Fechar"
           className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"

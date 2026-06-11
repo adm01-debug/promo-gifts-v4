@@ -36,7 +36,7 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (item: AddToCartInput) => void;
+  addToActiveCart: (item: AddToCartInput, cartId?: string) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
@@ -133,25 +133,34 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const addToActiveCart = useCallback(
-    (item: AddToCartInput) => {
-      if (!resolvedActiveCartId) {
+    (item: AddToCartInput, cartId?: string) => {
+      const targetId = cartId || resolvedActiveCartId;
+
+      if (!targetId) {
         toast.error('Selecione uma empresa antes de adicionar produtos', {
           description: 'Crie um carrinho vinculado a uma empresa primeiro.',
         });
         return;
       }
+
+      const targetCart = carts.find((c) => c.id === targetId);
+
       addItem.mutate(
-        { cartId: resolvedActiveCartId, item },
+        { cartId: targetId, item },
         {
           onSuccess: () => {
             toast.success(`${item.product_name} adicionado ao carrinho`, {
-              description: activeCart?.company_name,
+              description: targetCart?.company_name,
             });
+            // Update active cart if we explicitly added to a specific one
+            if (cartId && cartId !== resolvedActiveCartId) {
+              setActiveCartId(cartId);
+            }
           },
         },
       );
     },
-    [resolvedActiveCartId, addItem, activeCart],
+    [resolvedActiveCartId, addItem, carts],
   );
 
   const removeItem = useCallback(

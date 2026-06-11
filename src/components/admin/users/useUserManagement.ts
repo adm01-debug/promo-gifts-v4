@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -64,7 +65,7 @@ export function useUserManagement() {
 
       setUsers(usersWithRoles);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
       toast.error('Erro ao carregar usuários');
     } finally {
       setIsLoading(false);
@@ -89,7 +90,7 @@ export function useUserManagement() {
             : 'Agente';
       toast.success(`Usuário alterado para ${label}`);
     } catch (error) {
-      console.error('Error updating role:', error);
+      logger.error('Error updating role:', error);
       toast.error('Erro ao atualizar permissão');
     } finally {
       setUpdatingUserId(null);
@@ -158,7 +159,7 @@ export function useUserManagement() {
       setUsers((prev) => prev.filter((u) => u.user_id !== userId));
       return true;
     } catch (error: unknown) {
-      console.error('Error deleting user:', error);
+      logger.error('Error deleting user:', error);
       toast.error('Erro ao excluir usuário', {
         description: 'Não foi possível excluir o usuário.',
       });
@@ -196,7 +197,7 @@ export function useUserManagement() {
       toast.success('Usuário atualizado com sucesso');
       return true;
     } catch (error: unknown) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       toast.error('Erro ao atualizar usuário', {
         description: 'Não foi possível atualizar o usuário.',
       });
@@ -225,7 +226,7 @@ export function useUserManagement() {
       toast.success('Foto atualizada com sucesso');
       return publicUrl;
     } catch (error: unknown) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       toast.error('Erro ao enviar foto', {
         description: 'Não foi possível enviar a foto de perfil.',
       });

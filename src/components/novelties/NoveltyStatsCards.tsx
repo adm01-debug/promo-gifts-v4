@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { logger } from '@/lib/logger';
 function useCountUp(end: number, duration: number = 800) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -155,7 +156,7 @@ export function NoveltyStatsCards() {
   }
 
   if (error) {
-    console.error('Erro ao carregar estatísticas:', error);
+    logger.error('Erro ao carregar estatísticas:', error);
   }
 
   return (

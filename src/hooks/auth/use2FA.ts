@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import * as OTPAuth from 'otpauth';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
+import { logger } from '@/lib/logger';
 interface TwoFactorSettings {
   id: string;
   user_id: string;
@@ -35,7 +36,7 @@ export function use2FA(targetUserId?: string) {
       if (error) throw error;
       setSettings(data as TwoFactorSettings | null);
     } catch (error) {
-      console.error('Error fetching 2FA settings:', error);
+      logger.error('Error fetching 2FA settings:', error);
     } finally {
       setIsLoading(false);
     }

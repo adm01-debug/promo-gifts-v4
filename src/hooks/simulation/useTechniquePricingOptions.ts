@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { dbInvoke } from '@/lib/db/postgrest';
 
+import { logger } from '@/lib/logger';
 interface PriceTableEntry {
   id: string;
   composed_code: string;
@@ -70,7 +71,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
         });
         setTables((result.records || []) as PriceTableEntry[]);
       } catch (err) {
-        console.error('Error fetching technique pricing tables:', err);
+        logger.error('Error fetching technique pricing tables:', err);
         setTables([]);
       } finally {
         setIsLoading(false);
@@ -167,7 +168,7 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
             });
             if (result.records?.length) results[code] = result.records as PriceTableEntry[];
           } catch (err) {
-            console.error(`Error fetching pricing for ${code}:`, err);
+            logger.error(`Error fetching pricing for ${code}:`, err);
           }
         }),
       );

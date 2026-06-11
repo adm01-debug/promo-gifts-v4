@@ -157,9 +157,9 @@ export function useSuppliersManager() {
           .order('name', { ascending: true })
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
-        // Cast necessário: select explícito de colunas faz supabase-js estreitar o tipo para as
-        // colunas listadas; campos não selecionados (ex: logradouro, instagram) ficam fora do
-        // tipo inferido mesmo sendo null no DB. Restaura contrato original de Supplier[].
+        // O parser do select tipa a linha só com as 40 colunas listadas;
+        // os campos sociais/endereço do Supplier não são colunas do DB
+        // (preenchidos em runtime a partir dos JSONs address/contacts).
         all.push(...(records as unknown as Supplier[]));
         if (records.length < pageSize) break; // last page
       }

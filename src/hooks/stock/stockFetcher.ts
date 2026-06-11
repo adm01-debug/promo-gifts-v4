@@ -1,7 +1,7 @@
 /**
  * stockFetcher — Busca paginada e processamento de dados de estoque
  */
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import {
   type VariantStock,
@@ -92,17 +92,16 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   const resolvedTable = TABLE_ALIASES[table] ?? table;
 
   while (all.length < maxRecords) {
-    let query = supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from(resolvedTable as any)
-      .select(select, offset === 0 ? { count: 'exact' } : undefined);
+    let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(
+      select,
+      offset === 0 ? { count: 'exact' } : undefined,
+    );
 
     if (filters) {
       for (const [col, val] of Object.entries(filters)) {
         if (val === null) query = query.is(col, null);
         else if (Array.isArray(val)) query = query.in(col, val);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        else query = query.eq(col, val as any);
+        else query = query.eq(col, val);
       }
     }
 
@@ -122,7 +121,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
         break;
       }
       const errorMsg = `Erro ao buscar ${table}: ${error.message}`;
-      console.error(`[Stock] ${errorMsg}`, error);
+      logger.error(`[Stock] ${errorMsg}`, error);
       throw new Error(errorMsg);
     }
 

@@ -39,7 +39,7 @@ export function migratePayload<T>(
   }
 
   if (versioned.version > currentVersion) {
-    console.warn(
+    logger.warn(
       '[AutoSave] Future payload version detected, skipping restore to prevent state corruption',
     );
     return null;
@@ -83,7 +83,7 @@ export function useAutoSaveQuote<T>({
           lastSavedRef.current = JSON.stringify(migrated.data);
         }
       } catch (e) {
-        console.error('Failed to parse/migrate autosave data', e);
+        logger.error('Failed to parse/migrate autosave data', e);
       }
     }
   }, [enabled, key]);

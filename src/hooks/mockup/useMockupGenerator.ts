@@ -40,6 +40,7 @@ import {
   deleteMockupFromDb,
 } from '@/hooks/mockup/mockupGenerationService';
 
+import { logger } from '@/lib/logger';
 export type { Technique, GeneratedMockup };
 
 export function useMockupGenerator() {
@@ -264,7 +265,7 @@ export function useMockupGenerator() {
           draftNoticeTimeoutRef.current = setTimeout(() => setShowDraftRestoredNotice(false), 5000);
         }
       } catch (err) {
-        console.error('Erro ao restaurar rascunho:', err);
+        logger.error('Erro ao restaurar rascunho:', err);
       } finally {
         setHasDraftRestored(true);
         isRestoringDraft.current = false;
@@ -358,7 +359,7 @@ export function useMockupGenerator() {
       );
       setTechniques(techniquesData);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados. Tente novamente.');
     } finally {
       setIsLoadingData(false);
@@ -371,7 +372,7 @@ export function useMockupGenerator() {
       const data = await fetchMockupHistory(user?.id);
       setMockupHistory(data);
     } catch (error) {
-      console.error('Error fetching history:', error);
+      logger.error('Error fetching history:', error);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -439,7 +440,7 @@ export function useMockupGenerator() {
           processedFile = await ensureSupportedFormat(file);
           toast.success('Imagem convertida para PNG com sucesso!');
         } catch (err) {
-          console.error('Conversion error:', err);
+          logger.error('Conversion error:', err);
           toast.error('Erro ao converter imagem. Tente usar PNG ou JPG.');
           return;
         }
@@ -565,7 +566,7 @@ export function useMockupGenerator() {
         toast.success(`${result.batchResults.length} mockups gerados com sucesso!`);
       }
     } catch (error: unknown) {
-      console.error('Error generating mockup:', error);
+      logger.error('Error generating mockup:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao gerar mockup';
       setGenerationError(errorMessage);
       toast.error(errorMessage);
@@ -590,7 +591,7 @@ export function useMockupGenerator() {
       setMockupHistory((prev) => prev.filter((m) => m.id !== mockupToDelete));
       toast.success('Mockup excluído');
     } catch (error) {
-      console.error('Error deleting mockup:', error);
+      logger.error('Error deleting mockup:', error);
       toast.error('Erro ao excluir mockup');
     } finally {
       setDeleteDialogOpen(false);

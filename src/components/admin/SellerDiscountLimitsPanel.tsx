@@ -37,12 +37,12 @@ export function SellerDiscountLimitsPanel() {
       );
       const ids = sellers.map((p) => p.user_id);
       const { data: limits } = await supabase
-        .from('seller_discount_limits' as never)
+        .from('seller_discount_limits')
         .select('user_id, max_discount_percent')
         .in('user_id', ids);
 
       const byId = new Map<string, number>(
-        ((limits as Array<{ user_id: string; max_discount_percent: number }>) || []).map((l) => [
+        ((limits ?? []) as Array<{ user_id: string; max_discount_percent: number }>).map((l) => [
           l.user_id,
           Number(l.max_discount_percent),
         ]),
@@ -60,8 +60,7 @@ export function SellerDiscountLimitsPanel() {
     mutationFn: async ({ userId, percent }: { userId: string; percent: number }) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error('Não autenticado');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('seller_discount_limits')
         .upsert(
           { user_id: userId, max_discount_percent: percent, set_by: u.user.id },

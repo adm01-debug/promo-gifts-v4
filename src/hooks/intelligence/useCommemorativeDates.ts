@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 // Tipos baseados nas respostas das RPCs
 export interface CommemorativeDate {
   id: string;
@@ -62,7 +63,7 @@ async function callCommemorativeDatesAPI<T>(
   });
 
   if (error) {
-    console.error(`Error calling commemorative-dates/${action}:`, error);
+    logger.error(`Error calling commemorative-dates/${action}:`, error);
     throw new Error(error.message || 'Erro ao buscar datas comemorativas');
   }
 

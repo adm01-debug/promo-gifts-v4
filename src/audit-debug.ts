@@ -8,8 +8,6 @@
 
 import { supabase } from './integrations/supabase/client';
 
-type AuditTable = 'profiles' | 'user_roles' | 'products' | 'categories' | 'suppliers';
-
 async function performTechnicalAudit() {
   console.log('--- Iniciando Auditoria Técnica Profunda ---');
 
@@ -25,7 +23,7 @@ async function performTechnicalAudit() {
       session ? `Sessão ativa: ${session.user.email}` : 'Nenhuma sessão ativa',
     );
 
-    const { error: tableError } = await supabase
+    const { data: _tableData, error: tableError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
     if (tableError) throw tableError;
@@ -35,10 +33,14 @@ async function performTechnicalAudit() {
   }
 
   // 2. Verificação de Tabelas Essenciais
-  const tables: AuditTable[] = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
+  // Audit checks a known list of base tables; cast bypasses Supabase's view-only from() overloads.
+  type AuditTable = Parameters<(typeof supabase)['from']>[0];
+  const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
-      const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+      const { error } = await supabase
+        .from(table as AuditTable)
+        .select('count', { count: 'exact', head: true });
       if (error) console.warn(`⚠️ Tabela ${table}: Erro ou Acesso Negado (${error.code})`);
       else console.log(`✅ Tabela ${table}: Acessível`);
     } catch (err) {
@@ -58,5 +60,5 @@ async function performTechnicalAudit() {
 
 // Para rodar no console do devtools se necessário
 (
-  window as unknown as { performTechnicalAudit: typeof performTechnicalAudit }
+  window as unknown as Window & { performTechnicalAudit: () => Promise<void> }
 ).performTechnicalAudit = performTechnicalAudit;

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+import { logger } from '@/lib/logger';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -84,7 +85,7 @@ export function useDashboardWidgets({
         const stored = localStorage.getItem(`dashboard_${storageKey}`);
         if (stored) return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to load dashboard widgets:', e);
+        logger.error('Failed to load dashboard widgets:', e);
       }
     }
     return defaultWidgets;
@@ -98,7 +99,7 @@ export function useDashboardWidgets({
       try {
         localStorage.setItem(`dashboard_${storageKey}`, JSON.stringify(widgets));
       } catch (e) {
-        console.error('Failed to save dashboard widgets:', e);
+        logger.error('Failed to save dashboard widgets:', e);
       }
     }
   }, [widgets, storageKey]);

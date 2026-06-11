@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { logger } from '@/lib/logger';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
 
 interface QuoteDraft {
@@ -161,7 +162,7 @@ export function QuoteAutoSave({
         setStatus('idle');
       }, 2000);
     } catch (error) {
-      console.error('Erro ao salvar draft:', error);
+      logger.error('Erro ao salvar draft:', error);
       setStatus('error');
     }
   }, [storageKey, quoteId]);

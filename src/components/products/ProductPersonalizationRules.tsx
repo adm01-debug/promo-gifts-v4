@@ -334,7 +334,7 @@ export function ProductPersonalizationRules({
       });
       toast.success('Excel exportado com sucesso!');
     } catch (error) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast.error('Erro ao exportar Excel');
     }
   };
@@ -348,7 +348,7 @@ export function ProductPersonalizationRules({
       });
       toast.success('PDF exportado com sucesso!');
     } catch (error) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast.error('Erro ao exportar PDF');
     }
   };

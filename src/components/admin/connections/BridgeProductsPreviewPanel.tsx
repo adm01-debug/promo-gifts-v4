@@ -149,7 +149,8 @@ export function BridgeProductsPreviewPanel() {
             onClick={() => {
               void fetchAll({
                 filters: buildFilters(),
-                select: 'id,name,sku,sale_price,stock_quantity,is_active,brand,supplier_id,updated_at',
+                select:
+                  'id,name,sku,sale_price,stock_quantity,is_active,brand,supplier_id,updated_at',
                 orderBy: { column: 'updated_at', ascending: false },
                 limit: pageSize,
                 offset: (page - 1) * pageSize,
@@ -339,8 +340,10 @@ export function BridgeProductsPreviewPanel() {
                       </td>
                       <td className="px-3 py-2 font-mono text-xs">{p.sku ?? '—'}</td>
                       <td className="px-3 py-2 text-xs">{p.brand ?? '—'}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtCurrency(p.sale_price)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{p.stock ?? '—'}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {fmtCurrency(p.sale_price ?? p.unit_price)}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{p.stock_qty ?? '—'}</td>
                       <td className="px-3 py-2 text-center">
                         {p.is_active === true ? (
                           <Badge variant="default" className="text-[10px]">

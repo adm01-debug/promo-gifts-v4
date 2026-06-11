@@ -2405,7 +2405,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
     expect(cards).toHaveLength(3);
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2417,7 +2416,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     );
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2430,7 +2428,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     );
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     // Novo contrato: hasValidScores = false → winnerIndex = -1 → sem badge em qualquer card
     expect(within(cards[0]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
@@ -2446,7 +2443,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     ];
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2465,7 +2461,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
 
       const cards = screen.getAllByRole("listitem");
       expect(cards).toHaveLength(count);
-      const { within } = require("@testing-library/react");
       expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
       for (let i = 1; i < count; i++) {
         expect(within(cards[i]).queryByLabelText("Melhor score")).toBeNull();
@@ -3477,104 +3472,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     expect(onSelectWinner).not.toHaveBeenCalled();
   });
 
-  it.skip("roving tabindex: apenas card ativo tem tabIndex=0; demais cards tabIndex=-1; ativo migra ao mudar activeIndex (PENDENTE: componente não usa roving tabindex; outros testes desta suíte requerem Tab atravessar todos os cards)", async () => {
-    const user = userEvent.setup();
-    const navVariations: VariationItem[] = [
-      { id: "rv-1", imageUrl: "https://example.com/rv1.png", qualityScore: 80 } as VariationItem,
-      { id: "rv-2", imageUrl: "https://example.com/rv2.png", qualityScore: 70 } as VariationItem,
-      { id: "rv-3", imageUrl: "https://example.com/rv3.png", qualityScore: 90 } as VariationItem,
-    ];
-
-    function ControlledWrapper() {
-      const [activeIndex, setActiveIndex] = React.useState(0);
-      return (
-        <>
-          <button type="button" data-testid="before">Antes</button>
-          <MagicUpVariationComparator
-            variations={navVariations}
-            activeIndex={activeIndex}
-            onSelect={setActiveIndex}
-            onSelectWinner={vi.fn()}
-          />
-          <button type="button" data-testid="after">Depois</button>
-        </>
-      );
-    }
-
-    render(<ControlledWrapper />);
-    const total = navVariations.length;
-
-    const getCardTabIndices = (): number[] => {
-      return Array.from({ length: total }, (_, i) => {
-        const card = screen.getByRole("button", {
-          name: new RegExp(`^Selecionar variação ${i + 1}`),
-        });
-        return card.tabIndex;
-      });
-    };
-
-    const expectRovingState = (oneBasedActiveIndex: number) => {
-      const tabIndices = getCardTabIndices();
-      const zeros = tabIndices.filter((t) => t === 0);
-      expect(zeros).toHaveLength(1);
-      expect(tabIndices[oneBasedActiveIndex - 1]).toBe(0);
-      // eslint-disable-next-line no-restricted-syntax
-      tabIndices.forEach((t, i) => {
-        if (i !== oneBasedActiveIndex - 1) {
-          expect(t).toBe(-1);
-        }
-      });
-    };
-
-    // Estado inicial: card 1 ativo
-    expectRovingState(1);
-
-    // Tab a partir do botão "before" entra no card ATIVO (card 1)
-    const beforeBtn = screen.getByTestId("before");
-    beforeBtn.focus();
-    expect(beforeBtn).toHaveFocus();
-    await user.tab();
-    const card1 = screen.getByRole("button", { name: /^Selecionar variação 1/ });
-    expect(card1).toHaveFocus();
-
-    // Tab a partir do card ativo SAI do grupo (não cicla para outro card de seleção)
-    await user.tab();
-    const cardsAfterTab = screen.getAllByRole("button", { name: /^Selecionar variação/ });
-    // eslint-disable-next-line no-restricted-syntax
-    cardsAfterTab.forEach((c) => {
-      expect(c).not.toHaveFocus();
-    });
-
-    // ArrowRight: card 1 → card 2; tabIndex migra
-    card1.focus();
-    await user.keyboard("{ArrowRight}");
-    expectRovingState(2);
-
-    // ArrowRight: card 2 → card 3; tabIndex migra
-    await user.keyboard("{ArrowRight}");
-    expectRovingState(3);
-
-    // End: → último
-    await user.keyboard("{End}");
-    expectRovingState(total);
-
-    // Home: → primeiro
-    await user.keyboard("{Home}");
-    expectRovingState(1);
-
-    // Após Home, Tab a partir de "before" deve entrar no card 1 (ativo)
-    beforeBtn.focus();
-    await user.tab();
-    expect(card1).toHaveFocus();
-
-    // Mude activeIndex para 2 via setas e valide que Tab agora entra no card 2
-    await user.keyboard("{ArrowRight}");
-    expectRovingState(2);
-    beforeBtn.focus();
-    await user.tab();
-    const card2 = screen.getByRole("button", { name: /^Selecionar variação 2/ });
-    expect(card2).toHaveFocus();
-  });
 
   describe("ativação por Enter/Espaço nos botões", () => {
     const navVariations: VariationItem[] = [

@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 export type TelemetryEventType = 'error' | 'performance' | 'ux_action' | 'api_fail';
 
 export interface TelemetryPayload {
@@ -95,10 +96,10 @@ class TelemetryService {
       const { error } = await supabase.from('frontend_telemetry').insert(batch);
       if (error) {
         // Não re-bufferiza pra evitar loop infinito se erro for RLS/quota
-        console.warn('[Telemetry] Batch insert failed:', error.message);
+        logger.warn('[Telemetry] Batch insert failed:', error.message);
       }
     } catch (e) {
-      console.error('[Telemetry] Critical batch failure:', e);
+      logger.error('[Telemetry] Critical batch failure:', e);
     } finally {
       this.flushing = false;
       // Se ainda tem coisa no buffer, agenda próxima
@@ -109,7 +110,7 @@ class TelemetryService {
   async log(payload: TelemetryPayload): Promise<void> {
     try {
       if (import.meta.env.DEV) {
-        console.warn(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
+        logger.warn(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
       }
 
       if (!this.shouldSample(payload.event_type)) return;
@@ -131,7 +132,7 @@ class TelemetryService {
       }
     } catch (e) {
       // Telemetria nunca deve quebrar o app
-      console.error('[Telemetry] Critical failure:', e);
+      logger.error('[Telemetry] Critical failure:', e);
     }
   }
 

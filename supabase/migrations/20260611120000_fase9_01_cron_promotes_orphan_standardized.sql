@@ -1,0 +1,11 @@
+-- ════════════════════════════════════════════════════════════════
+-- MEDALLION — Fase 9 / Item A: robustez do cron de ingestão
+-- ════════════════════════════════════════════════════════════════
+-- process_pending_batches passa a ter um 2º passo: promover staging
+-- 'standardized' ÓRFÃO (sem raw pendente) — pads E variantes cujo pai já
+-- está promoted (caso de race observado em validação; antes ficava preso
+-- até o próximo import do fornecedor).
+-- Inclui hotfix de ambiguidade (OUT-param `status` × coluna `status`),
+-- pego em smoke test: colunas qualificadas (pp./pv./r.).
+-- Corpo final consolidado aplicado via MCP em fase9_01b + fase9_02.
+-- (Ver 20260611120100 para o corpo definitivo com os fixes de promoção.)

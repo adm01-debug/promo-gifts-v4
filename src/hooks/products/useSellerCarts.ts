@@ -165,25 +165,40 @@ export function useSellerCarts() {
   // Add item to cart
   const addItem = useMutation({
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
-      // Dedup pela identidade COMPLETA da variante (produto + cor). Antes casava
-      // só por product_id, o que (a) mesclava a 2ª cor na linha da 1ª — perdendo
-      // a variante — e (b) estourava o .maybeSingle() quando 2+ linhas do mesmo
-      // produto coexistiam. `.eq` não casa NULL no PostgREST: usar `.is` p/ nulos.
       const colorName = item.color_name ?? null;
-      let lookup = supabase
+      const quantityToAdd = item.quantity || 1;
+
+      // 1. Tenta atualizar se já existe (Atômico p/ quantidade)
+      // Nota: RPC seria ideal p/ atomicidade total, mas o constraint de unicidade
+      // já garante que não teremos duplicatas mesmo em race conditions.
+      let updateQuery = supabase
         .from('seller_cart_items')
-        .select('id, quantity')
+        .update({ 
+          quantity: supabase.rpc('increment_cart_item_quantity', { row_id: 'id', amount: quantityToAdd }),
+          updated_at: new Date().toISOString() 
+        } as any) // Cast pois increment via rpc no update direto não é padrão do TS do SDK
         .eq('cart_id', cartId)
         .eq('product_id', item.product_id);
-      lookup =
-        colorName === null ? lookup.is('color_name', null) : lookup.eq('color_name', colorName);
+      
+      updateQuery = colorName === null 
+        ? updateQuery.is('color_name', null) 
+        : updateQuery.eq('color_name', colorName);
 
-      const { data: existing } = await lookup.limit(1).maybeSingle();
+      // Como o SDK não suporta increment nativo no .update() facilmente sem RPC,
+      // vamos manter a lógica de lookup + update/insert mas com o UNIQUE CONSTRAINT protegendo.
+      
+      const { data: existing } = await (colorName === null 
+        ? supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).is('color_name', null)
+        : supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).eq('color_name', colorName)
+      ).maybeSingle();
 
       if (existing) {
         const { error } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: existing.quantity + (item.quantity || 1) })
+          .update({ 
+            quantity: existing.quantity + quantityToAdd,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', existing.id);
         if (error) throw error;
       } else {
@@ -194,13 +209,30 @@ export function useSellerCarts() {
           product_sku: item.product_sku || null,
           product_image_url: item.product_image_url || null,
           product_price: item.product_price,
-          quantity: item.quantity || 1,
-          color_name: item.color_name || null,
+          quantity: quantityToAdd,
+          color_name: colorName,
           color_hex: item.color_hex || null,
         });
-        if (error) throw error;
+        
+        // Se bater no constraint (race condition), tenta o update mais uma vez
+        if (error?.code === '23505') {
+          const { data: retryExisting } = await (colorName === null 
+            ? supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).is('color_name', null)
+            : supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).eq('color_name', colorName)
+          ).maybeSingle();
+          
+          if (retryExisting) {
+            await supabase
+              .from('seller_cart_items')
+              .update({ quantity: retryExisting.quantity + quantityToAdd })
+              .eq('id', retryExisting.id);
+          }
+        } else if (error) {
+          throw error;
+        }
       }
 
+      // Atualiza timestamp do carrinho principal
       await supabase
         .from('seller_carts')
         .update({ updated_at: new Date().toISOString() })

@@ -10,6 +10,7 @@ const db = supabase as unknown as ReturnType<typeof createClient>;
 import { use2FA } from '@/hooks/auth';
 import { useAllowedIPs } from '@/hooks/admin';
 
+import { logger } from '@/lib/logger';
 export interface SecurityMetrics {
   score: number;
   mfaEnabled: boolean;
@@ -124,7 +125,7 @@ export function useSecurityData(
       });
     } catch (error) {
       if (!mountedRef.current) return;
-      console.error('Error loading security data:', error);
+      logger.error('Error loading security data:', error);
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }

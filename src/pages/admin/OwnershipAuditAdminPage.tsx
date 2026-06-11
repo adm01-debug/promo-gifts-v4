@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { RlsIntegrationTestsDialog } from '@/components/admin/RlsIntegrationTestsDialog';
 import { OwnershipRepairDialog } from '@/components/admin/OwnershipRepairDialog';
 
+import { logger } from '@/lib/logger';
 interface ReportDetail {
   table: string;
   owner_column: string;
@@ -102,7 +103,7 @@ export default function OwnershipAuditAdminPage() {
       );
       await qc.invalidateQueries({ queryKey: ['ownership-audit-reports'] });
     } catch (e) {
-      console.error(e);
+      logger.error('Ownership audit run failed', e);
       toast.error(`Falha ao executar auditoria: ${(e as Error).message}`);
     } finally {
       setRunning(false);
@@ -140,7 +141,7 @@ export default function OwnershipAuditAdminPage() {
       }
       toast.success(`Matriz RLS exportada (${format.toUpperCase()}).`);
     } catch (e) {
-      console.error(e);
+      logger.error('RLS matrix export failed', e);
       toast.error(`Falha ao exportar matriz: ${(e as Error).message}`);
     }
   }

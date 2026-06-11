@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import type { FilterState } from './FilterPanel';
 
+import { logger } from '@/lib/logger';
 export interface FilterPreset {
   id: string;
   name: string;
@@ -54,7 +55,7 @@ export function useFilterPresets(context: string = 'catalog') {
         })),
       );
     } catch (err) {
-      console.error('Error fetching filter presets:', err);
+      logger.error('Error fetching filter presets:', err);
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +118,7 @@ export function useFilterPresets(context: string = 'catalog') {
         setPresets((prev) => [newPreset, ...prev]);
         return newPreset;
       } catch (err) {
-        console.error('Error saving preset:', err);
+        logger.error('Error saving preset:', err);
         toast.error('Erro ao salvar preset');
         return null;
       }
@@ -161,7 +162,7 @@ export function useFilterPresets(context: string = 'catalog') {
         setPresets((prev) => prev.map((p) => (p.id === id ? updated : p)));
         return updated;
       } catch (err) {
-        console.error('Error updating preset:', err);
+        logger.error('Error updating preset:', err);
         toast.error('Erro ao atualizar preset');
         return null;
       }
@@ -178,7 +179,7 @@ export function useFilterPresets(context: string = 'catalog') {
       setPresets((prev) => prev.filter((p) => p.id !== id));
       return true;
     } catch (err) {
-      console.error('Error deleting preset:', err);
+      logger.error('Error deleting preset:', err);
       toast.error('Erro ao excluir preset');
       return false;
     }
@@ -208,7 +209,7 @@ export function useFilterPresets(context: string = 'catalog') {
 
         setPresets((prev) => prev.map((p) => ({ ...p, is_default: p.id === id })));
       } catch (err) {
-        console.error('Error setting default preset:', err);
+        logger.error('Error setting default preset:', err);
         toast.error('Erro ao definir preset padrão');
       }
     },

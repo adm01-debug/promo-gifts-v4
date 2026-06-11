@@ -7,6 +7,7 @@ import { useGlobalErrorCatcher } from '@/hooks/ui/useErrorHandler';
 import { markBootSuccessful } from '@/lib/chunk-recovery';
 import { loadThemeConfig, applyRadius, applyThemePreset } from '@/lib/theme-presets';
 
+import { logger } from '@/lib/logger';
 /**
  * useAppBootstrap centralizes global initialization used by App.tsx.
  */
@@ -59,7 +60,7 @@ export function useAppBootstrap() {
       import('@/hooks/products/useCatalogPrefetch')
         .then(({ prefetchCatalog }) => prefetchCatalog(queryClient))
         .catch((error) => {
-          console.warn('[app-bootstrap] catalog prefetch skipped:', error);
+          logger.warn('[app-bootstrap] catalog prefetch skipped:', error);
         });
     }, 400);
 

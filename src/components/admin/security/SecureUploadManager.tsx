@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { logger } from '@/lib/logger';
 interface FileScanLog {
   id: string;
   created_at: string;
@@ -48,7 +49,7 @@ export function SecureUploadManager() {
       if (error) throw error;
       setLogs((data || []) as unknown as FileScanLog[]);
     } catch (error) {
-      console.error('Error fetching logs:', error);
+      logger.error('Error fetching logs:', error);
       toast.error('Erro ao carregar logs de auditoria');
     } finally {
       setIsLoading(false);
@@ -85,7 +86,7 @@ export function SecureUploadManager() {
       toast.success('Upload realizado com sucesso e verificado!');
       fetchLogs();
     } catch (error) {
-      console.error('Test upload error:', error);
+      logger.error('Test upload error:', error);
       toast.error('Erro ao realizar upload de teste');
     } finally {
       setIsUploading(false);

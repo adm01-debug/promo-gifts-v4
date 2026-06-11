@@ -3,7 +3,7 @@ import { CatalogToolbar } from '../CatalogToolbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
-import type { FilterState } from '@/components/filters/FilterPanel';
+import { defaultFilters } from '@/components/filters/FilterPanel';
 
 // Mock components
 vi.mock('@/components/products/StatsPopover', () => ({
@@ -14,13 +14,17 @@ vi.mock('@/components/products/LayoutPopover', () => ({
   LayoutPopover: () => <div data-testid="layout-popover">Layout</div>,
 }));
 
-// Mock FilterPanel
-vi.mock('@/components/filters/FilterPanel', () => ({
-  FilterPanel: () => <div data-testid="filter-panel">Filter Panel</div>,
-}));
+// Mock FilterPanel component while keeping real defaultFilters export
+vi.mock('@/components/filters/FilterPanel', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as object),
+    FilterPanel: () => <div data-testid="filter-panel">Filter Panel</div>,
+  };
+});
 
 const mockProps = {
-  filters: {} as unknown as FilterState,
+  filters: defaultFilters,
   setFilters: vi.fn(),
   activeFiltersCount: 0,
   filterSheetOpen: false,

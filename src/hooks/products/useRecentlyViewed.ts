@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { type Product } from '@/hooks/products';
 
+import { logger } from '@/lib/logger';
 const STORAGE_KEY = 'recently-viewed-products';
 const MAX_ITEMS = 10;
 
@@ -26,7 +27,7 @@ export function useRecentlyViewed() {
         setItems(JSON.parse(stored));
       }
     } catch (e) {
-      console.error('Error loading recently viewed:', e);
+      logger.error('Error loading recently viewed:', e);
     }
     setIsLoaded(true);
   }, []);

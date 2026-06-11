@@ -23,6 +23,7 @@ import {
   type RecentItem,
 } from './commandActions';
 
+import { logger } from '@/lib/logger';
 interface GlobalCommandBarProps {
   children?: ReactNode;
   showTrigger?: boolean;
@@ -42,7 +43,7 @@ export function GlobalCommandBar({ children, showTrigger = false }: GlobalComman
       const stored = localStorage.getItem(RECENT_ITEMS_KEY);
       if (stored) setRecentItems(JSON.parse(stored).slice(0, 5));
     } catch (e) {
-      console.error('Error loading recent items:', e);
+      logger.error('Error loading recent items:', e);
     }
   }, [open]);
 

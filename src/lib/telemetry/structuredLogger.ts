@@ -71,6 +71,9 @@ function emit(
   // BUG-1 FIX: usar o método correto do console por nível.
   // Antes, debug/info/warn iam todos pro console.warn, poluindo o
   // DevTools com warnings falsos e mascarando warns reais.
+  // Este dispatcher é o sink único de console do app; info/debug aqui
+  // são intencionais (no-console só permite warn/error no resto do código).
+  /* eslint-disable no-console */
   if (isDev) {
     if (level === 'error') console.error(tag, payload);
     else if (level === 'warn') console.warn(tag, payload);
@@ -87,6 +90,7 @@ function emit(
     // eslint-disable-next-line no-console
     else console.debug(json);
   }
+  /* eslint-enable no-console */
 
   // Sentry forwarding
   if (level === 'error') {

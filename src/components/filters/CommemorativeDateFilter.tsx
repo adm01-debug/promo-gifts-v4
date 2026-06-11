@@ -2,6 +2,7 @@ import { useActiveCommemorativeDates, type CommemorativeDate } from '@/hooks/int
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { logger } from '@/lib/logger';
 interface CommemorativeDateFilterProps {
   selectedDates: string[];
   onToggleDate: (slug: string) => void;
@@ -20,7 +21,7 @@ export function CommemorativeDateFilter({
   const { data: activeDates, isLoading, error } = useActiveCommemorativeDates();
 
   if (error) {
-    console.error('Erro ao carregar datas comemorativas:', error);
+    logger.error('Erro ao carregar datas comemorativas:', error);
     return null;
   }
 

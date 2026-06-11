@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { useComparisonStore, type CompareItem } from '@/stores/useComparisonStore';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 const CURRENT_SLOT_KEY = 'current'; // marker no campo client_name para o slot "atual"
 
 export function useComparisonSync() {
@@ -59,7 +60,7 @@ export function useComparisonSync() {
           });
         }
       } catch (e) {
-        console.warn('[useComparisonSync] hydrate failed', e);
+        logger.warn('[useComparisonSync] hydrate failed', e);
       } finally {
         hydratedRef.current = true;
       }
@@ -101,7 +102,7 @@ export function useComparisonSync() {
           });
         }
       } catch (e) {
-        console.warn('[useComparisonSync] upsert failed', e);
+        logger.warn('[useComparisonSync] upsert failed', e);
       }
     }, 1500);
     return () => clearTimeout(t);

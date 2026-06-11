@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Play,
   CheckCircle2,
+  XCircle,
   Loader2,
   Database,
   Zap,
@@ -18,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 interface SimulationDetail {
   fnName: string;
   status: number;
@@ -46,14 +48,17 @@ export default function SimulationPage() {
     setActiveMode(mode);
     setReport(null);
     try {
-      const { data, error } = await supabase.functions.invoke('simulation-orchestrator', {
-        body: { count: mode === 'load' ? 500 : 100, mode },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        mode === 'audit' ? 'audit-suite' : 'simulation-orchestrator',
+        {
+          body: mode === 'audit' ? {} : { count: mode === 'load' ? 500 : 100, mode },
+        },
+      );
       if (error) throw error;
       setReport(data);
       toast.success(`Simulação de ${mode} concluída!`);
     } catch (err) {
-      console.error(err);
+      logger.error('Freight simulation failed', err);
       toast.error('Falha ao executar simulação');
     } finally {
       setLoading(false);
@@ -79,20 +84,20 @@ export default function SimulationPage() {
         </div>
         <div className="flex gap-2">
           <Button
+            onClick={() => runSimulation('audit')}
+            disabled={loading}
+            variant="outline"
+            className="gap-2 border-primary/50 text-primary hover:bg-primary/5"
+          >
+            <ShieldAlert className="h-4 w-4" /> Rodar Auditoria Técnica
+          </Button>
+          <Button
             onClick={() => runSimulation('resilience')}
             disabled={loading}
             variant="outline"
             className="gap-2"
           >
             <Zap className="h-4 w-4" /> Resiliência
-          </Button>
-          <Button
-            onClick={() => runSimulation('fuzzing')}
-            disabled={loading}
-            variant="outline"
-            className="border-brand-primary-200 hover:bg-brand-primary-50 gap-2"
-          >
-            <ShieldAlert className="text-brand-primary-500 h-4 w-4" /> Fuzzing
           </Button>
           <Button
             onClick={() => runSimulation('load')}
@@ -107,8 +112,9 @@ export default function SimulationPage() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="audit">Auditoria (RLS)</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="logs">Logs Técnicos</TabsTrigger>
         </TabsList>
@@ -238,6 +244,49 @@ export default function SimulationPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="audit" className="mt-6 space-y-4">
+          {report?.results ? (
+            <div className="space-y-4">
+              {report.results.map((test: any, idx: number) => (
+                <Card key={idx} className="overflow-hidden">
+                  <div className={`h-1 w-full ${test.passed ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <CardHeader className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {test.passed ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-500" />
+                        )}
+                        <CardTitle className="text-base">{test.name}</CardTitle>
+                      </div>
+                      <Badge variant={test.passed ? 'secondary' : 'destructive'}>
+                        {test.passed ? 'OK' : 'FALHA'}
+                      </Badge>
+                    </div>
+                    <CardDescription>{test.details}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-32 rounded bg-muted/50 p-3 font-mono text-[10px]">
+                      {test.logs.map((log: string, lIdx: number) => (
+                        <div key={lIdx} className="mb-1 opacity-70">
+                          {log}
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <ShieldAlert className="mb-4 h-12 w-12 opacity-20" />
+              <p>Nenhum relatório de auditoria disponível.</p>
+              <p className="text-xs">Clique em "Rodar Auditoria Técnica" para validar o sistema.</p>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="performance" className="mt-6">
