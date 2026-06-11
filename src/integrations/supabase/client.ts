@@ -16,23 +16,28 @@ const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Reject env URLs that point to a different project — fall back to CANONICAL_URL instead.
-const envUrlIsValid = !envUrl || envUrl.includes(CURRENT_PROJECT_ID);
-
-if (!envUrlIsValid) {
-  log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
-  if (import.meta.env.DEV) {
-    console.error(
-      "%c[Supabase Critical]",
-      "color: red; font-weight: bold;",
-      `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
-    );
+// Validate that VITE_SUPABASE_URL, if set, points to the correct project.
+// Returns true when the URL is usable, false when it must be rejected.
+const validateEnv = (): boolean => {
+  if (!envUrl) {
+    log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
+    return true;
   }
-}
+  if (!envUrl.includes(CURRENT_PROJECT_ID)) {
+    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
+    if (import.meta.env.DEV) {
+      console.error(
+        "%c[Supabase Critical]",
+        "color: red; font-weight: bold;",
+        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
+      );
+    }
+    return false;
+  }
+  return true;
+};
 
-if (!envUrl) {
-  log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
-}
+const envUrlIsValid = validateEnv();
 
 export const SUPABASE_URL = envUrlIsValid ? (envUrl || CANONICAL_URL) : CANONICAL_URL;
 export const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
