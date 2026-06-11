@@ -45,39 +45,41 @@ interface MockHlsStatic {
 
 let lastHlsInstance: MockHlsInstance | null = null;
 
-// Mock hls.js for dynamic import
+// Mock hls.js for dynamic import.
+// vi.fn().mockImplementation() cannot be used as a `new` constructor in Vitest 4.x —
+// the mock wrapper is not constructor-compatible. A class solves this.
 vi.mock('hls.js', () => {
-  const mockHls = vi.fn().mockImplementation(() => {
-    const instance = {
-      loadSource: vi.fn(),
-      attachMedia: vi.fn(),
-      on: vi.fn(),
-      destroy: vi.fn(),
-      startLoad: vi.fn(),
-      recoverMediaError: vi.fn(),
-      currentLevel: -1,
-      autoLevelEnabled: true,
+  class MockHls {
+    loadSource = vi.fn();
+    attachMedia = vi.fn();
+    on = vi.fn();
+    destroy = vi.fn();
+    startLoad = vi.fn();
+    recoverMediaError = vi.fn();
+    currentLevel = -1;
+    autoLevelEnabled = true;
+
+    constructor() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      lastHlsInstance = this as any;
+    }
+
+    static isSupported = vi.fn().mockReturnValue(true);
+    static Events = {
+      MANIFEST_PARSED: 'hlsManifestParsed',
+      ERROR: 'hlsError',
+      LEVEL_SWITCHED: 'hlsLevelSwitched',
+      LEVEL_SWITCHING: 'hlsLevelSwitching',
+      FRAG_LOADED: 'hlsFragLoaded',
     };
-    lastHlsInstance = instance;
-    return instance;
-  });
+    static ErrorTypes = {
+      NETWORK_ERROR: 'networkError',
+      MEDIA_ERROR: 'mediaError',
+      OTHER_ERROR: 'otherError',
+    };
+  }
 
-  const hlsStatic = mockHls as unknown as MockHlsStatic;
-  hlsStatic.isSupported = vi.fn().mockReturnValue(true);
-  hlsStatic.Events = {
-    MANIFEST_PARSED: 'hlsManifestParsed',
-    ERROR: 'hlsError',
-    LEVEL_SWITCHED: 'hlsLevelSwitched',
-    LEVEL_SWITCHING: 'hlsLevelSwitching',
-    FRAG_LOADED: 'hlsFragLoaded',
-  };
-  hlsStatic.ErrorTypes = {
-    NETWORK_ERROR: 'networkError',
-    MEDIA_ERROR: 'mediaError',
-    OTHER_ERROR: 'otherError',
-  };
-
-  return { default: mockHls };
+  return { default: MockHls as unknown as MockHlsStatic & (new () => MockHlsInstance) };
 });
 
 // Mock lucide-react icons

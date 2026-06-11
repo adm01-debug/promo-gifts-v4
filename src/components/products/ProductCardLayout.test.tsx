@@ -16,6 +16,9 @@ vi.mock('@/contexts/SellerCartContext', () => ({
 vi.mock('@/contexts/CollectionsContext', () => ({
   useCollectionsContext: () => ({ collections: [], addToCollection: vi.fn() }),
 }));
+vi.mock('@/components/collections/AddToCollectionModal', () => ({
+  AddToCollectionModal: () => null,
+}));
 
 const mockProduct = {
   id: 'p1',
@@ -47,7 +50,7 @@ describe('ProductCard Layout and Typography', () => {
     );
 
     const supplier = screen.getByText('SupplierName');
-    const sku = screen.getByText('SKU12345');
+    const sku = screen.getByLabelText('Código do produto: SKU12345');
 
     expect(supplier).toBeDefined();
     expect(sku).toBeDefined();

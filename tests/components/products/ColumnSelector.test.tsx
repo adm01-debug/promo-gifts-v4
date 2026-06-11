@@ -66,8 +66,8 @@ describe("ColumnSelector", () => {
 
   it("hides options whose minWidth exceeds screen width", async () => {
     const { ColumnSelector } = await import("@/components/products/ColumnSelector");
-    // 900px → only 3 (minWidth=0) and 4 (minWidth=768) should be available
-    resizeWindowTo(900);
+    // 899px → only 3 (minWidth=0) and 4 (minWidth=640) available; 5 (minWidth=900) excluded
+    resizeWindowTo(899);
     renderWithProviders(<ColumnSelector value={3} onChange={onChange} />);
 
     expect(screen.getByLabelText("3 colunas")).toBeInTheDocument();
@@ -98,8 +98,8 @@ describe("ColumnSelector", () => {
 
   it("calls onChange with maxAvailable when value exceeds it", async () => {
     const { ColumnSelector } = await import("@/components/products/ColumnSelector");
-    // 900px → max available is 4; but value=8 (too high)
-    resizeWindowTo(900);
+    // 899px → max available is 4 (5 requires minWidth=900); but value=8 (too high)
+    resizeWindowTo(899);
     renderWithProviders(<ColumnSelector value={8} onChange={onChange} />);
 
     // The clamping useEffect fires on mount

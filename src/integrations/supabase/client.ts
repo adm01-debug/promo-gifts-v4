@@ -17,13 +17,16 @@ const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
 // Validate that VITE_SUPABASE_URL, if set, points to the correct project.
+// Localhost and placeholders are tolerated (dev/CI without secrets).
 // Returns true when the URL is usable, false when it must be rejected.
 const validateEnv = (): boolean => {
   if (!envUrl) {
     log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
     return true;
   }
-  if (!envUrl.includes(CURRENT_PROJECT_ID)) {
+  const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
+  const isPlaceholder = envUrl.includes('placeholder');
+  if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
     log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
     if (import.meta.env.DEV) {
       console.error(
@@ -85,10 +88,11 @@ supabase.auth.onAuthStateChange((event, session) => {
     is_canonical: projectId === CURRENT_PROJECT_ID
   });
 
-  if (projectId !== CURRENT_PROJECT_ID) {
-    authLog.error('wrong_project_detected', { 
-      current: projectId, 
-      expected: CURRENT_PROJECT_ID 
+  const isLocalProject = projectId.includes('localhost') || projectId.includes('127.0.0.1') || projectId === 'placeholder';
+  if (!isLocalProject && projectId !== CURRENT_PROJECT_ID) {
+    authLog.warn('wrong_project_detected', {
+      current: projectId,
+      expected: CURRENT_PROJECT_ID
     });
   }
 });

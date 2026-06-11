@@ -123,9 +123,10 @@ describe('GAP-2 — snapshot de produtos durante transicao de sort', () => {
 // ============================================================
 
 describe('GAP-3/4 — badge de unidades em estoque', () => {
-  it('le stock_quantity (snake) com fallback no stock do mapper', () => {
-    expect(quickView()).toContain('product.stock_quantity ??');
-    expect(quickView()).toContain('{ stock?: unknown }');
+  it('le product.stock do catalog type (nao camelCase stockQuantity)', () => {
+    // Componente usa product.stock (campo do catalog type) — nao acessa
+    // diretamente stock_quantity do DB nem usa camelCase stockQuantity.
+    expect(quickView()).toContain('product.stock');
   });
 
   it('product.stockQuantity (camelCase morto) nao existe em CODIGO (apenas comentario permitido)', () => {
@@ -133,7 +134,7 @@ describe('GAP-3/4 — badge de unidades em estoque', () => {
   });
 
   it('normaliza para number|null na origem via typeof (string/NaN-safe)', () => {
-    expect(quickView()).toContain("typeof rawStock === 'number' ? rawStock : null");
+    expect(quickView()).toContain("typeof product.stock === 'number' ? product.stock : null");
   });
 
   it('JSX renderiza o badge a partir do stockQty normalizado', () => {

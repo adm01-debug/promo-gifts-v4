@@ -16,6 +16,7 @@ vi.mock('../requestId', () => ({
 describe('structuredLogger.ts', () => {
   const consoleSpy = {
     log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    info: vi.spyOn(console, 'info').mockImplementation(() => {}),
     warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
     error: vi.spyOn(console, 'error').mockImplementation(() => {}),
   };
