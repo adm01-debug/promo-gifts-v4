@@ -9,6 +9,14 @@ Pipeline de dados em 3 camadas para padronização de catálogo multi-fornecedor
 > **`produtos_padronizacao` + `produtos_padronizacao_variantes`** (de-para via
 > `supplier_field_mappings` + `fn_apply_transform`).
 >
+> **Atualização 2026-06-10 (ADR 0008):** a normalização de **variante**
+> (`fn_standardize_variant`) e a derivação do pai (`fn_derive_parent_ref`)
+> deixaram de ter blocos hardcoded por fornecedor — passaram a ser 100%
+> data-driven pelo de-para (`supplier_field_mappings`,
+> `target_table='product_variants'`). Paridade verificável via
+> `fn_parity_standardize_variant(limit)`. Ver
+> `docs/adr/0008-silver-depara-variantes-derive-cor.md`.
+>
 > **Fluxo oficial (cron `process_pending_batches` a cada 5 min, por fornecedor `auto_sync`):**
 > ```
 > Bronze: supplier_products_raw (status='pending')

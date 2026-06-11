@@ -37,11 +37,17 @@ const STATUS_LABELS: Record<PriceFreshnessStatus, string> = {
  * contexto mais rico do que aria-label sozinho consegue, complementamos
  * com `title` (lido por SRs como descrição auxiliar e útil offline).
  */
+function formatAbsoluteDateLong(value: string | Date): string | null {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return formatPriceDateLong(d);
+}
+
 function buildAccessibleLabel(
   freshness: PriceFreshness,
   priceUpdatedAt?: string | Date | null,
 ): { ariaLabel: string; title: string } {
-  const absolute = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
+  const absolute = priceUpdatedAt ? formatAbsoluteDateLong(priceUpdatedAt) : null;
   const days = freshness.daysSinceUpdate;
   const relative =
     days === null ? null : days === 0 ? 'há 0 dias' : days === 1 ? 'há 1 dia' : `há ${days} dias`;
@@ -55,12 +61,12 @@ function buildAccessibleLabel(
       break;
     case 'aging':
       ariaLabel = absolute
-        ? `Preço próximo do limite de validade. Última atualização em ${absolute}, ${relative}.`
+        ? `Preço próximo do limite de validade. Última atualização do fornecedor em ${absolute}, ${relative}. Recomendamos confirmar antes de fechar o orçamento.`
         : 'Preço próximo do limite de validade. Recomendamos confirmar com o fornecedor.';
       break;
     case 'stale':
       ariaLabel = absolute
-        ? `Atenção: preço possivelmente defasado. Última atualização em ${absolute}, ${relative}. Confirme antes de enviar o orçamento.`
+        ? `Atenção: preço possivelmente defasado. Última atualização do fornecedor em ${absolute}, ${relative}. Confirme o valor antes de enviar o orçamento ao cliente.`
         : 'Atenção: preço possivelmente defasado. Confirme com o fornecedor.';
       break;
     case 'unknown':
@@ -70,7 +76,12 @@ function buildAccessibleLabel(
         : 'Preço com data não informada. Confirme o valor antes de enviar o orçamento.';
   }
 
-  const title = absolute ? `Atualizado em ${absolute}` : ariaLabel;
+  const title =
+    freshness.status === 'aging' || freshness.status === 'stale'
+      ? ariaLabel
+      : absolute
+        ? `Atualizado em ${absolute}`
+        : ariaLabel;
   return { ariaLabel, title };
 }
 
@@ -365,16 +376,22 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
           aria-label={ariaLabel}
           title={title}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/60 dark:bg-amber-500/10 dark:text-amber-200',
+            'inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100',
             className,
           )}
         >
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="tabular-nums">
-            {absolute ? `Atualizado em ${absolute}` : 'Preço pode estar defasado'}
-            {relative && (
-              <span className="text-amber-700/70 dark:text-amber-300/70"> · {relative}</span>
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            <span className="block">Preço pode estar defasado</span>
+            {absolute && (
+              <span className="block tabular-nums text-amber-900/80 dark:text-amber-200/80">
+                Última atualização em {absolute}
+                {relative && ` (${relative})`}
+              </span>
             )}
+            <span className="block text-[11px] font-normal text-amber-800 dark:text-amber-200">
+              Confirme com o fornecedor antes de fechar o orçamento.
+            </span>
           </span>
         </span>
       );
@@ -429,24 +446,31 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
           )}
         >
           <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>Data não informada</span>
+          <span>Data de atualização não informada</span>
         </span>
       );
     }
   } else {
-    // `inline` (default) — usado em PDP/Quick View.
-    // Padronizado para exibir apenas "Atualizado em DD/MM/AAAA" (o essencial),
-    // movendo o label relativo e regras para o tooltip.
+    // `inline` (default) — PDP/Quick View.
+    // Format: "${freshness.label} · em ${shortDate}${limitSuffix}"
+    // freshness.label is the canonical pt-BR copy from the utility:
+    //   fresh:   "Atualizado hoje" / "Atualizado há 1 dia" / "Atualizado há N dias"
+    //   aging:   "Atualizado há N dias"
+    //   stale:   "Preço pode estar defasado (há N dias)"
+    //   unknown: "Data de atualização não informada"
     const inlineDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
+
     body = (
       <span
         role="status"
         aria-label={ariaLabel}
+        title={title}
         className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
       >
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <span className="tabular-nums">
-          {inlineDate ? `Atualizado em ${inlineDate}` : freshness.label}
+          {freshness.label}
+          {inlineDate && <span className="opacity-70"> · em {inlineDate}</span>}
           {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
         </span>
       </span>

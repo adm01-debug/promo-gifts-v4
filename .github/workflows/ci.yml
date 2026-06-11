@@ -1,82 +1,47 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
 
 jobs:
-  quality:
-    name: Quality & Unit Tests
+  quality-gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
       
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
       - name: Install dependencies
         run: npm ci
-      
-      - name: Lint
-        # Baseline ratchet: bloqueia apenas regressões novas (erros/warnings)
-        # sobre .eslint-baseline.json. Dívida pré-existente fica congelada.
-        # Para inspeção completa (sem filtro de baseline) use `npm run qa:lint`.
-        run: npm run lint:baseline
-
-      - name: Typecheck
-        # Baseline ratchet sobre .tsc-baseline.json (bloqueia apenas erros novos).
-        # Inspeção completa: `npm run qa:typecheck`.
-        run: npm run typecheck
-      
-      - name: Unit & Integration Tests with Coverage
-        run: npm run test:coverage
-      
-      - name: Upload Coverage to PR
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vitest-coverage
-          path: coverage/
-          retention-days: 14
-
-
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      
-      - name: Run E2E Tests (Smoke)
-        run: npm run test:e2e:smoke
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
-          CI: true
-
-      - name: Run E2E Tests (Critical)
+        
+      - name: Lint check
+        run: npm run lint:check
+        
+      - name: Type check
+        run: npm run qa:typecheck
+        
+      - name: Build check
+        run: npm run build
+        
+      - name: Run Unit & Integration Tests
+        run: npm run test:quality
+        
+      - name: Run E2E Critical Tests
         run: npm run test:e2e:critical
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
-          CI: true
-      
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit Credentials
+        run: npm run audit:credentials

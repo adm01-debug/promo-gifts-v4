@@ -18,7 +18,7 @@ SELECT cron.schedule(
     '*/15 * * * *',
     $$
     SELECT net.http_post(
-        url := 'https://doufsxqlfjyuvxuezpln.supabase.co/functions/v1/connections-auto-test',
+        url := 'https://pqpdolkaeqlyzpdpbizo.supabase.co/functions/v1/connections-auto-test',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
             'x-cron-secret', public.get_edge_function_secret('CRON_SECRET')

@@ -63,7 +63,7 @@ export function useProductImageGallery({
         const { records } = await dbInvoke<ExternalImage>({
           table: 'product_images',
           operation: 'select',
-          filters: { product_id: productId },
+          filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'display_order', ascending: true },
         });
@@ -193,8 +193,8 @@ export function useProductImageGallery({
         setEditingIndex(null);
         if (productId)
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+      } catch {
+        toast.error('Erro ao atualizar');
       }
     },
     [extImageMap, productId, queryClient],
@@ -569,8 +569,8 @@ export function useProductImageGallery({
           toast.warning('Nenhuma imagem elegível para classificação em lote');
         else toast.success(`${affectedCount} imagem(ns) classificada(s) como "${label}"`);
         clearSelection();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar tipo em lote');
+      } catch {
+        toast.error('Erro ao atualizar tipo em lote');
       } finally {
         setIsBulkUpdating(false);
       }
@@ -624,8 +624,8 @@ export function useProductImageGallery({
         if (affectedCount === 0) toast.warning('Nenhuma imagem elegível para vínculo em lote');
         else toast.success(`${affectedCount} imagem(ns) vinculada(s) a "${label}"`);
         clearSelection();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar variação em lote');
+      } catch {
+        toast.error('Erro ao atualizar variação em lote');
       } finally {
         setIsBulkUpdating(false);
       }
@@ -664,8 +664,8 @@ export function useProductImageGallery({
       if (productId) queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
       toast.success(`${toRemove.length} imagem(ns) removida(s)`);
       clearSelection();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover imagens em lote');
+    } catch {
+      toast.error('Erro ao remover imagens em lote');
     } finally {
       setIsBulkUpdating(false);
     }
@@ -738,8 +738,8 @@ export function useProductImageGallery({
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         toast.success(`Alt text atualizado em ${updates.length} imagem(ns)`);
         clearSelection();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar alt text em lote');
+      } catch {
+        toast.error('Erro ao atualizar alt text em lote');
       } finally {
         setIsBulkUpdating(false);
       }

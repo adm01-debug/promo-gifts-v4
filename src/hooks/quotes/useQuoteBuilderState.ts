@@ -988,6 +988,7 @@ export function useQuoteBuilderState() {
         // Se outro usuário/sessão salvou enquanto estava aberto, exibe alerta.
         if (baselineUpdatedAtRef.current) {
           const { data: remoteQuote } = await supabase
+            // rls-allow: RLS scopes quotes to seller; concurrency check reads specific quote by id
             .from('quotes')
             .select('updated_at')
             .eq('id', quoteId)

@@ -94,7 +94,7 @@ const runtimeOverrides = new Map<FeatureFlag, boolean>();
 export function isFeatureEnabled(flag: FeatureFlag, userRole?: string): boolean {
   // Runtime override takes precedence
   if (runtimeOverrides.has(flag)) {
-    return runtimeOverrides.get(flag) as string;
+    return runtimeOverrides.get(flag) ?? false;
   }
 
   const config = FLAG_REGISTRY[flag];

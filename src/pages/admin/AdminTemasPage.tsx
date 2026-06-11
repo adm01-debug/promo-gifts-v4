@@ -92,8 +92,6 @@ export default function AdminTemasPage() {
     // setAppTheme removed as theme is fixed
   };
 
-  const _currentMode = config.mode === 'auto' ? 'system' : config.mode;
-
   return (
     <>
       <PageSEO

@@ -75,6 +75,12 @@ export interface ProductCardProps {
   activeColorFilter?: ActiveColorFilter | null;
   priority?: boolean;
   onStatusClick?: (type: string, value?: string | number) => void;
+  /**
+   * FIX ISSUE-02 2026-06-09: Imagem real da variante de cor via useColorEnrichment (ProductGrid).
+   * Injetada quando filtro de cor ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
+   * Evita exibir primary_image_url genérica quando filtro de cor está ativo.
+   */
+  colorEnrichmentImage?: string | null;
 }
 
 export const ProductCard = memo(
@@ -97,6 +103,7 @@ export const ProductCard = memo(
       activeColorFilter,
       priority = false,
       onStatusClick,
+      colorEnrichmentImage,
     },
     ref,
   ) {
@@ -129,9 +136,10 @@ export const ProductCard = memo(
 
     // Efeito para simular loading ao trocar de cor
     useEffect(() => {
-      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento
+      // Pequeno delay para evitar flickering visual e mostrar skeleton de carregamento.
+      // 100ms é o suficiente para percepção de mudança sem parecer lento.
       setIsUpdatingColor(true);
-      const timer = setTimeout(() => setIsUpdatingColor(false), 350);
+      const timer = setTimeout(() => setIsUpdatingColor(false), 100);
       return () => clearTimeout(timer);
     }, [activeVariantIdx]);
 
@@ -180,10 +188,13 @@ export const ProductCard = memo(
         const urlParams =
           typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         const urlColor = urlParams?.get('cor');
+        const urlProductId = urlParams?.get('pid');
 
-        // Prioridade: URL > Seleção manual > Filtro ativo
+        // Prioridade: URL (se o pid coincidir) > Seleção manual > Filtro ativo
         const targetColor =
-          urlColor || selectedColorFromStore || getActiveColorName(product, activeColorFilter);
+          (urlProductId === product.id ? urlColor : null) ||
+          selectedColorFromStore ||
+          getActiveColorName(product, activeColorFilter);
 
         if (targetColor) {
           const idx = allMatchingVariants.findIndex(
@@ -281,9 +292,8 @@ export const ProductCard = memo(
           });
           if (variant?.color_name) params.set('color_name', variant.color_name);
           if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-          if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-          if (product.images?.[0])
-            params.set('product_image', variant?.selected_thumbnail || product.images[0]);
+          const productImg = product.images?.[0] || '/placeholder.svg';
+          params.set('product_image', variant?.selected_thumbnail || productImg);
           setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
         } else if (variantPickerMode === 'share') {
           setShareVariant(
@@ -364,6 +374,12 @@ export const ProductCard = memo(
       // Prioridade 1: Imagem da variante atual do carrossel/seleção
       if (currentVariant?.image) return currentVariant.image;
 
+      // Prioridade 1.5: Imagem do batch enrichment de cor (useColorEnrichment via ProductGrid).
+      // Ativado apenas quando filtro de cor ativo — resolve imagem real da variante de cor
+      // sem depender de product.colors[].images (ausentes no catálogo lightweight).
+      // FIX ISSUE-02 2026-06-09
+      if (colorEnrichmentImage && activeColorFilter) return colorEnrichmentImage;
+
       // Prioridade 2: Resolver por filtro de cor (se houver)
       const filteredImg = resolveColorImage(product, activeColorFilter);
       if (filteredImg) return filteredImg;
@@ -377,9 +393,9 @@ export const ProductCard = memo(
         if (matchedImg) return matchedImg;
       }
 
-      // Fallback
-      return product.og_image_url || product.images[0] || null;
-    }, [product, activeColorFilter, currentVariant, activeColorName]);
+      // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
+      return product.primary_image_url || product.og_image_url || product.images[0] || null;
+    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage]);
 
     // Caso de fallback para quando a imagem da cor não existe
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
@@ -392,7 +408,9 @@ export const ProductCard = memo(
 
     const cardSrcSet =
       effectiveImageUrl !== '/placeholder.svg' &&
-      (effectiveImageUrl === product.og_image_url || effectiveImageUrl === product.images[0])
+      (effectiveImageUrl === product.primary_image_url ||
+        effectiveImageUrl === product.og_image_url ||
+        effectiveImageUrl === product.images[0])
         ? getSrcSet(effectiveImageUrl)
         : undefined;
 
@@ -436,7 +454,8 @@ export const ProductCard = memo(
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            navigate(`/produto/${product.id}`);
+            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            navigate(`/produto/${product.id}${colorParam}`);
           } else if (e.key.toLowerCase() === 'q') {
             e.preventDefault();
             setQuickViewOpen(true);
@@ -462,11 +481,12 @@ export const ProductCard = memo(
           if (currentVariant?.name) {
             const params = new URLSearchParams();
             params.set('cor', currentVariant.name);
+            params.set('pid', product.id);
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
-            if (currentVariant.hex) params.set('hex', currentVariant.hex.replace('#', ''));
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
-            navigate(`/produto/${product.id}`);
+            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            navigate(`/produto/${product.id}${colorParam}`);
           }
         }}
       >
@@ -507,7 +527,7 @@ export const ProductCard = memo(
               productId={product.id}
               productName={product.name}
               productSku={product.sku}
-              productImageUrl={product.og_image_url || product.images[0]}
+              productImageUrl={product.primary_image_url || product.og_image_url || product.images[0]}
               productPrice={product.price}
               productMinQuantity={product.minQuantity || 1}
               isFavorited={isFavorited}
@@ -552,25 +572,32 @@ export const ProductCard = memo(
             />
           )}
 
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[10px] tracking-tighter text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 sm:text-xs">
-              {product.sku}
-            </span>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <GenderBadge gender={product.gender} size="sm" />
-              <span className="flex max-w-[120px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs">
+          <div className="flex min-w-0 items-center justify-between gap-1.5">
+            <div className="flex min-w-0 shrink-1 items-center gap-1">
+              <span
+                className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                title={`Fornecedor: ${product.supplier.name}`}
+              >
                 <Building2
                   className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier.name).text)}
+                  aria-hidden="true"
                 />
-                {product.supplier.name}
+                <span className="truncate">{product.supplier.name}</span>
               </span>
+              <GenderBadge gender={product.gender} size="sm" />
             </div>
+            <span
+              className="shrink-0 font-mono text-[11.5px] font-medium tracking-tighter text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100 sm:text-[13.8px]"
+              aria-label={`Código do produto: ${product.sku}`}
+            >
+              {product.sku}
+            </span>
           </div>
 
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className="line-clamp-2 max-h-[2.5rem] min-h-[2.5rem] font-display text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:max-h-[3rem] sm:min-h-[3rem] sm:text-base"
+            className="line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]"
           >
             {product.name}
           </h3>
@@ -595,6 +622,7 @@ export const ProductCard = memo(
                 // Persiste a cor na URL sem forçar navegação completa
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('cor', c.name);
+                currentUrl.searchParams.set('pid', product.id);
                 window.history.replaceState({}, '', currentUrl.toString());
               }
             }}

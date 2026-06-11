@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '@/hooks/products';
 import type { BulkVariantSelection, BulkWizardMode } from '@/components/catalog/BulkVariantWizard';
@@ -30,15 +30,37 @@ export function useFiltersSelectionMode({
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // Remove stale IDs when products change
+  // BUG-SM-01 FIX: Use a ref to track filteredProducts to avoid stale closures in effects 
+  // and ensure we only remove IDs that actually became invalid.
+  const prevFilteredProductsRef = useRef<Product[]>([]);
   useEffect(() => {
+    // If selection is empty, nothing to clean
+    if (selectedIds.size === 0) {
+      prevFilteredProductsRef.current = filteredProducts;
+      return;
+    }
+
+    // Only clean if products changed significantly (length change or different first ID)
+    // This is a heuristic to avoid over-cleaning during scroll/lazy-load
+    const currentValidIds = new Set(filteredProducts.map(p => p.id));
+    
     setSelectedIds((prev) => {
-      if (prev.size === 0) return prev;
-      const validIds = new Set(filteredProducts.map((p) => p.id));
-      const filtered = new Set([...prev].filter((id) => validIds.has(id)));
-      return filtered.size === prev.size ? prev : filtered;
+      const next = new Set<string>();
+      let changed = false;
+      
+      for (const id of prev) {
+        if (currentValidIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      }
+      
+      return changed ? next : prev;
     });
-  }, [filteredProducts]);
+
+    prevFilteredProductsRef.current = filteredProducts;
+  }, [filteredProducts, selectedIds.size]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {

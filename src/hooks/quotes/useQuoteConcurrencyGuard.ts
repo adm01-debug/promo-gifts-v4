@@ -52,6 +52,7 @@ export function useQuoteConcurrencyGuard(quote: Quote | null | undefined) {
     if (!quote?.id || !baselineRef.current) return null;
 
     const { data, error } = await supabase
+      // rls-allow: RLS scopes quotes to seller; conflict check reads specific quote by id
       .from('quotes')
       .select('updated_at')
       .eq('id', quote.id)

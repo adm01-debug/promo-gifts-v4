@@ -77,7 +77,7 @@ export function resolveColorImage(
     }
   }
 
-  return undefined;
+  return product.primary_image_url || undefined;
 }
 
 /**

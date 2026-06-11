@@ -71,9 +71,9 @@ export function MfaEnrollmentDialog({
       setQrCode(data.totp.qr_code);
       setSecret(data.totp.secret);
       setStep('qr');
-    } catch (e) {
+    } catch {
       toast.error('Falha ao iniciar MFA', {
-        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        description: 'Não foi possível configurar o autenticador.',
       });
     } finally {
       setLoading(false);
@@ -101,9 +101,9 @@ export function MfaEnrollmentDialog({
       await refreshAAL();
       onOpenChange(false);
       navigate('/admin', { replace: true });
-    } catch (e) {
+    } catch {
       toast.error('Código inválido', {
-        description: e instanceof Error ? e.message : 'Tente novamente',
+        description: 'O código informado não confere. Tente novamente.',
       });
       setCode('');
     } finally {

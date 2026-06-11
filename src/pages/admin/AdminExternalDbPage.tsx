@@ -75,9 +75,9 @@ export default function AdminExternalDbPage() {
         description: validation.ok ? 'Contrato OK' : `${validation.missing.length} campos ausentes`,
       });
       refreshTelemetry();
-    } catch (err) {
+    } catch {
       toast.error('Falha ao testar RPC', {
-        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        description: 'Não foi possível executar o teste de contrato.',
       });
     } finally {
       setLiveLoading(null);
@@ -120,9 +120,9 @@ export default function AdminExternalDbPage() {
       }
       setDiffs(results);
       toast.success('Diff gerado', { description: `${results.length} tabelas inspecionadas` });
-    } catch (err) {
+    } catch {
       toast.error('Falha ao gerar diff', {
-        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        description: 'Não foi possível inspecionar as tabelas.',
       });
     } finally {
       setDiffLoading(false);

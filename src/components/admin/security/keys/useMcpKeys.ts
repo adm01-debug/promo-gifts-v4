@@ -88,7 +88,9 @@ export function useMcpKeys() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error('Erro ao carregar chaves', { description: error.message });
+      toast.error('Erro ao carregar chaves', {
+        description: 'Não foi possível carregar as chaves.',
+      });
       setRows([]);
       setLoading(false);
       return;

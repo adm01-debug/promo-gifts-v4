@@ -234,6 +234,12 @@ export const ProductList = memo(function ProductList({
 
   return (
     <>
+      <div className="mb-3 hidden items-center px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 sm:flex md:text-xs">
+        <div className="w-[72px] shrink-0 text-center">Produto</div>
+        <div className="ml-4 flex-1">Detalhes</div>
+        <div className="min-w-[100px] pr-4 text-right">Preço</div>
+        <div className="w-[160px] shrink-0 text-center">Ações</div>
+      </div>
       <div className="flex flex-col gap-2">
         {displayProducts.map((product, index) =>
           'isSkeleton' in product && product.isSkeleton ? (

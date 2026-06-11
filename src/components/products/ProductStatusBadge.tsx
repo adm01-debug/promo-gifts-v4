@@ -102,15 +102,16 @@ export function ProductStatusBadge({
       case 'novelty': {
         const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
         if (daysElapsed <= 5) {
-          return 'bg-success text-success-foreground shadow-[0_0_0_1px_hsl(var(--success)/0.3),0_2px_8px_hsl(var(--success)/0.25)]';
+          // Vibrant green for very new products, optimized for readability
+          return 'bg-[#00D166] text-white shadow-[0_2px_8px_rgba(0,209,102,0.3)] dark:bg-[#00E073] dark:text-[#002B16] dark:font-bold';
         }
         if (daysElapsed <= 15) {
-          return 'bg-success/80 text-success-foreground';
+          return 'bg-[#00D166]/80 text-white dark:bg-[#00E073]/90 dark:text-[#002B16] dark:font-bold';
         }
         if (daysElapsed <= 23) {
-          return 'bg-warning/80 text-warning-foreground';
+          return 'bg-warning text-warning-foreground dark:bg-[#FFD700] dark:text-[#332B00] dark:font-bold';
         }
-        return 'bg-brand-primary/80 text-brand-primary-foreground';
+        return 'bg-brand-primary text-brand-primary-foreground dark:bg-brand-primary/90';
       }
       case 'urgency':
         switch (urgencyType) {
@@ -301,6 +302,7 @@ export function ProductStatusBadge({
         'group-hover:scale-105 group-hover:shadow-lg',
         'will-change-transform hover:brightness-110 active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        'max-w-full truncate whitespace-nowrap', // Prevent text overflow, though flex-wrap handles the layout
         isClickable && 'pointer-events-auto cursor-pointer',
         getVariantStyles(),
         getSizeClasses(),

@@ -39,7 +39,7 @@ CREATE POLICY "Admins manage drift allowlist"
   WITH CHECK (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin'));
 
 COMMENT ON TABLE public.schema_drift_allowlist IS
-  'Tabelas onde divergência de schema entre Lovable interno (pqpdolkaeqlyzpdpbizo) e Oficial (doufsxqlfjyuvxuezpln) é aceitável por design (cache, infra, particionamento).';
+  'Tabelas onde divergência de schema entre Lovable interno (pqpdolkaeqlyzpdpbizo) e Oficial (pqpdolkaeqlyzpdpbizo) é aceitável por design (cache, infra, particionamento).';
 
 -- Atualizar fn_compute_and_record_drift para considerar allowlist
 CREATE OR REPLACE FUNCTION public.fn_compute_and_record_drift(p_lovable_signatures jsonb)

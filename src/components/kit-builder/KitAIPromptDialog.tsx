@@ -49,8 +49,8 @@ export function KitAIPromptDialog({ onApply }: KitAIPromptDialogProps) {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setSuggestion(data.suggestion as Suggestion);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Erro ao gerar sugestão');
+    } catch {
+      toast.error('Erro ao gerar sugestão');
     } finally {
       setLoading(false);
     }

@@ -17,10 +17,10 @@ describe('AppLogo Visual Consistency', () => {
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
     expect(icon).toHaveClass('text-primary-foreground');
-    // QA: o sidebar variant foi padronizado em h-10 w-10 (era h-9 w-9)
-    // para alinhar com o avatar do header. Atualizado para refletir.
-    expect(iconContainer).toHaveClass('h-10');
-    expect(iconContainer).toHaveClass('w-10');
+    // QA: o sidebar variant usa h-7 w-7 (compacto), com escalas responsivas
+    // 2xl:h-7.5 / ultra-wide:h-8. Test reflete o tamanho-base renderizado.
+    expect(iconContainer).toHaveClass('h-7');
+    expect(iconContainer).toHaveClass('w-7');
   });
 
   it('renders light variant with primary background and primary foreground icon', () => {

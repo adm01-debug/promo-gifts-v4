@@ -102,8 +102,7 @@ export default function AdminProductFormPage() {
           toast.error('Produto não encontrado');
           navigate('/admin/cadastros');
         }
-      } catch (err) {
-        console.error('Error loading product:', err);
+      } catch {
         toast.error('Erro ao carregar produto');
         navigate('/admin/cadastros');
       } finally {
@@ -382,7 +381,7 @@ export default function AdminProductFormPage() {
         const refreshed = await fetchPromobrindProductById(product.id);
         if (refreshed) setProduct(refreshed);
       } else {
-        let newProduct: PromobrindProduct;
+        let newProduct: PromobrindProduct | null;
         try {
           newProduct = await dbInvokeSingle<PromobrindProduct>({
             table: 'products',
@@ -439,7 +438,7 @@ export default function AdminProductFormPage() {
       }
     } catch (error: unknown) {
       console.error('Error saving product:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao salvar produto');
+      toast.error('Erro ao salvar produto');
     } finally {
       setIsSaving(false);
     }

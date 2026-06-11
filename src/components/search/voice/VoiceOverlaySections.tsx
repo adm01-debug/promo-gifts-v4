@@ -144,9 +144,9 @@ export function VoiceTextInput({ phase, onSimulateCommand }: TextInputProps) {
 }
 
 function VoiceFooter({
-  _showTextInput,
-  _onToggleTextInput,
-  _onClose,
+  showTextInput: _showTextInput,
+  onToggleTextInput: _onToggleTextInput,
+  onClose: _onClose,
 }: {
   showTextInput: boolean;
   onToggleTextInput: () => void;

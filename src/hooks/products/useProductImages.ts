@@ -28,6 +28,8 @@ export interface ProductImage {
   color_id: string | null;
   /** Código do fornecedor (ex: "105") — vincula imagem à cor via color_code da variante */
   supplier_code: string | null;
+  /** Sinal semântico: true = imagem pertence a uma cor específica (use este, não supplier_code) */
+  applies_to_color: boolean | null;
   url_cdn: string;
   url_original: string | null;
   image_type: string;
@@ -60,7 +62,7 @@ export async function fetchProductImages(productId: string): Promise<ProductImag
       table: 'product_images',
       operation: 'select',
       select:
-        'id, product_id, variant_id, color_id, supplier_code, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
+        'id, product_id, variant_id, color_id, supplier_code, applies_to_color, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
       filters: {
         product_id: productId,
         is_active: true,
@@ -109,7 +111,7 @@ export async function fetchProductImagesBatch(
           table: 'product_images',
           operation: 'select',
           select:
-            'id, product_id, variant_id, color_id, supplier_code, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
+            'id, product_id, variant_id, color_id, supplier_code, applies_to_color, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
           filters: { is_active: true, product_id: chunk },
           orderBy: { column: 'display_order', ascending: true },
           limit: 1000,

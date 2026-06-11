@@ -124,7 +124,7 @@ export default function VisualSearchPage() {
 
     recognition.onresult = (event: any) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      console.log("Voice command:", command);
+      // Voice command processing
       handleVoiceCommand(command);
     };
 
@@ -1117,31 +1117,31 @@ export default function VisualSearchPage() {
                                   </div>
                                 </div>
                                 <p className="italic text-foreground/80 leading-snug">{product.matchRationale}</p>
-                                
-                                <div className="mt-3 space-y-2 border-t border-primary/5 pt-2">
-                                  {results?.analysis.visualEvidence && (
-                                    <div className="flex flex-col gap-1.5">
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Material</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.material}"</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Silhueta</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.silhouette}"</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Acabamento</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.finish}"</span>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {product.totalFound && product.totalFound > 10 && (
-                                    <div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                                      <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
-                                    </div>
-                                  )}
+                              </div>
+                            )}
+                            
+                            {results?.analysis.visualEvidence && (
+                              <div className="mt-3 space-y-2 border-t border-primary/5 pt-2">
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Material</Badge>
+                                    <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.material}"</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Silhueta</Badge>
+                                    <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.silhouette}"</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Acabamento</Badge>
+                                    <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.finish}"</span>
+                                  </div>
                                 </div>
+                              </div>
+                            )}
+
+                            {product.totalFound && product.totalFound > 10 && (
+                              <div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
                               </div>
                             )}
                             

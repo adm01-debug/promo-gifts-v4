@@ -22,7 +22,12 @@ interface StepComparisonProps {
 
 export function StepComparison({ wizard }: StepComparisonProps) {
   const navigate = useNavigate();
-  const { comparisonResults, _selectedComparison, _selectedLocation, _engravingSpecs } = wizard;
+  const {
+    comparisonResults,
+    selectedComparison: _selectedComparison,
+    selectedLocation: _selectedLocation,
+    engravingSpecs: _engravingSpecs,
+  } = wizard;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const availableResults = comparisonResults.filter((r) => r.isAvailable);

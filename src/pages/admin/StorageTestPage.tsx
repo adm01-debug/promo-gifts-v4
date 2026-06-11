@@ -20,11 +20,17 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+interface StorageFile {
+  id: string | null;
+  name: string;
+  metadata?: { size?: number } | null;
+}
+
 export default function StorageTestPage() {
   const [uploading, setUploading] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [files, setFiles] = useState<unknown[]>([]);
+  const [files, setFiles] = useState<StorageFile[]>([]);
   const { toast } = useToast();
 
   const bucketName = 'test-external-storage';
@@ -51,7 +57,7 @@ export default function StorageTestPage() {
       console.error('Error fetching files:', error);
       toast({
         title: 'Erro ao buscar arquivos',
-        description: error.message,
+        description: 'Não foi possível carregar a lista de arquivos.',
         variant: 'destructive',
       });
     } finally {
@@ -88,10 +94,10 @@ export default function StorageTestPage() {
         description: `Arquivo ${file.name} enviado com sucesso para o Supabase externo.`,
       });
       fetchFiles();
-    } catch (error: unknown) {
+    } catch {
       toast({
         title: 'Erro no upload',
-        description: error.message,
+        description: 'Não foi possível enviar o arquivo.',
         variant: 'destructive',
       });
     } finally {
@@ -111,10 +117,10 @@ export default function StorageTestPage() {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (error: unknown) {
+    } catch {
       toast({
         title: 'Erro no download',
-        description: error.message,
+        description: 'Não foi possível baixar o arquivo.',
         variant: 'destructive',
       });
     }
@@ -131,10 +137,10 @@ export default function StorageTestPage() {
         description: 'Arquivo excluído do bucket externo.',
       });
       fetchFiles();
-    } catch (error: unknown) {
+    } catch {
       toast({
         title: 'Erro ao remover',
-        description: error.message,
+        description: 'Não foi possível remover o arquivo.',
         variant: 'destructive',
       });
     }
@@ -148,13 +154,17 @@ export default function StorageTestPage() {
     }
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-external-db', {
+      const { error } = await supabase.functions.invoke('sync-external-db', {
         body: { table, direction: 'to-external' },
       });
       if (error) throw error;
-      toast({ title: 'Sucesso', description: data.message });
-    } catch (err: unknown) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+      toast({ title: 'Sucesso', description: 'Sincronização concluída.' });
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível sincronizar.',
+        variant: 'destructive',
+      });
     } finally {
       setSyncing(false);
     }
@@ -304,7 +314,7 @@ export default function StorageTestPage() {
                             {file.name}
                           </span>
                           <span className="text-[10px] text-white/40">
-                            {(file.metadata?.size / 1024).toFixed(1)} KB
+                            {((file.metadata?.size ?? 0) / 1024).toFixed(1)} KB
                           </span>
                         </div>
                         <div className="flex items-center gap-1">

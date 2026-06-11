@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Etapa 4 (pré-requisito) — Endurecimento de RLS de ESCRITA: GESTÃO != VENDEDOR
--- Projeto: doufsxqlfjyuvxuezpln (Promo Brindes / PromoGifts)
+-- Projeto: pqpdolkaeqlyzpdpbizo (Promo Brindes / PromoGifts)
 -- Aplicado em produção via Supabase MCP em 2026-05-30 (este arquivo = rastreio git).
 -- ----------------------------------------------------------------------------
 -- REGRA DE NEGÓCIO: gestão (editar/criar/excluir) de produtos, fornecedores,

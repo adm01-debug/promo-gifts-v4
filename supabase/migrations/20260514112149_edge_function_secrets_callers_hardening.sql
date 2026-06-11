@@ -65,7 +65,7 @@ AS $function$
 DECLARE
   _event text;
   _payload jsonb;
-  _project_url text := 'https://doufsxqlfjyuvxuezpln.supabase.co';
+  _project_url text := 'https://pqpdolkaeqlyzpdpbizo.supabase.co';
   _dispatcher_secret text;
 BEGIN
   IF TG_TABLE_NAME = 'quotes' THEN
@@ -123,7 +123,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $function$
 DECLARE
-  v_supabase_url text := 'https://doufsxqlfjyuvxuezpln.supabase.co';
+  v_supabase_url text := 'https://pqpdolkaeqlyzpdpbizo.supabase.co';
   v_service_key text;
   v_dispatcher_secret text;
   v_retried int := 0;
@@ -209,7 +209,7 @@ SELECT cron.schedule(
   '*/15 * * * *',
   $cron$
   SELECT net.http_post(
-    url := 'https://doufsxqlfjyuvxuezpln.supabase.co/functions/v1/connections-auto-test',
+    url := 'https://pqpdolkaeqlyzpdpbizo.supabase.co/functions/v1/connections-auto-test',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'x-cron-secret', public.get_edge_function_secret('CONNECTIONS_AUTO_TEST_SECRET')

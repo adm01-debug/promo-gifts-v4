@@ -93,7 +93,7 @@ export function useOptimizationQueue() {
         } as never,
       );
       if (error) {
-        toast.error(`Falha ao enfileirar: ${error.message}`);
+        toast.error('Falha ao enfileirar otimização');
         return false;
       }
       toast.success('Otimização enfileirada');
@@ -110,7 +110,7 @@ export function useOptimizationQueue() {
       .delete()
       .eq('id', id);
     if (error) {
-      toast.error(`Falha ao remover: ${error.message}`);
+      toast.error('Falha ao remover item da fila');
       return;
     }
     invalidate();
@@ -123,7 +123,7 @@ export function useOptimizationQueue() {
       { _only_running: false } as never,
     );
     if (error) {
-      toast.error(`Falha ao resetar: ${error.message}`);
+      toast.error('Falha ao resetar a fila');
       return;
     }
     toast.success('Fila resetada');
@@ -137,7 +137,7 @@ export function useOptimizationQueue() {
       'claim_next_optimization' as never,
     );
     if (claimErr) {
-      toast.error(`Falha ao reivindicar: ${claimErr.message}`);
+      toast.error('Falha ao reivindicar item da fila');
       return 'error';
     }
     const claimed: unknown = claimedRaw;

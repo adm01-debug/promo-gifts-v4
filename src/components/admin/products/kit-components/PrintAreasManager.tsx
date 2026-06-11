@@ -83,8 +83,8 @@ export function PrintAreasManager({
       toast.success('Área de gravação criada');
       setIsCreating(false);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar área');
+    } catch {
+      toast.error('Erro ao criar área');
     } finally {
       setIsSaving(false);
     }
@@ -111,8 +111,8 @@ export function PrintAreasManager({
       toast.success('Área atualizada');
       setEditingId(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+    } catch {
+      toast.error('Erro ao atualizar');
     } finally {
       setIsSaving(false);
     }
@@ -126,8 +126,8 @@ export function PrintAreasManager({
       toast.success('Área removida');
       setDeleteTarget(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover');
+    } catch {
+      toast.error('Erro ao remover');
     } finally {
       setIsSaving(false);
     }

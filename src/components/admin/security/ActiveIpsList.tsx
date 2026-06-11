@@ -57,7 +57,11 @@ export function ActiveIpsList() {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) {
-      toast({ title: 'Erro ao carregar IPs', description: error.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao carregar IPs',
+        description: 'Não foi possível carregar a lista de IPs.',
+        variant: 'destructive',
+      });
     } else {
       setItems(data || []);
     }
@@ -94,7 +98,11 @@ export function ActiveIpsList() {
   const revoke = async (id: string) => {
     const { error } = await supabase.from('ip_access_control').delete().eq('id', id);
     if (error) {
-      toast({ title: 'Erro ao revogar', description: error.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao revogar',
+        description: 'Não foi possível revogar o IP.',
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'IP revogado' });
@@ -110,7 +118,11 @@ export function ActiveIpsList() {
       .update({ expires_at: next.toISOString() })
       .eq('id', id);
     if (error) {
-      toast({ title: 'Erro ao estender', description: error.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao estender',
+        description: 'Não foi possível estender o acesso.',
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'Expiração estendida +24h' });
@@ -125,7 +137,7 @@ export function ActiveIpsList() {
     if (error) {
       toast({
         title: 'Erro ao tornar permanente',
-        description: error.message,
+        description: 'Não foi possível tornar o bloqueio permanente.',
         variant: 'destructive',
       });
       return;

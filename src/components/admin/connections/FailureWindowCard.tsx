@@ -35,7 +35,9 @@ export function FailureWindowCard() {
       const { data, error } = await supabase.rpc('get_connection_failure_window_minutes');
       if (!cancelled) {
         if (error) {
-          toast.error('Não foi possível ler a janela atual', { description: error.message });
+          toast.error('Não foi possível ler a janela atual', {
+            description: 'Verifique as permissões e tente novamente.',
+          });
         } else if (typeof data === 'number') {
           setCurrent(data);
           setDraft(String(data));
@@ -59,10 +61,11 @@ export function FailureWindowCard() {
     });
     setSaving(false);
     if (error) {
+      const isForbidden = error.code === '42501' || error.message.includes('forbidden');
       toast.error('Falha ao alterar a janela', {
-        description: error.message.includes('forbidden')
+        description: isForbidden
           ? 'Apenas administradores podem alterar.'
-          : error.message,
+          : 'Não foi possível salvar a configuração.',
       });
       return;
     }

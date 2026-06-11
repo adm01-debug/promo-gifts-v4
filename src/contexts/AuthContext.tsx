@@ -91,6 +91,15 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// BUG-3 FIX: eventos que efetivamente alteram os dados do usuário (perfil +
+// roles). TOKEN_REFRESHED troca apenas o JWT, não os dados — não precisa
+// rebuscar profile/roles a cada refresh de ~5 min.
+const EVENTS_THAT_NEED_PROFILE_FETCH = new Set([
+  'SIGNED_IN',
+  'INITIAL_SESSION',
+  'USER_UPDATED',
+]);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -167,6 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const detachRevalidation = attachSessionRevalidation();
 
     void getSupabaseClient().then((supabase) => {
+      // BUG-2 FIX: flag local para coordenar onAuthStateChange com getSession().
+      // onAuthStateChange dispara INITIAL_SESSION antes de getSession() resolver;
+      // sem essa flag, ambos chamam fetchUserData para o mesmo userId, resultando
+      // em duas requests idênticas em ~300ms de intervalo.
+      let initialFetchScheduled = false;
+
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((event, session) => {
@@ -178,17 +193,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
-          // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
+
+          // BUG-3 FIX: só rebuscar perfil/roles em eventos que efetivamente
+          // alteram os dados do usuário. TOKEN_REFRESHED ocorre a cada ~5min e
+          // troca apenas o JWT — não precisa rebater no banco toda vez.
           const uid = session.user.id;
-          Promise.resolve().then(() => {
-            if (uid) {
-              fetchUserData(uid);
-              fetchAAL();
-              import('@/lib/external-db-prewarm').then((m) =>
-                m.prewarmExternalDb({ oncePerSession: true }),
-              );
-            }
-          });
+          if (EVENTS_THAT_NEED_PROFILE_FETCH.has(event)) {
+            initialFetchScheduled = true;
+            // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
+            Promise.resolve().then(() => {
+              if (uid) {
+                fetchUserData(uid);
+                fetchAAL();
+                import('@/lib/external-db-prewarm').then((m) =>
+                  m.prewarmExternalDb({ oncePerSession: true }),
+                );
+              }
+            });
+          } else {
+            // TOKEN_REFRESHED, PASSWORD_RECOVERY, MFA_CHALLENGE_VERIFIED, etc.
+            // Só refresca AAL sem rebater no banco.
+            fetchAAL();
+          }
         } else {
           clearProfileRoles();
           clearMFA();
@@ -219,8 +245,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch {
             /* getUser falhou por rede — segue fluxo normal */
           }
-          fetchUserData(session.user.id);
-          fetchAAL();
+
+          // BUG-2 FIX: onAuthStateChange(INITIAL_SESSION) já agendou
+          // fetchUserData via Promise.resolve().then acima. Só buscar aqui
+          // se o listener ainda não disparou (ex.: Supabase não emitiu
+          // INITIAL_SESSION antes de getSession() resolver).
+          if (!initialFetchScheduled) {
+            fetchUserData(session.user.id);
+            fetchAAL();
+          }
         } else {
           setIsLoading(false);
         }
@@ -277,12 +310,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading) return;
     const timer = window.setTimeout(() => {
-      console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
+      const log = createClientLogger('auth.watchdog');
+      log.warn('isLoading_stalled_forcing_false', { duration: '8s' });
       setIsLoading(false);
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
-    }, 12000);
+    }, 8000);
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);
 
@@ -393,8 +427,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+const FALLBACK_AUTH: AuthContextType = {
+  user: null,
+  session: null,
+  profile: null,
+  isLoading: false,
+  roles: [],
+  role: null,
+  isDev: false,
+  isSupervisor: false,
+  isAgente: false,
+  isSupervisorOrAbove: false,
+  isAdmin: false,
+  isManager: false,
+  isSeller: false,
+  canManage: false,
+  isAuthenticated: false,
+  currentAAL: null,
+  nextAAL: null,
+  hasMFA: false,
+  mfaRequired: false,
+  rolesLoaded: false,
+  refreshAAL: async () => {},
+  signIn: async () => ({ error: { message: 'AuthProvider indisponível' }, data: null }),
+  signOut: async () => {},
+  refreshProfile: async () => {},
+  refreshSession: async () => {},
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[AuthContext] useAuth called outside AuthProvider — using safe fallback. ' +
+          'This usually indicates an HMR module-duplication race; a full reload should fix it.',
+      );
+    }
+    return FALLBACK_AUTH;
+  }
   return context;
 };

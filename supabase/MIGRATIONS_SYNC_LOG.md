@@ -296,3 +296,27 @@ banco vivo). Por decisao explicita, os arquivos byte-exatos **nao** sao alterado
 Se algum dia precisarmos de replay from-scratch confiavel (ex.: reabilitar o
 Preview), o caminho e UMA migration forward no tip que torne estes objetos
 idempotentes — nunca editar os snapshots historicos.
+
+## 2026-06-10 — Execução das correções da auditoria medallion (11 migrações via MCP)
+
+Aplicadas diretamente no banco `doufsxqlfjyuvxuezpln` via MCP `apply_migration` e
+espelhadas 1:1 neste repo (mesmos version/nome):
+
+- `20260610120511_p0_carrossel_01_hash_canonico_e_enrich_tipado`
+- `20260610120708_p0_carrossel_02_fix_digest_schema`
+- `20260610121302_p0_carrossel_03_content_hash_drop_expression`
+- `20260610121713_p0_quarentena_01_promote_failures_marcam_bronze`
+- `20260610122207_p0_seguranca_01_fecha_anon_bronze_custos_e_fns`
+- `20260610122350_p0_seguranca_02_products_grants_por_coluna_anon`
+- `20260610122504_p0_estoque_01_fn_reconcile_stock_gold`
+- `20260610122909_p1_historico_01_particionamento_mensal`
+- `20260610123120_p1_gold_01_invariantes_indices_e_equivalencias_mortas`
+- `20260610123210_p1_health_01_fn_pipeline_health_v2`
+- `20260610123510_p1_ingest_01_fn_ingest_supplier_raw_reset_condicional`
+
+ATENÇÃO: as migrações `20260610120000..120500_silver_depara_*` (PR #693) existem
+no repo mas NÃO estão aplicadas no banco — decisão registrada no ADR 0009
+(aplicá-las regrediria a fn_standardize_variant viva). Reconciliar antes de
+qualquer `supabase db push`.
+
+Detalhes, métricas antes/depois e one-shots: docs/EXECUCAO_CORRECOES_MEDALLION_2026-06-10.md

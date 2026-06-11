@@ -52,22 +52,41 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
         if ! git diff --staged --quiet; then
-          git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
-          # CI runs on detached HEAD (merge commit); push explicitly to the PR branch.
           TARGET_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-          # The matrix runs shards in parallel; both may push baselines for distinct
-          # PNG files to the same branch. Rebase + retry so the losing shard's push
-          # is replayed on top of the winner's (different files => no conflicts).
-          for attempt in 1 2 3 4 5; do
-            if git push origin "HEAD:${TARGET_BRANCH}"; then
-              echo "Baselines pushed (attempt ${attempt})."
-              break
-            fi
-            echo "Push rejected (attempt ${attempt}) — fetch + rebase and retry."
-            git fetch origin "${TARGET_BRANCH}"
-            git rebase "origin/${TARGET_BRANCH}" || { git rebase --abort; exit 1; }
-            sleep $(( (RANDOM % 4) + 1 ))
-          done
+          # PR checks run on a detached merge-commit HEAD.  Rebasing that commit
+          # onto the PR branch creates add/add conflicts for every file the PR
+          # touched.  Fix: save the new PNG blobs, switch to the real branch tip,
+          # paste them there, then commit and push from a proper (non-merge) HEAD.
+          STAGED_LIST=$(git diff --staged --name-only)
+          TMPDIR_PNGS=$(mktemp -d)
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            mkdir -p "${TMPDIR_PNGS}/$(dirname "$f")"
+            cp "$f" "${TMPDIR_PNGS}/$f"
+          done <<< "$STAGED_LIST"
+          git fetch origin "${TARGET_BRANCH}"
+          git checkout -B _baseline-push "origin/${TARGET_BRANCH}"
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            mkdir -p "$(dirname "$f")"
+            cp "${TMPDIR_PNGS}/$f" "$f"
+          done <<< "$STAGED_LIST"
+          git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
+            # Retry loop handles the parallel-shard race: both shards add different
+            # PNG files to the same branch, so the loser does a clean rebase and retries.
+            for attempt in 1 2 3 4 5; do
+              if git push origin "HEAD:${TARGET_BRANCH}"; then
+                echo "Baselines pushed (attempt ${attempt})."
+                break
+              fi
+              echo "Push rejected (attempt ${attempt}) — fetch + rebase and retry."
+              git fetch origin "${TARGET_BRANCH}"
+              git rebase "origin/${TARGET_BRANCH}" || { git rebase --abort; exit 1; }
+              sleep $(( (RANDOM % 4) + 1 ))
+            done
+          fi
         fi
 
     - name: Upload Test Report

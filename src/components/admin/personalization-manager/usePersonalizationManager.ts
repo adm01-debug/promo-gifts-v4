@@ -189,10 +189,16 @@ export function usePersonalizationManager() {
 
   // ── Mutations ──
   const toggleGroupRulesMutation = useMutation({
-    mutationFn: async ({ id, useGroupRules }: { id: string; useGroupRules: boolean }) => {
+    mutationFn: async ({
+      id,
+      use_group_rules: useGroupRules,
+    }: {
+      id: string;
+      use_group_rules: boolean;
+    }) => {
       const { error } = await supabase
         .from('product_group_members')
-        .update({ useGroupRules })
+        .update({ use_group_rules: useGroupRules })
         .eq('id', id);
       if (error) throw error;
     },
@@ -400,7 +406,7 @@ export function usePersonalizationManager() {
       component_location_id: selectedLocationId,
       technique_id: newTechniqueId,
       composed_code: composedCode,
-      max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+      max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
     });
   };
 
@@ -496,7 +502,7 @@ export function usePersonalizationManager() {
       }
       await supabase
         .from('product_group_members')
-        .update({ useGroupRules: false })
+        .update({ use_group_rules: false })
         .eq('id', productMembership.id);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
@@ -511,7 +517,7 @@ export function usePersonalizationManager() {
     }
   };
 
-  const isUsingGroupRules = productMembership?.useGroupRules ?? false;
+  const isUsingGroupRules = productMembership?.use_group_rules ?? false;
   const hasGroup = !!productMembership;
 
   return {

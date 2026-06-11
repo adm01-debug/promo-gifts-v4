@@ -117,8 +117,8 @@ export function ProductKitComponentsSection({
       toast.success('Componente criado com sucesso');
       setIsCreating(false);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar componente');
+    } catch {
+      toast.error('Erro ao criar componente');
     } finally {
       setIsSaving(false);
     }
@@ -131,8 +131,8 @@ export function ProductKitComponentsSection({
       toast.success('Componente atualizado');
       setEditingId(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+    } catch {
+      toast.error('Erro ao atualizar');
     } finally {
       setIsSaving(false);
     }
@@ -146,8 +146,8 @@ export function ProductKitComponentsSection({
       toast.success('Componente removido');
       setDeleteTarget(null);
       invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover');
+    } catch {
+      toast.error('Erro ao remover');
     } finally {
       setIsSaving(false);
     }

@@ -74,6 +74,7 @@ export function QuickAddToQuote({
   };
 
   const handleOpenChange = (open: boolean) => {
+    if (disabled) return;
     setIsOpen(open);
     if (!open) {
       setSelectedVariant(undefined);
@@ -128,7 +129,12 @@ export function QuickAddToQuote({
             <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
           </Tooltip>
         ) : (
-          <Button size={buttonSize} className={cn(className)} onClick={(e) => e.stopPropagation()}>
+          <Button
+            size={buttonSize}
+            disabled={disabled}
+            className={cn(className)}
+            onClick={(e) => e.stopPropagation()}
+          >
             {iconOverride === 'cart' ? (
               <ShoppingCart className="h-4 w-4" />
             ) : iconOverride === 'plus' ? (
@@ -225,7 +231,7 @@ export function QuickAddToQuote({
                   min={minQuantity}
                   value={quantity}
                   onChange={(e) =>
-                    setQuantity(Math.max(minQuantity, parseInt(e.target.value) || minQuantity))
+                    setQuantity(Math.max(minQuantity, parseInt(e.target.value, 10) || minQuantity))
                   }
                   className="h-8 text-center"
                 />

@@ -72,13 +72,24 @@ export function ProtectedRoute({
 
   return (
     <EnhancedErrorBoundary
+      onError={(error) => {
+        console.error('[ProtectedRoute] Critical render failure:', error);
+      }}
       fallback={
-        <div className="p-8">
+        <div className="flex min-h-[60vh] items-center justify-center p-8">
           <EmptyState
             variant="error"
             title="Falha no Módulo"
-            description="Ocorreu um erro ao carregar esta seção. Tente recarregar a página."
-            action={{ label: 'Recarregar', onClick: () => window.location.reload() }}
+            description="Ocorreu um erro inesperado ao carregar esta seção. O sistema tentará se recuperar automaticamente."
+            action={{ 
+              label: 'Recarregar Módulo', 
+              onClick: () => {
+                // Bust cache and reload
+                const url = new URL(window.location.href);
+                url.searchParams.set('t', Date.now().toString());
+                window.location.replace(url.toString());
+              } 
+            }}
           />
         </div>
       }

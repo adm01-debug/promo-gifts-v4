@@ -19,10 +19,9 @@ export function ExportDossierButton({ clientId }: Props) {
       toast.success('Dossiê exportado', {
         description: 'PDF gerado com sucesso.',
       });
-    } catch (err) {
-      console.error('[ExportDossierButton] erro ao gerar PDF', err);
+    } catch {
       toast.error('Falha ao gerar dossiê', {
-        description: err instanceof Error ? err.message : 'Tente novamente.',
+        description: 'Tente novamente.',
       });
     }
   };

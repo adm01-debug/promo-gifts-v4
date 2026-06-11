@@ -181,6 +181,7 @@ interface ThrottleEntry {
 const throttleByEvent = new Map<string, ThrottleEntry>();
 
 function emit(event: string, payload: Record<string, unknown>) {
+  if (!isDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.log(`%c[notifications-metrics:${event}]`, 'color:#0891b2;font-weight:600', payload);
 }
@@ -368,7 +369,7 @@ export const notificationsMetrics = {
     state.triggers = 0;
     state.fetches = 0;
     state.byTrigger = { hover: 0, focus: 0, 'drawer-open': 0 };
-    state.byFetch = { initial: 0, polling: 0, prefetch: 0, mutation: 0 };
+    state.byFetch = { initial: 0, polling: 0, prefetch: 0, mutation: 0, 'filter-change': 0 };
     state.lastFetchAt = 0;
     state.fetchesWithinTtl = 0;
     state.fetchesAfterTtl = 0;

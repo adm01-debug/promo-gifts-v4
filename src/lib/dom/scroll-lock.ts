@@ -61,9 +61,31 @@ export function releaseScrollLock(): void {
 
 /** Release the lock only when no overlay is genuinely open. */
 export function releaseScrollLockIfIdle(): void {
+  // If we have an open overlay, we keep the lock.
   if (hasOpenOverlay()) return;
+  
+  // Otherwise, release everything.
   releaseScrollLock();
 }
+
+/** 
+ * Force release during navigation, with a small delay to allow the new 
+ * page to mount and Radix components from the old page to unmount.
+ */
+export function forceReleaseScrollLock(): void {
+  // We use a small timeout because navigation unmounts are often 
+  // processed after the URL change.
+  setTimeout(() => {
+    // If a new modal was opened immediately on the new page, respect it.
+    if (hasOpenOverlay()) return;
+    
+    // forceRootInteractive clears everything AND sets pointer-events: auto 
+    // as a fallback if something still looks stuck.
+    forceRootInteractive();
+  }, 60);
+}
+
+
 
 /**
  * True when <body> is currently inert via a stuck `pointer-events: none`

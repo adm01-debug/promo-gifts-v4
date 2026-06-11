@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsMetrics, type FetchSource } from '@/lib/notifications-metrics';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export interface WorkspaceNotification {
   id: string;
@@ -59,8 +60,8 @@ function isDebugEnabled(): boolean {
 
 function debugLog(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  // eslint-disable-next-line no-console
-  console.log(`%c[notifications:${event}]`, 'color:#7c3aed;font-weight:600', payload);
+  const log = createClientLogger('notifications.' + event);
+  log.info('event', payload);
 }
 
 export function useWorkspaceNotifications() {

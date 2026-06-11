@@ -65,7 +65,7 @@ export function VirtualizedProductGrid({
   onClearFilters,
   viewMode = 'grid',
   onViewModeChange,
-  showFilterBar = true,
+  showFilterBar = false,
   activeColorFilter,
   columnSelector,
   selectionMode = false,
@@ -93,18 +93,19 @@ export function VirtualizedProductGrid({
   const estimatedRowHeight =
     viewMode === 'list'
       ? 88 // Altura fixa do ListItem (88px)
-      : 480; // Altura média do Grid Card (pode variar ligeiramente por zoom)
+      : 520; // Altura média do Grid Card (pode variar ligeiramente por zoom)
 
   const virtualizer = useVirtualizer({
     count: hasMore ? rowCount + 1 : rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
-      // O loader row pode ter altura diferente
-      if (hasMore && index === rowCount) return 80;
+      if (hasMore && index === rowCount) return 120; // Espaço para loader/skeleton
       return estimatedRowHeight;
     },
     overscan: viewMode === 'list' ? 10 : 5,
+    scrollMargin: 0,
   });
+
 
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -135,10 +136,12 @@ export function VirtualizedProductGrid({
     return () => element.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Reset loadingMore when products change
+  // Reset loadingMore and scroll when products change (e.g. filter/sort)
   useEffect(() => {
     setLoadingMore(false);
-  }, [products.length]);
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [products]);
+
 
   const scrollToTop = () => {
     parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -148,11 +151,12 @@ export function VirtualizedProductGrid({
     return (
       <div className="relative h-full">
         <div
-          className="scrollbar-products h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto overscroll-contain rounded-xl border border-border/40 bg-background shadow-sm"
+          className="scrollbar-products h-full overflow-y-auto overscroll-contain rounded-xl border border-border/40 bg-background shadow-sm"
+
           style={{ contain: 'strict' }}
         >
-          {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-            <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+          {showFilterBar && !isLoading && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
+            <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
               <InlineFilterBar
                 activeFiltersCount={activeFiltersCount}
                 totalProducts={0}
@@ -201,12 +205,12 @@ export function VirtualizedProductGrid({
       <div
         ref={parentRef}
         data-testid="virtualized-product-grid"
-        className="scrollbar-products h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto overscroll-contain rounded-xl border border-border/40 bg-background shadow-sm"
+        className="scrollbar-products h-full overflow-y-auto overscroll-contain rounded-xl border border-border/40 bg-background shadow-sm"
         style={{ contain: 'strict' }}
       >
         {/* Barra de filtros sticky DENTRO do container de scroll */}
-        {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-          <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+        {showFilterBar && !isLoading && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
+          <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
             <InlineFilterBar
               activeFiltersCount={activeFiltersCount}
               totalProducts={products.length}
@@ -244,15 +248,38 @@ export function VirtualizedProductGrid({
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="flex items-center justify-center py-8"
+                  className="px-4"
                 >
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Carregando mais produtos...</span>
+                  <div
+                    className={cn(
+                      'grid gap-y-8',
+                      viewMode === 'list'
+                        ? 'grid-cols-1'
+                        : `grid-cols-2 sm:grid-cols-3 ${columns >= 4 ? 'lg:grid-cols-4' : ''} ${columns >= 5 ? 'xl:grid-cols-5' : ''} ${columns >= 6 ? '2xl:grid-cols-6' : ''}`,
+                    )}
+                    style={
+                      viewMode !== 'list'
+                        ? {
+                            columnGap: `${colGapPx}px`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {Array.from({ length: effectiveColumns }).map((_, i) => (
+                      <ProductCardSkeleton
+                        key={i}
+                        variant={viewMode === 'list' ? 'compact' : 'default'}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-xs">Carregando mais...</span>
                   </div>
                 </div>
               );
             }
+
 
             // Get products for this row
             const startIndex = virtualRow.index * effectiveColumns;

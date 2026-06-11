@@ -13,13 +13,17 @@
  * BUG-E: SVG logos pre-validated BEFORE calling edge function.
  * BUG-I: Single-area path sends only the relevant area in the `areas` array.
  *
- * Fixes (2026-06-01):
- * BUG-400a: fetchMockupHistory used explicit SELECT with non-existent columns.
- *   Fixed: .select('*') + area_config JSONB mapper.
- * BUG-400b: saveMockupToDb inserted position_x/y and logo_width/height_cm as
- *   top-level columns that do not exist in generated_mockups. The values are
- *   persisted in area_config JSONB — the top-level keys were silently rejected
- *   by Supabase/PostgREST. Removed the 4 duplicate top-level fields.
+ * Fixes (2026-06-10 — mockup contract restoration):
+ * - position_x/position_y/logo_width_cm/logo_height_cm DO exist in generated_mockups
+ *   (migration 20251215011449) and layout_url exists (migration 20260301135215). The
+ *   earlier "BUG-400b" removal was a misdiagnosis caused by a STALE types.ts — it
+ *   regressed geometry persistence to area_config only. Restored the top-level columns
+ *   (written via untypedFrom so the stale types do not reject them) while keeping the
+ *   area_config mirror for backward-compat with older rows. logoRotation/logoScale are
+ *   now persisted in area_config too.
+ * - generateMockupApi rewritten: per-area invocation (no dead areas[] payload),
+ *   friendly edge-error extraction, SVG pre-validation (assertNotSvg), 60s timeout,
+ *   and batch handling that keeps successes and warns on partial failures.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
@@ -95,38 +99,49 @@ export function getTechniquePrompt(technique: Technique): string {
 }
 
 // T8 FIX: limit to 200 records to prevent unbounded payload growth.
-// BUG-400a FIX (2026-06-01): select('*') instead of explicit column list.
+// Explicit column list (incl. layout_url + area_config). Geometry now lives in
+// dedicated top-level columns (position_x/y, logo_width_cm/height_cm — added by
+// migration 20251215011449) AND mirrored in area_config for backward-compat with
+// older records. Uses untypedFrom because the generated types.ts is stale and does
+// not yet reflect those columns (pending `npm run types:generate:supabase`).
+const MOCKUP_HISTORY_COLUMNS =
+  'id, user_id, product_id, product_name, product_sku, technique_id, technique_name, ' +
+  'mockup_url, thumbnail_url, layout_url, logo_url, position_x, position_y, ' +
+  'logo_width_cm, logo_height_cm, area_name, area_config, created_at';
+
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
-  let query = supabase
-    .from('generated_mockups')
-    .select('*')
+  let query = untypedFrom<Record<string, unknown>>('generated_mockups')
+    .select(MOCKUP_HISTORY_COLUMNS)
     .order('created_at', { ascending: false })
     .limit(200);
   if (userId) query = query.eq('user_id', userId);
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data || []).map((row) => {
+  return ((data as unknown as Record<string, unknown>[] | null) || []).map((row) => {
     const cfg = (row.area_config ?? {}) as Record<string, unknown>;
     return {
-      id: row.id,
-      product_id: row.product_id ?? null,
-      product_name: row.product_name,
-      product_sku: row.product_sku ?? null,
-      technique_id: row.technique_id ?? null,
-      technique_name: row.technique_name,
-      mockup_url: row.mockup_url,
-      logo_url: row.logo_url ?? (cfg.logoUrl as string | null) ?? null,
-      position_x: (cfg.positionX as number | null) ?? null,
-      position_y: (cfg.positionY as number | null) ?? null,
-      logo_width_cm: (cfg.logoWidth as number | null) ?? null,
-      logo_height_cm: (cfg.logoHeight as number | null) ?? null,
+      id: row.id as string,
+      product_id: (row.product_id as string | null) ?? null,
+      product_name: row.product_name as string,
+      product_sku: (row.product_sku as string | null) ?? null,
+      technique_id: (row.technique_id as string | null) ?? null,
+      technique_name: row.technique_name as string,
+      mockup_url: row.mockup_url as string,
+      layout_url: (row.layout_url as string | null) ?? null,
+      logo_url: (row.logo_url as string | null) ?? (cfg.logoUrl as string | null) ?? null,
+      position_x: (row.position_x as number | null) ?? (cfg.positionX as number | null) ?? null,
+      position_y: (row.position_y as number | null) ?? (cfg.positionY as number | null) ?? null,
+      logo_width_cm:
+        (row.logo_width_cm as number | null) ?? (cfg.logoWidth as number | null) ?? null,
+      logo_height_cm:
+        (row.logo_height_cm as number | null) ?? (cfg.logoHeight as number | null) ?? null,
       client_id: null,
       client_name: (cfg.clientName as string | null) ?? null,
-      location_name: row.area_name ?? null,
+      location_name: (row.area_name as string | null) ?? null,
       colors_count: (cfg.colorsCount as number | null) ?? null,
       annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
-      created_at: row.created_at,
+      created_at: row.created_at as string,
     } satisfies GeneratedMockup;
   });
 }
@@ -183,8 +198,13 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
         technique_id: safeTechniqueId,
         technique_name: technique.name,
         mockup_url: mockupUrl,
-        thumbnail_url: mockupUrl || null,
-        logo_url: logoUrl || null,
+        thumbnail_url: mockupUrl,
+        logo_url: logoUrl,
+        layout_url: extra?.layoutUrl || null,
+        position_x: area.positionX,
+        position_y: area.positionY,
+        logo_width_cm: area.logoWidth,
+        logo_height_cm: area.logoHeight,
         area_name: extra?.locationName || area.name || 'Frente',
         ai_model_used: technique.code || technique.name || 'custom',
         area_config: {
@@ -192,6 +212,8 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
           positionY: area.positionY,
           logoWidth: area.logoWidth,
           logoHeight: area.logoHeight,
+          logoRotation: area.logoRotation ?? null,
+          logoScale: area.logoScale ?? null,
           logoUrl,
           clientName,
           colorsCount: extra?.colorsCount || null,
@@ -217,44 +239,123 @@ export interface GenerateMockupParams {
 }
 
 export interface GenerateMockupResult {
-  mockupUrl: string;
+  mockupUrl?: string;
   singleUrl?: string | null;
   batchResults: { url: string; areaName: string }[];
   jobId?: string;
   revisionsLeft?: number;
 }
 
-const GENERATE_TIMEOUT_MS = 60_000;
+const GENERATE_TIMEOUT_MS = 60000;
+
+// BUG-E: SVG logos are rejected up-front — the edge function cannot composite SVGs.
+// Detect data: URLs encoding an SVG and fail fast with a friendly PT-BR message
+// BEFORE spending an edge-function invocation.
+function assertNotSvg(areas: PersonalizationArea[]): void {
+  for (const area of areas) {
+    if (area.logoPreview && area.logoPreview.startsWith('data:image/svg')) {
+      throw new Error(
+        'Logos SVG não são suportados. Converta o logo para PNG ou JPG e tente novamente.',
+      );
+    }
+  }
+}
+
+/**
+ * Extracts a human-friendly message from a supabase FunctionsHttpError.
+ * The edge function encodes { error, errorCode, message } in the non-2xx body,
+ * reachable via `error.context` (a Response). Falls back to the raw message.
+ */
+async function extractEdgeErrorMessage(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response } | null)?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = (await ctx.json()) as { error?: string; errorCode?: string; message?: string };
+      if (body?.message) return body.message;
+      if (body?.error) return body.error;
+    } catch {
+      /* body was not JSON — fall through to the generic message */
+    }
+  }
+  return error instanceof Error ? error.message : 'Falha ao gerar mockup.';
+}
+
+/** Invokes the edge function for a single area, enforcing the 60s timeout. */
+async function invokeMockupForArea(
+  params: GenerateMockupParams,
+  area: PersonalizationArea,
+): Promise<string> {
+  const generateCall = supabase.functions.invoke('generate-mockup', {
+    body: {
+      productImageUrl: params.productImage,
+      productName: params.productName,
+      technique: params.technique,
+      techniquePrompt: getTechniquePrompt(params.technique),
+      logoUrl: area.logoPreview,
+      areaName: area.name,
+      positionX: area.positionX,
+      positionY: area.positionY,
+      logoWidth: area.logoWidth,
+      logoHeight: area.logoHeight,
+      logoRotation: area.logoRotation ?? 0,
+      logoScale: area.logoScale ?? 100,
+    },
+  });
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('Tempo esgotado ao gerar mockup (limite de 60s).')),
+      GENERATE_TIMEOUT_MS,
+    );
+  });
+
+  try {
+    const { data, error } = await Promise.race([generateCall, timeout]);
+    if (error) throw new Error(await extractEdgeErrorMessage(error));
+    if (!data?.mockupUrl) throw new Error('Nenhuma imagem retornada pela API de mockup.');
+    return data.mockupUrl as string;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
-  const generateCall = supabase.functions.invoke('generate-mockup', {
-    body: {
-      productImage: params.productImage,
-      productName: params.productName,
-      technique: params.technique,
-      areas: params.areas,
-    },
-  });
+  const areasWithLogos = params.areas;
 
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(
-      () => reject(new Error('Timeout: geração demorou mais de 60s')),
-      GENERATE_TIMEOUT_MS,
-    ),
-  );
+  // BUG-E: pre-validate BEFORE the (expensive) edge invocation.
+  assertNotSvg(areasWithLogos);
 
-  const { data, error } = await Promise.race([generateCall, timeout]);
-  if (error) throw error;
-  if (!data?.mockupUrl) throw new Error('Resposta inválida da API de mockup');
-  return {
-    mockupUrl: data.mockupUrl,
-    singleUrl: data.mockupUrl,
-    jobId: data.jobId,
-    revisionsLeft: data.revisionsLeft,
-    batchResults: [],
-  };
+  // BUG-I: single-area path sends ONLY the relevant area — never the dead areas[] payload.
+  if (areasWithLogos.length === 1) {
+    const url = await invokeMockupForArea(params, areasWithLogos[0]);
+    return { singleUrl: url, batchResults: [] };
+  }
+
+  // BATCH: one invocation per area; keep the successes, warn about partial failures.
+  const batchResults: { url: string; areaName: string }[] = [];
+  let failures = 0;
+  for (const area of areasWithLogos) {
+    try {
+      const url = await invokeMockupForArea(params, area);
+      batchResults.push({ url, areaName: area.name });
+    } catch (err) {
+      failures += 1;
+      console.error(`[generateMockupApi] área "${area.name}" falhou:`, err);
+    }
+  }
+
+  if (batchResults.length === 0) {
+    throw new Error('Nenhum mockup gerado: todas as áreas falharam.');
+  }
+  if (failures > 0) {
+    toast.warning(
+      `${failures} área(s) não puderam ser geradas. Mostrando as ${batchResults.length} que deram certo.`,
+    );
+  }
+  return { singleUrl: batchResults[0].url, batchResults };
 }
 
 export function downloadMockupAsPdf(

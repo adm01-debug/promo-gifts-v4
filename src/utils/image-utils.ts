@@ -1,181 +1,232 @@
 /**
- * image-utils.ts — Utilitários de imagem baseados no Briefing Técnico v3
+ * image-utils.ts — Utilitários para manipulação de imagens de produtos.
  *
- * CDN: Cloudflare Images (100% funcional, HTTP 200 confirmado)
- * Variantes: public, large, medium, card, small, thumbnail
+ * CONCEITOS-CHAVE (ADR-001):
+ *   is_primary=true → imagem capa canônica do produto (predominantemente type='main').
+ *                     Vai para products.primary_image_url via trigger.
+ *   og_image_url    → calculado em runtime: is_og_image=true → first main → is_primary.
+ *                     NÃO está no SELECT; é calculado por enrichProducts().
  *
- * REGRA CRÍTICA:
- *   is_primary = true  → imagem SET (todas as cores juntas) → Hero PDP
- *   is_og_image = true → imagem MAIN (cor individual)       → Cards, OG tags
+ * TIPOS DE IMAGEM:
+ *   main      → imagem principal do produto. Pode ser cor-específica (applies_to_color=true,
+ *               image_type='main'). Tipicamente image_type='main', cor individual.
+ *   Nota: is_primary=true é encontrado em 5.553 imagens 'main' e apenas 1 'set'.
+ *
+ *   gallery   → imagens de galeria do produto.
+ *   product   → foto do produto isolado (sem fundo).
+ *   set       → imagens de conjunto/kit.
+ *   logo      → logo de gravação.
+ *   ambient   → imagens ambientadas.
+ *   detail    → detalhe do produto.
+ *
+ * TIPOS TÉCNICOS (excluídos da galeria do produto):
+ *   box, pouch, location, area, component
  */
-
-import { getProxiedImageUrl } from '@/utils/imageProxy';
-
-// ============================================
-// TIPOS
-// ============================================
-
-export type CdnVariant = 'public' | 'large' | 'medium' | 'card' | 'small' | 'thumbnail';
 
 export type ImageTypeCode =
   | 'main'
   | 'gallery'
+  | 'product'
   | 'set'
   | 'logo'
   | 'ambient'
   | 'detail'
   | 'box'
   | 'pouch'
-  | 'vitrine_pessoa'
-  | 'vitrine_ambiente'
-  | 'component'
   | 'location'
   | 'area'
-  | 'mockup'
-  | 'thumbnail'
-  | 'product'
-  | 'other';
+  | 'component';
 
 export interface ProductImageMeta {
   id?: string;
   url_cdn: string;
-  url_original?: string | null;
-  filename?: string | null;
+  url_original: string | null;
   image_type: string;
   is_primary: boolean;
-  is_og_image?: boolean;
-  applies_to_color?: boolean | null;
-  supplier_code?: string | null;
-  alt_text?: string | null;
-  title_text?: string | null;
+  is_og_image: boolean;
+  applies_to_color: boolean | null;
+  supplier_code: string | null;
+  alt_text: string | null;
+  title_text: string | null;
   display_order: number;
 }
 
-export interface CategorizedImages {
-  hero: ProductImageMeta | null; // is_primary (set — todas as cores)
+export interface GroupedImages {
+  hero: ProductImageMeta | null; // imagem com is_primary=true (predominantemente type='main')
   main: ProductImageMeta[]; // image_type=main
   gallery: ProductImageMeta[]; // image_type=gallery
   logo: ProductImageMeta[]; // image_type=logo (com gravação)
   ambient: ProductImageMeta[]; // image_type=ambient
-  packaging: ProductImageMeta[]; // box + pouch
+  packaging: ProductImageMeta[]; // image_type=box | pouch
+  technical: ProductImageMeta[]; // location | area | component
 }
 
-// ============================================
-// CDN HELPERS
-// ============================================
+/**
+ * Variantes de tamanho do Cloudflare Images.
+ * `card` (400×400) é usada nos cards de catálogo por dezenas de consumidores.
+ */
+export type CdnVariant = 'thumbnail' | 'small' | 'card' | 'medium' | 'large' | 'public';
+
+// CDN variant suffixes
+const CDN_VARIANTS: Record<CdnVariant, string> = {
+  thumbnail: '/thumbnail',
+  small: '/small',
+  card: '/card',
+  medium: '/medium',
+  large: '/large',
+  public: '/public',
+};
 
 /**
- * Troca a variante de tamanho da URL CDN do Cloudflare Images.
- * url_cdn já vem com /public no final.
- *
- * Variantes disponíveis:
- *   /public    → 1366×768  (alta res)
- *   /large     → 1200×1200 (zoom/lightbox)
- *   /medium    → 600×600   (galeria)
- *   /card      → 400×400   (card de produto)
- *   /small     → 300×300   (thumbnails)
- *   /thumbnail → 150×150   (micro thumb)
+ * Gera URL do CDN com variante de tamanho.
  */
-export function getCdnUrl(urlCdn: string, variant: CdnVariant = 'public'): string {
-  if (!urlCdn) return '/placeholder.svg';
-  // Only transform Cloudflare Images URLs (imagedelivery.net)
-  if (urlCdn.includes('imagedelivery.net')) {
-    return urlCdn.replace(/\/[^/]+$/, `/${variant}`);
+export function getCdnUrl(
+  url: string | null | undefined,
+  variant: CdnVariant = 'public',
+): string {
+  if (!url) return '/placeholder.svg';
+  if (url.includes('imagedelivery.net')) {
+    // Remove variante existente e aplica a nova
+    const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
+    return `${base}${CDN_VARIANTS[variant]}`;
   }
-  // Proxy non-Cloudflare URLs (e.g., spotgifts.com.br) to avoid CORS
-  return getProxiedImageUrl(urlCdn) || urlCdn;
+  return url;
 }
 
 /**
- * Gera srcSet para responsive images usando variantes CDN.
+ * Gera srcSet para imagens responsivas.
  */
-export function getSrcSet(urlCdn: string): string {
-  if (!urlCdn) return '';
-  const base = urlCdn.replace(/\/[^/]+$/, '');
+export function getSrcSet(url: string | null | undefined): string | undefined {
+  if (!url || !url.includes('imagedelivery.net')) return undefined;
+  const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
   return [
     `${base}/thumbnail 150w`,
-    `${base}/small 300w`,
+    `${base}/small 400w`,
     `${base}/card 480w`,
-    `${base}/medium 720w`,
-    `${base}/large 1000w`,
+    `${base}/medium 800w`,
+    `${base}/large 1200w`,
   ].join(', ');
 }
 
-/**
- * Gera sizes para responsive images baseado no contexto.
- */
 export function getImageSizes(context: 'card' | 'gallery' | 'hero' | 'thumb'): string {
   switch (context) {
     case 'card':
-      return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px';
+      return '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
     case 'gallery':
-      return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px';
+      return '(max-width: 768px) 100vw, 50vw';
     case 'hero':
-      return '(max-width: 768px) 100vw, 1200px';
+      return '(max-width: 768px) 100vw, 60vw';
     case 'thumb':
-      return '150px';
+      return '80px';
+    default:
+      return '100vw';
   }
 }
 
-// ============================================
-// SELEÇÃO DE IMAGEM POR CONTEXTO
-// ============================================
-
 /**
- * Para CARD de produto (listagem/grid).
- * Prioridade: is_og_image (MAIN, cor individual) → qualquer main → is_primary (SET) → primeira
- */
-export function getCardImage(images: ProductImageMeta[]): ProductImageMeta | null {
-  return (
-    images.find((i) => i.is_og_image) ||
-    images.find((i) => i.image_type === 'main') ||
-    images.find((i) => i.is_primary) ||
-    images[0] ||
-    null
-  );
-}
-
-/**
- * Para HERO da página de produto (sem cor selecionada).
- * Prioridade: is_primary (SET, todas as cores) → is_og_image → primeira
- */
-export function getHeroImage(images: ProductImageMeta[]): ProductImageMeta | null {
-  return images.find((i) => i.is_primary) || images.find((i) => i.is_og_image) || images[0] || null;
-}
-
-/**
- * Para Open Graph / SEO meta tags.
+ * Obtém URL da imagem OG (Open Graph / SEO).
  * Prioridade: is_og_image → qualquer main → is_primary → primeira
  */
-export function getOgImage(images: ProductImageMeta[]): ProductImageMeta | null {
-  return (
+export function getOgImageUrl(images: ProductImageMeta[]): string | null {
+  const og =
     images.find((i) => i.is_og_image) ||
     images.find((i) => i.image_type === 'main') ||
     images.find((i) => i.is_primary) ||
-    images[0] ||
+    images[0];
+  return og?.url_cdn ?? null;
+}
+
+/**
+ * Obtém URL da imagem principal do produto.
+ * Prioridade: is_og_image → qualquer main → is_primary → primeira
+ */
+export function getPrimaryImageUrl(images: ProductImageMeta[]): string | null {
+  const primary =
+    images.find((i) => i.is_og_image) ||
+    images.find((i) => i.image_type === 'main') ||
+    images.find((i) => i.is_primary) ||
+    images[0];
+  return primary?.url_cdn ?? null;
+}
+
+/**
+ * Obtém imagem para exibição baseada na cor selecionada.
+ * Prioridade: main da cor → gallery da cor → primeira da cor
+ */
+export function getColorHeroImage(
+  images: ProductImageMeta[],
+  colorCode: string,
+): ProductImageMeta | null {
+  const colorImgs = images.filter(
+    (i) => i.supplier_code === colorCode && i.applies_to_color === true,
+  );
+  return (
+    colorImgs.find((i) => i.image_type === 'main') ||
+    colorImgs.find((i) => i.image_type === 'gallery') ||
+    colorImgs[0] ||
     null
   );
 }
 
-// ============================================
-// FILTRAGEM POR COR
-// ============================================
+/**
+ * Agrupa imagens por tipo.
+ */
+export function groupImages(images: ProductImageMeta[]): GroupedImages {
+  return {
+    hero: images.find((i) => i.is_primary) ?? null,
+    main: images.filter((i) => i.image_type === 'main'),
+    gallery: images.filter((i) => i.image_type === 'gallery'),
+    logo: images.filter((i) => i.image_type === 'logo'),
+    ambient: images.filter((i) => i.image_type === 'ambient'),
+    packaging: images.filter((i) => i.image_type === 'box' || i.image_type === 'pouch'),
+    technical: images.filter(
+      (i) => i.image_type === 'location' || i.image_type === 'area' || i.image_type === 'component',
+    ),
+  };
+}
 
 /**
- * Filtra imagens relevantes para uma cor selecionada.
- * Retorna: imagens específicas da cor + imagens genéricas (set, ambient, box, etc.)
+ * Obtém imagens para a galeria de um produto com filtro de cor.
+ *
+ * Comportamento (ADR-001):
+ *   - A imagem type='main' é a imagem PRINCIPAL do produto.
+ *     Deve SEMPRE aparecer em primeiro lugar na galeria, mesmo quando uma cor
+ *     está activa — ela é o hero do produto, não uma variante de cor.
+ *   - Tipos técnicos (box, pouch, location, area, component) são excluídos.
+ *   - hero sempre primeiro; specific da cor depois; deduplicado.
+ *
+ * Prioridade de hero:
+ *   1. main com is_primary=true (hero canônico)
+ *   2. main genérico (!applies_to_color) — não ligado a nenhuma cor
+ *   3. main da cor seleccionada em specific — último recurso quando só existem mains por cor
+ *
+ * @param images     Lista completa de ProductImageMeta do produto
+ * @param colorCode  supplier_code da cor seleccionada
  */
 export function getColorImages(images: ProductImageMeta[], colorCode: string): ProductImageMeta[] {
-  // Imagens específicas dessa cor
+  // Tipos técnicos nunca aparecem na galeria de produto (ADR-001)
+  const TECHNICAL = new Set(['box', 'pouch', 'location', 'area', 'component']);
+
+  // 1) Imagens específicas desta cor (não-técnicas)
   const specific = images.filter(
-    (i) => i.applies_to_color === true && i.supplier_code === colorCode,
+    (i) =>
+      i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
   );
 
-  // Imagens genéricas (sem cor — set, ambient, box, etc.)
-  const generic = images.filter((i) => i.applies_to_color === false || i.applies_to_color === null);
+  // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
+  //    → main cor-específica da cor seleccionada (último recurso: produto só tem mains por cor)
+  //    A main é a imagem principal do produto e deve sempre aparecer, mesmo com cor activa.
+  const hero =
+    images.find((i) => i.image_type === 'main' && i.is_primary) ??
+    images.find((i) => i.image_type === 'main' && !i.applies_to_color) ??
+    specific.find((i) => i.image_type === 'main');
 
-  // Cor específica primeiro, genéricas depois
-  return [...specific, ...generic];
+  // 3) Hero sempre primeiro; deduplicar os specific (remover hero se vier na lista)
+  const result: ProductImageMeta[] = [];
+  if (hero) result.push(hero);
+  result.push(...specific.filter((i) => i.id !== hero?.id));
+
+  return result;
 }
 
 /**
@@ -212,64 +263,28 @@ export function getColorThumbnail(
 }
 
 // ============================================
-// CATEGORIZAÇÃO
+// CONSTANTES EXPORTADAS
 // ============================================
 
-/**
- * Separa imagens por categoria para exibição organizada (tabs na galeria).
- */
-export function categorizeImages(images: ProductImageMeta[]): CategorizedImages {
-  return {
-    hero: images.find((i) => i.is_primary) || null,
-    main: images.filter((i) => i.image_type === 'main'),
-    gallery: images.filter((i) => i.image_type === 'gallery'),
-    logo: images.filter((i) => i.image_type === 'logo'),
-    ambient: images.filter((i) => i.image_type === 'ambient'),
-    packaging: images.filter((i) => i.image_type === 'box' || i.image_type === 'pouch'),
-  };
-}
-
-// ============================================
-// CONSTANTES
-// ============================================
-
-/** Cloudflare account hash para montagem manual de URLs */
-export const CF_ACCOUNT_HASH = 'vKMs9Ow8bA_enuhLXZ2HAw';
-export const CF_BASE_URL = `https://imagedelivery.net/${CF_ACCOUNT_HASH}`;
-
-/** Tipos que aparecem na galeria pública */
+/** Tipos que aparecem na galeria do produto (exclui técnicos) */
 export const GALLERY_TYPES: ImageTypeCode[] = [
   'main',
   'gallery',
+  'product',
   'set',
   'logo',
   'ambient',
   'detail',
-  'box',
-  'pouch',
-  'vitrine_pessoa',
-  'vitrine_ambiente',
 ];
 
-/** Tipos específicos de cor */
-export const COLOR_SPECIFIC_TYPES: ImageTypeCode[] = ['main', 'gallery', 'detail', 'product'];
+/** Tipos técnicos — documentação/embalagem, não aparecem na galeria */
+export const TECHNICAL_IMAGE_TYPES: Set<string> = new Set([
+  'box',
+  'pouch',
+  'location',
+  'area',
+  'component',
+]);
 
-/** Ordem de prioridade de exibição por tipo */
-export const IMAGE_TYPE_PRIORITY: Record<string, number> = {
-  main: 10,
-  vitrine_pessoa: 12,
-  vitrine_ambiente: 13,
-  set: 15,
-  gallery: 20,
-  ambient: 25,
-  logo: 30,
-  detail: 35,
-  box: 40,
-  pouch: 41,
-  component: 50,
-  location: 51,
-  area: 52,
-  mockup: 60,
-  thumbnail: 70,
-  other: 99,
-};
+/** Tipos de imagem que podem ser cor-específicas */
+export const COLOR_SPECIFIC_TYPES: ImageTypeCode[] = ['main', 'gallery', 'detail', 'product'];

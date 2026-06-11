@@ -143,13 +143,12 @@ export async function fetchPromobrindProducts(options?: {
     let offset = 0;
     let loopCount: number | null = null;
     let consecutiveErrors = 0;
-    const MAX_CONSECUTIVE_ERRORS = 2; // Reduced from 3 — fail faster
+    const MAX_CONSECUTIVE_ERRORS = 2;
     const HARD_MAX = 200000;
     const PAGINATION_START = Date.now();
-    const PAGINATION_TIMEOUT_MS = 30_000; // 30s total budget for full pagination
+    const PAGINATION_TIMEOUT_MS = 30_000;
 
     while (offset < HARD_MAX) {
-      // Time-budget check: stop if we've been paginating too long
       if (Date.now() - PAGINATION_START > PAGINATION_TIMEOUT_MS) {
         logger.warn(
           `[external-db] Pagination time budget exceeded (${PAGINATION_TIMEOUT_MS}ms). Got ${products.length} products at offset=${offset}.`,
@@ -157,7 +156,6 @@ export async function fetchPromobrindProducts(options?: {
         break;
       }
 
-      // Reduce page size aggressively because the external products table is timing out under larger ranges
       const pageSize = offset >= 1000 ? 125 : BASE_PAGE_SIZE;
       const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
       let page: InvokeResult<PromobrindProduct>;
@@ -247,7 +245,6 @@ export async function fetchPromobrindProducts(options?: {
     totalCount = loopCount;
   }
 
-  // Enrich products
   if (products.length > 0) {
     await enrichProducts(products, options);
   }
@@ -268,10 +265,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     ...new Set(products.map((p) => p.supplier_id).filter(Boolean)),
   ] as string[];
 
-  // Threshold aumentado de 500 → 5000:
-  // O campo products.images[] é mantido pelo trigger trg_sync_product_images no banco,
-  // então o enriquecimento em runtime serve principalmente para cores/variantes.
-  // 5000 cobre o catálogo atual (~6.086 produtos) com margem para crescimento.
   const shouldRunHeavyEnrichment = products.length <= 5000 || typeof options?.limit === 'number';
 
   if (!shouldRunHeavyEnrichment) {
@@ -360,7 +353,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     return;
   }
 
-  // Extract results
   const variantsRecords: VariantRow[] = [];
   for (const idx of queryMap.variants) {
     const r = batchResults[idx];
@@ -389,7 +381,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
   }
 
   const suppliersMap = new Map(suppliersRecords.map((s) => [s.id, s.name]));
-  // Popula cache de imutáveis para reaproveitar em telas de detalhe sem ida ao bridge.
   try {
     const { putInCacheSafe } = await import('./immutableCache');
     for (const s of suppliersRecords) {
@@ -405,7 +396,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     colorGroupsRecords.map((g) => [g.id, { name: g.name, slug: g.slug }]),
   );
 
-  // Build image map
   const productIdSet = new Set(productIds);
   const imagesByProduct = new Map<
     string,
@@ -445,7 +435,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   });
 
-  // Build color map
   const colorsByProduct = new Map<
     string,
     Array<{
@@ -470,13 +459,23 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
     const productImgs = imagesByProduct.get(variant.product_id) || [];
     const byVariantId = productImgs
-      .filter((img) => img.variantId === variant.id && !img.isPrimary && !img.isOgImage)
+      .filter(
+        (img) =>
+          img.variantId === variant.id &&
+          !img.isPrimary &&
+          !img.isOgImage &&
+          !TECHNICAL_IMAGE_TYPES.has(img.type),
+      )
       .sort((a, b) => a.order - b.order)
       .map((img) => img.url);
     const byCode = variant.color_code
       ? productImgs
           .filter(
-            (img) => img.supplierCode === variant.color_code && !img.isPrimary && !img.isOgImage,
+            (img) =>
+              img.supplierCode === variant.color_code &&
+              !img.isPrimary &&
+              !img.isOgImage &&
+              !TECHNICAL_IMAGE_TYPES.has(img.type),
           )
           .sort((a, b) => a.order - b.order)
           .map((img) => img.url)
@@ -528,7 +527,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   });
 
-  // Apply enrichments to products
   products.forEach((product) => {
     const productImages = imagesByProduct.get(product.id);
     if (productImages && productImages.length > 0) {

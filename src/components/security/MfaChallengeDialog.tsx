@@ -56,9 +56,9 @@ export function MfaChallengeDialog({ open }: MfaChallengeDialogProps) {
       if (vErr) throw vErr;
       await refreshAAL();
       toast.success('Acesso administrativo liberado');
-    } catch (e) {
+    } catch {
       toast.error('Código inválido', {
-        description: e instanceof Error ? e.message : 'Tente novamente',
+        description: 'Tente novamente',
       });
       setCode('');
     } finally {

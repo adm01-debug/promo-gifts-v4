@@ -21,7 +21,7 @@ export function ProductInfoBar({
   supplierId,
   onOpenFutureStock,
   onOpenSupplierComparison,
-  _hasFutureStock = true,
+  hasFutureStock: _hasFutureStock = true,
 }: ProductInfoBarProps) {
   const navigate = useNavigate();
 

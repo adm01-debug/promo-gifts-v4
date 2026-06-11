@@ -142,7 +142,7 @@ export function useTechniques() {
 }
 
 /**
- * @deprecated View `v_technique_stats` NÃO EXISTE no DB doufsxqlfjyuvxuezpln.
+ * @deprecated View `v_technique_stats` NÃO EXISTE no DB pqpdolkaeqlyzpdpbizo.
  * Esta query sempre retorna erro/vazio. 0 consumers em components/pages.
  * TODO: Remover quando nenhum componente importar, ou criar a view no DB.
  *

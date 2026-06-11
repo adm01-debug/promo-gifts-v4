@@ -66,7 +66,7 @@ export default function AdminCadastrosPage() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs value={activeTab ?? undefined} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="products" className="gap-2">
               <Package className="h-4 w-4" />
