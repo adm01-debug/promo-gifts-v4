@@ -89,9 +89,10 @@ export default function TrendsPage() {
   const [showForecast, setShowForecast] = useUrlBoolean('fc', false);
   const days = RANGE_TO_DAYS[dateRange] ?? 30;
 
-  // Vendedores (não-managers) só veem seus próprios eventos.
-  const sellerScope = canManage ? null : (user?.id ?? null);
-  const scopeKey = sellerScope ?? 'all';
+  // MÓDULO ABERTO: Todos os usuários agora veem a visão macro de tendências.
+  // O filtro sellerScope foi desativado para permitir que vendedores vejam dados agregados de mercado.
+  const sellerScope = null;
+  const scopeKey = 'all';
   const demo = isDemoMode();
 
   const { sinceCurrent, sincePrevious, recentCutoff } = useMemo(() => {
