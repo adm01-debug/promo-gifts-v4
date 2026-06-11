@@ -76,7 +76,7 @@ export function TableRowActions({
               minQuantity={product.minQuantity || 1}
               variant="icon"
               className="h-7 w-7"
-              onSuccess={(variant) => handleCartAdd(variant as any)}
+              onSuccess={(variant) => handleCartAdd(variant as ExternalVariantStock | null)}
             />
           </div>
         </TooltipTrigger>
