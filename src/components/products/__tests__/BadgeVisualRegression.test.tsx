@@ -9,18 +9,16 @@ const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
       <ThemeProvider>
-        <TooltipProvider>
-          {ui}
-        </TooltipProvider>
+        <TooltipProvider>{ui}</TooltipProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
 describe('ProductStatusBadge Visual Regressions', () => {
   it('renders novelty badge with correct legible colors', () => {
     const { container } = renderWithProviders(
-      <ProductStatusBadge type="novelty" daysRemaining={30} size="sm" />
+      <ProductStatusBadge type="novelty" daysRemaining={30} size="sm" />,
     );
     const badge = container.querySelector('.inline-flex');
     expect(badge).toBeInTheDocument();
@@ -39,24 +37,23 @@ describe('ProductStatusBadge Visual Regressions', () => {
           <ProductStatusBadge type="kit" size="sm" />
           <ProductStatusBadge type="promotion" size="sm" />
         </div>
-      </div>
+      </div>,
     );
-    
+
     const badges = screen.getAllByRole('status');
     expect(badges).toHaveLength(4);
-    
+
     // In a real visual regression test we'd use screenshot comparison,
     // but here we verify the flex-wrap logic is present in the parent via manual code review
     // and ensuring the component itself handles truncation.
-    badges.forEach(badge => {
+    expect(badges).not.toHaveLength(0);
+    for (const badge of badges) {
       expect(badge).toHaveClass('truncate');
-    });
+    }
   });
 
   it('adjusts text size and padding for smaller screens', () => {
-    const { container } = renderWithProviders(
-      <ProductStatusBadge type="novelty" size="md" />
-    );
+    const { container } = renderWithProviders(<ProductStatusBadge type="novelty" size="md" />);
     const badge = container.querySelector('.inline-flex');
     // Verify responsive text classes
     expect(badge).toHaveClass('text-[10px]');

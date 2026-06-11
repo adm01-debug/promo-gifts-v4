@@ -1,20 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import React, { useState, useEffect } from 'react';
 import * as scrollLock from '@/lib/dom/scroll-lock';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { RootInteractivityGuard } from '@/components/system/RootInteractivityGuard';
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom';
 
 // Mock scroll lock functions to track calls
 vi.mock('@/lib/dom/scroll-lock', async () => {
-  const actual = await vi.importActual('@/lib/dom/scroll-lock');
+  const actual = await vi.importActual<typeof scrollLock>('@/lib/dom/scroll-lock');
   return {
-    ...actual as any,
-    releaseScrollLockIfIdle: vi.fn(actual.releaseScrollLockIfIdle as any),
-    forceRootInteractive: vi.fn(actual.forceRootInteractive as any),
-    hasOpenOverlay: vi.fn(actual.hasOpenOverlay as any),
-    isRootInert: vi.fn(actual.isRootInert as any),
+    ...actual,
+    releaseScrollLockIfIdle: vi.fn(actual.releaseScrollLockIfIdle),
+    forceRootInteractive: vi.fn(actual.forceRootInteractive),
+    hasOpenOverlay: vi.fn(actual.hasOpenOverlay),
+    isRootInert: vi.fn(actual.isRootInert),
   };
 });
 
@@ -23,7 +21,7 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
     vi.clearAllMocks();
     document.body.style.pointerEvents = '';
     document.documentElement.style.pointerEvents = '';
-    
+
     // Ensure root element exists for the guard
     let root = document.getElementById('root');
     if (!root) {
@@ -31,31 +29,30 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
       root.id = 'root';
       document.body.appendChild(root);
     }
-    
+
     // Default mock behavior: inert if body is none and no overlay open
-    (scrollLock.isRootInert as any).mockImplementation(() => {
+    vi.mocked(scrollLock.isRootInert).mockImplementation(() => {
       const bodyPE = document.body.style.pointerEvents;
       const htmlPE = document.documentElement.style.pointerEvents;
-      const hasOverlay = (scrollLock.hasOpenOverlay as any)();
+      const hasOverlay = vi.mocked(scrollLock.hasOpenOverlay)();
       return (bodyPE === 'none' || htmlPE === 'none') && !hasOverlay;
     });
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    const root = document.getElementById('root');
-    // Don't remove it every time as it might be needed for the next test
+    // The #root element is intentionally left in place between tests.
   });
 
   it('RootInteractivityGuard recovers from stuck pointer-events: none', async () => {
     vi.useFakeTimers();
-    (scrollLock.hasOpenOverlay as any).mockReturnValue(false);
-    
+    vi.mocked(scrollLock.hasOpenOverlay).mockReturnValue(false);
+
     render(<RootInteractivityGuard />);
 
     // Simulate a stuck pointer-events: none on body
     document.body.style.pointerEvents = 'none';
-    
+
     // Advance timers to trigger the guard's interval check
     await act(async () => {
       vi.advanceTimersByTime(400);
@@ -66,16 +63,19 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
 
   it('restores interactivity when navigating quickly between routes', async () => {
     vi.useFakeTimers();
-    
+
     const TestApp = () => {
       const navigate = useNavigate();
       return (
         <Routes>
-          <Route path="/" element={
-            <div>
-              <button onClick={() => navigate('/two')}>Go to 2</button>
-            </div>
-          } />
+          <Route
+            path="/"
+            element={
+              <div>
+                <button onClick={() => navigate('/two')}>Go to 2</button>
+              </div>
+            }
+          />
           <Route path="/two" element={<div>Page 2</div>} />
         </Routes>
       );
@@ -85,11 +85,11 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
       <MemoryRouter initialEntries={['/']}>
         <RootInteractivityGuard />
         <TestApp />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Initial state: No modal open, but something left pointer-events: none
-    (scrollLock.hasOpenOverlay as any).mockReturnValue(false);
+    vi.mocked(scrollLock.hasOpenOverlay).mockReturnValue(false);
     document.body.style.pointerEvents = 'none';
 
     // Click navigation
@@ -108,12 +108,12 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
 
   it('does NOT restore interactivity when an overlay is legitimately open', async () => {
     vi.useFakeTimers();
-    (scrollLock.hasOpenOverlay as any).mockReturnValue(true);
-    
+    vi.mocked(scrollLock.hasOpenOverlay).mockReturnValue(true);
+
     render(<RootInteractivityGuard />);
 
     document.body.style.pointerEvents = 'none';
-    
+
     await act(async () => {
       vi.advanceTimersByTime(400);
     });

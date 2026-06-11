@@ -4,7 +4,6 @@ import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
 import { cn } from '@/lib/utils';
 
-
 const Drawer = ({
   shouldScaleBackground = true,
   ...props
@@ -36,7 +35,7 @@ const DrawerContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   useOverlayInteractivity();
-  
+
   return (
     <DrawerPortal>
       <DrawerOverlay />
@@ -48,12 +47,12 @@ const DrawerContent = React.forwardRef<
         )}
         {...props}
       >
-
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
 DrawerContent.displayName = 'DrawerContent';
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

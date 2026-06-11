@@ -3,7 +3,6 @@ import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
-import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { useOverlayInteractivity } from '@/hooks/use-overlay-interactivity';
 
 
