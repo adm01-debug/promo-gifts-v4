@@ -2405,7 +2405,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
     expect(cards).toHaveLength(3);
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2417,7 +2416,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     );
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2430,7 +2428,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     );
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     // Novo contrato: hasValidScores = false → winnerIndex = -1 → sem badge em qualquer card
     expect(within(cards[0]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).toBeNull();
@@ -2446,7 +2443,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     ];
     renderTied(variations);
     const cards = screen.getAllByRole("listitem");
-    const { within } = require("@testing-library/react");
     expect(within(cards[0]).queryByLabelText("Melhor score")).toBeNull();
     expect(within(cards[1]).queryByLabelText("Melhor score")).not.toBeNull();
     expect(within(cards[2]).queryByLabelText("Melhor score")).toBeNull();
@@ -2465,7 +2461,6 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
 
       const cards = screen.getAllByRole("listitem");
       expect(cards).toHaveLength(count);
-      const { within } = require("@testing-library/react");
       expect(within(cards[0]).queryByLabelText("Melhor score")).not.toBeNull();
       for (let i = 1; i < count; i++) {
         expect(within(cards[i]).queryByLabelText("Melhor score")).toBeNull();
