@@ -8,3 +8,4 @@ export * from '@/hooks/auth/useProfileRoles';
 export * from '@/hooks/auth/useStepUpAuth';
 export * from '@/hooks/auth/usePasswordBreachCheck';
 export * from '@/hooks/auth/useRBAC';
+export * from '@/hooks/auth/useIPValidation';

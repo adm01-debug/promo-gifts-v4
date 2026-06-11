@@ -1,10 +1,10 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { useMemo } from 'react';
-
 /**
  * useRBAC — Hook central de permissões baseadas em roles (Role-Based Access Control)
  * Encapsula a lógica de hierarquia e permissões específicas.
  */
+import { useAuth } from '@/contexts/AuthContext';
+import { useMemo } from 'react';
+
 export function useRBAC() {
   const { roles, role: highestRole, isDev, isAdmin, isManager, isSupervisor, isAgente, isSeller } = useAuth();
 
