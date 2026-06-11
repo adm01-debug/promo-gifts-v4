@@ -66,14 +66,14 @@ export function AppLogo({
         <div className="flex flex-col">
           <span
             className={cn(
-              'font-display font-black uppercase leading-tight tracking-tight text-foreground drop-shadow-sm transition-all duration-300',
+              'font-display font-black leading-tight tracking-tight text-foreground drop-shadow-sm transition-all duration-300',
               isSidebar
                 ? 'ultra-wide:text-base text-[13px] sm:text-sm 2xl:text-[15px]'
                 : 'text-[22px] tracking-[0.08em] sm:text-[34.8px]',
               textClassName,
             )}
           >
-            PROMO BRINDES
+            Promo Gifts
           </span>
           <span
             className={cn(
@@ -84,7 +84,7 @@ export function AppLogo({
               subtextClassName,
             )}
           >
-            Plataforma de produtos
+            Plataforma de Vendas
             {!isSidebar && <span className="inline-block h-1 w-1 rounded-full bg-primary" />}
           </span>
         </div>
