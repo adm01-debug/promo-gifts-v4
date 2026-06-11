@@ -5,10 +5,10 @@
 -- doufsxqlfjyuvxuezpln em 2026-06-11 (MCP execute_sql), durante a integracao
 -- front-end <-> arquitetura Medallion (Bronze / Prata / Ouro).
 --
--- Esta versao TAMBEM foi registrada em supabase_migrations.schema_migrations
--- com este exato conteudo (paridade DB == repo), portanto `db push` nao tenta
--- reaplicar. O arquivo e seguro para replay: guards to_regclass + no-op quando
--- ja aplicado.
+-- Esta versao foi registrada em supabase_migrations.schema_migrations como
+-- MARCADOR (statements referenciam este arquivo homonimo, padrao ja usado no
+-- repo), portanto `db push` nao tenta reaplicar. O arquivo e seguro para
+-- replay: guards to_regclass + no-op quando ja aplicado.
 --
 --  M1  v_products_public               + filtro is_active = true (fecha vazamento de 19 inativos/fantasmas)
 --  M2  v_variant_sale_prices_public    reescrita SECURITY DEFINER nas tabelas-base (anon: 42501 -> 18.359 rows)
