@@ -3,7 +3,7 @@
  * Exibido quando há múltiplos carrinhos ativos.
  */
 import React from 'react';
-import { Building2, ShoppingCart, Plus, Check } from 'lucide-react';
+import { Building2, ShoppingCart, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -89,11 +89,7 @@ export function CartSelectorDialog({
 
         <div className="mt-4 flex flex-col gap-2">
           {canCreateMore && (
-            <Button
-              variant="outline"
-              className="w-full gap-2 border-dashed"
-              onClick={onCreateNew}
-            >
+            <Button variant="outline" className="w-full gap-2 border-dashed" onClick={onCreateNew}>
               <Plus className="h-4 w-4" />
               Criar novo carrinho para outra empresa
             </Button>
