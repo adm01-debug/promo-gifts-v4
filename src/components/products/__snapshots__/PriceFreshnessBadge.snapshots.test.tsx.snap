@@ -1344,14 +1344,15 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
   <div>
     <div>
       <div>
-        <div
+        <span
           aria-label="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
-          class="inline-flex items-start gap-2.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100/80 px-3.5 py-2.5 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-200"
+          class="inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100"
           role="status"
+          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle mt-0.5 h-4 w-4 shrink-0"
+            class="lucide lucide-alert-triangle mt-0.5 h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1372,26 +1373,24 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="M12 17h.01"
             />
           </svg>
-          <div
-            class="flex flex-col gap-0.5 leading-tight"
-          >
+          <span>
             <span
-              class="font-display text-sm font-semibold"
+              class="block"
             >
               Preço pode estar defasado
             </span>
             <span
-              class="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80"
+              class="block tabular-nums text-amber-900/80 dark:text-amber-200/80"
             >
               Última atualização em 03/03/2026 (há 61 dias)
             </span>
             <span
-              class="text-[11px] text-amber-800/80 dark:text-amber-200/70"
+              class="block text-[11px] font-normal text-amber-800 dark:text-amber-200"
             >
               Confirme com o fornecedor antes de fechar o orçamento.
             </span>
-          </div>
-        </div>
+          </span>
+        </span>
       </div>
       <div
         data-testid="tooltip-content"
