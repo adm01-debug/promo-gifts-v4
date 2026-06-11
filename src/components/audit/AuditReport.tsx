@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, CheckCircle, XCircle, Activity, Lock, Users, Database } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Activity, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,9 +13,15 @@ interface AuditResult {
   logs: string[];
 }
 
+interface AuditReportData {
+  status: string;
+  timestamp: string;
+  results: AuditResult[];
+}
+
 export function AuditReport() {
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<AuditReportData | null>(null);
 
   const runAudit = async () => {
     setLoading(true);
@@ -24,41 +30,43 @@ export function AuditReport() {
       if (error) throw error;
       setReport(data);
       toast.success('Auditoria concluída com sucesso');
-    } catch (err: any) {
-      toast.error('Falha na auditoria: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Falha na auditoria: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6">
       <Card className="border-2 border-primary/20 bg-primary/5">
         <CardHeader className="flex flex-row items-center gap-4">
-          <div className="p-3 bg-primary rounded-xl text-primary-foreground shadow-lg">
+          <div className="rounded-xl bg-primary p-3 text-primary-foreground shadow-lg">
             <Shield className="h-8 w-8" />
           </div>
           <div className="flex-1">
             <CardTitle className="text-2xl font-black">Auditoria Técnica Automática</CardTitle>
             <CardDescription>Validação de Concorrência, RLS e Limites de Negócio</CardDescription>
           </div>
-          <Button 
-            onClick={runAudit} 
+          <Button
+            onClick={runAudit}
             disabled={loading}
-            className="rounded-full px-8 font-bold shadow-md hover:shadow-lg transition-all"
+            className="rounded-full px-8 font-bold shadow-md transition-all hover:shadow-lg"
           >
             {loading ? (
               <>
                 <Activity className="mr-2 h-4 w-4 animate-spin" />
                 Auditando...
               </>
-            ) : 'Iniciar Simulações'}
+            ) : (
+              'Iniciar Simulações'
+            )}
           </Button>
         </CardHeader>
       </Card>
 
       {report && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card className="bg-card">
             <CardHeader className="pb-2">
               <CardDescription>Status Geral</CardDescription>
@@ -85,7 +93,10 @@ export function AuditReport() {
       )}
 
       {report?.results.map((test: AuditResult, idx: number) => (
-        <Card key={idx} className="overflow-hidden border-border/40 shadow-sm hover:shadow-md transition-shadow">
+        <Card
+          key={idx}
+          className="overflow-hidden border-border/40 shadow-sm transition-shadow hover:shadow-md"
+        >
           <div className={`h-1.5 w-full ${test.passed ? 'bg-green-500' : 'bg-red-500'}`} />
           <CardHeader className="flex flex-row items-center gap-3 py-4">
             {test.passed ? (
@@ -103,7 +114,7 @@ export function AuditReport() {
               <div className="space-y-1 font-mono text-[11px] leading-relaxed">
                 {test.logs.map((log, lIdx) => (
                   <div key={lIdx} className="border-b border-border/50 pb-1 opacity-70">
-                    <span className="text-primary mr-2">[{lIdx + 1}]</span>
+                    <span className="mr-2 text-primary">[{lIdx + 1}]</span>
                     {log}
                   </div>
                 ))}
@@ -115,7 +126,7 @@ export function AuditReport() {
 
       {!report && !loading && (
         <div className="flex flex-col items-center justify-center py-20 opacity-30">
-          <Database className="h-20 w-20 mb-4" />
+          <Database className="mb-4 h-20 w-20" />
           <p className="font-medium">Nenhum relatório gerado ainda.</p>
         </div>
       )}

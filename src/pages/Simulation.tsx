@@ -27,6 +27,13 @@ interface SimulationDetail {
   error: string;
 }
 
+interface AuditTestResult {
+  name: string;
+  passed: boolean;
+  details: string;
+  logs: string[];
+}
+
 interface SimulationReport {
   totalScenarios: number;
   successes: number;
@@ -36,6 +43,7 @@ interface SimulationReport {
   consistencyChecks: { passed: number; failed: number };
   details: SimulationDetail[];
   latencies: number[];
+  results?: AuditTestResult[];
 }
 
 export default function SimulationPage() {
@@ -249,7 +257,7 @@ export default function SimulationPage() {
         <TabsContent value="audit" className="mt-6 space-y-4">
           {report?.results ? (
             <div className="space-y-4">
-              {report.results.map((test: any, idx: number) => (
+              {report.results.map((test: AuditTestResult, idx: number) => (
                 <Card key={idx} className="overflow-hidden">
                   <div className={`h-1 w-full ${test.passed ? 'bg-green-500' : 'bg-red-500'}`} />
                   <CardHeader className="py-4">
