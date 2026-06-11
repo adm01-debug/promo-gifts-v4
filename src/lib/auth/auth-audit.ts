@@ -10,7 +10,7 @@ export async function runAuthAudit() {
       return { success: false, error: error.message };
     }
     
-    console.log('[AuthAudit] Resultado:', data);
+    console.warn('[AuthAudit] Resultado:', data);
     return { success: true, data };
   } catch (err) {
     console.error('[AuthAudit] Erro inesperado:', err);

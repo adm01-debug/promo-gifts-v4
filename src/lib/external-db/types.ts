@@ -11,6 +11,7 @@ export interface ExternalProduct {
   description?: string;
   short_description?: string;
   price?: number;
+  sale_price?: number;
   cost_price?: number;
   category_id?: string;
   subcategory_id?: string;

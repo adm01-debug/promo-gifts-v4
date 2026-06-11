@@ -157,7 +157,9 @@ export function useSuppliersManager() {
           .order('name', { ascending: true })
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
-        all.push(...records);
+        // select() com lista explícita de colunas (sem api_credentials) infere um
+        // subset anônimo — os campos omitidos são preenchíveis apenas em runtime
+        all.push(...((records ?? []) as unknown as Supplier[]));
         if (records.length < pageSize) break; // last page
       }
       setSuppliers(all);
