@@ -827,10 +827,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               points="12 6 12 12 16 14"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Atualizado há 31 dias
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 02/04/2026
             </span>
@@ -922,10 +924,12 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               d="m9 12 2 2 4-4"
             />
           </svg>
-          <span>
+          <span
+            class="tabular-nums"
+          >
             Atualizado hoje
             <span
-              class="tabular-nums text-muted-foreground"
+              class="opacity-70"
             >
                · em 03/05/2026
             </span>
