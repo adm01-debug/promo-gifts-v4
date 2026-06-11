@@ -206,12 +206,12 @@ export function resolveOAuthError(raw: string | null | undefined): OAuthErrorCop
       hint: 'Tente novamente.',
     };
   }
-  if (/network|fetch|timeout|timed.?out/.test(normalized)) {
+  if (/network|fetch|timeout|timed.?out|tempo.?esgotado/.test(normalized)) {
     return {
-      code: normalized,
-      title: 'Sem conexão com o Google',
-      description: 'Não conseguimos falar com o servidor do Google.',
-      hint: 'Verifique sua internet e tente de novo.',
+      code: 'timeout',
+      title: 'Sinal instável com o Google',
+      description: 'A conexão com o satélite de autenticação demorou mais que o esperado.',
+      hint: 'Verifique sua internet e tente de novo. Se persistir, use seu e-mail.',
     };
   }
   if (/popup|blocked/.test(normalized)) {

@@ -96,12 +96,10 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         const remaining = Math.max(1000, REDIRECT_TIMEOUT_MS - elapsed);
         failTimerRef.current = window.setTimeout(() => {
           authDebugError('social-login', 'pending timeout on remount', { remaining });
-          finishWithError(
-            'Tempo esgotado ao contatar o Google. Verifique sua conexão e tente novamente.',
-            { autoFallback: true },
-          );
+          finishWithError('timeout', { autoFallback: true });
         }, remaining);
       }
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -153,11 +151,9 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
       // e sinaliza autoFallback=true para que o pai foque o form de e-mail.
       failTimerRef.current = window.setTimeout(() => {
         authDebugError('social-login', 'redirect timeout', { ms: REDIRECT_TIMEOUT_MS });
-        finishWithError(
-          'Tempo esgotado ao contatar o Google. Verifique sua conexão e tente novamente.',
-          { autoFallback: true },
-        );
+        finishWithError('timeout', { autoFallback: true });
       }, REDIRECT_TIMEOUT_MS);
+
 
       try {
         const supabase = await getSupabaseClient();

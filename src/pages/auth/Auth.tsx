@@ -604,14 +604,16 @@ export default function Auth() {
                           >
                             {socialError.description}
                           </p>
-                          {socialError.code && (
-                            <p
-                              className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
-                              data-testid="social-login-error-code"
-                            >
-                              Código: {socialError.code}
-                            </p>
-                          )}
+                          {socialError.code &&
+                            socialError.code.length < 30 &&
+                            !socialError.code.includes('.') && (
+                              <p
+                                className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
+                                data-testid="social-login-error-code"
+                              >
+                                ID: {socialError.code}
+                              </p>
+                            )}
                           {socialError.hint && (
                             <div
                               className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
