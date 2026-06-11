@@ -81,7 +81,7 @@ export function useStepUpAuth() {
         loading: false,
         error: null,
       });
-    } catch (_e) {
+    } catch {
       setState({
         challengeId: null,
         passwordVerified: false,
@@ -108,7 +108,7 @@ export function useStepUpAuth() {
         return;
       }
       setState((s) => ({ ...s, passwordVerified: true, loading: false, error: null }));
-    } catch (_e) {
+    } catch {
       setState((s) => ({ ...s, loading: false, error: 'Falha de rede ao validar senha.' }));
     }
   }, []);
@@ -131,7 +131,7 @@ export function useStepUpAuth() {
       }
       setState((s) => ({ ...s, loading: false, error: null }));
       return data.token as string;
-    } catch (_e) {
+    } catch {
       setState((s) => ({ ...s, loading: false, error: 'Falha de rede ao validar código.' }));
       return null;
     }
