@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import {
   CheckCircle2,
-  AlertTriangle,
   Database,
   Globe,
   Wifi,
