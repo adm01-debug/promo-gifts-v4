@@ -94,6 +94,18 @@ const getStorageOrUndefined = (): SupabaseStorage | undefined => {
 
 const storage = getStorageOrUndefined();
 
+// Runtime validation: intercept all calls to ensure they go to the canonical project
+const validateClientConfig = () => {
+  const currentId = SUPABASE_URL.split('.')[0].split('//')[1];
+  const isLocal = currentId.includes('localhost') || currentId.includes('127.0.0.1') || currentId === 'placeholder';
+  
+  if (!isLocal && currentId !== CURRENT_PROJECT_ID) {
+    const errorMsg = `[Supabase Blocked] Attempting to connect to non-canonical project: ${currentId}. Expected: ${CURRENT_PROJECT_ID}`;
+    console.error(`%c${errorMsg}`, "color: white; background: red; padding: 5px; font-weight: bold;");
+    throw new Error(errorMsg);
+  }
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage,
