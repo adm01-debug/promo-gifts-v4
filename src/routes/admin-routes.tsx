@@ -102,7 +102,6 @@ export const adminRoutes = (
         }
       />
     </Route>
-  </>
 
     {/* DEV-ONLY — páginas técnicas com risco elevado (telemetria, conexões, secrets, MCP, audit técnico, prompts IA) */}
     <Route element={<DevRoute />}>
@@ -131,5 +130,5 @@ export const adminRoutes = (
       <Route path="/admin/qa/sidebar" element={<SidebarQAPage />} />
       <Route path="/admin/observabilidade" element={<ObservabilityDashboardPage />} />
     </Route>
-  </Route>
+  </>
 );
