@@ -304,7 +304,7 @@ export const ProductCard = memo(
               product_sku: product.sku || undefined,
               product_image_url: variant?.selected_thumbnail || product.images?.[0],
               product_price: product.price ?? 0,
-              quantity: product.min_quantity || 1,
+              quantity: product.minQuantity || 1,
               color_name: variant?.color_name || undefined,
               color_hex: variant?.color_hex || undefined,
             },
@@ -323,6 +323,7 @@ export const ProductCard = memo(
           setShareDialogOpen(true);
         }
       },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       [variantPickerMode, product, addFavorite, addToCompare, navigate],
     );
 
@@ -469,7 +470,9 @@ export const ProductCard = memo(
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            const colorParam = activeColorName
+              ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}`
+              : '';
             navigate(`/produto/${product.id}${colorParam}`);
           } else if (e.key.toLowerCase() === 'q') {
             e.preventDefault();
@@ -500,7 +503,9 @@ export const ProductCard = memo(
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
             navigate(`/produto/${product.id}?${params.toString()}`);
           } else {
-            const colorParam = activeColorName ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}` : '';
+            const colorParam = activeColorName
+              ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}`
+              : '';
             navigate(`/produto/${product.id}${colorParam}`);
           }
         }}
@@ -542,7 +547,9 @@ export const ProductCard = memo(
               productId={product.id}
               productName={product.name}
               productSku={product.sku}
-              productImageUrl={product.primary_image_url || product.og_image_url || product.images[0]}
+              productImageUrl={
+                product.primary_image_url || product.og_image_url || product.images[0]
+              }
               productPrice={product.price}
               productMinQuantity={product.minQuantity || 1}
               isFavorited={isFavorited}
@@ -588,7 +595,7 @@ export const ProductCard = memo(
           )}
 
           <div className="flex min-w-0 items-center justify-between gap-1.5">
-            <div className="flex min-w-0 shrink-1 items-center gap-1">
+            <div className="shrink-1 flex min-w-0 items-center gap-1">
               <span
                 className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
                 title={`Fornecedor: ${product.supplier.name}`}
@@ -745,7 +752,7 @@ export const ProductCard = memo(
                 product_sku: product.sku || undefined,
                 product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
                 product_price: product.price ?? 0,
-                quantity: product.min_quantity || 1,
+                quantity: product.minQuantity || 1,
                 color_name: pendingVariant?.color_name || undefined,
                 color_hex: pendingVariant?.color_hex || undefined,
               },

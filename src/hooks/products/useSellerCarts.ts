@@ -171,33 +171,50 @@ export function useSellerCarts() {
       // 1. Tenta atualizar se já existe (Atômico p/ quantidade)
       // Nota: RPC seria ideal p/ atomicidade total, mas o constraint de unicidade
       // já garante que não teremos duplicatas mesmo em race conditions.
-      let updateQuery = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let _updateQuery = (supabase as unknown as any)
         .from('seller_cart_items')
-        .update({ 
-          quantity: supabase.rpc('increment_cart_item_quantity', { row_id: 'id', amount: quantityToAdd }),
-          updated_at: new Date().toISOString() 
-        } as any) // Cast pois increment via rpc no update direto não é padrão do TS do SDK
+        .update({
+          // @ts-expect-error: increment_cart_item_quantity not in generated RPC types; row_id is the pk column ref
+          quantity: supabase.rpc('increment_cart_item_quantity', {
+            row_id: 'id',
+            amount: quantityToAdd,
+          }),
+          updated_at: new Date().toISOString(),
+        })
         .eq('cart_id', cartId)
         .eq('product_id', item.product_id);
-      
-      updateQuery = colorName === null 
-        ? updateQuery.is('color_name', null) 
-        : updateQuery.eq('color_name', colorName);
+
+      _updateQuery =
+        colorName === null
+          ? _updateQuery.is('color_name', null)
+          : _updateQuery.eq('color_name', colorName);
 
       // Como o SDK não suporta increment nativo no .update() facilmente sem RPC,
       // vamos manter a lógica de lookup + update/insert mas com o UNIQUE CONSTRAINT protegendo.
-      
-      const { data: existing } = await (colorName === null 
-        ? supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).is('color_name', null)
-        : supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).eq('color_name', colorName)
+
+      const { data: existing } = await (
+        colorName === null
+          ? supabase
+              .from('seller_cart_items')
+              .select('id, quantity')
+              .eq('cart_id', cartId)
+              .eq('product_id', item.product_id)
+              .is('color_name', null)
+          : supabase
+              .from('seller_cart_items')
+              .select('id, quantity')
+              .eq('cart_id', cartId)
+              .eq('product_id', item.product_id)
+              .eq('color_name', colorName)
       ).maybeSingle();
 
       if (existing) {
         const { error } = await supabase
           .from('seller_cart_items')
-          .update({ 
+          .update({
             quantity: existing.quantity + quantityToAdd,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
         if (error) throw error;
@@ -213,14 +230,25 @@ export function useSellerCarts() {
           color_name: colorName,
           color_hex: item.color_hex || null,
         });
-        
+
         // Se bater no constraint (race condition), tenta o update mais uma vez
         if (error?.code === '23505') {
-          const { data: retryExisting } = await (colorName === null 
-            ? supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).is('color_name', null)
-            : supabase.from('seller_cart_items').select('id, quantity').eq('cart_id', cartId).eq('product_id', item.product_id).eq('color_name', colorName)
+          const { data: retryExisting } = await (
+            colorName === null
+              ? supabase
+                  .from('seller_cart_items')
+                  .select('id, quantity')
+                  .eq('cart_id', cartId)
+                  .eq('product_id', item.product_id)
+                  .is('color_name', null)
+              : supabase
+                  .from('seller_cart_items')
+                  .select('id, quantity')
+                  .eq('cart_id', cartId)
+                  .eq('product_id', item.product_id)
+                  .eq('color_name', colorName)
           ).maybeSingle();
-          
+
           if (retryExisting) {
             await supabase
               .from('seller_cart_items')
