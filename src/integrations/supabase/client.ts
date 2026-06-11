@@ -93,10 +93,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   global: {
     fetch: async (url, options) => {
+      // Force logging of all Supabase requests in DEV
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        console.groupCollapsed(`%c[Supabase Request] ${options?.method || 'GET'} ${url}`, 'color: #3ecf8e; font-weight: bold;');
+        console.log('Options:', options);
+        console.groupEnd();
+      }
+
       try {
         const response = await fetch(url, options);
+        
+        if (isDev) {
+          console.groupCollapsed(`%c[Supabase Response] ${response.status} ${url}`, response.ok ? 'color: #3ecf8e;' : 'color: #f87171;');
+          console.log('Status:', response.status);
+          console.groupEnd();
+        }
+
         if (response.status === 401) {
-          // Clone avoid body consumption
           const body = await response.clone().json().catch(() => ({}));
           const isInvalidKey = body.code === 'UNAUTHORIZED_LEGACY_JWT' || 
                              body.message?.includes('Invalid JWT') || 
@@ -112,7 +126,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
               is_canonical: projectId === CURRENT_PROJECT_ID
             });
             
-            // If we're on a non-canonical project and getting 401, it's a critical config error
             if (projectId !== CURRENT_PROJECT_ID && !projectId.includes('localhost')) {
               console.error(`[Supabase Critical] 401 Unauthorized on project ${projectId}. Current configuration might be invalid.`);
             }
