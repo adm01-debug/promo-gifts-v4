@@ -14,7 +14,7 @@ export function useProfileRoles() {
 
   const fetchUserData = useCallback(async (userId: string) => {
     // BUG-FIX: Previne race condition setando a Promise síncronamente
-    let resolvePromise: ((value: void | PromiseLike<void>) => void) | undefined;
+    let resolvePromise: (value: void | PromiseLike<void>) => void = () => {};
     const fetchPromise = new Promise<void>((resolve) => {
       resolvePromise = resolve;
     });
@@ -82,7 +82,7 @@ export function useProfileRoles() {
         // to prevent white-screen of death if DB calls fail.
         setIsLoading(false);
         setRolesLoaded(true);
-        if (resolvePromise) resolvePromise();
+        resolvePromise();
       }
     };
 

@@ -84,7 +84,9 @@ function emit(
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
     else if (level === 'warn') console.warn(json);
+    // eslint-disable-next-line no-console
     else if (level === 'info') console.log(json);
+    // eslint-disable-next-line no-console
     else console.debug(json);
   }
   /* eslint-enable no-console */

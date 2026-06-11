@@ -3,6 +3,7 @@
  * Audit Técnico do Sistema - Junho 2026
  * ------------------------------------
  * Lovable: Lovable (Lovable-1.0)
+ * Script de diagnóstico executado via console do DevTools — console.log é o output intencional.
  */
 
 import { supabase } from './integrations/supabase/client';

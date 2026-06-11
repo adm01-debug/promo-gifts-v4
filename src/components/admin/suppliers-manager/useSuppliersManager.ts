@@ -348,7 +348,11 @@ export function useSuppliersManager() {
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const { data: existingRecords } = await untypedFrom<{ id: string; name: string; cnpj: string }>('suppliers')
+        const { data: existingRecords } = await untypedFrom<{
+          id: string;
+          name: string;
+          cnpj: string;
+        }>('suppliers')
           .select('id,name,cnpj')
           .eq('cnpj', editingSupplier.cnpj.trim())
           .limit(5);
