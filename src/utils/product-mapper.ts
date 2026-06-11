@@ -151,6 +151,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
       width_cm: p.width_cm,
       length_cm: p.length_cm,
       diameter_cm: p.diameter_cm,
+      circumference_cm: p.circumference_cm,
       weight_g: p.weight_g,
       capacity_ml: p.capacity_ml,
     },

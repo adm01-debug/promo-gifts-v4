@@ -1,4 +1,4 @@
-import { Scale, Box, ArrowUpDown, ArrowLeftRight, MoveHorizontal, Droplets } from 'lucide-react';
+import { Scale, Box, ArrowUpDown, ArrowLeftRight, MoveHorizontal, Droplets, Circle } from 'lucide-react';
 
 interface ProductDimensionsProps {
   dimensions?: {
@@ -6,6 +6,7 @@ interface ProductDimensionsProps {
     width_cm?: number | null;
     length_cm?: number | null;
     diameter_cm?: number | null;
+    circumference_cm?: number | null;
     weight_g?: number | null;
     capacity_ml?: number | null;
   };
@@ -68,9 +69,9 @@ function SpecItem({
 export function ProductDimensions({ dimensions, compact }: ProductDimensionsProps) {
   if (!dimensions) return null;
 
-  const { height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml } = dimensions;
+  const { height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml } = dimensions;
 
-  const hasAnySpec = height_cm || width_cm || length_cm || diameter_cm || weight_g || capacity_ml;
+  const hasAnySpec = height_cm || width_cm || length_cm || diameter_cm || circumference_cm || weight_g || capacity_ml;
 
   if (!hasAnySpec) return null;
 
@@ -93,6 +94,14 @@ export function ProductDimensions({ dimensions, compact }: ProductDimensionsProp
       icon: <Box className="h-5 w-5" />,
       label: 'Diâmetro',
       value: `${diameter_cm}`,
+      unit: 'cm',
+    });
+  }
+  if (circumference_cm) {
+    specs.push({
+      icon: <Circle className="h-5 w-5" />,
+      label: 'Circunferência',
+      value: `${circumference_cm}`,
       unit: 'cm',
     });
   }

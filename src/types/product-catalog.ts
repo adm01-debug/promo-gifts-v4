@@ -55,6 +55,7 @@ export interface Product {
     width_cm?: number | null;
     length_cm?: number | null;
     diameter_cm?: number | null;
+    circumference_cm?: number | null;
     weight_g?: number | null;
     capacity_ml?: number | null;
   };
