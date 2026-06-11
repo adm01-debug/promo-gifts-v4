@@ -24,6 +24,11 @@ export function RestrictedRouteNotice({ isCollapsed }: RestrictedRouteNoticeProp
   const { isAdmin, isDev, rolesLoaded } = useAuth();
   const path = location.pathname;
 
+  // Se for uma das rotas liberadas (Tendências ou Inteligência), não mostramos aviso de restrição
+  const publicExceptions = ['/tendencias', '/inteligencia-comercial'];
+  const isException = publicExceptions.some((p) => path === p || path.startsWith(`${p}/`));
+  if (isException) return null;
+
   const isDevRoute = isDevOnlyPath(path);
   const isAdminRoute = !isDevRoute && isAdminOnlyPath(path);
 
