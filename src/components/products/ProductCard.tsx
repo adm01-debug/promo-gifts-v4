@@ -29,6 +29,7 @@ import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
 import { ProductSparkline } from './ProductSparkline';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { SharePreviewDialog } from './share/SharePreviewDialog';
@@ -39,6 +40,7 @@ import { ProductColorSwatches } from './ProductColorSwatches';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
@@ -222,6 +224,9 @@ export const ProductCard = memo(
 
     const addFavorite = useFavoritesStore((s) => s.addFavorite);
     const addToCompare = useComparisonStore((s) => s.addToCompare);
+    const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
+    const [selectorOpen, setSelectorOpen] = useState(false);
+    const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
 
     const handleStatusClick = useCallback(
       (type: string, _value?: string | number) => {
@@ -284,17 +289,27 @@ export const ProductCard = memo(
           setCollectionVariant(variantInfo);
           setCollectionModalOpen(true);
         } else if (variantPickerMode === 'quote') {
-          const params = new URLSearchParams({
-            product_id: product.id,
-            product_name: product.name,
-            product_sku: product.sku || '',
-            product_price: String(product.price ?? 0),
-          });
-          if (variant?.color_name) params.set('color_name', variant.color_name);
-          if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-          const productImg = product.images?.[0] || '/placeholder.svg';
-          params.set('product_image', variant?.selected_thumbnail || productImg);
-          setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+          // Se temos múltiplos carrinhos, mostramos o seletor primeiro
+          if (carts.length > 1) {
+            setPendingVariant(variant);
+            setSelectorOpen(true);
+            return;
+          }
+
+          // Se tiver apenas 1 ou nenhum, segue o fluxo normal
+          addToActiveCart(
+            {
+              product_id: product.id,
+              product_name: product.name,
+              product_sku: product.sku || undefined,
+              product_image_url: variant?.selected_thumbnail || product.images?.[0],
+              product_price: product.price ?? 0,
+              quantity: product.min_quantity || 1,
+              color_name: variant?.color_name || undefined,
+              color_hex: variant?.color_hex || undefined,
+            },
+            carts.length === 1 ? carts[0].id : undefined,
+          );
         } else if (variantPickerMode === 'share') {
           setShareVariant(
             variant
@@ -714,6 +729,36 @@ export const ProductCard = memo(
           productName={product.name}
           mode={variantPickerMode}
           onComplete={handleVariantComplete}
+        />
+
+        <CartSelectorDialog
+          open={selectorOpen}
+          onOpenChange={setSelectorOpen}
+          carts={carts}
+          productName={product.name}
+          canCreateMore={canCreateCart}
+          onSelect={(cartId) => {
+            addToActiveCart(
+              {
+                product_id: product.id,
+                product_name: product.name,
+                product_sku: product.sku || undefined,
+                product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                product_price: product.price ?? 0,
+                quantity: product.min_quantity || 1,
+                color_name: pendingVariant?.color_name || undefined,
+                color_hex: pendingVariant?.color_hex || undefined,
+              },
+              cartId,
+            );
+            setSelectorOpen(false);
+            setPendingVariant(null);
+          }}
+          onCreateNew={() => {
+            setSelectorOpen(false);
+            setPendingVariant(null);
+            // Redireciona para criação de novo carrinho se necessário ou deixa o usuário criar via header
+          }}
         />
         <AddToCollectionModal
           open={collectionModalOpen}
