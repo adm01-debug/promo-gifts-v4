@@ -312,17 +312,6 @@ export default function Auth() {
                   {hint}
                 </p>
               </div>
-              <div className="flex items-center gap-3 pt-1">
-                <button
-                  type="button"
-                  className={authButtonClass(
-                    'h-8 rounded-lg bg-white/5 px-3 text-[10px] uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white',
-                  )}
-                  onClick={() => window.location.reload()}
-                >
-                  Recarregar
-                </button>
-              </div>
             </div>
           ),
         });
