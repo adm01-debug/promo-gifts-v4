@@ -48,6 +48,15 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
 
+      # GATE 2.5: Product type fields — campos críticos nunca podem ser removidos
+      # Previne: remoção de price/shortDescription/category_id durante merge (gap C2)
+      # Previne: renomeação silenciosa pelo Lovable como price→sale_price (gap L3)
+      - name: Gate 2.5 — Product type fields (bloqueante)
+        run: node scripts/check-product-type-fields.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
       # GATE 3: Build (zero build errors)
       - name: Build check
         run: npm run build
