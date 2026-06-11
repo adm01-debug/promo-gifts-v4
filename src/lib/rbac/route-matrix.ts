@@ -212,10 +212,10 @@ export const RBAC_ROUTES: RbacRouteEntry[] = [
   {
     path: '/tendencias',
     label: 'Tendências',
-    guard: 'AdminRoute',
-    role: 'admin',
-    mfaAal2: true,
-    category: 'admin',
+    guard: 'ProtectedRoute',
+    role: 'authenticated',
+    mfaAal2: false,
+    category: 'catalog',
   },
 
   // ─── Admin (gestão funcional, exige AAL2) ─────────────────────────────

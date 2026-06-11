@@ -300,7 +300,11 @@ export const SidebarReorganized = React.memo(
     const filteredGroups = useMemo(
       () =>
         enrichedNavGroups
-          .filter((g) => (!g.adminOnly || isAdmin) && (!g.devOnly || isDev))
+          .filter((g) => {
+            // Se o grupo for de Insights, ele é visível para todos os usuários autenticados
+            if (g.id === 'intelligence') return true;
+            return (!g.adminOnly || isAdmin) && (!g.devOnly || isDev);
+          })
           .map((g) => ({
             ...g,
             items: g.items.filter(isItemVisible).map((i) => ({
