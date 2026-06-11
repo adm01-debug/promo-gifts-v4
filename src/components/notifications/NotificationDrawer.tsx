@@ -494,6 +494,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
+                        aria-label="Exportar CSV"
                         onClick={handleExportCSV}
                       >
                         <Download className="h-4 w-4" />
