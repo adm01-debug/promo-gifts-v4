@@ -53,53 +53,56 @@ import {
  * Mounted under ProtectedRoute.
  */
 export const adminRoutes = (
-  <Route element={<AdminRoute />}>
-    <Route path="/admin" element={<Navigate to="/admin/usuarios" replace />} />
-    <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
-    <Route path="/admin/usuarios/promover" element={<AdminPromoverUsuarioPage />} />
-    <Route path="/admin/limites-desconto" element={<SellerDiscountLimitsAdminPage />} />
-    <Route path="/admin/rls-denials" element={<RlsDenialsAdminPage />} />
-    <Route path="/admin/auditoria-propriedade" element={<OwnershipAuditAdminPage />} />
-    <Route path="/admin/cadastros" element={<AdminCadastrosPage />} />
-    <Route path="/admin/cadastros/produto/:id" element={<AdminProductFormPage />} />
-    <Route path="/admin/permissoes" element={<PermissionsPage />} />
-    <Route path="/admin/roles" element={<RolesPage />} />
-    <Route path="/admin/role-permissoes" element={<RolePermissionsPage />} />
-    <Route path="/admin/video-variantes" element={<AdminVideoVariantsPage />} />
-    <Route path="/admin/kit-templates" element={<KitTemplatesAdminPage />} />
-    <Route path="/admin/kit-templates/metricas" element={<KitTemplatesMetricsPage />} />
-    <Route
-      path="/admin/aprovacoes-desconto"
-      element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
-    />
-    <Route
-      path="/admin/performance"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Performance foi descontinuado. Use o BI Comercial para análises."
-          redirectTo="/ferramentas/bi"
-        />
-      }
-    />
-    <Route
-      path="/admin/performance-comercial"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Performance Comercial foi descontinuado. Use o BI Comercial para análises."
-          redirectTo="/ferramentas/bi"
-        />
-      }
-    />
-    <Route
-      path="/admin/comissoes"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Comissões foi descontinuado nesta plataforma."
-          redirectTo="/admin/usuarios"
-        />
-      }
-    />
+  <>
     <Route path="/tendencias" element={<TrendsPage />} />
+    <Route element={<AdminRoute />}>
+      <Route path="/admin" element={<Navigate to="/admin/usuarios" replace />} />
+      <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
+      <Route path="/admin/usuarios/promover" element={<AdminPromoverUsuarioPage />} />
+      <Route path="/admin/limites-desconto" element={<SellerDiscountLimitsAdminPage />} />
+      <Route path="/admin/rls-denials" element={<RlsDenialsAdminPage />} />
+      <Route path="/admin/auditoria-propriedade" element={<OwnershipAuditAdminPage />} />
+      <Route path="/admin/cadastros" element={<AdminCadastrosPage />} />
+      <Route path="/admin/cadastros/produto/:id" element={<AdminProductFormPage />} />
+      <Route path="/admin/permissoes" element={<PermissionsPage />} />
+      <Route path="/admin/roles" element={<RolesPage />} />
+      <Route path="/admin/role-permissoes" element={<RolePermissionsPage />} />
+      <Route path="/admin/video-variantes" element={<AdminVideoVariantsPage />} />
+      <Route path="/admin/kit-templates" element={<KitTemplatesAdminPage />} />
+      <Route path="/admin/kit-templates/metricas" element={<KitTemplatesMetricsPage />} />
+      <Route
+        path="/admin/aprovacoes-desconto"
+        element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
+      />
+      <Route
+        path="/admin/performance"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Performance foi descontinuado. Use o BI Comercial para análises."
+            redirectTo="/ferramentas/bi"
+          />
+        }
+      />
+      <Route
+        path="/admin/performance-comercial"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Performance Comercial foi descontinuado. Use o BI Comercial para análises."
+            redirectTo="/ferramentas/bi"
+          />
+        }
+      />
+      <Route
+        path="/admin/comissoes"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Comissões foi descontinuado nesta plataforma."
+            redirectTo="/admin/usuarios"
+          />
+        }
+      />
+    </Route>
+  </>
 
     {/* DEV-ONLY — páginas técnicas com risco elevado (telemetria, conexões, secrets, MCP, audit técnico, prompts IA) */}
     <Route element={<DevRoute />}>
