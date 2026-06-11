@@ -20,7 +20,10 @@ jobs:
         run: bun run lint
         
       - name: Type check
-        run: bunx tsc --noEmit
+        # tsconfig.app.json (gate canônico do repo): o tsconfig raiz inclui
+        # vite.config.ts e parseia .d.ts de plugins, que quebram com o skew de
+        # versões resolvido pelo bun (TS1003 em @vitejs/plugin-react-swc).
+        run: bunx tsc -p tsconfig.app.json --noEmit
         
       - name: Run Module Tests (Unit & Integration)
         run: bunx vitest run src/hooks/products/__tests__/useReplenishments.integration.test.ts
