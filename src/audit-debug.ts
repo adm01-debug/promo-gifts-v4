@@ -35,6 +35,7 @@ async function performTechnicalAudit() {
   const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
+      // @ts-expect-error: string table name causes excessive generic depth in Supabase types
       const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
       if (error) console.warn(`⚠️ Tabela ${table}: Erro ou Acesso Negado (${error.code})`);
       else console.log(`✅ Tabela ${table}: Acessível`);
@@ -54,5 +55,5 @@ async function performTechnicalAudit() {
 }
 
 // Para rodar no console do devtools se necessário
-(window as Window & { performTechnicalAudit: () => Promise<void> }).performTechnicalAudit =
+(window as unknown as { performTechnicalAudit: () => Promise<void> }).performTechnicalAudit =
   performTechnicalAudit;
