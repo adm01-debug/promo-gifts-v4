@@ -29,7 +29,7 @@ describe('ProductColorSwatches', () => {
 
     const selectedSwatch = screen.getByLabelText('Opção de cor: Amarelo');
     expect(selectedSwatch.className).toContain('ring-primary');
-    expect(selectedSwatch.getAttribute('aria-pressed')).toBe('true');
+    expect(selectedSwatch.getAttribute('aria-checked')).toBe('true');
   });
 
   it('should call onSelect when a color is clicked', () => {
