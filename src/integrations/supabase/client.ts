@@ -48,7 +48,10 @@ const validateEnv = (): boolean => {
 const envUrlIsValid = validateEnv();
 
 export const SUPABASE_URL = envUrlIsValid ? (envUrl || CANONICAL_URL) : CANONICAL_URL;
-export const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
+// Quando a env URL é rejeitada, a env KEY pertence ao projeto errado e causaria
+// "Invalid API key" / 401. Descartar a key também e cair no fallback canônico.
+export const SUPABASE_PUBLISHABLE_KEY = envUrlIsValid ? (envKey || CANONICAL_ANON_KEY) : CANONICAL_ANON_KEY;
+
 
 log.info('init', { 
   url: SUPABASE_URL, 
