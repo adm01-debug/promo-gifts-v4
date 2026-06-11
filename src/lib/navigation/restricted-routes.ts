@@ -36,6 +36,11 @@ export function isDevOnlyPath(pathname: string): boolean {
 
 export function isAdminOnlyPath(pathname: string): boolean {
   if (isDevOnlyPath(pathname)) return true;
+  // Rotas que NÃO são mais admin-only, mesmo estando sob /admin ou em prefixos protegidos
+  const publicExceptions = ['/tendencias', '/inteligencia-comercial'];
+  if (publicExceptions.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return false;
+  }
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return true;
   return ADMIN_ONLY_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
