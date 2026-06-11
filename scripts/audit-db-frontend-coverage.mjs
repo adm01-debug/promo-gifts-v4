@@ -28,7 +28,11 @@ const ROOT = resolve(__dirname, "..");
 // Configuração
 // ──────────────────────────────────────────────────────────────────────────────
 
-const SEARCH_DIRS = ["src", "supabase/functions", "api"];
+// "api/" não existe neste repo hoje; filtrar para diretórios presentes evita
+// que o rg aborte com "No such file or directory" e derrube a auditoria.
+const SEARCH_DIRS = ["src", "supabase/functions", "api"].filter((d) =>
+  existsSync(resolve(ROOT, d))
+);
 
 const EXCLUDED_TABLE_PATTERNS = [
   /_old$/,

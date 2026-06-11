@@ -362,17 +362,19 @@ export function CartHeaderButton() {
                                     >
                                       {item.product_name}
                                     </p>
-                                      {item.color_name && (
-                                        <div className="mt-1 flex items-center gap-1.5 opacity-80">
-                                          <div 
-                                            className="h-2 w-2 rounded-full border border-border/40" 
-                                            style={{ backgroundColor: item.color_hex || 'transparent' }}
-                                          />
-                                          <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                                            {item.color_name}
-                                          </span>
-                                        </div>
-                                      )}
+                                    {item.color_name && (
+                                      <div className="mt-1 flex items-center gap-1.5 opacity-80">
+                                        <div
+                                          className="h-2 w-2 rounded-full border border-border/40"
+                                          style={{
+                                            backgroundColor: item.color_hex || 'transparent',
+                                          }}
+                                        />
+                                        <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                                          {item.color_name}
+                                        </span>
+                                      </div>
+                                    )}
                                     {/* Price + Qty stepper row */}
                                     <div className="mt-1.5 flex items-center justify-between gap-2">
                                       <PriceLabel

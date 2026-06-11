@@ -249,7 +249,8 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
                 {isChunk
                   ? 'Uma nova versão do aplicativo está disponível. Recarregue para atualizar — seus dados não serão perdidos.'
-                  : error?.message?.includes('Invalid JWT') || error?.message?.includes('UNAUTHORIZED')
+                  : error?.message?.includes('Invalid JWT') ||
+                      error?.message?.includes('UNAUTHORIZED')
                     ? 'Ocorreu um problema de autenticação ou conexão com o servidor. Tente sair e entrar novamente ou limpar o cache.'
                     : 'Ocorreu um erro inesperado nesta tela. Tente recarregar, limpar o cache ou voltar ao início.'}
               </p>

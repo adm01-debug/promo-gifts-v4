@@ -39,30 +39,33 @@ export function TableRowActions({
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
 
-  const handleCartAdd = useCallback((variant: ExternalVariantStock | null) => {
-    if (carts.length > 1) {
-      setPendingVariant(variant);
-      setSelectorOpen(true);
-      return;
-    }
+  const handleCartAdd = useCallback(
+    (variant: ExternalVariantStock | null) => {
+      if (carts.length > 1) {
+        setPendingVariant(variant);
+        setSelectorOpen(true);
+        return;
+      }
 
-    addToActiveCart(
-      {
-        product_id: product.id,
-        product_name: product.name,
-        product_sku: product.sku || undefined,
-        product_image_url: variant?.selected_thumbnail || product.images?.[0],
-        product_price: product.price ?? 0,
-        quantity: product.minQuantity || 1,
-        color_name: variant?.color_name || undefined,
-        color_hex: variant?.color_hex || undefined,
-      },
-      carts.length === 1 ? carts[0].id : undefined,
-    );
-  }, [carts, product, addToActiveCart]);
+      addToActiveCart(
+        {
+          product_id: product.id,
+          product_name: product.name,
+          product_sku: product.sku || undefined,
+          product_image_url: variant?.selected_thumbnail || product.images?.[0],
+          product_price: product.price ?? 0,
+          quantity: product.minQuantity || 1,
+          color_name: variant?.color_name || undefined,
+          color_hex: variant?.color_hex || undefined,
+        },
+        carts.length === 1 ? carts[0].id : undefined,
+      );
+    },
+    [carts, product, addToActiveCart],
+  );
 
   return (
-    <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 overflow-x-auto no-scrollbar max-w-full">
+    <div className="no-scrollbar flex max-w-full items-center justify-center gap-0.5 overflow-x-auto opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
       {/* 1 - Carrinho */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -76,7 +79,7 @@ export function TableRowActions({
               minQuantity={product.minQuantity || 1}
               variant="icon"
               className="h-7 w-7"
-              onSuccess={(variant) => handleCartAdd(variant as ExternalVariantStock | null)}
+              onSuccess={handleCartAdd}
             />
           </div>
         </TooltipTrigger>
@@ -89,7 +92,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground shrink-0"
+            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'quote');
@@ -108,7 +111,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
+            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'collection');
@@ -127,7 +130,10 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('h-7 w-7 rounded-full shrink-0', fav && 'bg-destructive/10 text-destructive')}
+            className={cn(
+              'h-7 w-7 shrink-0 rounded-full',
+              fav && 'bg-destructive/10 text-destructive',
+            )}
             onClick={(e) => {
               e.stopPropagation();
               if (fav) {
@@ -156,7 +162,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('h-7 w-7 rounded-full shrink-0', inComp && 'bg-primary/10 text-primary')}
+            className={cn('h-7 w-7 shrink-0 rounded-full', inComp && 'bg-primary/10 text-primary')}
             disabled={!inComp && !canAddToCompare}
             onClick={(e) => {
               e.stopPropagation();
@@ -184,7 +190,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
+            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenQuickView(product);
@@ -203,7 +209,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
+            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'share');

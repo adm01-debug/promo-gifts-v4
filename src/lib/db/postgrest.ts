@@ -13,6 +13,7 @@
  *   3. (rest-native.ts) table_code_option fixed to 'codigo_curto' (was 'codigo_tabela')
  */
 // import { supabase } from '@/integrations/supabase/client'; // unused
+import { GOLD_READ_ALIASES } from '@/integrations/supabase/gold-relations';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
@@ -37,14 +38,12 @@ export interface InvokeResult<T> {
   count: number | null;
 }
 
-// TABLE_ALIASES: bridge-era virtual names -> real DB table names
+// Bridge-era aliases: virtual names -> real DB table names. Valem para leitura
+// E escrita (as tabelas-fonte nunca existiram no banco).
 // IMPORTANT: only include aliases where the source does NOT exist as a real table.
 // personalization_techniques was REMOVED (BUG 1): it IS a real table with uuid PK,
 // EN column names, and its own RLS. Redirecting to tecnicas_gravacao returned wrong data.
-const TABLE_ALIASES: Record<string, string> = {
-  products: 'v_products_public',
-  suppliers: 'v_suppliers_public',
-  // Bridge-era aliases for engraving pricing tables (source tables never existed in DB)
+const BRIDGE_ALIASES: Record<string, string> = {
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
   customization_price_tables: 'tabela_preco_gravacao_oficial',
@@ -54,8 +53,21 @@ const TABLE_ALIASES: Record<string, string> = {
   // Queries to personalization_techniques go directly to that table.
 };
 
+// TABLE_ALIASES (LEITURA): bridge aliases + camada Ouro do Medallion
+// (gold-relations.ts), que redireciona tabelas-base para as views públicas:
+//   products -> v_products_public (grants por coluna na base quebram select=*)
+//   suppliers -> v_suppliers_public (base esconde api_credentials)
+// Escritas NÃO usam os aliases Ouro: views públicas não têm grant de DML
+// (dbInvokeDelete mira a tabela-base, resolvendo apenas BRIDGE_ALIASES).
+const TABLE_ALIASES: Record<string, string> = {
+  ...GOLD_READ_ALIASES,
+  ...BRIDGE_ALIASES,
+};
+
 // COLUMN_MAP: EN caller names -> real PT column names (for bridge-era PT-named tables)
-// Verified against information_schema.columns in pqpdolkaeqlyzpdpbizo.
+// Re-verificado em 2026-06-11 contra information_schema.columns do SSOT
+// doufsxqlfjyuvxuezpln (tecnicas_gravacao: codigo/nome/slug/ativo/ordem_exibicao;
+// tabela_preco_gravacao_oficial_faixa: quantidade_*/preco_unitario/ordem/...).
 const COLUMN_MAP: Record<string, Record<string, string>> = {
   tabela_preco_gravacao_oficial: {
     // PT passthrough (idempotent)
@@ -334,8 +346,11 @@ export async function dbInvokeSingle<T>(options: InvokeOptions): Promise<T | nul
 }
 
 export async function dbInvokeDelete(options: { table: string; id: string }): Promise<void> {
-  // Resolve alias so delete targets the real table (not a bridge-era virtual name)
-  const table = TABLE_ALIASES[options.table] ?? options.table;
+  // Resolve APENAS bridge aliases: deletes devem mirar a tabela-base real.
+  // Os aliases de leitura da camada Ouro (GOLD_READ_ALIASES) apontam para views
+  // públicas sem grant de DML — ex.: deletar 'print_area_techniques' via
+  // v_print_area_techniques_public falharia com permission denied.
+  const table = BRIDGE_ALIASES[options.table] ?? options.table;
   const { error } = await untypedFrom(table).delete().eq('id', options.id);
   if (error) throw error;
 }

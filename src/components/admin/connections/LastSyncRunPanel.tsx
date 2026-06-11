@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { rpcAdminSyncExternalConnections } from '@/integrations/supabase/gold';
 import { toast } from 'sonner';
 
 type SyncLogRow = {
@@ -70,7 +71,9 @@ export function LastSyncRunPanel() {
 
   const runManual = useCallback(async () => {
     setRunning(true);
-    const { error } = await supabase.rpc('sync_external_connections_from_credentials');
+    // Wrapper admin-gated: a função original é SECURITY DEFINER sem checagem de
+    // chamador e teve EXECUTE revogado de authenticated no hardening.
+    const { error } = await rpcAdminSyncExternalConnections();
     if (error) {
       toast.error('Falha ao executar sincronização');
     } else {

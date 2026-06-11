@@ -107,7 +107,7 @@ export function useSlashCommands(onClose: () => void) {
       keywords: ['saúde', 'health', 'diagnostico'],
       devOnly: true,
     },
-  ].filter(cmd => !cmd.devOnly || isDev);
+  ].filter((cmd) => !cmd.devOnly || isDev);
 
   return { commands };
 }

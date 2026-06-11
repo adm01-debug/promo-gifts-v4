@@ -339,12 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSupabaseClient()
       .then(async (supabase) => {
-        const isDev = import.meta.env.DEV;
-        if (isDev) {
-          logger.info('[Auth Debug] Invoking log-login-attempt', { email, user_id: data?.user?.id, success: !error });
-        }
-
-        const { error: invokeError, data: invokeData } = await supabase.functions.invoke('log-login-attempt', {
+        const { error: invokeError } = await supabase.functions.invoke('log-login-attempt', {
           body: {
             email,
             user_id: data?.user?.id,
@@ -355,21 +350,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: log.headers(),
         });
 
-        if (isDev) {
-          logger.info('[Auth Debug] log-login-attempt result', { error: invokeError, data: invokeData });
-        }
-
         if (invokeError) {
+          const invokeStatus = (invokeError as { status?: number }).status;
           log.error('log_login_attempt_failed', {
             error: invokeError.message,
-            status: (invokeError as { status?: number }).status,
+            status: invokeStatus,
             requestId: log.requestId,
           });
 
-          if (isBadJwtError(invokeError) || (invokeError as { status?: number }).status === 401) {
-            toast.error('Erro de autenticação na função de auditoria. Verifique a conexão com o projeto canônico.', {
-              description: `Request ID: ${log.requestId}`
-            });
+          if (isBadJwtError(invokeError) || invokeStatus === 401) {
+            toast.error(
+              'Erro de autenticação na função de auditoria. Verifique a conexão com o projeto canônico.',
+              {
+                description: `Request ID: ${log.requestId}`,
+              },
+            );
           }
         } else {
           log.info('log_login_attempt_ok', { requestId: log.requestId });
@@ -378,7 +373,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch((err) => {
         log.error('log_login_attempt_exception', { err: String(err) });
       });
-
 
     return { error, data };
   }, []);
