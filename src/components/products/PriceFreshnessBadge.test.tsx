@@ -17,12 +17,12 @@ describe('PriceFreshnessBadge Component', () => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it("renders 'Atualizado em DD/MM/AAAA' for fresh updates in inline variant", () => {
+  it("renders 'Atualizado hoje' for same-day updates in inline variant", () => {
     const today = new Date('2026-05-03T09:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={today} variant="inline" />);
 
-    // Agora padronizado para exibir apenas a data curta
-    expect(screen.getByText(/Atualizado em 03\/05\/2026/i)).toBeInTheDocument();
+    // Inline variant shows relative label for same-day: "Atualizado hoje · em DD/MM/YYYY"
+    expect(screen.getByText(/Atualizado hoje/i)).toBeInTheDocument();
   });
 
   it('renders nothing for fresh updates in compact variant (unless alwaysShow is true)', () => {
