@@ -96,12 +96,10 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         const remaining = Math.max(1000, REDIRECT_TIMEOUT_MS - elapsed);
         failTimerRef.current = window.setTimeout(() => {
           authDebugError('social-login', 'pending timeout on remount', { remaining });
-          finishWithError(
-            'Tempo esgotado ao contatar o Google. Verifique sua conexão e tente novamente.',
-            { autoFallback: true },
-          );
+          finishWithError('timeout', { autoFallback: true });
         }, remaining);
       }
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
