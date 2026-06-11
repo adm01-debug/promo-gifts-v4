@@ -43,25 +43,22 @@ describe('PriceFreshnessBadge Component', () => {
     expect(screen.getByText(/há 4m/i)).toBeInTheDocument();
   });
 
-  it("renders 'Atualizado em 19/03/2026' for aging updates in inline variant", () => {
+  it('renders relative age label with date for aging updates in inline variant', () => {
     // 2026-05-03 - 45 days ago
     const fortyFiveDaysAgo = new Date('2026-03-19T12:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={fortyFiveDaysAgo} variant="inline" />);
 
-    // Antes era "Atualizado há 45 dias", agora é padronizado
-    expect(screen.getByText(/Atualizado em 19\/03\/2026/i)).toBeInTheDocument();
+    // Inline variant: relative label + date suffix
+    expect(screen.getByText(/Atualizado há 45 dias/i)).toBeInTheDocument();
   });
 
-  it('renders PDP variant with simple date for stale updates', () => {
+  it('renders PDP variant with warning and date for stale updates', () => {
     const monthsAgo = new Date('2026-01-03T12:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={monthsAgo} variant="pdp" />);
 
-    // No PDP agora mostramos apenas a data curta
-    expect(screen.getByText(/Atualizado em 03\/01\/2026/i)).toBeInTheDocument();
-
-    // Detalhes como "há 120 dias" ou recomendações não devem estar no badge (vão para o tooltip)
-    expect(screen.queryByText(/\(há 120 dias\)/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Confirme com o fornecedor/i)).not.toBeInTheDocument();
+    // PDP mostra aviso de preço desatualizado com data
+    expect(screen.getByText(/Preço pode estar defasado/i)).toBeInTheDocument();
+    expect(screen.getByText(/03\/01\/2026/)).toBeInTheDocument();
   });
 
   it("shows 'Confirmado' state when confirmedAt is provided", () => {

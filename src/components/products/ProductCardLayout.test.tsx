@@ -16,6 +16,9 @@ vi.mock('@/contexts/SellerCartContext', () => ({
 vi.mock('@/contexts/CollectionsContext', () => ({
   useCollectionsContext: () => ({ collections: [], addToCollection: vi.fn() }),
 }));
+vi.mock('@/components/collections/AddToCollectionModal', () => ({
+  AddToCollectionModal: () => null,
+}));
 
 const mockProduct = {
   id: 'p1',
