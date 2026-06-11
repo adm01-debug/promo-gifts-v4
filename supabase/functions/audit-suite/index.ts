@@ -1,10 +1,5 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-
-// Manual CORS helper as we cannot easily import from _shared without knowing the exact structure
-const getCorsHeaders = () => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-});
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -28,7 +23,7 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: getCorsHeaders() });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   const results: TestResult[] = [];
@@ -138,12 +133,12 @@ Deno.serve(async (req) => {
       status: results.every(r => r.passed) ? "PASSED" : "FAILED",
       timestamp: new Date().toISOString(),
       results
-    }), { status: 200, headers: { ...getCorsHeaders(), "Content-Type": "application/json" } });
+    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
 
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { 
       status: 500, 
-      headers: { ...getCorsHeaders(), "Content-Type": "application/json" } 
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } 
     });
   }
 });
