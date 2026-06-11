@@ -1,6 +1,6 @@
-import React, { Suspense, useDeferredValue, memo } from 'react';
+import React, { Suspense } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
-import { Filter, ArrowUpDown, CheckSquare, RefreshCcw } from 'lucide-react';
+import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,10 +16,11 @@ import type { FilterState } from '@/components/filters/FilterPanel';
 import { StatsPopover } from '@/components/products/StatsPopover';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import type { SortOption, ViewMode } from '@/hooks/products/useCatalogState';
+import type { ViewMode, SortOption } from '@/hooks/products/useCatalogState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LazyFilterPanel = lazyWithRetry(() =>
   import('@/components/filters/FilterPanel').then((m) => ({ default: m.FilterPanel })),
@@ -54,17 +55,9 @@ interface CatalogToolbarProps {
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
   selectedCount?: number;
-  isTransitioning?: boolean;
-  showLayoutControlsOnly?: boolean;
-  onReset?: () => void;
-  hasActiveConstraints?: boolean;
 }
 
-// SORT_OPTIONS[0].value é o valor default ('name'). Derivar em vez de hardcodar
-// garante que qualquer futura mudança no SSOT seja refletida automaticamente.
-const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
-
-export const CatalogToolbar = memo(function CatalogToolbar({
+export function CatalogToolbar({
   filters,
   setFilters,
   activeFiltersCount,
@@ -81,76 +74,38 @@ export const CatalogToolbar = memo(function CatalogToolbar({
   selectionMode,
   onToggleSelectionMode,
   selectedCount = 0,
-  isTransitioning = false,
-  showLayoutControlsOnly = false,
-  onReset,
-  hasActiveConstraints = false,
 }: CatalogToolbarProps) {
-  const deferredIsTransitioning = useDeferredValue(isTransitioning);
-
   return (
-    <div className="flex w-full flex-col gap-3 rounded-xl border border-border/40 bg-muted/20 p-2 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:gap-4">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {onReset && (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-shrink-0 items-center gap-2">
+        <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onReset}
-                className={cn(
-                  'h-8 w-8 shrink-0 transition-all sm:h-9 sm:w-9',
-                  hasActiveConstraints
-                    ? 'border-primary/40 bg-primary/5 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)] hover:bg-primary/10'
-                    : 'border-border/40 text-muted-foreground hover:bg-muted',
-                )}
-                aria-label="Voltar ao início do catálogo"
-              >
-                <RefreshCcw className={cn('h-4 w-4', hasActiveConstraints && 'animate-pulse')} />
-              </Button>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2.5 sm:px-3"
+                  aria-label="Abrir filtros do catálogo"
+                >
+                  <Filter className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 min-w-5 text-xs sm:ml-2">
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
             </TooltipTrigger>
             <TooltipContent>
-              {hasActiveConstraints ? 'Limpar filtros e busca' : 'Recarregar catálogo'}
+              {activeFiltersCount > 0
+                ? `Refinar busca · ${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} ativo${activeFiltersCount > 1 ? 's' : ''}`
+                : 'Refinar por categoria, cor, preço e mais'}
             </TooltipContent>
           </Tooltip>
-        )}
-        {!showLayoutControlsOnly && (
-          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-2.5 sm:h-9 sm:px-3"
-                      aria-label="Abrir filtros do catálogo"
-                    >
-                      <Filter className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Filtros</span>
-                      <div className="relative w-0 sm:w-auto">
-                        {activeFiltersCount > 0 && (
-                          <div className="duration-200 animate-in fade-in zoom-in-0 sm:ml-2">
-                            <Badge
-                              variant="secondary"
-                              className="flex h-5 min-w-5 items-center justify-center text-xs"
-                            >
-                              {activeFiltersCount}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </Button>
-                  </SheetTrigger>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {activeFiltersCount > 0
-                  ? `Refinar busca · ${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} ativo${activeFiltersCount > 1 ? 's' : ''}`
-                  : 'Refinar por categoria, cor, preço e mais'}
-              </TooltipContent>
-            </Tooltip>
-            <SheetContent side="left" className="w-80 overflow-y-auto">
+          <SheetContent side="left" className="w-80 overflow-y-auto">
+            {filterSheetOpen && (
               <Suspense fallback={<FilterPanelSkeleton />}>
                 <LazyFilterPanel
                   filters={filters}
@@ -159,80 +114,47 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                   activeFiltersCount={activeFiltersCount}
                 />
               </Suspense>
-            </SheetContent>
-          </Sheet>
-        )}
+            )}
+          </SheetContent>
+        </Sheet>
 
-        {!showLayoutControlsOnly && (
-          <div className="flex items-center gap-1">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="relative inline-flex">
-                    <SelectTrigger
-                      className={cn(
-                        'relative h-8 w-10 text-xs font-medium transition-all sm:h-9 sm:w-52 sm:text-sm',
-                        sortBy !== DEFAULT_SORT_VALUE &&
-                          'border-primary bg-primary/5 ring-1 ring-primary/20',
-                      )}
-                      aria-label="Ordenar por"
-                      data-testid="catalog-sort-trigger"
-                    >
-                      <ArrowUpDown
-                        className={cn(
-                          'h-3.5 w-3.5 shrink-0 sm:mr-2',
-                          sortBy !== DEFAULT_SORT_VALUE ? 'text-primary' : 'text-muted-foreground',
-                        )}
-                      />
-                      <span className="hidden sm:inline">
-                        <SelectValue placeholder="Ordenar" />
-                      </span>
-                      {sortBy !== DEFAULT_SORT_VALUE && (
-                        <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
-                      )}
-                    </SelectTrigger>
+        <div className="flex items-center gap-1.5">
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SelectTrigger
+                  className="h-9 w-10 text-xs font-medium sm:h-10 sm:w-44 sm:text-sm"
+                  aria-label="Ordenar por"
+                  data-testid="catalog-sort-trigger"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:mr-2" />
+                  <span className="hidden sm:inline">
+                    <SelectValue placeholder="Ordenar" />
                   </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {sortBy !== DEFAULT_SORT_VALUE
-                    ? `Ordenado por: ${
-                        SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Relevância de cor'
-                      }`
-                    : 'Ordenar produtos (nome, preço, novidades…)'}
-                </TooltipContent>
-              </Tooltip>
-              <SelectContent>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-xs sm:text-sm"
-                    data-testid={`catalog-sort-item-${option.value}`}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        {!showLayoutControlsOnly && (
-          <div className="block">
-            <StatsPopover stats={statBadges} isFiltered={activeFiltersCount > 0} />
-          </div>
-        )}
+                </SelectTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Ordenar produtos (relevância, preço, novidades…)</TooltipContent>
+            </Tooltip>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className="text-xs sm:text-sm"
+                  data-testid={`catalog-sort-item-${option.value}`}
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="hidden sm:block">
+          <StatsPopover stats={statBadges} isFiltered={activeFiltersCount > 0} />
+        </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        {deferredIsTransitioning && (
-          <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-muted/30 px-2 py-1 duration-200 animate-in fade-in slide-in-from-right-2 sm:flex">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-            <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground">
-              Otimizando...
-            </span>
-          </div>
-        )}
-
+      <div className="flex items-center gap-2">
         {/* Selecionar / Cancelar toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -240,7 +162,7 @@ export const CatalogToolbar = memo(function CatalogToolbar({
               variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'relative h-8 gap-1.5 transition-all sm:h-9',
+                'relative h-8 gap-1.5 transition-all',
                 selectionMode
                   ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                   : 'hover:border-primary/50',
@@ -255,13 +177,22 @@ export const CatalogToolbar = memo(function CatalogToolbar({
                 {selectionMode ? 'Cancelar' : 'Selecionar'}
               </span>
 
-              {selectionMode && selectedCount > 0 && (
-                <div className="absolute -right-2 -top-2 duration-200 animate-in fade-in zoom-in-0">
-                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                    {selectedCount}
-                  </Badge>
-                </div>
-              )}
+              {/* Animated counter badge */}
+              <AnimatePresence>
+                {selectionMode && selectedCount > 0 && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    className="absolute -right-2 -top-2"
+                  >
+                    <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                      {selectedCount}
+                    </Badge>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -271,13 +202,15 @@ export const CatalogToolbar = memo(function CatalogToolbar({
           </TooltipContent>
         </Tooltip>
 
-        <LayoutPopover
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          gridColumns={gridColumns}
-          setGridColumns={setGridColumns}
-        />
+        <div className="hidden sm:block">
+          <LayoutPopover
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            gridColumns={gridColumns}
+            setGridColumns={setGridColumns}
+          />
+        </div>
       </div>
     </div>
   );
-});
+}

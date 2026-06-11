@@ -90,8 +90,8 @@ export default function Index() {
         path="/"
         jsonLd={structuredData}
       />
-      <div className="mx-auto w-full animate-fade-in space-y-4 py-1 sm:py-2 lg:py-3 print:pb-0">
-        {/* Header: Title + Search + Inline Toolbar */}
+      <div className="animate-fade-in space-y-3 p-4 sm:p-6">
+        {/* Header: Title + Search */}
         <CatalogHeader
           shouldShowCatalogSkeleton={catalog.shouldShowCatalogSkeleton}
           totalEstimate={catalog.totalEstimate}
@@ -103,40 +103,38 @@ export default function Index() {
           searchHistory={catalog.searchHistory}
           onClearHistory={catalog.clearHistory}
           onSelect={handleHeaderSelect}
-          toolbar={
-            <CatalogToolbar
-              filters={catalog.filters}
-              setFilters={catalog.setFilters}
-              activeFiltersCount={catalog.activeFiltersCount}
-              filterSheetOpen={catalog.filterSheetOpen}
-              setFilterSheetOpen={catalog.setFilterSheetOpen}
-              resetFilters={catalog.resetFilters}
-              sortBy={catalog.sortBy}
-              setSortBy={catalog.setSortBy}
-              statBadges={catalog.statBadges}
-              viewMode={catalog.viewMode}
-              setViewMode={catalog.setViewMode}
-              gridColumns={catalog.gridColumns}
-              setGridColumns={catalog.setGridColumns}
-              selectionMode={catalog.selectionMode}
-              onToggleSelectionMode={catalog.toggleSelectionMode}
-              selectedCount={catalog.selectedCount}
-              isTransitioning={catalog.isTransitioning}
-              showLayoutControlsOnly={false}
-              onReset={catalog.resetFilters}
-              hasActiveConstraints={catalog.hasActiveCatalogConstraints}
-            />
-          }
         />
 
-        {/* Active filter badges */}
-        <div className="px-4 sm:px-6">
-          <CatalogActiveFilters
+        {/* Toolbar: Filters + Sort + Stats + Layout — sticky abaixo do Header global.
+            Usa --header-h + --breadcrumb-h (definidos por Header/MainLayout) para
+            acompanhar a altura dinâmica em qualquer rota. */}
+        <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-4 border-b border-transparent bg-background/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 [&:not(:first-child)]:border-border/30">
+          <CatalogToolbar
             filters={catalog.filters}
             setFilters={catalog.setFilters}
             activeFiltersCount={catalog.activeFiltersCount}
+            filterSheetOpen={catalog.filterSheetOpen}
+            setFilterSheetOpen={catalog.setFilterSheetOpen}
+            resetFilters={catalog.resetFilters}
+            sortBy={catalog.sortBy}
+            setSortBy={catalog.setSortBy}
+            statBadges={catalog.statBadges}
+            viewMode={catalog.viewMode}
+            setViewMode={catalog.setViewMode}
+            gridColumns={catalog.gridColumns}
+            setGridColumns={catalog.setGridColumns}
+            selectionMode={catalog.selectionMode}
+            onToggleSelectionMode={catalog.toggleSelectionMode}
+            selectedCount={catalog.selectedCount}
           />
         </div>
+
+        {/* Active filter badges */}
+        <CatalogActiveFilters
+          filters={catalog.filters}
+          setFilters={catalog.setFilters}
+          activeFiltersCount={catalog.activeFiltersCount}
+        />
 
         {/* Product grid/list content */}
         <CatalogContent
