@@ -439,7 +439,7 @@ export default function Auth() {
 
   if (user && !authLoading && !isSubmitting) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#030508] text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#030508] text-white">
         <SpaceScene />
         <div className="z-10 flex flex-col items-center gap-6 duration-500 animate-in fade-in zoom-in">
           <div className="relative">
