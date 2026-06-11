@@ -1,0 +1,60 @@
+import { test, expect } from "./fixtures/test-base";
+import { Sel } from "./fixtures/selectors";
+import { gotoAndSettle } from "./helpers/nav";
+import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "./helpers/auth";
+
+/**
+ * Smoke Test: Fluxo Crítico de Autenticação @smoke
+ * 
+ * Este teste valida os pilares do sistema no projeto canônico:
+ * 1. Login com credenciais válidas (adm01)
+ * 2. Redirecionamento para Dashboard
+ * 3. Bloqueio de rotas protegidas sem sessão
+ * 4. Recuperação de senha (abertura do formulário)
+ */
+
+test.describe("Auth Critical Flow @smoke", () => {
+  // Limpa estado para garantir teste limpo
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("deve realizar login com sucesso e redirecionar para a home", async ({ page }) => {
+    // Usamos as credenciais que confirmamos estarem no banco doufsxqlfjyuvxuezpln
+    const email = "adm01@promobrindes.com.br";
+    const password = "Juca301225@";
+
+    console.log(`[Smoke] Iniciando login para ${email}`);
+    
+    // loginViaUI já faz o assert de não estar mais em /login se tiver sucesso
+    const success = await loginViaUI(page, { email, password });
+    expect(success).toBe(true);
+    
+    // Valida que estamos na home ou dashboard
+    await expectAuthenticated(page);
+    
+    // Verifica se o Header do app carregou (sinal de que a sessão foi hidratada no context)
+    await expect(page.locator(Sel.app.header)).toBeVisible();
+    
+    console.log(`[Smoke] Login OK. URL atual: ${page.url()}`);
+  });
+
+  test("deve bloquear acesso a rotas protegidas quando deslogado", async ({ page }) => {
+    // Tenta acessar /produtos diretamente
+    console.log("[Smoke] Testando bloqueio de rota protegida");
+    await gotoAndSettle(page, "/produtos");
+    
+    // Deve redirecionar para /auth ou /login
+    await expectUnauthenticated(page);
+    expect(page.url()).toContain("/auth");
+  });
+
+  test("deve exibir formulário de esqueci minha senha", async ({ page }) => {
+    await gotoAndSettle(page, "/login");
+    
+    // Clica no link de esqueci minha senha
+    await page.locator(Sel.login.forgot).click();
+    
+    // Verifica se a tela de recuperação apareceu
+    await expect(page.locator(Sel.login.forgotScreen)).toBeVisible();
+    await expect(page.locator('text=Esqueceu sua senha?')).toBeVisible();
+  });
+});
