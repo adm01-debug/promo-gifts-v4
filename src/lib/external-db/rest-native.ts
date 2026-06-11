@@ -32,7 +32,7 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_videos',
   'product_kit_components',
   'kit_component_print_areas',
-  'kit_component_media',
+  'component_media', // FIX 2026-06-11: nome real no SSOT (kit_component_media nunca existiu)
   'product_materials',
   'product_properties', // PHASE 6: real table name for product attributes
   'supplier_property_mappings', // PHASE 6: real table name for supplier attr mappings
@@ -670,7 +670,7 @@ const REST_NATIVE_WRITE_TABLES = new Set<string>([
   'product_videos',
   'product_materials',
   'product_kit_components',
-  'kit_component_media',
+  'component_media', // FIX 2026-06-11: nome real no SSOT (kit_component_media nunca existiu)
   'kit_component_print_areas',
   'tecnica_gravacao_variante',
   'tabela_preco_gravacao_oficial',

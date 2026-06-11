@@ -2,6 +2,7 @@
  * stockFetcher — Busca paginada e processamento de dados de estoque
  */
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { GOLD_READ_ALIASES } from '@/integrations/supabase/gold-relations';
 import { logger } from '@/lib/logger';
 import {
   type VariantStock,
@@ -84,12 +85,8 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   let totalCount: number | null = null;
   let lastFirstId: string | undefined;
 
-  // Aliases: tabelas expostas via views públicas.
-  const TABLE_ALIASES: Record<string, string> = {
-    products: 'v_products_public',
-    suppliers: 'v_suppliers_public',
-  };
-  const resolvedTable = TABLE_ALIASES[table] ?? table;
+  // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).
+  const resolvedTable = (GOLD_READ_ALIASES as Record<string, string>)[table] ?? table;
 
   while (all.length < maxRecords) {
     let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(

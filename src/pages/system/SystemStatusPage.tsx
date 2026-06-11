@@ -24,6 +24,7 @@ import {
   Fingerprint,
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { MedallionPipelineCard } from '@/components/system/MedallionPipelineCard';
 
 interface StatusItem {
   name: string;
@@ -553,6 +554,9 @@ export default function SystemStatusPage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Pipeline Medallion (Bronze → Prata → Ouro) */}
+        <MedallionPipelineCard />
 
         {/* CRM External Tables Health */}
         <Card>

@@ -59,11 +59,14 @@ export async function deletePrintArea(id: string): Promise<void> {
   await dbInvokeDelete({ table: 'kit_component_print_areas', id });
 }
 
-// ── Kit Component Media (external DB) ──
+// ── Kit Component Media ──
+// FIX 2026-06-11 (auditoria medallion): a tabela real no SSOT é component_media
+// (FK component_id). O nome bridge-era kit_component_media nunca existiu no
+// banco — todas as operações retornavam 404/PGRST205.
 
 export interface ComponentMedia {
   id: string;
-  kit_component_id: string;
+  component_id: string;
   product_id: string;
   media_type: 'image' | 'video';
   url: string;
@@ -74,9 +77,9 @@ export interface ComponentMedia {
 
 export async function fetchComponentMedia(componentId: string): Promise<ComponentMedia[]> {
   const { records } = await dbInvoke<ComponentMedia>({
-    table: 'kit_component_media',
+    table: 'component_media',
     operation: 'select',
-    filters: { kit_component_id: componentId },
+    filters: { component_id: componentId },
     limit: 100,
     orderBy: { column: 'sort_order', ascending: true },
   });
@@ -84,7 +87,7 @@ export async function fetchComponentMedia(componentId: string): Promise<Componen
 }
 
 export async function createComponentMedia(payload: Record<string, unknown>): Promise<void> {
-  const { error } = await untypedFrom('kit_component_media').insert(payload);
+  const { error } = await untypedFrom('component_media').insert(payload);
   if (error) throw new Error(error.message || 'Erro ao criar mídia');
 }
 
@@ -92,10 +95,10 @@ export async function updateComponentMedia(
   id: string,
   payload: Record<string, unknown>,
 ): Promise<void> {
-  const { error } = await untypedFrom('kit_component_media').update(payload).eq('id', id);
+  const { error } = await untypedFrom('component_media').update(payload).eq('id', id);
   if (error) throw new Error(error.message || 'Erro ao atualizar mídia');
 }
 
 export async function deleteComponentMedia(id: string): Promise<void> {
-  await dbInvokeDelete({ table: 'kit_component_media', id });
+  await dbInvokeDelete({ table: 'component_media', id });
 }
