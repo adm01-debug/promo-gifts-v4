@@ -132,21 +132,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     // Aumentado o intervalo entre os lançamentos de foguetes (de 2000ms para 6000ms)
     const rocketInterval = setInterval(() => spawnRocket(), 6000);
 
-    // Meteor shower interval
-    const meteorInterval = setInterval(() => {
-      const id = Date.now();
-      const newMeteor: MeteorData = {
-        id,
-        top: Math.random() * 60,
-        left: Math.random() * 60,
-        duration: 1.5 + Math.random() * 1,
-        delay: 0,
-      };
-      setMeteors((prev) => [...prev, newMeteor]);
-      setTimeout(() => {
-        setMeteors((prev) => prev.filter((m) => m.id !== id));
-      }, 3000);
-    }, 8000);
+    // Meteor shower removido para eliminar linhas rápidas atravessando a tela
+    const meteorInterval = null;
 
     setPlanets(
       [...Array(5)].map((_, i) => ({
@@ -186,7 +173,6 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
     return () => {
       clearInterval(rocketInterval);
-      clearInterval(meteorInterval);
     };
   }, [spawnRocket, config.astroCount, config.spacing, config.individualAstronauts]);
 
