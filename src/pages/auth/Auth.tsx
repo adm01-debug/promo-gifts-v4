@@ -32,6 +32,7 @@ import { LegalFooter } from '@/components/auth/LegalFooter';
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
