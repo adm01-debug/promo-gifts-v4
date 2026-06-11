@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Audit Técnico do Sistema - Junho 2026
  * ------------------------------------
@@ -5,18 +6,23 @@
  */
 
 import { supabase } from './integrations/supabase/client';
-import { logger } from './lib/logger';
 
 async function performTechnicalAudit() {
   console.log('--- Iniciando Auditoria Técnica Profunda ---');
 
   // 1. Verificação de Conectividade Supabase
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
     if (sessionError) throw sessionError;
-    console.log('✅ Conexão Auth: OK', session ? `Sessão ativa: ${session.user.email}` : 'Nenhuma sessão ativa');
+    console.log(
+      '✅ Conexão Auth: OK',
+      session ? `Sessão ativa: ${session.user.email}` : 'Nenhuma sessão ativa',
+    );
 
-    const { data: tableData, error: tableError } = await supabase
+    const { data: _tableData, error: tableError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
     if (tableError) throw tableError;
@@ -26,10 +32,14 @@ async function performTechnicalAudit() {
   }
 
   // 2. Verificação de Tabelas Essenciais
+  // Audit checks a known list of base tables; cast bypasses Supabase's view-only from() overloads.
+  type AuditTable = Parameters<(typeof supabase)['from']>[0];
   const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
-      const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+      const { error } = await supabase
+        .from(table as AuditTable)
+        .select('count', { count: 'exact', head: true });
       if (error) console.warn(`⚠️ Tabela ${table}: Erro ou Acesso Negado (${error.code})`);
       else console.log(`✅ Tabela ${table}: Acessível`);
     } catch (err) {
@@ -38,11 +48,8 @@ async function performTechnicalAudit() {
   }
 
   // 3. Verificação de Configurações de Ambiente
-  const envVars = [
-    'VITE_SUPABASE_URL',
-    'VITE_SUPABASE_PUBLISHABLE_KEY'
-  ];
-  envVars.forEach(v => {
+  const envVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY'];
+  envVars.forEach((v) => {
     if (!import.meta.env[v]) console.error(`❌ Variável de ambiente ausente: ${v}`);
     else console.log(`✅ Variável de ambiente presente: ${v}`);
   });
@@ -51,4 +58,6 @@ async function performTechnicalAudit() {
 }
 
 // Para rodar no console do devtools se necessário
-(window as any).performTechnicalAudit = performTechnicalAudit;
+(
+  window as unknown as Window & { performTechnicalAudit: () => Promise<void> }
+).performTechnicalAudit = performTechnicalAudit;
