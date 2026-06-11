@@ -44,4 +44,10 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Coverage Report
-        run: bunx vitest run --coverage --include="src/hooks/products/useReplenishments.ts"
+        # continue-on-error: coverage is informational; --include was removed in Vitest 4.x
+        continue-on-error: true
+        run: bunx vitest run --coverage "src/hooks/products/__tests__/useReplenishments*"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
