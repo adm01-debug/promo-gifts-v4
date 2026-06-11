@@ -4,7 +4,9 @@ import { CatalogToolbar } from '../CatalogToolbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
-import type { FilterState } from '@/components/filters/FilterPanel';
+// FilterPanel is mocked below, so seed from the non-mocked types module to keep
+// `filters` a real, fully-typed FilterState (catches FilterState breaking changes).
+import { defaultFilters } from '@/components/filters/filter-panel/types';
 
 // Mock components that might cause issues in a unit test environment
 vi.mock('@/components/products/StatsPopover', () => ({
@@ -16,7 +18,7 @@ vi.mock('@/components/products/LayoutPopover', () => ({
 }));
 
 const mockProps: ComponentProps<typeof CatalogToolbar> = {
-  filters: {} as FilterState,
+  filters: defaultFilters,
   setFilters: vi.fn(),
   activeFiltersCount: 0,
   filterSheetOpen: false,
