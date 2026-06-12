@@ -77,7 +77,7 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(40);
   const pageSize = 20;
 
   const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
