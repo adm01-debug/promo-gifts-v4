@@ -70,7 +70,7 @@ interface RankingResultRowProps {
   index: number;
   topRevenue: number;
   searchQuery: string;
-  formatCurrency: (v: number) => string;
+  formatCurrency: (v: number | null | undefined) => string;
   onClick: () => void;
 }
 
@@ -82,7 +82,10 @@ export function RankingResultRow({
   formatCurrency,
   onClick,
 }: RankingResultRowProps) {
-  const avgUnit = product.totalQuantity > 0 ? product.totalRevenue / product.totalQuantity : 0;
+  // FIX: null-guard — totalQuantity/totalRevenue podem vir null antes de estabilizar
+  const safeQty = product.totalQuantity ?? 0;
+  const safeRev = product.totalRevenue ?? 0;
+  const avgUnit = safeQty > 0 ? safeRev / safeQty : 0;
 
   return (
     <div
@@ -120,16 +123,17 @@ export function RankingResultRow({
           <p className="truncate text-sm font-medium">
             <HighlightMatch text={product.productName} query={searchQuery} />
           </p>
-          <ABCBadge revenue={product.totalRevenue} topRevenue={topRevenue} />
+          <ABCBadge revenue={safeRev} topRevenue={topRevenue} />
         </div>
         <div className="flex items-center gap-1 truncate text-[10px] text-muted-foreground">
           {product.productSku && <HighlightMatch text={product.productSku} query={searchQuery} />}
           {product.productSku && ' · '}
           {product.orderCount} pedidos
+          {/* FIX: null-guard mobile — crash site #1 */}
           <span className="sm:hidden">
             {' '}
-            · {product.totalQuantity.toLocaleString('pt-BR')} un. ·{' '}
-            {formatCurrency(product.totalRevenue)}
+            · {safeQty.toLocaleString('pt-BR')} un. ·{' '}
+            {formatCurrency(safeRev)}
           </span>
         </div>
       </div>
@@ -137,15 +141,15 @@ export function RankingResultRow({
       {/* Mobile trend indicator */}
       <div className="flex items-center gap-1 sm:hidden">{trendIcon[product.trend]}</div>
 
-      {/* Quantity — desktop */}
+      {/* Quantity — desktop: FIX null-guard crash site #2 */}
       <div className="hidden text-right sm:block">
-        <p className="text-sm font-medium">{product.totalQuantity.toLocaleString('pt-BR')}</p>
+        <p className="text-sm font-medium">{safeQty.toLocaleString('pt-BR')}</p>
         <p className="text-[10px] text-muted-foreground">un.</p>
       </div>
 
       {/* Revenue — desktop */}
       <div className="hidden text-right sm:block">
-        <p className="text-sm font-semibold">{formatCurrency(product.totalRevenue)}</p>
+        <p className="text-sm font-semibold">{formatCurrency(safeRev)}</p>
       </div>
 
       {/* Avg unit price — desktop */}
