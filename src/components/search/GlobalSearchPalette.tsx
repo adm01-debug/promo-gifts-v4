@@ -31,7 +31,7 @@ import {
   Calculator,
   LifeBuoy,
   AlertCircle,
-  Info,
+  
   type LucideIcon,
 } from 'lucide-react';
 
