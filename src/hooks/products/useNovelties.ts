@@ -338,22 +338,25 @@ export function useExpiringNovelties(maxDays: number = 7) {
 }
 
 /**
- * Hook para estatísticas de novidades
+ * Hook para estatísticas de novidades — contagens 100% server-side, sem limite artificial.
+ *
+ * Estratégia: 6 queries HEAD em paralelo (zero dados transferidos, só o count volta)
+ * + 1 query leve de supplier_id para calcular top fornecedor.
+ * Elimina o antigo .range(0,499) que travava "Últimos 15 Dias" e "Novidades Ativas" em 500.
  */
 export function useNoveltyStats() {
   return useQuery<NoveltyStatsDisplay>({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const now = new Date();
+      // Datas em horário local (consistente com comportamento anterior dos cards)
+      const todayStart        = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekStart         = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).toISOString();
+      const fifteenStart      = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14).toISOString();
+      const thirtyStart       = getCutoffDate(); // 30 dias atrás
+      // Expirando em breve = criados há mais de 23 dias (≤ 7 dias restantes)
+      const expiringSoonCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 23).toISOString();
 
-      const [noveltiesRes, totalRes] = await Promise.all([
-        fromTable('products')
-          .select('id, created_at, supplier_id', { count: 'exact' })
-          .eq('is_active', true)
-          .gte('created_at', cutoff)
-          .range(0, 499),
-        fromTable('products').select('id', { count: 'exact' }).eq('is_active', true).range(0, 0),
-      ]);
       const emptyStats: NoveltyStatsDisplay = {
         totalNovelties: 0,
         activeNovelties: 0,
@@ -366,56 +369,104 @@ export function useNoveltyStats() {
         topSupplierName: null,
         topSupplierCount: 0,
       };
-      if (noveltiesRes.error) {
-        handleQueryError('useNovelties', 'products', noveltiesRes.error);
-        return emptyStats;
-      }
-      if (totalRes.error) {
-        handleQueryError('useNovelties', 'products', totalRes.error);
-        return emptyStats;
-      }
 
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const weekStart = todayStart - 6 * 86400000;
-      const fifteenDaysStart = todayStart - 14 * 86400000;
+      // Todas as contagens em paralelo — server-side, sem limite artificial.
+      // { count: 'exact', head: true } = HEAD request: devolve só o número, zero linhas.
+      const [
+        todayRes,
+        weekRes,
+        fifteenRes,
+        activeRes,
+        expiringSoonRes,
+        totalRes,
+        supplierRes,
+      ] = await Promise.all([
+        // Chegaram hoje
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gte('created_at', todayStart),
+        // Últimos 7 dias (hoje + 6 dias anteriores)
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gte('created_at', weekStart),
+        // Últimos 15 dias
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gte('created_at', fifteenStart),
+        // Novidades ativas (últimos 30 dias)
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gte('created_at', thirtyStart),
+        // Expirando em breve (criados há > 23 dias, dentro da janela de 30)
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gte('created_at', thirtyStart)
+          .lt('created_at', expiringSoonCutoff),
+        // Total do catálogo ativo
+        fromTable('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true),
+        // supplier_id para calcular top fornecedor (só UUID — muito leve, sem limite)
+        fromTable('products')
+          .select('supplier_id')
+          .eq('is_active', true)
+          .gte('created_at', thirtyStart),
+      ]);
 
-      let records = (noveltiesRes.data ?? []) as unknown as (RawProduct & {
-        supplier_id: string | null;
-      })[];
-      let totalProducts = totalRes.count || 0;
+      if (todayRes.error)   { handleQueryError('useNovelties', 'products', todayRes.error);   return emptyStats; }
+      if (weekRes.error)    { handleQueryError('useNovelties', 'products', weekRes.error);    return emptyStats; }
+      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyStats; }
+      if (activeRes.error)  { handleQueryError('useNovelties', 'products', activeRes.error);  return emptyStats; }
+      if (totalRes.error)   { handleQueryError('useNovelties', 'products', totalRes.error);   return emptyStats; }
+
+      const arrivedToday      = todayRes.count    ?? 0;
+      const arrivedThisWeek   = weekRes.count      ?? 0;
+      const arrivedLast15Days = fifteenRes.count   ?? 0;
+      const activeCount       = activeRes.count    ?? 0;
+      const expiringSoon      = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
+      const totalProducts     = totalRes.count     ?? 0;
 
       // Fallback para MOCK se o banco estiver vazio
-      if (records.length === 0 && totalProducts === 0) {
-        records = MOCK_PRODUCTS;
-        totalProducts = MOCK_PRODUCTS.length + 50; // Simula uma taxa de novidade realista
+      if (activeCount === 0 && totalProducts === 0) {
+        const mockNovelties = MOCK_PRODUCTS.map((p) => ({
+          daysRemaining: calcDaysRemaining(p.created_at),
+          supplierId: p.supplier_id,
+        }));
+        const mockActive = mockNovelties.filter((n) => n.daysRemaining > 0);
+        const mockTotal = MOCK_PRODUCTS.length + 50;
+        return {
+          totalNovelties: mockActive.length,
+          activeNovelties: mockActive.length,
+          expiringSoon: mockActive.filter((n) => n.daysRemaining <= 7).length,
+          totalProducts: mockTotal,
+          noveltyRate: Math.round((mockActive.length / mockTotal) * 100),
+          arrivedToday: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS).length,
+          arrivedThisWeek: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS - 6).length,
+          arrivedLast15Days: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS - 14).length,
+          topSupplierName: MOCK_SUPPLIERS[0].name,
+          topSupplierCount: 2,
+        };
       }
 
-      const novelties = records.map((p) => ({
-        daysRemaining: calcDaysRemaining(p.created_at),
-        createdTime: new Date(p.created_at).getTime(),
-        supplierId: p.supplier_id,
-      }));
+      // Calcular top supplier a partir dos dados de supplier_id (sem limite de linhas)
+      const supplierRows = (!supplierRes.error && supplierRes.data)
+        ? (supplierRes.data as unknown as { supplier_id: string | null }[])
+        : [];
 
-      const active = novelties.filter((n) => n.daysRemaining > 0);
-      const expiring = active.filter((n) => n.daysRemaining <= 7);
-      const arrivedToday = active.filter((n) => n.createdTime >= todayStart).length;
-      const arrivedThisWeek = active.filter((n) => n.createdTime >= weekStart).length;
-      const arrivedLast15Days = active.filter((n) => n.createdTime >= fifteenDaysStart).length;
-      const activeCount = active.length;
-
-      // Find top supplier
       const supplierCounts = new Map<string, number>();
-      active.forEach((n) => {
-        if (n.supplierId) {
-          supplierCounts.set(n.supplierId, (supplierCounts.get(n.supplierId) || 0) + 1);
+      for (const row of supplierRows) {
+        if (row.supplier_id) {
+          supplierCounts.set(row.supplier_id, (supplierCounts.get(row.supplier_id) ?? 0) + 1);
         }
-      });
+      }
+
       let topSupplierId: string | null = null;
       let topSupplierCount = 0;
-      // for...of (não é closure) → o control-flow do TS rastreia a atribuição e
-      // mantém topSupplierId como string | null após o loop. Com forEach o TS5.4
-      // re-estreita para null (closure invisível ao analisador) → TS2339.
       for (const [id, count] of supplierCounts) {
         if (count > topSupplierCount) {
           topSupplierCount = count;
@@ -423,11 +474,11 @@ export function useNoveltyStats() {
         }
       }
 
-      // Resolve top supplier name
+      // Resolver nome do top supplier
       let topSupplierName: string | null = null;
       if (topSupplierId) {
         if (topSupplierId.startsWith('sup-')) {
-          topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name || null;
+          topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name ?? null;
         } else {
           try {
             const { data: supData, error: supError } = await fromTable('suppliers')
@@ -435,18 +486,18 @@ export function useNoveltyStats() {
               .eq('id', topSupplierId)
               .range(0, 0);
             if (!supError && supData && supData.length > 0) {
-              topSupplierName = (supData[0] as unknown as { name: string }).name || null;
+              topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
             }
           } catch {
-            /* fallback */
+            /* fallback silencioso */
           }
         }
       }
 
       return {
-        totalNovelties: novelties.length,
+        totalNovelties: activeCount,
         activeNovelties: activeCount,
-        expiringSoon: expiring.length,
+        expiringSoon,
         totalProducts,
         noveltyRate: totalProducts > 0 ? Math.round((activeCount / totalProducts) * 100) : 0,
         arrivedToday,
@@ -576,7 +627,8 @@ export function useIsProductNovelty(productId: string) {
 }
 
 /**
- * Hook para buscar IDs de produtos que são novidades (para batch checking)
+ * Hook para buscar IDs de produtos que são novidades (para batch checking de badges).
+ * Range aumentado para 1999 para cobrir o catálogo atual (~1100 produtos em 30 dias).
  */
 export function useNoveltyProductIds() {
   return useQuery<Set<string>>({
@@ -588,7 +640,7 @@ export function useNoveltyProductIds() {
         .select('id')
         .eq('is_active', true)
         .gte('created_at', cutoff)
-        .range(0, 499);
+        .range(0, 1999);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
         return new Set<string>();
