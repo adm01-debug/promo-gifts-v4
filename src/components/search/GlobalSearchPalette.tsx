@@ -459,35 +459,35 @@ export function GlobalSearchPalette() {
           )}
         </CommandList>
 
-        {/* Premium Footer */}
-        <div className="flex select-none items-center justify-between border-t px-5 py-2.5 [background:linear-gradient(90deg,hsl(var(--command-surface-raised)),hsl(var(--command-surface)),hsl(var(--command-surface-raised)))] [border-color:hsl(var(--command-border))]">
-          <div className="flex items-center gap-4 text-[11px] [color:hsl(var(--command-text-subtle))]">
+        {/* Premium Footer — Carbon Sleek keycaps */}
+        <div className="flex select-none items-center gap-5 border-t px-5 py-3 [background-color:hsl(var(--command-surface-raised)/0.4)] [border-color:hsl(var(--command-border))]">
+          <div className="flex flex-1 items-center gap-4 text-[11px] [color:hsl(var(--command-text-subtle))]">
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-md border px-1 font-mono text-[10px] leading-none [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 ↵
               </kbd>
               <span>Selecionar</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-md border px-1 font-mono text-[10px] leading-none [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 ↑↓
               </kbd>
               <span>Navegar</span>
             </span>
             <span className="hidden items-center gap-1.5 md:inline-flex">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-md border px-1 font-mono text-[10px] leading-none [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 1-9
               </kbd>
               <span>Saltar</span>
             </span>
             <span className="hidden items-center gap-1.5 md:inline-flex">
-              <kbd className="inline-flex h-[18px] items-center justify-center rounded-md border px-1 font-mono text-[10px] leading-none [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))]">
+              <kbd className="inline-flex h-[18px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 ⌘↵
               </kbd>
               <span>Nova aba</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-md border px-1 font-mono text-[10px] leading-none [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 ESC
               </kbd>
               <span>Fechar</span>
@@ -495,10 +495,8 @@ export function GlobalSearchPalette() {
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex cursor-help items-center gap-1.5 text-[10px] font-medium text-primary/40">
-                <div className="bg-primary/8 flex h-4 w-4 items-center justify-center rounded-md transition-colors hover:bg-primary/20">
-                  <Info className="h-2.5 w-2.5" />
-                </div>
+              <div className="flex cursor-help items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary/80 transition-colors hover:bg-primary/15">
+                <Sparkles className="h-2.5 w-2.5" />
                 <span>Busca com IA</span>
               </div>
             </TooltipTrigger>
