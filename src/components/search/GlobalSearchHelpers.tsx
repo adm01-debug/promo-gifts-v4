@@ -141,48 +141,38 @@ export function NavCard({
       value={action.title}
       onSelect={() => onSelect(action.href)}
       className={cn(
-        'flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1',
+        'group flex cursor-pointer items-start gap-3 rounded-xl border p-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1 transition-all',
         paletteItemStateClass,
-        isHighlight
-          ? 'from-primary/12 via-primary/6 border border-primary/20 bg-gradient-to-r to-transparent'
-          : '[background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))] hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]',
+        '[background-color:hsl(var(--command-surface-raised)/0.5)] [border-color:hsl(var(--command-border))] hover:[background-color:hsl(var(--command-surface-raised))] hover:[border-color:hsl(var(--command-border-strong))]',
       )}
       style={staggerStyle(index, 200)}
     >
       <div
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors',
           isHighlight
-            ? 'bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm shadow-primary/10'
-            : '[background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]',
+            ? 'bg-primary/10 text-primary'
+            : '[background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))] group-hover:text-foreground',
         )}
       >
-        {action.icon}
+        <span className="[&>svg]:h-5 [&>svg]:w-5">{action.icon}</span>
       </div>
-      <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            'truncate text-[13px]',
-            isHighlight ? 'font-semibold text-primary' : 'font-medium',
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-[13px] font-semibold text-foreground">
+            {action.title}
+          </span>
+          {action.shortcut && (
+            <kbd className="hidden h-[18px] min-w-[18px] items-center justify-center rounded border px-1 font-mono text-[10px] font-bold [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border-strong))] [color:hsl(var(--command-text-muted))] md:inline-flex">
+              {action.shortcut}
+            </kbd>
           )}
-        >
-          {action.title}
-        </p>
-        <p className="mt-0.5 truncate text-[10px] leading-tight [color:hsl(var(--command-text-subtle))]">
+        </div>
+        <p className="mt-0.5 truncate text-[11px] [color:hsl(var(--command-text-subtle))]">
           {action.description}
         </p>
       </div>
-      {action.shortcut && (
-        <kbd className="hidden h-5 min-w-[22px] items-center justify-center rounded-md border border-primary/20 bg-primary/10 px-1.5 font-mono text-[10px] font-semibold text-primary/60 md:inline-flex">
-          {action.shortcut}
-        </kbd>
-      )}
-      <ArrowUpRight
-        className={cn(
-          'h-3.5 w-3.5 shrink-0',
-          isHighlight ? 'text-primary/40' : '[color:hsl(var(--command-text-subtle))]',
-        )}
-      />
+      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 [color:hsl(var(--command-text-subtle))]" />
     </CommandItem>
   );
 }
