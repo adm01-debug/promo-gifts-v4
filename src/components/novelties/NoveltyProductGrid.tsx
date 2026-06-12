@@ -10,15 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
+import { useInfiniteScroll } from '@/hooks/common/useInfiniteScroll';
 import {
   Package,
   ArrowUpDown,
@@ -85,7 +77,7 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(40);
   const pageSize = 20;
 
   const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
@@ -157,16 +149,20 @@ export function NoveltyProductGrid() {
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
-  // Reset to first page when filters change
+  // Reset visible count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(40);
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
-  const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, currentPage, pageSize]);
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+  const hasMore = visibleCount < filteredProducts.length;
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore,
+    isLoading: isFetching,
+    onLoadMore: () => setVisibleCount((c) => c + pageSize),
+  });
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
@@ -618,60 +614,13 @@ export function NoveltyProductGrid() {
         </AnimatePresence>
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center py-4">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className={cn(
-                    currentPage === 1 && 'pointer-events-none opacity-50',
-                    'cursor-pointer',
-                  )}
-                />
-              </PaginationItem>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                if (
-                  totalPages > 7 &&
-                  page !== 1 &&
-                  page !== totalPages &&
-                  Math.abs(page - currentPage) > 1
-                ) {
-                  if (page === currentPage - 2 || page === currentPage + 2) {
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    );
-                  }
-                  return null;
-                }
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      isActive={currentPage === page}
-                      onClick={() => setCurrentPage(page)}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className={cn(
-                    currentPage === totalPages && 'pointer-events-none opacity-50',
-                    'cursor-pointer',
-                  )}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+      {/* Sentinela do scroll infinito + indicador de carregamento */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-6">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando mais novidades...
+          </div>
         </div>
       )}
 
