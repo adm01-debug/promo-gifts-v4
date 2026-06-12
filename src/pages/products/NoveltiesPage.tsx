@@ -43,19 +43,19 @@ export default function NoveltiesPage() {
         >
           {/* Cabeçalho — 15% menor que o original */}
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-[34px] sm:w-[34px]">
-              <Sparkles className="h-[14px] w-[14px] sm:h-[17px] sm:w-[17px]" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-10 sm:w-10">
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="flex min-w-0 flex-1 items-baseline gap-2 truncate">
               <h1
                 data-testid="page-title-novidades"
-                className="shrink-0 font-display text-[17px] font-bold tracking-tight text-foreground sm:text-[20px]"
+                className="shrink-0 font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl"
               >
                 Novidades
               </h1>
               <p
                 data-testid="novelty-description"
-                className="min-w-0 truncate text-[11px] font-medium text-muted-foreground sm:text-[12px]"
+                className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm"
               >
                 Produtos recém-chegados ao catálogo nos últimos 30 dias
               </p>
