@@ -1,6 +1,9 @@
 /**
  * CartHeaderButton - Ícone de carrinho no header com popover de resumo
  * Melhorado com skeletons de carregamento e UX de acesso rápido (Onda 10/10)
+ *
+ * FIX 2026-06-12: usa useSellerCartContextSafe (null-guard) para evitar
+ * 26.787 crashes por contexto ausente em Suspense fallbacks / HMR.
  */
 
 import {
@@ -21,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { useSellerCartContextSafe } from '@/contexts/SellerCartContext';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
@@ -51,6 +54,26 @@ export function CartHeaderButton() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // SAFE context hook — retorna null em vez de lançar erro quando o Provider está ausente.
+  // Resolve 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
+  const cartContext = useSellerCartContextSafe();
+
+  // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery).
+  // Renderiza ícone estático em vez de crashar o React tree.
+  if (!cartContext) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative h-8 w-8 rounded-full text-muted-foreground"
+        aria-label="Carrinho"
+      >
+        <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
+      </Button>
+    );
+  }
+
   const {
     carts,
     activeCart,
@@ -63,7 +86,7 @@ export function CartHeaderButton() {
     removeItem,
     updateItemQuantity,
     clearCart,
-  } = useSellerCartContext();
+  } = cartContext;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
