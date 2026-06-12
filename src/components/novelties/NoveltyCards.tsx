@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, Building2, FolderTree } from 'lucide-react';
+import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
