@@ -48,13 +48,7 @@ export function GlobalSearchIdleState({
       {/* Recent */}
       {history.length > 0 && (
         <div className="duration-200 animate-in fade-in-0">
-          <SectionHeader
-            icon={<Clock />}
-            label="Recentes"
-            count={history.length}
-            gradient="[background-color:hsl(var(--command-accent))]"
-            iconColor="[color:hsl(var(--command-text-subtle))]"
-          />
+          <SectionHeader icon={<Clock />} label="Recentes" count={history.length} />
 
           <div className="space-y-0.5 px-2">
             {history.slice(0, 4).map((term, i) => (
@@ -63,19 +57,19 @@ export function GlobalSearchIdleState({
                 value={`history-${term}`}
                 onSelect={() => onSuggestionClick(term)}
                 className={cn(
-                  'group flex items-center gap-3.5 rounded-xl px-3 py-2.5 duration-200 animate-in fade-in-0 slide-in-from-left-2',
+                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 duration-200 animate-in fade-in-0 slide-in-from-left-2',
                   paletteItemStateClass,
                 )}
                 style={staggerStyle(i)}
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl [background-color:hsl(var(--command-accent))] group-data-[selected=true]:[background-color:hsl(var(--command-accent-strong))]">
-                  <Clock className="h-4 w-4 [color:hsl(var(--command-text-subtle))]" />
-                </div>
-                <span className="flex-1 truncate text-[13px]">{term}</span>
+                <Clock className="h-4 w-4 shrink-0 [color:hsl(var(--command-text-subtle))] transition-colors group-data-[selected=true]:[color:hsl(var(--command-text-muted))]" />
+                <span className="flex-1 truncate text-[13px] uppercase tracking-wide [color:hsl(var(--command-text-muted))] group-data-[selected=true]:text-foreground group-data-[selected=true]:font-medium">
+                  {term}
+                </span>
                 <button
                   onClick={(e) => onRemoveFromHistory(e, term)}
                   aria-label={`Remover "${term}" do histórico`}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg opacity-0 transition-all hover:bg-destructive/10 group-hover:opacity-100 group-data-[selected=true]:opacity-100"
+                  className="flex h-6 w-6 items-center justify-center rounded-md opacity-0 transition-all hover:bg-destructive/10 group-hover:opacity-100 group-data-[selected=true]:opacity-100"
                 >
                   <X
                     className="h-3 w-3 [color:hsl(var(--command-text-subtle))] hover:text-destructive"
