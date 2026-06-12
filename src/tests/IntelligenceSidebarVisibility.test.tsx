@@ -56,24 +56,28 @@ describe('Sidebar Visibility Regression (Intelligence & Trends)', () => {
   it('shows Insights group and its items for regular users (non-admin)', async () => {
     renderSidebarWithRole(false);
     
-    // Check for "Insights" group
-    const insightsGroup = screen.getByText(/Insights/i);
-    expect(insightsGroup).toBeInTheDocument();
+    // Check for "Insights" group by label (uppercase in some contexts, but we use the label from navGroups)
+    const insightsLabel = screen.getByText(/INSIGHTS/i);
+    expect(insightsLabel).toBeInTheDocument();
 
-    // Click to expand the group if it's not default open
-    fireEvent.click(insightsGroup);
+    // The button containing the label should be clickable to expand
+    const groupButton = insightsLabel.closest('button');
+    if (groupButton) {
+      fireEvent.click(groupButton);
+    }
 
-    // Now check for the items inside
-    expect(await screen.findByText(/Inteligência de Mercado/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Tendências/i)).toBeInTheDocument();
+    // Now check for the items inside by their text
+    // Using getAllByText in case there are multiple matches (tooltip + real element)
+    expect(screen.getAllByText(/Inteligência de Mercado/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Tendências/i).length).toBeGreaterThan(0);
   });
 
   it('shows admin-only group ONLY for admins', () => {
     const { unmount } = renderSidebarWithRole(false);
-    expect(screen.queryByText(/Admin/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ADMIN/i)).not.toBeInTheDocument();
     unmount();
 
     renderSidebarWithRole(true);
-    expect(screen.getByText(/Admin/i)).toBeInTheDocument();
+    expect(screen.getByText(/ADMIN/i)).toBeInTheDocument();
   });
 });
