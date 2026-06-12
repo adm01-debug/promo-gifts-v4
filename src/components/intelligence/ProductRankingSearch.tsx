@@ -47,12 +47,13 @@ export function ProductRankingSearch() {
   const rankedProducts = products ?? [];
   const hasActiveFilters = !!(supplierId || categoryId || debouncedSearch);
 
-  const formatCurrency = (v: number) =>
+  // FIX TS2322: RankingResultRowProps.formatCurrency expects (v: number | null | undefined) => string
+  const formatCurrency = (v: number | null | undefined) =>
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       maximumFractionDigits: 0,
-    }).format(v);
+    }).format(v ?? 0);
 
   const summary = useMemo(() => {
     if (!products?.length) return null;
