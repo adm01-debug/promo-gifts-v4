@@ -153,16 +153,53 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           {product.product_name ?? '—'}
         </p>
         <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
+
+        {/* Categoria + Fornecedor */}
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          {product.category_name && (
+            <span className="flex items-center gap-0.5 truncate" title={product.category_name}>
+              <FolderTree className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{product.category_name}</span>
+            </span>
+          )}
+          {product.supplier_name && (
+            <span className="flex items-center gap-0.5 truncate" title={product.supplier_name}>
+              <Building2 className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{product.supplier_name}</span>
+            </span>
+          )}
+        </div>
+
         <div className="mt-0.5">
           <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
         </div>
-        {product.base_price !== null && (
-          <p className="text-sm font-semibold text-primary">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              product.base_price,
+
+        {/* Preço + Estoque */}
+        <div className="flex items-center justify-between gap-2">
+          {product.base_price !== null && (
+            <p className="text-sm font-semibold text-primary">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                product.base_price,
+              )}
+            </p>
+          )}
+          <span
+            className={cn(
+              'text-[11px] font-medium',
+              product.stock_status === 'out-of-stock'
+                ? 'text-destructive'
+                : product.stock_status === 'low-stock'
+                  ? 'text-amber-500'
+                  : 'text-emerald-500',
             )}
-          </p>
-        )}
+          >
+            {product.stock_status === 'out-of-stock'
+              ? 'Esgotado'
+              : product.stock_status === 'low-stock'
+                ? `${product.stock_quantity} em estoque (baixo)`
+                : `${product.stock_quantity} em estoque`}
+          </span>
+        </div>
       </div>
     </article>
   );
