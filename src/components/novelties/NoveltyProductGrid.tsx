@@ -385,9 +385,14 @@ export function NoveltyProductGrid() {
       <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px)+var(--novelty-sticky-h,160px))] z-20 -mx-4 flex flex-col gap-2 border-b border-border/40 bg-background/95 px-4 py-2 backdrop-blur-md lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Sparkles className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-            <span className="sr-only">Novidades</span>
-            <Badge variant="secondary" className="shrink-0 px-1.5 text-[10px] tabular-nums">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <h2 className="whitespace-nowrap text-base font-semibold text-primary sm:text-lg">
+              Novidades
+            </h2>
+            <Badge
+              variant="outline"
+              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 text-[10px] font-semibold tabular-nums text-primary"
+            >
               {isLoading && products.length === 0 ? (
                 <span className="flex items-center gap-1">
                   <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -397,7 +402,7 @@ export function NoveltyProductGrid() {
                 <>
                   {filteredProducts.length}
                   {hasActiveFilters && (
-                    <span className="text-muted-foreground">/{products.length}</span>
+                    <span className="text-primary/60">/{products.length}</span>
                   )}
                 </>
               )}
