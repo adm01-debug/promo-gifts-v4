@@ -13,22 +13,22 @@ export default function NoveltiesPage() {
         path="/novidades"
       />
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-4 py-4 pb-24 lg:px-6 xl:px-8">
-        {/* Cabeçalho da página */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-              <Sparkles className="h-6 w-6" />
+        {/* Cabeçalho da página — sticky no topo (mesmo padrão do Catálogo/Super Filtro) */}
+        <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-30 -mx-4 border-b border-border/40 bg-background/95 px-4 py-2 backdrop-blur-md lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-10 sm:w-10">
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="flex min-w-0 flex-1 items-baseline gap-2 truncate">
               <h1
                 data-testid="page-title-novidades"
-                className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+                className="shrink-0 font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl"
               >
                 Novidades
               </h1>
               <p
                 data-testid="novelty-description"
-                className="mt-1 text-sm font-medium text-muted-foreground sm:text-base"
+                className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm"
               >
                 Produtos recém-chegados ao catálogo nos últimos 30 dias
               </p>
