@@ -62,7 +62,20 @@ export interface ReplenishmentWithDetails {
   readonly stock_status: StockStatus;
 }
 
+/**
+ * KPI stats para o módulo Reposição.
+ *
+ * PRIMÁRIOS (Cenário A — produto saiu do zero):
+ *   restockedToday/Week/15d = produtos onde stock foi de 0 → positivo
+ *   topSupplierName/Count   = fornecedor líder em restocks reais
+ *   activeReplenishments    = variantes esgotadas com data de chegada futura
+ *
+ * SECUNDÁRIOS (Cenário B — reabastecimento preventivo, opcionais):
+ *   reorderedThisWeek/Month  = produtos que já tinham estoque e receberam mais
+ *   upcomingRestockVariants  = variantes com next_date_1 futuro (em estoque ou não)
+ */
 export interface ReplenishmentStatsDisplay {
+  // Primários — usados pelos 5 KPI cards
   readonly totalReplenishments: number;
   readonly activeReplenishments: number;
   readonly expiringSoon: number;
@@ -73,6 +86,10 @@ export interface ReplenishmentStatsDisplay {
   readonly restockedLast15Days: number;
   readonly topSupplierName: string | null;
   readonly topSupplierCount: number;
+  // Secundários — Cenário B (disponíveis para expansão futura da UI)
+  readonly reorderedThisWeek: number;
+  readonly reorderedThisMonth: number;
+  readonly upcomingRestockVariants: number;
 }
 
 interface RawProduct {
@@ -243,15 +260,17 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
 // ─── Stats Hook (RPC) ────────────────────────────────────────────
 //
 // FONTE DE VERDADE: fn_get_replenishment_stats() no Supabase
-// Lê de stock_daily_summary.restock_detected (eventos reais de restock)
-// e de vw_product_availability.has_incoming_stock (próximas reposições).
 //
-// NÃO usa updated_at de produtos — esse campo muda com qualquer alteração
-// (preço, imagem, sync de estoque) e não indica reposição real.
-// NÃO usa .range(0,499) — o limite travava todos os cards em 500.
+// KPI PRIMÁRIOS — Cenário A (produto saiu do zero):
+//   stock_open=0 → stock_close>0 = esgotado voltou ao estoque
+//   Exclui naturalmente o dia de inicialização (06/06) e Cenário C.
 //
-// untypedRpc is used because fn_get_replenishment_stats is not yet in the
-// generated Supabase types. Migrate to supabase.rpc() once types.ts is rerun.
+// KPI SECUNDÁRIOS — Cenário B (reabastecimento preventivo):
+//   reorderedThisWeek/Month = tinha estoque, recebeu mais
+//   upcomingRestockVariants = variantes com next_date_1 futuro
+//
+// untypedRpc: fn_get_replenishment_stats não está nos tipos gerados.
+// Migrar para supabase.rpc() após rerun do types.ts.
 
 export function useReplenishmentStats() {
   return useQuery<ReplenishmentStatsDisplay, Error>({
@@ -262,16 +281,19 @@ export function useReplenishmentStats() {
       if (error) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) {
           return {
-            totalReplenishments: 0,
-            activeReplenishments: 0,
-            expiringSoon: 0,
-            totalProducts: 0,
-            replenishmentRate: 0,
-            restockedToday: 0,
-            restockedThisWeek: 0,
-            restockedLast15Days: 0,
-            topSupplierName: null,
-            topSupplierCount: 0,
+            totalReplenishments:    0,
+            activeReplenishments:   0,
+            expiringSoon:           0,
+            totalProducts:          0,
+            replenishmentRate:      0,
+            restockedToday:         0,
+            restockedThisWeek:      0,
+            restockedLast15Days:    0,
+            topSupplierName:        null,
+            topSupplierCount:       0,
+            reorderedThisWeek:      0,
+            reorderedThisMonth:     0,
+            upcomingRestockVariants: 0,
           };
         }
         throw error;
@@ -280,17 +302,21 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        // totalReplenishments: usa semana como proxy do "período padrão"
-        totalReplenishments:  Number(d.restockedThisWeek    ?? 0),
-        activeReplenishments: Number(d.activeReplenishments ?? 0),
-        expiringSoon:         0,                                    // não rastreado pela RPC
-        totalProducts:        Number(d.totalVariants         ?? 0),
-        replenishmentRate:    Number(d.replenishmentRate     ?? 0),
-        restockedToday:       Number(d.restockedToday        ?? 0),
-        restockedThisWeek:    Number(d.restockedThisWeek     ?? 0),
-        restockedLast15Days:  Number(d.restockedLast15Days   ?? 0),
-        topSupplierName:      (d.topSupplierName as string)  ?? null,
-        topSupplierCount:     Number(d.topSupplierCount      ?? 0),
+        // ─ Primários (KPI cards) ─
+        totalReplenishments:     Number(d.restockedThisWeek    ?? 0),
+        activeReplenishments:    Number(d.activeReplenishments ?? 0),
+        expiringSoon:            0,
+        totalProducts:           Number(d.totalVariants        ?? 0),
+        replenishmentRate:       Number(d.replenishmentRate    ?? 0),
+        restockedToday:          Number(d.restockedToday       ?? 0),
+        restockedThisWeek:       Number(d.restockedThisWeek    ?? 0),
+        restockedLast15Days:     Number(d.restockedLast15Days  ?? 0),
+        topSupplierName:         (d.topSupplierName as string) ?? null,
+        topSupplierCount:        Number(d.topSupplierCount     ?? 0),
+        // ─ Secundários (Cenário B — expansão futura da UI) ─
+        reorderedThisWeek:       Number(d.reorderedThisWeek      ?? 0),
+        reorderedThisMonth:      Number(d.reorderedThisMonth     ?? 0),
+        upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
     staleTime: 5 * 60 * 1000,
