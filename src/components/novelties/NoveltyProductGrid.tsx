@@ -149,16 +149,20 @@ export function NoveltyProductGrid() {
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
-  // Reset to first page when filters change
+  // Reset visible count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(40);
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
-  const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, currentPage, pageSize]);
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+  const hasMore = visibleCount < filteredProducts.length;
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore,
+    isLoading: isFetching,
+    onLoadMore: () => setVisibleCount((c) => c + pageSize),
+  });
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
