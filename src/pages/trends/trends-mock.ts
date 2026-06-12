@@ -2,6 +2,9 @@
  * Mock data para o módulo Tendências.
  * Ativado via querystring `?demo=1` em /tendencias.
  * Permite avaliar viabilidade visual do módulo sem depender de eventos reais.
+ *
+ * FIX 2026-06-12: isDemoMode() agora retorna false por padrão (dados reais).
+ * Para ativar o demo: acessar /tendencias?demo=1
  */
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -83,7 +86,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
   },
   {
     id: 'p4',
-    name: 'Mochila Executiva Notebook 15”',
+    name: 'Mochila Executiva Notebook 15"',
     sku: 'MCH-EXE-PRT',
     views: 856,
     details: 312,
@@ -212,12 +215,17 @@ export function buildMockDaily(days: number) {
 }
 
 /**
- * Demo ligado por padrão (avaliação de viabilidade do módulo).
- * Para desligar: acessar /tendencias?demo=0
+ * isDemoMode — CORRIGIDO 2026-06-12
+ *
+ * Comportamento anterior (bug): retornava true por padrão → módulo sempre em MODO DEMO.
+ * Comportamento novo (correto): retorna false por padrão → módulo usa dados reais.
+ *
+ * Para ativar o modo demo (dados fictícios para avaliação): /tendencias?demo=1
+ * Para confirmar dados reais (default): /tendencias ou /tendencias?demo=0
  */
 export function isDemoMode(): boolean {
-  if (typeof window === 'undefined') return true;
-  return new URLSearchParams(window.location.search).get('demo') !== '0';
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('demo') === '1';
 }
 
 // =====================================================
