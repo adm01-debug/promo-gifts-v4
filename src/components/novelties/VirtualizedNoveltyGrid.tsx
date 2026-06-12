@@ -41,19 +41,17 @@ export function VirtualizedNoveltyGrid({
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
-  const virtualizer = useVirtualizer({
+  const virtualizer = useWindowVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => 480,
     overscan: 3,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
   return (
     <div
       ref={parentRef}
-      className="overflow-auto"
-      style={{ maxHeight: 'calc(100vh - 280px)' }}
       role="list"
       aria-label="Grade de novidades"
     >
