@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchResult {
   id: string;
@@ -58,7 +59,7 @@ const quickActions = [
 export function GlobalSearch({
   isOpen,
   onClose,
-  placeholder = 'Buscar produtos, orçamentos, clientes...',
+  placeholder = 'Busque por produtos, orçamentos...',
 }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -98,7 +99,7 @@ export function GlobalSearch({
     }
   }, [isOpen]);
 
-  // Mock search - replace with actual API call
+  // Real search via fn_global_search RPC — produtos + orçamentos
   const performSearch = useCallback(async (searchQuery: string, filter?: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
@@ -107,40 +108,75 @@ export function GlobalSearch({
 
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    try {
+      const supportedTypes = ['product', 'quote'];
+      const types =
+        filter && supportedTypes.includes(filter) ? [filter] : supportedTypes;
 
-    // Mock results
-    const mockResults: SearchResult[] = (
-      [
-        {
-          id: '1',
-          title: 'Caneta Personalizada Premium',
-          description: 'SKU: CAN-001 - Categoria: Escritório',
-          category: 'product',
-          url: '/produtos/1',
-          metadata: { price: 'R$ 5,90', stock: '1.250 un' } as Record<string, string>,
+      const { data, error } = await supabase.rpc('fn_global_search', {
+        p_term: searchQuery.trim(),
+        p_limit: 12,
+        p_types: types,
+      });
+
+      if (error) throw error;
+
+      const mapped: SearchResult[] = (data ?? []).map(
+        (row: {
+          result_id: string;
+          result_type: string;
+          result_title: string;
+          result_description: string | null;
+          result_url: string;
+          result_image_url: string | null;
+          result_metadata: Record<string, unknown> | null;
+          result_relevance: number;
+        }) => {
+          const cat = (['product', 'quote'] as string[]).includes(row.result_type)
+            ? (row.result_type as 'product' | 'quote')
+            : ('page' as SearchResult['category']);
+
+          const meta: Record<string, string> = {};
+          if (row.result_metadata) {
+            if (cat === 'product') {
+              if (row.result_metadata.price != null)
+                meta.Preço = `R$ ${Number(row.result_metadata.price).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2 },
+                )}`;
+              if (row.result_metadata.stock != null)
+                meta.Estoque = `${row.result_metadata.stock} un`;
+            } else if (cat === 'quote') {
+              if (row.result_metadata.status)
+                meta.Status = String(row.result_metadata.status);
+              if (row.result_metadata.total != null)
+                meta.Total = `R$ ${Number(row.result_metadata.total).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2 },
+                )}`;
+            }
+          }
+
+          return {
+            id: row.result_id,
+            title: row.result_title,
+            description: row.result_description ?? undefined,
+            category: cat,
+            url: row.result_url,
+            metadata: Object.keys(meta).length > 0 ? meta : undefined,
+            score: row.result_relevance,
+          };
         },
-        {
-          id: '2',
-          title: 'Orçamento #2024-0125',
-          description: 'Cliente: Empresa ABC Ltda',
-          category: 'quote',
-          url: '/orcamentos/2',
-          metadata: { value: 'R$ 15.000,00', status: 'Pendente' } as Record<string, string>,
-        },
-      ] as SearchResult[]
-    ).filter(
-      (r) =>
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+      );
 
-    const filteredResults = filter ? mockResults.filter((r) => r.category === filter) : mockResults;
-
-    setResults(filteredResults);
-    setIsLoading(false);
-    setSelectedIndex(0);
+      setResults(mapped);
+    } catch (err) {
+      console.error('[GlobalSearch] performSearch error:', err);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+      setSelectedIndex(0);
+    }
   }, []);
 
   // Debounced search
@@ -221,7 +257,6 @@ export function GlobalSearch({
     () => [
       { id: 'product', label: 'Produtos' },
       { id: 'quote', label: 'Orçamentos' },
-      { id: 'client', label: 'Clientes' },
     ],
     [],
   );
@@ -343,7 +378,7 @@ export function GlobalSearch({
                   ) : (
                     <div className="py-12 text-center">
                       <Search className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
-                      <p className="text-muted-foreground">Nenhum resultado para "{query}"</p>
+                      <p className="text-muted-foreground">Nenhum resultado para &quot;{query}&quot;</p>
                     </div>
                   )
                 ) : (
