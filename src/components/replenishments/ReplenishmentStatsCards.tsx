@@ -211,6 +211,11 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="\u00daltimos 7 Dias"
         value={s.restockedThisWeek}
+        subtitle={
+          s.reorderedThisWeek > 0
+            ? `+${s.reorderedThisWeek.toLocaleString('pt-BR')} reabastecidos`
+            : undefined
+        }
         icon={<CalendarRange className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="success"
         delay={100}
@@ -218,6 +223,11 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="\u00daltimos 15 Dias"
         value={s.restockedLast15Days}
+        subtitle={
+          s.reorderedThisMonth > 0
+            ? `+${s.reorderedThisMonth.toLocaleString('pt-BR')} reabastecidos`
+            : undefined
+        }
         icon={<CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="warning"
         delay={150}
@@ -234,6 +244,11 @@ export function ReplenishmentStatsCards() {
         label="Reposi\u00e7\u00f5es Ativas"
         value={s.activeReplenishments}
         suffix={s.replenishmentRate ? ` (${s.replenishmentRate}%)` : ''}
+        subtitle={
+          s.upcomingRestockVariants > 0
+            ? `${s.upcomingRestockVariants.toLocaleString('pt-BR')} variantes aguardam lote`
+            : undefined
+        }
         icon={<RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="default"
         delay={300}
