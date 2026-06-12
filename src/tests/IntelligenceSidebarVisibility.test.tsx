@@ -43,7 +43,7 @@ const renderSidebarWithRole = (isAdmin: boolean) => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
-          <AuthContext.Provider value={mockAuthContext as any}>
+          <AuthContext.Provider value={mockAuthContext as unknown as React.ContextType<typeof AuthContext>}>
             <SidebarReorganized isOpen={true} onToggle={vi.fn()} />
           </AuthContext.Provider>
         </TooltipProvider>
