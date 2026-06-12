@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SidebarReorganized } from '../components/layout/SidebarReorganized';
 import { BrowserRouter } from 'react-router-dom';
@@ -53,24 +53,27 @@ const renderSidebarWithRole = (isAdmin: boolean) => {
 };
 
 describe('Sidebar Visibility Regression (Intelligence & Trends)', () => {
-  it('shows Market Intelligence and Trends for regular users (non-admin)', () => {
+  it('shows Insights group and its items for regular users (non-admin)', async () => {
     renderSidebarWithRole(false);
     
-    // Check for "Inteligência de Mercado"
-    const marketIntelLink = screen.getByText(/Inteligência de Mercado/i);
-    expect(marketIntelLink).toBeInTheDocument();
-    
-    // Check for "Tendências"
-    const trendsLink = screen.getByText(/Tendências/i);
-    expect(trendsLink).toBeInTheDocument();
+    // Check for "Insights" group
+    const insightsGroup = screen.getByText(/Insights/i);
+    expect(insightsGroup).toBeInTheDocument();
+
+    // Click to expand the group if it's not default open
+    fireEvent.click(insightsGroup);
+
+    // Now check for the items inside
+    expect(await screen.findByText(/Inteligência de Mercado/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Tendências/i)).toBeInTheDocument();
   });
 
-  it('shows admin-only routes ONLY for admins', () => {
+  it('shows admin-only group ONLY for admins', () => {
     const { unmount } = renderSidebarWithRole(false);
-    expect(screen.queryByText(/Usuários/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Admin/i)).not.toBeInTheDocument();
     unmount();
 
     renderSidebarWithRole(true);
-    expect(screen.getByText(/Usuários/i)).toBeInTheDocument();
+    expect(screen.getByText(/Admin/i)).toBeInTheDocument();
   });
 });
