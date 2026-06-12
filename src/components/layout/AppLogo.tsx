@@ -62,7 +62,7 @@ export function AppLogo({
               subtextClassName,
             )}
           >
-            Plataforma de Vendas
+            Store System
           </span>
         </div>
       )}

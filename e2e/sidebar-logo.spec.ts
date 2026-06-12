@@ -19,7 +19,7 @@ test.describe('Sidebar Logo Visual Regression', () => {
     const logoText = brandHeader.getByText('Promo Gifts');
     await expect(logoText).toBeVisible();
 
-    const subText = brandHeader.getByText('Plataforma de Vendas');
+    const subText = brandHeader.getByText('Store System');
     await expect(subText).toBeVisible();
 
     // Visual sanity check for sizes (rough bounds)
