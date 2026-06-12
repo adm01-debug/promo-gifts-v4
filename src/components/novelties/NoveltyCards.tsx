@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, Building2, FolderTree } from 'lucide-react';
+import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
@@ -183,22 +184,14 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
               )}
             </p>
           )}
-          <span
-            className={cn(
-              'text-[11px] font-medium',
-              product.stock_status === 'out-of-stock'
-                ? 'text-destructive'
-                : product.stock_status === 'low-stock'
-                  ? 'text-amber-500'
-                  : 'text-emerald-500',
-            )}
-          >
-            {product.stock_status === 'out-of-stock'
-              ? 'Esgotado'
-              : product.stock_status === 'low-stock'
-                ? `${product.stock_quantity} em estoque (baixo)`
-                : `${product.stock_quantity} em estoque`}
-          </span>
+          <StockBadge
+            status={
+              product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
+            }
+            quantity={product.stock_quantity ?? 0}
+            showQuantity
+            size="sm"
+          />
         </div>
       </div>
     </article>
