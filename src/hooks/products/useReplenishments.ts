@@ -239,31 +239,24 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
   });
 }
 
+// ─── Stats Hook (RPC) ────────────────────────────────────────────
+//
+// FONTE DE VERDADE: fn_get_replenishment_stats() no Supabase
+// Lê de stock_daily_summary.restock_detected (eventos reais de restock)
+// e de vw_product_availability.has_incoming_stock (próximas reposições).
+//
+// NÃO usa updated_at de produtos — esse campo muda com qualquer alteração
+// (preço, imagem, sync de estoque) e não indica reposição real.
+// NÃO usa .range(0,499) — o limite travava todos os cards em 500.
+
 export function useReplenishmentStats() {
   return useQuery<ReplenishmentStatsDisplay, Error>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const { data, error } = await supabase.rpc('fn_get_replenishment_stats');
 
-      const [repResult, totalResult] = await Promise.all([
-        supabase
-          .from('v_products_public')
-          .select('id, created_at, updated_at, supplier_id', { count: 'exact' })
-          .is('is_active', true)
-          .gte('updated_at', cutoff)
-          .range(0, 499),
-        supabase
-          .from('v_products_public')
-          .select('id', { count: 'exact' })
-          .is('is_active', true)
-          .limit(1),
-      ]);
-
-      if (repResult.error || totalResult.error) {
-        if (
-          repResult.error?.message?.includes('410') ||
-          totalResult.error?.message?.includes('410')
-        ) {
+      if (error) {
+        if (error.message?.includes('410') || error.message?.includes('Gone')) {
           return {
             totalReplenishments: 0,
             activeReplenishments: 0,
@@ -277,71 +270,23 @@ export function useReplenishmentStats() {
             topSupplierCount: 0,
           };
         }
+        throw error;
       }
 
-      const records = (repResult.data as unknown as RawProduct[]) || [];
-
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const weekStart = todayStart - 6 * 86_400_000;
-      const fifteenDaysStart = todayStart - 14 * 86_400_000;
-
-      const replenishments = records.filter(isReplenishment).map((p) => ({
-        daysRemaining: calcDaysRemaining(p.updated_at),
-        updatedTime: new Date(p.updated_at).getTime(),
-        supplierId: p.supplier_id,
-      }));
-
-      const active = replenishments.filter((n) => n.daysRemaining > 0);
-      const expiring = active.filter((n) => n.daysRemaining <= 7);
-      const restockedToday = active.filter((n) => n.updatedTime >= todayStart).length;
-      const restockedThisWeek = active.filter((n) => n.updatedTime >= weekStart).length;
-      const restockedLast15Days = active.filter((n) => n.updatedTime >= fifteenDaysStart).length;
-      const totalProducts = totalResult.count ?? 0;
-      const activeCount = active.length;
-
-      // Find top supplier
-      const supplierCounts = new Map<string, number>();
-      for (const n of active) {
-        if (n.supplierId) {
-          supplierCounts.set(n.supplierId, (supplierCounts.get(n.supplierId) ?? 0) + 1);
-        }
-      }
-
-      let topSupplierId: string | null = null;
-      let topSupplierCount = 0;
-      for (const [id, count] of supplierCounts) {
-        if (count > topSupplierCount) {
-          topSupplierCount = count;
-          topSupplierId = id;
-        }
-      }
-
-      let topSupplierName: string | null = null;
-      if (topSupplierId) {
-        try {
-          const supRes = await supabase
-            .from('v_suppliers_public')
-            .select('name')
-            .eq('id', topSupplierId)
-            .limit(1);
-          topSupplierName = supRes.data?.[0]?.name ?? null;
-        } catch {
-          // Graceful fallback — supplier name unavailable
-        }
-      }
+      const d = (data ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments: replenishments.length,
-        activeReplenishments: activeCount,
-        expiringSoon: expiring.length,
-        totalProducts,
-        replenishmentRate: totalProducts > 0 ? Math.round((activeCount / totalProducts) * 100) : 0,
-        restockedToday,
-        restockedThisWeek,
-        restockedLast15Days,
-        topSupplierName,
-        topSupplierCount,
+        // totalReplenishments: usa semana como proxy do "período padrão"
+        totalReplenishments:  Number(d.restockedThisWeek    ?? 0),
+        activeReplenishments: Number(d.activeReplenishments ?? 0),
+        expiringSoon:         0,                                    // não rastreado pela RPC
+        totalProducts:        Number(d.totalVariants         ?? 0),
+        replenishmentRate:    Number(d.replenishmentRate     ?? 0),
+        restockedToday:       Number(d.restockedToday        ?? 0),
+        restockedThisWeek:    Number(d.restockedThisWeek     ?? 0),
+        restockedLast15Days:  Number(d.restockedLast15Days   ?? 0),
+        topSupplierName:      (d.topSupplierName as string)  ?? null,
+        topSupplierCount:     Number(d.topSupplierCount      ?? 0),
       };
     },
     staleTime: 5 * 60 * 1000,
