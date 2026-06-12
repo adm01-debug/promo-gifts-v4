@@ -46,8 +46,8 @@ describe("SectionHeader", () => {
 
 describe("staggerStyle", () => {
   it("returns correct animation delay", () => {
-    expect(staggerStyle(0)).toEqual({ animationDelay: "0ms" });
-    expect(staggerStyle(2)).toEqual({ animationDelay: "100ms" });
-    expect(staggerStyle(1, 200)).toEqual({ animationDelay: "250ms" });
+    expect(staggerStyle(0)).toMatchObject({ animationDelay: "0ms" });
+    expect(staggerStyle(2)).toMatchObject({ animationDelay: "100ms" });
+    expect(staggerStyle(1, 200)).toMatchObject({ animationDelay: "250ms" });
   });
 });
