@@ -16,7 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 
 interface SearchResult {
   id: string;
@@ -55,6 +55,18 @@ const quickActions = [
   { id: 'products', label: 'Catálogo de Produtos', url: '/filtros', icon: Package },
   { id: 'dashboard', label: 'Dashboard', url: '/bi', icon: TrendingUp },
 ];
+
+/** Row shape returned by fn_global_search RPC (not yet in generated types) */
+type FnGlobalSearchRow = {
+  result_id: string;
+  result_type: string;
+  result_title: string;
+  result_description: string | null;
+  result_url: string;
+  result_image_url: string | null;
+  result_metadata: Record<string, unknown> | null;
+  result_relevance: number;
+};
 
 export function GlobalSearch({
   isOpen,
@@ -99,7 +111,9 @@ export function GlobalSearch({
     }
   }, [isOpen]);
 
-  // Real search via fn_global_search RPC — produtos + orçamentos
+  // Real search via fn_global_search RPC — produtos + orçamentos.
+  // untypedRpc bypasses the Supabase type narrowing for functions not yet in
+  // generated types. Migrate to supabase.rpc() once types.ts is regenerated.
   const performSearch = useCallback(async (searchQuery: string, filter?: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
@@ -113,7 +127,7 @@ export function GlobalSearch({
       const types =
         filter && supportedTypes.includes(filter) ? [filter] : supportedTypes;
 
-      const { data, error } = await supabase.rpc('fn_global_search', {
+      const { data: rawData, error } = await untypedRpc('fn_global_search', {
         p_term: searchQuery.trim(),
         p_limit: 12,
         p_types: types,
@@ -121,17 +135,9 @@ export function GlobalSearch({
 
       if (error) throw error;
 
-      const mapped: SearchResult[] = (data ?? []).map(
-        (row: {
-          result_id: string;
-          result_type: string;
-          result_title: string;
-          result_description: string | null;
-          result_url: string;
-          result_image_url: string | null;
-          result_metadata: Record<string, unknown> | null;
-          result_relevance: number;
-        }) => {
+      const data = rawData as FnGlobalSearchRow[] | null;
+
+      const mapped: SearchResult[] = (data ?? []).map((row) => {
           const cat = (['product', 'quote'] as string[]).includes(row.result_type)
             ? (row.result_type as 'product' | 'quote')
             : ('page' as SearchResult['category']);

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 
 /** Window in days for considering a product as "replenished" */
 const REPLENISHMENT_WINDOW_DAYS = 30;
@@ -248,12 +249,15 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
 // NÃO usa updated_at de produtos — esse campo muda com qualquer alteração
 // (preço, imagem, sync de estoque) e não indica reposição real.
 // NÃO usa .range(0,499) — o limite travava todos os cards em 500.
+//
+// untypedRpc is used because fn_get_replenishment_stats is not yet in the
+// generated Supabase types. Migrate to supabase.rpc() once types.ts is rerun.
 
 export function useReplenishmentStats() {
   return useQuery<ReplenishmentStatsDisplay, Error>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('fn_get_replenishment_stats');
+      const { data: rawData, error } = await untypedRpc('fn_get_replenishment_stats');
 
       if (error) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) {
@@ -273,7 +277,7 @@ export function useReplenishmentStats() {
         throw error;
       }
 
-      const d = (data ?? {}) as Record<string, unknown>;
+      const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
         // totalReplenishments: usa semana como proxy do "período padrão"

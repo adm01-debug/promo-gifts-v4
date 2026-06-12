@@ -47,6 +47,24 @@ export function untypedFrom<T = Record<string, unknown>>(table: string) {
 }
 
 /**
+ * Call a Supabase RPC function that is not in the generated types.
+ *
+ * Same escape hatch as untypedFrom — casts to AnyClient to bypass the
+ * known-function-name narrowing on `.rpc()`. Cast the returned `data` at
+ * the call site to the expected return shape.
+ *
+ * Usage:
+ *   const { data: raw, error } = await untypedRpc('fn_my_rpc', { p_arg: v });
+ *   const data = raw as MyReturnType | null;
+ *
+ * Migration note: once `supabase gen types typescript` is rerun and types.ts
+ * includes the function, migrate the call site to `supabase.rpc('fn_my_rpc', ...)`.
+ */
+export function untypedRpc(fn: string, args?: Record<string, unknown>) {
+  return (supabase as unknown as AnyClient).rpc(fn, args ?? {});
+}
+
+/**
  * Known untyped table names for documentation.
  *
  * Empty since the 2026-05-24 cleanup. The previous entries now exist in the
