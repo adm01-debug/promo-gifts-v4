@@ -76,13 +76,13 @@ export function RankBadge({ index }: { index: number }) {
   );
 }
 
-/* ── Section Header — premium divider ── */
+/* ── Section Header — Carbon Sleek minimal ── */
 export function SectionHeader({
-  icon,
+  icon: _icon,
   label,
   count,
-  gradient,
-  iconColor = 'text-primary',
+  gradient: _gradient,
+  iconColor: _iconColor,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -91,27 +91,18 @@ export function SectionHeader({
   iconColor?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 pb-2.5 pt-5">
-      <div
-        className={cn(
-          'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg',
-          gradient || 'bg-primary/10',
-        )}
-      >
-        <span className={cn('[&>svg]:h-3.5 [&>svg]:w-3.5', iconColor)}>{icon}</span>
-      </div>
-      <span className="font-display text-[11px] font-bold uppercase tracking-[0.1em] [color:hsl(var(--command-text-subtle))]">
+    <div className="flex items-center px-4 pb-2 pt-4">
+      <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] [color:hsl(var(--command-text-subtle))]">
         {label}
       </span>
       {count !== undefined && count > 0 && (
         <Badge
           variant="secondary"
-          className="h-4 rounded-full border-0 px-1.5 text-[9px] font-bold [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-subtle))]"
+          className="ml-auto h-[18px] rounded-md border-0 px-1.5 text-[10px] font-semibold [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]"
         >
           {count}
         </Badge>
       )}
-      <div className="ml-1 h-px flex-1 [background:linear-gradient(90deg,hsl(var(--command-border-strong)),hsl(var(--command-border)),transparent)]" />
     </div>
   );
 }
