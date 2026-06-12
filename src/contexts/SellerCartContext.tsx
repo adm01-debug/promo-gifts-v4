@@ -277,10 +277,24 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** useSellerCartContext — lança erro se o contexto estiver ausente (uso normal). */
 export function useSellerCartContext() {
   const context = useContext(SellerCartContext);
   if (!context) {
     throw new Error('useSellerCartContext must be used within SellerCartProvider');
   }
   return context;
+}
+
+/**
+ * useSellerCartContextSafe — retorna null em vez de lançar erro quando o contexto está ausente.
+ *
+ * Usar em componentes que precisam renderizar dentro de Suspense fallbacks, durante HMR
+ * ou em qualquer contexto onde o SellerCartProvider pode não ter montado ainda.
+ * O componente consumidor é responsável por lidar com o retorno null.
+ *
+ * Resolve: 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
+ */
+export function useSellerCartContextSafe() {
+  return useContext(SellerCartContext) ?? null;
 }
