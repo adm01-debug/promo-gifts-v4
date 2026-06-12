@@ -41,10 +41,27 @@ export default function NoveltiesPage() {
           ref={stickyRef}
           className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-30 -mx-4 space-y-3 border-b border-border/40 bg-background/95 px-4 pb-3 pt-2 backdrop-blur-md lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
         >
-          {/* Cabeçalho oculto — mantém h1 para SEO/E2E sem ocupar espaço visual */}
-          <h1 data-testid="page-title-novidades" className="sr-only">
-            Novidades
-          </h1>
+          {/* Cabeçalho — 15% menor que o original */}
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-[34px] sm:w-[34px]">
+              <Sparkles className="h-[14px] w-[14px] sm:h-[17px] sm:w-[17px]" />
+            </div>
+            <div className="flex min-w-0 flex-1 items-baseline gap-2 truncate">
+              <h1
+                data-testid="page-title-novidades"
+                className="shrink-0 font-display text-[17px] font-bold tracking-tight text-foreground sm:text-[20px]"
+              >
+                Novidades
+              </h1>
+              <p
+                data-testid="novelty-description"
+                className="min-w-0 truncate text-[11px] font-medium text-muted-foreground sm:text-[12px]"
+              >
+                Produtos recém-chegados ao catálogo nos últimos 30 dias
+              </p>
+            </div>
+          </div>
+
 
 
           {/* KPIs focados em chegadas */}
