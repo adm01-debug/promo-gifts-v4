@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { NoveltyStatsCards } from '@/components/novelties/NoveltyStatsCards';
@@ -5,6 +6,28 @@ import { NoveltyProductGrid } from '@/components/novelties/NoveltyProductGrid';
 import { ExpiringNoveltiesWidget } from '@/components/novelties/ExpiringNoveltiesWidget';
 
 export default function NoveltiesPage() {
+  const stickyRef = useRef<HTMLDivElement | null>(null);
+
+  // Mede a altura do bloco sticky (header + KPIs) e expõe via CSS var
+  // para que a toolbar do grid possa se ancorar logo abaixo dele.
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const update = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--novelty-sticky-h', `${Math.round(h)}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+      document.documentElement.style.removeProperty('--novelty-sticky-h');
+    };
+  }, []);
+
   return (
     <>
       <PageSEO
@@ -13,8 +36,12 @@ export default function NoveltiesPage() {
         path="/novidades"
       />
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-4 py-4 pb-24 lg:px-6 xl:px-8">
-        {/* Cabeçalho da página — sticky no topo (mesmo padrão do Catálogo/Super Filtro) */}
-        <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-30 -mx-4 border-b border-border/40 bg-background/95 px-4 py-2 backdrop-blur-md lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
+        {/* Topo fixo da página — cabeçalho + KPIs juntos (mesmo padrão do Super Filtro) */}
+        <div
+          ref={stickyRef}
+          className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-30 -mx-4 space-y-3 border-b border-border/40 bg-background/95 px-4 pb-3 pt-2 backdrop-blur-md lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
+        >
+          {/* Cabeçalho */}
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-10 sm:w-10">
               <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -34,10 +61,10 @@ export default function NoveltiesPage() {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* KPIs focados em chegadas */}
-        <NoveltyStatsCards />
+          {/* KPIs focados em chegadas */}
+          <NoveltyStatsCards />
+        </div>
 
         {/* Layout principal — grid ocupa mais espaço */}
         <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-[1fr_280px]">
