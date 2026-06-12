@@ -64,6 +64,24 @@
     hsl(var(--primary-glow) / 0.06) 50%,
     hsl(var(--primary) / 0.08) 100%
   );
+
+  /* ─── Command Palette (Global Search) Design Tokens ──── */
+  /* Derivados do tema dark orange/blue — corrige BUG-GS-DS-01             */
+  /* Estes 9 tokens são usados por GlobalSearchPalette, GlobalSearchHelpers */
+  /* GlobalSearchIdleState, EmptySearchState mas NÃO estavam definidos.     */
+  /* Superfícies: usam a mesma matiz/saturação de --surface (24 28%)        */
+  --command-surface: 24 28% 6%;
+  --command-surface-raised: 24 28% 10%;
+  --command-surface-soft: 24 28% 8%;
+  /* Accent/seleção: tint azul (--primary = 217 91%) com alpha baixo        */
+  --command-accent: 217 91% 60% / 0.09;
+  --command-accent-strong: 217 91% 60% / 0.18;
+  /* Bordas: matiz laranja (24 100% 60%) com alpha reduzido                 */
+  --command-border: 24 100% 60% / 0.14;
+  --command-border-strong: 24 100% 60% / 0.28;
+  /* Texto: mesma matiz de --muted-foreground (24 15%) em lightness reduzida*/
+  --command-text-muted: 24 15% 62%;
+  --command-text-subtle: 24 12% 44%;
 }
 
 /* O bloco .dark agora herda tudo de :root, mantido apenas para compatibilidade com seletores Tailwind */
