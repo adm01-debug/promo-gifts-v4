@@ -134,7 +134,7 @@ function StatsLoadingSkeleton() {
     <div
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
       role="status"
-      aria-label="Carregando estatísticas"
+      aria-label="Carregando estat\u00edsticas"
     >
       {Array.from({ length: 5 }, (_, i) => (
         <Card key={i} className="border-border/50">
@@ -162,7 +162,7 @@ function StatsErrorState() {
         <CardContent className="flex items-center gap-3 p-4">
           <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
           <p className="text-sm text-destructive">
-            Erro ao carregar estatísticas. Tente recarregar a página.
+            Erro ao carregar estat\u00edsticas. Tente recarregar a p\u00e1gina.
           </p>
         </CardContent>
       </Card>
@@ -178,6 +178,8 @@ export function ReplenishmentStatsCards() {
   if (isLoading) return <StatsLoadingSkeleton />;
   if (error) return <StatsErrorState />;
 
+  // FIX TS2322: default object must match all 13 fields of ReplenishmentStatsDisplay
+  // (89d2b654 added reorderedThisWeek/Month + upcomingRestockVariants — Cenário B)
   const s: ReplenishmentStatsDisplay = stats ?? {
     totalReplenishments: 0,
     activeReplenishments: 0,
@@ -189,12 +191,15 @@ export function ReplenishmentStatsCards() {
     restockedLast15Days: 0,
     topSupplierName: null,
     topSupplierCount: 0,
+    reorderedThisWeek: 0,
+    reorderedThisMonth: 0,
+    upcomingRestockVariants: 0,
   };
 
   return (
     <section
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
-      aria-label="Estatísticas de reposição"
+      aria-label="Estat\u00edsticas de reposi\u00e7\u00e3o"
     >
       <StatCard
         label="Repostos Hoje"
@@ -204,14 +209,14 @@ export function ReplenishmentStatsCards() {
         delay={0}
       />
       <StatCard
-        label="Últimos 7 Dias"
+        label="\u00daltimos 7 Dias"
         value={s.restockedThisWeek}
         icon={<CalendarRange className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="success"
         delay={100}
       />
       <StatCard
-        label="Últimos 15 Dias"
+        label="\u00daltimos 15 Dias"
         value={s.restockedLast15Days}
         icon={<CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="warning"
@@ -220,13 +225,13 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="Top Fornecedor"
         value={s.topSupplierCount}
-        subtitle={s.topSupplierName ?? '—'}
+        subtitle={s.topSupplierName ?? '\u2014'}
         icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="orange"
         delay={200}
       />
       <StatCard
-        label="Reposições Ativas"
+        label="Reposi\u00e7\u00f5es Ativas"
         value={s.activeReplenishments}
         suffix={s.replenishmentRate ? ` (${s.replenishmentRate}%)` : ''}
         icon={<RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />}
