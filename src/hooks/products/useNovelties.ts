@@ -137,6 +137,7 @@ export interface NoveltyWithDetails {
   product_description: string | null;
   base_price: number | null;
   product_image: string | null;
+  product_set_image: string | null;
   category_id: string | null;
   category_name: string | null;
   supplier_code: string | null;
