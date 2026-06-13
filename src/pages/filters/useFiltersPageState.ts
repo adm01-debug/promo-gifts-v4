@@ -209,6 +209,10 @@ export function useFiltersPageState() {
     if (filters.priceRange[0] > 0) params.set('priceMin', String(filters.priceRange[0]));
     if (filters.priceRange[1] < 9999) params.set('priceMax', String(filters.priceRange[1]));
     if (filters.minStock > 0) params.set('minStock', String(filters.minStock));
+    if (filters.minSupplierSales30d > 0)
+      params.set('minSupplierSales30d', String(filters.minSupplierSales30d));
+    if (filters.minPromoSales90d > 0)
+      params.set('minPromoSales90d', String(filters.minPromoSales90d));
     if (filters.inStock) params.set('inStock', '1');
     if (filters.isKit) params.set('isKit', '1');
     if (filters.featured) params.set('featured', '1');
