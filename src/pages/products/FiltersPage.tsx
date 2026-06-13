@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useState, useRef, lazy, Suspense } from 'react';
+import { useCallback, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { SharePreviewDialog } from '@/components/products/share/SharePreviewDialog';
 import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
 import { type ExternalVariantStock, type Product } from '@/hooks/products';
@@ -76,6 +76,17 @@ export default function FiltersPage() {
   const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
 
   const state = useFiltersPageState();
+  // GAP-19 FIX: FiltersPage usa VirtualizedProductGrid SEM onLoadMore — todos os
+  // produtos são carregados progressivamente (fetchNextPage em background), então
+  // `products` (= filteredProducts) muda de referência a cada página carregada.
+  // Sem scrollResetKey, o modo legado do grid (efeito keyed em [scrollResetKey]
+  // undefined) não rolava ao topo ao trocar filtro/sort/view. Com a chave derivada
+  // de sortBy/viewMode/filters, o grid rola ao topo SOMENTE em mudança qualitativa
+  // do usuário — nunca durante a carga progressiva (mesma chave => scroll preservado).
+  const scrollResetKey = useMemo(
+    () => JSON.stringify([state.sortBy, state.viewMode, state.filters]),
+    [state.sortBy, state.viewMode, state.filters],
+  );
   const sel = useFiltersSelectionMode({
     selectionMode: state.selectionMode,
     filteredProducts: state.filteredProducts,
@@ -603,6 +614,7 @@ export default function FiltersPage() {
                   <>
                     {state.viewMode === 'grid' ? (
                       <VirtualizedProductGrid
+                        scrollResetKey={scrollResetKey}
                         products={state.filteredProducts}
                         isLoading={state.isLoadingProducts}
                         onProductClick={(productId) =>
