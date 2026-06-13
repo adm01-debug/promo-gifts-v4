@@ -584,13 +584,6 @@ export const ProductCard = memo(
                 setQuickViewOpen(true);
               }}
               markBusy={markBusy}
-              isWordMagicActive={isWordMagicActive}
-              isWordMagicGenerating={isWordMagicGenerating}
-              hasWordMagicEnrichment={hasWordMagicEnrichment}
-              onWordMagicClick={(e) => {
-                e.stopPropagation();
-                handleWordMagicClick();
-              }}
             />
           );
         })()}
@@ -637,13 +630,23 @@ export const ProductCard = memo(
             </span>
           </div>
 
-          <h3
-            data-testid="product-card-name"
-            data-product-name={product.name}
-            className={cn("line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isWordMagicActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
-          >
-            {displayName}
-          </h3>
+          {/* Word Magic — botão fixo, sempre visível no card */}
+          <div className="flex items-start gap-1.5">
+            <h3
+              data-testid="product-card-name"
+              data-product-name={product.name}
+              className={cn("flex-1 line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isWordMagicActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
+            >
+              {displayName}
+            </h3>
+            <WordMagicButton
+              hasEnrichment={hasWordMagicEnrichment}
+              isActive={isWordMagicActive}
+              isGenerating={isWordMagicGenerating}
+              onClick={(e) => { e.stopPropagation(); handleWordMagicClick(); }}
+              className="h-6 w-6 min-h-[24px] min-w-[24px] md:h-7 md:w-7 md:min-h-[28px] md:min-w-[28px] shrink-0 mt-0.5"
+            />
+          </div>
 
           <ProductColorSwatches
             colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
