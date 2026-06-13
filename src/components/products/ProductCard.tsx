@@ -709,7 +709,7 @@ export const ProductCard = memo(
           })()}
 
           {Array.isArray(product.materials) && product.materials.length > 0 && (
-            <div className="hidden flex-wrap gap-1.5 border-t border-border/50 pt-2 sm:flex">
+            <div className="hidden flex-wrap gap-1.5 border-t border-border/50 pt-1.5 sm:flex">
               {product.materials.slice(0, 2).map((material) => (
                 <span
                   key={material}
