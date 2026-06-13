@@ -177,13 +177,8 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     [onClick],
   );
 
-  const handleAddToQuote = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      navigate(`/orcamentos/novo?productId=${product.product_id}`);
-    },
-    [navigate, product.product_id],
-  );
+
+
 
   const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
 
