@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 
 // Per-product sparkline data
 export interface SparklineSalesData {
-  /** Daily depleted quantities (ordered by date ascending), last 30 days */
+  /** Daily depleted quantities (ordered by date ascending), last 90 days */
   dailyQty: number[];
   totalQty: number;
   /** Total units replenished in the period */
@@ -18,6 +18,9 @@ export interface SparklineSalesData {
   /** Current available stock across all supplier sources */
   availableStock: number;
 }
+
+/** Window length in days for the sales aggregation. */
+export const SPARKLINE_WINDOW_DAYS = 90;
 
 type SparklineMap = Record<string, SparklineSalesData>;
 
@@ -88,7 +91,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
   if (!productIds.length) return {};
 
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 30);
+  cutoff.setDate(cutoff.getDate() - SPARKLINE_WINDOW_DAYS);
   const cutoffStr = toLocalDateStr(cutoff);
 
   const BATCH_SIZE = 50;
@@ -158,7 +161,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
     let totalQty = 0;
     const dateMap = depletedByDate[pid] || {};
 
-    for (let i = 29; i >= 0; i--) {
+    for (let i = SPARKLINE_WINDOW_DAYS - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const ds = toLocalDateStr(d);

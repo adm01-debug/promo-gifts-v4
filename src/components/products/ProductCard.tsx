@@ -30,7 +30,7 @@ import {
 } from '@/utils/color-image-resolver';
 import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
-import { ProductSparkline } from './ProductSparkline';
+import { ProductSales90dButton } from './ProductSales90dButton';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
@@ -780,12 +780,7 @@ export const ProductCard = memo(
           )}
 
           <div className="border-t border-border/30 pt-1 sm:pt-1.5">
-            <div className="mb-0.5 flex items-center justify-between">
-              <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                Vendas 30d
-              </span>
-            </div>
-            <ProductSparkline productId={product.id} />
+            <ProductSales90dButton productId={product.id} />
           </div>
         </div>
 
