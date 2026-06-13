@@ -44,6 +44,7 @@ export interface ReplenishmentWithDetails {
   readonly product_description: string | null;
   readonly base_price: number | null;
   readonly product_image: string | null;
+  readonly product_set_image: string | null;
   readonly category_id: string | null;
   category_name: string | null;
   supplier_code: string | null;
