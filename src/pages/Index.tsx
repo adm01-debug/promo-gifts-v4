@@ -90,7 +90,7 @@ export default function Index() {
         path="/"
         jsonLd={structuredData}
       />
-      <div className="animate-fade-in space-y-3 p-4 sm:p-6">
+      <div className="animate-fade-in space-y-3 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-5">
         {/* Header: Title + Search */}
         <CatalogHeader
           shouldShowCatalogSkeleton={catalog.shouldShowCatalogSkeleton}
