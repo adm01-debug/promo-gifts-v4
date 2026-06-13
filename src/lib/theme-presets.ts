@@ -423,10 +423,6 @@ const PRIDE_PINK = '330 85% 52%'; // Reduzido de 58% para 52% para contraste > 3
 // Rainbow completo — reservado a MOMENTOS CERIMONIAIS (logo, novidade, divider).
 const rainbowGrad = `linear-gradient(135deg, hsl(${PRIDE_RED}), hsl(${PRIDE_ORANGE}), hsl(${PRIDE_YELLOW}), hsl(${PRIDE_GREEN}), hsl(${PRIDE_BLUE}), hsl(${PRIDE_PURPLE}))`;
 const rainbowDivider = `linear-gradient(90deg, hsl(${PRIDE_RED} / 0.5), hsl(${PRIDE_YELLOW} / 0.5), hsl(${PRIDE_GREEN} / 0.5), hsl(${PRIDE_BLUE} / 0.5), hsl(${PRIDE_PURPLE} / 0.5))`;
-// Gradiente pride ELEGANTE (2 stops) — usado em gradient-primary / secondary.
-// Símbolo pride preservado (pink→purple) sem ruído multicor em botões/CTAs.
-const prideGrad = `linear-gradient(135deg, hsl(${PRIDE_PINK}), hsl(${PRIDE_PURPLE}))`;
-const prideGradDark = `linear-gradient(135deg, hsl(330 85% 60%), hsl(${PRIDE_PURPLE}))`;
 
 const diversityPreset: ThemePreset = {
   ...diversityBase,
