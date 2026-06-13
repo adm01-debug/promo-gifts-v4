@@ -161,14 +161,14 @@ export function ReplenishmentToolbar({
           variant={selectionMode ? 'default' : 'outline'}
           size="sm"
           className={cn(
-            'h-8 shrink-0 gap-1.5 text-xs transition-all',
+            'h-9 shrink-0 gap-1.5 text-[13px] transition-all',
             selectionMode &&
               'bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]',
           )}
           onClick={onToggleSelectionMode}
           aria-pressed={selectionMode}
         >
-          <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
+          <CheckSquare className="h-4 w-4" aria-hidden="true" />
           <span className="hidden sm:inline">{selectionMode ? 'Cancelar' : 'Selecionar'}</span>
         </Button>
         <LayoutPopover
@@ -196,10 +196,10 @@ export function ReplenishmentToolbar({
       >
         <Select value={selectedSupplier} onValueChange={onSupplierChange}>
           <SelectTrigger
-            className="h-7 w-[160px] gap-1 text-[11px]"
+            className="h-8 w-[176px] gap-1 text-[12px]"
             aria-label="Filtrar por fornecedor"
           >
-            <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <SelectValue placeholder="Fornecedor" />
           </SelectTrigger>
           <SelectContent>
@@ -214,10 +214,10 @@ export function ReplenishmentToolbar({
 
         <Select value={selectedCategory} onValueChange={onCategoryChange}>
           <SelectTrigger
-            className="h-7 w-[160px] gap-1 text-[11px]"
+            className="h-8 w-[176px] gap-1 text-[12px]"
             aria-label="Filtrar por categoria"
           >
-            <FolderTree className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -231,8 +231,8 @@ export function ReplenishmentToolbar({
         </Select>
 
         <Select value={sortMode} onValueChange={(v) => onSortChange(v as SortMode)}>
-          <SelectTrigger className="h-7 w-[180px] gap-1 text-[11px]" aria-label="Ordenar produtos">
-            <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+          <SelectTrigger className="h-8 w-[198px] gap-1 text-[12px]" aria-label="Ordenar produtos">
+            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -248,15 +248,16 @@ export function ReplenishmentToolbar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+            className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground"
             onClick={onClearFilters}
             aria-label="Limpar todos os filtros"
           >
-            <X className="mr-0.5 h-3 w-3" aria-hidden="true" />
+            <X className="mr-0.5 h-3.5 w-3.5" aria-hidden="true" />
             Limpar
           </Button>
         )}
       </div>
+
 
       {/* Active Filter Chips */}
       {hasActiveFilters && (
