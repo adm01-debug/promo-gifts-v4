@@ -29,7 +29,6 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
   const variantData = useSparklineDataByVariant(variantId);
   const data = variantId ? variantData : productData;
   const isVariantScope = !!variantId && !!variantData;
-  const hasSales = !!data && data.totalQty > 0;
 
   const summary = useMemo(() => {
     const pts = data?.dailyQty ?? [];
