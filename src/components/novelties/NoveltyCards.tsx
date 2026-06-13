@@ -126,18 +126,12 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
-        {product.product_image ? (
-          <img
-            src={product.product_image}
-            alt={product.product_name}
-            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Package className="h-8 w-8 text-muted-foreground/30" />
-          </div>
-        )}
+        <HoverSetImage
+          primary={product.product_image}
+          set={product.product_set_image}
+          alt={product.product_name}
+          fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
+        />
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
