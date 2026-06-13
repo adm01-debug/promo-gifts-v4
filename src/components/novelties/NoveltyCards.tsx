@@ -110,6 +110,19 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         </div>
       )}
 
+      {/* FAB "+" — paridade total com ProductCard (Carrinho/Orçamento/Coleção/Favoritar/Comparar/QuickView/Compartilhar) */}
+      {!selectionMode && (
+        <ProductQuickActionsFAB
+          productId={product.product_id}
+          productName={product.product_name}
+          productSku={product.product_sku}
+          productImageUrl={product.product_image}
+          productPrice={product.base_price ?? 0}
+          productMinQuantity={product.min_quantity || 1}
+          isOutOfStock={product.stock_status === 'out-of-stock'}
+        />
+      )}
+
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
         {product.product_image ? (
