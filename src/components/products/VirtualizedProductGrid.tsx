@@ -305,7 +305,7 @@ export function VirtualizedProductGrid({
 
             // Get products for this row
             const startIndex = virtualRow.index * effectiveColumns;
-            const rowProducts = products.slice(startIndex, startIndex + effectiveColumns);
+            const rowProducts = hydratedProducts.slice(startIndex, startIndex + effectiveColumns);
 
             return (
               <div
