@@ -9,6 +9,7 @@ import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { InlineFilterBar } from '@/components/filters/StickyFilterBar';
 import type { Product } from '@/hooks/products';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 
 interface VirtualizedProductGridProps {
   products: Product[];
