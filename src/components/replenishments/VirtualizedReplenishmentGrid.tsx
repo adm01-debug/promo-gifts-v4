@@ -14,6 +14,7 @@ interface VirtualizedGridProps {
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
+  topSupplierName?: string | null;
 }
 
 export function VirtualizedReplenishmentGrid({
