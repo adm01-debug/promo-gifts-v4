@@ -36,7 +36,7 @@ export function VirtualizedReplenishmentGrid({
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 480,
+    estimateSize: () => 430,
     overscan: 3,
     measureElement: (el) => el.getBoundingClientRect().height,
   });

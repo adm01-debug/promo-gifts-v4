@@ -23,7 +23,7 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
     <Card
       className={cn(
         productCardStyles.container,
-        'h-[480px] max-h-[480px] min-h-[480px] cursor-default',
+        'h-[430px] max-h-[430px] min-h-[430px] cursor-default',
         className,
       )}
       aria-hidden="true"
@@ -82,10 +82,6 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
             <Skeleton className="h-8 w-full" />
           </div>
 
-          {/* CTA */}
-          <div className="mt-auto pt-2">
-            <Skeleton className="h-8 w-full rounded-md" />
-          </div>
         </div>
       </CardContent>
     </Card>
