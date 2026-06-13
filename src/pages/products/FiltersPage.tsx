@@ -229,7 +229,10 @@ export default function FiltersPage() {
 
           {/* Content */}
           <div className="min-w-0 flex-1 space-y-6">
-            <div className="flex flex-col gap-4">
+            <div
+              className="sticky z-20 flex flex-col gap-4 bg-background/90 pb-3 pt-1 backdrop-blur-sm"
+              style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
+            >
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-shrink-0">
                   <h1
