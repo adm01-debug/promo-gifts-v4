@@ -260,6 +260,7 @@ function toNovelty(p: RawProduct): NoveltyWithDetails {
     product_description: null,
     base_price: p.sale_price,
     product_image: p.primary_image_url,
+    product_set_image: p.set_image_url ?? null,
     category_id: p.category_id,
     category_name: null,
     supplier_code: null,
