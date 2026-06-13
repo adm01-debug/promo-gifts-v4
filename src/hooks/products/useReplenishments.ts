@@ -97,6 +97,7 @@ interface RawProduct {
   readonly id: string;
   readonly name: string;
   readonly sku: string | null;
+  readonly primary_image_url: string | null;
   readonly images: string[] | null;
   readonly sale_price: number | null;
   readonly category_id: string | null;
@@ -106,6 +107,7 @@ interface RawProduct {
   readonly stock_quantity: number | null;
   readonly min_quantity?: number | null;
 }
+
 
 // ─── Data Logic ──────────────────────────────────────────────────
 
