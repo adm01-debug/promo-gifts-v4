@@ -382,7 +382,7 @@ export function NoveltyProductGrid() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <h2 className="whitespace-nowrap text-base font-semibold text-primary sm:text-lg">
+            <h2 className="whitespace-nowrap text-[17px] font-semibold text-primary sm:text-[20px]">
               Novidades
             </h2>
             <Badge
