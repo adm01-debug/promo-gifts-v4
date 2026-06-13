@@ -1,7 +1,7 @@
 /**
  * ReplenishmentCardSkeleton — Skeleton dedicado com o shape exato do
- * ReplenishmentGridCard (480px, badge top-left, imagem 1:1, meta line,
- * nome, preço+estoque, categoria, swatches, sparkline, CTA).
+ * ReplenishmentGridCard (430px, badge top-left, imagem 1:1, meta line,
+ * nome, preço+estoque, categoria, swatches, sparkline).
  *
  * Por que dedicado: o ProductCardSkeleton genérico tem proporções
  * diferentes e causa "layout shift" perceptível na entrada do grid.
