@@ -11,6 +11,7 @@ import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import { useDebounce } from '@/hooks/common/useDebounce';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { toast } from 'sonner';
@@ -98,6 +99,16 @@ export function useFiltersPageState() {
     if (ms) {
       const parsedMs = parseInt(ms, 10);
       if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
+    }
+    const mss = get('minSupplierSales30d');
+    if (mss) {
+      const n = parseInt(mss, 10);
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales30d = n;
+    }
+    const mps = get('minPromoSales90d');
+    if (mps) {
+      const n = parseInt(mps, 10);
+      if (Number.isFinite(n) && n >= 0) f.minPromoSales90d = n;
     }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
