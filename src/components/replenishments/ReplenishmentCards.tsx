@@ -186,7 +186,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     <Card
       className={cn(
         productCardStyles.container,
-        'h-[480px] max-h-[480px] min-h-[480px]', // Altura fixa para paridade no grid (inclui CTA)
+        'h-[430px] max-h-[430px] min-h-[430px]', // Altura fixa para paridade no grid
         recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
         isSelected && productCardStyles.selected,
       )}
