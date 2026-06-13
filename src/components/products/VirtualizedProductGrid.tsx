@@ -173,7 +173,7 @@ export function VirtualizedProductGrid({
     return (
       <div className="relative h-full">
         <div
-          className="scrollbar-products h-full overflow-y-auto overscroll-contain rounded-xl border border-border/40 bg-background shadow-sm"
+          className="scrollbar-products h-full overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm"
 
           style={{ contain: 'strict' }}
         >
