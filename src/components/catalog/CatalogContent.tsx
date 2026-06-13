@@ -162,7 +162,7 @@ export const CatalogContent = memo(function CatalogContent({
     return (
       <SparklineSalesProvider productIds={productIds}>
         <ProductLeafCategoryProvider productIds={productIds}>
-          <div className="h-[calc(100vh-280px)] min-h-[600px] w-full">
+          <div className="h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,0px)-200px)] min-h-[500px] w-full">
             <VirtualizedProductGrid
               products={paginatedProducts}
               isLoading={isLoadingMore}
