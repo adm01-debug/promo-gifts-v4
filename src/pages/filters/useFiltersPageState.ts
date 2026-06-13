@@ -459,6 +459,17 @@ export function useFiltersPageState() {
           );
         return (product.stock || 0) >= filters.minStock;
       });
+    // Vendas Fornecedor (30d): usa supplierSalesMap.depleted30d (mv_product_intelligence).
+    // Enquanto o map ainda não carregou, o filtro é inerte (evita falso-negativo no 1º render).
+    if (filters.minSupplierSales30d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales30d;
+      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) >= threshold);
+    }
+    // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+      const threshold = filters.minPromoSales90d;
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
+    }
     // FIX-03: verificar variações além do estoque agregado.
     // Produto com stock=0 mas com variações em estoque era incorretamente excluído.
     if (filters.inStock)
