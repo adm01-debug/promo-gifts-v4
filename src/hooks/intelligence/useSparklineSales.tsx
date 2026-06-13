@@ -22,13 +22,24 @@ export interface SparklineSalesData {
 /** Window length in days for the sales aggregation. */
 export const SPARKLINE_WINDOW_DAYS = 90;
 
-type SparklineMap = Record<string, SparklineSalesData>;
+interface SparklineCtxValue {
+  byProduct: Record<string, SparklineSalesData>;
+  byVariant: Record<string, SparklineSalesData>;
+}
 
-const SparklineCtx = createContext<SparklineMap>({});
+const SparklineCtx = createContext<SparklineCtxValue>({ byProduct: {}, byVariant: {} });
 
 export function useSparklineData(productId: string): SparklineSalesData | undefined {
-  const map = useContext(SparklineCtx);
-  return map[productId];
+  const { byProduct } = useContext(SparklineCtx);
+  return byProduct[productId];
+}
+
+/** Dados agregados para uma variante específica (cor/SKU). */
+export function useSparklineDataByVariant(
+  variantId: string | null | undefined,
+): SparklineSalesData | undefined {
+  const { byVariant } = useContext(SparklineCtx);
+  return variantId ? byVariant[variantId] : undefined;
 }
 
 interface Props {
