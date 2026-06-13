@@ -26,9 +26,10 @@ import { SellerCartProvider } from '@/contexts/SellerCartContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
 
 import { GlobalOverlay } from './GlobalOverlay';
-const GlobalCommandBar = lazyWithRetry(() =>
-  import('@/components/command/GlobalCommandBar').then((m) => ({ default: m.GlobalCommandBar })),
-);
+// NOTA: GlobalCommandBar (design antigo) foi removido — a busca global agora é
+// servida exclusivamente por GlobalSearchPalette (montado no Header) via
+// useSearchStore + useGlobalShortcuts. Manter os dois causava o palette antigo
+// interceptar Ctrl/Cmd+K e ocultar o design novo.
 const PersistentBreadcrumbs = lazyWithRetry(() =>
   import('@/components/common/PersistentBreadcrumbs').then((m) => ({
     default: m.PersistentBreadcrumbs,
@@ -164,9 +165,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <OnboardingProvider>
       <SellerCartProvider>
-        <Suspense fallback={layoutContent}>
-          <GlobalCommandBar>{layoutContent}</GlobalCommandBar>
-        </Suspense>
+        {layoutContent}
       </SellerCartProvider>
     </OnboardingProvider>
   );
