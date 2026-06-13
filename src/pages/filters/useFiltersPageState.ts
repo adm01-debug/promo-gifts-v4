@@ -273,6 +273,9 @@ export function useFiltersPageState() {
   // Promo Brindes sales ranking (lazy — only fetched when needed)
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
+  // Vendas Promo Brindes nos últimos 90 dias (filtro do Super Filtro — COMERCIAL)
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
+
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
