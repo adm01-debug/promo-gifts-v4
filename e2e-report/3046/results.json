@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+        "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+      },
+      "gitCommit": {
+        "shortHash": "bb573ce",
+        "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+        "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+        "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781368453000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781368453000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "commitHash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472593628"
+          },
+          "gitCommit": {
+            "shortHash": "bb573ce",
+            "hash": "bb573ceb4d8d8a4bcd6943e102c482b92a1f93d7",
+            "subject": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]",
+            "body": "fix(word-magic): plug ai_* fields into lightweight fetch — fixes toggle global [M8]\n\nRoot cause: PRODUCT_SELECT_LIGHTWEIGHT não incluía os campos AI, então\nai_title/ai_description/ai_summary/ai_version/ai_generated_at chegavam como\nundefined nos cards. useWordMagic.hasEnrichment era sempre false.\n\nChanges:\n1. products-lightweight.ts:\n   - Add ai_title, ai_description, ai_summary, ai_version, ai_generated_at\n     to PRODUCT_SELECT_LIGHTWEIGHT (SELECT do PostgREST)\n   - Add optional fields to LightweightProduct interface\n\n2. useProductsLightweight.ts:\n   - Add AI fields to mapLightweightToProduct return object:\n     aiTitle, aiDescription, aiSummary, aiVersion, aiGeneratedAt\n\nFlow after fix:\nfetchPromobrindProductsLightweight\n  → PRODUCT_SELECT_LIGHTWEIGHT (now includes ai_*)\n  → mapLightweightToProduct (now maps ai_* → aiTitle/aiVersion etc.)\n  → Product.aiVersion > 0 && Product.aiTitle\n  → useWordMagic.hasEnrichment = true\n  → isGlobalAIMode && hasEnrichment → isAIActive = true\n  → ProductCard shows AI name + badge ✨ IA\n\nVerified: 0 TS errors introduced. Word Magic toggle now functional.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368453000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-13T16:36:50.052Z",
+    "duration": 4416.115000000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
