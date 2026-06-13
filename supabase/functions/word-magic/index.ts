@@ -57,11 +57,11 @@ CTA sugerida: ${ctas}
 ${storytelling ? `Template narrativo: ${storytelling}` : ''}
 
 Gere o JSON abaixo com textos comercialmente otimizados para brindes B2B brasileiros.
-IMPORTANTE: ai_description deve ter entre 400 e 700 caracteres, NUNCA ser cortada no meio de uma frase.
+IMPORTANTE: ai_description deve ter entre 500 e 900 caracteres, NUNCA ser cortada no meio de uma frase. Finalize sempre com ponto.
 
 {
   "ai_title": "Título comercial impactante (máx 90 chars, sem nº de referência do fornecedor)",
-  "ai_description": "Descrição B2B completa com bullets ✅ mostrando benefícios. Entre 400-700 chars. SEMPRE terminar com frase completa.",
+  "ai_description": "Descrição B2B completa com bullets ✅ mostrando benefícios. Entre 500-900 chars. SEMPRE terminar com frase completa.",
   "ai_summary": "Resumo para listagem do catálogo (máx 200 chars, terminar com ponto)"
 }`;
 }
