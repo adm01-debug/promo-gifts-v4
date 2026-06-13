@@ -67,48 +67,8 @@ const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobi
     'out-of-stock': { className: 'out-of-stock', label: 'Sem estoque', mobileIcon: '✗' },
   };
 
-// ─── Quick Action Button (overlay) ───────────────────────────────
-
-interface QuickActionProps {
-  readonly icon: React.ReactNode;
-  readonly label: string;
-  readonly onClick: (e: React.MouseEvent) => void;
-  readonly active?: boolean;
-  readonly activeClass?: string;
-}
-
-const QuickAction = memo(function QuickAction({
-  icon,
-  label,
-  onClick,
-  active,
-  activeClass,
-}: QuickActionProps) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={onClick}
-          aria-label={label}
-          aria-pressed={active}
-          className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-background/95 text-foreground/70 shadow-sm backdrop-blur transition-all',
-            'hover:scale-110 hover:border-primary/40 hover:text-primary',
-            active && (activeClass ?? 'border-primary/60 bg-primary text-primary-foreground'),
-          )}
-        >
-          {icon}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="left" className="text-xs">
-        {label}
-      </TooltipContent>
-    </Tooltip>
-  );
-});
-
 // ─── Grid Card ───────────────────────────────────────────────────
+
 
 export interface ReplenishmentCardProps {
   readonly product: ReplenishmentWithDetails;
