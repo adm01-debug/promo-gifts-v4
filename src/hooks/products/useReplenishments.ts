@@ -9,7 +9,7 @@ const REPLENISHMENT_WINDOW_DAYS = 30;
 const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 
 const REPLENISHMENT_SELECT =
-  'id, name, sku, primary_image_url, images, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
+  'id, name, sku, primary_image_url, set_image_url, images, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
 
 
 // ─── Date Utilities ──────────────────────────────────────────────
@@ -44,6 +44,7 @@ export interface ReplenishmentWithDetails {
   readonly product_description: string | null;
   readonly base_price: number | null;
   readonly product_image: string | null;
+  readonly product_set_image: string | null;
   readonly category_id: string | null;
   category_name: string | null;
   supplier_code: string | null;
@@ -98,6 +99,7 @@ interface RawProduct {
   readonly name: string;
   readonly sku: string | null;
   readonly primary_image_url: string | null;
+  readonly set_image_url?: string | null;
   readonly images: string[] | null;
   readonly sale_price: number | null;
   readonly category_id: string | null;
@@ -148,6 +150,7 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
     product_description: null,
     base_price: p.sale_price,
     product_image: p.primary_image_url || (p.images && p.images.length > 0 ? p.images[0] : null),
+    product_set_image: p.set_image_url ?? null,
     category_id: p.category_id,
     category_name: null,
     supplier_code: null,

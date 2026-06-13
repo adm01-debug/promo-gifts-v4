@@ -6,7 +6,7 @@ const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
-  'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
+  'id, name, sku, primary_image_url, set_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
 
 /**
  * Filtros de qualidade aplicados a TODOS os hooks de novidades.
@@ -137,6 +137,7 @@ export interface NoveltyWithDetails {
   product_description: string | null;
   base_price: number | null;
   product_image: string | null;
+  product_set_image: string | null;
   category_id: string | null;
   category_name: string | null;
   supplier_code: string | null;
@@ -176,6 +177,7 @@ interface RawProduct {
   name: string;
   sku: string | null;
   primary_image_url: string | null;
+  set_image_url?: string | null;
   sale_price: number | null;
   category_id: string | null;
   supplier_id: string | null;
@@ -258,6 +260,7 @@ function toNovelty(p: RawProduct): NoveltyWithDetails {
     product_description: null,
     base_price: p.sale_price,
     product_image: p.primary_image_url,
+    product_set_image: p.set_image_url ?? null,
     category_id: p.category_id,
     category_name: null,
     supplier_code: null,
