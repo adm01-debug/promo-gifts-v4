@@ -23,6 +23,7 @@ import {
   type ColorDotLike,
 } from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
+import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
