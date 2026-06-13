@@ -131,7 +131,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   isSelected,
   onToggleSelect,
   colors,
-  topSupplierName,
+  _topSupplierName,
 }: ReplenishmentCardProps) {
   const navigate = useNavigate();
   const recent = isRecent(product.replenished_at);
