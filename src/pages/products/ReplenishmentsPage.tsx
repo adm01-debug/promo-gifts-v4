@@ -14,26 +14,24 @@ export default function ReplenishmentsPage() {
         path="/reposicao"
       />
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-4 py-4 pb-24 lg:px-6 xl:px-8">
-        {/* Cabeçalho da página */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-              <RefreshCw className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <h1
-                data-testid="page-title-reposicao"
-                className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-              >
-                Reposição
-              </h1>
-              <p
-                data-testid="replenishment-description"
-                className="mt-1 text-sm font-medium text-muted-foreground sm:text-base"
-              >
-                Produtos que voltaram ao estoque dos fornecedores nos últimos 30 dias
-              </p>
-            </div>
+        {/* Cabeçalho — mesmo padrão de Novidades (compacto, 1 linha) */}
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-10 sm:w-10">
+            <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
+          </div>
+          <div className="flex min-w-0 flex-1 items-baseline gap-2 truncate">
+            <h1
+              data-testid="page-title-reposicao"
+              className="shrink-0 font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+            >
+              Reposição
+            </h1>
+            <p
+              data-testid="replenishment-description"
+              className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm"
+            >
+              Produtos que voltaram ao estoque dos fornecedores nos últimos 30 dias
+            </p>
           </div>
         </div>
 
