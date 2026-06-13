@@ -319,14 +319,14 @@ function SearchInput({
   return (
     <div className="relative flex-1">
       <Search
-        className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+        className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden="true"
       />
       <Input
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 border-border/50 bg-muted/40 pl-8 text-xs focus:bg-background"
+        className="h-9 border-border/50 bg-muted/40 pl-8 text-[13px] focus:bg-background"
         aria-label="Buscar reposições"
       />
       {value && (
@@ -336,9 +336,10 @@ function SearchInput({
           aria-label="Limpar busca"
           type="button"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
+
     </div>
   );
 }
