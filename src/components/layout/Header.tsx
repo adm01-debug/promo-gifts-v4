@@ -87,6 +87,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
   const setOpenSearch = useSearchStore((s) => s.setOpen);
 
   const isScrolled = useIsScrolled(20);
+  const { isGlobalAIMode, toggleGlobalAIMode } = useWordMagicStore();
 
   // Altura dinâmica do Header (px). Usada como --header-h para que stickys
   // filhos (breadcrumb, toolbars de catálogo) ancorem corretamente abaixo

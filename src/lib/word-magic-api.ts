@@ -7,7 +7,17 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { WordMagicEnrichment } from '@/stores/useWordMagicStore';
+
+// ─── Tipo de enriquecimento (mantido local — store simplificado em v2) ─────────
+
+export interface WordMagicEnrichment {
+  ai_title: string;
+  ai_description: string;
+  ai_summary: string;
+  ai_version: number;
+  ai_generated_at?: string;
+  source: 'cache' | 'generated';
+}
 
 // ─── Tipos de resposta da Edge Function ───────────────────────────────────────
 
