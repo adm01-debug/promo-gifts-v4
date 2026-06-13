@@ -62,7 +62,7 @@ export const useWordMagicStore = create<WordMagicStore>((set, get) => ({
   setActive: (productId, active) => {
     set((s) => {
       const next = new Set(s.activeIds);
-      active ? next.add(productId) : next.delete(productId);
+      if (active) { next.add(productId); } else { next.delete(productId); }
       return { activeIds: next };
     });
   },
@@ -70,7 +70,7 @@ export const useWordMagicStore = create<WordMagicStore>((set, get) => ({
   setGenerating: (productId, generating) => {
     set((s) => {
       const next = new Set(s.generatingIds);
-      generating ? next.add(productId) : next.delete(productId);
+      if (generating) { next.add(productId); } else { next.delete(productId); }
       return { generatingIds: next };
     });
   },
