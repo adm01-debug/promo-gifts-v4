@@ -75,9 +75,7 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
   const addToCompare = useComparisonStore((s) => s.addToCompare);
   const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
   const isInCompare = useComparisonStore((s) => s.isInCompare(productId));
-  const compareItems = useComparisonStore((s) => s.items);
-  const compareMax = useComparisonStore((s) => s.maxItems);
-  const canAddToCompare = compareItems.length < compareMax;
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
 
   // Carrinho (orçamento)
   const { carts, addToActiveCart } = useSellerCartContext();
