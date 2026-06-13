@@ -25,6 +25,7 @@ type CommandDialogProps = DialogProps & {
   /** Accessible label read by screen readers for the search dialog.
    *  Defaults to "Busca rápida". Override when context differs. */
   dialogTitle?: string;
+  contentClassName?: string;
 };
 
 /**
@@ -41,11 +42,19 @@ type CommandDialogProps = DialogProps & {
  *     tests `props['aria-describedby'] !== undefined`, which evaluates
  *     to false even when the prop is spread with value undefined.
  */
-const CommandDialog = ({ children, dialogTitle = 'Busca rápida', ...props }: CommandDialogProps) => {
+const CommandDialog = ({
+  children,
+  dialogTitle = 'Busca rápida',
+  contentClassName,
+  ...props
+}: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       <DialogContent
-        className="max-w-[560px] overflow-hidden !rounded-2xl bg-[hsl(var(--command-surface))] p-0 shadow-[0_24px_80px_hsl(var(--command-shadow))] [border-color:hsl(var(--command-border))] [&>div]:overflow-hidden"
+        className={cn(
+          'max-w-[560px] overflow-hidden !rounded-2xl bg-[hsl(var(--command-surface))] p-0 shadow-[0_24px_80px_hsl(var(--command-shadow))] [border-color:hsl(var(--command-border))] [&>div]:overflow-hidden',
+          contentClassName,
+        )}
         showCloseButton={false}
         // ── A11y: explicitly opt-out of description ──────────────────────
         // Radix checks `'aria-describedby' in props` (key presence, not
