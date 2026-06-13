@@ -563,8 +563,21 @@ export const ProductCard = memo(
 
         {/* Quick Actions FAB */}
         {(() => {
+          const liveMatch =
+            selectedColorFromStore && activeColorName && liveVariants?.length
+              ? liveVariants.find(
+                  (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                )
+              : undefined;
+          const liveStock = liveMatch?.stock_quantity ?? null;
           const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
-          const isOutOfStock = (colorStock?.stockStatus ?? product.stockStatus) === 'out-of-stock';
+          const effectiveStatus =
+            liveStock !== null
+              ? liveStock <= 0
+                ? 'out-of-stock'
+                : 'in-stock'
+              : (colorStock?.stockStatus ?? product.stockStatus);
+          const isOutOfStock = effectiveStatus === 'out-of-stock';
 
           return (
             <ProductCardActions
