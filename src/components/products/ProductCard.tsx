@@ -585,7 +585,7 @@ export const ProductCard = memo(
         {/* Info section */}
         <div
           className={cn(
-            'relative flex flex-1 flex-col space-y-2.5 p-3 transition-all duration-500 sm:space-y-4 sm:p-5',
+            'relative flex flex-1 flex-col space-y-2 p-3 transition-all duration-500 sm:space-y-3 sm:p-4',
             isHovered ? 'translate-y-[-2px] bg-background' : 'bg-background',
           )}
           style={{ zIndex: 10 }}
@@ -709,7 +709,7 @@ export const ProductCard = memo(
           })()}
 
           {Array.isArray(product.materials) && product.materials.length > 0 && (
-            <div className="hidden flex-wrap gap-1.5 border-t border-border/50 pt-2 sm:flex">
+            <div className="hidden flex-wrap gap-1.5 border-t border-border/50 pt-1.5 sm:flex">
               {product.materials.slice(0, 2).map((material) => (
                 <span
                   key={material}
@@ -726,7 +726,7 @@ export const ProductCard = memo(
             </div>
           )}
 
-          <div className="border-t border-border/30 pt-1.5 sm:pt-2">
+          <div className="border-t border-border/30 pt-1 sm:pt-1.5">
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Vendas 30d
