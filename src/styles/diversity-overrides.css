@@ -1,180 +1,78 @@
 /*
- * diversity-overrides.css — SKIN DIVERSITY 🏳️‍🌈
+ * diversity-overrides.css — SKIN DIVERSITY 🏳️‍🌈 (v2 — Elegant Pride)
  *
- * Aplicado exclusivamente quando a SKIN DIVERSITY está ativa.
+ * FILOSOFIA:
+ *   Rainbow é MOMENTO, não padrão. A bandeira pride perde simbolismo
+ *   quando vira wallpaper. Esta versão limita o gradiente arco-íris a
+ *   4 pontos cerimoniais (logo, divisor, badge novidade, wash hero) e
+ *   deixa toda a UI operar com pride-pink SÓLIDO — como qualquer skin
+ *   profissional. Resultado: identidade pride preservada, ruído visual
+ *   eliminado, hierarquia restaurada.
  *
- * MECANISMO: applyThemePreset() estampa
- *   document.documentElement.dataset.presetId = 'diversity'
- *   (src/lib/theme-presets.ts → applyThemePreset)
+ * MECANISMO: html[data-preset-id="diversity"] estampado por applyThemePreset().
  *
- * ESPECIFICIDADE: html[data-preset-id="diversity"] ... → (0,2,1+)
- *   supera qualquer utilitário Tailwind (0,1,0 a 0,2,0).
- *   Sem !important.
+ * O QUE ESTE ARQUIVO NÃO FAZ MAIS (vs v1):
+ *   ✗ Não pinta bg-primary com rainbow → fica pink sólido
+ *   ✗ Não pinta hover/focus/active/checked/selected com rainbow
+ *   ✗ Não pinta ring-primary com 4 camadas rainbow → ring pink sutil
+ *   ✗ Não pinta scrollbar / slider thumb / sidebar item ativo com rainbow
+ *   ✗ Não pinta from/via/to-primary sólidos com rainbow
  *
- * SELETORES UTILIZADOS:
- *   [class~="x"]   → token exato (whitespace word match): seguro contra
- *                    substrings — ex: "hover:bg-primary" ≠ "hover:bg-primary-foreground"
- *   [class*="x"]   → substring — usado apenas quando o sufixo único garante
- *                    ausência de falsos positivos (ex: "bg-primary/", "from-primary")
+ * O QUE PERMANECE RAINBOW (momentos cerimoniais):
+ *   ✓ AppLogo (TSX detecta presetId='diversity' e aplica gradient-primary)
+ *   ✓ --gradient-divider (linha fina horizontal)
+ *   ✓ --gradient-novelty (badge "Novidade" — usado pontualmente)
+ *   ✓ --gradient-hero (wash sutil de fundo em páginas hero)
+ *   ✓ Barra lateral 3px do NavLink ativo (detalhe de luxo)
  */
 
-/* ── Variáveis auxiliares (escopo: apenas diversity) ─────────────────── */
+/* ── Variável auxiliar (escopo: apenas diversity) ────────────────────── */
 html[data-preset-id="diversity"] {
   --_rb: var(--gradient-primary);
-  --_rb-h: linear-gradient(
-    135deg,
-    hsl(0 85% 55% / 0.14),
-    hsl(130 70% 45% / 0.10),
-    hsl(210 80% 55% / 0.12),
-    hsl(280 80% 58% / 0.13)
-  );
-  scrollbar-color: hsl(330 85% 55% / 0.5) hsl(var(--muted) / 0.3);
+  /* Scrollbar volta ao padrão pride-pink sólido (legibilidade > efeito) */
+  scrollbar-color: hsl(330 85% 55% / 0.55) hsl(var(--muted) / 0.3);
 }
 
-/* ── 1. bg-primary sólido → gradiente arco-íris ──────────────────────── */
-html[data-preset-id="diversity"] .bg-primary {
-  background: var(--_rb);
+/* ═══════════════════════════════════════════════════════════════════════
+ * MOMENTO CERIMONIAL #1 — Divisor rainbow horizontal
+ *
+ * Usado em separadores temáticos da UI. Mantém o símbolo pride visível
+ * como detalhe arquitetônico, não como ruído.
+ * ═══════════════════════════════════════════════════════════════════════ */
+html[data-preset-id="diversity"] [class*="divide-primary"] > * + *,
+html[data-preset-id="diversity"] hr.rainbow,
+html[data-preset-id="diversity"] [data-rainbow-divider] {
+  background: var(--gradient-divider);
+  border: none;
+  height: 2px;
 }
 
-/* ── 2. bg-primary/* (variações com opacidade) → rainbow sutil ──────────
-   [class*="bg-primary/"] seguro: "/" não ocorre em bg-primary-foreground.
-   Cobre: /5 /10 /15 /20 /25 /30 /50 /70 /80 /90 etc.
-   ─────────────────────────────────────────────────────────────────────── */
-html[data-preset-id="diversity"] [class*="bg-primary/"] {
-  background: var(--_rb-h);
-}
-
-/* ── 3. Gradientes from-primary (e to-primary) → rainbow sutil ──────────
-   Cobre: BulkSelectionBar, Search idle icons, hero, funnel chart,
-          GlobalSearchPalette overlay/cards, search suggestions.
-   [class*="from-primary"] seguro: "from-" nunca antecede "foreground".
-   ─────────────────────────────────────────────────────────────────────── */
-html[data-preset-id="diversity"] [class*="from-primary"] {
-  background: var(--_rb-h);
-}
-
-html[data-preset-id="diversity"] [class*="via-primary"] {
-  background: var(--_rb-h);
-}
-
-html[data-preset-id="diversity"] [class*="to-primary"] {
-  background: var(--_rb-h);
-}
-
-/* ── 4. Checkbox / Switch marcados ───────────────────────────────────── */
-html[data-preset-id="diversity"] [data-state="checked"] {
-  background: var(--_rb);
-}
-
-/* ── 5. Tab ativa ────────────────────────────────────────────────────── */
-html[data-preset-id="diversity"] [data-state="active"] {
-  background: var(--_rb);
-}
-
-/* ── 6. Select / Command palette item selecionado ────────────────────── */
-html[data-preset-id="diversity"] [data-state="selected"] {
-  background: var(--_rb);
-}
-
-/* ── 7. Sidebar menu button ativo ────────────────────────────────────── */
-html[data-preset-id="diversity"] [data-active="true"] {
-  background: var(--_rb-h);
-}
-
-/* ── 8. Barra lateral ativa (::before pseudo-element) ───────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+ * MOMENTO CERIMONIAL #2 — Barra lateral do NavLink ativo (3px rainbow)
+ *
+ * O NavLink ativo tem `before:bg-primary` (barra vertical 3px à esquerda).
+ * Apenas essa micro-barra ganha rainbow — vira detalhe de luxo do menu
+ * sem poluir o restante. O background do item permanece pink/10 sólido.
+ * ═══════════════════════════════════════════════════════════════════════ */
 html[data-preset-id="diversity"] [class*="before:bg-primary"]::before {
   background: var(--_rb);
 }
 
-/* ── 9. Ring → rainbow em camadas via box-shadow ─────────────────────── */
-html[data-preset-id="diversity"] [class*="ring-primary"] {
-  box-shadow:
-    0 0 0 2px hsl(0 85% 55%),
-    0 0 0 3.5px hsl(130 70% 45%),
-    0 0 0 5px hsl(210 80% 55%),
-    0 0 0 6.5px hsl(280 80% 58% / 0.4);
-}
-
-/* ── 10. Slider thumb ────────────────────────────────────────────────── */
-html[data-preset-id="diversity"] [role="slider"] {
-  background: var(--_rb);
-  border: none;
-  box-shadow: inset 0 0 0 3px hsl(var(--background));
-}
-
-/* ── 11. Scrollbar (webkit + firefox) ───────────────────────────────── */
-html[data-preset-id="diversity"] ::-webkit-scrollbar-thumb {
-  background: var(--_rb);
-  border-radius: 100px;
-  border: 2px solid hsl(var(--background));
-}
-
-/* ── 12. hover:bg-primary / focus:bg-primary (sem opacidade) ────────────
-   Usa [class~="x"] — token whitespace match exato.
-   SEGURO: "hover:bg-primary" ≠ "hover:bg-primary-foreground" no token list.
-   Cobre: AdvancedSearch, SmartSearch, QuickAddToQuote,
-          VideoGrid buttons, VisualSearchPage, calendar days,
-          SkipToContent focus state, sonner toast action.
-   ─────────────────────────────────────────────────────────────────────── */
-html[data-preset-id="diversity"] [class~="hover:bg-primary"],
-html[data-preset-id="diversity"] [class~="focus:bg-primary"],
-html[data-preset-id="diversity"] [class~="group-hover:bg-primary"],
-html[data-preset-id="diversity"] [class~="active:bg-primary"],
-html[data-preset-id="diversity"] [class~="group-[.toast]:bg-primary"] {
-  background: var(--_rb);
-}
-
-/* ── 13. Sidebar nav item ativo: texto branco → pride pink ───────────────
- * O NavLink ativo tem: bg-primary/10 font-bold text-white before:bg-primary
- * Em diversity, queremos que o texto use text-primary (pride pink) ao invés
- * de text-white, criando consistência com o ícone (já em text-primary).
- *
- * Seletor duplo garante máxima especificidade e zero falsos positivos:
- *   [class*="before:bg-primary"] → substring para NavLink ativo
- *   [class~="text-white"]        → token exato para whitespace-list
- * ─────────────────────────────────────────────────────────────────────── */
+/* Texto do NavLink ativo: text-white → pride pink (consistência com ícone) */
 html[data-preset-id="diversity"] [class*="before:bg-primary"][class~="text-white"] {
   color: hsl(var(--primary));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
- * FIX-01/02/03 — Gradientes SÓLIDOS → rainbow FULL (não sutil)
- *
- * PROBLEMA DETECTADO em QA exaustiva:
- *   Rules 3-5 usam [class*="from/via/to-primary"] (substring) e aplicam
- *   --_rb-h (rainbow 14% opacity) a TODOS os elementos — incluindo
- *   progress bars, badges, wizard steppers, floating buttons que usam
- *   gradientes SÓLIDOS (from-primary, via-primary, to-primary sem slash).
- *   Resultado: esses elementos ficavam visualmente apagados.
- *
- * FIX: [class~="X"] = token whitespace match EXATO.
- *   Captura 'from-primary' mas NÃO 'from-primary/12', NÃO 'hover:from-primary'.
- *   Colocado APÓS rules 3-5 na cascade → vence por source order (mesma spec).
- *
- * Elementos agora com rainbow FULL:
- *   from-primary (sólido): ProductStatusBadge, PromoFlixPlayer, HorizontalStepper,
- *     StockDashboard, WizardSteps, BulkVariantWizard, MockupWizard,
- *     ExpertChatButton (FAB), SuccessCelebration, GenerateButton
- *   via-primary (sólido): WizardSteps, ConfirmedSummary (header),
- *     WizardStepIndicator, FiltersPage progress bar
- *   to-primary (sólido): NoveltyProductGrid, ReplenishmentProductGrid,
- *     MockupResultCard shimmer, TechniqueTooltip
- *
- * Elementos que PERMANECEM com rainbow sutil (--_rb-h):
- *   from-primary/N:  BulkSelectionBar (/15), Search idle icons (/12),
- *                    GlobalSearchPalette cards (/12,/25), bi radars (/5,/10)
- *   via-primary/N:   GlobalSearchPalette divider (/30,/[0.05])
- *   to-primary/N:    gradient ends fracionados (/70,/80,/90)
+ * REFINAMENTOS DE ELEGÂNCIA — sem rainbow, apenas polimento
  * ═══════════════════════════════════════════════════════════════════════ */
 
-html[data-preset-id="diversity"] [class~="from-primary"] {
-  background: var(--_rb);
+/* Ring de foco: pink sólido suave (sem 4 camadas multicor) */
+html[data-preset-id="diversity"] [class*="ring-primary"] {
+  --tw-ring-color: hsl(var(--primary) / 0.5);
 }
 
-html[data-preset-id="diversity"] [class~="via-primary"] {
-  background: var(--_rb);
-}
-
-html[data-preset-id="diversity"] [class~="to-primary"] {
-  background: var(--_rb);
+/* Sombras glow do skin: pink suave em vez de neon agressivo (dark fica ok) */
+html[data-preset-id="diversity"] {
+  --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 4px 20px hsl(var(--primary) / 0.18);
 }
