@@ -287,6 +287,7 @@ export function useFiltersPageState() {
   // Promo Brindes sales ranking (lazy — only fetched when needed)
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
@@ -323,6 +324,8 @@ export function useFiltersPageState() {
       count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.minStock > 0) count++;
+    if (filters.minSupplierSales30d > 0) count++;
+    if (filters.minPromoSales90d > 0) count++;
     if (filters.inStock) count++;
     if (filters.isKit) count++;
     if (filters.featured) count++;
