@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+        "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+      },
+      "gitCommit": {
+        "shortHash": "f8bad23",
+        "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+        "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+        "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+        "author": {
+          "name": "Claude",
+          "email": "claude@anthropic.com",
+          "time": 1781375526000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781375526000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f8bad23830c840300c1a301fe18503c6f48c5840",
+            "commitHash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27475407491"
+          },
+          "gitCommit": {
+            "shortHash": "f8bad23",
+            "hash": "f8bad23830c840300c1a301fe18503c6f48c5840",
+            "subject": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros",
+            "body": "fix(filters): GAP-19 - scroll-to-top ao filtrar na pagina de filtros\n\nA FiltersPage usa VirtualizedProductGrid SEM onLoadMore: todos os produtos sao\ncarregados progressivamente (fetchNextPage em background), entao products (=\nfilteredProducts) muda de referencia a cada pagina carregada. Como ela nao\npassava scrollResetKey, o efeito de scroll do grid (keyed em [scrollResetKey])\nficava em modo legado (key undefined, nunca muda) e so rolava ao topo no mount.\n\nEfeito do gap: ao trocar filtro/sort/view, o grid NAO rolava ao topo (ficava na\nposicao anterior, ou clampado no fim da nova lista). Antes do BUG-SCROLL-01, o\ncomportamento original rolava ao topo em todo products change — o que tambem\ncausava snap-back durante a carga progressiva. A chave resolve os dois: rola ao\ntopo SOMENTE em mudanca de sortBy/viewMode/filters, nunca durante a carga.\n\nValidacao: sim_gap19 (8/8, 3 modos quantificados), mega_sim2 (1050 cenarios,\n4 blocos), tsc EXIT:0, ESLint EXIT:0, prettier limpo.\n",
+            "author": {
+              "name": "Claude",
+              "email": "claude@anthropic.com",
+              "time": 1781375526000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781375526000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-13T18:33:34.089Z",
+    "duration": 4048.97,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
