@@ -108,7 +108,8 @@ export const CATALOG_BATCH_PAGES = 4;
 export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, sale_price, cost_price, primary_image_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
-  'stock_quantity, min_quantity, is_kit, gender, price_updated_at';
+  'stock_quantity, min_quantity, is_kit, gender, price_updated_at, ' +
+  'ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 interface CatalogPage {
   products: Product[];
