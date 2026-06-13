@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -8,7 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree } from 'lucide-react';
+import {
+  Package,
+  Building2,
+  FolderTree,
+  Heart,
+  GitCompare,
+  Eye,
+  ShoppingCart,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
@@ -19,6 +30,8 @@ import {
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
+import { useFavoritesStore } from '@/stores/useFavoritesStore';
+import { useComparisonStore } from '@/stores/useComparisonStore';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -30,12 +43,70 @@ function formatPrice(price: number): string {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * Formata quantidade de estoque de forma compacta para evitar overflow em
+ * cards estreitos (ex: 7624 → "7,6 mil"; 1_250_000 → "1,2 mi").
+ */
+function formatStockQty(qty: number): string {
+  if (qty >= 1_000_000) {
+    return `${(qty / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  }
+  if (qty >= 10_000) {
+    return `${Math.round(qty / 1000).toLocaleString('pt-BR')} mil`;
+  }
+  if (qty >= 1_000) {
+    return `${(qty / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  }
+  return qty.toLocaleString('pt-BR');
+}
+
 const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobileIcon: string }> =
   {
     'in-stock': { className: 'in-stock', label: 'Em estoque', mobileIcon: '✓' },
     'low-stock': { className: 'low-stock', label: 'Estoque baixo', mobileIcon: '!' },
     'out-of-stock': { className: 'out-of-stock', label: 'Sem estoque', mobileIcon: '✗' },
   };
+
+// ─── Quick Action Button (overlay) ───────────────────────────────
+
+interface QuickActionProps {
+  readonly icon: React.ReactNode;
+  readonly label: string;
+  readonly onClick: (e: React.MouseEvent) => void;
+  readonly active?: boolean;
+  readonly activeClass?: string;
+}
+
+const QuickAction = memo(function QuickAction({
+  icon,
+  label,
+  onClick,
+  active,
+  activeClass,
+}: QuickActionProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={active}
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-background/95 text-foreground/70 shadow-sm backdrop-blur transition-all',
+            'hover:scale-110 hover:border-primary/40 hover:text-primary',
+            active && (activeClass ?? 'border-primary/60 bg-primary text-primary-foreground'),
+          )}
+        >
+          {icon}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="text-xs">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+});
 
 // ─── Grid Card ───────────────────────────────────────────────────
 
@@ -56,9 +127,16 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   onToggleSelect,
   colors,
 }: ReplenishmentCardProps) {
+  const navigate = useNavigate();
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
+
+  // Stores — favoritos & comparação (quick actions)
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavorited = useFavoritesStore((s) => s.isFavorite(product.product_id));
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const isInCompare = useComparisonStore((s) => s.isInCompare(product.product_id));
 
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
@@ -69,11 +147,45 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     e.stopPropagation();
   }, []);
 
+  const handleFavorite = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleFavorite(product.product_id);
+    },
+    [toggleFavorite, product.product_id],
+  );
+
+  const handleCompare = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleCompare(product.product_id);
+    },
+    [toggleCompare, product.product_id],
+  );
+
+  const handleOpenDetail = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onClick();
+    },
+    [onClick],
+  );
+
+  const handleAddToQuote = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigate(`/orcamentos/novo?productId=${product.product_id}`);
+    },
+    [navigate, product.product_id],
+  );
+
+  const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
+
   return (
     <Card
       className={cn(
         productCardStyles.container,
-        'h-[420px] max-h-[420px] min-h-[420px]', // Altura fixa para paridade no grid
+        'h-[480px] max-h-[480px] min-h-[480px]', // Altura fixa para paridade no grid (inclui CTA)
         recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
         isSelected && productCardStyles.selected,
       )}
@@ -89,7 +201,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         }
       }}
     >
-      <CardContent className="p-0">
+      <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30">
           {product.product_image ? (
@@ -106,6 +218,44 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
+          {/* Badge superior esquerdo — Reposição */}
+          <div className="absolute left-2 top-2 z-10">
+            <ReplenishmentBadge daysSince={product.days_since} size="sm" />
+          </div>
+
+          {/* Quick actions (hover) — canto superior direito */}
+          {!selectionMode && (
+            <div
+              className={cn(
+                'absolute right-2 top-2 z-10 flex flex-col gap-1.5 transition-all duration-200',
+                'opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0',
+                'group-focus-within:opacity-100 group-focus-within:translate-x-0',
+                isFavorited && 'opacity-100 translate-x-0',
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <QuickAction
+                icon={<Heart className={cn('h-3.5 w-3.5', isFavorited && 'fill-current')} />}
+                label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                onClick={handleFavorite}
+                active={isFavorited}
+                activeClass="border-rose-500/60 bg-rose-500 text-white"
+              />
+              <QuickAction
+                icon={<GitCompare className="h-3.5 w-3.5" />}
+                label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                onClick={handleCompare}
+                active={isInCompare}
+              />
+              <QuickAction
+                icon={<Eye className="h-3.5 w-3.5" />}
+                label="Ver detalhes"
+                onClick={handleOpenDetail}
+              />
+            </div>
+          )}
+
+          {/* Checkbox de seleção em massa (mantém posição quando ativa) */}
           {selectionMode && (
             <div
               className="absolute right-2 top-2 z-10"
@@ -123,10 +273,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
-          <div className="absolute left-2 top-2">
-            <ReplenishmentBadge daysSince={product.days_since} size="sm" />
-          </div>
-
           <div
             className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             aria-hidden="true"
@@ -134,8 +280,8 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         </div>
 
         {/* Content Section */}
-        <div className={productCardStyles.infoSection}>
-          {/* SKU + Supplier */}
+        <div className={cn(productCardStyles.infoSection, 'flex flex-1 flex-col')}>
+          {/* Meta line — SKU · Fornecedor (hierarquia: menor, muted) */}
           <div className="flex items-center justify-between gap-2">
             {product.product_sku && (
               <span className="truncate font-mono text-[10px] text-muted-foreground sm:text-xs">
@@ -143,14 +289,21 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
               </span>
             )}
             {product.supplier_name && (
-              <span className="flex max-w-[120px] shrink-0 items-center gap-1 truncate rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground sm:px-2 sm:text-xs">
-                <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
-                {product.supplier_name}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex max-w-[120px] shrink-0 items-center gap-1 truncate rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground sm:px-2 sm:text-xs">
+                    <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{product.supplier_name}</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Fornecedor: {product.supplier_name}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
-          {/* Name */}
+          {/* Name — hierarquia principal */}
           <h3 className={productCardStyles.title}>{product.product_name}</h3>
 
           {/* Price + Stock */}
@@ -176,9 +329,19 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
                   {stockConfig.mobileIcon}
                 </span>
               </span>
-              <span className="text-[10px] tabular-nums text-muted-foreground sm:text-xs">
-                {stockQty.toLocaleString('pt-BR')} un.
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="cursor-help text-[10px] tabular-nums text-muted-foreground sm:text-xs"
+                    aria-label={stockLabel}
+                  >
+                    {formatStockQty(stockQty)} un.
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {stockLabel}
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -194,19 +357,40 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
           {/* Cores disponíveis */}
           <div className="flex items-center gap-1">
-            <ProductColorSwatches colors={colors} max={6} size="sm" hideWhenEmpty={false} />
+            <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
           </div>
 
           {/* Sparkline */}
           <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                Vendas 30d
+                Tendência 30d
               </span>
             </div>
             <ProductSparkline productId={product.product_id} />
           </div>
+
+          {/* CTA primário — aparece no hover (desktop) / sempre (mobile) */}
+          <div
+            className={cn(
+              'mt-auto pt-2 transition-opacity duration-200',
+              'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              size="sm"
+              variant="default"
+              className="h-8 w-full gap-1.5 text-xs font-semibold"
+              onClick={handleAddToQuote}
+              aria-label={`Adicionar ${product.product_name} a um orçamento`}
+            >
+              <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" />
+              Adicionar a orçamento
+            </Button>
+          </div>
         </div>
+
       </CardContent>
     </Card>
   );
