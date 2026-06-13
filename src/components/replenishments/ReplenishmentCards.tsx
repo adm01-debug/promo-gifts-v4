@@ -131,12 +131,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
 
-  // Stores — favoritos & comparação (quick actions)
-  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
-  const isFavorited = useFavoritesStore((s) => s.isFavorite(product.product_id));
-  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
-  const isInCompare = useComparisonStore((s) => s.isInCompare(product.product_id));
-
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
     else onClick();
@@ -145,30 +139,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);
-
-  const handleFavorite = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      toggleFavorite(product.product_id);
-    },
-    [toggleFavorite, product.product_id],
-  );
-
-  const handleCompare = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      toggleCompare(product.product_id);
-    },
-    [toggleCompare, product.product_id],
-  );
-
-  const handleOpenDetail = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onClick();
-    },
-    [onClick],
-  );
 
   const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
 
