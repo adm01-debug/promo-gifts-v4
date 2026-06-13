@@ -123,3 +123,16 @@ html[data-preset-id="diversity"] [class~="active:bg-primary"],
 html[data-preset-id="diversity"] [class~="group-[.toast]:bg-primary"] {
   background: var(--_rb);
 }
+
+/* ── 13. Sidebar nav item ativo: texto branco → pride pink ───────────────
+ * O NavLink ativo tem: bg-primary/10 font-bold text-white before:bg-primary
+ * Em diversity, queremos que o texto use text-primary (pride pink) ao invés
+ * de text-white, criando consistência com o ícone (já em text-primary).
+ *
+ * Seletor duplo garante máxima especificidade e zero falsos positivos:
+ *   [class*="before:bg-primary"] → substring para NavLink ativo
+ *   [class~="text-white"]        → token exato para whitespace-list
+ * ─────────────────────────────────────────────────────────────────────── */
+html[data-preset-id="diversity"] [class*="before:bg-primary"][class~="text-white"] {
+  color: hsl(var(--primary));
+}
