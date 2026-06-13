@@ -26,7 +26,7 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
   className,
 }: ProductSales90dButtonProps) {
   const data = useSparklineData(productId);
-  const hasData = !!data && data.totalQty > 0;
+  const hasSales = !!data && data.totalQty > 0;
 
   const summary = useMemo(() => {
     const pts = data?.dailyQty ?? [];
@@ -57,8 +57,7 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
     };
   }, [data]);
 
-  // Não renderiza se não houver dados reais
-  if (!hasData) return null;
+  // Sempre renderiza o botão (mesmo com 0 vendas no período)
 
   const TrendIcon =
     summary.periodChange > 2 ? TrendingUp : summary.periodChange < -2 ? TrendingDown : Minus;
