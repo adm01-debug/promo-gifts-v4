@@ -530,8 +530,11 @@ export function useNoveltyProductIds() {
       const PAGE = 1000;
       const MAX_PAGES = 50; // guarda anti-loop: teto de 50k novidades
       const ids = new Set<string>();
+      // HARDENING: avanca pelo nro real de linhas e para em pagina vazia.
+      // db-max-rows medido = 1000 em prod; isto torna a paginacao robusta a
+      // QUALQUER teto do servidor, sem depender do acoplamento PAGE == teto.
+      let from = 0;
       for (let page = 0; page < MAX_PAGES; page += 1) {
-        const from = page * PAGE;
         const { data, error } = await applyNoveltyQualityFilters(
           fromTable('products').select('id').eq('is_active', true),
         )
@@ -544,7 +547,8 @@ export function useNoveltyProductIds() {
         }
         const rows = (data ?? []) as unknown as { id: string }[];
         for (const r of rows) ids.add(r.id);
-        if (rows.length < PAGE) break; // ultima pagina
+        from += rows.length;
+        if (rows.length === 0) break; // fim dos resultados
       }
 
       return ids;

@@ -94,8 +94,10 @@ export function useProductsColorsBatch(productIds: string[]) {
           const MAX_PAGES = 50;
           let allRows: VariantRow[] = [];
           let chunkFailed = false;
+          // HARDENING: avanca pelo nro real de linhas e para em pagina vazia.
+          // Robusto a QUALQUER db-max-rows (medido = 1000), sem depender de PAGE == teto.
+          let from = 0;
           for (let page = 0; page < MAX_PAGES; page += 1) {
-            const from = page * PAGE;
             const { data, error } = await untypedFrom(resolveTable('product_variants'))
               .select('product_id, color_name, color_hex')
               .in('product_id', chunk)
@@ -114,7 +116,8 @@ export function useProductsColorsBatch(productIds: string[]) {
             }
             const rows = (data ?? []) as VariantRow[];
             allRows = allRows.concat(rows);
-            if (rows.length < PAGE) break;
+            from += rows.length;
+            if (rows.length === 0) break;
           }
           if (chunkFailed) continue;
 
