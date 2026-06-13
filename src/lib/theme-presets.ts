@@ -461,13 +461,13 @@ const diversityPreset: ThemePreset = {
     'sidebar-accent-foreground': '290 80% 35%',
     'sidebar-border': '330 40% 92%',
     'sidebar-ring': PRIDE_PINK,
-    // === GRADIENTES — RAINBOW reservado a momentos cerimoniais ===
-    'gradient-primary': prideGrad, // pink→purple (CTAs/botões, elegante)
-    'gradient-secondary': prideGrad,
+    // === GRADIENTES — TODOS RAINBOW (identidade pride preservada) ===
+    'gradient-primary': rainbowGrad,
+    'gradient-secondary': rainbowGrad,
     'gradient-success': `linear-gradient(135deg, hsl(${PRIDE_GREEN}), hsl(${PRIDE_BLUE}))`,
-    'gradient-novelty': rainbowGrad, // ✓ momento cerimonial (badge novidade)
-    'gradient-hero': `linear-gradient(135deg, hsl(${PRIDE_RED} / 0.05), hsl(${PRIDE_GREEN} / 0.04), hsl(${PRIDE_PURPLE} / 0.05))`,
-    'gradient-divider': rainbowDivider, // ✓ momento cerimonial (linha fina)
+    'gradient-novelty': rainbowGrad,
+    'gradient-hero': `linear-gradient(135deg, hsl(${PRIDE_RED} / 0.08), hsl(${PRIDE_GREEN} / 0.06), hsl(${PRIDE_PURPLE} / 0.08))`,
+    'gradient-divider': rainbowDivider,
     'gradient-surface': `linear-gradient(180deg, hsl(330 30% 98%), hsl(280 20% 96%))`,
     // === SOMBRAS GLOW — CADA UMA EM UMA COR DIFERENTE ===
     'shadow-glow': `0 0 24px hsl(${PRIDE_PINK} / 0.25)`,
@@ -504,13 +504,13 @@ const diversityPreset: ThemePreset = {
     'sidebar-accent-foreground': '290 85% 78%',
     'sidebar-border': '330 30% 18%',
     'sidebar-ring': '330 85% 60%',
-    // === GRADIENTES — RAINBOW reservado a momentos cerimoniais ===
-    'gradient-primary': prideGradDark, // pink→purple elegante
-    'gradient-secondary': prideGradDark,
+    // === GRADIENTES — TODOS RAINBOW ===
+    'gradient-primary': rainbowGrad,
+    'gradient-secondary': rainbowGrad,
     'gradient-success': `linear-gradient(135deg, hsl(${PRIDE_GREEN}), hsl(${PRIDE_BLUE}))`,
-    'gradient-novelty': rainbowGrad, // ✓ momento cerimonial
-    'gradient-hero': `linear-gradient(135deg, hsl(${PRIDE_RED} / 0.08), hsl(${PRIDE_GREEN} / 0.05), hsl(${PRIDE_PURPLE} / 0.08))`,
-    'gradient-divider': rainbowDivider, // ✓ momento cerimonial
+    'gradient-novelty': rainbowGrad,
+    'gradient-hero': `linear-gradient(135deg, hsl(${PRIDE_RED} / 0.14), hsl(${PRIDE_GREEN} / 0.08), hsl(${PRIDE_PURPLE} / 0.14))`,
+    'gradient-divider': rainbowDivider,
     'gradient-surface': `linear-gradient(180deg, hsl(280 25% 9%), hsl(330 20% 6%))`,
     // === SOMBRAS GLOW NEON ===
     'shadow-glow': `0 0 30px hsl(330 85% 60% / 0.4), 0 0 60px hsl(${PRIDE_PURPLE} / 0.18)`,

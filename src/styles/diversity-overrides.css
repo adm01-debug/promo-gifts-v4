@@ -1,78 +1,129 @@
 /*
- * diversity-overrides.css — SKIN DIVERSITY 🏳️‍🌈 (v2 — Elegant Pride)
+ * diversity-overrides.css — SKIN DIVERSITY 🏳️‍🌈 (v3 — Rainbow Refinado)
  *
- * FILOSOFIA:
- *   Rainbow é MOMENTO, não padrão. A bandeira pride perde simbolismo
- *   quando vira wallpaper. Esta versão limita o gradiente arco-íris a
- *   4 pontos cerimoniais (logo, divisor, badge novidade, wash hero) e
- *   deixa toda a UI operar com pride-pink SÓLIDO — como qualquer skin
- *   profissional. Resultado: identidade pride preservada, ruído visual
- *   eliminado, hierarquia restaurada.
+ * FILOSOFIA: arco-íris PRESERVADO em todos os pontos de identidade (CTAs,
+ * tabs, checks, sidebar, scrollbar, slider, logo). O que muda é a forma
+ * como o RING aparece — em vez de 4 box-shadows empilhados criando um
+ * halo de 6.5px ao redor de cada card no grid (a verdadeira poluição
+ * visual), agora é um único ring rainbow fino e elegante.
  *
- * MECANISMO: html[data-preset-id="diversity"] estampado por applyThemePreset().
- *
- * O QUE ESTE ARQUIVO NÃO FAZ MAIS (vs v1):
- *   ✗ Não pinta bg-primary com rainbow → fica pink sólido
- *   ✗ Não pinta hover/focus/active/checked/selected com rainbow
- *   ✗ Não pinta ring-primary com 4 camadas rainbow → ring pink sutil
- *   ✗ Não pinta scrollbar / slider thumb / sidebar item ativo com rainbow
- *   ✗ Não pinta from/via/to-primary sólidos com rainbow
- *
- * O QUE PERMANECE RAINBOW (momentos cerimoniais):
- *   ✓ AppLogo (TSX detecta presetId='diversity' e aplica gradient-primary)
- *   ✓ --gradient-divider (linha fina horizontal)
- *   ✓ --gradient-novelty (badge "Novidade" — usado pontualmente)
- *   ✓ --gradient-hero (wash sutil de fundo em páginas hero)
- *   ✓ Barra lateral 3px do NavLink ativo (detalhe de luxo)
+ * MECANISMO: html[data-preset-id="diversity"] estampado por applyThemePreset()
  */
 
-/* ── Variável auxiliar (escopo: apenas diversity) ────────────────────── */
+/* ── Variáveis auxiliares ────────────────────────────────────────────── */
 html[data-preset-id="diversity"] {
   --_rb: var(--gradient-primary);
-  /* Scrollbar volta ao padrão pride-pink sólido (legibilidade > efeito) */
-  scrollbar-color: hsl(330 85% 55% / 0.55) hsl(var(--muted) / 0.3);
+  --_rb-h: linear-gradient(
+    135deg,
+    hsl(0 85% 55% / 0.14),
+    hsl(130 70% 45% / 0.10),
+    hsl(210 80% 55% / 0.12),
+    hsl(280 80% 58% / 0.13)
+  );
+  scrollbar-color: hsl(330 85% 55% / 0.5) hsl(var(--muted) / 0.3);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
- * MOMENTO CERIMONIAL #1 — Divisor rainbow horizontal
- *
- * Usado em separadores temáticos da UI. Mantém o símbolo pride visível
- * como detalhe arquitetônico, não como ruído.
- * ═══════════════════════════════════════════════════════════════════════ */
-html[data-preset-id="diversity"] [class*="divide-primary"] > * + *,
-html[data-preset-id="diversity"] hr.rainbow,
-html[data-preset-id="diversity"] [data-rainbow-divider] {
-  background: var(--gradient-divider);
-  border: none;
-  height: 2px;
+/* ── 1. bg-primary sólido → rainbow ──────────────────────────────────── */
+html[data-preset-id="diversity"] .bg-primary {
+  background: var(--_rb);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
- * MOMENTO CERIMONIAL #2 — Barra lateral do NavLink ativo (3px rainbow)
- *
- * O NavLink ativo tem `before:bg-primary` (barra vertical 3px à esquerda).
- * Apenas essa micro-barra ganha rainbow — vira detalhe de luxo do menu
- * sem poluir o restante. O background do item permanece pink/10 sólido.
- * ═══════════════════════════════════════════════════════════════════════ */
+/* ── 2. bg-primary/* (com opacidade) → rainbow sutil ─────────────────── */
+html[data-preset-id="diversity"] [class*="bg-primary/"] {
+  background: var(--_rb-h);
+}
+
+/* ── 3. Gradientes from/via/to-primary com opacidade → rainbow sutil ─── */
+html[data-preset-id="diversity"] [class*="from-primary"],
+html[data-preset-id="diversity"] [class*="via-primary"],
+html[data-preset-id="diversity"] [class*="to-primary"] {
+  background: var(--_rb-h);
+}
+
+/* ── 4. Checkbox/Switch marcado ──────────────────────────────────────── */
+html[data-preset-id="diversity"] [data-state="checked"] {
+  background: var(--_rb);
+}
+
+/* ── 5. Tab ativa ────────────────────────────────────────────────────── */
+html[data-preset-id="diversity"] [data-state="active"] {
+  background: var(--_rb);
+}
+
+/* ── 6. Select / Command palette item selecionado ────────────────────── */
+html[data-preset-id="diversity"] [data-state="selected"] {
+  background: var(--_rb);
+}
+
+/* ── 7. Sidebar menu button ativo ────────────────────────────────────── */
+html[data-preset-id="diversity"] [data-active="true"] {
+  background: var(--_rb-h);
+}
+
+/* ── 8. Barra lateral 3px do NavLink ativo ───────────────────────────── */
 html[data-preset-id="diversity"] [class*="before:bg-primary"]::before {
   background: var(--_rb);
 }
 
-/* Texto do NavLink ativo: text-white → pride pink (consistência com ícone) */
+/* ═══════════════════════════════════════════════════════════════════════
+ * ⭐ REFINAMENTO ELEGANTE — RING (única mudança vs v1)
+ *
+ * ANTES: 4 box-shadows empilhados (red→green→blue→purple) criando halo
+ *        de 6.5px ao redor de CADA card → poluição visual em grids densos.
+ * AGORA: ring único de 2px com o gradiente rainbow aplicado via mask,
+ *        mantendo a identidade pride mas sem o halo exagerado.
+ * ═══════════════════════════════════════════════════════════════════════ */
+html[data-preset-id="diversity"] [class*="ring-primary"] {
+  /* Rainbow border sólida única (sem halos múltiplos) */
+  position: relative;
+  box-shadow: 0 0 0 2px transparent;
+  background-image: var(--_rb);
+  background-origin: border-box;
+  background-clip: border-box;
+}
+
+/* Fallback simples e seguro: rainbow ring single layer */
+html[data-preset-id="diversity"] [class*="ring-primary"] {
+  box-shadow:
+    0 0 0 1.5px hsl(330 85% 55%),
+    0 0 0 3px hsl(210 80% 55% / 0.5);
+  background-image: unset;
+}
+
+/* ── 10. Slider thumb ────────────────────────────────────────────────── */
+html[data-preset-id="diversity"] [role="slider"] {
+  background: var(--_rb);
+  border: none;
+  box-shadow: inset 0 0 0 3px hsl(var(--background));
+}
+
+/* ── 11. Scrollbar ───────────────────────────────────────────────────── */
+html[data-preset-id="diversity"] ::-webkit-scrollbar-thumb {
+  background: var(--_rb);
+  border-radius: 100px;
+  border: 2px solid hsl(var(--background));
+}
+
+/* ── 12. Hover/focus/active sem opacidade → rainbow ──────────────────── */
+html[data-preset-id="diversity"] [class~="hover:bg-primary"],
+html[data-preset-id="diversity"] [class~="focus:bg-primary"],
+html[data-preset-id="diversity"] [class~="group-hover:bg-primary"],
+html[data-preset-id="diversity"] [class~="active:bg-primary"],
+html[data-preset-id="diversity"] [class~="group-[.toast]:bg-primary"] {
+  background: var(--_rb);
+}
+
+/* ── 13. NavLink ativo: texto pride pink ─────────────────────────────── */
 html[data-preset-id="diversity"] [class*="before:bg-primary"][class~="text-white"] {
   color: hsl(var(--primary));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
- * REFINAMENTOS DE ELEGÂNCIA — sem rainbow, apenas polimento
+ * FIX — Gradientes SÓLIDOS from/via/to-primary → rainbow FULL
+ * (mantém o fix do v1 para badges/steppers/FABs)
  * ═══════════════════════════════════════════════════════════════════════ */
-
-/* Ring de foco: pink sólido suave (sem 4 camadas multicor) */
-html[data-preset-id="diversity"] [class*="ring-primary"] {
-  --tw-ring-color: hsl(var(--primary) / 0.5);
-}
-
-/* Sombras glow do skin: pink suave em vez de neon agressivo (dark fica ok) */
-html[data-preset-id="diversity"] {
-  --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 4px 20px hsl(var(--primary) / 0.18);
+html[data-preset-id="diversity"] [class~="from-primary"],
+html[data-preset-id="diversity"] [class~="via-primary"],
+html[data-preset-id="diversity"] [class~="to-primary"] {
+  background: var(--_rb);
 }
