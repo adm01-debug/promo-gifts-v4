@@ -170,7 +170,11 @@ export const SECTION_GROUPS = [
     sections: ['cores', 'categorias', 'estoque', 'preco', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
-  { label: 'COMERCIAL', sections: ['fornecedores', 'tecnicas'], icon: TrendingUp },
+  {
+    label: 'COMERCIAL',
+    sections: ['fornecedores', 'vendas-fornecedor', 'vendas-promo', 'tecnicas'],
+    icon: TrendingUp,
+  },
   {
     label: 'MARKETING',
     sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],
