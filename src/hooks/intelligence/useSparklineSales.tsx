@@ -58,7 +58,7 @@ export function SparklineSalesProvider({ productIds, children }: Props) {
     return unique;
   }, [productIds]);
 
-  const { data: sparkMap } = useQuery({
+  const { data: sparkData } = useQuery({
     queryKey: ['sparkline-supplier-batch', stableIds],
     queryFn: () => fetchSupplierSparklineBatch(stableIds),
     enabled: stableIds.length > 0,
@@ -67,7 +67,7 @@ export function SparklineSalesProvider({ productIds, children }: Props) {
     refetchOnWindowFocus: false,
   });
 
-  const value = sparkMap ?? {};
+  const value = sparkData ?? { byProduct: {}, byVariant: {} };
 
   return <SparklineCtx.Provider value={value}>{children}</SparklineCtx.Provider>;
 }
