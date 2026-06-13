@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 
 // Per-product sparkline data
 export interface SparklineSalesData {
-  /** Daily depleted quantities (ordered by date ascending), last 30 days */
+  /** Daily depleted quantities (ordered by date ascending), last 90 days */
   dailyQty: number[];
   totalQty: number;
   /** Total units replenished in the period */
@@ -18,6 +18,9 @@ export interface SparklineSalesData {
   /** Current available stock across all supplier sources */
   availableStock: number;
 }
+
+/** Window length in days for the sales aggregation. */
+export const SPARKLINE_WINDOW_DAYS = 90;
 
 type SparklineMap = Record<string, SparklineSalesData>;
 
