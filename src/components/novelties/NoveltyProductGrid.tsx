@@ -474,12 +474,12 @@ export function NoveltyProductGrid() {
         {/* Search full-width on mobile */}
         <div className="flex w-full items-center gap-2 sm:hidden">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar novidades..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-border/50 bg-muted/40 pl-8 text-xs focus:bg-background"
+              className="h-9 border-border/50 bg-muted/40 pl-8 text-[13px] focus:bg-background"
             />
             {searchQuery && (
               <button
