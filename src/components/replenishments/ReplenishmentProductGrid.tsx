@@ -230,9 +230,13 @@ export function ReplenishmentProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 15 }).map((_, i) => (
-              <ProductCardSkeleton key={i} variant={viewMode === 'list' ? 'compact' : 'default'} />
-            ))}
+            {Array.from({ length: 15 }).map((_, i) =>
+              viewMode === 'list' ? (
+                <ProductCardSkeleton key={i} variant="compact" />
+              ) : (
+                <ReplenishmentCardSkeleton key={i} />
+              ),
+            )}
           </div>
         </div>
       );
