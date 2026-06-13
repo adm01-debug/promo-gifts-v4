@@ -780,7 +780,21 @@ export const ProductCard = memo(
           )}
 
           <div className="border-t border-border/30 pt-1 sm:pt-1.5">
-            <ProductSales90dButton productId={product.id} />
+            {(() => {
+              const activeVariantId =
+                activeColorName && liveVariants?.length
+                  ? (liveVariants.find(
+                      (v) => v.color_name?.toLowerCase() === activeColorName.toLowerCase(),
+                    )?.id ?? null)
+                  : null;
+              return (
+                <ProductSales90dButton
+                  productId={product.id}
+                  variantId={activeVariantId}
+                  variantLabel={activeVariantId ? activeColorName : null}
+                />
+              );
+            })()}
           </div>
         </div>
 
