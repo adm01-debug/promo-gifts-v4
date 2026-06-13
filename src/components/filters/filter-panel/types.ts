@@ -126,6 +126,14 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Fornecedores',
     icon: React.createElement(Truck, { className: 'h-4 w-4' }),
   },
+  'vendas-fornecedor': {
+    title: 'Vendas Fornecedor (30d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
+  'vendas-promo': {
+    title: 'Vendas Promo Brindes (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
   publico: { title: 'Público-Alvo', icon: React.createElement(Users, { className: 'h-4 w-4' }) },
   'datas-comemorativas': {
     title: 'Datas Comemorativas',
