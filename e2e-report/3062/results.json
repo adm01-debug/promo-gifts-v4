@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+        "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+      },
+      "gitCommit": {
+        "shortHash": "3a2f5ac",
+        "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+        "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+        "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781374372000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781374372000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3a2f5acc1479923c707938752092fc355fdc884f",
+            "commitHash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27474943935"
+          },
+          "gitCommit": {
+            "shortHash": "3a2f5ac",
+            "hash": "3a2f5acc1479923c707938752092fc355fdc884f",
+            "subject": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)",
+            "body": "fix: auditoria dos 200 commits — caps de paginação, DRY anon key, drift de schema (#735)\n\n* fix(novelties): paginate useNoveltyProductIds (drop .range(0,1999) cap)\n\nSob db-max-rows (~1000) o cap unico truncava o Set de novidades em bursts de\ningestao. Agora pagina (PAGE=1000, MAX_PAGES=50, order by id). Diff minimo: so\no bloco de query (mock-on-empty ja foi removido na main). Auditoria: P1-1.\n\n* fix(products): paginate variant color batch, drop .range(0,4999) cap\n\nCom 100 produtos/chunk e db-max-rows (~1000) o cap unico podia truncar cores.\nPagina (PAGE=1000, MAX_PAGES=50) com order(product_id,color_name,color_hex);\na dedup por (nome|hex) ja existente torna a paginacao estavel sem PK. Auditoria: P1-1.\n\n* refactor(supabase): single-source anon key via canonical client\n\nImporta SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY de @/integrations/supabase/client\n(SSOT, com validateEnv), removendo a anon key hardcoded duplicada. Auditoria: P2.\n\n* chore(db): reconcile ai_enrichment_queue + view drift into migrations\n\nFila ativa de enriquecimento IA (~7,1k linhas) + view vw_ai_enrichment_status\nexistiam em prod sem migration. DDL do catalogo vivo; idempotente (IF NOT EXISTS\n/ DO-guard / CREATE OR REPLACE). Aplicar em prod e no-op. Auditoria: P0-2.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781374372000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781374372000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-13T18:14:20.390Z",
+    "duration": 3891.1090000000004,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
