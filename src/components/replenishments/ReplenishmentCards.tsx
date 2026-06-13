@@ -117,6 +117,8 @@ export interface ReplenishmentCardProps {
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
   readonly colors?: readonly ColorDotLike[];
+  /** Nome do fornecedor #1 do período (vem de useReplenishmentStats). */
+  readonly topSupplierName?: string | null;
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -126,6 +128,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   isSelected,
   onToggleSelect,
   colors,
+  topSupplierName,
 }: ReplenishmentCardProps) {
   const navigate = useNavigate();
   const recent = isRecent(product.replenished_at);
