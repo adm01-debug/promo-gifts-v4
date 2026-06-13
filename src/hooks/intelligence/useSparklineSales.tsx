@@ -30,16 +30,16 @@ interface SparklineCtxValue {
 const SparklineCtx = createContext<SparklineCtxValue>({ byProduct: {}, byVariant: {} });
 
 export function useSparklineData(productId: string): SparklineSalesData | undefined {
-  const { byProduct } = useContext(SparklineCtx);
-  return byProduct[productId];
+  const ctx = useContext(SparklineCtx);
+  return ctx?.byProduct?.[productId];
 }
 
 /** Dados agregados para uma variante específica (cor/SKU). */
 export function useSparklineDataByVariant(
   variantId: string | null | undefined,
 ): SparklineSalesData | undefined {
-  const { byVariant } = useContext(SparklineCtx);
-  return variantId ? byVariant[variantId] : undefined;
+  const ctx = useContext(SparklineCtx);
+  return variantId ? ctx?.byVariant?.[variantId] : undefined;
 }
 
 interface Props {
