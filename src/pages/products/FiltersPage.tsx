@@ -766,6 +766,7 @@ export default function FiltersPage() {
                   </div>
                 )}
               </div>
+            </div>
           </div>
         </div>
       </div>
