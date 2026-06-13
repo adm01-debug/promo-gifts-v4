@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+        "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+      },
+      "gitCommit": {
+        "shortHash": "be02623",
+        "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+        "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+        "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781368107000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781368180000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "commitHash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27472482161"
+          },
+          "gitCommit": {
+            "shortHash": "be02623",
+            "hash": "be02623b873f37f090ccd576ac4cc1bf7390ff34",
+            "subject": "fix: make SuperFiltro toolbar sticky below header+breadcrumb",
+            "body": "fix: make SuperFiltro toolbar sticky below header+breadcrumb\n\nUses CSS vars --header-h + --breadcrumb-h (set by MainLayout) so the\ntitle/search/controls bar stays visible when user scrolls into the\nproducts list — even when the main nav sidebar collapses.\n\nz-20 keeps it above product cards but below breadcrumb (z-30).\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368107000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781368180000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-13T16:32:01.410Z",
+    "duration": 3947.9390000000003,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
