@@ -494,8 +494,8 @@ export function NoveltyProductGrid() {
 
         <div className="flex flex-wrap items-center gap-1.5">
           <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-            <SelectTrigger className="h-7 w-[160px] gap-1 text-[11px]">
-              <Building2 className="h-3 w-3 shrink-0" />
+            <SelectTrigger className="h-8 w-[176px] gap-1 text-[12px]">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
               <SelectValue placeholder="Fornecedor" />
             </SelectTrigger>
             <SelectContent>
@@ -508,8 +508,8 @@ export function NoveltyProductGrid() {
             </SelectContent>
           </Select>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-7 w-[160px] gap-1 text-[11px]">
-              <FolderTree className="h-3 w-3 shrink-0" />
+            <SelectTrigger className="h-8 w-[176px] gap-1 text-[12px]">
+              <FolderTree className="h-3.5 w-3.5 shrink-0" />
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
@@ -522,8 +522,8 @@ export function NoveltyProductGrid() {
             </SelectContent>
           </Select>
           <Select value={sortMode} onValueChange={(v) => setSortMode(v)}>
-            <SelectTrigger className="h-7 w-[180px] gap-1 text-[11px]">
-              <ArrowUpDown className="h-3 w-3" />
+            <SelectTrigger className="h-8 w-[198px] gap-1 text-[12px]">
+              <ArrowUpDown className="h-3.5 w-3.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -539,7 +539,7 @@ export function NoveltyProductGrid() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+              className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground"
               onClick={clearFilters}
             >
               <X className="mr-0.5 h-3 w-3" />
