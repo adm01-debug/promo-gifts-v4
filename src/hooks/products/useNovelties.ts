@@ -15,7 +15,8 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-const applyNoveltyQualityFilters = (query: ReturnType<typeof fromTable>) =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applyNoveltyQualityFilters = (query: any): any =>
   query
     .eq('is_stockout', false)
     .not('primary_image_url', 'is', null)
