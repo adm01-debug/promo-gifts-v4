@@ -165,10 +165,11 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
-    // Carrega variantes (com estoque por cor) somente quando o usuário clica
-    // numa bolinha deste card — evita N requests no grid inteiro.
+    // Carrega variantes (com estoque/foto por cor) assim que o usuário interage com o card
+    // — hover OU clique de cor — para evitar latência percebida no clique da bolinha.
+    // Demais cards (sem hover/clique) não disparam request.
     const { data: liveVariants } = useExternalVariantStock(
-      selectedColorFromStore ? product.id : undefined,
+      isHovered || selectedColorFromStore ? product.id : undefined,
     );
 
     // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
@@ -178,18 +179,30 @@ export const ProductCard = memo(
     // primeiro uso.
     const allMatchingVariants = useMemo(() => {
       const matches = resolveAllMatchingColors(product.colors, activeColorFilter);
+      const liveImageByName = new Map<string, string>();
+      if (liveVariants?.length) {
+        for (const v of liveVariants) {
+          if (v.color_name && v.selected_thumbnail) {
+            liveImageByName.set(v.color_name.toLowerCase(), v.selected_thumbnail);
+          }
+        }
+      }
       // Se não houver filtros ativos, todas as cores do produto são consideradas para o carrossel
       if (matches.length === 0 && product.colors) {
         return product.colors.map((c) => ({
           name: c.name,
           hex: c.hex || '#888',
-          image: c.images?.[0] || c.image,
+          image: c.images?.[0] || c.image || liveImageByName.get(c.name.toLowerCase()),
           groupSlug: c.groupSlug,
           variationSlug: c.variationSlug,
         }));
       }
-      return matches;
-    }, [product.colors, activeColorFilter]);
+      // Enriquecer matches com thumbnails vindos do BD externo (lightweight catalog)
+      return matches.map((m) => ({
+        ...m,
+        image: m.image || liveImageByName.get(m.name.toLowerCase()),
+      }));
+    }, [product.colors, activeColorFilter, liveVariants]);
 
     useEffect(() => {
       setIsInitialLoad(false);
