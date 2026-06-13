@@ -571,6 +571,7 @@ export function useFiltersPageState() {
     isLoadingColorFilter,
     promoSalesMap,
     supplierSalesMap,
+    promoSales90dMap,
   ]);
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
