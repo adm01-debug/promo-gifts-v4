@@ -89,6 +89,27 @@ export function VirtualizedProductGrid({
   }, [effectiveColumns]);
   const rowGapPx = viewMode === 'list' ? 8 : 32;
 
+  // Hidrata cores nos cards cujo fetch principal (lightweight) não trouxe `colors`.
+  // Mesmo padrão usado no ProductGrid (Novidades/Reposição) — SSOT em useProductsColorsBatch.
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+  const hydratedProducts = useMemo(() => {
+    if (colorsByProduct.size === 0) return products;
+    return products.map((p) => {
+      if (p.colors && p.colors.length > 0) return p;
+      const batch = colorsByProduct.get(p.id);
+      if (!batch || batch.length === 0) return p;
+      return {
+        ...p,
+        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+      };
+    });
+  }, [products, colorsByProduct]);
+
+
   // Calculate rows based on columns
   const rowCount = Math.ceil(products.length / effectiveColumns);
   const estimatedRowHeight =
