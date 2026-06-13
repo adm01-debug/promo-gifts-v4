@@ -102,13 +102,13 @@ export function useFiltersPageState() {
     }
     const mss = get('minSupplierSales30d');
     if (mss) {
-      const parsed = parseInt(mss, 10);
-      if (Number.isFinite(parsed) && parsed >= 0) f.minSupplierSales30d = parsed;
+      const n = parseInt(mss, 10);
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales30d = n;
     }
     const mps = get('minPromoSales90d');
     if (mps) {
-      const parsed = parseInt(mps, 10);
-      if (Number.isFinite(parsed) && parsed >= 0) f.minPromoSales90d = parsed;
+      const n = parseInt(mps, 10);
+      if (Number.isFinite(n) && n >= 0) f.minPromoSales90d = n;
     }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
@@ -287,9 +287,7 @@ export function useFiltersPageState() {
   // Promo Brindes sales ranking (lazy — only fetched when needed)
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
-  // Vendas Promo Brindes nos últimos 90 dias (filtro do Super Filtro — COMERCIAL)
   const { data: promoSales90dMap } = usePromoSales90dByProduct();
-
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
@@ -461,20 +459,16 @@ export function useFiltersPageState() {
           );
         return (product.stock || 0) >= filters.minStock;
       });
-    // Filtro COMERCIAL — Vendas do fornecedor (30d via mv_product_intelligence)
-    if (filters.minSupplierSales30d > 0 && supplierSalesMap) {
+    // Vendas Fornecedor (30d): usa supplierSalesMap.depleted30d (mv_product_intelligence).
+    // Enquanto o map ainda não carregou, o filtro é inerte (evita falso-negativo no 1º render).
+    if (filters.minSupplierSales30d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
       const threshold = filters.minSupplierSales30d;
-      result = result.filter((product) => {
-        const entry = supplierSalesMap.get(product.id) as
-          | { depleted30d?: number }
-          | undefined;
-        return (entry?.depleted30d ?? 0) >= threshold;
-      });
+      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) >= threshold);
     }
-    // Filtro COMERCIAL — Vendas internas Promo Brindes (90d via order_items)
-    if (filters.minPromoSales90d > 0 && promoSales90dMap) {
+    // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
       const threshold = filters.minPromoSales90d;
-      result = result.filter((product) => (promoSales90dMap.get(product.id) ?? 0) >= threshold);
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
     }
     // FIX-03: verificar variações além do estoque agregado.
     // Produto com stock=0 mas com variações em estoque era incorretamente excluído.
@@ -739,14 +733,14 @@ export function useFiltersPageState() {
       summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
     if (filters.minSupplierSales30d > 0)
       summary.push({
-        label: 'Vendas Forn. 30d',
-        value: `≥ ${filters.minSupplierSales30d} un.`,
+        label: 'Vendas fornec.',
+        value: `≥ ${filters.minSupplierSales30d} un./30d`,
         key: 'minSupplierSales30d',
       });
     if (filters.minPromoSales90d > 0)
       summary.push({
-        label: 'Vendas Promo 90d',
-        value: `≥ ${filters.minPromoSales90d} un.`,
+        label: 'Vendas Promo',
+        value: `≥ ${filters.minPromoSales90d} un./90d`,
         key: 'minPromoSales90d',
       });
     if (filters.inStock) summary.push({ label: 'Em estoque', value: 'Sim', key: 'inStock' });

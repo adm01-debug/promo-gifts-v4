@@ -1,39 +1,39 @@
-/**
- * Hook para ranking de vendas internas (Promo Brindes) nos últimos 90 dias.
- * Agrega `order_items.quantity` por `product_id` filtrando por
- * `order_items.created_at >= now() - 90d` (pedidos fechados).
- *
- * Diferente do `usePromoSalesRanking` (que usa quote_items all-time para sorting),
- * este é o hook canônico para o FILTRO "Vendas Promo Brindes 90d" do Super Filtro.
- */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
-export const PROMO_SALES_WINDOW_DAYS = 90;
-
+/**
+ * Aggregates quantity from order_items (closed orders) over the last 90 days,
+ * grouped by product_id. Used by Super Filter to filter products that sold at
+ * least X units in the Promo Brindes module.
+ *
+ * Read-only client-side query — no new tables/functions created.
+ */
 export function usePromoSales90dByProduct() {
   return useQuery({
     queryKey: ['promo-sales-90d-by-product'],
     queryFn: async (): Promise<Map<string, number>> => {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - PROMO_SALES_WINDOW_DAYS);
-
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
       const { data, error } = await supabase
         .from('order_items')
         .select('product_id, quantity, created_at')
-        .gte('created_at', cutoff.toISOString());
+        .gte('created_at', since.toISOString());
 
-      if (error) throw error;
+      if (error) {
+        logger.warn('[usePromoSales90dByProduct] query failed', { error: error.message });
+        return new Map();
+      }
 
       const map = new Map<string, number>();
       for (const row of data || []) {
         if (!row.product_id) continue;
-        map.set(row.product_id, (map.get(row.product_id) || 0) + (row.quantity || 0));
+        const q = row.quantity || 0;
+        if (q <= 0) continue;
+        map.set(row.product_id, (map.get(row.product_id) || 0) + q);
       }
       return map;
     },
     staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 }

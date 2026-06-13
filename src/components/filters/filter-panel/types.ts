@@ -46,10 +46,6 @@ export interface FilterState {
   tags: string[];
   priceRange: [number, number];
   minStock: number;
-  /** Vendas mínimas do fornecedor (últimos 30 dias, depleted30d da MV de inteligência). */
-  minSupplierSales30d: number;
-  /** Vendas mínimas internas da Promo Brindes (últimos 90 dias, order_items). */
-  minPromoSales90d: number;
   inStock: boolean;
   isKit: boolean;
   featured: boolean;
@@ -60,6 +56,9 @@ export interface FilterState {
   gender: string[];
   sizes: string[];
   sortBy: string;
+  // COMERCIAL — Filtros por vendas (somente Super Filtro)
+  minSupplierSales30d: number; // mín. unidades vendidas pelo fornecedor nos últimos 30 dias
+  minPromoSales90d: number;    // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
 export interface FilterPanelProps {
@@ -97,8 +96,6 @@ export const defaultFilters: FilterState = {
   tags: [],
   priceRange: [0, 9999],
   minStock: 0,
-  minSupplierSales30d: 0,
-  minPromoSales90d: 0,
   inStock: false,
   isKit: false,
   featured: false,
@@ -109,6 +106,8 @@ export const defaultFilters: FilterState = {
   gender: [],
   sizes: [],
   sortBy: 'name',
+  minSupplierSales30d: 0,
+  minPromoSales90d: 0,
 };
 
 export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
@@ -125,14 +124,6 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
   fornecedores: {
     title: 'Fornecedores',
     icon: React.createElement(Truck, { className: 'h-4 w-4' }),
-  },
-  'vendas-fornecedor': {
-    title: 'Vendas Fornecedor (30d)',
-    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
-  },
-  'vendas-promo': {
-    title: 'Vendas Promo Brindes (90d)',
-    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
   },
   publico: { title: 'Público-Alvo', icon: React.createElement(Users, { className: 'h-4 w-4' }) },
   'datas-comemorativas': {
@@ -151,6 +142,14 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
   tecnicas: {
     title: 'Técnicas de Gravação',
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
+  },
+  'vendas-fornecedor': {
+    title: 'Vendas Fornecedor (30d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
+  'vendas-promo': {
+    title: 'Vendas Promo Brindes (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
   },
   // BUG-SF-18 FIX: genero usava Users (igual a publico), tamanhos usava Package (igual a estoque).
   // Ícones mais semânticos: User (singular) para gênero, Ruler para tamanhos.
