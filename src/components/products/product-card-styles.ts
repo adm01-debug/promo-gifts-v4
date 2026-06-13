@@ -16,26 +16,24 @@ export const productCardStyles = {
   recent: 'border-success/30 shadow-[0_0_16px_hsl(var(--success)/0.1)]',
   selected: 'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
 
-  // Seção de informações (texto e preços)
-  infoSection: 'relative space-y-2 bg-card p-2.5 sm:space-y-3 sm:p-4',
+  // Seção de informações (texto e preços) — espaçamentos reduzidos ~20%
+  infoSection: 'relative space-y-1.5 bg-card p-2 sm:space-y-2 sm:p-3',
 
   // Título do produto (line-clamp e min-height para alinhamento)
-  // Padronizado para 2 linhas de texto com fallback de altura para evitar desalinhamento
   title: cn(
-    'line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] font-display text-sm font-semibold leading-snug text-foreground',
+    'line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] font-display text-sm font-semibold leading-snug text-foreground',
     'transition-colors duration-300 group-hover:text-primary sm:text-base',
   ),
 
   // Seção de preço e estoque
-  priceStockSection: 'flex items-end justify-between pt-0.5 sm:pt-1',
+  priceStockSection: 'flex items-end justify-between pt-0',
 
-  // Container de preço (min-height para manter botões/indicadores alinhados na mesma base)
-  // Padronizado para comportar preços com e sem label "A partir de" ou "Preço sob consulta"
-  priceContainer: 'min-h-[3.25rem] sm:min-h-[3.75rem] flex flex-col justify-end',
+  // Container de preço
+  priceContainer: 'min-h-[2.5rem] sm:min-h-[3rem] flex flex-col justify-end',
 
   // Seção de categoria
-  categoryBadgeSection: 'mt-0.5 flex flex-wrap gap-1.5 border-t border-primary/20 pt-1.5',
+  categoryBadgeSection: 'mt-0 flex flex-wrap gap-1 border-t border-primary/20 pt-1',
 
   // Seção de Sparkline/Gráfico
-  sparklineSection: 'border-t border-border/30 pt-1.5 sm:pt-2',
+  sparklineSection: 'border-t border-border/30 pt-1 sm:pt-1.5',
 };
