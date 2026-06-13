@@ -100,6 +100,16 @@ export function useFiltersPageState() {
       const parsedMs = parseInt(ms, 10);
       if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
     }
+    const mss = get('minSupplierSales30d');
+    if (mss) {
+      const parsed = parseInt(mss, 10);
+      if (Number.isFinite(parsed) && parsed >= 0) f.minSupplierSales30d = parsed;
+    }
+    const mps = get('minPromoSales90d');
+    if (mps) {
+      const parsed = parseInt(mps, 10);
+      if (Number.isFinite(parsed) && parsed >= 0) f.minPromoSales90d = parsed;
+    }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
     if (get('featured') === '1') f.featured = true;
