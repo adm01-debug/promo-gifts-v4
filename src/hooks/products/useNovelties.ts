@@ -524,17 +524,30 @@ export function useNoveltyProductIds() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { data, error } = await applyNoveltyQualityFilters(
-        fromTable('products').select('id').eq('is_active', true),
-      )
-        .gte('created_at', cutoff)
-        .range(0, 1999);
-      if (error) {
-        handleQueryError('useNovelties', 'products', error);
-        return new Set<string>();
+      // BUGFIX (audit 200-commits, P1-1): substitui o cap silencioso .range(0,1999)
+      // por paginacao completa. O PostgREST pode aplicar db-max-rows (~1000), entao
+      // pedir 2000 numa tacada poderia truncar novidades em bursts de ingestao.
+      const PAGE = 1000;
+      const MAX_PAGES = 50; // guarda anti-loop: teto de 50k novidades
+      const ids = new Set<string>();
+      for (let page = 0; page < MAX_PAGES; page += 1) {
+        const from = page * PAGE;
+        const { data, error } = await applyNoveltyQualityFilters(
+          fromTable('products').select('id').eq('is_active', true),
+        )
+          .gte('created_at', cutoff)
+          .order('id', { ascending: true }) // ordenacao estavel p/ paginacao deterministica
+          .range(from, from + PAGE - 1);
+        if (error) {
+          handleQueryError('useNovelties', 'products', error);
+          break;
+        }
+        const rows = (data ?? []) as unknown as { id: string }[];
+        for (const r of rows) ids.add(r.id);
+        if (rows.length < PAGE) break; // ultima pagina
       }
 
-      return new Set(((data ?? []) as unknown as { id: string }[]).map((r) => r.id));
+      return ids;
     },
     staleTime: 2 * 60 * 1000,
   });
