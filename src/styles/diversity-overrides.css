@@ -66,28 +66,22 @@ html[data-preset-id="diversity"] [class*="before:bg-primary"]::before {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
- * ⭐ REFINAMENTO ELEGANTE — RING (única mudança vs v1)
- *
- * ANTES: 4 box-shadows empilhados (red→green→blue→purple) criando halo
- *        de 6.5px ao redor de CADA card → poluição visual em grids densos.
- * AGORA: ring único de 2px com o gradiente rainbow aplicado via mask,
- *        mantendo a identidade pride mas sem o halo exagerado.
+ * ⭐ RING / BORDER — sem contornos gritantes
+ * Remove o halo rosa/rainbow ao redor de cards, botões da sidebar,
+ * pílulas do header e qualquer elemento usando ring-primary/border-primary.
+ * Mantém a identidade arco-íris APENAS em fundos, textos e ícones.
  * ═══════════════════════════════════════════════════════════════════════ */
-html[data-preset-id="diversity"] [class*="ring-primary"] {
-  /* Rainbow border sólida única (sem halos múltiplos) */
-  position: relative;
-  box-shadow: 0 0 0 2px transparent;
-  background-image: var(--_rb);
-  background-origin: border-box;
-  background-clip: border-box;
+html[data-preset-id="diversity"] [class*="ring-primary"],
+html[data-preset-id="diversity"] [class*="ring-2"],
+html[data-preset-id="diversity"] [class*="ring-1"] {
+  box-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
 }
 
-/* Fallback simples e seguro: rainbow ring single layer */
-html[data-preset-id="diversity"] [class*="ring-primary"] {
-  box-shadow:
-    0 0 0 1.5px hsl(330 85% 55%),
-    0 0 0 3px hsl(210 80% 55% / 0.5);
-  background-image: unset;
+html[data-preset-id="diversity"] [class*="border-primary"] {
+  border-color: hsl(var(--border)) !important;
 }
 
 /* ── 10. Slider thumb ────────────────────────────────────────────────── */
