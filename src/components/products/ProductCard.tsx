@@ -726,7 +726,7 @@ export const ProductCard = memo(
             </div>
           )}
 
-          <div className="border-t border-border/30 pt-1.5 sm:pt-2">
+          <div className="border-t border-border/30 pt-1 sm:pt-1.5">
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Vendas 30d
