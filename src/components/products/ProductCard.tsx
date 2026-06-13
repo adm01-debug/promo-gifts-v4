@@ -165,6 +165,12 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
+    // Carrega variantes (com estoque por cor) somente quando o usuário clica
+    // numa bolinha deste card — evita N requests no grid inteiro.
+    const { data: liveVariants } = useExternalVariantStock(
+      selectedColorFromStore ? product.id : undefined,
+    );
+
     // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
     // do useEffect abaixo que o referencia no array de deps — isso quebrava em
     // runtime com "Cannot access 'allMatchingVariants' before initialization"
