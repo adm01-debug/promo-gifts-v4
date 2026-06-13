@@ -185,37 +185,9 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             <ReplenishmentBadge daysSince={product.days_since} size="sm" />
           </div>
 
-          {/* Quick actions (hover) — canto superior direito */}
-          {!selectionMode && (
-            <div
-              className={cn(
-                'absolute right-2 top-2 z-10 flex flex-col gap-1.5 transition-all duration-200',
-                'opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0',
-                'group-focus-within:opacity-100 group-focus-within:translate-x-0',
-                isFavorited && 'opacity-100 translate-x-0',
-              )}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <QuickAction
-                icon={<Heart className={cn('h-3.5 w-3.5', isFavorited && 'fill-current')} />}
-                label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                onClick={handleFavorite}
-                active={isFavorited}
-                activeClass="border-rose-500/60 bg-rose-500 text-white"
-              />
-              <QuickAction
-                icon={<GitCompare className="h-3.5 w-3.5" />}
-                label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
-                onClick={handleCompare}
-                active={isInCompare}
-              />
-              <QuickAction
-                icon={<Eye className="h-3.5 w-3.5" />}
-                label="Ver detalhes"
-                onClick={handleOpenDetail}
-              />
-            </div>
-          )}
+          {/* FAB "+" — paridade total com ProductCard (renderizado fora da área da imagem para overlay) */}
+
+
 
           {/* Checkbox de seleção em massa (mantém posição quando ativa) */}
           {selectionMode && (
