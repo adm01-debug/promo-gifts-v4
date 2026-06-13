@@ -114,6 +114,18 @@ export interface Product {
     is_primary: boolean;
     title: string | null;
   }>;
+
+  // ── Word Magic — conteúdo gerado por IA (DeepSeek V3) ──────────────────────
+  /** Título comercial gerado por IA. null = ainda não gerado. */
+  aiTitle?: string | null;
+  /** Descrição B2B completa gerada por IA. */
+  aiDescription?: string | null;
+  /** Resumo curto gerado por IA (para listagem no catálogo). */
+  aiSummary?: string | null;
+  /** Versão do conteúdo IA. 0 = sem geração. Incrementa a cada re-geração. */
+  aiVersion?: number | null;
+  /** Timestamp da última geração IA (ISO 8601). */
+  aiGeneratedAt?: string | null;
 }
 
 export interface KitComponent {

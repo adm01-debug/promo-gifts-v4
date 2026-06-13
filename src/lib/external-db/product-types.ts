@@ -205,7 +205,7 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
@@ -215,7 +215,7 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY =
   'id, name, sku, cost_price, images, primary_image_url, set_image_url, ' +
@@ -226,7 +226,7 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
   'id, name, sku, cost_price, images, primary_image_url, set_image_url, ' +
@@ -236,7 +236,7 @@ export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
@@ -247,7 +247,7 @@ export const PRODUCT_SELECT_FIELDS_DETAIL =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
@@ -257,7 +257,7 @@ export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
   'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {

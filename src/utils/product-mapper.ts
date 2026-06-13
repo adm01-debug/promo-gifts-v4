@@ -209,5 +209,11 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           color: (ck.color ?? null) as string | null,
         };
       }) || undefined,
+    // Word Magic — campos gerados por IA
+    aiTitle: p.ai_title ?? null,
+    aiDescription: p.ai_description ?? null,
+    aiSummary: p.ai_summary ?? null,
+    aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
+    aiGeneratedAt: p.ai_generated_at ?? null,
   };
 }
