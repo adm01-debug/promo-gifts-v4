@@ -539,7 +539,17 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = useMemo(
+  // BUG-SCROLL-01 FIX: chave estável derivada de sortBy + filters + debouncedSearch
+  // + viewMode. Muda SOMENTE quando o conjunto de produtos muda qualitativamente
+  // (filter/sort/search/viewMode), NUNCA quando displayCount aumenta via loadMore().
+  // Passada ao VirtualizedProductGrid para rolar ao topo apenas nas mudanças certas.
+  const scrollResetKey = useMemo(() => {
+    // JSON.stringify(filters) é chamado apenas quando filters muda de referência
+    // (setFilters), não a cada render — custo mínimo.
+    return `${sortBy}|${debouncedSearch}|${viewMode}|${JSON.stringify(filters)}`;
+  }, [sortBy, debouncedSearch, viewMode, filters]);
+
+    const hasActiveCatalogConstraints = useMemo(
     () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
     [activeFiltersCount, searchQuery],
   );
@@ -875,5 +885,6 @@ export function useCatalogState() {
     hasMoreProducts,
     ITEMS_PER_PAGE,
     loadMore,
+    scrollResetKey,
   };
 }

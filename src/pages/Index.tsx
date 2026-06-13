@@ -169,6 +169,7 @@ export default function Index() {
           onOpenFilters={() => catalog.setFilterSheetOpen(true)}
           activeFiltersCount={catalog.activeFiltersCount}
           onViewModeChange={catalog.setViewMode}
+          scrollResetKey={catalog.scrollResetKey}
         />
       </div>
 

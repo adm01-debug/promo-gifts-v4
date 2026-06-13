@@ -54,6 +54,8 @@ interface CatalogContentProps {
   onOpenFilters?: () => void;
   activeFiltersCount?: number;
   onViewModeChange?: (mode: ViewMode) => void;
+  /** BUG-SCROLL-01 FIX: chave de reset de scroll — ver useCatalogState e VirtualizedProductGrid */
+  scrollResetKey?: string;
 }
 
 export const CatalogContent = memo(function CatalogContent({
@@ -91,6 +93,7 @@ export const CatalogContent = memo(function CatalogContent({
   onOpenFilters,
   activeFiltersCount = 0,
   onViewModeChange,
+  scrollResetKey,
 }: CatalogContentProps) {
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
@@ -185,6 +188,7 @@ export const CatalogContent = memo(function CatalogContent({
               onSortChange={onSortChange}
               onOpenFilters={onOpenFilters}
               onClearFilters={onResetFilters}
+              scrollResetKey={scrollResetKey}
               showFilterBar={false}
               activeFiltersCount={activeFiltersCount}
               onViewModeChange={onViewModeChange}

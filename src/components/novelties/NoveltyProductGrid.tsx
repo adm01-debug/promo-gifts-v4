@@ -79,6 +79,13 @@ export function NoveltyProductGrid() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
   const pageSize = 20;
+  // BUG-SCROLL-03 FIX: guard local para evitar que o IntersectionObserver
+  // do sentinel dispare múltiplos setVisibleCount antes do re-render React.
+  // O `isLoading: isFetching` só cobre o fetch do React Query, não a
+  // paginação local — sem este guard, visibleCount saltava em múltiplos de
+  // pageSize em um único "batch" do React 18, causando expansão abrupta do
+  // grid e snap visual do conteúdo.
+  const isLoadingMoreLocalRef = useRef(false);
 
   const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
@@ -158,10 +165,23 @@ export function NoveltyProductGrid() {
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
   const hasMore = visibleCount < filteredProducts.length;
+  // BUG-SCROLL-03 FIX: handler com ref-guard + useCallback para estabilidade
+  // na dep do useInfiniteScroll (evita recrear o IntersectionObserver a cada render).
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMoreLocalRef.current) return; // Guard: evita cascata de increments
+    isLoadingMoreLocalRef.current = true;
+    setVisibleCount((prev) => prev + pageSize);
+    // Libera o guard após o próximo ciclo de render (suficiente para o
+    // IntersectionObserver recalcular com o DOM atualizado).
+    setTimeout(() => {
+      isLoadingMoreLocalRef.current = false;
+    }, 150);
+  }, [pageSize]);
+
   const { sentinelRef } = useInfiniteScroll({
     hasMore,
     isLoading: isFetching,
-    onLoadMore: () => setVisibleCount((c) => c + pageSize),
+    onLoadMore: handleLoadMore,
   });
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });

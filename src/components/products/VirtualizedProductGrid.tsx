@@ -44,6 +44,12 @@ interface VirtualizedProductGridProps {
   /** External toggle handler */
   onToggleSelect?: (id: string) => void;
   onStatusClick?: (type: string, value?: string | number) => void;
+  /**
+   * BUG-SCROLL-01 FIX: Chave que muda SOMENTE em filter/sort — NUNCA em load-more.
+   * Quando muda, o grid rola ao topo. Quando `undefined` (padrão legado), o scroll
+   * reset ocorre em toda mudança de referência do array (FiltersPage: backward-compat).
+   */
+  scrollResetKey?: string;
 }
 
 export function VirtualizedProductGrid({
@@ -73,6 +79,7 @@ export function VirtualizedProductGrid({
   selectedIds,
   onToggleSelect,
   onStatusClick,
+  scrollResetKey,
 }: VirtualizedProductGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -158,11 +165,33 @@ export function VirtualizedProductGrid({
     return () => element.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Reset loadingMore and scroll when products change (e.g. filter/sort)
+  // BUG-SCROLL-01 FIX: dois efeitos com responsabilidades distintas.
+  //
+  // PROBLEMA ANTERIOR: um único useEffect([products]) chamava scrollTo(0)
+  // toda vez que displayCount subia via loadMore() — products = nova slice
+  // = nova referência — causando snap-back inevitável com 7.143 produtos.
+  //
+  // SOLUÇÃO:
+  //   1. setLoadingMore(false) → em toda mudança de products (inclusive load-more)
+  //   2. scrollTo(0) → SOMENTE quando scrollResetKey muda (filter/sort/viewMode)
+  //      scrollResetKey não muda em load-more → scroll preservado ✓
+  //
+  // Modo legado (scrollResetKey=undefined): FiltersPage e similares que não passam
+  // a prop continuam com o comportamento anterior (scroll reset no products change).
   useEffect(() => {
     setLoadingMore(false);
-    parentRef.current?.scrollTo({ top: 0 });
   }, [products]);
+
+  useEffect(() => {
+    if (scrollResetKey === undefined) {
+      // Modo legado: backward-compat para callers sem a prop.
+      parentRef.current?.scrollTo({ top: 0 });
+      return;
+    }
+    // scrollResetKey definido: rola ao topo somente em filter/sort/viewMode.
+    parentRef.current?.scrollTo({ top: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollResetKey]);
 
 
   const scrollToTop = () => {
