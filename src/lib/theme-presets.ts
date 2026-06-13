@@ -1010,6 +1010,10 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
   // Enable smooth transition for all elements
   root.classList.add('theme-transitioning');
 
+  // Stamp the active preset id so components can react to specific skins
+  // (e.g. AppLogo rainbow gradient for diversity skin).
+  root.dataset.presetId = presetId;
+
   const colors = preset[actualMode];
 
   CSS_VARS_TO_APPLY.forEach((key) => {
