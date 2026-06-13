@@ -38,7 +38,6 @@ interface ProductCardActionsProps {
   onOpenVariantPicker: (mode: VariantActionMode) => void;
   onQuickView: () => void;
   markBusy: () => void;
-  // Word Magic
 }
 
 export const ProductCardActions = memo(function ProductCardActions({
