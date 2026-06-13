@@ -616,12 +616,6 @@ export const ProductCard = memo(
               </span>
               <GenderBadge gender={product.gender} size="sm" />
             </div>
-            <span
-              className="shrink-0 font-mono text-[11.5px] font-medium tracking-tighter text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100 sm:text-[13.8px]"
-              aria-label={`Código do produto: ${product.sku}`}
-            >
-              {product.sku}
-            </span>
           </div>
 
           <h3
