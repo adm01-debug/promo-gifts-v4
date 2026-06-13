@@ -119,8 +119,6 @@ export interface ReplenishmentCardProps {
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
   readonly colors?: readonly ColorDotLike[];
-  /** Nome do fornecedor #1 do período (vem de useReplenishmentStats). */
-  readonly topSupplierName?: string | null;
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -130,7 +128,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   isSelected,
   onToggleSelect,
   colors,
-  _topSupplierName,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
@@ -174,9 +171,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     },
     [onClick],
   );
-
-
-
 
   const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
 

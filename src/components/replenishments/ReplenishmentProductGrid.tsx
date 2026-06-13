@@ -7,7 +7,6 @@ import {
   replenishmentToProduct,
   useReplenishmentsSelectionMode,
   useReplenishmentsWithDetails,
-  useReplenishmentStats,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
@@ -75,8 +74,6 @@ export function ReplenishmentProductGrid() {
     isFetching,
     error,
   } = useReplenishmentsWithDetails({ limit: 200 });
-  const { data: stats } = useReplenishmentStats();
-  const topSupplierName = stats?.topSupplierName ?? null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const products = replenishments ?? [];
   const loadingProgress = useLoadingProgress(isLoading);
@@ -318,7 +315,6 @@ export function ReplenishmentProductGrid() {
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
-        topSupplierName={topSupplierName}
       />
     );
   };
