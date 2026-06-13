@@ -91,7 +91,7 @@ export function ProductDetailHero({
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
 
   // ── Word Magic ───────────────────────────────────────────────────────────
-  const { displayName, displayDescription, isAIActive, hasEnrichment } = useWordMagic(product);
+  const { displayName, displayDescription, isAIActive } = useWordMagic(product);
 
   // Categoria-FOLHA (mais específica) + caminho raiz→folha para este produto.
   const { leafById } = useProductLeafCategories([product.id]);

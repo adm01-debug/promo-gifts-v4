@@ -228,7 +228,7 @@ export const ProductCard = memo(
     const addToCompare = useComparisonStore((s) => s.addToCompare);
 
     // ── Word Magic ───────────────────────────────────────────────────────────
-    const { displayName, isAIActive, hasEnrichment } = useWordMagic(product);
+    const { displayName, isAIActive } = useWordMagic(product);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
