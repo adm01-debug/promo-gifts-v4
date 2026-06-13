@@ -1,5 +1,4 @@
 import React, { memo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -133,7 +132,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   colors,
   _topSupplierName,
 }: ReplenishmentCardProps) {
-  const navigate = useNavigate();
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
