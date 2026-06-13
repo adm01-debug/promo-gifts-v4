@@ -11,6 +11,7 @@ import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import { useDebounce } from '@/hooks/common/useDebounce';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { toast } from 'sonner';
