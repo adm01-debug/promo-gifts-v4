@@ -99,17 +99,17 @@ export function ReplenishmentToolbar({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <RefreshCw className="h-4 w-4 shrink-0 text-info" aria-hidden="true" />
+          <RefreshCw className="h-[18px] w-[18px] shrink-0 text-info" aria-hidden="true" />
           <div className="flex flex-col">
-            <h2 className="whitespace-nowrap text-base font-semibold sm:text-lg">Reposição</h2>
-            <p className="hidden text-[10px] text-muted-foreground lg:block">
+            <h2 className="whitespace-nowrap text-[17px] font-semibold sm:text-[20px]">Reposição</h2>
+            <p className="hidden text-[11px] text-muted-foreground lg:block">
               Produtos repostos nos últimos 30 dias
             </p>
           </div>
-          <Badge variant="secondary" className="shrink-0 px-1.5 text-[10px] tabular-nums">
+          <Badge variant="secondary" className="shrink-0 px-1.5 text-[11px] tabular-nums">
             {isLoading && totalCount === 0 ? (
               <span className="flex items-center gap-1">
-                <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 carregando…
               </span>
             ) : (
@@ -124,12 +124,12 @@ export function ReplenishmentToolbar({
             {isLoading && loadingProgress > 0 && loadingProgress < 100 && (
               <motion.span
                 initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 48 }}
+                animate={{ opacity: 1, width: 53 }}
                 exit={{ opacity: 0, width: 0 }}
                 className="ml-1 inline-flex items-center gap-1"
               >
                 <span
-                  className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle"
+                  className="inline-block h-1 w-[53px] overflow-hidden rounded-full bg-muted/50 align-middle"
                   aria-hidden="true"
                 >
                   <motion.span
@@ -139,7 +139,7 @@ export function ReplenishmentToolbar({
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                   />
                 </span>
-                <span className="text-[10px] tabular-nums text-muted-foreground/60">
+                <span className="text-[11px] tabular-nums text-muted-foreground/60">
                   {Math.round(loadingProgress)}%
                 </span>
               </motion.span>
@@ -147,7 +147,7 @@ export function ReplenishmentToolbar({
           </AnimatePresence>
 
           {/* Desktop Search */}
-          <div className="hidden w-80 sm:block lg:w-[25rem]">
+          <div className="hidden w-[352px] sm:block lg:w-[27.5rem]">
             <SearchInput
               value={searchQuery}
               onChange={onSearchChange}
@@ -155,6 +155,7 @@ export function ReplenishmentToolbar({
             />
           </div>
         </div>
+
 
         <Button
           variant={selectionMode ? 'default' : 'outline'}
