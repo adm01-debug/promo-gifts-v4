@@ -336,7 +336,7 @@ export function NoveltyTableView({
             <TableHead className="min-w-[200px]">Produto</TableHead>
             <TableHead>SKU</TableHead>
             <TableHead>Novidade</TableHead>
-            <TableHead>Pre\u00e7o</TableHead>
+            <TableHead>Preço</TableHead>
             <TableHead>Cores</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Fornecedor</TableHead>
