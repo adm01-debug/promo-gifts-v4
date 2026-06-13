@@ -176,6 +176,12 @@ export interface PromobrindProduct {
   // Nomes denormalizados (fallback de exibição)
   category?: string | null;
   supplier?: string | null;
+  // Word Magic — campos gerados por IA (word-magic Edge Function)
+  ai_title?: string | null;
+  ai_description?: string | null;
+  ai_summary?: string | null;
+  ai_version?: number | null;
+  ai_generated_at?: string | null;
 }
 
 export function getProductImageUrl(product: PromobrindProduct): string | null {
