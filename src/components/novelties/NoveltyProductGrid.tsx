@@ -387,7 +387,7 @@ export function NoveltyProductGrid() {
             </h2>
             <Badge
               variant="outline"
-              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 text-[10px] font-semibold tabular-nums text-primary"
+              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 text-[11px] font-semibold tabular-nums text-primary"
             >
               {isLoading && products.length === 0 ? (
                 <span className="flex items-center gap-1">
