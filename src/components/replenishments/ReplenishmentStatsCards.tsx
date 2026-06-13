@@ -134,7 +134,7 @@ function StatsLoadingSkeleton() {
     <div
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
       role="status"
-      aria-label="Carregando estat\u00edsticas"
+      aria-label="Carregando estatísticas"
     >
       {Array.from({ length: 5 }, (_, i) => (
         <Card key={i} className="border-border/50">
@@ -162,7 +162,7 @@ function StatsErrorState() {
         <CardContent className="flex items-center gap-3 p-4">
           <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
           <p className="text-sm text-destructive">
-            Erro ao carregar estat\u00edsticas. Tente recarregar a p\u00e1gina.
+            Erro ao carregar estatísticas. Tente recarregar a página.
           </p>
         </CardContent>
       </Card>
@@ -199,7 +199,7 @@ export function ReplenishmentStatsCards() {
   return (
     <section
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
-      aria-label="Estat\u00edsticas de reposi\u00e7\u00e3o"
+      aria-label="Estatísticas de reposição"
     >
       <StatCard
         label="Repostos Hoje"
@@ -209,7 +209,7 @@ export function ReplenishmentStatsCards() {
         delay={0}
       />
       <StatCard
-        label="\u00daltimos 7 Dias"
+        label="Últimos 7 Dias"
         value={s.restockedThisWeek}
         subtitle={
           s.reorderedThisWeek > 0
@@ -221,7 +221,7 @@ export function ReplenishmentStatsCards() {
         delay={100}
       />
       <StatCard
-        label="\u00daltimos 15 Dias"
+        label="Últimos 15 Dias"
         value={s.restockedLast15Days}
         subtitle={
           s.reorderedThisMonth > 0
@@ -235,13 +235,13 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="Top Fornecedor"
         value={s.topSupplierCount}
-        subtitle={s.topSupplierName ?? '\u2014'}
+        subtitle={s.topSupplierName ?? '—'}
         icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="orange"
         delay={200}
       />
       <StatCard
-        label="Reposi\u00e7\u00f5es Ativas"
+        label="Reposições Ativas"
         value={s.activeReplenishments}
         suffix={s.replenishmentRate ? ` (${s.replenishmentRate}%)` : ''}
         subtitle={
