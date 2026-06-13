@@ -7,6 +7,7 @@ import {
   replenishmentToProduct,
   useReplenishmentsSelectionMode,
   useReplenishmentsWithDetails,
+  useReplenishmentStats,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
