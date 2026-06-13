@@ -190,7 +190,6 @@ export function VirtualizedProductGrid({
     }
     // scrollResetKey definido: rola ao topo somente em filter/sort/viewMode.
     parentRef.current?.scrollTo({ top: 0 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollResetKey]);
 
 
