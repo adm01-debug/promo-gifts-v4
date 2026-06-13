@@ -215,7 +215,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             <img
               src={product.product_image}
               alt={`Foto de ${product.product_name}`}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 sm:p-3"
               loading="lazy"
               decoding="async"
             />
