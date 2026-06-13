@@ -61,6 +61,9 @@ interface ProductTableViewProps {
   loadMoreRef?: React.RefObject<HTMLDivElement>;
   itemsPerPage?: number;
   onLoadMore?: () => void;
+  // GAP-20 FIX: chave de reset de scroll (mesma de useCatalogState/VirtualizedProductGrid).
+  // Quando muda (filtro/sort/view), reseta o scrollTop do container interno da tabela ao topo.
+  scrollResetKey?: string;
 }
 
 type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
@@ -156,9 +159,21 @@ export const ProductTableView = memo(function ProductTableView({
   loadMoreRef,
   itemsPerPage: _itemsPerPage,
   onLoadMore,
+  scrollResetKey,
 }: ProductTableViewProps) {
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // GAP-20 FIX: a tabela usa um virtualizer ELEMENT-scoped (container overflow-y-auto
+  // de altura fixa), então é imune ao snap-back de carga progressiva — mas, ao contrário
+  // do grid/list (que rolam a window ao topo via scrollResetKey), seu scrollTop interno
+  // NÃO era resetado ao trocar filtro/sort/view: o usuário rolado para baixo permanecia
+  // numa posição arbitrária (ou no fim, pelo clamp do browser) do novo conjunto. Resetamos
+  // o scrollTop ao topo SOMENTE quando scrollResetKey muda — nunca durante a carga
+  // progressiva (load-more não altera scrollResetKey), preservando o scroll do usuário.
+  useEffect(() => {
+    if (parentRef.current) parentRef.current.scrollTop = 0;
+  }, [scrollResetKey]);
   const [sortCol, setSortCol] = useState<SortCol>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 

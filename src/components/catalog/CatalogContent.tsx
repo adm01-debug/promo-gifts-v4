@@ -215,6 +215,7 @@ export const CatalogContent = memo(function CatalogContent({
         <ProductLeafCategoryProvider productIds={productIds}>
           {viewMode === 'table' && (
             <ProductTableView
+              scrollResetKey={scrollResetKey}
               products={paginatedProducts}
               isLoading={isLoadingMore}
               onProductClick={handleProductClick}
