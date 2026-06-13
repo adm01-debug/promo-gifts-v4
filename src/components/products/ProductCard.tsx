@@ -30,7 +30,7 @@ import {
 } from '@/utils/color-image-resolver';
 import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
-import { ProductSparkline } from './ProductSparkline';
+import { ProductSales90dButton } from './ProductSales90dButton';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
