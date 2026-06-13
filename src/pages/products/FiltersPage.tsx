@@ -167,10 +167,10 @@ export default function FiltersPage() {
         description="Filtre e encontre brindes por cor, categoria, preço e fornecedor."
         path="/produtos"
       />
-      <div className="mx-auto flex w-full max-w-[1920px] animate-fade-in flex-col px-3 pt-3 pb-24 sm:px-4 sm:pt-4 md:pb-0 lg:px-6 xl:px-8 min-h-[calc(100dvh-var(--header-h,56px)-var(--breadcrumb-h,0px))]">
-        <div className="flex flex-1 gap-8 overflow-hidden min-h-0">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="flex gap-8">
           {/* Sidebar */}
-          <aside className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px)+0.5rem)] hidden h-[calc(100dvh-var(--header-h,56px)-var(--breadcrumb-h,0px)-1rem)] w-80 shrink-0 overflow-hidden rounded-b-xl lg:flex lg:flex-col">
+          <aside className="sticky top-4 hidden max-h-[calc(100vh-6rem)] w-80 shrink-0 overflow-hidden rounded-b-xl lg:flex lg:flex-col">
             <div className="scrollbar-thin relative min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
               <FilterPanel
                 filters={state.filters}
@@ -228,8 +228,8 @@ export default function FiltersPage() {
           </aside>
 
           {/* Content */}
-          <div className="flex min-w-0 flex-1 flex-col min-h-0">
-            <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 shrink-0 bg-background/95 backdrop-blur-sm -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8 pb-4 flex flex-col gap-4">
+          <div className="min-w-0 flex-1 space-y-6">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-shrink-0">
                   <h1
@@ -584,10 +584,9 @@ export default function FiltersPage() {
                   )}
                 </div>
               </div>
-            </div>{/* ← fecha sticky — só a toolbar fica dentro */}
 
-            {/* Products — fora da sticky, scrollável normalmente */}
-            <div className="relative flex-1 min-h-0">
+              {/* Products */}
+              <div className="relative h-[calc(100vh-10rem)] min-h-[500px]">
                 {state.isFiltering && (
                   <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center rounded-xl bg-background/50 pt-32 backdrop-blur-[1px] transition-opacity duration-200">
                     <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
@@ -643,7 +642,7 @@ export default function FiltersPage() {
                         onToggleSelect={sel.toggleSelect}
                       />
                     ) : state.viewMode === 'list' ? (
-                      <div className="scrollbar-products h-full min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background p-4 shadow-sm">
+                      <div className="scrollbar-products h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background p-4 shadow-sm">
                         <ProductList
                           products={state.filteredProducts}
                           isLoading={state.isLoadingProducts}
@@ -673,7 +672,7 @@ export default function FiltersPage() {
                         />
                       </div>
                     ) : (
-                      <div className="h-full min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm">
+                      <div className="h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm">
                         <ProductTableView
                           products={state.filteredProducts}
                           isLoading={state.isLoadingProducts}
