@@ -27,6 +27,7 @@ import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
