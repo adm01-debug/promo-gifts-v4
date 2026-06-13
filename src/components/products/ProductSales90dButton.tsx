@@ -5,27 +5,30 @@ import { cn } from '@/lib/utils';
 import {
   SPARKLINE_WINDOW_DAYS,
   useSparklineData,
+  useSparklineDataByVariant,
 } from '@/hooks/intelligence/useSparklineSales';
 
 interface ProductSales90dButtonProps {
   productId: string;
+  /** Quando informado, exibe vendas APENAS dessa variante (cor/SKU). */
+  variantId?: string | null;
+  /** Rótulo da variante ativa (ex.: "Azul"). */
+  variantLabel?: string | null;
   className?: string;
 }
 
 const nf = new Intl.NumberFormat('pt-BR');
 
-/**
- * Botão compacto exibindo "Vendas 90d · N un".
- * Ao clicar, abre um popover com o resumo das vendas dos últimos 90 dias
- * (saídas, disponível, média/dia, pico, comparação 1ª vs 2ª metade).
- *
- * Substitui a antiga sparkline inline no card de produto.
- */
 export const ProductSales90dButton = memo(function ProductSales90dButton({
   productId,
+  variantId,
+  variantLabel,
   className,
 }: ProductSales90dButtonProps) {
-  const data = useSparklineData(productId);
+  const productData = useSparklineData(productId);
+  const variantData = useSparklineDataByVariant(variantId);
+  const data = variantId ? variantData : productData;
+  const isVariantScope = !!variantId && !!variantData;
   const hasSales = !!data && data.totalQty > 0;
 
   const summary = useMemo(() => {
