@@ -165,10 +165,11 @@ export const ProductCard = memo(
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
 
-    // Carrega variantes (com estoque por cor) somente quando o usuário clica
-    // numa bolinha deste card — evita N requests no grid inteiro.
+    // Carrega variantes (com estoque/foto por cor) assim que o usuário interage com o card
+    // — hover OU clique de cor — para evitar latência percebida no clique da bolinha.
+    // Demais cards (sem hover/clique) não disparam request.
     const { data: liveVariants } = useExternalVariantStock(
-      selectedColorFromStore ? product.id : undefined,
+      isHovered || selectedColorFromStore ? product.id : undefined,
     );
 
     // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
