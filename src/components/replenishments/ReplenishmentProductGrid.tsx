@@ -318,6 +318,7 @@ export function ReplenishmentProductGrid() {
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
+        topSupplierName={topSupplierName}
       />
     );
   };
