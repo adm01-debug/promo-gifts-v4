@@ -134,7 +134,7 @@ export function RecentReplenishmentsWidget() {
                               <img
                                 src={item.product_image}
                                 alt=""
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain"
                                 loading="lazy"
                                 decoding="async"
                               />
