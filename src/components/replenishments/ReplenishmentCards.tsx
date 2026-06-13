@@ -221,9 +221,27 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
-          {/* Badge superior esquerdo — Reposição */}
-          <div className="absolute left-2 top-2 z-10">
+          {/* Badge superior esquerdo — Reposição + Top fornecedor (stack) */}
+          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
             <ReplenishmentBadge daysSince={product.days_since} size="sm" />
+            {topSupplierName &&
+              product.supplier_name &&
+              topSupplierName.toLowerCase() === product.supplier_name.toLowerCase() && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/95 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-[0_2px_8px_hsl(45_93%_47%/0.35)] sm:text-[10px]">
+                      <span aria-hidden="true">★</span>
+                      Top fornecedor
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">
+                    <p className="font-semibold">Fornecedor líder do período</p>
+                    <p className="text-muted-foreground">
+                      {topSupplierName} é o nº 1 em reposições nos últimos 30 dias.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
           </div>
 
           {/* Quick actions (hover) — canto superior direito */}
