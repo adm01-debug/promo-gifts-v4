@@ -46,6 +46,10 @@ export interface FilterState {
   tags: string[];
   priceRange: [number, number];
   minStock: number;
+  /** Vendas mínimas do fornecedor (últimos 30 dias, depleted30d da MV de inteligência). */
+  minSupplierSales30d: number;
+  /** Vendas mínimas internas da Promo Brindes (últimos 90 dias, order_items). */
+  minPromoSales90d: number;
   inStock: boolean;
   isKit: boolean;
   featured: boolean;
