@@ -63,10 +63,10 @@ export function useWordMagic(product: Product): UseWordMagicReturn {
     // Produto tem conteúdo IA no DB → hidratar diretamente sem chamar Edge Function
     if ((product.aiVersion ?? 0) > 0 && product.aiTitle) {
       setEnrichment(productId, {
-        ai_title:        product.aiTitle!,
+        ai_title:        product.aiTitle as string,
         ai_description:  product.aiDescription ?? '',
         ai_summary:      product.aiSummary      ?? '',
-        ai_version:      product.aiVersion!,
+        ai_version:      product.aiVersion as number,
         ai_generated_at: product.aiGeneratedAt  ?? undefined,
         source:          'db',
       });
