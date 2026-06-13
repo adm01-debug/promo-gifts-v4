@@ -544,12 +544,15 @@ export function useCatalogState() {
   // (filter/sort/search/viewMode), NUNCA quando displayCount aumenta via loadMore().
   // Passada ao VirtualizedProductGrid para rolar ao topo apenas nas mudanças certas.
   const scrollResetKey = useMemo(() => {
-    // JSON.stringify(filters) é chamado apenas quando filters muda de referência
-    // (setFilters), não a cada render — custo mínimo.
-    return `${sortBy}|${debouncedSearch}|${viewMode}|${JSON.stringify(filters)}`;
+    // GAP-COLISÃO FIX: serializa tudo via JSON.stringify de um array. Concatenar
+    // com '|' abria uma colisão teórica: um search contendo '|' poderia, em tese,
+    // produzir a mesma string que outra combinação. Empacotar em array +
+    // JSON.stringify escapa qualquer caractere especial (aspas, pipe, emoji) de
+    // forma inequívoca. JSON.stringify só recomputa quando uma dep muda — custo mínimo.
+    return JSON.stringify([sortBy, debouncedSearch, viewMode, filters]);
   }, [sortBy, debouncedSearch, viewMode, filters]);
 
-    const hasActiveCatalogConstraints = useMemo(
+  const hasActiveCatalogConstraints = useMemo(
     () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
     [activeFiltersCount, searchQuery],
   );

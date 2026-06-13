@@ -55,21 +55,53 @@ export function VirtualizedNoveltyGrid({
   useLayoutEffect(() => {
     if (!parentRef.current) return;
 
+    // Evita writes redundantes de estado (re-render desnecessário) quando a
+    // medição não mudou — só faz setState se o valor realmente diferir.
+    let lastMargin = -1;
     const measure = () => {
       if (!parentRef.current) return;
       const rect = parentRef.current.getBoundingClientRect();
       const margin = Math.round(rect.top + window.scrollY);
-      setScrollMargin(margin);
+      if (margin !== lastMargin) {
+        lastMargin = margin;
+        setScrollMargin(margin);
+      }
     };
 
     measure(); // Medição inicial (pós-mount, offsetTop já definido)
 
-    // Atualiza em resize (responsividade: viewport muda → offsetTop muda)
-    window.addEventListener('resize', measure, { passive: true });
-    return () => {
-      window.removeEventListener('resize', measure);
+    // BUG-SCROLL-02b FIX (GAP-7): o offsetTop do grid muda não só em resize de
+    // window, mas também quando elementos ACIMA dele mudam de altura SEM um
+    // resize de viewport — ex.: o sticky header (NoveltyStatsCards) sai do
+    // estado Skeleton para os KPIs reais quando os stats async chegam, ou a
+    // toolbar sticky cresce. Sem reagir a isso, o scrollMargin ficava stale e
+    // o conteúdo "saltava" tardiamente. Solução: ResizeObserver no documentElement
+    // (captura qualquer reflow de layout do fluxo do documento) + listener de
+    // resize de window (viewport). rAF coalesce múltiplos disparos em 1 medição.
+    let rafId: number | null = null;
+    const scheduleMeasure = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        measure();
+      });
     };
-  }, []); // Deps vazias: só executa 1× após mount
+
+    window.addEventListener('resize', scheduleMeasure, { passive: true });
+
+    const ro = new ResizeObserver(scheduleMeasure);
+    // Observa o documentElement: qualquer mudança de altura no fluxo acima do
+    // grid (sticky header, KPIs, toolbar) dispara nova medição coalescida.
+    ro.observe(document.documentElement);
+    // Observa também o próprio parent (mudança de posição relativa ao layout).
+    if (parentRef.current) ro.observe(parentRef.current);
+
+    return () => {
+      window.removeEventListener('resize', scheduleMeasure);
+      ro.disconnect();
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, []); // Deps vazias: observers cobrem mudanças subsequentes sem re-subscribe
 
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
@@ -83,11 +115,7 @@ export function VirtualizedNoveltyGrid({
   });
 
   return (
-    <div
-      ref={parentRef}
-      role="list"
-      aria-label="Grade de novidades"
-    >
+    <div ref={parentRef} role="list" aria-label="Grade de novidades">
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,

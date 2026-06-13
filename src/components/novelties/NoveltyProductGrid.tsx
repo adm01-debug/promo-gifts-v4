@@ -86,6 +86,9 @@ export function NoveltyProductGrid() {
   // pageSize em um único "batch" do React 18, causando expansão abrupta do
   // grid e snap visual do conteúdo.
   const isLoadingMoreLocalRef = useRef(false);
+  // Timer do guard — guardado em ref para cleanup no unmount (evita
+  // set-state/ref-write após desmontar e leak do timeout).
+  const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
@@ -159,6 +162,13 @@ export function NoveltyProductGrid() {
   // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(40);
+    // GAP-11 FIX: libera o guard ao trocar de filtro para que o primeiro
+    // load-more do novo conjunto não fique bloqueado pelos 150ms residuais.
+    if (guardTimerRef.current) {
+      clearTimeout(guardTimerRef.current);
+      guardTimerRef.current = null;
+    }
+    isLoadingMoreLocalRef.current = false;
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
@@ -172,11 +182,21 @@ export function NoveltyProductGrid() {
     isLoadingMoreLocalRef.current = true;
     setVisibleCount((prev) => prev + pageSize);
     // Libera o guard após o próximo ciclo de render (suficiente para o
-    // IntersectionObserver recalcular com o DOM atualizado).
-    setTimeout(() => {
+    // IntersectionObserver recalcular com o DOM atualizado). GAP-8: o timer
+    // fica em ref para ser limpo no unmount.
+    if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
+    guardTimerRef.current = setTimeout(() => {
       isLoadingMoreLocalRef.current = false;
+      guardTimerRef.current = null;
     }, 150);
   }, [pageSize]);
+
+  // GAP-8 FIX: limpa o timer do guard ao desmontar para evitar callback órfão.
+  useEffect(() => {
+    return () => {
+      if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
+    };
+  }, []);
 
   const { sentinelRef } = useInfiniteScroll({
     hasMore,
@@ -417,9 +437,7 @@ export function NoveltyProductGrid() {
               ) : (
                 <>
                   {filteredProducts.length}
-                  {hasActiveFilters && (
-                    <span className="text-primary/60">/{products.length}</span>
-                  )}
+                  {hasActiveFilters && <span className="text-primary/60">/{products.length}</span>}
                 </>
               )}
             </Badge>
