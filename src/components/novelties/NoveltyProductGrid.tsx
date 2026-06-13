@@ -382,12 +382,12 @@ export function NoveltyProductGrid() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <h2 className="whitespace-nowrap text-base font-semibold text-primary sm:text-lg">
+            <h2 className="whitespace-nowrap text-[17px] font-semibold text-primary sm:text-[20px]">
               Novidades
             </h2>
             <Badge
               variant="outline"
-              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 text-[10px] font-semibold tabular-nums text-primary"
+              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 text-[11px] font-semibold tabular-nums text-primary"
             >
               {isLoading && products.length === 0 ? (
                 <span className="flex items-center gap-1">
@@ -411,7 +411,7 @@ export function NoveltyProductGrid() {
                   exit={{ opacity: 0, width: 0 }}
                   className="ml-1 inline-flex items-center gap-1"
                 >
-                  <span className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle">
+                  <span className="inline-block h-1 w-[53px] overflow-hidden rounded-full bg-muted/50 align-middle">
                     <motion.span
                       className="block h-full rounded-full bg-primary/60"
                       initial={{ width: 0 }}
@@ -419,7 +419,7 @@ export function NoveltyProductGrid() {
                       transition={{ duration: 0.4, ease: 'easeOut' }}
                     />
                   </span>
-                  <span className="text-[10px] tabular-nums text-muted-foreground/60">
+                  <span className="text-[11px] tabular-nums text-muted-foreground/60">
                     {Math.round(loadingProgress)}%
                   </span>
                 </motion.span>
@@ -427,14 +427,14 @@ export function NoveltyProductGrid() {
             </AnimatePresence>
 
             {/* Search inline — mesmo padrão do CatalogHeader */}
-            <div className="hidden w-80 sm:block lg:w-[25rem]">
+            <div className="hidden w-[27.5rem] sm:block lg:w-[27.5rem]">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar novidades…  /"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 border-border/50 bg-muted/40 pl-8 text-xs focus:bg-background"
+                  className="h-9 border-border/50 bg-muted/40 pl-8 text-[13px] focus:bg-background"
                 />
                 {searchQuery && (
                   <button
@@ -474,12 +474,12 @@ export function NoveltyProductGrid() {
         {/* Search full-width on mobile */}
         <div className="flex w-full items-center gap-2 sm:hidden">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar novidades..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-border/50 bg-muted/40 pl-8 text-xs focus:bg-background"
+              className="h-9 border-border/50 bg-muted/40 pl-8 text-[13px] focus:bg-background"
             />
             {searchQuery && (
               <button
@@ -494,8 +494,8 @@ export function NoveltyProductGrid() {
 
         <div className="flex flex-wrap items-center gap-1.5">
           <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-            <SelectTrigger className="h-7 w-[160px] gap-1 text-[11px]">
-              <Building2 className="h-3 w-3 shrink-0" />
+            <SelectTrigger className="h-8 w-[176px] gap-1 text-[12px]">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
               <SelectValue placeholder="Fornecedor" />
             </SelectTrigger>
             <SelectContent>
@@ -508,8 +508,8 @@ export function NoveltyProductGrid() {
             </SelectContent>
           </Select>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-7 w-[160px] gap-1 text-[11px]">
-              <FolderTree className="h-3 w-3 shrink-0" />
+            <SelectTrigger className="h-8 w-[176px] gap-1 text-[12px]">
+              <FolderTree className="h-3.5 w-3.5 shrink-0" />
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
@@ -522,8 +522,8 @@ export function NoveltyProductGrid() {
             </SelectContent>
           </Select>
           <Select value={sortMode} onValueChange={(v) => setSortMode(v)}>
-            <SelectTrigger className="h-7 w-[180px] gap-1 text-[11px]">
-              <ArrowUpDown className="h-3 w-3" />
+            <SelectTrigger className="h-8 w-[198px] gap-1 text-[12px]">
+              <ArrowUpDown className="h-3.5 w-3.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -539,7 +539,7 @@ export function NoveltyProductGrid() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+              className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground"
               onClick={clearFilters}
             >
               <X className="mr-0.5 h-3 w-3" />
