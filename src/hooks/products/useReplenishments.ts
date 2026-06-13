@@ -150,6 +150,7 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
     product_description: null,
     base_price: p.sale_price,
     product_image: p.primary_image_url || (p.images && p.images.length > 0 ? p.images[0] : null),
+    product_set_image: p.set_image_url ?? null,
     category_id: p.category_id,
     category_name: null,
     supplier_code: null,
