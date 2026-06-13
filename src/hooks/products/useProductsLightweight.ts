@@ -86,6 +86,12 @@ export function mapLightweightToProduct(
     dimensions: {},
     priceUpdatedAt: p.price_updated_at ?? null,
     priceFreshnessThresholdDays: null,
+    // Word Magic — campos AI para o toggle global (aiTitle/aiDescription/aiVersion)
+    aiTitle: p.ai_title ?? null,
+    aiDescription: p.ai_description ?? null,
+    aiSummary: p.ai_summary ?? null,
+    aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
+    aiGeneratedAt: p.ai_generated_at ?? null,
   };
 }
 
