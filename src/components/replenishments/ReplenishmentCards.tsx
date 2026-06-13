@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
+import { HoverSetImage } from '@/components/products/HoverSetImage';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -135,19 +136,11 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
       <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
-          {product.product_image ? (
-            <img
-              src={product.product_image}
-              alt={`Foto de ${product.product_name}`}
-              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
-              <Package className="h-12 w-12 text-muted-foreground/20" />
-            </div>
-          )}
+          <HoverSetImage
+            primary={product.product_image}
+            set={product.product_set_image}
+            alt={`Foto de ${product.product_name}`}
+          />
 
 
           {/* Badge superior esquerdo — Reposição */}
