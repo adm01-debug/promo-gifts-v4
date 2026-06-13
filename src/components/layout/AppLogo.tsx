@@ -1,12 +1,14 @@
 /**
  * AppLogo — Logo da aplicação com suporte à SKIN DIVERSITY.
  *
- * SKIN DIVERSITY (BUG-LOGO-01):
+ * SKIN DIVERSITY:
  * Quando o preset 'diversity' está ativo, applyThemePreset() marca
  * document.documentElement.dataset.presetId = 'diversity'.
  * O hook usePresetId() observa esse atributo via MutationObserver e
- * retorna o id atual, permitindo que o ícone exiba o gradiente arco-íris
- * (var(--gradient-primary)) em vez do bg-primary sólido.
+ * aplica gradiente arco-íris (var(--gradient-primary)) em:
+ *   1. Fundo do ícone   → background via inline style
+ *   2. Texto "Promo Gifts"  → background-clip: text trick
+ *   3. Subtítulo "Store System" → idem (com opacity-70 herdada)
  */
 import { useEffect, useState } from 'react';
 import { Gift } from 'lucide-react';
@@ -66,8 +68,7 @@ export function AppLogo({
   const iconColor = usesPrimary ? 'text-primary-foreground' : 'text-background';
   const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
 
-  // SKIN DIVERSITY: aplica o gradient-primary (arco-íris) no fundo do ícone.
-  // Para as demais skins usa bg-primary sólido (padrão V3).
+  // SKIN DIVERSITY: fundo do ícone como gradiente arco-íris.
   const iconBgClass = isDiversity
     ? '' // inline style cuida do fundo — classe vazia evita conflito
     : usesPrimary
@@ -75,6 +76,17 @@ export function AppLogo({
       : 'bg-foreground';
 
   const iconStyle = isDiversity ? { background: 'var(--gradient-primary)' } : undefined;
+
+  // SKIN DIVERSITY: gradient text trick — background-clip:text revela o
+  // gradiente arco-íris através do shape do texto. Não afeta elementos SVG.
+  const gradientTextStyle: React.CSSProperties | undefined = isDiversity
+    ? {
+        background: 'var(--gradient-primary)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }
+    : undefined;
 
   return (
     <div
@@ -96,24 +108,26 @@ export function AppLogo({
 
       {showText && (
         <div className="flex flex-col">
-          {/* Name — V3 exact: text-xl font-bold leading-none tracking-tight */}
+          {/* Name — DIVERSITY: gradient text | Outros: text-foreground/text-white */}
           <span
             className={cn(
               'font-display text-xl font-bold leading-none tracking-tight',
-              textColor,
+              isDiversity ? '' : textColor,
               textClassName,
             )}
+            style={gradientTextStyle}
           >
             Promo Gifts
           </span>
 
-          {/* Subtitle — V3 exact: text-[10px] font-semibold uppercase tracking-widest opacity-70 */}
+          {/* Subtitle — DIVERSITY: gradient text (opacity-70 herdado) | Outros: muted/primary */}
           <span
             className={cn(
               'text-[10px] font-semibold uppercase tracking-widest opacity-70',
-              variant === 'light' ? 'text-primary' : 'text-muted-foreground',
+              isDiversity ? '' : variant === 'light' ? 'text-primary' : 'text-muted-foreground',
               subtextClassName,
             )}
+            style={gradientTextStyle}
           >
             Store System
           </span>
