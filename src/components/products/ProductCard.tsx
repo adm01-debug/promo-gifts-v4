@@ -10,7 +10,10 @@ import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
 import { useProductBounds } from '@/hooks/products/useProductBounds';
 import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
-import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import {
+  useExternalVariantStock,
+  type ExternalVariantStock,
+} from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
