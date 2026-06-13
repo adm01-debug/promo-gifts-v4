@@ -196,12 +196,12 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     >
       <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30">
+        <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
           {product.product_image ? (
             <img
               src={product.product_image}
               alt={`Foto de ${product.product_name}`}
-              className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 sm:p-3"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
               decoding="async"
             />
@@ -210,6 +210,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
               <Package className="h-12 w-12 text-muted-foreground/20" />
             </div>
           )}
+
 
           {/* Badge superior esquerdo — Reposição */}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
