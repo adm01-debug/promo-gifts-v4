@@ -14,6 +14,7 @@ interface VirtualizedGridProps {
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
+  topSupplierName?: string | null;
 }
 
 export function VirtualizedReplenishmentGrid({
@@ -24,6 +25,7 @@ export function VirtualizedReplenishmentGrid({
   onToggleSelect,
   onProductClick,
   colorsByProduct,
+  topSupplierName,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +85,7 @@ export function VirtualizedReplenishmentGrid({
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
                     colors={colorsByProduct?.get(product.product_id)}
+                    topSupplierName={topSupplierName}
                   />
                 </div>
               ))}

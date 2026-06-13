@@ -7,6 +7,7 @@ import {
   replenishmentToProduct,
   useReplenishmentsSelectionMode,
   useReplenishmentsWithDetails,
+  useReplenishmentStats,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
@@ -22,6 +23,7 @@ import { ReplenishmentToolbar } from './ReplenishmentToolbar';
 import { getGridColsClass, getGridGapClass } from './grid-layout';
 import { VirtualizedReplenishmentGrid } from './VirtualizedReplenishmentGrid';
 import { VirtualizedReplenishmentList } from './VirtualizedReplenishmentList';
+import { ReplenishmentCardSkeleton } from './ReplenishmentCardSkeleton';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 type ViewMode = 'grid' | 'list' | 'table';
@@ -73,6 +75,8 @@ export function ReplenishmentProductGrid() {
     isFetching,
     error,
   } = useReplenishmentsWithDetails({ limit: 200 });
+  const { data: stats } = useReplenishmentStats();
+  const topSupplierName = stats?.topSupplierName ?? null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const products = replenishments ?? [];
   const loadingProgress = useLoadingProgress(isLoading);
@@ -226,9 +230,13 @@ export function ReplenishmentProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 15 }).map((_, i) => (
-              <ProductCardSkeleton key={i} variant={viewMode === 'list' ? 'compact' : 'default'} />
-            ))}
+            {Array.from({ length: 15 }).map((_, i) =>
+              viewMode === 'list' ? (
+                <ProductCardSkeleton key={i} variant="compact" />
+              ) : (
+                <ReplenishmentCardSkeleton key={i} />
+              ),
+            )}
           </div>
         </div>
       );
@@ -310,6 +318,7 @@ export function ReplenishmentProductGrid() {
         onToggleSelect={sel.toggleSelect}
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
+        topSupplierName={topSupplierName}
       />
     );
   };
