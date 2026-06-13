@@ -149,6 +149,44 @@ export function FilterPanel({
         toggleArrayFilter={state.toggleArrayFilter}
       />
     ),
+    'vendas-fornecedor': () => (
+      <div className="px-1">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="whitespace-nowrap text-xs text-muted-foreground">Mín. vendas</span>
+          <DebouncedPriceInput
+            value={filters.minSupplierSales30d || ''}
+            onChange={(v) => onFilterChange({ ...filters, minSupplierSales30d: v })}
+            fallback={0}
+            placeholder="Ex: 500"
+            min={0}
+            className={filters.minSupplierSales30d > 0 ? 'border-brand-primary/60' : ''}
+          />
+          <span className="text-xs text-muted-foreground">un./30d</span>
+        </div>
+        <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+          Filtra produtos com pelo menos X unidades vendidas pelo fornecedor nos últimos 30 dias.
+        </p>
+      </div>
+    ),
+    'vendas-promo': () => (
+      <div className="px-1">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="whitespace-nowrap text-xs text-muted-foreground">Mín. vendas</span>
+          <DebouncedPriceInput
+            value={filters.minPromoSales90d || ''}
+            onChange={(v) => onFilterChange({ ...filters, minPromoSales90d: v })}
+            fallback={0}
+            placeholder="Ex: 100"
+            min={0}
+            className={filters.minPromoSales90d > 0 ? 'border-brand-primary/60' : ''}
+          />
+          <span className="text-xs text-muted-foreground">un./90d</span>
+        </div>
+        <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+          Filtra produtos com pelo menos X unidades em pedidos fechados nos últimos 90 dias.
+        </p>
+      </div>
+    ),
     publico: () => (
       <PublicoFilter
         filters={filters}
