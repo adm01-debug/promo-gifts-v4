@@ -99,6 +99,7 @@ interface RawProduct {
   readonly name: string;
   readonly sku: string | null;
   readonly primary_image_url: string | null;
+  readonly set_image_url?: string | null;
   readonly images: string[] | null;
   readonly sale_price: number | null;
   readonly category_id: string | null;
