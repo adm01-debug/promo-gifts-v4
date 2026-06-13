@@ -82,10 +82,6 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
             <Skeleton className="h-8 w-full" />
           </div>
 
-          {/* CTA */}
-          <div className="mt-auto pt-2">
-            <Skeleton className="h-8 w-full rounded-md" />
-          </div>
         </div>
       </CardContent>
     </Card>
