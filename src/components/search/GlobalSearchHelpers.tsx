@@ -141,17 +141,17 @@ export function NavCard({
       value={action.title}
       onSelect={() => onSelect(action.href)}
       className={cn(
-        'group flex cursor-pointer items-start gap-3 rounded-xl border p-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1 transition-all',
+        'group flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1 transition-all',
         paletteItemStateClass,
-        '[background-color:hsl(var(--command-surface-raised)/0.5)] [border-color:hsl(var(--command-border))] hover:[background-color:hsl(var(--command-surface-raised))] hover:[border-color:hsl(var(--command-border-strong))]',
+        '[background-color:hsl(var(--command-surface-raised)/0.72)] [border-color:hsl(var(--command-border))] hover:-translate-y-0.5 hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]',
       )}
       style={staggerStyle(index, 200)}
     >
       <div
         className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors',
           isHighlight
-            ? 'bg-primary/10 text-primary'
+            ? 'bg-primary/12 text-primary'
             : '[background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))] group-hover:text-foreground',
         )}
       >
