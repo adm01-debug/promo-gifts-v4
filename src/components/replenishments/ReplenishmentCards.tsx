@@ -17,7 +17,7 @@ import {
   GitCompare,
   Eye,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
