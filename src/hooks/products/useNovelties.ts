@@ -9,6 +9,19 @@ const NOVELTY_SELECT =
   'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
 
 /**
+ * Filtros de qualidade aplicados a TODOS os hooks de novidades.
+ * Garante consistência com a pipeline DB (product_novelties):
+ * - is_stockout=false  → produto em stockout não é novidade
+ * - sale_price > 0     → produto sem preço não aparece como novidade
+ * - primary_image_url  → produto sem imagem não aparece como novidade
+ */
+const applyNoveltyQualityFilters = (query: ReturnType<typeof fromTable>) =>
+  query
+    .eq('is_stockout', false)
+    .not('primary_image_url', 'is', null)
+    .gt('sale_price', 0);
+
+/**
  * MOCK DATA para visualização quando o banco está vazio
  */
 const MOCK_CATEGORIES = [
@@ -39,7 +52,7 @@ const MOCK_PRODUCTS: RawProduct[] = [
     sale_price: 299.9,
     category_id: 'cat-1',
     supplier_id: 'sup-1',
-    created_at: getMockDate(0), // Hoje
+    created_at: getMockDate(0),
     stock_quantity: 45,
     min_quantity: 10,
   },
@@ -51,7 +64,7 @@ const MOCK_PRODUCTS: RawProduct[] = [
     sale_price: 89.0,
     category_id: 'cat-2',
     supplier_id: 'sup-2',
-    created_at: getMockDate(2), // 2 dias atrás (Últimos 7 dias)
+    created_at: getMockDate(2),
     stock_quantity: 5,
     min_quantity: 15,
   },
@@ -63,7 +76,7 @@ const MOCK_PRODUCTS: RawProduct[] = [
     sale_price: 124.5,
     category_id: 'cat-4',
     supplier_id: 'sup-3',
-    created_at: getMockDate(5), // 5 dias atrás (Últimos 7 dias)
+    created_at: getMockDate(5),
     stock_quantity: 120,
     min_quantity: 20,
   },
@@ -75,7 +88,7 @@ const MOCK_PRODUCTS: RawProduct[] = [
     sale_price: 450.0,
     category_id: 'cat-1',
     supplier_id: 'sup-1',
-    created_at: getMockDate(12), // 12 dias atrás (Últimos 15 dias)
+    created_at: getMockDate(12),
     stock_quantity: 0,
     min_quantity: 5,
   },
@@ -87,7 +100,7 @@ const MOCK_PRODUCTS: RawProduct[] = [
     sale_price: 45.0,
     category_id: 'cat-2',
     supplier_id: 'sup-2',
-    created_at: getMockDate(25), // 25 dias atrás (Expira logo)
+    created_at: getMockDate(25),
     stock_quantity: 300,
     min_quantity: 50,
   },
@@ -187,7 +200,6 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const categoryIds = [...new Set(novelties.map((n) => n.category_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
-  // Fallback para mock se os IDs forem do mock
   const isMock = novelties.some((n) => n.product_id.startsWith('mock-'));
 
   const [catRecords, supRecords] = await Promise.all([
@@ -270,7 +282,8 @@ export interface UseNoveltiesOptions {
 }
 
 /**
- * Hook para buscar novidades — produtos adicionados nos últimos 30 dias (banco externo)
+ * Hook para buscar novidades — produtos adicionados nos últimos 30 dias.
+ * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
   const { limit = 100, onlyHighlighted = false } = options;
@@ -280,9 +293,11 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { data, error } = await fromTable('products')
-        .select(NOVELTY_SELECT)
-        .eq('is_active', true)
+      const baseQuery = applyNoveltyQualityFilters(
+        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
+      );
+
+      const { data, error } = await baseQuery
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .range(0, limit - 1);
@@ -290,7 +305,6 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
 
       let records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
 
-      // Fallback para MOCK se o banco estiver vazio
       if (records.length === 0) {
         records = MOCK_PRODUCTS;
       }
@@ -301,7 +315,6 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         novelties = novelties.filter((n) => n.is_highlighted);
       }
 
-      // Enriquecer com nomes de categoria e fornecedor
       return enrichNovelties(novelties);
     },
     staleTime: 2 * 60 * 1000,
@@ -310,18 +323,20 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
 }
 
 /**
- * Hook para buscar novidades expirando em breve (≤ maxDays restantes)
+ * Hook para buscar novidades expirando em breve (≤ maxDays restantes).
+ * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useExpiringNovelties(maxDays: number = 7) {
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['expiring-novelties', maxDays],
     queryFn: async () => {
-      // Buscar todas as novidades dos últimos 30 dias
       const cutoff = getCutoffDate();
 
-      const { data, error } = await fromTable('products')
-        .select(NOVELTY_SELECT)
-        .eq('is_active', true)
+      const baseQuery = applyNoveltyQualityFilters(
+        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
+      );
+
+      const { data, error } = await baseQuery
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true })
         .range(0, 199);
@@ -339,22 +354,18 @@ export function useExpiringNovelties(maxDays: number = 7) {
 
 /**
  * Hook para estatísticas de novidades — contagens 100% server-side, sem limite artificial.
- *
- * Estratégia: 6 queries HEAD em paralelo (zero dados transferidos, só o count volta)
- * + 1 query leve de supplier_id para calcular top fornecedor.
- * Elimina o antigo .range(0,499) que travava "Últimos 15 Dias" e "Novidades Ativas" em 500.
+ * Filtros de qualidade aplicados: is_stockout=false, sale_price>0, primary_image_url IS NOT NULL.
+ * Alinha os counts do frontend com a pipeline DB (product_novelties).
  */
 export function useNoveltyStats() {
   return useQuery<NoveltyStatsDisplay>({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
-      // Datas em horário local (consistente com comportamento anterior dos cards)
       const todayStart        = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const weekStart         = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).toISOString();
       const fifteenStart      = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14).toISOString();
-      const thirtyStart       = getCutoffDate(); // 30 dias atrás
-      // Expirando em breve = criados há mais de 23 dias (≤ 7 dias restantes)
+      const thirtyStart       = getCutoffDate();
       const expiringSoonCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 23).toISOString();
 
       const emptyStats: NoveltyStatsDisplay = {
@@ -370,8 +381,12 @@ export function useNoveltyStats() {
         topSupplierCount: 0,
       };
 
-      // Todas as contagens em paralelo — server-side, sem limite artificial.
-      // { count: 'exact', head: true } = HEAD request: devolve só o número, zero linhas.
+      // Helper: query base com filtros de qualidade para HEAD counts
+      const qualityBase = () =>
+        applyNoveltyQualityFilters(
+          fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        );
+
       const [
         todayRes,
         weekRes,
@@ -381,41 +396,22 @@ export function useNoveltyStats() {
         totalRes,
         supplierRes,
       ] = await Promise.all([
-        // Chegaram hoje
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .gte('created_at', todayStart),
-        // Últimos 7 dias (hoje + 6 dias anteriores)
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .gte('created_at', weekStart),
+        // Chegaram hoje (com filtros de qualidade)
+        qualityBase().gte('created_at', todayStart),
+        // Últimos 7 dias
+        qualityBase().gte('created_at', weekStart),
         // Últimos 15 dias
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .gte('created_at', fifteenStart),
+        qualityBase().gte('created_at', fifteenStart),
         // Novidades ativas (últimos 30 dias)
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .gte('created_at', thirtyStart),
-        // Expirando em breve (criados há > 23 dias, dentro da janela de 30)
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .gte('created_at', thirtyStart)
-          .lt('created_at', expiringSoonCutoff),
-        // Total do catálogo ativo
-        fromTable('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true),
-        // supplier_id para calcular top fornecedor (só UUID — muito leve, sem limite)
-        fromTable('products')
-          .select('supplier_id')
-          .eq('is_active', true)
-          .gte('created_at', thirtyStart),
+        qualityBase().gte('created_at', thirtyStart),
+        // Expirando em breve
+        qualityBase().gte('created_at', thirtyStart).lt('created_at', expiringSoonCutoff),
+        // Total do catálogo ativo (sem filtros de qualidade — denominador real)
+        fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        // supplier_id para top fornecedor (com filtros de qualidade)
+        applyNoveltyQualityFilters(
+          fromTable('products').select('supplier_id').eq('is_active', true),
+        ).gte('created_at', thirtyStart),
       ]);
 
       if (todayRes.error)   { handleQueryError('useNovelties', 'products', todayRes.error);   return emptyStats; }
@@ -431,7 +427,6 @@ export function useNoveltyStats() {
       const expiringSoon      = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
       const totalProducts     = totalRes.count     ?? 0;
 
-      // Fallback para MOCK se o banco estiver vazio
       if (activeCount === 0 && totalProducts === 0) {
         const mockNovelties = MOCK_PRODUCTS.map((p) => ({
           daysRemaining: calcDaysRemaining(p.created_at),
@@ -453,7 +448,6 @@ export function useNoveltyStats() {
         };
       }
 
-      // Calcular top supplier a partir dos dados de supplier_id (sem limite de linhas)
       const supplierRows = (!supplierRes.error && supplierRes.data)
         ? (supplierRes.data as unknown as { supplier_id: string | null }[])
         : [];
@@ -474,7 +468,6 @@ export function useNoveltyStats() {
         }
       }
 
-      // Resolver nome do top supplier
       let topSupplierName: string | null = null;
       if (topSupplierId) {
         if (topSupplierId.startsWith('sup-')) {
@@ -513,7 +506,8 @@ export function useNoveltyStats() {
 }
 
 /**
- * Hook para buscar novidades via interface simplificada (compatível com NoveltiesSection)
+ * Hook para buscar novidades via interface simplificada.
+ * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNovelties(
   options: UseNoveltiesOptions & { supplierCode?: string; maxDays?: number } = {},
@@ -527,7 +521,6 @@ export function useNovelties(
       let supplierId: string | undefined;
 
       if (supplierCode) {
-        // Precisa buscar o supplier_id pelo code
         const { data: supData, error: supError } = await fromTable('suppliers')
           .select('id')
           .eq('code', supplierCode)
@@ -538,9 +531,9 @@ export function useNovelties(
         }
       }
 
-      let query = fromTable('products')
-        .select(NOVELTY_SELECT)
-        .eq('is_active', true)
+      let query = applyNoveltyQualityFilters(
+        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
+      )
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .range(0, limit - 1);
@@ -568,7 +561,8 @@ export function useNovelties(
 }
 
 /**
- * Hook para contar total de novidades ativas
+ * Hook para contar total de novidades ativas.
+ * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNoveltyCount() {
   return useQuery<number>({
@@ -576,9 +570,9 @@ export function useNoveltyCount() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { count, error } = await fromTable('products')
-        .select('id', { count: 'exact' })
-        .eq('is_active', true)
+      const { count, error } = await applyNoveltyQualityFilters(
+        fromTable('products').select('id', { count: 'exact' }).eq('is_active', true),
+      )
         .gte('created_at', cutoff)
         .range(0, 0);
       if (error) {
@@ -594,16 +588,18 @@ export function useNoveltyCount() {
 }
 
 /**
- * Verifica se um produto específico é novidade
+ * Verifica se um produto específico é novidade.
+ * Respeita os filtros de qualidade: o produto deve estar ativo,
+ * não ser stockout, ter imagem e ter preço definido.
  */
 export function useIsProductNovelty(productId: string) {
   return useQuery<{ isNovelty: boolean; daysRemaining: number | null }>({
     queryKey: ['is-novelty', productId],
     queryFn: async () => {
-      const { data, error } = await fromTable('products')
-        .select('id, created_at')
+      const { data, error } = await applyNoveltyQualityFilters(
+        fromTable('products').select('id, created_at').eq('is_active', true),
+      )
         .eq('id', productId)
-        .eq('is_active', true)
         .range(0, 0);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
@@ -627,8 +623,9 @@ export function useIsProductNovelty(productId: string) {
 }
 
 /**
- * Hook para buscar IDs de produtos que são novidades (para batch checking de badges).
- * Range aumentado para 1999 para cobrir o catálogo atual (~1100 produtos em 30 dias).
+ * Hook para buscar IDs de produtos que são novidades (batch checking de badges).
+ * Aplica filtros de qualidade: exclui stockout, sem imagem e sem preço.
+ * Alinha o badge do card com o que a pipeline DB considera novidade.
  */
 export function useNoveltyProductIds() {
   return useQuery<Set<string>>({
@@ -636,9 +633,9 @@ export function useNoveltyProductIds() {
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
-      const { data, error } = await fromTable('products')
-        .select('id')
-        .eq('is_active', true)
+      const { data, error } = await applyNoveltyQualityFilters(
+        fromTable('products').select('id').eq('is_active', true),
+      )
         .gte('created_at', cutoff)
         .range(0, 1999);
       if (error) {
