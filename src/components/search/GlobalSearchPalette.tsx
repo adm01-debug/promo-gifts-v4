@@ -194,17 +194,23 @@ export function GlobalSearchPalette() {
       )}
 
       {/* ── Command Dialog ── */}
-      <CommandDialog open={s.open} onOpenChange={s.setOpen}>
-        <div className="relative">
+      <CommandDialog
+        open={s.open}
+        onOpenChange={s.setOpen}
+        dialogTitle="Busca global"
+        contentClassName="top-[12%] max-w-[760px] translate-y-0 border border-[hsl(var(--command-border))] !rounded-xl bg-[hsl(var(--command-surface))] shadow-[0_36px_120px_hsl(var(--command-shadow)),0_0_0_1px_hsl(var(--command-border-strong)/0.25)] data-[state=open]:slide-in-from-top-6 data-[state=closed]:slide-out-to-top-6"
+      >
+        <div className="relative border-b [border-color:hsl(var(--command-border))]">
           <CommandInput
-            placeholder="Buscar produtos, orçamentos, clientes..."
+            placeholder="Buscar produtos, orçamentos ou clientes..."
             value={s.query}
             onValueChange={s.setQuery}
+            className="h-14 text-[15px] font-medium placeholder:[color:hsl(var(--command-text-subtle))]"
           />
-          <div className="absolute bottom-0 left-6 right-6 h-[2px] rounded-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+          <div className="absolute bottom-0 left-5 right-5 h-px bg-primary/40" />
         </div>
 
-        <CommandList className="scrollbar-thin max-h-[520px] px-1 [background-color:hsl(var(--command-surface))]">
+        <CommandList className="scrollbar-thin max-h-[560px] px-2 py-2 [background-color:hsl(var(--command-surface))]">
           {/* Search error banner */}
           {s.searchError && !s.isSearching && (
             <div className="mx-2 mt-3 flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 duration-300 animate-in fade-in-0 slide-in-from-top-2">
@@ -460,8 +466,8 @@ export function GlobalSearchPalette() {
         </CommandList>
 
         {/* Premium Footer — Carbon Sleek keycaps */}
-        <div className="flex select-none items-center gap-5 border-t px-5 py-3 [background-color:hsl(var(--command-surface-raised)/0.4)] [border-color:hsl(var(--command-border))]">
-          <div className="flex flex-1 items-center gap-4 text-[11px] [color:hsl(var(--command-text-subtle))]">
+        <div className="flex select-none items-center gap-5 border-t px-5 py-3 [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
+          <div className="flex flex-1 flex-wrap items-center gap-x-5 gap-y-2 text-[11px] [color:hsl(var(--command-text-subtle))]">
             <span className="inline-flex items-center gap-1.5">
               <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
                 ↵
