@@ -736,6 +736,18 @@ export function useFiltersPageState() {
     }
     if (filters.minStock > 0)
       summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
+    if (filters.minSupplierSales30d > 0)
+      summary.push({
+        label: 'Vendas Forn. 30d',
+        value: `≥ ${filters.minSupplierSales30d} un.`,
+        key: 'minSupplierSales30d',
+      });
+    if (filters.minPromoSales90d > 0)
+      summary.push({
+        label: 'Vendas Promo 90d',
+        value: `≥ ${filters.minPromoSales90d} un.`,
+        key: 'minPromoSales90d',
+      });
     if (filters.inStock) summary.push({ label: 'Em estoque', value: 'Sim', key: 'inStock' });
     if (filters.isKit) summary.push({ label: 'Kit', value: 'Sim', key: 'isKit' });
     if (filters.featured) summary.push({ label: 'Destaque', value: 'Sim', key: 'featured' });
