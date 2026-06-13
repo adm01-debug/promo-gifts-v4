@@ -48,16 +48,20 @@ function formatPrice(price: number): string {
  * cards estreitos (ex: 7624 → "7,6 mil"; 1_250_000 → "1,2 mi").
  */
 function formatStockQty(qty: number): string {
-  if (qty >= 1_000_000) {
-    return `${(qty / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  if (!Number.isFinite(qty) || qty < 0) return '0';
+  const q = Math.floor(qty);
+  if (q >= 1_000_000) {
+    return `${(q / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
   }
-  if (qty >= 10_000) {
-    return `${Math.round(qty / 1000).toLocaleString('pt-BR')} mil`;
+  // Promove para "mi" quando arredondamento estouraria para 1000 mil
+  if (q >= 950_000) return '1 mi';
+  if (q >= 10_000) {
+    return `${Math.round(q / 1000).toLocaleString('pt-BR')} mil`;
   }
-  if (qty >= 1_000) {
-    return `${(qty / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  if (q >= 1_000) {
+    return `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
   }
-  return qty.toLocaleString('pt-BR');
+  return q.toLocaleString('pt-BR');
 }
 
 const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobileIcon: string }> =
