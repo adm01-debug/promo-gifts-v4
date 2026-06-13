@@ -398,8 +398,8 @@ export function ProductDetailHero({
                   variant="button"
                   buttonSize="lg"
                   className="xl:h-13 font-action-button h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-primary text-[0.875rem] text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                  labelOverride="Personalizar"
-                  iconOverride="plus"
+                  labelOverride="Carrinho"
+                  iconOverride="cart"
                 />
                 <Button
                   size="lg"
