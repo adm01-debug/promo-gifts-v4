@@ -241,7 +241,7 @@ export const ProductSparkline = memo(function ProductSparkline({
             {/* Metrics grid */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 px-3 py-2">
               <TooltipMetric
-                label="Saídas 30d"
+                label="Saídas 90d"
                 value={`${summary.totalSales.toLocaleString('pt-BR')} un`}
               />
               <TooltipMetric
