@@ -25,6 +25,7 @@ export function VirtualizedReplenishmentGrid({
   onToggleSelect,
   onProductClick,
   colorsByProduct,
+  topSupplierName,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
