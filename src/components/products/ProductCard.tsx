@@ -665,11 +665,6 @@ export const ProductCard = memo(
 
           {(() => {
             const hasUserSelectedColor = !!selectedColorFromStore;
-            // Carrega variantes do produto SÓ quando o usuário clicou em uma bolinha de cor
-            // (evita N requisições no grid). Restrito a este card.
-            const { data: liveVariants } = useExternalVariantStock(
-              hasUserSelectedColor ? product.id : undefined,
-            );
             const liveMatch =
               hasUserSelectedColor && activeColorName && liveVariants?.length
                 ? liveVariants.find(
