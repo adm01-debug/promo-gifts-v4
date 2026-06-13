@@ -372,7 +372,7 @@ export function ReplenishmentTableView({
                       <img
                         src={product.product_image}
                         alt={`Foto de ${product.product_name}`}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         loading="lazy"
                         decoding="async"
                       />
