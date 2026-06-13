@@ -136,3 +136,45 @@ html[data-preset-id="diversity"] [class~="group-[.toast]:bg-primary"] {
 html[data-preset-id="diversity"] [class*="before:bg-primary"][class~="text-white"] {
   color: hsl(var(--primary));
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * FIX-01/02/03 — Gradientes SÓLIDOS → rainbow FULL (não sutil)
+ *
+ * PROBLEMA DETECTADO em QA exaustiva:
+ *   Rules 3-5 usam [class*="from/via/to-primary"] (substring) e aplicam
+ *   --_rb-h (rainbow 14% opacity) a TODOS os elementos — incluindo
+ *   progress bars, badges, wizard steppers, floating buttons que usam
+ *   gradientes SÓLIDOS (from-primary, via-primary, to-primary sem slash).
+ *   Resultado: esses elementos ficavam visualmente apagados.
+ *
+ * FIX: [class~="X"] = token whitespace match EXATO.
+ *   Captura 'from-primary' mas NÃO 'from-primary/12', NÃO 'hover:from-primary'.
+ *   Colocado APÓS rules 3-5 na cascade → vence por source order (mesma spec).
+ *
+ * Elementos agora com rainbow FULL:
+ *   from-primary (sólido): ProductStatusBadge, PromoFlixPlayer, HorizontalStepper,
+ *     StockDashboard, WizardSteps, BulkVariantWizard, MockupWizard,
+ *     ExpertChatButton (FAB), SuccessCelebration, GenerateButton
+ *   via-primary (sólido): WizardSteps, ConfirmedSummary (header),
+ *     WizardStepIndicator, FiltersPage progress bar
+ *   to-primary (sólido): NoveltyProductGrid, ReplenishmentProductGrid,
+ *     MockupResultCard shimmer, TechniqueTooltip
+ *
+ * Elementos que PERMANECEM com rainbow sutil (--_rb-h):
+ *   from-primary/N:  BulkSelectionBar (/15), Search idle icons (/12),
+ *                    GlobalSearchPalette cards (/12,/25), bi radars (/5,/10)
+ *   via-primary/N:   GlobalSearchPalette divider (/30,/[0.05])
+ *   to-primary/N:    gradient ends fracionados (/70,/80,/90)
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-preset-id="diversity"] [class~="from-primary"] {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [class~="via-primary"] {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [class~="to-primary"] {
+  background: var(--_rb);
+}
