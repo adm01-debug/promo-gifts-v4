@@ -23,6 +23,7 @@ import { ReplenishmentToolbar } from './ReplenishmentToolbar';
 import { getGridColsClass, getGridGapClass } from './grid-layout';
 import { VirtualizedReplenishmentGrid } from './VirtualizedReplenishmentGrid';
 import { VirtualizedReplenishmentList } from './VirtualizedReplenishmentList';
+import { ReplenishmentCardSkeleton } from './ReplenishmentCardSkeleton';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 type ViewMode = 'grid' | 'list' | 'table';
