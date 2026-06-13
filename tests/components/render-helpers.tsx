@@ -161,6 +161,23 @@ vi.mock("react-hot-toast", () => ({
   }),
 }));
 
+// --- Collections context mock (cards renderizam ProductQuickActionsFAB → AddToCollectionModal) ---
+vi.mock("@/components/collections/AddToCollectionModal", () => ({
+  AddToCollectionModal: () => null,
+}));
+vi.mock("@/contexts/CollectionsContext", () => ({
+  useCollectionsContext: () => ({
+    collections: [],
+    activeCollection: null,
+    loading: false,
+    addToCollection: vi.fn(),
+    removeFromCollection: vi.fn(),
+    createCollection: vi.fn(),
+    setActiveCollection: vi.fn(),
+  }),
+  CollectionsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 export function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {
