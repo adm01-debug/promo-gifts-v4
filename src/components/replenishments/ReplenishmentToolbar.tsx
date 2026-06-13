@@ -99,17 +99,17 @@ export function ReplenishmentToolbar({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <RefreshCw className="h-4 w-4 shrink-0 text-info" aria-hidden="true" />
+          <RefreshCw className="h-[18px] w-[18px] shrink-0 text-info" aria-hidden="true" />
           <div className="flex flex-col">
-            <h2 className="whitespace-nowrap text-base font-semibold sm:text-lg">Reposição</h2>
-            <p className="hidden text-[10px] text-muted-foreground lg:block">
+            <h2 className="whitespace-nowrap text-[17px] font-semibold sm:text-[20px]">Reposição</h2>
+            <p className="hidden text-[11px] text-muted-foreground lg:block">
               Produtos repostos nos últimos 30 dias
             </p>
           </div>
-          <Badge variant="secondary" className="shrink-0 px-1.5 text-[10px] tabular-nums">
+          <Badge variant="secondary" className="shrink-0 px-1.5 text-[11px] tabular-nums">
             {isLoading && totalCount === 0 ? (
               <span className="flex items-center gap-1">
-                <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 carregando…
               </span>
             ) : (
@@ -124,12 +124,12 @@ export function ReplenishmentToolbar({
             {isLoading && loadingProgress > 0 && loadingProgress < 100 && (
               <motion.span
                 initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 48 }}
+                animate={{ opacity: 1, width: 53 }}
                 exit={{ opacity: 0, width: 0 }}
                 className="ml-1 inline-flex items-center gap-1"
               >
                 <span
-                  className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle"
+                  className="inline-block h-1 w-[53px] overflow-hidden rounded-full bg-muted/50 align-middle"
                   aria-hidden="true"
                 >
                   <motion.span
@@ -139,7 +139,7 @@ export function ReplenishmentToolbar({
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                   />
                 </span>
-                <span className="text-[10px] tabular-nums text-muted-foreground/60">
+                <span className="text-[11px] tabular-nums text-muted-foreground/60">
                   {Math.round(loadingProgress)}%
                 </span>
               </motion.span>
@@ -147,7 +147,7 @@ export function ReplenishmentToolbar({
           </AnimatePresence>
 
           {/* Desktop Search */}
-          <div className="hidden w-80 sm:block lg:w-[25rem]">
+          <div className="hidden w-[352px] sm:block lg:w-[27.5rem]">
             <SearchInput
               value={searchQuery}
               onChange={onSearchChange}
@@ -156,18 +156,19 @@ export function ReplenishmentToolbar({
           </div>
         </div>
 
+
         <Button
           variant={selectionMode ? 'default' : 'outline'}
           size="sm"
           className={cn(
-            'h-8 shrink-0 gap-1.5 text-xs transition-all',
+            'h-9 shrink-0 gap-1.5 text-[13px] transition-all',
             selectionMode &&
               'bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]',
           )}
           onClick={onToggleSelectionMode}
           aria-pressed={selectionMode}
         >
-          <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
+          <CheckSquare className="h-4 w-4" aria-hidden="true" />
           <span className="hidden sm:inline">{selectionMode ? 'Cancelar' : 'Selecionar'}</span>
         </Button>
         <LayoutPopover
@@ -195,10 +196,10 @@ export function ReplenishmentToolbar({
       >
         <Select value={selectedSupplier} onValueChange={onSupplierChange}>
           <SelectTrigger
-            className="h-7 w-[160px] gap-1 text-[11px]"
+            className="h-8 w-[176px] gap-1 text-[12px]"
             aria-label="Filtrar por fornecedor"
           >
-            <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <SelectValue placeholder="Fornecedor" />
           </SelectTrigger>
           <SelectContent>
@@ -213,10 +214,10 @@ export function ReplenishmentToolbar({
 
         <Select value={selectedCategory} onValueChange={onCategoryChange}>
           <SelectTrigger
-            className="h-7 w-[160px] gap-1 text-[11px]"
+            className="h-8 w-[176px] gap-1 text-[12px]"
             aria-label="Filtrar por categoria"
           >
-            <FolderTree className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -230,8 +231,8 @@ export function ReplenishmentToolbar({
         </Select>
 
         <Select value={sortMode} onValueChange={(v) => onSortChange(v as SortMode)}>
-          <SelectTrigger className="h-7 w-[180px] gap-1 text-[11px]" aria-label="Ordenar produtos">
-            <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+          <SelectTrigger className="h-8 w-[198px] gap-1 text-[12px]" aria-label="Ordenar produtos">
+            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -247,15 +248,16 @@ export function ReplenishmentToolbar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+            className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground"
             onClick={onClearFilters}
             aria-label="Limpar todos os filtros"
           >
-            <X className="mr-0.5 h-3 w-3" aria-hidden="true" />
+            <X className="mr-0.5 h-3.5 w-3.5" aria-hidden="true" />
             Limpar
           </Button>
         )}
       </div>
+
 
       {/* Active Filter Chips */}
       {hasActiveFilters && (
@@ -317,14 +319,14 @@ function SearchInput({
   return (
     <div className="relative flex-1">
       <Search
-        className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+        className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden="true"
       />
       <Input
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 border-border/50 bg-muted/40 pl-8 text-xs focus:bg-background"
+        className="h-9 border-border/50 bg-muted/40 pl-8 text-[13px] focus:bg-background"
         aria-label="Buscar reposições"
       />
       {value && (
@@ -334,9 +336,10 @@ function SearchInput({
           aria-label="Limpar busca"
           type="button"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
+
     </div>
   );
 }
