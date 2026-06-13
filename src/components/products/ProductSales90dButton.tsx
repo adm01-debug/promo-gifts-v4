@@ -26,7 +26,7 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
   className,
 }: ProductSales90dButtonProps) {
   const data = useSparklineData(productId);
-  const hasData = !!data && data.totalQty > 0;
+  const hasSales = !!data && data.totalQty > 0;
 
   const summary = useMemo(() => {
     const pts = data?.dailyQty ?? [];
