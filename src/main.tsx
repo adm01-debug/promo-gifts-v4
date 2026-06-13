@@ -12,6 +12,7 @@ import App from './App.tsx';
 import './index.css';
 import './styles/brand-tokens.css';
 import './styles/missing-root-tokens.css';
+import './styles/diversity-overrides.css';
 
 validateSupabaseConfig();
 initSentry();

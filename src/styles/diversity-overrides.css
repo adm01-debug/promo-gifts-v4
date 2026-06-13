@@ -1,0 +1,90 @@
+/*
+ * diversity-overrides.css — SKIN DIVERSITY 🏳️‍🌈
+ *
+ * Aplicado exclusivamente quando a SKIN DIVERSITY está ativa.
+ *
+ * MECANISMO: applyThemePreset() estampa
+ *   document.documentElement.dataset.presetId = 'diversity'
+ *   Todos os seletores dependem desse atributo.
+ *
+ * ESPECIFICIDADE: html[data-preset-id="diversity"] → (0,2,1+)
+ *   supera qualquer utilitário Tailwind (0,1,0 a 0,2,0).
+ *   Sem !important.
+ *
+ * COBERTURA (14 touchpoints):
+ *   1.  .bg-primary            → gradient arco-íris sólido
+ *   2.  bg-primary/*           → gradient sutil (opacidades)
+ *   3.  from-primary           → gradient sutil (BulkBar, Search)
+ *   4.  via-primary            → gradient sutil (Search divider)
+ *   5.  data-state=checked     → gradient (checkbox, switch)
+ *   6.  data-state=active      → gradient (tabs)
+ *   7.  data-active=true       → gradient sutil (sidebar menu)
+ *   8.  before:bg-primary ::before → gradient (barra lateral)
+ *   9.  ring-primary           → box-shadow rainbow em camadas
+ *   10. [role=slider]          → gradient + inset (slider thumb)
+ *   11. scrollbar              → webkit gradient / Firefox pink
+ */
+
+html[data-preset-id="diversity"] {
+  --_rb: var(--gradient-primary);
+  --_rb-h: linear-gradient(
+    135deg,
+    hsl(0 85% 55% / 0.14),
+    hsl(130 70% 45% / 0.10),
+    hsl(210 80% 55% / 0.12),
+    hsl(280 80% 58% / 0.13)
+  );
+  scrollbar-color: hsl(330 85% 55% / 0.5) hsl(var(--muted) / 0.3);
+}
+
+html[data-preset-id="diversity"] .bg-primary {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [class*="bg-primary/"] {
+  background: var(--_rb-h);
+}
+
+html[data-preset-id="diversity"] [class*="from-primary"] {
+  background: var(--_rb-h);
+}
+
+html[data-preset-id="diversity"] [class*="via-primary"] {
+  background: var(--_rb-h);
+}
+
+html[data-preset-id="diversity"] [data-state="checked"] {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [data-state="active"] {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [data-active="true"] {
+  background: var(--_rb-h);
+}
+
+html[data-preset-id="diversity"] [class*="before:bg-primary"]::before {
+  background: var(--_rb);
+}
+
+html[data-preset-id="diversity"] [class*="ring-primary"] {
+  box-shadow:
+    0 0 0 2px hsl(0 85% 55%),
+    0 0 0 3.5px hsl(130 70% 45%),
+    0 0 0 5px hsl(210 80% 55%),
+    0 0 0 6.5px hsl(280 80% 58% / 0.4);
+}
+
+html[data-preset-id="diversity"] [role="slider"] {
+  background: var(--_rb);
+  border: none;
+  box-shadow: inset 0 0 0 3px hsl(var(--background));
+}
+
+html[data-preset-id="diversity"] ::-webkit-scrollbar-thumb {
+  background: var(--_rb);
+  border-radius: 100px;
+  border: 2px solid hsl(var(--background));
+}
