@@ -161,7 +161,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
     let totalQty = 0;
     const dateMap = depletedByDate[pid] || {};
 
-    for (let i = 29; i >= 0; i--) {
+    for (let i = SPARKLINE_WINDOW_DAYS - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const ds = toLocalDateStr(d);
