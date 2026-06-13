@@ -43,6 +43,7 @@ import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 import { WordMagicBadge } from '@/components/word-magic/WordMagicBadge';
+import { WordMagicButton } from '@/components/word-magic/WordMagicButton';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
@@ -643,7 +644,7 @@ export const ProductCard = memo(
               hasEnrichment={hasWordMagicEnrichment}
               isActive={isWordMagicActive}
               isGenerating={isWordMagicGenerating}
-              onClick={(e) => { e.stopPropagation(); handleWordMagicClick(); }}
+              onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleWordMagicClick(); }}
               className="h-6 w-6 min-h-[24px] min-w-[24px] md:h-7 md:w-7 md:min-h-[28px] md:min-w-[28px] shrink-0 mt-0.5"
             />
           </div>
