@@ -658,9 +658,31 @@ export const ProductCard = memo(
           <div className="flex-1" />
 
           {(() => {
+            const hasUserSelectedColor = !!selectedColorFromStore;
+            // Carrega variantes do produto SÓ quando o usuário clicou em uma bolinha de cor
+            // (evita N requisições no grid). Restrito a este card.
+            const { data: liveVariants } = useExternalVariantStock(
+              hasUserSelectedColor ? product.id : undefined,
+            );
+            const liveMatch =
+              hasUserSelectedColor && activeColorName && liveVariants?.length
+                ? liveVariants.find(
+                    (v) =>
+                      (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                  )
+                : undefined;
+            const liveStock = liveMatch?.stock_quantity ?? null;
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
-            const displayStock = colorStock?.stock ?? product.stock;
-            const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
+            const displayStock =
+              liveStock !== null ? liveStock : (colorStock?.stock ?? product.stock);
+            const displayStatus =
+              liveStock !== null
+                ? liveStock <= 0
+                  ? 'out-of-stock'
+                  : liveStock < 10
+                    ? 'low-stock'
+                    : 'in-stock'
+                : (colorStock?.stockStatus ?? product.stockStatus);
 
             return (
               <div
