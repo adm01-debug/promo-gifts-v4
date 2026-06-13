@@ -110,7 +110,9 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <Activity className="h-3.5 w-3.5" />
-              Mercado · {SPARKLINE_WINDOW_DAYS} dias
+              {isVariantScope
+                ? `Variante${variantLabel ? ` · ${variantLabel}` : ''}`
+                : `Mercado · ${SPARKLINE_WINDOW_DAYS} dias`}
             </span>
             <span className="text-sm font-bold tabular-nums text-foreground">
               {nf.format(summary.totalSales)} un
