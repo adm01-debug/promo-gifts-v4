@@ -377,25 +377,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             <ProductSparkline productId={product.product_id} />
           </div>
 
-          {/* CTA primário — aparece no hover (desktop) / sempre (mobile) */}
-          <div
-            className={cn(
-              'mt-auto pt-2 transition-opacity duration-200',
-              'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100',
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button
-              size="sm"
-              variant="default"
-              className="h-8 w-full gap-1.5 text-xs font-semibold"
-              onClick={handleAddToQuote}
-              aria-label={`Adicionar ${product.product_name} a um orçamento`}
-            >
-              <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" />
-              Adicionar a orçamento
-            </Button>
-          </div>
         </div>
 
       </CardContent>
