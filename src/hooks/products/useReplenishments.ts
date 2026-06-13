@@ -9,7 +9,7 @@ const REPLENISHMENT_WINDOW_DAYS = 30;
 const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 
 const REPLENISHMENT_SELECT =
-  'id, name, sku, primary_image_url, images, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
+  'id, name, sku, primary_image_url, set_image_url, images, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
 
 
 // ─── Date Utilities ──────────────────────────────────────────────
