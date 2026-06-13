@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { ReplenishmentStatsCards } from '@/components/replenishments/ReplenishmentStatsCards';
@@ -6,6 +7,26 @@ import { RecentReplenishmentsWidget } from '@/components/replenishments/RecentRe
 import { EnhancedErrorBoundary } from '@/components/errors/EnhancedErrorBoundary';
 
 export default function ReplenishmentsPage() {
+  const stickyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const update = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--replenishment-sticky-h', `${Math.round(h)}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+      document.documentElement.style.removeProperty('--replenishment-sticky-h');
+    };
+  }, []);
+
   return (
     <>
       <PageSEO
