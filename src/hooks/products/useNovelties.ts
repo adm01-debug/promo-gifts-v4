@@ -177,6 +177,7 @@ interface RawProduct {
   name: string;
   sku: string | null;
   primary_image_url: string | null;
+  set_image_url?: string | null;
   sale_price: number | null;
   category_id: string | null;
   supplier_id: string | null;
