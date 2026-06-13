@@ -35,7 +35,6 @@ import { sortVariationsByColor } from '@/utils/colorSorting';
 import type { ProductVariation } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
 import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
-import { WordMagicButton } from '@/components/word-magic/WordMagicButton';
 
 interface ProductDetailHeroProps {
   product: Product;
@@ -92,14 +91,7 @@ export function ProductDetailHero({
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
 
   // ── Word Magic ───────────────────────────────────────────────────────────
-  const {
-    displayName,
-    displayDescription,
-    isActive:      isWordMagicActive,
-    isGenerating:  isWordMagicGenerating,
-    hasEnrichment: hasWordMagicEnrichment,
-    handleWordMagicClick,
-  } = useWordMagic(product);
+  const { displayName, displayDescription, isAIActive, hasEnrichment } = useWordMagic(product);
 
   // Categoria-FOLHA (mais específica) + caminho raiz→folha para este produto.
   const { leafById } = useProductLeafCategories([product.id]);
@@ -231,20 +223,15 @@ export function ProductDetailHero({
           <h1
             data-testid="page-title-detalhe-produto"
             data-product-name={product.name}
-            className={cn("font-display text-lg font-bold leading-tight tracking-tight sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl", isWordMagicActive ? "text-violet-700 dark:text-violet-300" : "text-foreground")}
+            className={cn("font-display text-lg font-bold leading-tight tracking-tight sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl", isAIActive ? "text-violet-700 dark:text-violet-300" : "text-foreground")}
           >
             {displayName}
           </h1>
 
           {/* Word Magic — botão integrado no cabeçalho do produto */}
           <div className="flex items-center gap-2 flex-wrap">
-            <WordMagicButton
-              hasEnrichment={hasWordMagicEnrichment}
-              isActive={isWordMagicActive}
-              isGenerating={isWordMagicGenerating}
-              onClick={() => handleWordMagicClick()}
-            />
-            {isWordMagicActive && (
+            
+            {isAIActive && (
               <span className="flex items-center gap-1 rounded-full border border-violet-300/60 bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
                 <BookOpen className="h-3 w-3" />
                 Texto IA ativo

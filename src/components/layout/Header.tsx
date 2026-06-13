@@ -12,6 +12,7 @@ import {
   Palette,
   BookOpen,
   Tag,
+  Sparkles,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -36,6 +37,7 @@ import { useToast } from '@/hooks/ui/use-toast';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 
 import { useSearchStore } from '@/stores/useSearchStore';
+import { useWordMagicStore } from '@/stores/useWordMagicStore';
 
 import { StockAlertsIndicator } from '@/components/inventory/StockAlertsIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationDrawer';
@@ -377,6 +379,38 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 {badgesEnabled ? 'Clique para ocultar' : 'Clique para reativar'}
               </TooltipContent>
             </Tooltip>
+
+            {/* Word Magic — toggle global Nativo ↔ IA */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleGlobalAIMode}
+                  aria-label={isGlobalAIMode ? 'Desativar textos com IA' : 'Ativar textos com IA'}
+                  aria-pressed={isGlobalAIMode}
+                  className={cn(
+                    'relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-primary/10',
+                    isGlobalAIMode
+                      ? 'text-violet-600 dark:text-violet-400'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Sparkles className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                  {isGlobalAIMode && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-violet-500 ring-1 ring-background"
+                    />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isGlobalAIMode
+                  ? 'Modo IA ativo — clique para ver texto original'
+                  : 'Ativar textos melhorados por IA'}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* ── Mobile overflow menu (#8) ── */}
@@ -422,6 +456,10 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 >
                   <Tag className="mr-2 h-4 w-4" />
                   Badges: {badgesEnabled ? 'Ocultar' : 'Exibir'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={toggleGlobalAIMode} className={isGlobalAIMode ? 'text-violet-600 dark:text-violet-400' : ''}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  IA: {isGlobalAIMode ? 'Ativo — clique para desativar' : 'Ativar textos com IA'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

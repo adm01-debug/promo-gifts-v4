@@ -43,7 +43,6 @@ import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 import { WordMagicBadge } from '@/components/word-magic/WordMagicBadge';
-import { WordMagicButton } from '@/components/word-magic/WordMagicButton';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
@@ -229,13 +228,7 @@ export const ProductCard = memo(
     const addToCompare = useComparisonStore((s) => s.addToCompare);
 
     // ── Word Magic ───────────────────────────────────────────────────────────
-    const {
-      displayName,
-      isActive:       isWordMagicActive,
-      isGenerating:   isWordMagicGenerating,
-      hasEnrichment:  hasWordMagicEnrichment,
-      handleWordMagicClick,
-    } = useWordMagic(product);
+    const { displayName, isAIActive, hasEnrichment } = useWordMagic(product);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
@@ -550,7 +543,7 @@ export const ProductCard = memo(
 
 
         {/* Word Magic Badge — visível quando AI está ativa */}
-        <WordMagicBadge visible={isWordMagicActive} />
+        <WordMagicBadge visible={isAIActive} />
 
         {/* Quick Actions FAB */}
         {(() => {
@@ -631,23 +624,13 @@ export const ProductCard = memo(
             </span>
           </div>
 
-          {/* Word Magic — botão fixo, sempre visível no card */}
-          <div className="flex items-start gap-1.5">
-            <h3
-              data-testid="product-card-name"
-              data-product-name={product.name}
-              className={cn("flex-1 line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isWordMagicActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
-            >
-              {displayName}
-            </h3>
-            <WordMagicButton
-              hasEnrichment={hasWordMagicEnrichment}
-              isActive={isWordMagicActive}
-              isGenerating={isWordMagicGenerating}
-              onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleWordMagicClick(); }}
-              className="h-6 w-6 min-h-[24px] min-w-[24px] md:h-7 md:w-7 md:min-h-[28px] md:min-w-[28px] shrink-0 mt-0.5"
-            />
-          </div>
+          <h3
+            data-testid="product-card-name"
+            data-product-name={product.name}
+            className={cn("line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isAIActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
+          >
+            {displayName}
+          </h3>
 
           <ProductColorSwatches
             colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
