@@ -97,6 +97,8 @@ export const defaultFilters: FilterState = {
   tags: [],
   priceRange: [0, 9999],
   minStock: 0,
+  minSupplierSales30d: 0,
+  minPromoSales90d: 0,
   inStock: false,
   isKit: false,
   featured: false,
