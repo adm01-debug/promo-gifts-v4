@@ -57,7 +57,7 @@ export function RankBadge({ index }: { index: number }) {
     );
   if (index === 1)
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[inset_0_1px_0_hsl(var(--command-border)/0.4)] [background-color:hsl(var(--command-surface-soft))] [border-color:hsl(var(--command-border-strong))]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[inset_0_1px_0_hsl(var(--command-border))] [background-color:hsl(var(--command-surface-soft))] [border-color:hsl(var(--command-border-strong))]">
         <Medal className="h-4 w-4 [color:hsl(var(--command-text-muted))]" />
       </div>
     );
@@ -143,7 +143,7 @@ export function NavCard({
       className={cn(
         'group flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-3 duration-200 animate-in fade-in-0 slide-in-from-bottom-1 transition-all',
         paletteItemStateClass,
-        '[background-color:hsl(var(--command-surface-raised)/0.72)] [border-color:hsl(var(--command-border))] hover:-translate-y-0.5 hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]',
+        '[background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))] hover:-translate-y-0.5 hover:[background-color:hsl(var(--command-surface-soft))] hover:[border-color:hsl(var(--command-border-strong))]',
       )}
       style={staggerStyle(index, 200)}
     >
