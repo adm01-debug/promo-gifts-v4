@@ -91,7 +91,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
   if (!productIds.length) return {};
 
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 30);
+  cutoff.setDate(cutoff.getDate() - SPARKLINE_WINDOW_DAYS);
   const cutoffStr = toLocalDateStr(cutoff);
 
   const BATCH_SIZE = 50;
