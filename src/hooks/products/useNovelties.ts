@@ -23,91 +23,6 @@ const applyNoveltyQualityFilters = (query: any): any =>
     .gt('sale_price', 0);
 
 /**
- * MOCK DATA para visualização quando o banco está vazio
- */
-const MOCK_CATEGORIES = [
-  { id: 'cat-1', name: 'Eletrônicos' },
-  { id: 'cat-2', name: 'Escritório' },
-  { id: 'cat-3', name: 'Acessórios' },
-  { id: 'cat-4', name: 'Lifestyle' },
-];
-
-const MOCK_SUPPLIERS = [
-  { id: 'sup-1', name: 'Tech Gifts S.A.', code: 'TGS' },
-  { id: 'sup-2', name: 'Premium Office', code: 'POF' },
-  { id: 'sup-3', name: 'Global Merch', code: 'GME' },
-];
-
-const getMockDate = (daysAgo: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toISOString();
-};
-
-const MOCK_PRODUCTS: RawProduct[] = [
-  {
-    id: 'mock-1',
-    name: 'Smartwatch Ultra Pro X',
-    sku: 'SW-001',
-    primary_image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80',
-    sale_price: 299.9,
-    category_id: 'cat-1',
-    supplier_id: 'sup-1',
-    created_at: getMockDate(0),
-    stock_quantity: 45,
-    min_quantity: 10,
-  },
-  {
-    id: 'mock-2',
-    name: 'Caderno Moleskine Executive',
-    sku: 'NB-202',
-    primary_image_url: 'https://images.unsplash.com/photo-1544816153-0973059446d3?w=800&q=80',
-    sale_price: 89.0,
-    category_id: 'cat-2',
-    supplier_id: 'sup-2',
-    created_at: getMockDate(2),
-    stock_quantity: 5,
-    min_quantity: 15,
-  },
-  {
-    id: 'mock-3',
-    name: 'Garrafa Térmica Titanium',
-    sku: 'BT-500',
-    primary_image_url: 'https://images.unsplash.com/photo-1602143394807-a2536fe0589a?w=800&q=80',
-    sale_price: 124.5,
-    category_id: 'cat-4',
-    supplier_id: 'sup-3',
-    created_at: getMockDate(5),
-    stock_quantity: 120,
-    min_quantity: 20,
-  },
-  {
-    id: 'mock-4',
-    name: 'Fone Bluetooth Noise Cancelling',
-    sku: 'HP-99',
-    primary_image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-    sale_price: 450.0,
-    category_id: 'cat-1',
-    supplier_id: 'sup-1',
-    created_at: getMockDate(12),
-    stock_quantity: 0,
-    min_quantity: 5,
-  },
-  {
-    id: 'mock-5',
-    name: 'Kit Canetas Premium Metal',
-    sku: 'PN-05',
-    primary_image_url: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?w=800&q=80',
-    sale_price: 45.0,
-    category_id: 'cat-2',
-    supplier_id: 'sup-2',
-    created_at: getMockDate(25),
-    stock_quantity: 300,
-    min_quantity: 50,
-  },
-];
-
-/**
  * Calcula a data de corte para novidades (últimos N dias)
  */
 function getCutoffDate(days: number = NOVELTY_WINDOW_DAYS): string {
@@ -203,10 +118,8 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const categoryIds = [...new Set(novelties.map((n) => n.category_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
-  const isMock = novelties.some((n) => n.product_id.startsWith('mock-'));
-
   const [catRecords, supRecords] = await Promise.all([
-    !isMock && categoryIds.length > 0
+    categoryIds.length > 0
       ? (async () => {
           const { data, error } = await fromTable('categories')
             .select('id, name')
@@ -215,8 +128,8 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           if (error) return handleQueryError('useNovelties', 'categories', error);
           return (data ?? []) as unknown as CategoryRecord[];
         })()
-      : Promise.resolve(isMock ? MOCK_CATEGORIES : ([] as CategoryRecord[])),
-    !isMock && supplierIds.length > 0
+      : Promise.resolve([] as CategoryRecord[]),
+    supplierIds.length > 0
       ? (async () => {
           const { data, error } = await fromTable('suppliers')
             .select('id, name, code')
@@ -225,7 +138,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           if (error) return handleQueryError('useNovelties', 'suppliers', error);
           return (data ?? []) as unknown as SupplierRecord[];
         })()
-      : Promise.resolve(isMock ? MOCK_SUPPLIERS : ([] as SupplierRecord[])),
+      : Promise.resolve([] as SupplierRecord[]),
   ]);
 
   const catMap = new Map(catRecords.map((c) => [c.id, c.name]));
@@ -304,14 +217,11 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
       const { data, error } = await baseQuery
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
         .range(0, limit - 1);
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      let records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
-
-      if (records.length === 0) {
-        records = MOCK_PRODUCTS;
-      }
+      const records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
 
       let novelties = records.map(toNovelty).filter((n) => n.is_active);
 
@@ -343,6 +253,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
       const { data, error } = await baseQuery
         .gte('created_at', cutoff)
         .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
         .range(0, 199);
       if (error) return handleQueryError('useNovelties', 'products', error);
 
@@ -431,27 +342,6 @@ export function useNoveltyStats() {
       const expiringSoon      = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
       const totalProducts     = totalRes.count     ?? 0;
 
-      if (activeCount === 0 && totalProducts === 0) {
-        const mockNovelties = MOCK_PRODUCTS.map((p) => ({
-          daysRemaining: calcDaysRemaining(p.created_at),
-          supplierId: p.supplier_id,
-        }));
-        const mockActive = mockNovelties.filter((n) => n.daysRemaining > 0);
-        const mockTotal = MOCK_PRODUCTS.length + 50;
-        return {
-          totalNovelties: mockActive.length,
-          activeNovelties: mockActive.length,
-          expiringSoon: mockActive.filter((n) => n.daysRemaining <= 7).length,
-          totalProducts: mockTotal,
-          noveltyRate: Math.round((mockActive.length / mockTotal) * 100),
-          arrivedToday: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS).length,
-          arrivedThisWeek: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS - 6).length,
-          arrivedLast15Days: mockActive.filter((n) => n.daysRemaining >= NOVELTY_WINDOW_DAYS - 14).length,
-          topSupplierName: MOCK_SUPPLIERS[0].name,
-          topSupplierCount: 2,
-        };
-      }
-
       const supplierRows = (!supplierRes.error && supplierRes.data)
         ? (supplierRes.data as unknown as { supplier_id: string | null }[])
         : [];
@@ -474,20 +364,16 @@ export function useNoveltyStats() {
 
       let topSupplierName: string | null = null;
       if (topSupplierId) {
-        if (topSupplierId.startsWith('sup-')) {
-          topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name ?? null;
-        } else {
-          try {
-            const { data: supData, error: supError } = await fromTable('suppliers')
-              .select('name')
-              .eq('id', topSupplierId)
-              .range(0, 0);
-            if (!supError && supData && supData.length > 0) {
-              topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
-            }
-          } catch {
-            /* fallback silencioso */
+        try {
+          const { data: supData, error: supError } = await fromTable('suppliers')
+            .select('name')
+            .eq('id', topSupplierId)
+            .range(0, 0);
+          if (!supError && supData && supData.length > 0) {
+            topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
           }
+        } catch {
+          /* fallback silencioso */
         }
       }
 
@@ -540,6 +426,7 @@ export function useNovelties(
       )
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
         .range(0, limit - 1);
 
       if (supplierId) {
