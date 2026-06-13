@@ -411,7 +411,7 @@ export function NoveltyProductGrid() {
                   exit={{ opacity: 0, width: 0 }}
                   className="ml-1 inline-flex items-center gap-1"
                 >
-                  <span className="inline-block h-1 w-12 overflow-hidden rounded-full bg-muted/50 align-middle">
+                  <span className="inline-block h-1 w-[53px] overflow-hidden rounded-full bg-muted/50 align-middle">
                     <motion.span
                       className="block h-full rounded-full bg-primary/60"
                       initial={{ width: 0 }}
@@ -419,7 +419,7 @@ export function NoveltyProductGrid() {
                       transition={{ duration: 0.4, ease: 'easeOut' }}
                     />
                   </span>
-                  <span className="text-[10px] tabular-nums text-muted-foreground/60">
+                  <span className="text-[11px] tabular-nums text-muted-foreground/60">
                     {Math.round(loadingProgress)}%
                   </span>
                 </motion.span>
