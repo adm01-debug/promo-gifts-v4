@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
@@ -172,6 +173,7 @@ export const ProductCardImage = memo(function ProductCardImage({
                   transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
                 }}
                 containerClassName="h-full w-full"
+                urlOriginal={deriveOriginalUrl(activeSrc)}
                 priority={priority}
                 onLoad={onImageLoad}
                 {...DEFAULT_IMAGE_CONFIG}
@@ -271,7 +273,7 @@ export const ProductCardImage = memo(function ProductCardImage({
               onClick={() => onStatusClick?.('out-of-stock')}
             />
           )}
-          
+
           {stockStatus === 'low' && (
             <ProductStatusBadge
               type="urgency"

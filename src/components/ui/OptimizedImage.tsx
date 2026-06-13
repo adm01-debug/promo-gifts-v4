@@ -12,6 +12,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   lqip?: string;
   debug?: boolean;
   onDetection?: (rule: string) => void;
+  /** URL de fallback (origem do fornecedor) tentada quando a src do CF Images falha, antes do ícone de erro. */
+  urlOriginal?: string | null;
 }
 
 export function OptimizedImage({
@@ -27,13 +29,16 @@ export function OptimizedImage({
   lqip,
   debug = false,
   onDetection,
+  urlOriginal,
   onLoad: onLoadProp,
   onError: onErrorProp,
   style: externalStyle,
   ...props
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // 0 = src primaria (CF) | 1 = urlOriginal (origem fornecedor) | 2 = erro (icone)
+  const [fallbackStage, setFallbackStage] = useState<0 | 1 | 2>(0);
+  const error = fallbackStage === 2;
   const [isInView, setIsInView] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -124,6 +129,30 @@ export function OptimizedImage({
     transitionTimingFunction: 'ease-out',
   };
 
+  // Reinicia a cadeia de fallback quando a src primaria muda (ex.: variante de cor)
+  useEffect(() => {
+    setFallbackStage(0);
+    setIsLoaded(false);
+  }, [src]);
+
+  const activeSrc = !isInView
+    ? undefined
+    : fallbackStage === 0
+      ? src
+      : fallbackStage === 1
+        ? (urlOriginal ?? undefined)
+        : undefined;
+
+  const handleImageError: React.ReactEventHandler<HTMLImageElement> = (e) => {
+    if (fallbackStage === 0 && urlOriginal && !urlOriginal.includes('/placeholder')) {
+      setFallbackStage(1);
+      setIsLoaded(false);
+    } else {
+      setFallbackStage(2);
+    }
+    onErrorProp?.(e);
+  };
+
   return (
     <div
       className={cn('relative overflow-hidden bg-white', containerClassName)}
@@ -171,7 +200,7 @@ export function OptimizedImage({
 
           <img
             ref={imgRef}
-            src={isInView ? src : undefined}
+            src={activeSrc}
             alt={alt}
             className={cn(
               'h-full w-full transition-all ease-out',
@@ -186,10 +215,7 @@ export function OptimizedImage({
               setIsLoaded(true);
               onLoadProp?.(e);
             }}
-            onError={(e) => {
-              setError(true);
-              onErrorProp?.(e);
-            }}
+            onError={handleImageError}
             loading={priority ? 'eager' : 'lazy'}
             {...(priority ? { fetchpriority: 'high' } : {})}
             {...props}

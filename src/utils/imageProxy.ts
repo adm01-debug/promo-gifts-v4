@@ -37,3 +37,43 @@ export function needsProxy(url: string | null | undefined): boolean {
     return false;
   }
 }
+
+// ─── Derivação determinística de url_original a partir de CF URL / CF ID ───
+//
+// SPOT: `spot-{ref}_{color}` → spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg
+// Outros fornecedores: padrão opaco → não derivável sem lookup no banco.
+//
+// Fallback de baixo custo quando url_original não está no objeto Product
+// (que carrega apenas CF URLs em images[]). Usado pelo OptimizedImage quando
+// a imagem do Cloudflare falha, ANTES de mostrar o ícone de erro.
+
+const SPOT_ORIGIN_BASE = 'https://www.spotgifts.com.br/fotos/produtos/';
+
+/**
+ * Tenta derivar a url_original do fornecedor a partir da URL CDN do Cloudflare.
+ * Retorna null quando o padrão não é reconhecido (sem fallback → mostra ícone).
+ */
+export function deriveOriginalUrl(cfUrl: string | null | undefined): string | null {
+  if (!cfUrl) return null;
+  try {
+    if (!cfUrl.includes('imagedelivery.net')) return null;
+    const parts = cfUrl.split('/');
+    if (parts.length < 5) return null;
+    const cfId = parts[parts.length - 2];
+    if (
+      cfId.startsWith('spot-') &&
+      !cfId.startsWith('spot-area-') &&
+      !cfId.startsWith('spot-pa-')
+    ) {
+      const withoutPrefix = cfId.slice(5);
+      const typeSpecific = ['_set', '_box', '_amb', '_pouch', '-b', '-c', '-d', '-e', '-f', '-g'];
+      const hasTypeSuffix = typeSpecific.some((sfx) => withoutPrefix.endsWith(sfx));
+      if (!hasTypeSuffix && withoutPrefix.includes('_')) {
+        return `${SPOT_ORIGIN_BASE}${withoutPrefix}.jpg`;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
