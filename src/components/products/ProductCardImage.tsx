@@ -288,7 +288,7 @@ export const ProductCardImage = memo(function ProductCardImage({
       <div className="absolute bottom-1.5 right-1.5 z-10">
         <Badge
           variant="secondary"
-          className="h-auto bg-background/80 px-1.5 py-0.5 text-[9px] font-medium leading-none backdrop-blur-sm"
+          className="h-auto bg-background/80 px-1.5 py-0.5 text-[10.5px] font-medium leading-none backdrop-blur-sm"
         >
           {product.sku}
         </Badge>
