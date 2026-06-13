@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -8,7 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree } from 'lucide-react';
+import {
+  Package,
+  Building2,
+  FolderTree,
+  Heart,
+  GitCompare,
+  Eye,
+  ShoppingCart,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
@@ -19,6 +30,8 @@ import {
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
+import { useFavoritesStore } from '@/stores/useFavoritesStore';
+import { useComparisonStore } from '@/stores/useComparisonStore';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -30,12 +43,70 @@ function formatPrice(price: number): string {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * Formata quantidade de estoque de forma compacta para evitar overflow em
+ * cards estreitos (ex: 7624 → "7,6 mil"; 1_250_000 → "1,2 mi").
+ */
+function formatStockQty(qty: number): string {
+  if (qty >= 1_000_000) {
+    return `${(qty / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  }
+  if (qty >= 10_000) {
+    return `${Math.round(qty / 1000).toLocaleString('pt-BR')} mil`;
+  }
+  if (qty >= 1_000) {
+    return `${(qty / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  }
+  return qty.toLocaleString('pt-BR');
+}
+
 const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobileIcon: string }> =
   {
     'in-stock': { className: 'in-stock', label: 'Em estoque', mobileIcon: '✓' },
     'low-stock': { className: 'low-stock', label: 'Estoque baixo', mobileIcon: '!' },
     'out-of-stock': { className: 'out-of-stock', label: 'Sem estoque', mobileIcon: '✗' },
   };
+
+// ─── Quick Action Button (overlay) ───────────────────────────────
+
+interface QuickActionProps {
+  readonly icon: React.ReactNode;
+  readonly label: string;
+  readonly onClick: (e: React.MouseEvent) => void;
+  readonly active?: boolean;
+  readonly activeClass?: string;
+}
+
+const QuickAction = memo(function QuickAction({
+  icon,
+  label,
+  onClick,
+  active,
+  activeClass,
+}: QuickActionProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={active}
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-background/95 text-foreground/70 shadow-sm backdrop-blur transition-all',
+            'hover:scale-110 hover:border-primary/40 hover:text-primary',
+            active && (activeClass ?? 'border-primary/60 bg-primary text-primary-foreground'),
+          )}
+        >
+          {icon}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="text-xs">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+});
 
 // ─── Grid Card ───────────────────────────────────────────────────
 
