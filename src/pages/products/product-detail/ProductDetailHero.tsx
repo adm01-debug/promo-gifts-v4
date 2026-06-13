@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift } from 'lucide-react';
+import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift, BookOpen } from 'lucide-react';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 import { sortVariationsByColor } from '@/utils/colorSorting';
 import type { ProductVariation } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
+import { WordMagicButton } from '@/components/word-magic/WordMagicButton';
 
 interface ProductDetailHeroProps {
   product: Product;
@@ -88,6 +90,16 @@ export function ProductDetailHero({
 }: ProductDetailHeroProps) {
   const navigate = useNavigate();
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
+
+  // ── Word Magic ───────────────────────────────────────────────────────────
+  const {
+    displayName,
+    displayDescription,
+    isActive:      isWordMagicActive,
+    isGenerating:  isWordMagicGenerating,
+    hasEnrichment: hasWordMagicEnrichment,
+    handleWordMagicClick,
+  } = useWordMagic(product);
 
   // Categoria-FOLHA (mais específica) + caminho raiz→folha para este produto.
   const { leafById } = useProductLeafCategories([product.id]);
@@ -219,10 +231,27 @@ export function ProductDetailHero({
           <h1
             data-testid="page-title-detalhe-produto"
             data-product-name={product.name}
-            className="font-display text-lg font-bold leading-tight tracking-tight text-foreground sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl"
+            className={cn("font-display text-lg font-bold leading-tight tracking-tight sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl", isWordMagicActive ? "text-violet-700 dark:text-violet-300" : "text-foreground")}
           >
-            {product.name}
+            {displayName}
           </h1>
+
+          {/* Word Magic — botão integrado no cabeçalho do produto */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <WordMagicButton
+              hasEnrichment={hasWordMagicEnrichment}
+              isActive={isWordMagicActive}
+              isGenerating={isWordMagicGenerating}
+              onClick={() => handleWordMagicClick()}
+            />
+            {isWordMagicActive && (
+              <span className="flex items-center gap-1 rounded-full border border-violet-300/60 bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
+                <BookOpen className="h-3 w-3" />
+                Texto IA ativo
+              </span>
+            )}
+          </div>
+
           <ProductInfoBar
             sku={selectedVariation?.sku || product.sku}
             supplierName={product.supplier.name}
@@ -480,9 +509,9 @@ export function ProductDetailHero({
               <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-foreground xl:text-sm">
                 Descrição
               </h4>
-              {product.description ? (
+              {displayDescription ? (
                 (() => {
-                  const sentences = product.description
+                  const sentences = displayDescription
                     .split(/[.]\s+/)
                     .map((s) => s.trim().replace(/\.$/, ''))
                     .filter((s) => s.length > 5);
@@ -503,7 +532,7 @@ export function ProductDetailHero({
                   }
                   return (
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      {product.description}
+                      {displayDescription}
                     </p>
                   );
                 })()
