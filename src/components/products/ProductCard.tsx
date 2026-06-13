@@ -10,7 +10,10 @@ import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
 import { useProductBounds } from '@/hooks/products/useProductBounds';
 import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
-import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import {
+  useExternalVariantStock,
+  type ExternalVariantStock,
+} from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
@@ -161,6 +164,12 @@ export const ProductCard = memo(
     // BUG-4 FIX: Sincronização de cor selecionada entre Grid e PDP via store
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     const selectedColorFromStore = useProductSelectionStore((s) => s.selectedColors[product.id]);
+
+    // Carrega variantes (com estoque por cor) somente quando o usuário clica
+    // numa bolinha deste card — evita N requests no grid inteiro.
+    const { data: liveVariants } = useExternalVariantStock(
+      selectedColorFromStore ? product.id : undefined,
+    );
 
     // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
     // do useEffect abaixo que o referencia no array de deps — isso quebrava em
@@ -411,11 +420,18 @@ export const ProductCard = memo(
         );
         const matchedImg = colorMatch ? colorMatch.images?.[0] || colorMatch.image : null;
         if (matchedImg) return matchedImg;
+
+        // Prioridade 3.5: thumbnail vindo de useExternalVariantStock
+        // (lightweight catalog não traz colors[].images — fallback ao banco externo)
+        const liveMatch = liveVariants?.find(
+          (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+        );
+        if (liveMatch?.selected_thumbnail) return liveMatch.selected_thumbnail;
       }
 
       // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
       return product.primary_image_url || product.og_image_url || product.images[0] || null;
-    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage]);
+    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage, liveVariants]);
 
     // Caso de fallback para quando a imagem da cor não existe
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
@@ -655,9 +671,26 @@ export const ProductCard = memo(
           <div className="flex-1" />
 
           {(() => {
+            const hasUserSelectedColor = !!selectedColorFromStore;
+            const liveMatch =
+              hasUserSelectedColor && activeColorName && liveVariants?.length
+                ? liveVariants.find(
+                    (v) =>
+                      (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                  )
+                : undefined;
+            const liveStock = liveMatch?.stock_quantity ?? null;
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
-            const displayStock = colorStock?.stock ?? product.stock;
-            const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
+            const displayStock =
+              liveStock !== null ? liveStock : (colorStock?.stock ?? product.stock);
+            const displayStatus =
+              liveStock !== null
+                ? liveStock <= 0
+                  ? 'out-of-stock'
+                  : liveStock < 10
+                    ? 'low-stock'
+                    : 'in-stock'
+                : (colorStock?.stockStatus ?? product.stockStatus);
 
             return (
               <div
