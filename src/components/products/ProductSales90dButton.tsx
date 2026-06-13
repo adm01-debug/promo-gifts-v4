@@ -87,6 +87,11 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
             <Activity className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Vendas {SPARKLINE_WINDOW_DAYS}d
+              {isVariantScope && variantLabel ? (
+                <span className="ml-1 normal-case tracking-normal text-foreground/70">
+                  · {variantLabel}
+                </span>
+              ) : null}
             </span>
           </span>
           <span className="text-xs font-bold tabular-nums text-foreground">
