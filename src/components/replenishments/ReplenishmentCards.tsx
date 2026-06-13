@@ -162,6 +162,18 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         }
       }}
     >
+      {/* FAB "+" — paridade total com ProductCard (Carrinho/Orçamento/Coleção/Favoritar/Comparar/QuickView/Compartilhar) */}
+      {!selectionMode && (
+        <ProductQuickActionsFAB
+          productId={product.product_id}
+          productName={product.product_name}
+          productSku={product.product_sku}
+          productImageUrl={product.product_image}
+          productPrice={product.base_price ?? 0}
+          productMinQuantity={product.min_quantity || 1}
+          isOutOfStock={product.stock_status === 'out-of-stock'}
+        />
+      )}
       <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
