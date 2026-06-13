@@ -420,11 +420,18 @@ export const ProductCard = memo(
         );
         const matchedImg = colorMatch ? colorMatch.images?.[0] || colorMatch.image : null;
         if (matchedImg) return matchedImg;
+
+        // Prioridade 3.5: thumbnail vindo de useExternalVariantStock
+        // (lightweight catalog não traz colors[].images — fallback ao banco externo)
+        const liveMatch = liveVariants?.find(
+          (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+        );
+        if (liveMatch?.selected_thumbnail) return liveMatch.selected_thumbnail;
       }
 
       // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
       return product.primary_image_url || product.og_image_url || product.images[0] || null;
-    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage]);
+    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage, liveVariants]);
 
     // Caso de fallback para quando a imagem da cor não existe
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
