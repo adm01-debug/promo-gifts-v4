@@ -6,7 +6,7 @@ const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const NOVELTY_WINDOW_DAYS = 30;
 const NOVELTY_SELECT =
-  'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
+  'id, name, sku, primary_image_url, set_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
 
 /**
  * Filtros de qualidade aplicados a TODOS os hooks de novidades.
