@@ -41,6 +41,8 @@ import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
+import { WordMagicBadge } from '@/components/word-magic/WordMagicBadge';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
@@ -224,6 +226,15 @@ export const ProductCard = memo(
 
     const addFavorite = useFavoritesStore((s) => s.addFavorite);
     const addToCompare = useComparisonStore((s) => s.addToCompare);
+
+    // ── Word Magic ───────────────────────────────────────────────────────────
+    const {
+      displayName,
+      isActive:       isWordMagicActive,
+      isGenerating:   isWordMagicGenerating,
+      hasEnrichment:  hasWordMagicEnrichment,
+      handleWordMagicClick,
+    } = useWordMagic(product);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
@@ -536,6 +547,10 @@ export const ProductCard = memo(
           isUpdatingColor={isUpdatingColor}
         />
 
+
+        {/* Word Magic Badge — visível quando AI está ativa */}
+        <WordMagicBadge visible={isWordMagicActive} />
+
         {/* Quick Actions FAB */}
         {(() => {
           const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
@@ -569,6 +584,13 @@ export const ProductCard = memo(
                 setQuickViewOpen(true);
               }}
               markBusy={markBusy}
+              isWordMagicActive={isWordMagicActive}
+              isWordMagicGenerating={isWordMagicGenerating}
+              hasWordMagicEnrichment={hasWordMagicEnrichment}
+              onWordMagicClick={(e) => {
+                e.stopPropagation();
+                handleWordMagicClick();
+              }}
             />
           );
         })()}
@@ -618,9 +640,9 @@ export const ProductCard = memo(
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className="line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]"
+            className={cn("line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isWordMagicActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
           >
-            {product.name}
+            {displayName}
           </h3>
 
           <ProductColorSwatches

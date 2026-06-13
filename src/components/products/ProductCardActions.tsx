@@ -19,6 +19,7 @@ import { QuickAddToQuote } from './QuickAddToQuote';
 import { cn } from '@/lib/utils';
 import { feedback } from '@/lib/feedback';
 import type { VariantActionMode } from './VariantPickerDialog';
+import { WordMagicButton } from '@/components/word-magic/WordMagicButton';
 
 interface ProductCardActionsProps {
   productId: string;
@@ -38,6 +39,11 @@ interface ProductCardActionsProps {
   onOpenVariantPicker: (mode: VariantActionMode) => void;
   onQuickView: () => void;
   markBusy: () => void;
+  // Word Magic
+  isWordMagicActive?: boolean;
+  isWordMagicGenerating?: boolean;
+  hasWordMagicEnrichment?: boolean;
+  onWordMagicClick?: (e: React.MouseEvent) => void;
 }
 
 export const ProductCardActions = memo(function ProductCardActions({
@@ -58,6 +64,10 @@ export const ProductCardActions = memo(function ProductCardActions({
   onOpenVariantPicker,
   onQuickView,
   markBusy,
+  isWordMagicActive = false,
+  isWordMagicGenerating = false,
+  hasWordMagicEnrichment = false,
+  onWordMagicClick,
 }: ProductCardActionsProps) {
   const btnClass =
     'h-9 w-9 md:h-11 md:w-11 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50 hover:bg-card hover:scale-110 hover:shadow-xl transition-all duration-200 min-h-[36px] min-w-[36px] md:min-h-[44px] md:min-w-[44px]';
@@ -160,6 +170,17 @@ export const ProductCardActions = memo(function ProductCardActions({
           )}
           onClick={onFavorite}
         />
+
+
+        {/* 5a - Word Magic */}
+        {onWordMagicClick && (
+          <WordMagicButton
+            hasEnrichment={hasWordMagicEnrichment}
+            isActive={isWordMagicActive}
+            isGenerating={isWordMagicGenerating}
+            onClick={onWordMagicClick}
+          />
+        )}
 
         {/* 5 - Comparar */}
         <ActionButton
