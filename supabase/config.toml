@@ -82,6 +82,8 @@ verify_jwt = false
 verify_jwt = false
 
 
+[functions.word-magic]
+verify_jwt = true
 
 [auth]
 enable_signup = false
