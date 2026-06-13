@@ -602,7 +602,7 @@ export const ProductCard = memo(
             />
           )}
 
-          <div className="flex min-w-0 items-center justify-between gap-1.5">
+          <div className="flex min-w-0 items-center justify-start gap-1.5">
             <div className="shrink-1 flex min-w-0 items-center gap-1">
               <span
                 className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
