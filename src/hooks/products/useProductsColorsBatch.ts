@@ -86,23 +86,42 @@ export function useProductsColorsBatch(productIds: string[]) {
         const CHUNK = 100;
         for (let i = 0; i < missingIds.length; i += CHUNK) {
           const chunk = missingIds.slice(i, i + CHUNK);
-          const { data, error } = await untypedFrom(resolveTable('product_variants'))
-            .select('product_id, color_name, color_hex')
-            .in('product_id', chunk)
-            .eq('is_active', true)
-            .not('color_name', 'is', null)
-            .range(0, 4999);
+          // BUGFIX (audit 200-commits, P1-1): pagina as variantes do chunk em vez de
+          // depender de .range(0,4999). Com 100 produtos/chunk e db-max-rows (~1000),
+          // o cap unico poderia truncar cores. A dedup por (nome|hex) abaixo torna a
+          // paginacao estavel mesmo sem PK explicita.
+          const PAGE = 1000;
+          const MAX_PAGES = 50;
+          let allRows: VariantRow[] = [];
+          let chunkFailed = false;
+          for (let page = 0; page < MAX_PAGES; page += 1) {
+            const from = page * PAGE;
+            const { data, error } = await untypedFrom(resolveTable('product_variants'))
+              .select('product_id, color_name, color_hex')
+              .in('product_id', chunk)
+              .eq('is_active', true)
+              .not('color_name', 'is', null)
+              .order('product_id', { ascending: true })
+              .order('color_name', { ascending: true })
+              .order('color_hex', { ascending: true })
+              .range(from, from + PAGE - 1);
 
-          if (error) {
-            logger.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
-            handleQueryError('useProductsColorsBatch', 'product_variants', error);
-            continue;
+            if (error) {
+              logger.error(`[useProductsColorsBatch] Error fetching colors for chunk:`, error);
+              handleQueryError('useProductsColorsBatch', 'product_variants', error);
+              chunkFailed = true;
+              break;
+            }
+            const rows = (data ?? []) as VariantRow[];
+            allRows = allRows.concat(rows);
+            if (rows.length < PAGE) break;
           }
+          if (chunkFailed) continue;
 
           // Agrupa resultados por ID
           const results = new Map<string, Map<string, ProductColorDot>>();
 
-          for (const row of (data ?? []) as VariantRow[]) {
+          for (const row of allRows) {
             const pid = row.product_id;
             const name = (row.color_name || '').trim();
             if (!name) continue;
