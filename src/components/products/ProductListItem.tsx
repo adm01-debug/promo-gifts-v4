@@ -526,16 +526,20 @@ export const ProductListItem = memo(function ProductListItem({
                 {product.sku}
               </span>
             )}
-            {/* Inline color dots */}
-            <ProductColorSwatches
-              colors={product.colors}
-              max={5}
-              size="xs"
-              hideWhenEmpty={false}
-              className="ml-1 hidden md:flex"
-            />
           </div>
         </div>
+
+        {/* Center — full color swatches (all colors, no overflow) */}
+        <div className="hidden min-w-0 flex-1 items-center justify-center px-2 md:flex">
+          <ProductColorSwatches
+            colors={product.colors}
+            max={product.colors?.length || 0}
+            size="sm"
+            hideWhenEmpty
+            className="flex-wrap justify-center"
+          />
+        </div>
+
 
         {/* Price column — right-aligned, always visible */}
         <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
