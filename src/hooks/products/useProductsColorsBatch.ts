@@ -133,6 +133,7 @@ export function useProductsColorsBatch(productIds: string[]) {
             const name = (row.color_name || '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
+            const image = row.primary_image_url?.trim() || null;
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
             let dedupMap = results.get(pid);
@@ -140,8 +141,13 @@ export function useProductsColorsBatch(productIds: string[]) {
               dedupMap = new Map();
               results.set(pid, dedupMap);
             }
-            if (!dedupMap.has(key)) {
-              dedupMap.set(key, { name, hex });
+            // Mantém a primeira ocorrência (já ordenada por color_name/color_hex),
+            // mas se a primeira não tinha imagem e a próxima tem, preenche.
+            const existing = dedupMap.get(key);
+            if (!existing) {
+              dedupMap.set(key, { name, hex, image });
+            } else if (!existing.image && image) {
+              dedupMap.set(key, { ...existing, image });
             }
           }
 
