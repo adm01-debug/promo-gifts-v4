@@ -308,6 +308,7 @@ export function useCatalogState() {
     search: debouncedServerSearch,
     categories: filters.categories,
     suppliers: filters.suppliers,
+    sortBy,
   });
 
   const realProducts = useMemo(() => {
