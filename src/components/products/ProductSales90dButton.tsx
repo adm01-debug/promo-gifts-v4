@@ -1,6 +1,6 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Activity, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, Zap, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   SPARKLINE_WINDOW_DAYS,
@@ -25,10 +25,14 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
   variantLabel,
   className,
 }: ProductSales90dButtonProps) {
+  // Padrão: mostrar TOTAL do produto (todas as variantes), mesmo quando há variante selecionada.
+  // Usuário pode optar por ver apenas a variante via toggle dentro do popover.
+  const [scope, setScope] = useState<'product' | 'variant'>('product');
   const productData = useSparklineData(productId);
   const variantData = useSparklineDataByVariant(variantId);
-  const data = variantId ? variantData : productData;
-  const isVariantScope = !!variantId && !!variantData;
+  const canScopeVariant = !!variantId && !!variantData;
+  const isVariantScope = scope === 'variant' && canScopeVariant;
+  const data = isVariantScope ? variantData : productData;
 
   const summary = useMemo(() => {
     const pts = data?.dailyQty ?? [];
@@ -111,13 +115,55 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
               <Activity className="h-3.5 w-3.5" />
               {isVariantScope
                 ? `Variante${variantLabel ? ` · ${variantLabel}` : ''}`
-                : `Mercado · ${SPARKLINE_WINDOW_DAYS} dias`}
+                : `Produto · ${SPARKLINE_WINDOW_DAYS} dias`}
             </span>
             <span className="text-sm font-bold tabular-nums text-foreground">
               {nf.format(summary.totalSales)} un
             </span>
           </div>
+
+          {canScopeVariant ? (
+            <div className="mt-2 flex items-center gap-1 rounded-md bg-muted/60 p-0.5">
+              <button
+                type="button"
+                onClick={() => setScope('product')}
+                className={cn(
+                  'flex-1 rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors',
+                  scope === 'product'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setScope('variant')}
+                className={cn(
+                  'flex-1 truncate rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors',
+                  scope === 'variant'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+                title={variantLabel ?? 'Variante'}
+              >
+                {variantLabel ?? 'Variante'}
+              </button>
+              {scope === 'variant' ? (
+                <button
+                  type="button"
+                  onClick={() => setScope('product')}
+                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                  title="Resetar para todas as variantes"
+                  aria-label="Resetar para todas as variantes"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
+
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 py-2.5">
           <Metric label={`Saídas ${SPARKLINE_WINDOW_DAYS}d`} value={`${nf.format(summary.totalSales)} un`} />
