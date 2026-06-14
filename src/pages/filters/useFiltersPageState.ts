@@ -100,10 +100,10 @@ export function useFiltersPageState() {
       const parsedMs = parseInt(ms, 10);
       if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
     }
-    const mss = get('minSupplierSales30d');
+    const mss = get('minSupplierSales90d') ?? get('minSupplierSales30d'); // back-compat URL
     if (mss) {
       const n = parseInt(mss, 10);
-      if (Number.isFinite(n) && n >= 0) f.minSupplierSales30d = n;
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales90d = n;
     }
     const mps = get('minPromoSales90d');
     if (mps) {
@@ -209,8 +209,8 @@ export function useFiltersPageState() {
     if (filters.priceRange[0] > 0) params.set('priceMin', String(filters.priceRange[0]));
     if (filters.priceRange[1] < 9999) params.set('priceMax', String(filters.priceRange[1]));
     if (filters.minStock > 0) params.set('minStock', String(filters.minStock));
-    if (filters.minSupplierSales30d > 0)
-      params.set('minSupplierSales30d', String(filters.minSupplierSales30d));
+    if (filters.minSupplierSales90d > 0)
+      params.set('minSupplierSales90d', String(filters.minSupplierSales90d));
     if (filters.minPromoSales90d > 0)
       params.set('minPromoSales90d', String(filters.minPromoSales90d));
     if (filters.inStock) params.set('inStock', '1');
@@ -324,7 +324,7 @@ export function useFiltersPageState() {
       count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.minStock > 0) count++;
-    if (filters.minSupplierSales30d > 0) count++;
+    if (filters.minSupplierSales90d > 0) count++;
     if (filters.minPromoSales90d > 0) count++;
     if (filters.inStock) count++;
     if (filters.isKit) count++;
@@ -459,11 +459,13 @@ export function useFiltersPageState() {
           );
         return (product.stock || 0) >= filters.minStock;
       });
-    // Vendas Fornecedor (30d): usa supplierSalesMap.depleted30d (mv_product_intelligence).
-    // Enquanto o map ainda não carregou, o filtro é inerte (evita falso-negativo no 1º render).
-    if (filters.minSupplierSales30d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
-      const threshold = filters.minSupplierSales30d;
-      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) >= threshold);
+    // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3 (MV expõe apenas total_depleted_30d).
+    // Padroniza janela com o filtro Promo Brindes (90d). Map inerte enquanto carrega.
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales90d;
+      result = result.filter(
+        (p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) * 3 >= threshold,
+      );
     }
     // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
     if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
@@ -731,11 +733,11 @@ export function useFiltersPageState() {
     }
     if (filters.minStock > 0)
       summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
-    if (filters.minSupplierSales30d > 0)
+    if (filters.minSupplierSales90d > 0)
       summary.push({
         label: 'Vendas fornec.',
-        value: `≥ ${filters.minSupplierSales30d} un./30d`,
-        key: 'minSupplierSales30d',
+        value: `≥ ${filters.minSupplierSales90d} un./90d`,
+        key: 'minSupplierSales90d',
       });
     if (filters.minPromoSales90d > 0)
       summary.push({

@@ -56,8 +56,8 @@ export interface FilterState {
   gender: string[];
   sizes: string[];
   sortBy: string;
-  // COMERCIAL — Filtros por vendas (somente Super Filtro)
-  minSupplierSales30d: number; // mín. unidades vendidas pelo fornecedor nos últimos 30 dias
+  // COMERCIAL — Filtros por vendas (somente Super Filtro) — janela padronizada 90d
+  minSupplierSales90d: number; // mín. unidades vendidas pelo fornecedor nos últimos 90 dias
   minPromoSales90d: number;    // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
@@ -106,7 +106,7 @@ export const defaultFilters: FilterState = {
   gender: [],
   sizes: [],
   sortBy: 'name',
-  minSupplierSales30d: 0,
+  minSupplierSales90d: 0,
   minPromoSales90d: 0,
 };
 
@@ -144,7 +144,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
   },
   'vendas-fornecedor': {
-    title: 'Vendas Fornecedor (30d)',
+    title: 'Vendas Fornecedor (90d)',
     icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
   },
   'vendas-promo': {
