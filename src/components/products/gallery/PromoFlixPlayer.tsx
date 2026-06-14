@@ -178,6 +178,8 @@ export function PromoFlixPlayer({
   const initTokenRef = useRef(0);
   const autoplayFallbackTriedRef = useRef(false);
   const suppressMutePersistRef = useRef(false);
+  // Guard: prevents native video onError from overwriting HLS error after destroy
+  const hlsDestroyedRef = useRef(false);
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -221,6 +223,7 @@ export function PromoFlixPlayer({
     if (!video || !src) return;
     const myToken = ++initTokenRef.current;
     autoplayFallbackTriedRef.current = false;
+    hlsDestroyedRef.current = false;
     setIsLoading(true);
     setHlsError(null);
     setIsReconnecting(false);
@@ -365,6 +368,7 @@ export function PromoFlixPlayer({
                 } catch {
                   /* noop */
                 }
+                hlsDestroyedRef.current = true;
                 hlsRef.current = null;
               } else {
                 setIsReconnecting(true);
@@ -385,6 +389,7 @@ export function PromoFlixPlayer({
                 } catch {
                   /* noop */
                 }
+                hlsDestroyedRef.current = true;
                 hlsRef.current = null;
               }
               break;
@@ -399,6 +404,7 @@ export function PromoFlixPlayer({
               } catch {
                 /* noop */
               }
+              hlsDestroyedRef.current = true;
               hlsRef.current = null;
               break;
           }
@@ -550,6 +556,7 @@ export function PromoFlixPlayer({
         src: video.currentSrc?.substring(0, 80),
       });
       if (hlsRef.current) return;
+      if (hlsDestroyedRef.current) return;
       if (!video.currentSrc && !video.src) return;
       switch (error?.code) {
         case 1:
