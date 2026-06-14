@@ -344,14 +344,30 @@ export function PromoFlixPlayer({
           }));
           setQualities(levels);
           try {
+            // Restaura preferência PORTÁVEL por altura ("h:720") ou "auto". Mantém ABR
+            // (currentLevel = -1) por padrão. Valores legados (índice cru) são ignorados,
+            // o que também corrige o bug histórico de travar em baixa resolução entre vídeos.
             const savedQuality = localStorage.getItem('promoflix_quality');
-            if (savedQuality !== null) {
-              const q = parseInt(savedQuality, 10);
-              if (!isNaN(q) && q >= -1 && q < data.levels.length) {
-                hlsInstance.currentLevel = q;
-                setCurrentQuality(q);
+            if (savedQuality && savedQuality.startsWith('h:')) {
+              const targetH = parseInt(savedQuality.slice(2), 10);
+              if (Number.isFinite(targetH) && targetH > 0) {
+                let bestIdx = -1;
+                let bestDiff = Infinity;
+                data.levels.forEach((lvl, idx) => {
+                  if (!lvl.height) return;
+                  const diff = Math.abs(lvl.height - targetH);
+                  if (diff < bestDiff) {
+                    bestDiff = diff;
+                    bestIdx = idx;
+                  }
+                });
+                if (bestIdx >= 0) {
+                  hlsInstance.currentLevel = bestIdx;
+                  setCurrentQuality(bestIdx);
+                }
               }
             }
+            // 'auto' / null / formato legado ⇒ não mexe: ABR ativo (currentLevel -1).
           } catch (err) {
             logger.warn('Falha ao carregar preferência de qualidade:', err);
           }
@@ -504,9 +520,24 @@ export function PromoFlixPlayer({
       if (!hls) return;
       hls.currentLevel = index;
       setCurrentQuality(index);
-      localStorage.setItem('promoflix_quality', index.toString());
       const label =
         index === -1 ? 'Auto' : qualities.find((q) => q.id === index)?.label || 'Qualidade';
+      // Persistir de forma PORTÁVEL entre vídeos: o índice de nível é por-manifesto, então
+      // salvar o índice cru travava a resolução (às vezes a mais baixa) em vídeos seguintes.
+      // Salvamos a ALTURA ("h:720") ou "auto".
+      try {
+        if (index === -1) {
+          localStorage.setItem('promoflix_quality', 'auto');
+        } else {
+          const h = parseInt(label, 10);
+          localStorage.setItem(
+            'promoflix_quality',
+            Number.isFinite(h) && h > 0 ? `h:${h}` : 'auto',
+          );
+        }
+      } catch {
+        /* noop */
+      }
       flash(label);
     },
     [qualities, flash],
