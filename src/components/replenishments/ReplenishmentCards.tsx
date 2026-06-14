@@ -193,38 +193,54 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
         {/* Content Section */}
         <div className={cn(productCardStyles.infoSection, 'flex flex-1 flex-col')}>
-          {/* Meta line — SKU · Fornecedor (hierarquia: menor, muted) */}
-          <div className="flex items-center justify-between gap-2">
-            {product.product_sku && (
-              <span className="truncate font-mono text-[10px] text-muted-foreground sm:text-xs">
-                {product.product_sku}
-              </span>
-            )}
-            {product.supplier_name && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span
-                    className="flex max-w-[160px] shrink-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
-                    title={`Fornecedor: ${product.supplier_name}`}
-                  >
-                    <Building2
-                      className={cn(
-                        'h-3 w-3 shrink-0',
-                        getSupplierColors(product.supplier_name).text,
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate">{product.supplier_name}</span>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Fornecedor: {product.supplier_name}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+          {/* 1 — Categoria */}
+          {product.category_id && product.category_name && (
+            <ProductCategoryBadges
+              category={{ id: product.category_id, name: product.category_name }}
+              categoryUuid={product.category_id}
+              className="flex-wrap"
+            />
+          )}
 
-          {/* Name — hierarquia principal */}
+          {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
+          {(product.supplier_name || product.product_sku) && (
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              {product.supplier_name ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="flex min-w-0 max-w-[160px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                      title={`Fornecedor: ${product.supplier_name}`}
+                    >
+                      <Building2
+                        className={cn(
+                          'h-3 w-3 shrink-0',
+                          getSupplierColors(product.supplier_name).text,
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{product.supplier_name}</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Fornecedor: {product.supplier_name}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <span />
+              )}
+              {product.product_sku && (
+                <span
+                  className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
+                  aria-label={`Código do produto: ${product.product_sku}`}
+                >
+                  {product.product_sku}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* 4 — Nome do produto */}
           <h3 className={productCardStyles.title}>{product.product_name}</h3>
 
           {/* Price + Stock */}
@@ -266,16 +282,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           </div>
 
-          {/* Categoria (badge estilo catálogo) */}
-          {product.category_id && product.category_name && (
-            <div className={productCardStyles.categoryBadgeSection}>
-              <ProductCategoryBadges
-                category={{ id: product.category_id, name: product.category_name }}
-                categoryUuid={product.category_id}
-                className="flex-wrap"
-              />
-            </div>
-          )}
 
           {/* Cores disponíveis — mini-carrossel de variantes */}
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>

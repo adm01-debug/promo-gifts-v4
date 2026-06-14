@@ -174,13 +174,8 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-0.5">
-        <p className="line-clamp-2 text-sm font-medium leading-tight">
-          {product.product_name ?? '—'}
-        </p>
-        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
-
-        {/* Categoria (badge estilo catálogo) */}
+      <div className="flex flex-col gap-1">
+        {/* 1 — Categoria */}
         {product.category_id && product.category_name && (
           <ProductCategoryBadges
             category={{ id: product.category_id, name: product.category_name }}
@@ -189,21 +184,39 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           />
         )}
 
-        {/* Fornecedor (badge estilo catálogo) */}
-        {product.supplier_name && (
-          <div className="flex min-w-0 items-center">
-            <span
-              className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
-              title={`Fornecedor: ${product.supplier_name}`}
-            >
-              <Building2
-                className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier_name).text)}
-                aria-hidden="true"
-              />
-              <span className="truncate">{product.supplier_name}</span>
-            </span>
+        {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
+        {(product.supplier_name || product.product_sku) && (
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            {product.supplier_name ? (
+              <span
+                className="flex min-w-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                title={`Fornecedor: ${product.supplier_name}`}
+              >
+                <Building2
+                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier_name).text)}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{product.supplier_name}</span>
+              </span>
+            ) : (
+              <span />
+            )}
+            {product.product_sku && (
+              <span
+                className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
+                aria-label={`Código do produto: ${product.product_sku}`}
+              >
+                {product.product_sku}
+              </span>
+            )}
           </div>
         )}
+
+        {/* 4 — Nome do produto */}
+        <p className="line-clamp-2 text-sm font-medium leading-tight">
+          {product.product_name ?? '—'}
+        </p>
+
 
         <div className="mt-0.5">
           <ProductColorSwatches
