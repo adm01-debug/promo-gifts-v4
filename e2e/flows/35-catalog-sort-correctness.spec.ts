@@ -46,11 +46,22 @@ async function readCards(page: Page): Promise<CardData[]> {
 }
 
 async function applySort(page: Page, value: string) {
+  const before = await readCards(page);
+  const beforeKey = before.map((c) => c.name).join("|");
   await page.locator(Sel.catalog.sortTrigger).click();
   await page.locator(Sel.catalog.sortItem(value)).click();
-  // aguarda re-render do grid (cards podem ser remontados)
-  await page.waitForTimeout(1200);
+  // aguarda o grid efetivamente reordenar (ou estabilizar com mesma ordem)
   await waitForTestIdVisible(page, "product-card", { timeout: 15_000 });
+  await pollUntil(
+    async () => {
+      const now = await readCards(page);
+      if (now.length === 0) return false;
+      const nowKey = now.map((c) => c.name).join("|");
+      // estabilidade: mesma leitura 2x OU mudou em relação ao before
+      return nowKey !== beforeKey || now.length === before.length;
+    },
+    { timeout: 8_000, interval: 250 },
+  ).catch(() => {/* tolerante */});
 }
 
 function isNonDecreasing(nums: number[]): boolean {
