@@ -18,12 +18,16 @@ import { logger } from '@/lib/logger';
 export interface ProductColorDot {
   name: string;
   hex: string | null;
+  /** Imagem da variante (primary_image_url) — usada pelos cards para trocar a
+   *  foto principal ao clicar no swatch (mini-carrossel de variantes). */
+  image: string | null;
 }
 
 type VariantRow = {
   product_id: string;
   color_name: string | null;
   color_hex: string | null;
+  primary_image_url: string | null;
 };
 
 /**
