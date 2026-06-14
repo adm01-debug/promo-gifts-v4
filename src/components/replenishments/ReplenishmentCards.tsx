@@ -138,7 +138,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           productId={product.product_id}
           productName={product.product_name}
           productSku={product.product_sku}
-          productImageUrl={product.product_image}
+          productImageUrl={activeImage}
           productPrice={product.base_price ?? 0}
           productMinQuantity={product.min_quantity || 1}
           isOutOfStock={product.stock_status === 'out-of-stock'}
@@ -148,8 +148,11 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
           <HoverSetImage
-            primary={product.product_image}
-            set={product.product_set_image}
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            // Desativa o crossfade "todas as cores" quando o usuário está
+            // navegando pelas variantes — a foto da cor selecionada vence.
+            set={activeColorName ? null : product.product_set_image}
             alt={`Foto de ${product.product_name}`}
           />
 
