@@ -408,7 +408,7 @@ export const ProductTableView = memo(function ProductTableView({
               className="justify-end"
             />
           </div>
-          <div className="w-60 shrink-0 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="w-48 shrink-0 px-1 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Ações
           </div>
         </div>
@@ -638,7 +638,7 @@ export const ProductTableView = memo(function ProductTableView({
                   />
                 </div>
 
-                <div className="w-60 shrink-0 px-3">
+                <div className="w-48 shrink-0 px-1">
                   <TableRowActions
                     product={product}
                     isFavorite={isFavorite?.(product.id) || false}

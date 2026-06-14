@@ -78,7 +78,7 @@ export function TableRowActions({
               productPrice={product.price}
               minQuantity={product.minQuantity || 1}
               variant="icon"
-              className="h-7 w-7"
+              className="h-6 w-6"
               onSuccess={handleCartAdd}
             />
           </div>
@@ -92,7 +92,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
+            className="h-6 w-6 shrink-0 rounded-full text-muted-foreground hover:bg-success hover:text-success-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'quote');
@@ -111,7 +111,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'collection');
@@ -131,7 +131,7 @@ export function TableRowActions({
             variant="ghost"
             size="icon"
             className={cn(
-              'h-7 w-7 shrink-0 rounded-full',
+              'h-6 w-6 shrink-0 rounded-full',
               fav && 'bg-destructive/10 text-destructive',
             )}
             onClick={(e) => {
@@ -162,7 +162,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('h-7 w-7 shrink-0 rounded-full', inComp && 'bg-primary/10 text-primary')}
+            className={cn('h-6 w-6 shrink-0 rounded-full', inComp && 'bg-primary/10 text-primary')}
             disabled={!inComp && !canAddToCompare}
             onClick={(e) => {
               e.stopPropagation();
@@ -190,7 +190,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenQuickView(product);
@@ -209,7 +209,7 @@ export function TableRowActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onOpenVariantPicker(product, 'share');
