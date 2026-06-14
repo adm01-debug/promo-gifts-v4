@@ -325,18 +325,9 @@ export const ProductListItem = memo(function ProductListItem({
   const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
   const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
-  // Prioridade: estoque direto do swatch clicado > resolver > estoque do produto
-  const userSelectedStock = userSelectedColor?.stock;
-  const userSelectedStatus =
-    typeof userSelectedStock === 'number'
-      ? userSelectedStock <= 0
-        ? 'out-of-stock'
-        : userSelectedStock < 10
-          ? 'low-stock'
-          : 'in-stock'
-      : undefined;
-  const displayStock = userSelectedStock ?? colorStock?.stock ?? product.stock;
-  const displayStatus = userSelectedStatus ?? colorStock?.stockStatus ?? product.stockStatus;
+  // Estoque por cor resolvido pela fonte única (resolveColorStock já considera a cor selecionada pelo usuário via userSelectedColorName).
+  const displayStock = colorStock?.stock ?? product.stock;
+  const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
 
   const activeColorName =
     userSelectedColor?.name || currentVariant?.name || getActiveColorName(product, activeColorFilter);
