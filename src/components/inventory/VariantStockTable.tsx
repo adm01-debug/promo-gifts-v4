@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 
 // ============================================
@@ -120,17 +120,18 @@ function ColorSwatch({ hex, name }: { hex?: string; name?: string }) {
 function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
   const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
 
-  const progressColor =
-    current <= 0
-      ? 'bg-destructive'
-      : current <= min * 0.25
-        ? 'bg-destructive'
-        : current <= min
-          ? 'bg-warning'
-          : 'bg-success';
-
-  const statusLabel =
-    current <= 0 ? 'Esgotado' : current <= min * 0.25 ? 'Crítico' : current <= min ? 'Estoque baixo' : 'OK';
+  // Derivação via fonte única (calculateStockStatus em '@/types/stock'); rótulo+cor
+  // co-localizados a esta tabela de inventário (admin).
+  const PROGRESS_PRESENTATION: Record<string, { label: string; color: string }> = {
+    out_of_stock: { label: 'Esgotado', color: 'bg-destructive' },
+    critical: { label: 'Crítico', color: 'bg-destructive' },
+    low_stock: { label: 'Estoque baixo', color: 'bg-warning' },
+    in_stock: { label: 'OK', color: 'bg-success' },
+    incoming: { label: 'Chegando', color: 'bg-warning' },
+    overstocked: { label: 'OK', color: 'bg-success' },
+  };
+  const { label: statusLabel, color: progressColor } =
+    PROGRESS_PRESENTATION[calculateStockStatus(current, min)] ?? PROGRESS_PRESENTATION.in_stock;
 
   return (
     <TooltipProvider>
