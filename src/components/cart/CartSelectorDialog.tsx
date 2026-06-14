@@ -57,6 +57,7 @@ export function CartSelectorDialog({
               <button
                 key={cart.id}
                 onClick={() => onSelect(cart.id)}
+                data-testid={`cart-selector-item-${cart.id}`}
                 className={cn(
                   'group flex w-full items-center gap-3 rounded-xl border border-border/40 bg-card p-3 text-left transition-all',
                   'hover:border-primary/40 hover:bg-primary/5 hover:shadow-md active:scale-[0.98]',
