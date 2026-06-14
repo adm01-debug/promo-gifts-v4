@@ -27,7 +27,8 @@ type VariantRow = {
   product_id: string;
   color_name: string | null;
   color_hex: string | null;
-  primary_image_url: string | null;
+  selected_thumbnail: string | null;
+  images: string[] | null;
 };
 
 /**
@@ -103,7 +104,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           let from = 0;
           for (let page = 0; page < MAX_PAGES; page += 1) {
             const { data, error } = await untypedFrom(resolveTable('product_variants'))
-              .select('product_id, color_name, color_hex, primary_image_url')
+              .select('product_id, color_name, color_hex, selected_thumbnail, images')
               .in('product_id', chunk)
               .eq('is_active', true)
               .not('color_name', 'is', null)
@@ -133,7 +134,9 @@ export function useProductsColorsBatch(productIds: string[]) {
             const name = (row.color_name || '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
-            const image = row.primary_image_url?.trim() || null;
+            const image =
+              row.selected_thumbnail?.trim() ||
+              (Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : null);
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
             let dedupMap = results.get(pid);
