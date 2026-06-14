@@ -103,6 +103,8 @@ export const ProductListItem = memo(function ProductListItem({
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
   const actionBusyRef = useRef(false);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  // Cor selecionada manualmente via swatch (bolinha) — sobrescreve imagem/estoque exibidos
+  const [userSelectedColorName, setUserSelectedColorName] = useState<string | null>(null);
 
   // Reset variant index when color filter changes
   const listFilterKey = activeColorFilter
@@ -309,17 +311,25 @@ export const ProductListItem = memo(function ProductListItem({
     : 0;
   const currentVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
 
-  const variantImage = currentVariant?.image;
+  // Match do swatch clicado pelo usuário (prioridade máxima sobre filtro/carousel)
+  const userSelectedColor = userSelectedColorName
+    ? product.colors?.find((c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase()) ?? null
+    : null;
+  const userSelectedImage =
+    userSelectedColor?.images?.[0] || userSelectedColor?.image || undefined;
+
+  const variantImage = userSelectedImage || currentVariant?.image;
   const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
   // primary_image_url (is_primary=true) é a imagem capa canônica — deve ser a primeira exibida
   const rawImageUrl = colorSpecificImage || product.primary_image_url || product.og_image_url || product.images[0] || null;
   const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
-  const colorStock = resolveColorStock(product, activeColorFilter);
+  const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
   const displayStock = colorStock?.stock ?? product.stock;
   const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
 
-  const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
+  const activeColorName =
+    userSelectedColor?.name || currentVariant?.name || getActiveColorName(product, activeColorFilter);
 
   const matchedHighlightColor =
     currentVariant?.hex || resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
@@ -538,6 +548,12 @@ export const ProductListItem = memo(function ProductListItem({
             size="sm"
             hideWhenEmpty
             className="flex-wrap justify-start"
+            selectedName={activeColorName}
+            onSelect={(c) => {
+              setUserSelectedColorName((prev) =>
+                prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
+              );
+            }}
           />
         </div>
 
