@@ -116,7 +116,8 @@ export function ProductStatusBadge({
       case 'urgency':
         switch (urgencyType) {
           case 'limited-stock':
-            return 'bg-destructive/90 text-destructive-foreground';
+            return 'bg-warning text-warning-foreground shadow-md';
+
           case 'trending':
             return 'bg-primary/90 text-primary-foreground';
           case 'ending-soon':
