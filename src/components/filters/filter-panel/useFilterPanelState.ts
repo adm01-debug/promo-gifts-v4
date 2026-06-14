@@ -246,7 +246,7 @@ export function useFilterPanelState(
       genero: (filters.gender || []).length,
       tamanhos: (filters.sizes || []).length,
       'opcoes-rapidas': quickCount,
-      ordenacao: filters.sortBy !== 'name' ? 1 : 0,
+      ordenacao: filters.sortBy !== 'newest' ? 1 : 0,
     } as Record<string, number>;
   }, [filters, materialFilterState]);
 
@@ -258,7 +258,7 @@ export function useFilterPanelState(
     if (filters.minStock > 0) {
       summaries.estoque = `≥${filters.minStock} un.`;
     }
-    if (filters.sortBy !== 'name') {
+    if (filters.sortBy !== 'newest') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);
       summaries.ordenacao = opt?.label || '';
     }
