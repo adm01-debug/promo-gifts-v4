@@ -14,7 +14,7 @@ import {
   shareCartLink,
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import { showUndoToast } from '@/utils/undoToast';
 import { differenceInDays } from 'date-fns';
 import {
@@ -300,7 +300,7 @@ export function useSellerCartsPage() {
     setConfirmQuoteCart(null);
     // Conversão atômica no servidor: cria o orçamento (rascunho persistido) e só então
     // remove o carrinho — tudo numa transação. Em caso de erro, o carrinho é PRESERVADO.
-    const { data, error } = await supabase.rpc('fn_convert_cart_to_quote', {
+    const { data, error } = await untypedRpc('fn_convert_cart_to_quote', {
       p_cart_id: cartId,
     });
     const result = data as

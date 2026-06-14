@@ -31,7 +31,7 @@ import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 
 export function CartHeaderButton() {
   const navigate = useNavigate();
@@ -502,10 +502,9 @@ export function CartHeaderButton() {
                             setOpen(false);
                             // Conversão atômica: cria orçamento (rascunho persistido) e remove o
                             // carrinho numa só transação. Em erro, o carrinho é PRESERVADO.
-                            const { data, error } = await supabase.rpc(
-                              'fn_convert_cart_to_quote',
-                              { p_cart_id: cartId },
-                            );
+                            const { data, error } = await untypedRpc('fn_convert_cart_to_quote', {
+                              p_cart_id: cartId,
+                            });
                             const result = data as
                               | {
                                   quote_id?: string;
