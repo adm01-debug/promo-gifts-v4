@@ -14,6 +14,7 @@ import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking'
 import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
+import { isProductKit } from '@/lib/products/kit-detection';
 import { toast } from 'sonner';
 import type { ProductVariation } from '@/types/product-catalog';
 
@@ -502,7 +503,7 @@ export function useFiltersPageState() {
       });
     if (filters.hasCommercialPackaging)
       result = result.filter((product) => product.hasCommercialPackaging === true);
-    if (filters.isKit) result = result.filter((product) => product.isKit === true);
+    if (filters.isKit) result = result.filter(isProductKit);
     // BUG-15a FIX: featured era contabilizado/chipeado mas nunca filtrava produtos.
     if (filters.featured) result = result.filter((product) => product.featured === true);
     // BUG-15b FIX: isNew mapeia para product.newArrival (campo correto no tipo Product).
