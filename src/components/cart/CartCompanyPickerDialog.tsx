@@ -185,7 +185,7 @@ export function CartCompanyPickerDialog({
         );
         writeList(RECENT_KEY, nextRecents);
         setRecents(nextRecents);
-        onCreated?.();
+        onCreated?.(result.id);
         onOpenChange(false);
       }
     },
