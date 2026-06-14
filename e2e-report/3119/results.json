@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+        "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+      },
+      "gitCommit": {
+        "shortHash": "8043cef",
+        "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+        "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+        "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781447085000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781447085000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "commitHash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27501784308"
+          },
+          "gitCommit": {
+            "shortHash": "8043cef",
+            "hash": "8043cefc3e3ee28c279f5d102a3c424e133a4bd1",
+            "subject": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única",
+            "body": "fix(catalog): corrige TS2339 em ProductListItem — estoque por cor via fonte única\n\nO commit 8445738 (Lovable bot) acessava userSelectedColor.stock, mas o tipo\nProductColor (elemento de product.colors) NÃO possui campo stock — estoque por\ncor vive em product.variations[].stock. Resultado: regressão TS2339 que quebrou\no deploy de produção (dpl_3Ywxh8gH, HEAD dc7b1bb ficou ERROR; prod servindo commit antigo).\n\nFix: remove o bloco redundante do bot e restaura as 2 linhas canônicas. A função\nresolveColorStock() JÁ recebe userSelectedColorName (linha 327) e resolve o estoque\nda variação correspondente — a seleção de swatch do usuário continua honrada, agora\nvia fonte única, eliminando também o 4º limiar de estoque hardcoded (<10) que o bot duplicou.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781447085000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-14T14:25:53.060Z",
+    "duration": 4047.0050000000006,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
