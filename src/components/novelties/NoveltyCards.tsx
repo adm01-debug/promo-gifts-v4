@@ -25,6 +25,8 @@ import {
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
+import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { getSupplierColors } from '@/lib/supplier-colors';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
