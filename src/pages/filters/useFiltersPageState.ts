@@ -324,7 +324,7 @@ export function useFiltersPageState() {
       count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.minStock > 0) count++;
-    if (filters.minSupplierSales30d > 0) count++;
+    if (filters.minSupplierSales90d > 0) count++;
     if (filters.minPromoSales90d > 0) count++;
     if (filters.inStock) count++;
     if (filters.isKit) count++;
