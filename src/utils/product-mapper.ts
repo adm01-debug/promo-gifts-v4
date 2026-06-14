@@ -3,6 +3,7 @@
  *
  * Converts raw PromobrindProduct to the internal Product format.
  */
+import { getCatalogStockStatus, type CatalogStockStatus } from '@/lib/catalog-stock-status';
 import type { Product } from '@/types/product-catalog';
 import {
   type PromobrindProduct,
@@ -12,10 +13,8 @@ import {
 } from '@/lib/external-db';
 import { normalizeColors } from '@/utils/product-colors';
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  if (stock <= 0) return 'out-of-stock';
-  if (stock < 10) return 'low-stock';
-  return 'in-stock';
+function getStockStatus(stock: number): CatalogStockStatus {
+  return getCatalogStockStatus(stock);
 }
 
 function parseMaterials(materials: unknown): string[] {
