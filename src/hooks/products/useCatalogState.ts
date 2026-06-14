@@ -47,10 +47,27 @@ export type SortOption =
   | 'best-seller-promo';
 
 const VIEW_MODE_KEY = 'catalog-view-mode';
+const SORT_SESSION_KEY = 'catalog:sortBy';
 
 // BUG-SORT-01 FIX: Conjunto dos valores válidos derivado do SSOT (SORT_OPTIONS).
 // Declarado fora do hook para não ser recriado a cada render.
 const VALID_SORT_VALUES = new Set<string>(SORT_OPTIONS.map((o) => o.value));
+
+function getSessionSortPreference(): string | null {
+  try {
+    return typeof window !== 'undefined' ? window.sessionStorage.getItem(SORT_SESSION_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionSortPreference(sortBy: SortOption): void {
+  try {
+    if (typeof window !== 'undefined') window.sessionStorage.setItem(SORT_SESSION_KEY, sortBy);
+  } catch {
+    /* sessionStorage indisponivel — mantém somente em memoria */
+  }
+}
 
 /**
  * BUG-SORT-09 FIX: Mapa de aliases conhecidos → valores canônicos de SortOption.
@@ -124,7 +141,7 @@ export function useCatalogState() {
   const { registerProducts } = useProductsContext();
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
-  const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
+  const { updatePreferences } = useCatalogPreferences();
   // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
   // dispara render extra (ref não re-renderiza) e a escrita via effect é
   // concurrent-safe. O valor só é LIDO quando isTransitioning=true.
@@ -169,17 +186,18 @@ export function useCatalogState() {
   const rawUrlSort = searchParams.get('sort');
   const initialSortBy: SortOption = rawUrlSort
     ? validateSortOption(rawUrlSort)
-    : validateSortOption(preferences.sortBy);
+    : validateSortOption(getSessionSortPreference());
 
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
-  // Sync sortBy with preferences once loaded
+  // Sync sortBy with the current browser session only.
+  // PO rule: a fresh login/tab starts in "Mais Recentes"; old cloud/local prefs must not override it.
   useEffect(() => {
-    if (prefsLoaded && preferences.sortBy && !searchParams.get('sort')) {
-      // BUG-SORT-01 FIX: validar o valor de preferência antes de aplicar ao state.
-      setSortByState(validateSortOption(preferences.sortBy));
+    const storedSort = getSessionSortPreference();
+    if (storedSort && !searchParams.get('sort')) {
+      setSortByState(validateSortOption(storedSort));
     }
-  }, [prefsLoaded, preferences.sortBy, searchParams]);
+  }, [searchParams]);
 
   const setSortBy = useCallback(
     (s: SortOption | string) => {
@@ -190,6 +208,7 @@ export function useCatalogState() {
       const validated = validateSortOption(s);
       if (validated === sortBy) return;
       setIsTransitioning(true);
+      setSessionSortPreference(validated);
       setSortByState(validated);
     },
     [sortBy],
@@ -289,6 +308,7 @@ export function useCatalogState() {
     search: debouncedServerSearch,
     categories: filters.categories,
     suppliers: filters.suppliers,
+    sortBy,
   });
 
   const realProducts = useMemo(() => {
@@ -708,7 +728,7 @@ export function useCatalogState() {
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('newest');
     setSearchQuery('');
     navigate('/', { replace: true });
   }, [navigate, setSortBy]);
