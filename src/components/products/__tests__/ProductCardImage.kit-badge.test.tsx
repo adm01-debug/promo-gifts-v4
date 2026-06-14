@@ -1,82 +1,68 @@
-/**
- * Valida que o badge "Kit" renderiza no card do catálogo quando product.isKit=true.
- *
- * Caminho exercitado:
- *   DB.is_kit=true → mapLightweightToProduct → product.isKit=true →
- *   ProductCardImage → <ProductStatusBadge type="kit"> → texto "Kit" no DOM.
- */
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ProductCardImage } from '@/components/products/ProductCardImage';
-import { mapLightweightToProduct } from '@/hooks/products/useProductsLightweight';
-import type { LightweightProduct } from '@/lib/external-db/products-lightweight';
+import { describe, expect, it } from 'vitest';
+import { ProductCardImage } from '../ProductCardImage';
+import type { Product } from '@/types/product-catalog';
 
-vi.mock('@/hooks/ui/useReducedMotion', () => ({ useReducedMotion: () => true }));
-vi.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ actualTheme: 'light' }),
-}));
-vi.mock('@/stores/useBadgeVisibilityStore', () => ({
-  useBadgeVisibilityStore: (sel: (s: unknown) => unknown) =>
-    sel({ routeSettings: {}, badgesEnabled: true }),
-}));
-
-const base: LightweightProduct = {
-  id: 'kit-1',
-  name: 'Kit Executivo',
-  sku: 'KIT-1',
-  supplier_reference: null,
-  sale_price: 100,
-  cost_price: 80,
-  image_url: null,
-  primary_image_url: null,
-  set_image_url: null,
-  supplier_id: null,
-  category_id: null,
-  main_category_id: null,
-  brand: null,
-  is_active: true,
-  active: true,
-  stock_quantity: 10,
-  min_quantity: 1,
-  is_kit: true,
-  is_new: false,
-  created_at: '2020-01-01T00:00:00.000Z',
-  gender: null,
-  short_description: null,
+const baseProduct: Product = {
+  id: 'prod-kit-fallback',
+  name: 'Kit churrasco — ref. KC0124PP',
+  description: '',
+  shortDescription: '',
+  price: 47.09,
+  image_url: '/placeholder.svg',
+  images: ['/placeholder.svg'],
+  sku: 'KC0124PP',
+  stock: 0,
+  colors: [],
+  materials: [],
+  minQuantity: 1,
+  stockStatus: 'out-of-stock',
+  featured: false,
+  newArrival: false,
+  onSale: false,
+  isKit: false,
+  category: { id: 'cat-kit', name: 'Kit Churrasco' },
+  supplier: { id: 'supplier', name: 'Asia Import' },
+  tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
 };
 
-const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <MemoryRouter>
-    <TooltipProvider>{children}</TooltipProvider>
-  </MemoryRouter>
-);
+function renderImage(product: Product, categoryName?: string | null) {
+  return render(
+    <BrowserRouter>
+      <TooltipProvider>
+        <ProductCardImage
+          product={product}
+          cardImageUrl="/placeholder.svg"
+          imageLoaded
+          isHovered={false}
+          computedImageScale={1}
+          allMatchingVariants={[]}
+          hasMultipleVariants={false}
+          safeVariantIdx={0}
+          onVariantChange={() => undefined}
+          categoryName={categoryName}
+          priority
+        />
+      </TooltipProvider>
+    </BrowserRouter>,
+  );
+}
 
 describe('ProductCardImage — badge Kit', () => {
-  it('renderiza "Kit" quando is_kit=true no BD', () => {
-    const product = mapLightweightToProduct(base);
-    expect(product.isKit).toBe(true);
-
-    render(
-      <Wrap>
-        <ProductCardImage product={product} />
-      </Wrap>,
-    );
-
-    expect(screen.getByText('Kit')).toBeDefined();
+  it('exibe o badge Kit quando isKit=true', () => {
+    renderImage({ ...baseProduct, isKit: true, category: { id: 'cat', name: 'Churrasco' } });
+    expect(screen.getByText('Kit')).toBeInTheDocument();
   });
 
-  it('NÃO renderiza "Kit" quando is_kit=false', () => {
-    const product = mapLightweightToProduct({ ...base, is_kit: false });
-    expect(product.isKit).toBe(false);
+  it('exibe o badge Kit pelo fallback de categoria quando isKit=false', () => {
+    renderImage(baseProduct, 'Kit Churrasco');
+    expect(screen.getByText('Kit')).toBeInTheDocument();
+  });
 
-    render(
-      <Wrap>
-        <ProductCardImage product={product} />
-      </Wrap>,
-    );
-
-    expect(screen.queryByText('Kit')).toBeNull();
+  it('não exibe o badge Kit para produto comum', () => {
+    renderImage({ ...baseProduct, name: 'Caneca térmica', category: { id: 'cat', name: 'Canecas' } });
+    expect(screen.queryByText('Kit')).not.toBeInTheDocument();
   });
 });

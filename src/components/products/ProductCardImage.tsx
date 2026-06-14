@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
+import { isProductKit } from '@/lib/products/kit-detection';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
@@ -74,6 +75,9 @@ interface ProductCardImageProps {
   onStatusClick?: (type: string) => void;
   /** Whether a color update is in progress (shows loading state) */
   isUpdatingColor?: boolean;
+  /** Leaf category name/path resolved outside the card, used as fallback for kit detection */
+  categoryName?: string | null;
+  categoryPath?: readonly string[] | null;
 }
 
 export const ProductCardImage = memo(function ProductCardImage({
@@ -96,6 +100,8 @@ export const ProductCardImage = memo(function ProductCardImage({
   priority = false,
   onStatusClick,
   isUpdatingColor = false,
+  categoryName,
+  categoryPath,
 }: ProductCardImageProps) {
   // Resolve the active image: prefer the variant-specific image (if a color is
   // selected in the carousel), otherwise fall back to the card image URL.
@@ -116,7 +122,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   // Derive badge flags from the product object
   const featured = product.featured;
   const newArrival = product.newArrival;
-  const isKit = product.isKit;
+  const isKit = isProductKit(product, { categoryName, categoryPath });
   const onSale = product.onSale;
   const hasPackaging = product.hasCommercialPackaging === true;
   const stockStatus: 'ok' | 'low' | 'unavailable' =

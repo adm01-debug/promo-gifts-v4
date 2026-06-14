@@ -49,6 +49,7 @@ import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
+import { isProductKit } from '@/lib/products/kit-detection';
 
 interface ProductListItemProps {
   product: Product;
@@ -85,6 +86,7 @@ export const ProductListItem = memo(function ProductListItem({
   onStatusClick,
 }: ProductListItemProps) {
   const navigate = useNavigate();
+  const detectedIsKit = isProductKit(product);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [collectionVariant, setCollectionVariant] = useState<
     | {
@@ -479,7 +481,7 @@ export const ProductListItem = memo(function ProductListItem({
                 onClick={() => handleStatusClick('promotion')}
               />
             )}
-            {product.isKit && (
+            {detectedIsKit && (
               <ProductStatusBadge type="kit" size="sm" onClick={() => handleStatusClick('kit')} />
             )}
             {product.hasCommercialPackaging && (

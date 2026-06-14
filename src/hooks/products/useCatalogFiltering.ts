@@ -6,6 +6,7 @@ import type { Product, SupplierSalesEntry } from '@/hooks/products';
 import type { FilterState } from '@/components/filters/FilterPanel';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import { sortProducts } from '@/utils/product-sorting';
+import { isProductKit } from '@/lib/products/kit-detection';
 
 interface CatalogFilteringOptions {
   realProducts: Product[];
@@ -136,6 +137,10 @@ export function useCatalogFiltering({
       result = result.filter((p) => p.hasCommercialPackaging === true);
     }
 
+    if (filters.isKit) {
+      result = result.filter((product) => isProductKit(product));
+    }
+
     if (genderFilterSet.size > 0) {
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
     }
@@ -174,6 +179,7 @@ export function useCatalogFiltering({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     filters.priceRange[1],
     filters.inStock,
+    filters.isKit,
     filters.materiais,
     sortBy,
     hasFuzzySearch,
