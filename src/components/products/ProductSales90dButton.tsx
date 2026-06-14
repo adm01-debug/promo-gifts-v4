@@ -25,10 +25,14 @@ export const ProductSales90dButton = memo(function ProductSales90dButton({
   variantLabel,
   className,
 }: ProductSales90dButtonProps) {
+  // Padrão: mostrar TOTAL do produto (todas as variantes), mesmo quando há variante selecionada.
+  // Usuário pode optar por ver apenas a variante via toggle dentro do popover.
+  const [scope, setScope] = useState<'product' | 'variant'>('product');
   const productData = useSparklineData(productId);
   const variantData = useSparklineDataByVariant(variantId);
-  const data = variantId ? variantData : productData;
-  const isVariantScope = !!variantId && !!variantData;
+  const canScopeVariant = !!variantId && !!variantData;
+  const isVariantScope = scope === 'variant' && canScopeVariant;
+  const data = isVariantScope ? variantData : productData;
 
   const summary = useMemo(() => {
     const pts = data?.dailyQty ?? [];
