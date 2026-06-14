@@ -187,18 +187,25 @@ export const ProductListItem = memo(function ProductListItem({
         setCollectionVariant(variantInfo);
         setCollectionModalOpen(true);
       } else if (variantPickerMode === 'quote') {
-        const params = new URLSearchParams({
-          product_id: product.id,
-          product_name: product.name,
-          product_sku: product.sku || '',
-          product_price: String(product.price ?? 0),
-        });
-        if (variant?.color_name) params.set('color_name', variant.color_name);
-        if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-        if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-        if (product.images?.[0])
-          params.set('product_image', variant?.selected_thumbnail || product.images[0]);
-        setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+        // Fluxo correto: variação já selecionada → escolher carrinho/cliente
+        if (carts.length > 1) {
+          setPendingVariant(variant);
+          setSelectorOpen(true);
+          return;
+        }
+        addToActiveCart(
+          {
+            product_id: product.id,
+            product_name: product.name,
+            product_sku: product.sku || undefined,
+            product_image_url: variant?.selected_thumbnail || product.images?.[0],
+            product_price: product.price ?? 0,
+            quantity: product.minQuantity || 1,
+            color_name: variant?.color_name || undefined,
+            color_hex: variant?.color_hex || undefined,
+          },
+          carts.length === 1 ? carts[0].id : undefined,
+        );
       } else if (variantPickerMode === 'share') {
         setShareVariant(
           variant
@@ -212,7 +219,7 @@ export const ProductListItem = memo(function ProductListItem({
         setShareDialogOpen(true);
       }
     },
-    [variantPickerMode, product, favStore, compStore, navigate],
+    [variantPickerMode, product, favStore, compStore, carts, addToActiveCart],
   );
 
   const formatPrice = (price: number) =>
