@@ -78,7 +78,7 @@ const _STATUS_OPTIONS: {
   },
   {
     value: 'low_stock',
-    label: 'Baixo',
+    label: 'Estoque baixo',
     icon: <AlertTriangle className="h-3.5 w-3.5" />,
     color: 'text-warning',
   },

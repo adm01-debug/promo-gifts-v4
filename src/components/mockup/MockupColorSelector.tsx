@@ -153,7 +153,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
                     ⊕ {formatStock(variant.stock_quantity ?? 0)} un
                   </span>
                 ) : (
-                  <span className="text-[10px] text-destructive">△ Sem estoque</span>
+                  <span className="text-[10px] text-destructive">△ Estoque zerado</span>
                 )}
               </div>
             </button>

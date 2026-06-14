@@ -50,7 +50,7 @@ export const EnhancedProductCard = memo(function EnhancedProductCard({
         : undefined;
   const urgencyText =
     urgencyType === 'out-of-stock'
-      ? 'Sem estoque'
+      ? 'Estoque zerado'
       : urgencyType === 'limited-stock'
         ? 'Estoque limitado'
         : undefined;

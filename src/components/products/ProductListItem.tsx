@@ -231,7 +231,7 @@ export const ProductListItem = memo(function ProductListItem({
       case 'low-stock':
         return 'Estoque baixo';
       case 'out-of-stock':
-        return 'Sem estoque';
+        return 'Estoque zerado';
       default:
         return 'Em estoque';
     }

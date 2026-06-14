@@ -207,7 +207,7 @@ export function QuoteBuilderProductSearch({
                             {isOutOfStock ? (
                               <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-destructive">
                                 <AlertTriangle className="h-2.5 w-2.5" />
-                                Sem estoque
+                                Estoque zerado
                               </span>
                             ) : isLowStock ? (
                               <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-warning">

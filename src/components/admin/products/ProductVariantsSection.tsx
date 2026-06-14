@@ -33,7 +33,7 @@ function StockBadge({ stock }: { stock: number | null }) {
   if (qty === 0)
     return (
       <Badge variant="destructive" className="px-1.5 py-0 text-[10px]">
-        Sem estoque
+        Estoque zerado
       </Badge>
     );
   if (qty < 100)
