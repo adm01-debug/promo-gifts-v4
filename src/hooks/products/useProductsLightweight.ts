@@ -117,10 +117,15 @@ export const CATALOG_BATCH_PAGES = 4;
  * Custo: +1 campo text por linha — impacto negligenciável (~8 bytes/produto).
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, sale_price, cost_price, primary_image_url, set_image_url, ' +
+  'id, name, sku, supplier_reference, short_description, ' +
+  'sale_price, cost_price, primary_image_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
   'stock_quantity, min_quantity, is_kit, is_new, created_at, gender, price_updated_at, ' +
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+// FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
+// Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
+// description='' em TODO produto da grade, neutralizando o re-rank/substring client-side por
+// referência do fornecedor e descrição. Mantidos is_new/created_at (feature newArrival).
 
 interface CatalogPage {
   products: Product[];
