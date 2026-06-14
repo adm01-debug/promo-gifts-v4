@@ -41,6 +41,7 @@ import { ProductCardImage } from './ProductCardImage';
 import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
+import { isProductKit } from '@/lib/products/kit-detection';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
@@ -118,6 +119,10 @@ export const ProductCard = memo(
     const navigate = useNavigate();
     const { prefetchProduct } = usePrefetchProduct();
     const leafCategory = useLeafCategory(product.id);
+    const detectedIsKit = isProductKit(product, {
+      categoryName: leafCategory?.name,
+      categoryPath: leafCategory?.path,
+    });
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -561,6 +566,8 @@ export const ProductCard = memo(
           priority={priority}
           onStatusClick={handleStatusClick}
           isUpdatingColor={isUpdatingColor}
+          categoryName={leafCategory?.name}
+          categoryPath={leafCategory?.path}
         />
 
 
@@ -633,6 +640,7 @@ export const ProductCard = memo(
               groups={product.groups}
               categoryUuid={leafCategory?.id ?? product.category_id}
               categoryPath={leafCategory?.path}
+              isKit={detectedIsKit}
               className="flex-wrap"
             />
           )}
