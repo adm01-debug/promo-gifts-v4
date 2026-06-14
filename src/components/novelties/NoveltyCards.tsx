@@ -195,7 +195,14 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         </div>
 
         <div className="mt-0.5">
-          <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="sm"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
 
         {/* Preço + Estoque */}
