@@ -44,7 +44,9 @@ export function CartSelectorDialog({
             Escolher Carrinho
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Você tem {carts.length} carrinhos ativos. Em qual deseja adicionar{' '}
+            {carts.length === 1
+              ? 'Você tem 1 carrinho ativo. Escolha-o ou crie um novo para outro cliente para adicionar '
+              : `Você tem ${carts.length} carrinhos ativos. Em qual deseja adicionar `}
             <span className="font-semibold text-foreground">{productName}</span>?
           </DialogDescription>
         </DialogHeader>
