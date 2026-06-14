@@ -530,14 +530,14 @@ export const ProductListItem = memo(function ProductListItem({
 
         </div>
 
-        {/* Center — full color swatches (all colors, no overflow) */}
-        <div className="hidden min-w-0 flex-1 items-center justify-center px-2 md:flex">
+        {/* Center — full color swatches, sempre iniciam na mesma posição (esquerda) */}
+        <div className="hidden min-w-0 flex-1 items-center justify-start pl-4 pr-2 md:flex">
           <ProductColorSwatches
             colors={product.colors}
             max={product.colors?.length || 0}
             size="sm"
             hideWhenEmpty
-            className="flex-wrap justify-center"
+            className="flex-wrap justify-start"
           />
         </div>
 
