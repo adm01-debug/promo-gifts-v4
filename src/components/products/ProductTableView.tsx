@@ -332,6 +332,15 @@ export const ProductTableView = memo(function ProductTableView({
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center border-b border-border/50 bg-muted/90 px-4 py-2.5 shadow-sm backdrop-blur-md">
           {selectionMode && <div className="w-10 px-2" />}
+          <div className="hidden w-40 px-3 lg:block">
+            <SortHeader
+              label="Fornecedor"
+              col="supplier"
+              activeCol={sortCol}
+              activeDir={sortDir}
+              onSort={handleSort}
+            />
+          </div>
           <div className="w-12 px-2" />
           <div className="flex-1 px-3">
             <SortHeader
@@ -351,22 +360,13 @@ export const ProductTableView = memo(function ProductTableView({
               onSort={handleSort}
             />
           </div>
-          <div className="hidden w-40 px-3 lg:block">
-            <SortHeader
-              label="Fornecedor"
-              col="supplier"
-              activeCol={sortCol}
-              activeDir={sortDir}
-              onSort={handleSort}
-            />
-          </div>
           <div className="hidden w-32 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:block">
             Cores
           </div>
           <div className="w-32 px-3 text-right">
             <SortHeader
-              label="Preço"
-              col="price"
+              label="Estoque"
+              col="stock"
               activeCol={sortCol}
               activeDir={sortDir}
               onSort={handleSort}
@@ -375,8 +375,8 @@ export const ProductTableView = memo(function ProductTableView({
           </div>
           <div className="w-32 px-3 text-right">
             <SortHeader
-              label="Estoque"
-              col="stock"
+              label="Preço"
+              col="price"
               activeCol={sortCol}
               activeDir={sortDir}
               onSort={handleSort}
@@ -436,6 +436,9 @@ export const ProductTableView = memo(function ProductTableView({
                       <Skeleton className="h-4 w-4 rounded" />
                     </div>
                   )}
+                  <div className="hidden w-40 px-3 lg:block">
+                    <Skeleton className="h-3 w-24" />
+                  </div>
                   <div className="w-12 px-2">
                     <Skeleton className="h-10 w-10 rounded-md" />
                   </div>
@@ -446,19 +449,16 @@ export const ProductTableView = memo(function ProductTableView({
                   <div className="hidden w-32 px-3 md:block">
                     <Skeleton className="h-3 w-20" />
                   </div>
-                  <div className="hidden w-40 px-3 lg:block">
-                    <Skeleton className="h-3 w-24" />
-                  </div>
                   <div className="hidden w-32 gap-1 px-3 sm:flex">
                     {[1, 2, 3].map((i) => (
                       <Skeleton key={i} className="h-3.5 w-3.5 rounded-full" />
                     ))}
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-16" />
+                    <Skeleton className="ml-auto h-4 w-12" />
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-12" />
+                    <Skeleton className="ml-auto h-4 w-16" />
                   </div>
                   <div className="flex w-48 justify-center gap-2 px-3">
                     {[1, 2, 3].map((i) => (
@@ -523,6 +523,10 @@ export const ProductTableView = memo(function ProductTableView({
                   </div>
                 )}
 
+                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
+                  {product.supplier?.name}
+                </div>
+
                 <div className="w-12 px-2">
                   <div className="h-10 w-10 overflow-hidden rounded-md border border-border/30 bg-muted/30">
                     <img
@@ -554,9 +558,6 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
                   {product.sku}
                 </div>
-                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
-                  {product.supplier?.name}
-                </div>
 
                 <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
                   {product.colors.length > 0 ? (
@@ -585,14 +586,6 @@ export const ProductTableView = memo(function ProductTableView({
                   )}
                 </div>
 
-                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
-                  {formatPrice(product.price)}
-                  <PriceFreshnessBadge
-                    priceUpdatedAt={product.priceUpdatedAt}
-                    variant="icon-only"
-                  />
-                </div>
-
                 <div
                   className={cn(
                     'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
@@ -610,6 +603,14 @@ export const ProductTableView = memo(function ProductTableView({
                     )}
                   />
                   {(displayStock || 0).toLocaleString('pt-BR')}
+                </div>
+
+                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
+                  {formatPrice(product.price)}
+                  <PriceFreshnessBadge
+                    priceUpdatedAt={product.priceUpdatedAt}
+                    variant="icon-only"
+                  />
                 </div>
 
                 <div className="w-48 px-3">
