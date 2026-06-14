@@ -33,10 +33,9 @@ export function ListItemActions({
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-0.5',
+        'flex shrink-0 items-center gap-0.5 pr-1',
         'opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
         'transition-opacity duration-200',
-        'overflow-x-auto no-scrollbar max-w-full'
       )}
     >
       {/* 1 - Carrinho */}
