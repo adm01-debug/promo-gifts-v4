@@ -27,6 +27,8 @@ import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
+import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { getSupplierColors } from '@/lib/supplier-colors';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
