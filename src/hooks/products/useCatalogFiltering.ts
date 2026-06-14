@@ -138,7 +138,7 @@ export function useCatalogFiltering({
     }
 
     if (filters.isKit) {
-      result = result.filter(isProductKit);
+      result = result.filter((product) => isProductKit(product));
     }
 
     if (genderFilterSet.size > 0) {

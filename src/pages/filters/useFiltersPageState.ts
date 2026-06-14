@@ -503,7 +503,7 @@ export function useFiltersPageState() {
       });
     if (filters.hasCommercialPackaging)
       result = result.filter((product) => product.hasCommercialPackaging === true);
-    if (filters.isKit) result = result.filter(isProductKit);
+    if (filters.isKit) result = result.filter((product) => isProductKit(product));
     // BUG-15a FIX: featured era contabilizado/chipeado mas nunca filtrava produtos.
     if (filters.featured) result = result.filter((product) => product.featured === true);
     // BUG-15b FIX: isNew mapeia para product.newArrival (campo correto no tipo Product).
