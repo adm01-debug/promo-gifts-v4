@@ -336,7 +336,14 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {product.supplier_name}
             </span>
           )}
-          <ProductColorSwatches colors={colors} max={5} size="xs" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="xs"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
       </div>
 
