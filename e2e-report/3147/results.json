@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+        "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+      },
+      "gitCommit": {
+        "shortHash": "72d98c0",
+        "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+        "subject": "Fix/video playback performance (#744)",
+        "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781471850000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781471850000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72d98c02fe62af87d10039f19118b8d095da9595",
+            "commitHash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27512322830"
+          },
+          "gitCommit": {
+            "shortHash": "72d98c0",
+            "hash": "72d98c02fe62af87d10039f19118b8d095da9595",
+            "subject": "Fix/video playback performance (#744)",
+            "body": "Fix/video playback performance (#744)\n\n* perf(video): corrige travamento e baixa resolução do player (config hls.js p/ VOD)\n\nSintomas: vídeo de produto lento, \"sem resolução\" e travando.\n\nCausa-raiz: o hls.js usava lowLatencyMode:true — modo para streams LL-HLS AO VIVO.\nOs vídeos do Cloudflare Stream são VOD (provado: manifesto tem EXT-X-PLAYLIST-TYPE:VOD\n+ EXT-X-ENDLIST e zero EXT-X-PART). Em VOD, lowLatencyMode mantém buffer mínimo\nperseguindo um \"live edge\" inexistente => rebuffer/travamento a cada jitter e ABR\npreso em rendition baixo. Somava-se a falta de tuning de ABR (cold-start ~500 kbps =>\ninicia no piso) e buffer pequeno (30s).\n\nCorrecao (tuned p/ Cloudflare Stream VOD; chaves validadas na API do hls.js 1.6.16):\n- lowLatencyMode: false  (VOD, nao live)\n- maxBufferLength 30->60, maxMaxBufferLength 600, maxBufferSize 120MB (absorve jitter)\n- backBufferLength 90->30 (videos curtos; poupa memoria)\n- startLevel:-1 + abrEwmaDefaultEstimate 1_000_000 + startFragPrefetch:true\n  (cold-start ~720p em vez de 480p na escada real, e sobe rapido)\n- capLevelToPlayerSize:false (nao trava em baixa qualidade se o player montar pequeno)\n\nValidacao: manifesto real inspecionado (VOD confirmado, escada ate 1080p);\nESLint 0, esbuild transform OK, lint:baseline 0/0 sem regressao.\n\n* fix(video): preferencia de qualidade portavel entre videos (corrige trava em baixa res)\n\nA preferencia de qualidade era persistida como INDICE de nivel cru (localStorage\npromoflix_quality = \"0\"..\"N\") e reaplicada via currentLevel em todo video. Como o\nindice de nivel e por-manifesto (varia de video p/ video, 0 = mais baixo, e fixa-lo\ndesliga o ABR), se o usuario escolhesse uma qualidade baixa uma vez (ex.: conexao\nruim), TODOS os videos seguintes ficavam travados em baixa resolucao — mesmo em\nconexao boa.\n\nCorrecao: persistir por ALTURA, portavel (\"h:720\") ou \"auto\"; no restore\n(MANIFEST_PARSED) mapear a altura para o nivel de menor diferenca do manifesto atual.\nValores legados (indice cru) sao ignorados => caem em ABR, o que tambem desfaz\nautomaticamente travas herdadas de versoes anteriores.\n\nValidacao: harness com 34 cenarios (exato/nearest/round-trip/portabilidade entre\nladders/legado/bordas) — 0 falhas. ESLint 0, lint:baseline 0/0.\n\n* perf(video): calibra cold-start do ABR p/ 2 Mbps (resolucao inicial >=480p garantida)\n\nMedindo 100 manifestos reais (ASIA/SPOT/xbz/somarcas), o cold-start a 1 Mbps\niniciava abaixo de 480p em 36% dos videos (peak-BANDWIDTH alto em xbz/SPOT) —\ncontribuindo p/ a queixa \"sem resolucao\" nos primeiros segundos.\n\nConfirmado no fonte do hls.js: firstAutoLevel usa findBestLevel(getBwEstimate()),\ne antes do 1o fragmento getBwEstimate() retorna abrEwmaDefaultEstimate. Logo, subir\na estimativa sobe o nivel inicial. Calibracao 1M->2M:\n  cold-start@2M: 100% >=480p, ~76% >=720p (vs 64%/30% em 1M).\ntestBandwidth:true (default mantido) mede o 1o fragmento e cai p/ o piso (~330p) em\nrede lenta, entao nao ha risco de travar no inicio.\n\nValidacao: tabela de calibracao sobre 100 videos; ESLint 0, esbuild OK.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781471850000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781471850000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-14T21:20:10.559Z",
+    "duration": 2054.54,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
