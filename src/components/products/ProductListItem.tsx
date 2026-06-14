@@ -654,6 +654,36 @@ export const ProductListItem = memo(function ProductListItem({
         product={product}
         selectedVariant={shareVariant}
       />
+
+      {/* Cart/Cliente Selector — exibido após a escolha da variação */}
+      <CartSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        carts={carts}
+        productName={product.name}
+        canCreateMore={canCreateCart}
+        onSelect={(cartId) => {
+          addToActiveCart(
+            {
+              product_id: product.id,
+              product_name: product.name,
+              product_sku: product.sku || undefined,
+              product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+              product_price: product.price ?? 0,
+              quantity: product.minQuantity || 1,
+              color_name: pendingVariant?.color_name || undefined,
+              color_hex: pendingVariant?.color_hex || undefined,
+            },
+            cartId,
+          );
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+        onCreateNew={() => {
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+      />
     </>
   );
 });
