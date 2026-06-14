@@ -145,7 +145,7 @@ export function ProductStatusBadge({
         return (
           <>
             <Package className={iconSize} />
-            <span>{value || 'Fora de estoque'}</span>
+            <span>{value || 'Estoque zerado'}</span>
           </>
         );
       case 'kit':
