@@ -14,6 +14,7 @@ import {
   shareCartLink,
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { showUndoToast } from '@/utils/undoToast';
 import { differenceInDays } from 'date-fns';
 import {
@@ -293,30 +294,42 @@ export function useSellerCartsPage() {
     setConfirmQuoteCart(cart);
   }, []);
 
-  const confirmGenerateQuote = useCallback(() => {
+  const confirmGenerateQuote = useCallback(async () => {
     if (!confirmQuoteCart) return;
-    navigate('/orcamentos/novo', {
-      state: {
-        fromCart: true,
-        cartId: confirmQuoteCart.id,
-        companyId: confirmQuoteCart.company_id,
-        companyName: confirmQuoteCart.company_name,
-        companyLocation: confirmQuoteCart.company_location,
-        items: confirmQuoteCart.items.map((i) => ({
-          product_id: i.product_id,
-          product_name: i.product_name,
-          product_sku: i.product_sku,
-          product_image_url: i.product_image_url,
-          unit_price: i.product_price,
-          quantity: i.quantity,
-          color_name: i.color_name,
-          color_hex: i.color_hex,
-        })),
-      },
-    });
-    deleteCart(confirmQuoteCart.id);
+    const cartId = confirmQuoteCart.id;
     setConfirmQuoteCart(null);
-  }, [confirmQuoteCart, navigate, deleteCart]);
+    // Conversão atômica no servidor: cria o orçamento (rascunho persistido) e só então
+    // remove o carrinho — tudo numa transação. Em caso de erro, o carrinho é PRESERVADO.
+    const { data, error } = await supabase.rpc('fn_convert_cart_to_quote', {
+      p_cart_id: cartId,
+    });
+    const result = data as
+      | {
+          quote_id?: string;
+          bumped?: Array<{ produto: string; para: number }>;
+          warnings?: Array<{ produto: string }>;
+        }
+      | null;
+    if (error || !result?.quote_id) {
+      toast.error(
+        error?.message || 'Não foi possível gerar o orçamento. Seu carrinho foi preservado.',
+      );
+      return;
+    }
+    if (result.bumped?.length) {
+      toast.info(
+        `Quantidades ajustadas ao mínimo: ${result.bumped
+          .map((b) => `${b.produto} → ${b.para}`)
+          .join('; ')}`,
+      );
+    }
+    if (result.warnings?.length) {
+      toast.warning(
+        `Sem estoque no momento: ${result.warnings.map((w) => w.produto).join('; ')}`,
+      );
+    }
+    navigate(`/orcamentos/${result.quote_id}/editar`);
+  }, [confirmQuoteCart, navigate]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),
