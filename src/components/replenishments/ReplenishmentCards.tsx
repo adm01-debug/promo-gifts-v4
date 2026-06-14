@@ -90,6 +90,17 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
 
+  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+  // num swatch troca a foto principal pela imagem da variante selecionada.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
+
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
     else onClick();
