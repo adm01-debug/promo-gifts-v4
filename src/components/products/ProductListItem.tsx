@@ -510,8 +510,13 @@ export const ProductListItem = memo(function ProductListItem({
             </Badge>
           )}
 
-          {/* Stock + SKU row */}
+          {/* SKU + Stock row — SKU em destaque, antes do estoque */}
           <div className="mt-0.5 flex items-center gap-2">
+            {product.sku && (
+              <span className="rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
+                {product.sku}
+              </span>
+            )}
             <span
               className={cn(
                 'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
@@ -521,12 +526,8 @@ export const ProductListItem = memo(function ProductListItem({
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
             </span>
-            {product.sku && (
-              <span className="hidden font-mono text-[10px] text-muted-foreground/50 sm:inline">
-                {product.sku}
-              </span>
-            )}
           </div>
+
         </div>
 
         {/* Center — full color swatches (all colors, no overflow) */}
