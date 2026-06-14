@@ -33,6 +33,7 @@ import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
 import { ProductSales90dButton } from './ProductSales90dButton';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { SharePreviewDialog } from './share/SharePreviewDialog';
