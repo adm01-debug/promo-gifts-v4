@@ -218,23 +218,29 @@ export const ProductCardImage = memo(function ProductCardImage({
             />
           )}
 
-          {isNovelty && noveltyDaysRemaining !== undefined ? (
-            <ProductStatusBadge
-              type="novelty"
-              daysRemaining={noveltyDaysRemaining}
-              size="sm"
-              onClick={() => onStatusClick?.('novelty')}
-            />
-          ) : (
-            newArrival && (
+          {(() => {
+            // Compute days remaining from product.created_at when explicit
+            // novelty props are not provided (catálogo/super filtro/etc).
+            let resolvedDaysRemaining = noveltyDaysRemaining;
+            if (resolvedDaysRemaining === undefined && newArrival && product.created_at) {
+              const ts = Date.parse(product.created_at);
+              if (!Number.isNaN(ts)) {
+                const elapsed = Math.floor((Date.now() - ts) / 86400000);
+                const remaining = 30 - elapsed;
+                if (remaining > 0 && remaining <= 30) resolvedDaysRemaining = remaining;
+              }
+            }
+            const showNovelty = (isNovelty && noveltyDaysRemaining !== undefined) || newArrival;
+            if (!showNovelty) return null;
+            return (
               <ProductStatusBadge
                 type="novelty"
-                value="Novo"
+                daysRemaining={resolvedDaysRemaining}
                 size="sm"
                 onClick={() => onStatusClick?.('novelty')}
               />
-            )
-          )}
+            );
+          })()}
 
           {isKit && (
             <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
