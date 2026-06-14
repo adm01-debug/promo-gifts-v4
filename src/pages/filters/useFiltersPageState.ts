@@ -291,9 +291,17 @@ export function useFiltersPageState() {
     return () => clearTimeout(timer);
   }, [filtersJson]);
 
-  const sortBy = filters.sortBy || 'name';
+  const sortBy = filters.sortBy || 'newest';
   const setSortBy = useCallback((value: string) => {
     setFilters((prev) => ({ ...prev, sortBy: value }));
+    // Persiste a escolha do usuário durante a sessão (limpo no logout/nova aba).
+    if (typeof window !== 'undefined' && VALID_SORT_VALUES.has(value)) {
+      try {
+        window.sessionStorage.setItem('catalog:sortBy', value);
+      } catch {
+        /* sessionStorage indisponível — ignora */
+      }
+    }
   }, []);
 
   // Promo Brindes sales ranking (lazy — only fetched when needed)
