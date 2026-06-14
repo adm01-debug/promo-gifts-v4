@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+        "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+      },
+      "gitCommit": {
+        "shortHash": "ab4f47b",
+        "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+        "subject": "Fixed icon popover trigger bug",
+        "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+        "author": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781444151000
+        },
+        "committer": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781444151000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "commitHash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27500560207"
+          },
+          "gitCommit": {
+            "shortHash": "ab4f47b",
+            "hash": "ab4f47b19b1d4833b16b8ac3c3862ebc246704c0",
+            "subject": "Fixed icon popover trigger bug",
+            "body": "Fixed icon popover trigger bug\n\nX-Lovable-Edit-ID: edt-825a0a5b-7c0f-46d1-8239-d9987980815c\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781444151000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-14T13:37:39.650Z",
+    "duration": 4120.523,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
