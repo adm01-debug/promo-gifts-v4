@@ -4,7 +4,7 @@
  * Mantém iframe para YouTube.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Play, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -55,6 +55,13 @@ export function GalleryVideoPlayer({
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [useFallback, setUseFallback] = useState(false);
   const v = productVideos[activeVideoIndex];
+
+  // Reset do fallback ao trocar de vídeo ou reabrir o dialog: sem isso, um vídeo
+  // que falhou e ativou o fallback forçaria o fallback no próximo vídeo selecionado
+  // (mesmo que o Cloudflare Stream dele funcione), ou mostraria "indisponível".
+  useEffect(() => {
+    setUseFallback(false);
+  }, [v?.id, open]);
 
   const cloudflareId = extractCloudflareStreamId(v?.url_stream);
   const hlsUrl = v?.url_hls ?? getCloudflareHlsUrl(v?.url_stream);
