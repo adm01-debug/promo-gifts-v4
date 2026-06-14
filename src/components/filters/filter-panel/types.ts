@@ -56,8 +56,8 @@ export interface FilterState {
   gender: string[];
   sizes: string[];
   sortBy: string;
-  // COMERCIAL — Filtros por vendas (somente Super Filtro)
-  minSupplierSales30d: number; // mín. unidades vendidas pelo fornecedor nos últimos 30 dias
+  // COMERCIAL — Filtros por vendas (somente Super Filtro) — janela padronizada 90d
+  minSupplierSales90d: number; // mín. unidades vendidas pelo fornecedor nos últimos 90 dias
   minPromoSales90d: number;    // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
