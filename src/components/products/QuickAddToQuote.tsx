@@ -124,25 +124,21 @@ export function QuickAddToQuote({
             <span className="text-xs">Orçar</span>
           </Badge>
         ) : variant === 'icon' ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon"
-                aria-label="Adicionar ao Carrinho"
-                disabled={disabled}
-                className={cn(
-                  'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
-                  'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
-                  className,
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ShoppingCart className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
-          </Tooltip>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label="Adicionar ao Carrinho"
+            title="Adicionar ao Carrinho"
+            disabled={disabled}
+            className={cn(
+              'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
+              'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
+              className,
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </Button>
         ) : (
           <Button
             size={buttonSize}
