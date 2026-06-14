@@ -22,8 +22,8 @@ describe('ProductStatusBadge Visual Regressions', () => {
     );
     const badge = container.querySelector('.inline-flex');
     expect(badge).toBeInTheDocument();
-    // Check for the vibrant green background
-    expect(badge).toHaveClass('bg-[#00D166]');
+    // Check for the vibrant blue background (current NEW badge color)
+    expect(badge).toHaveClass('bg-[#2563EB]');
     // Check for white text (contrast)
     expect(badge).toHaveClass('text-white');
   });
