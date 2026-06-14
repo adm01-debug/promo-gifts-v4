@@ -46,6 +46,8 @@ import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 
 interface ProductListItemProps {
   product: Product;
