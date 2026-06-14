@@ -128,6 +128,9 @@ export default defineConfig(({ mode }) => {
     },
 
     optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext',
+      },
       include: [
         'react',
         'react-dom',
@@ -146,6 +149,7 @@ export default defineConfig(({ mode }) => {
         'zod',
       ],
     },
+
 
     test: {
       globals: true,
