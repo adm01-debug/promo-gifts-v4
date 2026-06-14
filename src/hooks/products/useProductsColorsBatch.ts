@@ -27,7 +27,8 @@ type VariantRow = {
   product_id: string;
   color_name: string | null;
   color_hex: string | null;
-  primary_image_url: string | null;
+  selected_thumbnail: string | null;
+  images: string[] | null;
 };
 
 /**
