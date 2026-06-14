@@ -204,8 +204,17 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             {product.supplier_name && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="flex max-w-[120px] shrink-0 items-center gap-1 truncate rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground sm:px-2 sm:text-xs">
-                    <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span
+                    className="flex max-w-[160px] shrink-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                    title={`Fornecedor: ${product.supplier_name}`}
+                  >
+                    <Building2
+                      className={cn(
+                        'h-3 w-3 shrink-0',
+                        getSupplierColors(product.supplier_name).text,
+                      )}
+                      aria-hidden="true"
+                    />
                     <span className="truncate">{product.supplier_name}</span>
                   </span>
                 </TooltipTrigger>
