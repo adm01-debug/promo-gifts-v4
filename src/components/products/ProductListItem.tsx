@@ -103,6 +103,9 @@ export const ProductListItem = memo(function ProductListItem({
   } | null>(null);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
+  const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
   const actionBusyRef = useRef(false);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   // Cor selecionada manualmente via swatch (bolinha) — sobrescreve imagem/estoque exibidos
