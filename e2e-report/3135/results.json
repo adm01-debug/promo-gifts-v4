@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+        "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+      },
+      "gitCommit": {
+        "shortHash": "912208c",
+        "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+        "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+        "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781455754000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781455754000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "commitHash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27505586208"
+          },
+          "gitCommit": {
+            "shortHash": "912208c",
+            "hash": "912208c2a0ad29a3412b8a3a2766e9e010541f2b",
+            "subject": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)",
+            "body": "fix(cart): conversão carrinho→orçamento atômica via RPC (sem perda de dados)\n\nP0: confirmGenerateQuote / botão \"Gerar Orçamento\" deletavam o carrinho ANTES\ndo orçamento existir, passando itens por location.state volátil. F5/voltar/erro\n= perda total do carrinho (causa-raiz dos 90% de itens órfãos).\n\nAgora ambos os pontos chamam a RPC transacional fn_convert_cart_to_quote, que:\n- cria um orçamento rascunho PERSISTIDO (F5-safe) e copia os itens;\n- aplica o mínimo de venda por produto (bump) e sinaliza itens sem estoque;\n- remove o carrinho apenas após o orçamento existir, tudo numa transação;\n- em caso de erro, NÃO remove o carrinho (preservado) e mostra toast.\n\nFrontend navega para /orcamentos/:id/editar (rascunho real) em vez de /novo\ncom estado volátil. Remove o deleteCart() prematuro nos dois handlers.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781455754000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-14T16:50:18.763Z",
+    "duration": 4094.95,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
