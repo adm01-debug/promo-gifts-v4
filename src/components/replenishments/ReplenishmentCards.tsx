@@ -267,13 +267,14 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           </div>
 
-          {/* Category */}
-          {product.category_name && (
+          {/* Categoria (badge estilo catálogo) */}
+          {product.category_id && product.category_name && (
             <div className={productCardStyles.categoryBadgeSection}>
-              <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary shadow-sm shadow-primary/10 sm:text-xs">
-                <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />
-                {product.category_name}
-              </span>
+              <ProductCategoryBadges
+                category={{ id: product.category_id, name: product.category_name }}
+                categoryUuid={product.category_id}
+                className="flex-wrap"
+              />
             </div>
           )}
 
