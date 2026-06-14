@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+        "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+      },
+      "gitCommit": {
+        "shortHash": "37ac27b",
+        "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+        "subject": "Corrigiu fluxo do carrinho",
+        "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+        "author": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781448197000
+        },
+        "committer": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781448197000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "commitHash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27502259231"
+          },
+          "gitCommit": {
+            "shortHash": "37ac27b",
+            "hash": "37ac27b538bb25b20d8c2ad8300db2cf672f2042",
+            "subject": "Corrigiu fluxo do carrinho",
+            "body": "Corrigiu fluxo do carrinho\n\nX-Lovable-Edit-ID: edt-c51dd0ad-5c0c-45e7-a236-0b782bebe983\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781448197000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-14T14:44:38.900Z",
+    "duration": 4049.349,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
