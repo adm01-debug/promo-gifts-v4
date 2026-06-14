@@ -469,6 +469,10 @@ export const ProductCard = memo(
         ref={ref}
         data-testid="product-card"
         data-product-id={product.id}
+        data-product-name={product.name}
+        data-product-price={product.price ?? ''}
+        data-product-stock={product.stock ?? ''}
+        data-product-created-at={product.created_at ?? ''}
         className={cn(
           'card-lift card-glow group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card sm:rounded-2xl',
           'touch-manipulation transition-all duration-500 ease-out',
