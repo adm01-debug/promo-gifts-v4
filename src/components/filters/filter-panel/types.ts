@@ -106,7 +106,7 @@ export const defaultFilters: FilterState = {
   gender: [],
   sizes: [],
   sortBy: 'name',
-  minSupplierSales30d: 0,
+  minSupplierSales90d: 0,
   minPromoSales90d: 0,
 };
 
