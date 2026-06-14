@@ -46,14 +46,15 @@ describe('sortByColorGroup', () => {
   it('should recognize Portuguese color names', () => {
     const colors = ['Amarelo', 'Vermelho', 'Verde', 'Roxo'];
     const sorted = sortByColorGroup(colors, (c) => c);
-    // Azuis(3) absent, Verde(4) < Vermelho(5) < Amarelo(6) < Roxo(9)
+    // Verde(4) < Vermelho(7) < Amarelo(8) < Roxo(10)
     expect(sorted).toEqual(['Verde', 'Vermelho', 'Amarelo', 'Roxo']);
   });
 
   it('should recognize English color names', () => {
     const colors = ['Red', 'Blue', 'Green'];
     const sorted = sortByColorGroup(colors, (c) => c);
-    expect(sorted).toEqual(['Blue', 'Green', 'Red']);
+    // Green(4) < Blue(6) < Red(7)
+    expect(sorted).toEqual(['Green', 'Blue', 'Red']);
   });
 });
 
