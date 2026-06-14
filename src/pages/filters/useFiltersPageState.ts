@@ -120,8 +120,20 @@ export function useFiltersPageState() {
     // FIX-28/B5: só aceitar sortBy da URL se for um valor conhecido — evita
     // que o Select fique sem opção correspondente (placeholder vazio) e que o
     // pipeline de sort receba um valor que cai no no-op silencioso.
+    //
+    // Padrão de ordenação (PO):
+    //  - 1º acesso da sessão (sem URL sortBy e sem sessionStorage) → 'newest'.
+    //  - Durante a sessão, mantém a última escolha do usuário (sessionStorage).
+    //  - URL sortBy (ex.: link compartilhado) sempre vence.
     const sortByParam = get('sortBy');
-    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) f.sortBy = sortByParam;
+    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) {
+      f.sortBy = sortByParam;
+    } else if (typeof window !== 'undefined') {
+      const stored = window.sessionStorage.getItem('catalog:sortBy');
+      f.sortBy = stored && VALID_SORT_VALUES.has(stored) ? stored : 'newest';
+    } else {
+      f.sortBy = 'newest';
+    }
     return f;
   });
 
