@@ -325,9 +325,11 @@ export function PromoFlixPlayer({
           // Vídeos de produto são curtos: 30s de back-buffer p/ seek-back bastam e poupam memória.
           backBufferLength: 30,
           // ABR: iniciar já numa qualidade decente e subir rápido (anti "sem resolução").
-          // Estimativa de cold-start 2x o default (500k→1M) ⇒ começa ~480p+ em vez do piso.
+          // Estimativa de cold-start calibrada medindo 100 manifestos reais (4 fornecedores):
+          // 2 Mbps ⇒ 100% iniciam >=480p e ~76% >=720p; em rede lenta o testBandwidth do
+          // hls.js mede o 1º fragmento e cai p/ o piso (~330p), então não trava no início.
           startLevel: -1,
-          abrEwmaDefaultEstimate: 1_000_000,
+          abrEwmaDefaultEstimate: 2_000_000,
           startFragPrefetch: true,
           // Nunca limitar a resolução ao tamanho do elemento (evita travar em baixa qualidade
           // quando o player monta pequeno antes de o modal/fullscreen expandir).
