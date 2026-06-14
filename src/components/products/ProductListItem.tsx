@@ -48,6 +48,7 @@ import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 
 interface ProductListItemProps {
   product: Product;
