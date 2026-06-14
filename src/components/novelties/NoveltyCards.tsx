@@ -3,7 +3,7 @@
  * Follows the same info pattern as ProductCard (catalog).
  */
 
-import { memo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -77,6 +77,17 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
 
+  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+  // num swatch troca a foto principal pela imagem da variante selecionada.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
+
   return (
     <article
       className={cn(
@@ -117,7 +128,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           productId={product.product_id}
           productName={product.product_name}
           productSku={product.product_sku}
-          productImageUrl={product.product_image}
+          productImageUrl={activeImage}
           productPrice={product.base_price ?? 0}
           productMinQuantity={product.min_quantity || 1}
           isOutOfStock={product.stock_status === 'out-of-stock'}
@@ -127,8 +138,11 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
         <HoverSetImage
-          primary={product.product_image}
-          set={product.product_set_image}
+          key={activeImage ?? product.product_image ?? 'placeholder'}
+          primary={activeImage}
+          // Desativa o crossfade "todas as cores" quando o usuário está navegando
+          // pelas variantes — a foto da cor selecionada tem prioridade.
+          set={activeColorName ? null : product.product_set_image}
           alt={product.product_name}
           fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
         />
@@ -181,7 +195,14 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         </div>
 
         <div className="mt-0.5">
-          <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="sm"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
 
         {/* Preço + Estoque */}
@@ -218,6 +239,16 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
 
+  // Mini-carrossel de variantes — mesmo comportamento do grid.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
+
   return (
     <article
       className={cn(
@@ -252,11 +283,12 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {product.product_image ? (
+        {activeImage ? (
           <img
-            src={product.product_image}
+            key={activeImage}
+            src={activeImage}
             alt={product.product_name}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-contain transition-opacity duration-200"
             loading="lazy"
           />
         ) : (
@@ -304,7 +336,14 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {product.supplier_name}
             </span>
           )}
-          <ProductColorSwatches colors={colors} max={5} size="xs" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="xs"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
       </div>
 

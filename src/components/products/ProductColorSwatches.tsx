@@ -30,6 +30,9 @@ import { cn } from '@/lib/utils';
 export interface ColorDotLike {
   name: string;
   hex: string | null;
+  /** Imagem específica desta variante (opcional). Quando presente, módulos como
+   *  Novidades/Reposição usam para trocar a foto principal ao clicar no swatch. */
+  image?: string | null;
 }
 
 interface ProductColorSwatchesProps {
