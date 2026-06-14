@@ -60,7 +60,7 @@ const getStockStatusColor = (status: string) => STOCK_STATUS_COLOR[status] ?? 'i
 const STOCK_STATUS_LABEL: Record<string, string> = {
   'in-stock': 'Em estoque',
   'low-stock': 'Estoque baixo',
-  'out-of-stock': 'Sem estoque',
+  'out-of-stock': 'Estoque zerado',
 };
 const getStockStatusLabel = (status: string) => STOCK_STATUS_LABEL[status] ?? 'Em estoque';
 
