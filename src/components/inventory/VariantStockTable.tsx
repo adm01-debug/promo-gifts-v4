@@ -55,7 +55,7 @@ const STATUS_CONFIG: Record<
     icon: <CheckCircle2 className="h-4 w-4" />,
   },
   low_stock: {
-    label: 'Baixo',
+    label: 'Estoque baixo',
     color: 'text-warning',
     bgColor: 'bg-warning/10 border-warning/20',
     icon: <TrendingDown className="h-4 w-4" />,
@@ -130,7 +130,7 @@ function StockProgressBar({ current, min }: { current: number; min: number; max?
           : 'bg-success';
 
   const statusLabel =
-    current <= 0 ? 'Esgotado' : current <= min * 0.25 ? 'Crítico' : current <= min ? 'Baixo' : 'OK';
+    current <= 0 ? 'Esgotado' : current <= min * 0.25 ? 'Crítico' : current <= min ? 'Estoque baixo' : 'OK';
 
   return (
     <TooltipProvider>
@@ -168,7 +168,7 @@ function StockProgressBar({ current, min }: { current: number; min: number; max?
               <p className="text-warning">⚠️ Abaixo do nível mínimo — considere reabastecer</p>
             )}
             {current <= 0 && (
-              <p className="text-destructive">🚨 Sem estoque — reposição urgente necessária</p>
+              <p className="text-destructive">🚨 Estoque zerado — reposição urgente necessária</p>
             )}
           </div>
         </TooltipContent>

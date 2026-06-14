@@ -101,7 +101,7 @@ export default function ComparePage() {
       case 'low-stock':
         return { label: 'Estoque baixo', color: 'text-warning' };
       case 'out-of-stock':
-        return { label: 'Sem estoque', color: 'text-destructive' };
+        return { label: 'Estoque zerado', color: 'text-destructive' };
       default:
         return { label: 'Em estoque', color: 'text-success' };
     }

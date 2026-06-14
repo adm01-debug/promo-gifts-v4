@@ -185,7 +185,7 @@ export function ProductVariantSelector({
 
                 {isOutOfStock && (
                   <Badge variant="secondary" className="px-1.5 py-0 text-xs">
-                    Sem estoque
+                    Estoque zerado
                   </Badge>
                 )}
               </button>

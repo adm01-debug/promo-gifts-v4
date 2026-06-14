@@ -405,7 +405,7 @@ export function VariantGridMatrix({
                               <p className={stockColor(stock)}>
                                 {stock > 0
                                   ? `${stock.toLocaleString('pt-BR')} un. disponíveis`
-                                  : 'Sem estoque'}
+                                  : 'Estoque zerado'}
                               </p>
                             </div>
                           </TooltipContent>

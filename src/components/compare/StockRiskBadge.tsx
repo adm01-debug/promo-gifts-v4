@@ -18,7 +18,7 @@ export function StockRiskBadge({ product }: Props) {
   if (status === 'out-of-stock' || stock === 0) {
     return (
       <Badge variant="destructive" className="gap-1 px-1.5 py-0.5 text-[10px]">
-        <AlertTriangle className="h-3 w-3" /> Sem estoque
+        <AlertTriangle className="h-3 w-3" /> Estoque zerado
       </Badge>
     );
   }

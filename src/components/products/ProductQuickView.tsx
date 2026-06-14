@@ -181,7 +181,7 @@ export const ProductQuickView = React.memo(
         case 'low-stock':
           return { label: 'Estoque baixo', color: 'text-warning', bg: 'bg-warning/10' };
         case 'out-of-stock':
-          return { label: 'Sem estoque', color: 'text-destructive', bg: 'bg-destructive/10' };
+          return { label: 'Estoque zerado', color: 'text-destructive', bg: 'bg-destructive/10' };
         default:
           return { label: 'Em estoque', color: 'text-success', bg: 'bg-success/10' };
       }

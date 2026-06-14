@@ -63,7 +63,7 @@ const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobi
   {
     'in-stock': { className: 'in-stock', label: 'Em estoque', mobileIcon: '✓' },
     'low-stock': { className: 'low-stock', label: 'Estoque baixo', mobileIcon: '!' },
-    'out-of-stock': { className: 'out-of-stock', label: 'Sem estoque', mobileIcon: '✗' },
+    'out-of-stock': { className: 'out-of-stock', label: 'Estoque zerado', mobileIcon: '✗' },
   };
 
 // ─── Grid Card ───────────────────────────────────────────────────
