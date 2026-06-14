@@ -748,7 +748,8 @@ export const ProductCard = memo(
                       displayStatus === 'out-of-stock'
                         ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
                         : displayStatus === 'low-stock'
-                          ? 'bg-warning/15 text-warning-foreground ring-1 ring-warning/30 [&_*]:text-warning'
+                          ? 'bg-warning text-warning-foreground'
+
                           : getStockStatusColor(displayStatus),
                     )}
                   >
