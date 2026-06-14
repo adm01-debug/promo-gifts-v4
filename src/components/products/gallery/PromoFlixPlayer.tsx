@@ -76,6 +76,9 @@ interface PromoFlixPlayerProps {
   productSku?: string | null;
   productMinQuantity?: number | null;
   shareUrl?: string | null;
+  /** Chamado quando o player esgota todas as tentativas e falha de forma irrecuperável.
+   *  O componente pai pode usar isso para acionar um fallback (ex.: iframe YouTube/Vimeo). */
+  onUnrecoverableError?: () => void;
 }
 
 export function PromoFlixPlayer({
@@ -91,6 +94,7 @@ export function PromoFlixPlayer({
   productSku,
   productMinQuantity,
   shareUrl,
+  onUnrecoverableError,
 }: PromoFlixPlayerProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const canShareOnWhatsApp = Boolean(productName);
@@ -180,6 +184,9 @@ export function PromoFlixPlayer({
   const suppressMutePersistRef = useRef(false);
   // Guard: prevents native video onError from overwriting HLS error after destroy
   const hlsDestroyedRef = useRef(false);
+  // Stable ref to the unrecoverable-error callback (avoids stale closures)
+  const onUnrecoverableErrorRef = useRef(onUnrecoverableError);
+  onUnrecoverableErrorRef.current = onUnrecoverableError;
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -370,6 +377,7 @@ export function PromoFlixPlayer({
                 }
                 hlsDestroyedRef.current = true;
                 hlsRef.current = null;
+                onUnrecoverableErrorRef.current?.();
               } else {
                 setIsReconnecting(true);
                 hlsInstance.startLoad();
@@ -391,6 +399,7 @@ export function PromoFlixPlayer({
                 }
                 hlsDestroyedRef.current = true;
                 hlsRef.current = null;
+                onUnrecoverableErrorRef.current?.();
               }
               break;
             default:
@@ -406,6 +415,7 @@ export function PromoFlixPlayer({
               }
               hlsDestroyedRef.current = true;
               hlsRef.current = null;
+              onUnrecoverableErrorRef.current?.();
               break;
           }
         });
@@ -576,6 +586,7 @@ export function PromoFlixPlayer({
           setHlsError(
             'Não foi possível reproduzir este vídeo. O formato pode não ser suportado pelo seu navegador ou o link está indisponível.',
           );
+          onUnrecoverableErrorRef.current?.();
           break;
       }
       setIsLoading(false);
