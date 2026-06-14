@@ -316,27 +316,14 @@ export const ProductCard = memo(
           setCollectionVariant(variantInfo);
           setCollectionModalOpen(true);
         } else if (variantPickerMode === 'quote') {
-          // Se temos múltiplos carrinhos, mostramos o seletor primeiro
-          if (carts.length > 1) {
-            setPendingVariant(variant);
+          // Sempre abre o seletor de carrinho/cliente (mesmo com 0/1 carrinhos),
+          // para permitir criar um carrinho novo para outro cliente naquele momento.
+          setPendingVariant(variant);
+          if (carts.length === 0) {
+            setCompanyPickerOpen(true);
+          } else {
             setSelectorOpen(true);
-            return;
           }
-
-          // Se tiver apenas 1 ou nenhum, segue o fluxo normal
-          addToActiveCart(
-            {
-              product_id: product.id,
-              product_name: product.name,
-              product_sku: product.sku || undefined,
-              product_image_url: variant?.selected_thumbnail || product.images?.[0],
-              product_price: product.price ?? 0,
-              quantity: product.minQuantity || 1,
-              color_name: variant?.color_name || undefined,
-              color_hex: variant?.color_hex || undefined,
-            },
-            carts.length === 1 ? carts[0].id : undefined,
-          );
         } else if (variantPickerMode === 'share') {
           setShareVariant(
             variant
