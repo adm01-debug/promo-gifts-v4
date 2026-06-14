@@ -3,7 +3,7 @@
  * Follows the same info pattern as ProductCard (catalog).
  */
 
-import { memo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Table,
