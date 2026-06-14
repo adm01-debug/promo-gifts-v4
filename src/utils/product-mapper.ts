@@ -142,7 +142,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: Boolean(p.is_featured || p.is_bestseller),
-    newArrival: Boolean(p.is_new),
+    newArrival: Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
     onSale: Boolean(p.is_on_sale),
     isKit: Boolean(p.is_kit),
     gender: p.gender || null,
