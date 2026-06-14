@@ -436,6 +436,9 @@ export const ProductTableView = memo(function ProductTableView({
                       <Skeleton className="h-4 w-4 rounded" />
                     </div>
                   )}
+                  <div className="hidden w-40 px-3 lg:block">
+                    <Skeleton className="h-3 w-24" />
+                  </div>
                   <div className="w-12 px-2">
                     <Skeleton className="h-10 w-10 rounded-md" />
                   </div>
@@ -446,19 +449,16 @@ export const ProductTableView = memo(function ProductTableView({
                   <div className="hidden w-32 px-3 md:block">
                     <Skeleton className="h-3 w-20" />
                   </div>
-                  <div className="hidden w-40 px-3 lg:block">
-                    <Skeleton className="h-3 w-24" />
-                  </div>
                   <div className="hidden w-32 gap-1 px-3 sm:flex">
                     {[1, 2, 3].map((i) => (
                       <Skeleton key={i} className="h-3.5 w-3.5 rounded-full" />
                     ))}
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-16" />
+                    <Skeleton className="ml-auto h-4 w-12" />
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-12" />
+                    <Skeleton className="ml-auto h-4 w-16" />
                   </div>
                   <div className="flex w-48 justify-center gap-2 px-3">
                     {[1, 2, 3].map((i) => (
