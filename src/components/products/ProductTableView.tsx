@@ -37,6 +37,8 @@ import { useComparisonStore } from '@/stores/useComparisonStore';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { toast } from 'sonner';
 import { showErrorToast } from '@/utils/undoToast';
+// FIX(catalog-table-cores): hidratacao de cores client-side — mesmo SSOT do grid/lista.
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 
 interface ProductTableViewProps {
   products: Product[];
@@ -207,6 +209,29 @@ export const ProductTableView = memo(function ProductTableView({
   const favStore = useFavoritesStore();
   const compStore = useComparisonStore();
 
+  // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
+  // (chega `[]`), entao a tabela caia no placeholder "–". Grid/Lista ja hidratam
+  // via useProductsColorsBatch (SSOT, cache global compartilhado). Replicamos o
+  // MESMO padrao aqui para exibir os swatches na coluna CORES — sem alterar o
+  // restante da UI nem o caminho de filtro por cor.
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+  const hydratedProducts = useMemo(() => {
+    if (colorsByProduct.size === 0) return products;
+    return products.map((p) => {
+      if (p.colors && p.colors.length > 0) return p;
+      const batch = colorsByProduct.get(p.id);
+      if (!batch || batch.length === 0) return p;
+      return {
+        ...p,
+        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+      };
+    });
+  }, [products, colorsByProduct]);
+
   const handleSort = useCallback(
     (col: SortCol) => {
       if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -225,7 +250,7 @@ export const ProductTableView = memo(function ProductTableView({
         (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
       );
     }
-    return [...products].sort((a, b) => {
+    return [...hydratedProducts].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
       switch (sortCol) {
         case 'name':
@@ -243,7 +268,7 @@ export const ProductTableView = memo(function ProductTableView({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, sortCol, sortDir]);
+  }, [hydratedProducts, sortCol, sortDir]);
 
   const virtualizer = useVirtualizer({
     count: sorted.length + (hasMore ? 1 : 0),
