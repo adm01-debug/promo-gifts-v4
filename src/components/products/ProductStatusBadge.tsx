@@ -100,18 +100,26 @@ export function ProductStatusBadge({
       case 'promotion':
         return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
+        // Badge "NEW" (canto direito) — rosa choque, alto contraste
+        if (value === 'NEW') {
+          return 'bg-[#FF1493] text-white font-bold shadow-[0_2px_8px_rgba(255,20,147,0.4)] ring-1 ring-white/20';
+        }
+        // Badge "Novidade X dias" (canto esquerdo) — cor por faixa, sempre legível
         const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
         if (daysElapsed <= 5) {
-          // Vibrant green for very new products, optimized for readability
-          return 'bg-[#00D166] text-white shadow-[0_2px_8px_rgba(0,209,102,0.3)] dark:bg-[#00E073] dark:text-[#002B16] dark:font-bold';
+          // Recém-chegado — azul vívido
+          return 'bg-[#2563EB] text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]';
         }
         if (daysElapsed <= 15) {
-          return 'bg-[#00D166]/80 text-white dark:bg-[#00E073]/90 dark:text-[#002B16] dark:font-bold';
+          // Ainda fresco — roxo
+          return 'bg-[#7C3AED] text-white font-semibold shadow-[0_2px_8px_rgba(124,58,237,0.35)]';
         }
         if (daysElapsed <= 23) {
-          return 'bg-warning text-warning-foreground dark:bg-[#FFD700] dark:text-[#332B00] dark:font-bold';
+          // Meio da janela — âmbar com texto escuro p/ contraste
+          return 'bg-[#F59E0B] text-[#1F1300] font-bold shadow-[0_2px_8px_rgba(245,158,11,0.35)]';
         }
-        return 'bg-brand-primary text-brand-primary-foreground dark:bg-brand-primary/90';
+        // Saindo da janela — laranja queimado
+        return 'bg-[#EA580C] text-white font-semibold shadow-[0_2px_8px_rgba(234,88,12,0.35)]';
       }
       case 'urgency':
         switch (urgencyType) {
