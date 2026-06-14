@@ -267,7 +267,7 @@ export function FilterPanel({
     ),
     ordenacao: () => (
       <Select
-        value={filters.sortBy || 'name'}
+        value={filters.sortBy || 'newest'}
         onValueChange={(value) => onFilterChange({ ...filters, sortBy: value })}
       >
         <SelectTrigger className="w-full">
