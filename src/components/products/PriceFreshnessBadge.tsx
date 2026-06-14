@@ -333,7 +333,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
       <span
         role="status"
         aria-label={ariaLabel}
-        /* title removido: Tooltip Radix evita duplicidade */
         tabIndex={0}
         className={cn('inline-flex items-center justify-center', color, focusRing, className)}
       >
@@ -374,7 +373,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
         <span
           role="status"
           aria-label={ariaLabel}
-          /* title removido: Tooltip Radix evita duplicidade */
           className={cn(
             'inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100',
             className,
@@ -400,7 +398,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
         <span
           role="status"
           aria-label={ariaLabel}
-          /* title removido: Tooltip Radix evita duplicidade */
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300',
             className,
@@ -419,7 +416,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
         <span
           role="status"
           aria-label={ariaLabel}
-          /* title removido: Tooltip Radix evita duplicidade */
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400',
             className,
@@ -439,7 +435,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
         <span
           role="status"
           aria-label={ariaLabel}
-          /* title removido: Tooltip Radix evita duplicidade */
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground',
             className,
@@ -464,7 +459,6 @@ export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
       <span
         role="status"
         aria-label={ariaLabel}
-        /* title removido: Tooltip Radix evita duplicidade */
         className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
       >
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
