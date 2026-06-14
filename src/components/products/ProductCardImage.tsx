@@ -278,11 +278,12 @@ export const ProductCardImage = memo(function ProductCardImage({
             <ProductStatusBadge
               type="urgency"
               urgencyType="limited-stock"
-              value="Baixo"
+              value="Estoque baixo"
               size="sm"
               onClick={() => onStatusClick?.('urgency')}
             />
           )}
+
         </div>
       </div>
 

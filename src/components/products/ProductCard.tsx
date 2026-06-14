@@ -747,12 +747,16 @@ export const ProductCard = memo(
                       'stock-indicator flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight sm:text-[10px]',
                       displayStatus === 'out-of-stock'
                         ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
-                        : getStockStatusColor(displayStatus),
+                        : displayStatus === 'low-stock'
+                          ? 'bg-warning text-warning-foreground'
+
+                          : getStockStatusColor(displayStatus),
                     )}
                   >
                     <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
                     <span className="whitespace-nowrap">{getStockStatusLabel(displayStatus)}</span>
                   </span>
+
                   <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
                     {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                   </span>
