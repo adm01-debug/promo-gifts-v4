@@ -523,6 +523,10 @@ export const ProductTableView = memo(function ProductTableView({
                   </div>
                 )}
 
+                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
+                  {product.supplier?.name}
+                </div>
+
                 <div className="w-12 px-2">
                   <div className="h-10 w-10 overflow-hidden rounded-md border border-border/30 bg-muted/30">
                     <img
@@ -554,9 +558,6 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
                   {product.sku}
                 </div>
-                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
-                  {product.supplier?.name}
-                </div>
 
                 <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
                   {product.colors.length > 0 ? (
@@ -585,14 +586,6 @@ export const ProductTableView = memo(function ProductTableView({
                   )}
                 </div>
 
-                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
-                  {formatPrice(product.price)}
-                  <PriceFreshnessBadge
-                    priceUpdatedAt={product.priceUpdatedAt}
-                    variant="icon-only"
-                  />
-                </div>
-
                 <div
                   className={cn(
                     'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
@@ -610,6 +603,14 @@ export const ProductTableView = memo(function ProductTableView({
                     )}
                   />
                   {(displayStock || 0).toLocaleString('pt-BR')}
+                </div>
+
+                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
+                  {formatPrice(product.price)}
+                  <PriceFreshnessBadge
+                    priceUpdatedAt={product.priceUpdatedAt}
+                    variant="icon-only"
+                  />
                 </div>
 
                 <div className="w-48 px-3">
