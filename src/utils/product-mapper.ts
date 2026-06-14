@@ -17,6 +17,16 @@ function getStockStatus(stock: number): CatalogStockStatus {
   return getCatalogStockStatus(stock);
 }
 
+// Janela de novidade alinhada ao módulo Novidades (useNovelties.NOVELTY_WINDOW_DAYS = 30)
+const NOVELTY_WINDOW_DAYS = 30;
+function isWithinNoveltyWindow(createdAt: unknown): boolean {
+  if (typeof createdAt !== 'string' || !createdAt) return false;
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  const elapsedDays = (Date.now() - ts) / 86400000;
+  return elapsedDays >= 0 && elapsedDays <= NOVELTY_WINDOW_DAYS;
+}
+
 function parseMaterials(materials: unknown): string[] {
   if (!materials) return [];
   if (Array.isArray(materials)) return materials.filter(Boolean);
