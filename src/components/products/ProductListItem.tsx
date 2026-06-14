@@ -211,7 +211,7 @@ export const ProductListItem = memo(function ProductListItem({
         setShareDialogOpen(true);
       }
     },
-    [variantPickerMode, product, favStore, compStore, carts, addToActiveCart],
+    [variantPickerMode, product, favStore, compStore, carts],
   );
 
   const formatPrice = (price: number) =>

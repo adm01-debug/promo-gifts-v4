@@ -2,7 +2,6 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { getCatalogStockStatusColor, getCatalogStockStatusLabel } from '@/lib/catalog-stock-status';
 import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback } from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
@@ -52,9 +51,19 @@ import { WordMagicBadge } from '@/components/word-magic/WordMagicBadge';
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
 
-// Mapas de status de estoque centralizados em @/lib/catalog-stock-status (fonte única).
-const getStockStatusColor = getCatalogStockStatusColor;
-const getStockStatusLabel = getCatalogStockStatusLabel;
+const STOCK_STATUS_COLOR: Record<string, string> = {
+  'in-stock': 'in-stock',
+  'low-stock': 'low-stock',
+  'out-of-stock': 'out-of-stock',
+};
+const getStockStatusColor = (status: string) => STOCK_STATUS_COLOR[status] ?? 'in-stock';
+
+const STOCK_STATUS_LABEL: Record<string, string> = {
+  'in-stock': 'Em estoque',
+  'low-stock': 'Estoque baixo',
+  'out-of-stock': 'Estoque zerado',
+};
+const getStockStatusLabel = (status: string) => STOCK_STATUS_LABEL[status] ?? 'Em estoque';
 
 export interface ProductCardProps {
   product: Product;
@@ -330,7 +339,7 @@ export const ProductCard = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, product, addFavorite, addToCompare, carts, addToActiveCart],
+      [variantPickerMode, product, addFavorite, addToCompare, carts],
     );
 
     const markBusy = () => {
