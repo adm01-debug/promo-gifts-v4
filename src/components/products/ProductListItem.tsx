@@ -46,6 +46,8 @@ import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 
 interface ProductListItemProps {
   product: Product;
@@ -101,6 +103,9 @@ export const ProductListItem = memo(function ProductListItem({
   } | null>(null);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
+  const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
   const actionBusyRef = useRef(false);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   // Cor selecionada manualmente via swatch (bolinha) — sobrescreve imagem/estoque exibidos
@@ -182,18 +187,25 @@ export const ProductListItem = memo(function ProductListItem({
         setCollectionVariant(variantInfo);
         setCollectionModalOpen(true);
       } else if (variantPickerMode === 'quote') {
-        const params = new URLSearchParams({
-          product_id: product.id,
-          product_name: product.name,
-          product_sku: product.sku || '',
-          product_price: String(product.price ?? 0),
-        });
-        if (variant?.color_name) params.set('color_name', variant.color_name);
-        if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-        if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-        if (product.images?.[0])
-          params.set('product_image', variant?.selected_thumbnail || product.images[0]);
-        setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+        // Fluxo correto: variação já selecionada → escolher carrinho/cliente
+        if (carts.length > 1) {
+          setPendingVariant(variant);
+          setSelectorOpen(true);
+          return;
+        }
+        addToActiveCart(
+          {
+            product_id: product.id,
+            product_name: product.name,
+            product_sku: product.sku || undefined,
+            product_image_url: variant?.selected_thumbnail || product.images?.[0],
+            product_price: product.price ?? 0,
+            quantity: product.minQuantity || 1,
+            color_name: variant?.color_name || undefined,
+            color_hex: variant?.color_hex || undefined,
+          },
+          carts.length === 1 ? carts[0].id : undefined,
+        );
       } else if (variantPickerMode === 'share') {
         setShareVariant(
           variant
@@ -207,7 +219,7 @@ export const ProductListItem = memo(function ProductListItem({
         setShareDialogOpen(true);
       }
     },
-    [variantPickerMode, product, favStore, compStore, navigate],
+    [variantPickerMode, product, favStore, compStore, carts, addToActiveCart],
   );
 
   const formatPrice = (price: number) =>
@@ -632,6 +644,36 @@ export const ProductListItem = memo(function ProductListItem({
         onOpenChange={setShareDialogOpen}
         product={product}
         selectedVariant={shareVariant}
+      />
+
+      {/* Cart/Cliente Selector — exibido após a escolha da variação */}
+      <CartSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        carts={carts}
+        productName={product.name}
+        canCreateMore={canCreateCart}
+        onSelect={(cartId) => {
+          addToActiveCart(
+            {
+              product_id: product.id,
+              product_name: product.name,
+              product_sku: product.sku || undefined,
+              product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+              product_price: product.price ?? 0,
+              quantity: product.minQuantity || 1,
+              color_name: pendingVariant?.color_name || undefined,
+              color_hex: pendingVariant?.color_hex || undefined,
+            },
+            cartId,
+          );
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+        onCreateNew={() => {
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
       />
     </>
   );
