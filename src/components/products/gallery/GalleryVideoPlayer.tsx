@@ -53,12 +53,22 @@ export function GalleryVideoPlayer({
   shareUrl,
 }: GalleryVideoPlayerProps) {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [useFallback, setUseFallback] = useState(false);
   const v = productVideos[activeVideoIndex];
 
   const cloudflareId = extractCloudflareStreamId(v?.url_stream);
   const hlsUrl = v?.url_hls ?? getCloudflareHlsUrl(v?.url_stream);
   const directUrl = v?.url_original ?? null;
   const youtubeId = v?.source_youtube_id ?? null;
+
+  // Fallback embed: usa source_youtube_id quando Cloudflare falha.
+  // Detecta Vimeo pelo url_original para montar embed correto.
+  const isVimeoSource = Boolean(v?.url_original?.includes('vimeo.com'));
+  const fallbackEmbedSrc = youtubeId
+    ? isVimeoSource
+      ? `https://player.vimeo.com/video/${youtubeId}?autoplay=1&title=0&byline=0&portrait=0`
+      : `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`
+    : null;
 
   const posterUrl =
     getCloudflareThumbnailUrl(v?.url_stream, { time: '1s', height: 720 }) ??
@@ -102,7 +112,7 @@ export function GalleryVideoPlayer({
                   allowFullScreen
                 />
               </div>
-            ) : playerSrc ? (
+            ) : playerSrc && !useFallback ? (
               <PromoFlixPlayer
                 src={playerSrc}
                 isHls={isHls}
@@ -115,7 +125,20 @@ export function GalleryVideoPlayer({
                 productSku={productSku}
                 productMinQuantity={productMinQuantity}
                 shareUrl={shareUrl}
+                onUnrecoverableError={
+                  fallbackEmbedSrc ? () => setUseFallback(true) : undefined
+                }
               />
+            ) : fallbackEmbedSrc ? (
+              <div className="aspect-video w-full">
+                <iframe
+                  src={fallbackEmbedSrc}
+                  title={v?.title || `Vídeo do produto ${productName}`}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                />
+              </div>
             ) : (
               <div className="flex aspect-video w-full items-center justify-center text-sm text-white/60">
                 Vídeo indisponível
