@@ -37,7 +37,7 @@ export function CartSelectorDialog({
 }: CartSelectorDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]" data-testid="cart-selector-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-primary" />
@@ -57,6 +57,7 @@ export function CartSelectorDialog({
               <button
                 key={cart.id}
                 onClick={() => onSelect(cart.id)}
+                data-testid={`cart-selector-item-${cart.id}`}
                 className={cn(
                   'group flex w-full items-center gap-3 rounded-xl border border-border/40 bg-card p-3 text-left transition-all',
                   'hover:border-primary/40 hover:bg-primary/5 hover:shadow-md active:scale-[0.98]',
@@ -91,7 +92,7 @@ export function CartSelectorDialog({
 
         <div className="mt-4 flex flex-col gap-2">
           {canCreateMore && (
-            <Button variant="outline" className="w-full gap-2 border-dashed" onClick={onCreateNew}>
+            <Button variant="outline" className="w-full gap-2 border-dashed" onClick={onCreateNew} data-testid="cart-selector-create-new">
               <Plus className="h-4 w-4" />
               Criar novo carrinho para outra empresa
             </Button>
