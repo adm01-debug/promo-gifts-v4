@@ -85,7 +85,7 @@ const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
 /**
  * BUG-SORT-01 FIX: Valida e normaliza um sort value arbitrário.
  * BUG-SORT-09 FIX: Normaliza aliases conhecidos para o valor canônico antes
- * de validar no SSOT. Retorna 'name' (default seguro) para qualquer valor
+ * de validar no SSOT. Retorna 'newest' (default seguro) para qualquer valor
  * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
  * de voice agent quebrem o Select UI e o URL sync loop.
  */
@@ -233,7 +233,7 @@ export function useCatalogState() {
     if (sortBy === 'newest') {
       // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
       // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
-      // selecionava 'Nome A-Z'. O URL sync effect lia o param stale e revertia
+      // selecionava 'Mais Recentes'. O URL sync effect lia o param stale e revertia
       // o state imediatamente — tornando impossível selecionar o item default.
       newParams.delete('sort');
     } else {
