@@ -100,10 +100,10 @@ export function useFiltersPageState() {
       const parsedMs = parseInt(ms, 10);
       if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
     }
-    const mss = get('minSupplierSales30d');
+    const mss = get('minSupplierSales90d') ?? get('minSupplierSales30d'); // back-compat URL
     if (mss) {
       const n = parseInt(mss, 10);
-      if (Number.isFinite(n) && n >= 0) f.minSupplierSales30d = n;
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales90d = n;
     }
     const mps = get('minPromoSales90d');
     if (mps) {
