@@ -180,21 +180,30 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         </p>
         <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
 
-        {/* Categoria + Fornecedor */}
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          {product.category_name && (
-            <span className="flex items-center gap-0.5 truncate" title={product.category_name}>
-              <FolderTree className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{product.category_name}</span>
-            </span>
-          )}
-          {product.supplier_name && (
-            <span className="flex items-center gap-0.5 truncate" title={product.supplier_name}>
-              <Building2 className="h-3 w-3 flex-shrink-0" />
+        {/* Categoria (badge estilo catálogo) */}
+        {product.category_id && product.category_name && (
+          <ProductCategoryBadges
+            category={{ id: product.category_id, name: product.category_name }}
+            categoryUuid={product.category_id}
+            className="flex-wrap"
+          />
+        )}
+
+        {/* Fornecedor (badge estilo catálogo) */}
+        {product.supplier_name && (
+          <div className="flex min-w-0 items-center">
+            <span
+              className="flex items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+              title={`Fornecedor: ${product.supplier_name}`}
+            >
+              <Building2
+                className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier_name).text)}
+                aria-hidden="true"
+              />
               <span className="truncate">{product.supplier_name}</span>
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="mt-0.5">
           <ProductColorSwatches
