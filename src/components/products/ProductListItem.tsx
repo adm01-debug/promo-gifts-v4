@@ -187,25 +187,15 @@ export const ProductListItem = memo(function ProductListItem({
         setCollectionVariant(variantInfo);
         setCollectionModalOpen(true);
       } else if (variantPickerMode === 'quote') {
-        // Fluxo correto: variação já selecionada → escolher carrinho/cliente
-        if (carts.length > 1) {
-          setPendingVariant(variant);
+        // Fluxo: variação já escolhida → seletor de cliente/carrinho.
+        // Sempre abre o seletor (mesmo com 0/1 carrinho) para permitir criar carrinho
+        // para outro cliente naquele momento.
+        setPendingVariant(variant);
+        if (carts.length === 0) {
+          setCompanyPickerOpen(true);
+        } else {
           setSelectorOpen(true);
-          return;
         }
-        addToActiveCart(
-          {
-            product_id: product.id,
-            product_name: product.name,
-            product_sku: product.sku || undefined,
-            product_image_url: variant?.selected_thumbnail || product.images?.[0],
-            product_price: product.price ?? 0,
-            quantity: product.minQuantity || 1,
-            color_name: variant?.color_name || undefined,
-            color_hex: variant?.color_hex || undefined,
-          },
-          carts.length === 1 ? carts[0].id : undefined,
-        );
       } else if (variantPickerMode === 'share') {
         setShareVariant(
           variant
