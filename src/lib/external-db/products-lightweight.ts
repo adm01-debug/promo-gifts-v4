@@ -39,6 +39,8 @@ export interface LightweightProduct {
   stock_quantity?: number | null;
   min_quantity?: number | null;
   is_kit?: boolean | null;
+  is_new?: boolean | null;
+  created_at?: string | null;
   gender?: string | null;
   short_description?: string | null;
   price_updated_at?: string | null;
