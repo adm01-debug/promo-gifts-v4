@@ -266,9 +266,16 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
-          {/* Cores disponíveis */}
-          <div className="flex items-center gap-1">
-            <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          {/* Cores disponíveis — mini-carrossel de variantes */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <ProductColorSwatches
+              colors={colors}
+              max={5}
+              size="sm"
+              hideWhenEmpty={false}
+              selectedName={activeColorName}
+              onSelect={(c) => setActiveColorName(c.name)}
+            />
           </div>
 
           {/* Sparkline */}
