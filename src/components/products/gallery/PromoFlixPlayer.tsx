@@ -313,10 +313,25 @@ export function PromoFlixPlayer({
           }
         }
         const hlsInstance = new hlsConstructor({
-          maxBufferLength: 30,
+          // Cloudflare Stream entrega VOD (não é live). lowLatencyMode mantém o buffer
+          // mínimo perseguindo um "live edge" inexistente → travamento a cada jitter e
+          // ABR preso em baixa qualidade. Para VOD precisa ser false.
+          lowLatencyMode: false,
           enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 90,
+          // Buffer dianteiro saudável p/ absorver variação de rede sem rebuffer (anti-travamento).
+          maxBufferLength: 60,
+          maxMaxBufferLength: 600,
+          maxBufferSize: 120 * 1000 * 1000,
+          // Vídeos de produto são curtos: 30s de back-buffer p/ seek-back bastam e poupam memória.
+          backBufferLength: 30,
+          // ABR: iniciar já numa qualidade decente e subir rápido (anti "sem resolução").
+          // Estimativa de cold-start 2x o default (500k→1M) ⇒ começa ~480p+ em vez do piso.
+          startLevel: -1,
+          abrEwmaDefaultEstimate: 1_000_000,
+          startFragPrefetch: true,
+          // Nunca limitar a resolução ao tamanho do elemento (evita travar em baixa qualidade
+          // quando o player monta pequeno antes de o modal/fullscreen expandir).
+          capLevelToPlayerSize: false,
         });
         hlsRef.current = hlsInstance;
         hlsInstance.loadSource(src);
