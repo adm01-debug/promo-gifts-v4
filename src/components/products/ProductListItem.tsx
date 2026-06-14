@@ -433,7 +433,8 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Info — main content block */}
-        <div className="min-w-0 flex-1 py-0.5">
+        <div className="min-w-0 flex-1 py-0.5 md:flex-none md:w-[42%]">
+
           {/* Top meta row */}
           <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
             {product.featured && (
