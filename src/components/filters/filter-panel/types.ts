@@ -144,7 +144,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
   },
   'vendas-fornecedor': {
-    title: 'Vendas Fornecedor (30d)',
+    title: 'Vendas Fornecedor (90d)',
     icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
   },
   'vendas-promo': {
