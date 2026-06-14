@@ -189,6 +189,7 @@ export function useCatalogState() {
     : validateSortOption(getSessionSortPreference());
 
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
+  const pendingLocalSortRef = useRef<SortOption | null>(null);
 
   // Sync sortBy with the current browser session only.
   // PO rule: a fresh login/tab starts in "Mais Recentes"; old cloud/local prefs must not override it.
@@ -208,6 +209,7 @@ export function useCatalogState() {
       const validated = validateSortOption(s);
       if (validated === sortBy) return;
       setIsTransitioning(true);
+      pendingLocalSortRef.current = validated;
       setSessionSortPreference(validated);
       setSortByState(validated);
     },
@@ -395,10 +397,19 @@ export function useCatalogState() {
   }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
   // BUG-SORT-01 FIX: Validar o sort param da URL antes de sincronizar com o state.
-  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=name) e
+  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=newest) e
   // canonicalizar aliases (?sort=popularity → ?sort=best-seller-promo).
   useEffect(() => {
     const urlSort = searchParams.get('sort');
+    const pendingLocalSort = pendingLocalSortRef.current;
+    if (pendingLocalSort) {
+      const urlMatchesPendingSort =
+        pendingLocalSort === 'newest' ? !urlSort : validateSortOption(urlSort) === pendingLocalSort;
+
+      if (!urlMatchesPendingSort) return;
+      pendingLocalSortRef.current = null;
+    }
+
     if (urlSort) {
       const validated = validateSortOption(urlSort);
 
@@ -409,7 +420,7 @@ export function useCatalogState() {
 
       // Normalizar URL: remover sort=default ou substituir alias por canonical.
       // Cobre dois casos:
-      //   1. ?sort=name        → remover (é o default; param redundante)
+      //   1. ?sort=newest      → remover (é o default; param redundante)
       //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
       const urlNeedsNormalization = validated === 'newest' || urlSort !== validated;
       if (urlNeedsNormalization) {
