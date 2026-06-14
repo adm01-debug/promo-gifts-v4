@@ -385,6 +385,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       clearProfileRoles();
       clearMFA();
+      // Reset de preferências de sessão (ex.: sort do catálogo) para garantir que
+      // o próximo login na mesma aba comece com o padrão "Mais Recentes".
+      try {
+        window.sessionStorage.removeItem('catalog:sortBy');
+      } catch {
+        /* sessionStorage indisponível — ignora */
+      }
       import('@/lib/external-db-prewarm').then((m) => m.resetPrewarmSession()).catch(() => {});
     }
   }, [clearProfileRoles, clearMFA]);
