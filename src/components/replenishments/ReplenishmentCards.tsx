@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -90,6 +90,17 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
 
+  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+  // num swatch troca a foto principal pela imagem da variante selecionada.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
+
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
     else onClick();
@@ -127,7 +138,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           productId={product.product_id}
           productName={product.product_name}
           productSku={product.product_sku}
-          productImageUrl={product.product_image}
+          productImageUrl={activeImage}
           productPrice={product.base_price ?? 0}
           productMinQuantity={product.min_quantity || 1}
           isOutOfStock={product.stock_status === 'out-of-stock'}
@@ -137,8 +148,11 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
           <HoverSetImage
-            primary={product.product_image}
-            set={product.product_set_image}
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            // Desativa o crossfade "todas as cores" quando o usuário está
+            // navegando pelas variantes — a foto da cor selecionada vence.
+            set={activeColorName ? null : product.product_set_image}
             alt={`Foto de ${product.product_name}`}
           />
 
@@ -252,9 +266,16 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           )}
 
-          {/* Cores disponíveis */}
-          <div className="flex items-center gap-1">
-            <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          {/* Cores disponíveis — mini-carrossel de variantes */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <ProductColorSwatches
+              colors={colors}
+              max={5}
+              size="sm"
+              hideWhenEmpty={false}
+              selectedName={activeColorName}
+              onSelect={(c) => setActiveColorName(c.name)}
+            />
           </div>
 
           {/* Sparkline */}
