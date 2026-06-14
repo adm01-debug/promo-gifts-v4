@@ -825,9 +825,36 @@ export const ProductCard = memo(
             setPendingVariant(null);
           }}
           onCreateNew={() => {
+            // Mantém pendingVariant — será adicionado ao novo carrinho
             setSelectorOpen(false);
+            setCompanyPickerOpen(true);
+          }}
+        />
+
+        {/* Picker de empresa — cria carrinho na hora e adiciona o item pendente */}
+        <CartCompanyPickerDialog
+          open={companyPickerOpen}
+          onOpenChange={(o) => {
+            setCompanyPickerOpen(o);
+            if (!o) setPendingVariant(null);
+          }}
+          onCreated={(newCartId) => {
+            if (newCartId) {
+              addToActiveCart(
+                {
+                  product_id: product.id,
+                  product_name: product.name,
+                  product_sku: product.sku || undefined,
+                  product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                  product_price: product.price ?? 0,
+                  quantity: product.minQuantity || 1,
+                  color_name: pendingVariant?.color_name || undefined,
+                  color_hex: pendingVariant?.color_hex || undefined,
+                },
+                newCartId,
+              );
+            }
             setPendingVariant(null);
-            // Redireciona para criação de novo carrinho se necessário ou deixa o usuário criar via header
           }}
         />
         <AddToCollectionModal
