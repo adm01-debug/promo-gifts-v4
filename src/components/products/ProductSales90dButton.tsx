@@ -1,6 +1,6 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Activity, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, Zap, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   SPARKLINE_WINDOW_DAYS,
