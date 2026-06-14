@@ -544,17 +544,18 @@ export const ProductListItem = memo(function ProductListItem({
 
         {/* Price column — right-aligned, always visible */}
         <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
-          <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
-            {formatPrice(product.price)}
-          </span>
-          <div className="mt-0.5 flex justify-end">
+          <div className="flex items-center justify-end gap-1.5">
             <PriceFreshnessBadge
               priceUpdatedAt={product.priceUpdatedAt}
               thresholdDays={product.priceFreshnessThresholdDays}
-              variant="compact"
+              variant="icon-only"
             />
+            <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
+              {formatPrice(product.price)}
+            </span>
           </div>
         </div>
+
 
         <ListItemActions
           product={product}
