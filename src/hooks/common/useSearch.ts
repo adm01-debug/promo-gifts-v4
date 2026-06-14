@@ -3,7 +3,11 @@ import Fuse from 'fuse.js';
 import { type Product } from '@/hooks/products';
 import { CATEGORIES, SUPPLIERS } from '@/data/mockData';
 import { ProductsContext } from '@/contexts/ProductsContext';
-import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
+import {
+  createProductFuseOptions,
+  normalizeProductSearch,
+  rankProductSearchResults,
+} from '@/utils/product-search';
 import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 
 export interface SearchResult {
@@ -142,9 +146,11 @@ export function useSearch(products: Product[] = []) {
 
     matchingCategories.forEach((result) => {
       const category = result.item;
+      // FIX 2026-06-14 (catalog-search-audit): removido o ramo parseInt(p.category_id) === category.id.
+      // category_id é UUID; parseInt('192e45...') retornava 192 (falso-positivo) e ainda gerava NaN
+      // para UUIDs não-numéricos. Mantém-se apenas a comparação estrita por id (string).
       const productCount = availableProducts.filter(
-        (p) =>
-          p.category_id === String(category.id) || parseInt(p.category_id || '0') === category.id,
+        (p) => p.category_id != null && p.category_id === String(category.id),
       ).length;
       results.push({
         type: 'category',
@@ -160,9 +166,19 @@ export function useSearch(products: Product[] = []) {
 
     matchingSuppliers.forEach((result) => {
       const supplier = result.item;
-      const productCount = availableProducts.filter(
-        (p) => p.brand === supplier.id || p.supplier_reference === supplier.id,
-      ).length;
+      // FIX 2026-06-14 (catalog-search-audit): o brand do produto é o NOME do fornecedor
+      // (ex.: 'XBZ', 'Spot | Stricker', 'Asia Import', 'Só Marcas'), nunca o id mockado
+      // ('xbz'|'stricker'|'asia'|'somarcas'). A comparação antiga (p.brand === supplier.id e
+      // p.supplier_reference === supplier.id) jamais casava -> contagem sempre 0. Passamos a casar
+      // por tokens normalizados (>=3 chars) do nome do fornecedor presentes no brand.
+      const supTokens = normalizeProductSearch(supplier.name)
+        .split(/[\s|]+/)
+        .filter((t) => t.length >= 3);
+      const productCount = availableProducts.filter((p) => {
+        if (!p.brand) return false;
+        const b = normalizeProductSearch(p.brand);
+        return supTokens.some((t) => b.includes(t));
+      }).length;
       results.push({
         type: 'supplier',
         id: supplier.id,

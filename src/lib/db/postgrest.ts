@@ -205,9 +205,11 @@ function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
   return rows;
 }
 
-const SEARCH_COLUMNS: Record<string, string> = {
-  v_products_public: 'name',
-  products: 'name',
+// FIX 2026-06-14 (catalog-search-audit): _search agora aceita MÚLTIPLAS colunas.
+// Valor string[] => OR de ILIKE (name OU sku OU supplier_reference); string => 1 coluna (legado, inalterado).
+const SEARCH_COLUMNS: Record<string, string | string[]> = {
+  v_products_public: ['name', 'sku', 'supplier_reference'],
+  products: ['name', 'sku', 'supplier_reference'],
   categories: 'name',
   v_suppliers_public: 'name',
   suppliers: 'name',
@@ -276,9 +278,29 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     : untypedFrom(table).select(remappedSelect);
 
   if (searchTerm) {
-    const searchCol = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
-    if (searchCol) query = query.ilike(searchCol, `%${searchTerm}%`);
-    else logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
+    const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+    if (searchCfg) {
+      const cols = Array.isArray(searchCfg) ? searchCfg : [searchCfg];
+      if (cols.length === 1) {
+        // Caminho legado: 1 coluna -> ilike parametrizado (comportamento idêntico ao anterior).
+        query = query.ilike(cols[0], `%${searchTerm}%`);
+      } else {
+        // Multi-coluna: PostgREST .or() recebe uma STRING de filtro, então o termo precisa ser
+        // sanitizado — vírgula, parênteses e curingas (*,%) são metacaracteres de controle do
+        // or()/ilike e, sem isso, permitiriam quebra/injeção de filtro. Dentro do .or() o curinga
+        // do ilike é '*' (não '%').
+        const safe = searchTerm.replace(/[,()*%]/g, ' ').trim();
+        if (safe.length > 0) {
+          const orExpr = cols.map((c) => `${c}.ilike.*${safe}*`).join(',');
+          query = query.or(orExpr);
+        } else {
+          // termo composto só de metacaracteres -> degrada para ilike na 1ª coluna.
+          query = query.ilike(cols[0], `%${searchTerm}%`);
+        }
+      }
+    } else {
+      logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
+    }
   }
 
   if (remappedFilters) {
