@@ -332,6 +332,15 @@ export const ProductTableView = memo(function ProductTableView({
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center border-b border-border/50 bg-muted/90 px-4 py-2.5 shadow-sm backdrop-blur-md">
           {selectionMode && <div className="w-10 px-2" />}
+          <div className="hidden w-40 px-3 lg:block">
+            <SortHeader
+              label="Fornecedor"
+              col="supplier"
+              activeCol={sortCol}
+              activeDir={sortDir}
+              onSort={handleSort}
+            />
+          </div>
           <div className="w-12 px-2" />
           <div className="flex-1 px-3">
             <SortHeader
@@ -351,22 +360,13 @@ export const ProductTableView = memo(function ProductTableView({
               onSort={handleSort}
             />
           </div>
-          <div className="hidden w-40 px-3 lg:block">
-            <SortHeader
-              label="Fornecedor"
-              col="supplier"
-              activeCol={sortCol}
-              activeDir={sortDir}
-              onSort={handleSort}
-            />
-          </div>
           <div className="hidden w-32 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:block">
             Cores
           </div>
           <div className="w-32 px-3 text-right">
             <SortHeader
-              label="Preço"
-              col="price"
+              label="Estoque"
+              col="stock"
               activeCol={sortCol}
               activeDir={sortDir}
               onSort={handleSort}
@@ -375,8 +375,8 @@ export const ProductTableView = memo(function ProductTableView({
           </div>
           <div className="w-32 px-3 text-right">
             <SortHeader
-              label="Estoque"
-              col="stock"
+              label="Preço"
+              col="price"
               activeCol={sortCol}
               activeDir={sortDir}
               onSort={handleSort}
