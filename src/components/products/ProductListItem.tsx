@@ -317,15 +317,20 @@ export const ProductListItem = memo(function ProductListItem({
 
   // Match do swatch clicado pelo usuário (prioridade máxima sobre filtro/carousel)
   const userSelectedColor = userSelectedColorName
-    ? product.colors?.find((c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase()) ?? null
+    ? (product.colors?.find((c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase()) ??
+      null)
     : null;
-  const userSelectedImage =
-    userSelectedColor?.images?.[0] || userSelectedColor?.image || undefined;
+  const userSelectedImage = userSelectedColor?.images?.[0] || userSelectedColor?.image || undefined;
 
   const variantImage = userSelectedImage || currentVariant?.image;
   const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
   // primary_image_url (is_primary=true) é a imagem capa canônica — deve ser a primeira exibida
-  const rawImageUrl = colorSpecificImage || product.primary_image_url || product.og_image_url || product.images[0] || null;
+  const rawImageUrl =
+    colorSpecificImage ||
+    product.primary_image_url ||
+    product.og_image_url ||
+    product.images[0] ||
+    null;
   const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
   const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
@@ -334,7 +339,9 @@ export const ProductListItem = memo(function ProductListItem({
   const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
 
   const activeColorName =
-    userSelectedColor?.name || currentVariant?.name || getActiveColorName(product, activeColorFilter);
+    userSelectedColor?.name ||
+    currentVariant?.name ||
+    getActiveColorName(product, activeColorFilter);
 
   const matchedHighlightColor =
     currentVariant?.hex || resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
@@ -448,8 +455,7 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Info — main content block */}
-        <div className="min-w-0 flex-1 py-0.5 md:flex-none md:w-[42%]">
-
+        <div className="min-w-0 flex-1 py-0.5 md:flex-[0_1_42%]">
           {/* Top meta row */}
           <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
             {product.featured && (
@@ -542,7 +548,6 @@ export const ProductListItem = memo(function ProductListItem({
               {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
             </span>
           </div>
-
         </div>
 
         {/* Center — full color swatches, sempre iniciam na mesma posição (esquerda) */}
@@ -562,7 +567,6 @@ export const ProductListItem = memo(function ProductListItem({
           />
         </div>
 
-
         {/* Price column — right-aligned, always visible */}
         <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
           <div className="flex items-center justify-end gap-1.5">
@@ -576,7 +580,6 @@ export const ProductListItem = memo(function ProductListItem({
             </span>
           </div>
         </div>
-
 
         <ListItemActions
           product={product}

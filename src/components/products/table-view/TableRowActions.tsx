@@ -65,7 +65,7 @@ export function TableRowActions({
   );
 
   return (
-    <div className="no-scrollbar flex max-w-full items-center justify-center gap-0.5 overflow-x-auto opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+    <div className="flex items-center justify-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
       {/* 1 - Carrinho */}
       <Tooltip>
         <TooltipTrigger asChild>
