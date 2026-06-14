@@ -103,7 +103,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           let from = 0;
           for (let page = 0; page < MAX_PAGES; page += 1) {
             const { data, error } = await untypedFrom(resolveTable('product_variants'))
-              .select('product_id, color_name, color_hex')
+              .select('product_id, color_name, color_hex, primary_image_url')
               .in('product_id', chunk)
               .eq('is_active', true)
               .not('color_name', 'is', null)
