@@ -239,6 +239,16 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
 
+  // Mini-carrossel de variantes — mesmo comportamento do grid.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
+
   return (
     <article
       className={cn(
