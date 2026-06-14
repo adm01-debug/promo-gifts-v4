@@ -11,14 +11,15 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('ProductStatusBadge — consistency across contexts', () => {
-  it('renders "Fora de estoque" badge with default label', () => {
+  it('renders "Estoque zerado" badge with default label', () => {
     render(
       <Wrapper>
         <ProductStatusBadge type="out-of-stock" size="sm" />
       </Wrapper>,
     );
-    expect(screen.getByText(/Fora de estoque/i)).toBeInTheDocument();
+    expect(screen.getByText(/Estoque zerado/i)).toBeInTheDocument();
   });
+
 
   it('size="sm" uses the standardized 9px typography and tight padding', () => {
     const { container } = render(
