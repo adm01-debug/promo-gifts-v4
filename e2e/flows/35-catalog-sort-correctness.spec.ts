@@ -50,7 +50,7 @@ async function applySort(page: Page, value: string) {
   await page.locator(Sel.catalog.sortItem(value)).click();
   // aguarda re-render do grid (cards podem ser remontados)
   await page.waitForTimeout(1200);
-  await waitForTestId(page, "product-card", { timeout: 15_000 });
+  await waitForTestIdVisible(page, "product-card", { timeout: 15_000 });
 }
 
 function isNonDecreasing(nums: number[]): boolean {
@@ -67,7 +67,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("name (A→Z): nomes em ordem alfabética", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
     await applySort(page, "name");
 
     const cards = (await readCards(page)).slice(0, SAMPLE_SIZE);
@@ -80,7 +80,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("price-asc: preços em ordem crescente", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
     await applySort(page, "price-asc");
 
     const prices = (await readCards(page))
@@ -94,7 +94,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("price-desc: preços em ordem decrescente", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
     await applySort(page, "price-desc");
 
     const prices = (await readCards(page))
@@ -108,7 +108,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("stock: estoque em ordem decrescente (Maior Estoque)", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
     await applySort(page, "stock");
 
     const stocks = (await readCards(page))
@@ -122,7 +122,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("newest: created_at em ordem decrescente", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
     await applySort(page, "newest");
 
     const ts = (await readCards(page))
@@ -136,7 +136,7 @@ test.describe("Catálogo — corretude da ordenação", () => {
 
   test("troca de ordenação realmente reordena o grid", async ({ page }) => {
     await gotoAndSettle(page, "/produtos");
-    await waitForTestId(page, "product-card", { timeout: 20_000 });
+    await waitForTestIdVisible(page, "product-card", { timeout: 20_000 });
 
     await applySort(page, "name");
     const firstByName = (await readCards(page)).slice(0, 5).map((c) => c.name);
