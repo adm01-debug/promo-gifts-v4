@@ -253,4 +253,12 @@ describe('SORT-SESSION — ranking do catálogo não alterna após seleção', (
     expect(src).not.toContain('prefsLoaded');
     expect(src).not.toContain('preferences.sortBy');
   });
+
+  it('bloqueia URL stale de sobrescrever a escolha local enquanto a navegação sincroniza', () => {
+    const src = catalogState();
+    expect(src).toContain('const pendingLocalSortRef = useRef<SortOption | null>(null)');
+    expect(src).toContain('pendingLocalSortRef.current = validated');
+    expect(src).toContain('if (!urlMatchesPendingSort) return');
+    expect(src).toContain('pendingLocalSortRef.current = null');
+  });
 });
