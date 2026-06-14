@@ -169,12 +169,17 @@ export function useCatalogState() {
   const rawUrlSort = searchParams.get('sort');
   const initialSortBy: SortOption = rawUrlSort
     ? validateSortOption(rawUrlSort)
-    : validateSortOption(preferences.sortBy);
+    : validateSortOption(sessionStorage.getItem('catalog:sortBy') ?? preferences.sortBy);
 
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
   // Sync sortBy with preferences once loaded
   useEffect(() => {
+    const storedSort = sessionStorage.getItem('catalog:sortBy');
+    if (storedSort && !searchParams.get('sort')) {
+      setSortByState(validateSortOption(storedSort));
+      return;
+    }
     if (prefsLoaded && preferences.sortBy && !searchParams.get('sort')) {
       // BUG-SORT-01 FIX: validar o valor de preferência antes de aplicar ao state.
       setSortByState(validateSortOption(preferences.sortBy));
@@ -190,6 +195,7 @@ export function useCatalogState() {
       const validated = validateSortOption(s);
       if (validated === sortBy) return;
       setIsTransitioning(true);
+      sessionStorage.setItem('catalog:sortBy', validated);
       setSortByState(validated);
     },
     [sortBy],
@@ -708,7 +714,7 @@ export function useCatalogState() {
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('newest');
     setSearchQuery('');
     navigate('/', { replace: true });
   }, [navigate, setSortBy]);
