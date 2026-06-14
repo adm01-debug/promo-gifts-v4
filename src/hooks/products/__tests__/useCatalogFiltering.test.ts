@@ -94,4 +94,41 @@ describe('useCatalogFiltering', () => {
 
     expect(result.current).toHaveLength(2);
   });
+
+  it('should filter kits using category fallback when isKit flag is missing', () => {
+    const kitProducts = [
+      ...mockProducts,
+      {
+        ...mockProducts[0],
+        id: '3',
+        name: 'Kit churrasco — ref. KC0124PP',
+        sku: 'KC0124PP',
+        isKit: false,
+        category: { id: 'cat-kit', name: 'Kit Churrasco' },
+        category_name: 'Kit Churrasco',
+      } as Product,
+    ];
+    const filters = {
+      ...defaultFilters,
+      isKit: true,
+    };
+
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        realProducts: kitProducts,
+        filters,
+        sortBy: 'name',
+        hasFuzzySearch: false,
+        fuzzySearchResults: [],
+        hasMaterialFilter: false,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        hasCategoryFilter: false,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
+
+    expect(result.current.map((product) => product.id)).toEqual(['3']);
+  });
 });
