@@ -253,6 +253,7 @@ export const ProductCard = memo(
     const { displayName, isAIActive } = useWordMagic(product);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
     const [selectorOpen, setSelectorOpen] = useState(false);
+    const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
     const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
 
     const handleStatusClick = useCallback(
