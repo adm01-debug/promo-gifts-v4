@@ -30,8 +30,6 @@ import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { untypedRpc } from '@/lib/supabase-untyped';
 
 export function CartHeaderButton() {
   const navigate = useNavigate();
@@ -497,43 +495,32 @@ export function CartHeaderButton() {
                         </div>
                         <Button
                           className="h-10 w-full gap-2 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                          onClick={async () => {
-                            const cartId = activeCart.id;
+                          onClick={() => {
+                            const cart = activeCart;
                             setOpen(false);
-                            // Conversão atômica: cria orçamento (rascunho persistido) e remove o
-                            // carrinho numa só transação. Em erro, o carrinho é PRESERVADO.
-                            const { data, error } = await untypedRpc('fn_convert_cart_to_quote', {
-                              p_cart_id: cartId,
+                            // Handoff para o módulo de orçamento: navega para /orcamentos/novo
+                            // com cliente e itens já pré-preenchidos via location.state (fromCart).
+                            // NÃO persiste nada nem consome número — o orçamento só se torna real
+                            // quando o vendedor preenche gravação/pagamento/entrega e clica em
+                            // Salvar. O carrinho é PRESERVADO.
+                            navigate('/orcamentos/novo', {
+                              state: {
+                                fromCart: true,
+                                companyId: cart.company_id,
+                                companyName: cart.company_name,
+                                companyLocation: cart.company_location || undefined,
+                                items: cart.items.map((i) => ({
+                                  product_id: i.product_id,
+                                  product_name: i.product_name,
+                                  product_sku: i.product_sku || undefined,
+                                  product_image_url: i.product_image_url || undefined,
+                                  quantity: i.quantity,
+                                  unit_price: i.product_price,
+                                  color_name: i.color_name || undefined,
+                                  color_hex: i.color_hex || undefined,
+                                })),
+                              },
                             });
-                            const result = data as
-                              | {
-                                  quote_id?: string;
-                                  bumped?: Array<{ produto: string; para: number }>;
-                                  warnings?: Array<{ produto: string }>;
-                                }
-                              | null;
-                            if (error || !result?.quote_id) {
-                              toast.error(
-                                error?.message ||
-                                  'Não foi possível gerar o orçamento. Seu carrinho foi preservado.',
-                              );
-                              return;
-                            }
-                            if (result.bumped?.length) {
-                              toast.info(
-                                `Quantidades ajustadas ao mínimo: ${result.bumped
-                                  .map((b) => `${b.produto} → ${b.para}`)
-                                  .join('; ')}`,
-                              );
-                            }
-                            if (result.warnings?.length) {
-                              toast.warning(
-                                `Sem estoque no momento: ${result.warnings
-                                  .map((w) => w.produto)
-                                  .join('; ')}`,
-                              );
-                            }
-                            navigate(`/orcamentos/${result.quote_id}/editar`);
                           }}
                         >
                           <ArrowRight className="h-3.5 w-3.5" />

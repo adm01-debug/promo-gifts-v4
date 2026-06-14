@@ -14,7 +14,6 @@ import {
   shareCartLink,
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
-import { untypedRpc } from '@/lib/supabase-untyped';
 import { showUndoToast } from '@/utils/undoToast';
 import { differenceInDays } from 'date-fns';
 import {
@@ -294,41 +293,32 @@ export function useSellerCartsPage() {
     setConfirmQuoteCart(cart);
   }, []);
 
-  const confirmGenerateQuote = useCallback(async () => {
+  const confirmGenerateQuote = useCallback(() => {
     if (!confirmQuoteCart) return;
-    const cartId = confirmQuoteCart.id;
+    const cart = confirmQuoteCart;
     setConfirmQuoteCart(null);
-    // Conversão atômica no servidor: cria o orçamento (rascunho persistido) e só então
-    // remove o carrinho — tudo numa transação. Em caso de erro, o carrinho é PRESERVADO.
-    const { data, error } = await untypedRpc('fn_convert_cart_to_quote', {
-      p_cart_id: cartId,
+    // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
+    // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
+    // consome número de orçamento — o orçamento só se torna real quando o vendedor
+    // preenche gravação/pagamento/entrega e clica em Salvar. O carrinho é PRESERVADO.
+    navigate('/orcamentos/novo', {
+      state: {
+        fromCart: true,
+        companyId: cart.company_id,
+        companyName: cart.company_name,
+        companyLocation: cart.company_location || undefined,
+        items: cart.items.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          product_sku: i.product_sku || undefined,
+          product_image_url: i.product_image_url || undefined,
+          quantity: i.quantity,
+          unit_price: i.product_price,
+          color_name: i.color_name || undefined,
+          color_hex: i.color_hex || undefined,
+        })),
+      },
     });
-    const result = data as
-      | {
-          quote_id?: string;
-          bumped?: Array<{ produto: string; para: number }>;
-          warnings?: Array<{ produto: string }>;
-        }
-      | null;
-    if (error || !result?.quote_id) {
-      toast.error(
-        error?.message || 'Não foi possível gerar o orçamento. Seu carrinho foi preservado.',
-      );
-      return;
-    }
-    if (result.bumped?.length) {
-      toast.info(
-        `Quantidades ajustadas ao mínimo: ${result.bumped
-          .map((b) => `${b.produto} → ${b.para}`)
-          .join('; ')}`,
-      );
-    }
-    if (result.warnings?.length) {
-      toast.warning(
-        `Sem estoque no momento: ${result.warnings.map((w) => w.produto).join('; ')}`,
-      );
-    }
-    navigate(`/orcamentos/${result.quote_id}/editar`);
   }, [confirmQuoteCart, navigate]);
 
   const otherCarts = useMemo(
