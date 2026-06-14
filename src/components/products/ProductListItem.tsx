@@ -104,6 +104,7 @@ export const ProductListItem = memo(function ProductListItem({
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
   const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
   const actionBusyRef = useRef(false);
