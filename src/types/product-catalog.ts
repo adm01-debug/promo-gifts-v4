@@ -14,6 +14,8 @@ export interface ProductColor {
   code?: string;
   image?: string;
   images?: string[];
+  /** Estoque desta variação de cor (vem do mapper externo). */
+  stock?: number;
 }
 
 export interface Product {
