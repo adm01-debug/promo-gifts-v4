@@ -105,7 +105,7 @@ export const defaultFilters: FilterState = {
   hasCommercialPackaging: false,
   gender: [],
   sizes: [],
-  sortBy: 'name',
+  sortBy: 'newest',
   minSupplierSales90d: 0,
   minPromoSales90d: 0,
 };
