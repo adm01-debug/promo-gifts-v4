@@ -733,11 +733,11 @@ export function useFiltersPageState() {
     }
     if (filters.minStock > 0)
       summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
-    if (filters.minSupplierSales30d > 0)
+    if (filters.minSupplierSales90d > 0)
       summary.push({
         label: 'Vendas fornec.',
-        value: `≥ ${filters.minSupplierSales30d} un./30d`,
-        key: 'minSupplierSales30d',
+        value: `≥ ${filters.minSupplierSales90d} un./90d`,
+        key: 'minSupplierSales90d',
       });
     if (filters.minPromoSales90d > 0)
       summary.push({
