@@ -283,11 +283,12 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {product.product_image ? (
+        {activeImage ? (
           <img
-            src={product.product_image}
+            key={activeImage}
+            src={activeImage}
             alt={product.product_name}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-contain transition-opacity duration-200"
             loading="lazy"
           />
         ) : (
