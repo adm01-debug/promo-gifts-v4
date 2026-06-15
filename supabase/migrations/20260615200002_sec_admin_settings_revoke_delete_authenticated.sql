@@ -1,0 +1,27 @@
+-- ============================================================
+-- MIGRATION: sec_admin_settings_revoke_delete_authenticated
+-- Objetivo : Revogar GRANT DELETE de authenticated em admin_settings.
+-- Data     : 2026-06-15
+-- Branch   : chore/admin-settings-hardening
+-- Melhoria : #2 de 4 — Higiene de grants (princípio menor privilégio)
+--
+-- CONTEXTO:
+--   A tabela admin_settings tem GRANT DELETE para authenticated
+--   mas NÃO tem policy RLS para DELETE. Isso significa que:
+--   (a) Nenhum usuário consegue deletar linhas (RLS bloqueia — correto)
+--   (b) O GRANT existe porém é inútil e enganoso
+--   Violação do princípio do menor privilégio: não deve existir
+--   GRANT sem a intenção real de permitir a operação.
+--
+-- IMPACTO:
+--   Frontend : 0 impacto — nenhum hook chama DELETE nesta tabela.
+--   Backend  : 0 impacto — nenhuma função Postgres usa DELETE aqui.
+--   service_role: 0 impacto — bypassa RLS e não precisa do GRANT.
+--   Segurança: melhora a postura — grant fantasma removido.
+--
+-- REVERSÃO (se necessário):
+--   GRANT DELETE ON public.admin_settings TO authenticated;
+-- ============================================================
+
+-- Remover o GRANT DELETE do role authenticated
+REVOKE DELETE ON public.admin_settings FROM authenticated;
