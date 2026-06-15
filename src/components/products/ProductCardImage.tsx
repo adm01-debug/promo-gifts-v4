@@ -125,12 +125,31 @@ export const ProductCardImage = memo(function ProductCardImage({
   const isKit = isProductKit(product, { categoryName, categoryPath });
   const onSale = product.onSale;
   const hasPackaging = product.hasCommercialPackaging === true;
+  // Status de estoque para badges. Fallback defensivo: quando `product.stockStatus`
+  // vem ausente/inválido ou divergente de `product.stock` (ex.: marcado como
+  // "low-stock" porém quantidade = 0), derivamos do número via SSOT
+  // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
+  // quando o backend devolve um payload parcial.
+  const validStatuses = new Set(['in-stock', 'low-stock', 'out-of-stock']);
+  const stockQty = typeof product.stock === 'number' && Number.isFinite(product.stock)
+    ? product.stock
+    : null;
+  const rawStatus = validStatuses.has(product.stockStatus as string)
+    ? product.stockStatus
+    : stockQty !== null
+      ? getCatalogStockStatus(stockQty)
+      : undefined;
+  const reconciledStatus =
+    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0
+      ? 'out-of-stock'
+      : rawStatus;
   const stockStatus: 'ok' | 'low' | 'unavailable' =
-    product.stockStatus === 'out-of-stock'
+    reconciledStatus === 'out-of-stock'
       ? 'unavailable'
-      : product.stockStatus === 'low-stock'
+      : reconciledStatus === 'low-stock'
         ? 'low'
         : 'ok';
+
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
