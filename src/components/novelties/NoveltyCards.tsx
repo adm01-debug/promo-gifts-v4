@@ -92,6 +92,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
   return (
     <article
+      data-testid="novelty-grid-card"
       className={cn(
         'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-md',
