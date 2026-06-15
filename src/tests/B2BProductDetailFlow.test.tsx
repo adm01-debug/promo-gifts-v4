@@ -17,10 +17,23 @@ vi.mock('react-router-dom', async () => {
 });
 
 const mockAddToActiveCart = vi.fn();
+
+/**
+ * FIX 2026-06-15: mock completo de SellerCartContext.
+ * ANTES: apenas {activeCart, addToActiveCart} — QuickAddToQuote acessa
+ *   carts.length na linha 64 → TypeError: Cannot read properties of undefined.
+ * DEPOIS: inclui carts (array com 1 carrinho ativo) e canCreateCart,
+ *   satisfazendo todos os accessors de QuickAddToQuote e CartSelectorDialog.
+ */
 vi.mock('@/contexts/SellerCartContext', () => ({
   useSellerCartContext: () => ({
-    activeCart: { id: 'cart-1', company_name: 'Empresa Teste' },
+    activeCart: { id: 'cart-1', company_name: 'Empresa Teste', items: [] },
+    activeCartId: 'cart-1',
+    carts: [{ id: 'cart-1', company_name: 'Empresa Teste', items: [], status: 'novo' }],
     addToActiveCart: mockAddToActiveCart,
+    canCreateCart: true,
+    isLoading: false,
+    totalItems: 0,
   }),
 }));
 
@@ -116,12 +129,15 @@ describe('B2B Product Detail Flow Integration', () => {
     const confirmAdd = await screen.findByTestId('product-card-add-to-cart');
     fireEvent.click(confirmAdd);
 
+    // addToActiveCart(item, cartId?) — cartId é undefined quando há 1 carrinho
+    // ativo e nenhum seletor é exibido (carts.length não excede 1).
     expect(mockAddToActiveCart).toHaveBeenCalledWith(
       expect.objectContaining({
         product_id: 'prod-123',
         quantity: 50,
         color_name: 'Azul',
       }),
+      undefined,
     );
   });
 
