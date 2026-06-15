@@ -8,7 +8,7 @@ import { getCredential } from '../_shared/credentials.ts';
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const DEEPSEEK_MODEL   = 'deepseek-chat';
+const DEEPSEEK_MODEL   = 'deepseek-v4-flash'; // MIGRADO: deepseek-chat depreca 24/jul/2026
 const MAX_TOKENS       = 2048; // FIX: era 700 no processador batch → textos truncados
 
 // ─── Schema de entrada ────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 10. Chamar DeepSeek V3 — max_tokens=2048 (FIX do truncamento)
+    // 10. Chamar DeepSeek V4-Flash — max_tokens=2048 (FIX do truncamento)
     const aiStart = Date.now();
     const prompt  = buildPrompt(productCtx as Record<string, unknown>, copywritingConfig);
 
