@@ -1,5 +1,6 @@
 import { Navigate, Route } from 'react-router-dom';
 import {
+  CartsListPage,
   CollectionDetailPage,
   CollectionsPage,
   ComparePage,
