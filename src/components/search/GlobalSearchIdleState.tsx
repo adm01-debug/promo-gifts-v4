@@ -113,6 +113,7 @@ export function GlobalSearchIdleState({
                       src={product.image_url}
                       alt={product.name}
                       className="h-full w-full object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                     />
                   ) : (
                     <RankBadge index={idx} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Check, ShoppingCart, X, Palette } from 'lucide-react';
+import { Plus, Check, ShoppingCart, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -156,7 +156,7 @@ export function QuickAddToQuote({
             {iconOverride === 'cart' ? (
               <ShoppingCart className="h-4 w-4" />
             ) : iconOverride === 'plus' ? (
-              <Palette className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             ) : (
               <Plus className="h-4 w-4" />
             )}

@@ -37,8 +37,13 @@ export function useSearch(products: Product[] = []) {
 
   const history = useMemo(() => searchHistory.map((h) => h.label), [searchHistory]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const availableProducts = products.length > 0 ? products : productsContext?.products || [];
+  // FIX: wrap in useMemo to prevent new array reference on every render
+  // when productsContext?.products is undefined (fallback to []) causing all
+  // dependent useMemos (Fuse instances, suggestions) to recompute every keystroke.
+  const availableProducts = useMemo(
+    () => (products.length > 0 ? products : productsContext?.products || []),
+    [products, productsContext?.products],
+  );
 
   // FIX 2026-06-14 (#5-raiz): categorias e fornecedores REAIS (fallback p/ mock enquanto carrega).
   const { data: realCategories } = useQuery<RealCategory[]>({

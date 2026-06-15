@@ -278,6 +278,7 @@ export function QuoteBuilderSummaryColumn({
                                 alt={item.product_name}
                                 className="h-12 w-12 rounded-lg bg-muted object-cover"
                                 loading="lazy"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                               />
                             ) : (
                               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
