@@ -36,7 +36,7 @@ Perfil (2026-06-15): **73.210 linhas / 82 MB / ~7.118 produtos** (~10 imagens/pr
 |---|------|-----------|-----------|
 | 1 | `format` casing inconsistente | `..._format_canonical_guard` | Trigger `fn_normalize_image_format` + CHECK `chk_product_images_format_lc` (lowercase). Verificado: `'  JPG '` → `jpeg`; CHECK rejeita maiúsculas. |
 | 2 | RLS anônima permissiva (`USING(true)`) | `..._assert_secure_select_rls` | Baseline seguro re-afirmado (idempotente): anônimo vê só `is_active=true` (23 inativas ocultas). |
-| 3 | drift `image_type` ↔ `image_type_id` | `..._sync_image_type_code` | Guard `BEFORE UPDATE OF image_type_id` (FK = fonte da verdade). Verificado: `gallery`→`set` propaga. |
+| 3 | drift `image_type` ↔ `image_type_id` | `..._sync_image_type_code` (+ `..._sync_image_type_code_close_drift`) | Guard `BEFORE UPDATE OF image_type_id, image_type` (FK = fonte da verdade; cobre também updates parciais só do texto). Verificado: `gallery`→`set` propaga; update só-texto é revertido p/ code da FK. |
 | 4 | amplificação de escrita + observabilidade | `..._observability_and_resync` + `..._resync_deterministic` | View `v_product_images_quality_gap` + `fn_resync_product_media()` determinística/idempotente (run1=1, run2=0). |
 | 5 | documentação de schema | `..._schema_documentation` | COMMENTs em tabela + 19 colunas + objetos novos. |
 
