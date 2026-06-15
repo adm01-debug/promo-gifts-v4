@@ -133,7 +133,56 @@ function SellerCartsContent() {
 
   const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
-  // Confirmação de remoção de item (tabela)
+  // Ordenação + paginação (persistidas)
+  type SortKey = 'name' | 'price' | 'total';
+  type SortDir = 'asc' | 'desc';
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    if (typeof window === 'undefined') return 'name';
+    return (localStorage.getItem('cart-table-sort-key') as SortKey) || 'name';
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    if (typeof window === 'undefined') return 'asc';
+    return (localStorage.getItem('cart-table-sort-dir') as SortDir) || 'asc';
+  });
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === 'undefined') return 25;
+    const v = Number(localStorage.getItem('cart-table-page-size'));
+    return [10, 25, 50, 100].includes(v) ? v : 25;
+  });
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-key', sortKey);
+  }, [sortKey]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-dir', sortDir);
+  }, [sortDir]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-page-size', String(pageSize));
+  }, [pageSize]);
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortDir('asc');
+      return key;
+    });
+    setPage(1);
+  }, []);
+
+  // Erros inline por linha (qty) — impedem persistir valor inválido
+  const [qtyErrors, setQtyErrors] = useState<Record<string, string>>({});
+  const setRowError = useCallback((id: string, msg: string | null) => {
+    setQtyErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[id] = msg;
+      else delete next[id];
+      return next;
+    });
+  }, []);
+
+  // Confirmação de remoção de item (tabela) — otimista; hook já oferece desfazer
   const [pendingRemoveItem, setPendingRemoveItem] = useState<{ id: string; name: string } | null>(
     null,
   );
@@ -141,7 +190,6 @@ function SellerCartsContent() {
     if (!pendingRemoveItem) return;
     try {
       s.handleRemoveItem(pendingRemoveItem.id, pendingRemoveItem.name);
-      toast.success(`"${pendingRemoveItem.name}" removido do carrinho`);
     } catch {
       toast.error('Não foi possível remover o item. Tente novamente.');
     } finally {
@@ -149,24 +197,37 @@ function SellerCartsContent() {
     }
   }, [pendingRemoveItem, s]);
 
-  // Validação + feedback ao alterar qtd
+  // Validação + feedback inline ao alterar qtd
   const safeUpdateQuantity = useCallback(
-    (itemId: string, raw: number, productName: string) => {
-      if (!Number.isFinite(raw) || raw < 1) {
-        toast.warning(`Quantidade inválida para "${productName}". Ajustada para 1.`);
-        s.handleUpdateQuantity(itemId, 1);
+    (itemId: string, rawValue: string, productName: string) => {
+      const trimmed = rawValue.trim();
+      if (trimmed === '') {
+        setRowError(itemId, 'Informe uma quantidade.');
+        return;
+      }
+      const raw = Number(trimmed);
+      if (!Number.isFinite(raw) || Number.isNaN(raw)) {
+        setRowError(itemId, 'Valor numérico inválido.');
+        return;
+      }
+      if (raw < 1) {
+        setRowError(itemId, 'Mínimo 1 unidade.');
         return;
       }
       const qty = Math.floor(raw);
       if (qty > 999999) {
-        toast.warning('Quantidade máxima é 999.999.');
+        setRowError(itemId, 'Máximo 999.999.');
+        toast.warning(`Quantidade máxima para "${productName}" é 999.999.`);
         s.handleUpdateQuantity(itemId, 999999);
         return;
       }
+      setRowError(itemId, null);
       s.handleUpdateQuantity(itemId, qty);
     },
-    [s],
+    [s, setRowError],
   );
+
+
 
 
   const gridColsClass = useMemo(() => {
