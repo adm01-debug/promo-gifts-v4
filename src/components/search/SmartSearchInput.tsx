@@ -340,14 +340,16 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     <div className="flex flex-wrap gap-2 px-2 py-2">
                       {quickSuggestions.map((suggestion, index) => (
                         <div
-                          key={suggestion.label}
+                          key={suggestion.id ?? suggestion.label}
                           className="animate-in fade-in zoom-in-90"
                           style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
                         >
                           <Badge
                             variant="secondary"
                             className="cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-primary-foreground"
-                            onClick={() => submitSearch(suggestion.label)}
+                            // FIX 2026-06-15: handleSelectResult com type:'category' + UUID
+                            // → onSelect em FiltersPage aplica filtro real (não busca textual).
+                            onClick={() => handleSelectResult(suggestion)}
                           >
                             {suggestion.icon} {suggestion.label}
                           </Badge>

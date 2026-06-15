@@ -254,16 +254,30 @@ export function useSearch(products: Product[] = []) {
     return results;
   }, [query, history, availableProducts, productFuse, categoryFuse, supplierFuse]);
 
-  // Quick suggestions (popular/trending)
-  const quickSuggestions = useMemo(() => {
-    return [
-      { label: 'Canetas', icon: '🖊️' },
-      { label: 'Garrafas', icon: '🍶' },
-      { label: 'Ecológico', icon: '🌱' },
-      { label: 'Tecnologia', icon: '💻' },
-      { label: 'Kits', icon: '🎁' },
-    ];
-  }, []);
+  // FIX 2026-06-15 (quick-suggestions-real-categories): chips derivados das top-5
+  // categorias REAIS do DB (por contagem de produtos no catálogo carregado).
+  // Cada chip tem type:'category' + id UUID → click aplica filtro real via onSelect,
+  // não busca textual. Enquanto carrega (availableProducts vazio) retorna [] (sem chips).
+  const quickSuggestions = useMemo<SearchResult[]>(() => {
+    if (!realCategories?.length || availableProducts.length === 0) return [];
+    // Contagem O(n): Map de category_id → count
+    const catCounts = new Map<string, number>();
+    for (const p of availableProducts) {
+      if (p.category_id) catCounts.set(p.category_id, (catCounts.get(p.category_id) ?? 0) + 1);
+    }
+    return effectiveCategorySource
+      .map((c) => ({ c, count: catCounts.get(String(c.id)) ?? 0 }))
+      .filter((x) => x.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(({ c, count }) => ({
+        type:     'category' as const,
+        id:       String(c.id),
+        label:    c.name,
+        sublabel: `${count} produtos`,
+        icon:     (c as RealCategory).icon ?? '📁',
+      }));
+  }, [realCategories, availableProducts, effectiveCategorySource]);
 
   return {
     query,
