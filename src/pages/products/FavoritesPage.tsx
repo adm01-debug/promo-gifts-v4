@@ -249,12 +249,15 @@ export default function FavoritesPage() {
   const filteredProducts = useMemo(() => {
     let list = productsWithVariant;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      // FIX 2026-06-15 (favorites-search-accent): NFD strip espelhando PR #755/#750.
+      const norm = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku?.toLowerCase().includes(q) ||
-          p.brand?.toLowerCase().includes(q),
+          norm(p.name).includes(q) ||
+          (p.sku && norm(p.sku).includes(q)) ||
+          (p.brand && norm(p.brand).includes(q)),
       );
     }
     if (onlyPriceDrops && isRemoteListView) {
