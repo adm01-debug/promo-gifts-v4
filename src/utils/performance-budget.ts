@@ -47,7 +47,8 @@ export function initPerformanceBudget(): void {
   try {
     const lcpObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      const last = entries[entries.length - 1] as PerformancePaintTiming;
+      // BUG-F FIX: PerformancePaintTiming é para 'paint' entries, não LCP. PerformanceEntry tem startTime.
+      const last = entries[entries.length - 1];
       const value = last.startTime;
       reportMetric('LCP', value, getRating('LCP', value));
     });

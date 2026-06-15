@@ -26,6 +26,16 @@ const observerCache = new Map<string, IntersectionObserver>();
 // Map de callbacks por elemento
 const callbackMap = new WeakMap<Element, (isIntersecting: boolean) => void>();
 
+// BUG-I FIX (2026-06-15): disconnect all shared observers on Vite HMR to prevent
+// module-level singletons from accumulating across hot-reloads in development.
+// In production import.meta.hot is undefined so this is a no-op.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    observerCache.forEach((observer) => observer.disconnect());
+    observerCache.clear();
+  });
+}
+
 function getObserverKey(rootMargin: string, threshold: number | number[]): string {
   return `${rootMargin}|${JSON.stringify(threshold)}`;
 }

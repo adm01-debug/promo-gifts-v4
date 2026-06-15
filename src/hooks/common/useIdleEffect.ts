@@ -26,7 +26,11 @@ export function useIdleEffect(
   useEffect(() => {
     let cleanup: (() => void) | void;
     let idleId: number | undefined;
-    let timerId: ReturnType<typeof setTimeout> | undefined;
+    // BUG-G FIX (2026-06-15): separate variables so the delay timer and the
+    // fallback schedule timer are both properly cancelled on unmount.
+    // Before: timerId was overwritten inside schedule() losing the delay timer ref.
+    let delayTimerId: ReturnType<typeof setTimeout> | undefined;
+    let scheduleTimerId: ReturnType<typeof setTimeout> | undefined;
 
     const schedule = () => {
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -37,14 +41,14 @@ export function useIdleEffect(
           { timeout },
         );
       } else {
-        timerId = setTimeout(() => {
+        scheduleTimerId = setTimeout(() => {
           cleanup = fn();
         }, Math.max(timeout / 2, 100));
       }
     };
 
     if (delay > 0) {
-      timerId = setTimeout(schedule, delay);
+      delayTimerId = setTimeout(schedule, delay);
     } else {
       schedule();
     }
@@ -53,9 +57,8 @@ export function useIdleEffect(
       if (idleId !== undefined && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId);
       }
-      if (timerId !== undefined) {
-        clearTimeout(timerId);
-      }
+      if (delayTimerId !== undefined) clearTimeout(delayTimerId);
+      if (scheduleTimerId !== undefined) clearTimeout(scheduleTimerId);
       cleanup?.();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
