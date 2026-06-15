@@ -6,7 +6,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Plus, ArrowRight } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -93,13 +93,13 @@ function CartsListContent() {
         </div>
       ) : carts.length === 0 ? (
         <EmptyState
-          icon={ShoppingCart}
+          variant="cart"
           title="Nenhum carrinho aberto"
           description="Crie um carrinho para começar a montar uma proposta para um cliente."
           action={
-            <Button onClick={() => setPickerOpen(true)} disabled={!canCreateCart} className="gap-2">
-              <Plus className="h-4 w-4" /> Novo carrinho
-            </Button>
+            canCreateCart
+              ? { label: 'Novo carrinho', onClick: () => setPickerOpen(true) }
+              : undefined
           }
         />
       ) : (
