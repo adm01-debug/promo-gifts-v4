@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+        "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+      },
+      "gitCommit": {
+        "shortHash": "99a4563",
+        "hash": "99a4563d39805642f93217b71f521262685b4435",
+        "subject": "Fix/video player size 30pct (#764)",
+        "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781531479000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781531479000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/99a4563d39805642f93217b71f521262685b4435",
+            "commitHash": "99a4563d39805642f93217b71f521262685b4435",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27551030178"
+          },
+          "gitCommit": {
+            "shortHash": "99a4563",
+            "hash": "99a4563d39805642f93217b71f521262685b4435",
+            "subject": "Fix/video player size 30pct (#764)",
+            "body": "Fix/video player size 30pct (#764)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(player): reduz modal do GalleryVideoPlayer 30% proporcional AxL\n\nmax-w-5xl (64rem / 1024px) → max-w-[44.8rem] (717px)\n64rem × 0.70 = 44.8rem → redução exata de 30%\nAltura escala automaticamente via aspect-video (16:9)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531479000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531479000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T13:58:41.982Z",
+    "duration": 4597.868,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
