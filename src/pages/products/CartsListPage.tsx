@@ -6,11 +6,19 @@
  */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowRight, Search, X } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -24,9 +32,26 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { AvatarLogo } from '@/components/shared/AvatarLogo';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
-import { formatCurrency, getStatusCfg } from '@/components/cart/CartUtilComponents';
+import {
+  formatCurrency,
+  getStatusCfg,
+  STATUS_CONFIG,
+} from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
-import type { SellerCart } from '@/hooks/products';
+import type { SellerCart, CartStatus } from '@/hooks/products';
+
+type StatusFilter = 'all' | CartStatus;
+type SortKey = 'recent' | 'value-desc' | 'items-desc';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'recent', label: 'Mais recente' },
+  { value: 'value-desc', label: 'Maior valor' },
+  { value: 'items-desc', label: 'Mais itens' },
+];
+
+function cartSubtotal(c: SellerCart) {
+  return c.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
+}
 
 export default function CartsListPage() {
   return (
