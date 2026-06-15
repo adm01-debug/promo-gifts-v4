@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+        "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+      },
+      "gitCommit": {
+        "shortHash": "3ebff37",
+        "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+        "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+        "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781535039000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781535039000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "commitHash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27554789956"
+          },
+          "gitCommit": {
+            "shortHash": "3ebff37",
+            "hash": "3ebff37608a9ede425f0db662942b3f67b7a0e45",
+            "subject": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)",
+            "body": "fix(audit-v2): 4 bugs pós-análise exaustiva de commits (#769)\n\nBUG-E (perf): useSearch.ts — rankProductSearchResults chamado 2× por query\n  Extrai allProductMatches para useMemo próprio; suggestions e totalProductMatches\n  reutilizam. De O(2n) para O(n) em cada keystroke do campo de busca.\n\nBUG-G (memory-leak): useIdleEffect.ts — timerId reatribuído no path Safari\n  Quando delay>0, timerId era sobrescrito dentro de schedule(), perdendo o ref\n  do delay timer no cleanup. Fix: variáveis separadas delayTimerId + scheduleTimerId.\n\nBUG-F (type): performance-budget.ts — cast incorreto em entry LCP\n  PerformancePaintTiming é o tipo de paint entries, não LCP. Removido; startTime\n  já está em PerformanceEntry (tipo base retornado por list.getEntries()).\n\nBUG-I (hmr-leak): useIntersectionObserver.ts — singletons acumulam em HMR\n  observerCache/callbackMap são module-level e não eram limpos em hot-reload.\n  Adicionado import.meta.hot.dispose() para disconnect + clear. Zero custo prod.\n\nBonus: .eslint-baseline.json 4 → 0 (erros eram phantom)",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781535039000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781535039000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T14:52:07.827Z",
+    "duration": 4215.026,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
