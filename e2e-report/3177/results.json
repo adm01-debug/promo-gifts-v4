@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+        "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+      },
+      "gitCommit": {
+        "shortHash": "1672a77",
+        "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+        "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+        "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781520468000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781520468000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "commitHash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27541058399"
+          },
+          "gitCommit": {
+            "shortHash": "1672a77",
+            "hash": "1672a77e39e6e4c531175770953cc1177e6a37f0",
+            "subject": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados",
+            "body": "feat(estoque): reescreve StockAlertsIndicator com 4 abas e hooks dedicados\n\n- Zerou / Baixo / Novidade / Chegou, cada uma com RPC propria\n- Nao usa mais useStockAlerts/useNoveltiesWithDetails/useReplenishmentsWithDetails\n- Remove o `return null` quando total=0 (sino sempre visivel)\n- aria-busy no trigger durante carregamento dos contadores\n- data-testid=\"stock-alerts-indicator\" para e2e preciso\n- Cor dominante: destructive > warning > primary\n- Estados vazios: \"Tudo visto\" vs \"Nenhuma notificacao\"\n- Footer \"Ver todos os N\" quando lista local < count servidor\n- Sem switch/default (if-chain exaustivo, sem warning de lint)\n- Sem non-null assertions, sem any vazando",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781520468000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T10:48:57.738Z",
+    "duration": 3787.6780000000003,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
