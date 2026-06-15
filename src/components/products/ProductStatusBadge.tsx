@@ -60,8 +60,14 @@ export function ProductStatusBadge({
     return s.badgesEnabled;
   });
 
-  // Hide all status badges when user has disabled them (urgency badges always show as they're contextual)
-  if (!badgesEnabled && type !== 'urgency') return null;
+  // Hide all status badges when user has disabled them.
+  // Exceção: urgências contextuais permanecem visíveis, EXCETO "limited-stock"
+  // (badge "Estoque baixo"), que deve respeitar o toggle global como as demais
+  // badges de status de estoque (out-of-stock, etc.).
+  if (!badgesEnabled) {
+    const isToggleableUrgency = type === 'urgency' && urgencyType === 'limited-stock';
+    if (type !== 'urgency' || isToggleableUrgency) return null;
+  }
 
   const isClickable = !!onClick;
 
