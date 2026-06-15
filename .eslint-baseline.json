@@ -1,5 +1,10 @@
 {
-  "generatedAt": "2026-06-12T12:09:57.461Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-15T12:56:55.487Z",
+  "totalErrors": 2,
+  "counts": {
+    "src/components/inventory/StockAlertsIndicator.tsx": {
+      "eqeqeq": 2,
+      "react-hooks/exhaustive-deps": 2
+    }
+  }
 }
