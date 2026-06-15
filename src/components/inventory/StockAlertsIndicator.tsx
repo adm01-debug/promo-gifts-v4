@@ -9,6 +9,7 @@ import {
   RefreshCw,
   TrendingDown,
   AlertCircle,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,14 +30,54 @@ import {
 /**
  * Sino de ESTOQUE do header (`aria-label="Alertas de estoque"`).
  *
- * NÃO confundir com `NotificationBell` (`aria-label="Notificações"`), que serve
- * o sistema workspace_notifications. Este componente é alimentado pelas RPCs
- * dedicadas em `fn_get_stock_notification_*` — fontes de verdade auditadas e
- * alinhadas a badge #8, product_novelties e stock_daily_summary (Cenário A).
- *
- * Ver auditoria completa: docs/notifications-module-audit.md
- * Hook: src/hooks/products/useStockNotifications.ts
+ * v2: filtro de período (Hoje / 7 dias / 30 dias / Tudo) + data do evento
+ * por item ("Esgotado 15/06/2026"). Fontes de verdade e ACL em
+ * docs/notifications-module-audit.md.
  */
+
+// ─── Período ─────────────────────────────────────────────────────
+
+type DatePeriod = 'today' | '7d' | '30d' | 'all';
+
+const PERIODS: { key: DatePeriod; label: string }[] = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'all', label: 'Tudo' },
+];
+
+/** Converte DatePeriod em string ISO 'YYYY-MM-DD' (ou null = sem filtro). */
+function getSince(period: DatePeriod): string | null {
+  if (period === 'all') return null;
+  const d = new Date();
+  if (period === '7d') d.setDate(d.getDate() - 7);
+  else if (period === '30d') d.setDate(d.getDate() - 30);
+  // 'today': d permanece como data atual
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Formata a data do evento no padrão pt-BR (DD/MM/AAAA).
+ * Strings date-only ('YYYY-MM-DD') são normalizadas com T12:00:00
+ * para evitar drift de timezone.
+ */
+function formatEventDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  try {
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+      ? `${dateStr}T12:00:00`
+      : dateStr;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
 
 // ─── Tab config ──────────────────────────────────────────────────
 
@@ -116,7 +157,7 @@ const NotificationTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
 );
 NotificationTrigger.displayName = 'NotificationTrigger';
 
-// ─── Item helpers (if-chain para evitar default-case lint) ───────
+// ─── Item helpers ────────────────────────────────────────────────
 
 function getKindBadge(kind: StockNotificationKind): JSX.Element {
   if (kind === 'stockout')
@@ -159,13 +200,17 @@ export function StockAlertsIndicator() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('stockout');
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [period, setPeriod] = useState<DatePeriod>('all');
+
+  // `since` é recalculado apenas quando `period` muda
+  const since = useMemo(() => getSince(period), [period]);
 
   // ── Data ──────────────────────────────────────────────────────
-  const countsQuery = useStockNotificationCounts();
-  const stockoutQuery = useStockoutAlerts(50);
-  const lowQuery = useLowStockAlerts(50);
-  const noveltyQuery = useNoveltyAlerts(30);
-  const restocksQuery = useRecentRestocks(30);
+  const countsQuery = useStockNotificationCounts(since);
+  const stockoutQuery = useStockoutAlerts(50, since);
+  const lowQuery = useLowStockAlerts(50, since);
+  const noveltyQuery = useNoveltyAlerts(30, since);
+  const restocksQuery = useRecentRestocks(30, since);
 
   const counts = countsQuery.data ?? {
     stockout: 0,
@@ -295,8 +340,27 @@ export function StockAlertsIndicator() {
           })}
         </div>
 
+        {/* Filtro de período */}
+        <div className="flex items-center gap-1.5 border-b border-border/20 bg-muted/20 px-4 py-1.5">
+          <Calendar className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={cn(
+                'rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors',
+                period === p.key
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
         {/* List */}
-        <ScrollArea className="h-[360px]">
+        <ScrollArea className="h-[320px]">
           <div className="space-y-1.5 p-3">
             {activeList.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
@@ -333,12 +397,21 @@ export function StockAlertsIndicator() {
 
                   {/* Content */}
                   <div className="min-w-0 flex-1">
+                    {/* Row 1: nome + badge + data do evento */}
                     <div className="mb-1 flex items-start gap-2">
                       <p className="line-clamp-2 flex-1 text-xs font-medium leading-tight text-foreground/90">
                         {item.productName}
                       </p>
-                      {getKindBadge(item.kind)}
+                      <div className="flex shrink-0 flex-col items-end gap-0.5">
+                        {getKindBadge(item.kind)}
+                        {item.eventDate && (
+                          <span className="tabular-nums text-[9px] text-muted-foreground/80">
+                            {formatEventDate(item.eventDate)}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    {/* Row 2: sku + estoque + fornecedor */}
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                       <span className="font-mono">{item.sku}</span>
                       {item.stockQuantity != null && (
@@ -391,7 +464,7 @@ export function StockAlertsIndicator() {
           </div>
         </ScrollArea>
 
-        {/* Footer: "Ver todos os N" — só quando lista visível < total do servidor */}
+        {/* Footer: "Ver todos os N" — só quando lista visível < total servidor */}
         {activeList.length > 0 && activeServerCount > activeList.length && (
           <div className="border-t border-border/30 p-2">
             <button
