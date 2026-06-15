@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+        "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+      },
+      "gitCommit": {
+        "shortHash": "1a789d9",
+        "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+        "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+        "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781531132000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781531132000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "commitHash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550680359"
+          },
+          "gitCommit": {
+            "shortHash": "1a789d9",
+            "hash": "1a789d942f4aee5f9a019efb97514cce05ff265a",
+            "subject": "Fix/audit bugs 2026 06 15 v2 (#763)",
+            "body": "Fix/audit bugs 2026 06 15 v2 (#763)\n\n* fix(audit): 12 bugs — icon/useMemo/unmount/indentation/parseInt/img-error\n\nBUG-1 QuickAddToQuote [VISUAL CRÍTICO]\n  iconOverride='plus' renderizava <Palette> em vez de <Plus>.\n  Remove import Palette (agora unused).\n\nBUG-2 useSearch [PERFORMANCE CRÍTICA]\n  availableProducts sem useMemo → nova referência [] a cada render quando\n  productsContext?.products é undefined; invalida cascata de 5 useMemos\n  (Fuse instances, suggestions) a cada keystroke. Envolto em useMemo.\n\nBUG-3 PromoFlixPlayer [MEMORY LEAK]\n  controlsTimeoutRef.current não limpo no cleanup do useEffect de unmount.\n  Timer disparava depois da desmontagem, tentando atualizar state de\n  componente desmontado. Adicionado clearTimeout no bloco de cleanup.\n\nBUG-4 App.tsx [CODE QUALITY]\n  AriaLiveProvider com indentação errada (mesmo nível do pai\n  AccessibilityProvider). Corrigida a hierarquia visual do JSX tree.\n\nBUG-5 QuoteBuilderPage [EDGE CASE CRASH]\n  parseInt(val) sem radix nem guard de NaN. Se val for inválido,\n  addDays(new Date(), NaN) → Invalid Date → format() lança exception.\n  Fix: parseInt(val, 10) || 1.\n\nBUG-6..12 Imagens sem onError fallback CDN [UX]\n  7 componentes renderizavam <img src=...> sem handler onError.\n  CDN indisponível ou URL quebrada exibia ícone de imagem quebrada\n  do browser em vez do placeholder. Adicionado onError em:\n  - ReplenishmentCards (grid)\n  - NoveltyCards (grid + tabela)\n  - QuoteItemsTable, DraggableQuoteItems (2x)\n  - QuoteBuilderSummaryColumn, QuoteItemDetailSheet\n  - GlobalSearchIdleState\n\n* fix(audit): timers sem cleanup + imagens restantes sem onError\n\nMEMORY LEAKS / SIDE-EFFECTS PÓS-UNMOUNT:\n- useSellerCartsPage: debounceNotesRef sem cleanup no unmount — timer de 800ms\n  disparava após navegação e chamava updateCartNotes no DB desnecessariamente.\n  Adicionado useEffect(() => () => clearTimeout(debounceNotesRef.current), [])\n- useCatalogState: searchDebounceRef sem cleanup no unmount — timer de 300ms\n  chamava setIsSearching(false) em componente desmontado.\n  Adicionado useEffect de cleanup equivalente.\n\nIMAGENS SEM onError FALLBACK (restantes):\n- simulator/ProductSearch: selected product preview + search result grid (2x)\n- VisualSearchButton: preview de imagem carregada para busca visual por IA\n- shared-types (company logo): logo de empresa nos cabeçalhos de orçamento\n  (usa style.display='none' em vez de src fallback para revelar iniciais)\n\n* fix(audit): imagens coleções/busca/segurança + store unbounded growth\n\nIMAGENS SEM onError (lote final):\n- CollectionGridCard: 9 imagens de preview de coleção (1/2/3/4 fotos)\n- CollectionTableView: preview de linha na tabela\n- CollectionListItem: imagem compacta no modo lista\n- ClientDetailHeader: logo de empresa do cliente\n- SearchResultGroups: produto nos resultados de autocomplete\n- ImageZoomCell: zoom de imagem na comparação\n- VisualSearchPage: preview sidebar + resultado de busca por IA\n- MfaEnrollmentDialog: QR code MFA (display='none' em erro)\n\nSTORE UNBOUNDED GROWTH:\n- useProductSelectionStore: selectedColors acumulava indefinidamente\n  no localStorage — sem limite máximo de entradas. Adicionado cap de\n  200 entradas (FIFO: remove as mais antigas ao atingir o limite).\n  Com catálogo de 6.000+ produtos e navegação intensiva, o store poderia\n  ocupar vários MB de localStorage sem esse limite.\n\n* fix(audit): race condition em GlobalSearch + console.error → logger\n\nRACE CONDITION em GlobalSearch.performSearch:\nQuando o usuário digitava rápido, duas buscas podiam estar em-flight\nsimultaneamente. A busca mais antiga (resultados obsoletos) podia\nsobrescrever os resultados da busca mais recente, causando UI inconsistente.\n\nSolução: contador de geração (searchGenRef). Cada chamada a performSearch\nincrementa o contador e captura sua geração local. Antes de chamar\nsetResults/setIsLoading/setSelectedIndex, verifica se ainda é a geração\nmais recente. Resultados de buscas obsoletas são silenciosamente descartados.\n\nconsole.error → logger.warn:\nO console.error de erros de busca poluía o console de produção e não\npassava pelo sistema de telemetria estruturado do projeto. Substituído por\nlogger.warn com structured context { err: String(err) }.\n\nNOTA: console.info em OptimizedImage.tsx não alterado — é guardado por\nif (debug || process.env.NODE_ENV === 'development'), portanto não aparece\nem produção sem a prop debug explícita.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531132000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531132000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T13:55:28.292Z",
+    "duration": 3997.6630000000005,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
