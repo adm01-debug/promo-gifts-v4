@@ -656,8 +656,15 @@ export const ProductCard = memo(
           )}
 
           {cardIntelligenceBadges.length > 0 && (
-            <IntelligenceBadges badges={cardIntelligenceBadges} className="gap-1.5" />
+            <div
+              className="mt-0.5 flex w-full min-w-0 flex-wrap items-center gap-1.5"
+              data-testid="product-card-intelligence-badges"
+            >
+              <IntelligenceBadges badges={cardIntelligenceBadges} className="gap-1.5" />
+            </div>
           )}
+
+
 
 
 
