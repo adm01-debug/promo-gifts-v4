@@ -145,6 +145,15 @@ export function useSearch(products: Product[] = []) {
     [effectiveSupplierSource],
   );
 
+  // BUG-E FIX (2026-06-15): lifted out to avoid calling rankProductSearchResults
+  // twice per query change — once in suggestions, once in totalProductMatches.
+  // Both memos had identical dependencies; now they share this single computation.
+  const allProductMatches = useMemo(() => {
+    const searchTerm = query.trim();
+    if (!searchTerm || searchTerm.length < 2) return [] as ReturnType<typeof rankProductSearchResults>;
+    return rankProductSearchResults(availableProducts, searchTerm, productFuse);
+  }, [query, availableProducts, productFuse]);
+
   // Generate suggestions based on query - usando busca fuzzy
   const suggestions = useMemo((): SearchResult[] => {
     const results: SearchResult[] = [];
@@ -187,12 +196,7 @@ export function useSearch(products: Product[] = []) {
       });
     }
 
-    // FIX: era slice(0,6) → agora 30 com scrollbar no dropdown
-    const allProductMatches = rankProductSearchResults(
-      availableProducts,
-      searchTerm,
-      productFuse,
-    );
+    // allProductMatches provided by shared useMemo above (BUG-E fix — no double computation)
     const orderedProducts = allProductMatches.slice(0, 30);
 
     orderedProducts.forEach((product) => {
@@ -259,15 +263,12 @@ export function useSearch(products: Product[] = []) {
     });
 
     return results;
-  }, [query, history, availableProducts, productFuse, categoryFuse, supplierFuse]);
+  }, [query, history, allProductMatches, availableProducts, categoryFuse, supplierFuse]);
 
   // Total count of products matching the search term (including those beyond
   // the 30-item display limit). Used by SmartSearchInput "Ver todos N resultados".
-  const totalProductMatches = useMemo(() => {
-    const searchTerm = query.trim();
-    if (!searchTerm || searchTerm.length < 2) return 0;
-    return rankProductSearchResults(availableProducts, searchTerm, productFuse).length;
-  }, [query, availableProducts, productFuse]);
+  // BUG-E FIX: reuses shared allProductMatches memo — O(1) lookup instead of recomputing.
+  const totalProductMatches = useMemo(() => allProductMatches.length, [allProductMatches]);
 
   // FIX 2026-06-15 (quick-suggestions-real-categories): chips derivados das top-5
   // categorias REAIS do DB (por contagem de produtos no catálogo carregado).
