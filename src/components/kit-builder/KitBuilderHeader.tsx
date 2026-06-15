@@ -13,8 +13,8 @@ import {
   Check,
   Library,
   Sparkles,
+  Package,
 } from 'lucide-react';
-import * as Lucide from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -88,7 +88,7 @@ export function KitBuilderHeader({
         string,
         React.ComponentType<{ className?: string; strokeWidth?: number }>
       >
-    )[identityIconName] || Lucide.Package;
+    )[identityIconName] || Package;
 
   return (
     <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-md">

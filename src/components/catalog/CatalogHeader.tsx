@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { SmartSearchInput } from '@/components/search';
 import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopover';
 import { Home, Search, Clock, Trash2 } from 'lucide-react';
@@ -21,7 +21,7 @@ interface CatalogHeaderProps {
   onClearHistory?: () => void;
 }
 
-export function CatalogHeader({
+function CatalogHeaderInner({
   shouldShowCatalogSkeleton,
   totalEstimate,
   filteredCount,
@@ -209,3 +209,6 @@ export function CatalogHeader({
     </div>
   );
 }
+
+export const CatalogHeader = memo(CatalogHeaderInner);
+CatalogHeader.displayName = 'CatalogHeader';

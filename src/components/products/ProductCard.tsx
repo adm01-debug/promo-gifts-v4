@@ -148,6 +148,7 @@ export const ProductCard = memo(
       [intelligenceBadges],
     );
     const [isHovered, setIsHovered] = useState(false);
+// ── Dialog states agrupados — 1 re-render por abertura de dialog ─────────
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
       | {
