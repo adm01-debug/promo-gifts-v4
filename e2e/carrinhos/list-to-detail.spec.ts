@@ -53,9 +53,22 @@ test.describe('Carrinhos · lista → detalhe @smoke', () => {
     }
 
     // Cabeçalhos esperados na ordem do módulo Orçamentos
-    for (const label of ['Status', 'Empresa', 'Itens', 'Valor', 'Atualizado']) {
+    const expectedHeaders = ['Status', 'Empresa', 'Itens', 'Valor', 'Atualizado'];
+    for (const label of expectedHeaders) {
       await expect(page.getByRole('columnheader', { name: new RegExp(`^${label}$`) })).toBeVisible();
     }
+
+    // Tablet 768px: ordem das colunas e alinhamento preservados (padrão Orçamentos)
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
+    const headers = page.getByRole('columnheader');
+    const headerTexts = (await headers.allInnerTexts()).map((t) => t.trim()).filter(Boolean);
+    expect(headerTexts.slice(0, expectedHeaders.length)).toEqual(expectedHeaders);
+
+    const itensHeader = page.getByRole('columnheader', { name: /^Itens$/ });
+    const valorHeader = page.getByRole('columnheader', { name: /^Valor$/ });
+    await expect(itensHeader).toHaveClass(/text-center/);
+    await expect(valorHeader).toHaveClass(/text-right/);
 
     // Mobile: tabela continua visível (com overflow horizontal)
     await page.setViewportSize({ width: 390, height: 844 });
