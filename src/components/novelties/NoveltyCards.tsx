@@ -224,6 +224,14 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           {product.product_name ?? '—'}
         </p>
 
+        {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
+        <p
+          className="line-clamp-2 min-h-[2.5rem] break-words text-sm font-medium leading-tight"
+          title={product.product_name ?? undefined}
+        >
+          {product.product_name ?? '—'}
+        </p>
+
         <div className="mt-0.5">
           <ProductColorSwatches
             colors={colors}
@@ -235,11 +243,33 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           />
         </div>
 
-        {/* Preço + Estoque — ancorados ao final do card */}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          {product.base_price !== null ? (
-            <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-medium text-muted-foreground">A partir de</span>
+        {/* Preço + Estoque — ancorados ao final do card; altura mínima reservada
+            para não colapsar enquanto carrega ou quando os valores faltam. */}
+        <div
+          data-testid="novelty-card-footer"
+          className="mt-auto flex min-h-[2.75rem] items-end justify-between gap-2 pt-2"
+        >
+          {isPriceStockLoading ? (
+            <div
+              data-testid="novelty-card-price-skeleton"
+              className="flex flex-col gap-1"
+              aria-busy="true"
+              aria-label="Carregando preço"
+            >
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ) : product.base_price !== null &&
+            product.base_price !== undefined &&
+            Number.isFinite(product.base_price) &&
+            product.base_price > 0 ? (
+            <div data-testid="novelty-card-price" className="flex flex-col leading-tight">
+              <span
+                data-testid="novelty-card-price-prefix"
+                className="text-[10px] font-medium text-muted-foreground"
+              >
+                A partir de
+              </span>
               <p className="text-sm font-semibold text-primary">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                   product.base_price,
@@ -247,16 +277,29 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
               </p>
             </div>
           ) : (
-            <span />
+            <span
+              data-testid="novelty-card-price-unavailable"
+              className="text-xs italic text-muted-foreground"
+            >
+              Sob consulta
+            </span>
           )}
-          <StockBadge
-            status={
-              product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
-            }
-            quantity={product.stock_quantity ?? 0}
-            showQuantity
-            size="sm"
-          />
+          {isPriceStockLoading ? (
+            <Skeleton
+              data-testid="novelty-card-stock-skeleton"
+              className="h-5 w-16 rounded-full"
+              aria-label="Carregando estoque"
+            />
+          ) : (
+            <StockBadge
+              status={
+                product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
+              }
+              quantity={product.stock_quantity ?? 0}
+              showQuantity
+              size="sm"
+            />
+          )}
         </div>
       </div>
     </article>
