@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+        "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+      },
+      "gitCommit": {
+        "shortHash": "f55151c",
+        "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+        "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+        "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781523685000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781523685000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f55151cbe08f577f3402c1093949378fc79f570a",
+            "commitHash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27543760948"
+          },
+          "gitCommit": {
+            "shortHash": "f55151c",
+            "hash": "f55151cbe08f577f3402c1093949378fc79f570a",
+            "subject": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand",
+            "body": "fix(ts): TS2345 em useSearch.ts — restaura variável local normalizedBrand\n\nO Lovable sync 30c1fb9 (#752) fez inline do padrão correto:\n\n  Antes (correto):\n    const normalizedBrand = normalizeProductSearch(p.brand); // string narrowed\n    return supTokens.some((t) => normalizedBrand.includes(t));\n\n  Depois (sync, quebrado):\n    return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));\n\nO TypeScript não mantém narrowing de propriedade de objeto (string | null → string)\ndentro de closures em .some(). A variável local captura o valor já estreitado,\ngarantindo que normalizeProductSearch receba string, não string | null. TS2345.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781523685000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T11:46:05.871Z",
+    "duration": 4096.221,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
