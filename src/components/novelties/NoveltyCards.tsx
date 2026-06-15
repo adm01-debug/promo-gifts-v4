@@ -82,6 +82,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   onSelect,
   onStatusClick,
   colors,
+  isPriceStockLoading = false,
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
 
