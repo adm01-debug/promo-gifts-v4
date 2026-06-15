@@ -161,7 +161,11 @@ export function useProductIntelligenceBadges(
 
     const avgDepletion = bestVel?.avg_daily_depletion_7d ?? 0;
     const minDepletion = settings.bestSeller.minAvgDailyDepletion7d;
-    if (settings.bestSeller.enabled && avgDepletion >= minDepletion) {
+    if (
+      settings.bestSeller.enabled &&
+      Number.isFinite(avgDepletion) &&
+      avgDepletion >= minDepletion
+    ) {
       out.push({
         type: 'best-seller',
         label: 'Best-seller',
