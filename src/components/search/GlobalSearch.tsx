@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { untypedRpc } from '@/lib/supabase-untyped';
+import { logger } from '@/lib/logger';
 
 interface SearchResult {
   id: string;
@@ -77,6 +78,8 @@ export function GlobalSearch({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // FIX race condition: contador de geração para descartar resultados de buscas obsoletas
+  const searchGenRef = useRef(0);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +123,8 @@ export function GlobalSearch({
       return;
     }
 
+    // FIX race condition: incrementa geração e captura a local
+    const gen = ++searchGenRef.current;
     setIsLoading(true);
 
     try {
@@ -175,13 +180,16 @@ export function GlobalSearch({
         },
       );
 
-      setResults(mapped);
+      // FIX race condition: só atualiza se ainda somos a busca mais recente
+      if (gen === searchGenRef.current) setResults(mapped);
     } catch (err) {
-      console.error('[GlobalSearch] performSearch error:', err);
-      setResults([]);
+      logger.warn('[GlobalSearch] performSearch error', { err: String(err) });
+      if (gen === searchGenRef.current) setResults([]);
     } finally {
-      setIsLoading(false);
-      setSelectedIndex(0);
+      if (gen === searchGenRef.current) {
+        setIsLoading(false);
+        setSelectedIndex(0);
+      }
     }
   }, []);
 
