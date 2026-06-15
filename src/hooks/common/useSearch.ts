@@ -182,11 +182,14 @@ export function useSearch(products: Product[] = []) {
       });
     }
 
-    const orderedProducts = rankProductSearchResults(
+    // FIX: era slice(0,6) → agora 30 com scrollbar no dropdown
+    const allProductMatches = rankProductSearchResults(
       availableProducts,
       searchTerm,
       productFuse,
-    ).slice(0, 6);
+    );
+    const orderedProducts = allProductMatches.slice(0, 30);
+    const totalProductMatches = allProductMatches.length;
 
     orderedProducts.forEach((product) => {
       // Skip if already added as exact SKU match
@@ -289,5 +292,6 @@ export function useSearch(products: Product[] = []) {
     removeFromHistory: (term: string) => removeFromHistory(`history-${term}`),
     clearHistory,
     isLoaded: true,
+    totalProductMatches,
   };
 }

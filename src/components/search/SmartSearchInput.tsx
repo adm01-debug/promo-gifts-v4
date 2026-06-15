@@ -63,7 +63,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
     const [tooltipVisible, setTooltipVisible] = useState(false);
     // ──────────────────────────────────────────────────────────────────────────
 
-    const { query, setQuery, suggestions, quickSuggestions, clearHistory } = useSearch(products);
+    const { query, setQuery, suggestions, quickSuggestions, clearHistory, totalProductMatches } = useSearch(products);
 
     const { history, addToHistory, removeFromHistory } = useSearchHistory('general');
 
@@ -270,7 +270,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
             className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-border bg-popover shadow-xl duration-150 animate-in fade-in zoom-in-[0.98] slide-in-from-top-1"
             role="listbox"
           >
-            <ScrollArea className="max-h-[420px]">
+            <ScrollArea className="max-h-[520px]">
               {query && suggestions.length > 0 && (
                 <GroupedSearchResults
                   suggestions={suggestions}
@@ -378,6 +378,22 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     <Search className="mr-1.5 h-3 w-3" />
                     Buscar "{query}" no catálogo completo
                   </Button>
+                </div>
+              )}
+              {/* Rodapé: quando Fuse encontrou mais de 30, oferece 'ver todos' */}
+              {query.trim().length >= 2 && totalProductMatches > 30 && (
+                <div className="border-t border-border/40 bg-muted/20 px-3 py-2">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => submitSearch(query)}
+                  >
+                    <span>
+                      Ver todos <strong className="text-foreground">{totalProductMatches}</strong> resultados
+                      {' '}para &ldquo;<span className="text-primary">{query}</span>&rdquo;
+                    </span>
+                    <span className="text-primary text-sm">→</span>
+                  </button>
                 </div>
               )}
             </ScrollArea>
