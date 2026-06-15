@@ -3,9 +3,8 @@
  *
  * Garante que após o fix de altura flexível dos cards (`min-h-[420px]`
  * sem `max-h` / `h-fixo`), o módulo /novidades:
- *  1. Permite scroll vertical (document/window cresce).
- *  2. O virtualizer renderiza novas linhas ao rolar (itens entram/saem
- *     do DOM dinamicamente — comportamento esperado de virtualização).
+ *  1. Permite scroll vertical no wrapper da lista.
+ *  2. O virtualizer renderiza corretamente ao rolar esse wrapper.
  */
 import { test, expect, requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
@@ -31,34 +30,39 @@ test.describe('Novidades — scroll + virtualizer', () => {
       return;
     }
 
-    // 1) Document deve ser maior que a viewport (scroll possível).
-    const { scrollHeight, viewportH } = await page.evaluate(() => ({
-      scrollHeight: document.documentElement.scrollHeight,
-      viewportH: window.innerHeight,
-    }));
-    expect(scrollHeight).toBeGreaterThan(viewportH);
+    // 1) O wrapper do virtualizer deve ser o container de scroll estável.
+    const metrics = await list.evaluate((el) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+        overflowY: cs.overflowY,
+      };
+    });
+    expect(metrics.overflowY).toMatch(/auto|scroll/);
+    expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
 
     // 2) Captura ids visíveis antes de rolar.
     const before = await page
       .locator('div[role="listitem"] article')
       .evaluateAll((nodes) => nodes.map((_, i) => i).length);
 
-    // Rola até quase o fim.
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight - 600));
+    // Rola o wrapper até quase o fim.
+    await list.evaluate((el) => el.scrollTo(0, el.scrollHeight - el.clientHeight - 24));
     await page.waitForTimeout(400);
 
-    // window.scrollY deve ter avançado.
-    const scrollY = await page.evaluate(() => window.scrollY);
-    expect(scrollY).toBeGreaterThan(100);
+    // scrollTop do wrapper deve ter avançado.
+    const scrollTop = await list.evaluate((el) => el.scrollTop);
+    expect(scrollTop).toBeGreaterThan(100);
 
     // 3) O virtualizer deve ter renderizado linhas (count > 0 após scroll).
     const afterCount = await page.locator('div[role="listitem"]').count();
     expect(afterCount).toBeGreaterThan(0);
 
     // 4) Volta ao topo — scrollY ~ 0 e itens continuam renderizando.
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await list.evaluate((el) => el.scrollTo(0, 0));
     await page.waitForTimeout(300);
-    const topY = await page.evaluate(() => window.scrollY);
+    const topY = await list.evaluate((el) => el.scrollTop);
     expect(topY).toBeLessThan(50);
     expect(await page.locator('div[role="listitem"]').count()).toBeGreaterThan(0);
 

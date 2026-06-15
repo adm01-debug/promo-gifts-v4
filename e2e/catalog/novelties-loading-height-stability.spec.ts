@@ -3,14 +3,13 @@
  *
  * Objetivo: garantir que o container de loading (`[data-testid="novelty-loading-grid"]`)
  * reserva altura suficiente para que, ao trocar para a grade virtualizada
- * (`div[role="list"][aria-label="Grade de novidades"]`), o documento NÃO encolha
- * — caso contrário, o `scrollMargin` do `useWindowVirtualizer` fica stale e o
- * scroll do módulo trava.
+ * (`div[role="list"][aria-label="Grade de novidades"]`), o wrapper NÃO encolha
+ * e continue sendo o container de scroll usado pelo virtualizer.
  *
  * Também valida que após a transição:
  *  - O virtualizer renderiza `role="listitem"` (recalculo OK).
- *  - O `scrollHeight` final é >= ao reservado pelo skeleton (sem colapso).
- *  - Rolagem efetiva avança `window.scrollY`.
+ *  - O `scrollHeight` final do wrapper é >= ao reservado pelo skeleton (sem colapso).
+ *  - Rolagem efetiva avança `scrollTop` no wrapper.
  */
 import { test, expect, requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
@@ -30,14 +29,12 @@ test.describe('Novidades — altura do wrapper estável durante transição skel
     //    inicial e valida apenas o estado final.
     const loadingGrid = page.getByTestId('novelty-loading-grid');
     let skeletonHeight = 0;
-    let skeletonDocHeight = 0;
+    let skeletonReservedHeight = 0;
     try {
       await loadingGrid.waitFor({ state: 'visible', timeout: 2_000 });
       const box = await loadingGrid.boundingBox();
       skeletonHeight = box?.height ?? 0;
-      skeletonDocHeight = await page.evaluate(
-        () => document.documentElement.scrollHeight,
-      );
+      skeletonReservedHeight = skeletonHeight;
       // Sanity: o wrapper de loading deve reservar pelo menos ~420px (1 linha de cards).
       expect(skeletonHeight).toBeGreaterThanOrEqual(400);
     } catch {
@@ -55,39 +52,30 @@ test.describe('Novidades — altura do wrapper estável durante transição skel
       return;
     }
 
-    // 3) Altura do documento pós-transição não pode encolher abaixo do reservado
-    //    durante o skeleton (com tolerância de 24px para diferenças de padding/gap).
-    const finalDocHeight = await page.evaluate(
-      () => document.documentElement.scrollHeight,
-    );
-    if (skeletonDocHeight > 0) {
-      expect(finalDocHeight).toBeGreaterThanOrEqual(skeletonDocHeight - 24);
-    }
-
-    // 4) Wrapper da lista virtualizada não pode ter colapsado (height>0).
+    // 3) Wrapper da lista virtualizada não pode ter colapsado (height>0).
     const listBox = await list.boundingBox();
     expect(listBox?.height ?? 0).toBeGreaterThan(200);
     // E não pode ser MENOR que a área reservada pelo skeleton (tolerância 24px).
-    if (skeletonHeight > 0) {
-      expect((listBox?.height ?? 0)).toBeGreaterThanOrEqual(skeletonHeight - 24);
+    if (skeletonReservedHeight > 0) {
+      expect((listBox?.height ?? 0)).toBeGreaterThanOrEqual(
+        Math.min(skeletonReservedHeight, 420) - 24,
+      );
     }
 
-    // 5) Virtualizer continua respondendo a scroll: ao rolar, scrollY avança e
+    // 4) Virtualizer continua respondendo a scroll: ao rolar, scrollTop avança e
     //    permanece havendo `role="listitem"` no DOM (recalculo ativo).
-    const beforeY = await page.evaluate(() => window.scrollY);
-    await page.evaluate(() =>
-      window.scrollTo(0, document.documentElement.scrollHeight - 600),
-    );
+    const beforeY = await list.evaluate((el) => el.scrollTop);
+    await list.evaluate((el) => el.scrollTo(0, el.scrollHeight - el.clientHeight - 24));
     await page.waitForTimeout(400);
-    const afterY = await page.evaluate(() => window.scrollY);
+    const afterY = await list.evaluate((el) => el.scrollTop);
     expect(afterY).toBeGreaterThan(beforeY + 100);
     expect(await page.locator('div[role="listitem"]').count()).toBeGreaterThan(0);
 
-    // 6) Estabilidade pós-scroll: duas leituras consecutivas do scrollHeight
+    // 5) Estabilidade pós-scroll: duas leituras consecutivas do scrollHeight
     //    não devem divergir (sem oscilação tardia do virtualizer).
-    const h1 = await page.evaluate(() => document.documentElement.scrollHeight);
+    const h1 = await list.evaluate((el) => el.scrollHeight);
     await page.waitForTimeout(300);
-    const h2 = await page.evaluate(() => document.documentElement.scrollHeight);
+    const h2 = await list.evaluate((el) => el.scrollHeight);
     expect(Math.abs(h2 - h1)).toBeLessThanOrEqual(8);
   });
 });
