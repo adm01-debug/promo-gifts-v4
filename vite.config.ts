@@ -171,7 +171,8 @@ export default defineConfig(({ mode }) => {
             // Kit builder
             if (
               id.includes('/src/pages/kit-') ||
-              id.includes('/src/components/kit-')
+              id.includes('/src/components/kit-') ||
+              id.includes('/src/hooks/kit-builder/')
             ) {
               return 'kit-domain';
             }
@@ -179,7 +180,8 @@ export default defineConfig(({ mode }) => {
             // Quotes / Orçamentos
             if (
               id.includes('/src/pages/quotes/') ||
-              id.includes('/src/components/quotes/')
+              id.includes('/src/components/quotes/') ||
+              id.includes('/src/hooks/quotes/')
             ) {
               return 'quotes-domain';
             }
