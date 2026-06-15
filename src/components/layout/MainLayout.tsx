@@ -150,7 +150,18 @@ export function MainLayout({ children }: MainLayoutProps) {
             aria-labelledby="main-heading"
           >
             <Suspense fallback={<div>{children || <Outlet />}</div>}>
-              <PageTransition variant="fade-slide" duration={0.6}>
+              {/*
+                FIX scroll quebrado em /produto/:id, /novidades, /reposicao:
+                a variant `fade-slide` deixa `transform: translateY(0px)` inline
+                no wrapper depois da animação. Esse transform cria um novo
+                containing block que (a) faz o ProductStickyHeader (position:
+                fixed) ancorar no wrapper em vez do viewport e (b) corrompe a
+                medição do useWindowVirtualizer (getBoundingClientRect.top +
+                window.scrollY passa a refletir a translação interna), zerando
+                a barra de rolagem. `fade` só anima opacity → sem transform
+                residual → scroll/sticky voltam a funcionar.
+              */}
+              <PageTransition variant="fade" duration={0.6}>
                 {children || <Outlet />}
               </PageTransition>
             </Suspense>
