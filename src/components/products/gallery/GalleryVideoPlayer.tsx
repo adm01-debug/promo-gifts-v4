@@ -87,7 +87,8 @@ export function GalleryVideoPlayer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-5xl overflow-hidden border-none bg-black p-0 [&>button.absolute]:hidden">
+      {/* max-w-[44.8rem] = 70% de max-w-5xl (64rem) → redução de 30% proporcional AxL */}
+      <DialogContent className="w-full max-w-[44.8rem] overflow-hidden border-none bg-black p-0 [&>button.absolute]:hidden">
         <div className="relative w-full">
           {/* Header (apenas para multi-video info + close) */}
           <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex items-center justify-between p-4">
