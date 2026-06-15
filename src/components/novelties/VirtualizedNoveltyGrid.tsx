@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { NoveltyWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
@@ -19,6 +19,9 @@ interface VirtualizedNoveltyGridProps {
   onProductClick: (id: string) => void;
   onStatusClick?: (type: string, value?: string | number) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 /**
@@ -35,6 +38,9 @@ export function VirtualizedNoveltyGrid({
   onProductClick,
   onStatusClick,
   colorsByProduct,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +54,27 @@ export function VirtualizedNoveltyGrid({
     overscan: 3,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el || !onLoadMore) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const handleScroll = () => {
+      if (!hasMore || isLoadingMore) return;
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 640) {
+        onLoadMore();
+      }
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    timeoutId = setTimeout(handleScroll, 180);
+
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [products.length, hasMore, isLoadingMore, onLoadMore]);
 
   return (
     <div
