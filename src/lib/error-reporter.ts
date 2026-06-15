@@ -1,6 +1,12 @@
 /**
  * Centralized error reporting service.
- * Captures unhandled errors and sends them to the database for monitoring.
+ * Captures unhandled errors and sends them to frontend_telemetry for monitoring.
+ *
+ * HISTÓRICO:
+ * - Antes (até 2026-06-15): escrevia em admin_audit_log (action='client_error')
+ *   → contaminava a tabela de auditoria com ruído de dev (42.946 linhas / 60 MB)
+ * - Agora: escreve em frontend_telemetry, que é o lugar semântico correto
+ *   → RLS adequada, retenção 30 dias, sem poluir o audit trail
  */
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
@@ -70,30 +76,36 @@ async function flushErrors() {
   try {
     const supabase = await getSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
-    const userId = userData?.user?.id;
+    const userId = userData?.user?.id ?? null; // null quando não autenticado (antes era UUID zero)
 
     for (const err of batch) {
-      err.userId = userId;
+      err.userId = userId ?? undefined;
     }
 
-    const rows = batch.map((err) => ({
-      action: 'client_error',
-      resource_type: 'error',
-      resource_id: null,
-      user_id: err.userId || '00000000-0000-0000-0000-000000000000',
-      details: {
-        message: err.message,
+    // Mapear para o schema de frontend_telemetry
+    // Constraints RLS: event_type 1-64, name 1-256, url ≤2048,
+    //                  user_agent ≤1024, session_id ≤128, metadata ≤8192
+    const rows = batch.map((err) => {
+      const metadataPayload = {
         stack: err.stack?.slice(0, 2000),
-        url: err.url,
         timestamp: err.timestamp,
-        userAgent: err.userAgent.slice(0, 200),
+        componentStack: err.componentStack?.slice(0, 500),
         ...err.metadata,
-      },
-      ip_address: null,
-      user_agent: err.userAgent.slice(0, 200),
-    }));
+      };
 
-    const { error } = await supabase.from('admin_audit_log').insert(rows);
+      return {
+        event_type: 'error',
+        name: err.message.slice(0, 256) || 'Unknown error',
+        url: err.url.slice(0, 2048),
+        user_agent: err.userAgent.slice(0, 1024),
+        user_id: err.userId ?? null,
+        metadata: metadataPayload,
+      };
+    });
+
+    // CORREÇÃO (2026-06-15): frontend_telemetry é o destino correto.
+    // admin_audit_log é exclusivo para eventos de auditoria administrativa.
+    const { error } = await supabase.from('frontend_telemetry').insert(rows);
     if (error) logger.warn('[ErrorReporter] Failed to flush:', error.message);
   } catch (e) {
     logger.warn('[ErrorReporter] Flush failed:', e);
