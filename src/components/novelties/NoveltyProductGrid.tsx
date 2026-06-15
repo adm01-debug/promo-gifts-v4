@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useInfiniteScroll } from '@/hooks/common/useInfiniteScroll';
 import {
   Package,
   ArrowUpDown,
@@ -202,12 +201,6 @@ export function NoveltyProductGrid() {
       if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
     };
   }, []);
-
-  const { sentinelRef } = useInfiniteScroll({
-    hasMore,
-    isLoading: isFetching,
-    onLoadMore: handleLoadMore,
-  });
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
@@ -675,7 +668,7 @@ export function NoveltyProductGrid() {
 
       {/* Sentinela do scroll infinito + indicador de carregamento */}
       {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-6">
+        <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando mais novidades...
