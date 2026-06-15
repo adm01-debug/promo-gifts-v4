@@ -78,4 +78,49 @@ test.describe('Carrinhos · qty edge cases & sort/pagination @smoke', () => {
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator(`[data-testid="cart-qty-input-${itemId}"]`)).toBeVisible();
   });
+
+  test('bloqueia valores negativos e decimais sem alterar o total', async ({ page }) => {
+    await loginAs(page, 'seller');
+    await gotoAndSettle(page, '/carrinhos');
+
+    await page.evaluate(() => localStorage.setItem('cart-view-mode', 'table'));
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+
+    const input = page.locator('[data-testid^="cart-qty-input-"]').first();
+    if (!(await input.count())) {
+      test.skip(true, 'Carrinho vazio neste ambiente.');
+      return;
+    }
+    const testid = await input.getAttribute('data-testid');
+    const itemId = testid!.replace('cart-qty-input-', '');
+    const errSel = `[data-testid="cart-qty-error-${itemId}"]`;
+    const totalSel = `[data-testid="cart-row-total-${itemId}"]`;
+
+    // Snapshot total antes de tentar valores inválidos
+    const totalBefore = (await page.locator(totalSel).count())
+      ? await page.locator(totalSel).innerText()
+      : null;
+
+    // Negativo → erro inline, total não muda
+    await input.fill('-5');
+    await expect(page.locator(errSel)).toContainText(/negativ/i);
+    if (totalBefore !== null) {
+      expect(await page.locator(totalSel).innerText()).toBe(totalBefore);
+    }
+
+    // Decimal → erro inline, total não muda
+    await input.fill('2.5');
+    await expect(page.locator(errSel)).toContainText(/inteir/i);
+    if (totalBefore !== null) {
+      expect(await page.locator(totalSel).innerText()).toBe(totalBefore);
+    }
+
+    // Decimal com vírgula (input type=number ignora) → vazio → erro
+    await input.fill('3,7');
+    await expect(page.locator(errSel)).toBeVisible();
+    if (totalBefore !== null) {
+      expect(await page.locator(totalSel).innerText()).toBe(totalBefore);
+    }
+  });
 });
