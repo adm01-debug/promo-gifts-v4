@@ -174,7 +174,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-1 flex-col gap-1">
         {/* 1 — Categoria */}
         {product.category_id && product.category_name && (
           <ProductCategoryBadges
@@ -217,7 +217,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           {product.product_name ?? '—'}
         </p>
 
-
         <div className="mt-0.5">
           <ProductColorSwatches
             colors={colors}
@@ -229,14 +228,19 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           />
         </div>
 
-        {/* Preço + Estoque */}
-        <div className="flex items-center justify-between gap-2">
-          {product.base_price !== null && (
-            <p className="text-sm font-semibold text-primary">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                product.base_price,
-              )}
-            </p>
+        {/* Preço + Estoque — ancorados ao final do card */}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+          {product.base_price !== null ? (
+            <div className="flex flex-col leading-tight">
+              <span className="text-[10px] font-medium text-muted-foreground">A partir de</span>
+              <p className="text-sm font-semibold text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  product.base_price,
+                )}
+              </p>
+            </div>
+          ) : (
+            <span />
           )}
           <StockBadge
             status={
