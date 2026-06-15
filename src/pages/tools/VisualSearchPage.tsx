@@ -427,7 +427,7 @@ export default function VisualSearchPage() {
                   <Card className="relative overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/5 transition-all duration-300">
                     <CardContent className="p-0">
                       <div className="relative overflow-hidden group">
-                        <img data-testid="sidebar-preview-image" src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
+                        <img data-testid="sidebar-preview-image" src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
                         
                         {/* Visual Highlights Overlay */}
                         {results?.analysis.visualHighlights && !isSearching && showHotspots && (
@@ -752,7 +752,7 @@ export default function VisualSearchPage() {
                       }}
                       className="group relative aspect-square overflow-hidden rounded-md border border-border/40 hover:border-primary transition-all active:scale-90"
                     >
-                      <img src={item.imageUrl} alt={item.productType} className="h-full w-full object-cover transition-transform group-hover:scale-110" />
+                      <img src={item.imageUrl} alt={item.productType} className="h-full w-full object-cover transition-transform group-hover:scale-110" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <RefreshCcw className="h-3 w-3 text-white" />
                       </div>

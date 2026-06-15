@@ -62,7 +62,7 @@ export function SearchResultItem({
         )}
       >
         {productImg ? (
-          <img src={productImg} alt="" className="h-full w-full object-contain" />
+          <img src={productImg} alt="" className="h-full w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         ) : (
           typeIcons[result.type] || result.icon
         )}
