@@ -8,7 +8,10 @@
  * - Notas sempre visíveis (textarea inline com debounce)
  * - Sidebar reorganizada (Hero pricing → Ação → Menu) + Health Checklist
  */
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { LayoutPopover } from '@/components/products/LayoutPopover';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+
 
 import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
@@ -73,6 +76,35 @@ const NOTES_PLACEHOLDERS = [
 function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  // View mode + grid columns (persisted)
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (localStorage.getItem('cart-view-mode') as 'grid' | 'list' | 'table') || 'grid';
+  });
+  const [gridColumns, setGridColumns] = useState<ColumnCount>(() => {
+    if (typeof window === 'undefined') return 3;
+    const v = Number(localStorage.getItem('cart-grid-columns'));
+    return ([3, 4, 5, 6, 8].includes(v) ? v : 3) as ColumnCount;
+  });
+  useEffect(() => {
+    localStorage.setItem('cart-view-mode', viewMode);
+  }, [viewMode]);
+  useEffect(() => {
+    localStorage.setItem('cart-grid-columns', String(gridColumns));
+  }, [gridColumns]);
+
+  const gridColsClass = useMemo(() => {
+    if (viewMode !== 'grid') return 'grid-cols-1';
+    const map: Record<ColumnCount, string> = {
+      3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+      4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+      5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+      6: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6',
+      8: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-8',
+    };
+    return map[gridColumns];
+  }, [viewMode, gridColumns]);
 
   const focusNotes = useCallback(() => {
     notesRef.current?.focus();
@@ -360,37 +392,138 @@ function SellerCartsContent() {
                 onNavigateProducts={() => s.navigate('/produtos')}
               />
             ) : (
-              <DndContext
-                sensors={s.sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={s.handleDragEnd}
-              >
-                <SortableContext
-                  items={s.activeCart.items.map((i) => i.id)}
-                  strategy={rectSortingStrategy}
-                >
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <AnimatePresence>
-                      {s.activeCart.items.map((item, index) => (
-                        <SortableCartItem
-                          key={item.id}
-                          item={item}
-                          index={index}
-                          otherCarts={s.otherCarts}
-                          companyAccentColor={s.companyAccentColor}
-                          stockMap={s.stockMap}
-                          onRemove={s.handleRemoveItem}
-                          onUpdateQuantity={s.handleUpdateQuantity}
-                          onUpdateNotes={s.updateItemNotes}
-                          onMoveToCart={s.handleMoveItem}
-                          onDuplicateToCart={s.handleDuplicateItem}
-                          onNavigate={s.navigate}
-                        />
-                      ))}
-                    </AnimatePresence>
+              <>
+                {/* Toolbar de visualização */}
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {s.activeCart.items.length} {s.activeCart.items.length === 1 ? 'item' : 'itens'}
+                  </span>
+                  <LayoutPopover
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                    gridColumns={gridColumns}
+                    setGridColumns={setGridColumns}
+                  />
+                </div>
+
+                {viewMode === 'table' ? (
+                  <div className="overflow-x-auto rounded-xl border border-border/40 bg-card/40">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold">Produto</th>
+                          <th className="px-3 py-2 text-left font-semibold">Cor</th>
+                          <th className="px-3 py-2 text-right font-semibold">Qtd</th>
+                          <th className="px-3 py-2 text-right font-semibold">Preço</th>
+                          <th className="px-3 py-2 text-right font-semibold">Total</th>
+                          <th className="px-3 py-2 text-right font-semibold">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {s.activeCart.items.map((item) => (
+                          <tr
+                            key={item.id}
+                            className="border-t border-border/30 transition-colors hover:bg-muted/20"
+                          >
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={item.product_image_url || '/placeholder.svg'}
+                                  alt={item.product_name}
+                                  className="h-10 w-10 flex-shrink-0 rounded-md border border-border/30 object-cover"
+                                  loading="lazy"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => s.navigate(`/produto/${item.product_id}`)}
+                                  className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
+                                >
+                                  {item.product_name}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              {item.color_name ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  {item.color_hex && (
+                                    <span
+                                      className="inline-block h-3 w-3 rounded-full border border-border/40"
+                                      style={{ background: item.color_hex }}
+                                    />
+                                  )}
+                                  {item.color_name}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/60">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  s.handleUpdateQuantity(item.id, Math.max(1, Number(e.target.value) || 1))
+                                }
+                                className="h-8 w-20 rounded-md border border-border/40 bg-background px-2 text-right text-sm tabular-nums focus:border-primary/40 focus:outline-none"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                              {formatCurrency(item.product_price)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-semibold tabular-nums text-foreground">
+                              {formatCurrency(item.product_price * item.quantity)}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => s.handleRemoveItem(item.id, item.product_name)}
+                                aria-label="Remover item"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </SortableContext>
-              </DndContext>
+                ) : (
+                  <DndContext
+                    sensors={s.sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={s.handleDragEnd}
+                  >
+                    <SortableContext
+                      items={s.activeCart.items.map((i) => i.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className={cn('grid gap-4', gridColsClass)}>
+                        <AnimatePresence>
+                          {s.activeCart.items.map((item, index) => (
+                            <SortableCartItem
+                              key={item.id}
+                              item={item}
+                              index={index}
+                              otherCarts={s.otherCarts}
+                              companyAccentColor={s.companyAccentColor}
+                              stockMap={s.stockMap}
+                              onRemove={s.handleRemoveItem}
+                              onUpdateQuantity={s.handleUpdateQuantity}
+                              onUpdateNotes={s.updateItemNotes}
+                              onMoveToCart={s.handleMoveItem}
+                              onDuplicateToCart={s.handleDuplicateItem}
+                              onNavigate={s.navigate}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </>
             )}
           </div>
 
