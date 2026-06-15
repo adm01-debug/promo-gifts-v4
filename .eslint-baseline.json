@@ -1,10 +1,28 @@
 {
-  "generatedAt": "2026-06-15T12:56:55.487Z",
-  "totalErrors": 2,
+  "generatedAt": "2026-06-15T13:05:10.908Z",
+  "totalErrors": 8,
   "counts": {
     "src/components/inventory/StockAlertsIndicator.tsx": {
       "eqeqeq": 2,
       "react-hooks/exhaustive-deps": 2
+    },
+    "src/components/kit-builder/IdentitySuggestionButton.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/components/kit-builder/KitIdentityPicker.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/components/kit-builder/SimilarKitsWidget.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/components/kit-library/KitCard.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/components/kit-library/KitTemplatePreviewDialog.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/admin/KitTemplatesAdminPage.tsx": {
+      "no-duplicate-imports": 1
     }
   }
 }
