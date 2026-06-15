@@ -217,6 +217,7 @@ export function OptimizedImage({
             }}
             onError={handleImageError}
             loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
             {...(priority ? { fetchpriority: 'high' } : {})}
             {...props}
           />

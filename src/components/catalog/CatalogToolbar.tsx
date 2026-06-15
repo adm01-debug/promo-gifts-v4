@@ -20,7 +20,7 @@ import type { ViewMode, SortOption } from '@/hooks/products/useCatalogState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 const LazyFilterPanel = lazyWithRetry(() =>
   import('@/components/filters/FilterPanel').then((m) => ({ default: m.FilterPanel })),

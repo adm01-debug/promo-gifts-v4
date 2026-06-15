@@ -5,7 +5,13 @@ import { componentTagger } from 'lovable-tagger';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 /**
- * Vite Configuration - Production Ready
+ * Vite Configuration - Production Ready (perf/deep-optimization-2026)
+ *
+ * Otimizações aplicadas:
+ * - manualChunks expandido: index chunk → granular splits por domínio
+ * - cssCodeSplit habilitado
+ * - esbuild com legalComments:none, treeShaking:true
+ * - optimizeDeps.include expandido para pré-bundling mais preciso
  */
 export default defineConfig(({ mode }) => {
   const isProd = mode === 'production';
@@ -49,68 +55,143 @@ export default defineConfig(({ mode }) => {
 
       rollupOptions: {
         output: {
+          // Nomes de chunk mais legíveis (sem hash aleatório no nome)
+          chunkFileNames: (chunkInfo) => {
+            const name = chunkInfo.name || 'chunk';
+            return `assets/${name}-[hash].js`;
+          },
           manualChunks(id: string) {
-            if (id.includes('vite/preload-helper')) {
-              return 'runtime-vendor';
-            }
-            if (id.includes('node_modules/clsx/')) {
-              return 'utils-vendor';
-            }
+            // ── Runtime interno do Vite ────────────────────────────────────
+            if (id.includes('vite/preload-helper')) return 'runtime-vendor';
+
+            // ── React core (react + react-dom) ─────────────────────────────
             if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
               return 'react-vendor';
             }
-            if (id.includes('node_modules/react-router')) {
-              return 'router-vendor';
-            }
+
+            // ── React Router ───────────────────────────────────────────────
+            if (id.includes('node_modules/react-router')) return 'router-vendor';
+
+            // ── TanStack Query (react-query) ────────────────────────────────
+            if (id.includes('node_modules/@tanstack/')) return 'query-vendor';
+
+            // ── Supabase SDK ───────────────────────────────────────────────
+            if (id.includes('node_modules/@supabase/')) return 'supabase-vendor';
+
+            // ── Radix UI + cmdk ────────────────────────────────────────────
             if (id.includes('node_modules/@radix-ui/') || id.includes('node_modules/cmdk/')) {
               return 'ui-vendor';
             }
-            if (id.includes('node_modules/@tanstack/')) {
-              return 'query-vendor';
-            }
-            if (id.includes('node_modules/@supabase/')) {
-              return 'supabase-vendor';
-            }
-            // NOTE: framer-motion is intentionally NOT force-chunked here.
-            // Forcing it into one vendor blob defeats LazyMotion's code-splitting
-            // (importing LazyMotion would drag the heavy `domMax` features into the
-            // critical path). Letting Rollup split it keeps the LazyMotion runtime
-            // tiny and streams `domMax` features via dynamic import (MotionProvider).
-            if (id.includes('node_modules/date-fns/')) {
-              return 'date-vendor';
-            }
+
+            // ── Lucide React (ícones) ──────────────────────────────────────
+            // Mantido em chunk próprio — tree-shaking por rota já acontece,
+            // mas um chunk dedicado reduz waterfall no critical path.
+            if (id.includes('node_modules/lucide-react/')) return 'icons-vendor';
+
+            // ── Framer Motion ──────────────────────────────────────────────
+            // NÃO force-chunked: LazyMotion precisa do split dinâmico próprio.
+            // Deixar o Rollup dividir mantém domMax carregado sob demanda.
+
+            // ── date-fns ───────────────────────────────────────────────────
+            if (id.includes('node_modules/date-fns/')) return 'date-vendor';
+
+            // ── Recharts + D3 (gráficos) ───────────────────────────────────
             if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3-')) {
               return 'charts-vendor';
             }
-            if (id.includes('node_modules/zod/')) {
-              return 'zod-vendor';
-            }
+
+            // ── Zod (validação) ────────────────────────────────────────────
+            if (id.includes('node_modules/zod/')) return 'zod-vendor';
+
+            // ── React Hook Form ────────────────────────────────────────────
             if (
               id.includes('node_modules/react-hook-form/') ||
               id.includes('node_modules/@hookform/')
             ) {
               return 'form-vendor';
             }
-            if (id.includes('node_modules/sonner/')) {
-              return 'toast-vendor';
-            }
+
+            // ── Sonner (toast) ─────────────────────────────────────────────
+            if (id.includes('node_modules/sonner/')) return 'toast-vendor';
+
+            // ── PDF / image export (jsPDF + html2canvas) ───────────────────
+            // Carregado APENAS em páginas de exportação — chunk próprio evita
+            // que 620 KB entre no critical path do catálogo.
             if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas')) {
               return 'export-vendor';
             }
-            if (id.includes('node_modules/@dnd-kit/')) {
-              return 'dnd-vendor';
+
+            // ── XLSX ───────────────────────────────────────────────────────
+            if (id.includes('node_modules/@e965/xlsx') || id.includes('node_modules/xlsx')) {
+              return 'xlsx-vendor';
             }
-            if (id.includes('node_modules/lucide-react/')) {
-              return 'icons-vendor';
-            }
-            if (id.includes('node_modules/@sentry/')) {
-              return 'sentry-vendor';
-            }
+
+            // ── DnD Kit ────────────────────────────────────────────────────
+            if (id.includes('node_modules/@dnd-kit/')) return 'dnd-vendor';
+
+            // ── Sentry ─────────────────────────────────────────────────────
+            if (id.includes('node_modules/@sentry/')) return 'sentry-vendor';
+
+            // ── Markdown (react-markdown, remark) ──────────────────────────
             if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-')) {
               return 'markdown-vendor';
             }
-            if (id.includes('node_modules/pptxgenjs/')) {
-              return 'pptx-vendor';
+
+            // ── PPTX ───────────────────────────────────────────────────────
+            if (id.includes('node_modules/pptxgenjs/')) return 'pptx-vendor';
+
+            // ── Utilitários pequenos (clsx, tailwind-merge, class-variance-authority) ─
+            if (
+              id.includes('node_modules/clsx/') ||
+              id.includes('node_modules/tailwind-merge/') ||
+              id.includes('node_modules/class-variance-authority/')
+            ) {
+              return 'utils-vendor';
+            }
+
+            // ── Zustand ────────────────────────────────────────────────────
+            if (id.includes('node_modules/zustand/')) return 'zustand-vendor';
+
+            // ── App src: split por domínio para reduzir o chunk index ───────
+            // Páginas de Admin (raramente visitadas — split agressivo)
+            if (id.includes('/src/pages/admin/') || id.includes('/src/components/admin/')) {
+              return 'admin-domain';
+            }
+
+            // Páginas de BI / Intelligence
+            if (
+              id.includes('/src/pages/bi/') ||
+              id.includes('/src/components/bi/') ||
+              id.includes('/src/hooks/bi/') ||
+              id.includes('/src/hooks/intelligence/')
+            ) {
+              return 'bi-domain';
+            }
+
+            // Kit builder
+            if (
+              id.includes('/src/pages/kit-') ||
+              id.includes('/src/components/kit-')
+            ) {
+              return 'kit-domain';
+            }
+
+            // Quotes / Orçamentos
+            if (
+              id.includes('/src/pages/quotes/') ||
+              id.includes('/src/components/quotes/')
+            ) {
+              return 'quotes-domain';
+            }
+
+            // Magic Up / Mockup
+            if (
+              id.includes('/src/pages/magic-up/') ||
+              id.includes('/src/pages/mockups/') ||
+              id.includes('/src/components/magic-up/') ||
+              id.includes('/src/components/mockup/')
+            ) {
+              return 'tools-domain';
             }
           },
         },
@@ -147,20 +228,20 @@ export default defineConfig(({ mode }) => {
         'date-fns',
         'lucide-react',
         'zod',
+        // Pré-bundlar helpers frequentes
+        '@supabase/supabase-js',
+        'nprogress',
       ],
     },
-
 
     test: {
       globals: true,
       environment: 'jsdom',
       setupFiles: './src/test/setup.ts',
-      // Auto-retry for flaky component tests
       retry: process.env.CI ? 2 : 0,
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html', 'json-summary'],
-        // Thresholds to block PRs on regression
         thresholds: {
           statements: 80,
           branches: 80,

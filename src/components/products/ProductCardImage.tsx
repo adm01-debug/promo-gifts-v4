@@ -16,7 +16,7 @@
  */
 import { memo } from 'react';
 import { Package } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
