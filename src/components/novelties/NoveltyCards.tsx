@@ -102,7 +102,11 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       className={cn(
         'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-md',
-        'h-[420px] max-h-[420px] min-h-[420px]', // Altura fixa para paridade no grid
+        // Altura mínima estável para o grid não "quicar"; sem `max-h` para
+        // permitir crescimento com conteúdo (categoria/SKU/nome longos) e
+        // evitar overflow clipping que invalida a medição do virtualizer
+        // (causa de scroll inconsistente no /novidades).
+        'min-h-[420px]',
         isSelected && 'border-primary ring-2 ring-primary/20',
       )}
       onClick={() => onSelect?.(product.product_id)}
