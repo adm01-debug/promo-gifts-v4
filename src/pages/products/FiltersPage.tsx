@@ -282,11 +282,29 @@ export default function FiltersPage() {
                 <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                   <SmartSearchInput
                     placeholder="Buscar produtos..."
-                    onSelect={(result) =>
-                      result.type === 'product'
-                        ? navigate(`/produto/${result.id}`)
-                        : state.handleFilterChange({ ...state.filters, search: result.label })
-                    }
+                    products={state.realProducts}
+                    onSelect={(result) => {
+                      if (result.type === 'product') {
+                        navigate(`/produto/${result.id}`);
+                        return;
+                      }
+                      // FIX 2026-06-14 (#5-raiz): categoria/fornecedor aplicam filtro por UUID real.
+                      if (result.type === 'category') {
+                        state.handleFilterChange({
+                          ...state.filters,
+                          categories: Array.from(new Set([...state.filters.categories, result.id])),
+                        });
+                        return;
+                      }
+                      if (result.type === 'supplier') {
+                        state.handleFilterChange({
+                          ...state.filters,
+                          suppliers: Array.from(new Set([...state.filters.suppliers, result.id])),
+                        });
+                        return;
+                      }
+                      state.handleFilterChange({ ...state.filters, search: result.label });
+                    }}
                     onSearch={(q) => state.handleFilterChange({ ...state.filters, search: q })}
                     className="flex-1"
                   />

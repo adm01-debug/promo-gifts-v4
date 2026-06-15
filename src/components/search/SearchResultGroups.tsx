@@ -138,10 +138,10 @@ export function GroupedSearchResults({
       <div className="flex items-center justify-between px-2 py-1.5">
         <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <Zap className="h-3 w-3 text-primary" />
-          Resultados
+          Sugestões
         </span>
         <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-          {resultCount} {resultCount === 1 ? 'resultado' : 'resultados'}
+          {resultCount} {resultCount === 1 ? 'sugestão' : 'sugestões'}
         </Badge>
       </div>
 
