@@ -302,7 +302,9 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
       const normalized = stripAccents(searchTerm);
       if (normalized.length > 0) {
         try {
-          query = (query as unknown as { textSearch: Function }).textSearch(
+          query = (query as unknown as {
+          textSearch: (col: string, q: string, opts?: { type?: string; config?: string }) => typeof query;
+        }).textSearch(
             ftsCfg.column,
             normalized,
             { type: 'websearch', config: ftsCfg.config },

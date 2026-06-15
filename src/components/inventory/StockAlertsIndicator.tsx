@@ -212,13 +212,17 @@ export function StockAlertsIndicator() {
   const noveltyQuery = useNoveltyAlerts(30, since);
   const restocksQuery = useRecentRestocks(30, since);
 
-  const counts = countsQuery.data ?? {
-    stockout: 0,
-    low_stock: 0,
-    novelties: 0,
-    restocks: 0,
-    total: 0,
-  };
+  const counts = useMemo(
+    () =>
+      countsQuery.data ?? {
+        stockout: 0,
+        low_stock: 0,
+        novelties: 0,
+        restocks: 0,
+        total: 0,
+      },
+    [countsQuery.data],
+  );
   const isLoadingCounts = countsQuery.isLoading;
 
   // ── Tab counts map ────────────────────────────────────────────
@@ -414,13 +418,13 @@ export function StockAlertsIndicator() {
                     {/* Row 2: sku + estoque + fornecedor */}
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                       <span className="font-mono">{item.sku}</span>
-                      {item.stockQuantity != null && (
+                      {item.stockQuantity !== null && (
                         <span className="flex items-center gap-1">
                           {getKindIcon(item.kind)}
                           <span className={cn('font-medium', KIND_STOCK_CLASS[item.kind])}>
                             {item.stockQuantity} un.
                           </span>
-                          {item.kind === 'low' && item.lowStockThreshold != null && (
+                          {item.kind === 'low' && item.lowStockThreshold !== null && (
                             <span className="text-muted-foreground">
                               / {item.lowStockThreshold}
                             </span>
