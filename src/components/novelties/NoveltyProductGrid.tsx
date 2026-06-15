@@ -143,12 +143,17 @@ export function NoveltyProductGrid() {
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+      // FIX 2026-06-15 (novidades-search-accent): normaliza acento em ambos os lados
+      // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
+      // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
+      const norm = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const q = norm(searchQuery.trim());
       filtered = filtered.filter(
         (p) =>
-          p.product_name.toLowerCase().includes(q) ||
-          (p.product_sku && p.product_sku.toLowerCase().includes(q)) ||
-          (p.supplier_name && p.supplier_name.toLowerCase().includes(q)),
+          norm(p.product_name).includes(q) ||
+          (p.product_sku && norm(p.product_sku).includes(q)) ||
+          (p.supplier_name && norm(p.supplier_name).includes(q)),
       );
     }
     if (selectedSupplier !== 'all')
