@@ -2,6 +2,7 @@
  * Kit Identity Picker — popover para definir cor, ícone e tag do kit
  */
 import { useState } from 'react';
+import * as Lucide from 'lucide-react';
 import { Package } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -1,6 +1,7 @@
 /**
  * Preview rico do template antes de clonar — com seção "Quem usou também usou".
  */
+import * as Lucide from 'lucide-react';
 import { Package } from 'lucide-react';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import {

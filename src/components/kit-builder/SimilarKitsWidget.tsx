@@ -3,6 +3,7 @@
  * semelhantes ao kit atual (overlap >=30% por SKU).
  */
 import { useNavigate } from 'react-router-dom';
+import * as Lucide from 'lucide-react';
 import { Package, type LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
