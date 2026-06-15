@@ -275,6 +275,11 @@ export function NoveltyProductGrid() {
             />
           </div>
           <div
+            data-testid="novelty-loading-grid"
+            // Reserva altura mínima do bloco da lista durante o loading para que
+            // a transição skeleton→cards não cause oscilação na medição do
+            // virtualizer (scrollMargin/offsetTop estáveis).
+            style={{ minHeight: viewMode === 'list' ? 600 : 1260 }}
             className={cn(
               'grid',
               viewMode === 'list'
@@ -283,7 +288,15 @@ export function NoveltyProductGrid() {
             )}
           >
             {Array.from({ length: 15 }).map((_, i) => (
-              <ProductCardSkeleton key={i} variant={viewMode === 'list' ? 'compact' : 'default'} />
+              <div
+                key={i}
+                data-testid="novelty-loading-card"
+                // Altura reservada idêntica ao card real (min-h-[420px]) para
+                // estabilizar o layout no swap skeleton→dados.
+                className={viewMode === 'list' ? '' : 'min-h-[420px]'}
+              >
+                <ProductCardSkeleton variant={viewMode === 'list' ? 'compact' : 'default'} />
+              </div>
             ))}
           </div>
         </div>
