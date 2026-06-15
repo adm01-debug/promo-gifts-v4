@@ -83,7 +83,7 @@ export function IntelligenceBadges({
         return (
           <Tooltip key={badge.type}>
             <TooltipTrigger asChild>
-              <div>
+              <div data-testid={`intelligence-badge-${badge.type}`}>
                 <Badge
                   variant="outline"
                   className={cn(
@@ -97,7 +97,11 @@ export function IntelligenceBadges({
                 </Badge>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[260px] text-center">
+            <TooltipContent
+              side="bottom"
+              className="max-w-[260px] text-center"
+              data-testid={`intelligence-badge-${badge.type}-tooltip`}
+            >
               <p className="font-medium">{badge.label}</p>
               {badge.description ? (
                 <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
