@@ -11,6 +11,13 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
+import {
+  CartTablePreferences,
+  type CartTableColumnKey,
+  type CartTableDensity,
+} from '@/components/cart/CartTablePreferences';
+
+
 
 
 import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
