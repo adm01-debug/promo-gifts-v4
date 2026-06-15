@@ -106,6 +106,13 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
+      - name: Vitest — stress + fuzz badges (blocking)
+        run: |
+          npx vitest run \
+            src/hooks/products/__tests__/useProductIntelligenceBadges.test.tsx \
+            src/hooks/products/__tests__/useProductIntelligenceBadges.stress.test.tsx \
+            src/hooks/admin/__tests__/useIntelligenceBadgeSettings.fuzz.test.ts
+
       - name: Run Playwright tests (Sharded Parallel)
         run: |
           npx playwright test --shard=${{ matrix.shard }}/2 \
@@ -114,6 +121,8 @@ jobs:
             e2e/login.spec.ts \
             e2e/mockup-generate.spec.ts \
             e2e/routes/app/replenishment-grid-visual.spec.ts \
+            e2e/catalog/product-card-badges-visual.spec.ts \
+            e2e/catalog/product-card-to-superfilter.spec.ts \
             --project=chromium-authed
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
