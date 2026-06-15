@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
@@ -55,7 +56,7 @@ function broadcast(s: IntelligenceBadgeSettings) {
 }
 
 interface Row {
-  value: unknown;
+  value: Json | null;
 }
 
 /**
