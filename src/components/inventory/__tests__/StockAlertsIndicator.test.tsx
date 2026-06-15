@@ -155,8 +155,10 @@ describe('StockAlertsIndicator — painel e abas', () => {
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
 
+    // Quando os tabs têm contagem, o textContent do <button> é "Zerou3" (texto + span
+    // concatenados), por isso usamos getByRole com name regex em vez de getByText exact.
     for (const label of ['Zerou', 'Baixo', 'Novidade', 'Chegou']) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
     }
   });
 
@@ -171,8 +173,11 @@ describe('StockAlertsIndicator — painel e abas', () => {
     });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
-    await user.click(screen.getByText('Chegou'));
+    // Tab "Chegou" tem textContent "Chegou2" (label + span de contagem), então
+    // usamos getByRole com name regex para encontrar o botão pelo accessible name.
+    await user.click(screen.getByRole('button', { name: /Chegou/ }));
 
+    // Badges têm texto exato "Reposto" (sem contagem apendada), então exact=true funciona.
     expect(screen.getAllByText('Reposto').length).toBe(2);
     expect(screen.getByText('500 un.')).toBeInTheDocument();
     expect(screen.queryByText('0 un.')).not.toBeInTheDocument();
@@ -194,9 +199,14 @@ describe('StockAlertsIndicator — painel e abas', () => {
     });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
-    await user.click(screen.getByText('Baixo'));
+    // Tab "Baixo" tem textContent "Baixo1" → accessible name regex para clique.
+    await user.click(screen.getByRole('button', { name: /Baixo/ }));
 
-    expect(screen.getAllByText('Baixo').length).toBeGreaterThanOrEqual(2);
+    // Após clicar no tab Baixo:
+    // - Tab button "Baixo1" (contagem apendada): textContent contém "Baixo" → match com regex
+    // - ItemBadge "Baixo": texto exato "Baixo" → match com regex
+    // Total: 2 elementos contendo "Baixo"
+    expect(screen.getAllByText(/Baixo/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/7 un\./)).toBeInTheDocument();
     expect(screen.getByText(/\/ 10/)).toBeInTheDocument();
   });
