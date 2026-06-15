@@ -417,7 +417,7 @@ export function NoveltyProductGrid() {
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
         hasMore={hasMore}
-        isLoadingMore={isFetching || isLoadingMoreLocalRef.current}
+        isLoadingMore={isFetching}
         onLoadMore={handleLoadMore}
         onStatusClick={(type) => {
           if (type === 'novelty') return;
