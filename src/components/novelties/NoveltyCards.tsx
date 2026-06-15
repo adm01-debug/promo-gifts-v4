@@ -219,10 +219,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           </div>
         )}
 
-        {/* 4 — Nome do produto */}
-        <p className="line-clamp-2 text-sm font-medium leading-tight">
-          {product.product_name ?? '—'}
-        </p>
 
         {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
         <p
