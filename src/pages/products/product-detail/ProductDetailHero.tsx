@@ -118,16 +118,12 @@ export function ProductDetailHero({
     product.priceFreshnessThresholdDays ??
     DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS;
 
+  // FIX scroll/sticky no PDP: `overflow-x-hidden` faz o eixo Y colapsar para
+  // `overflow-y:auto` (spec CSS), tornando este grid um *scroll container* e
+  // (a) quebrando o `lg:sticky lg:top-20` da galeria (passa a ancorar neste
+  // container, não no viewport) e (b) confundindo a barra de rolagem da
+  // página. `overflow-x-clip` clipa o eixo X sem criar scroll container.
   return (
-    {/*
-      FIX scroll/sticky no PDP: `overflow-x-hidden` faz o eixo Y
-      colapsar para `overflow-y:auto` (spec CSS), tornando este grid
-      um *scroll container* e (a) quebrando o `lg:sticky lg:top-20`
-      da galeria (passa a ancorar neste container, não no viewport)
-      e (b) confundindo a barra de rolagem da página em viewports
-      onde o conteúdo da direita é mais alto que a esquerda.
-      `overflow-x-clip` clipa o eixo X sem criar scroll container.
-    */}
     <div className="grid min-w-0 gap-4 overflow-x-clip lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6 xl:gap-8">
       {/* LEFT — Gallery */}
       <div className="min-w-0">
