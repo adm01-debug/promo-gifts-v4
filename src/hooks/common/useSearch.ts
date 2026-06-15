@@ -189,7 +189,6 @@ export function useSearch(products: Product[] = []) {
       productFuse,
     );
     const orderedProducts = allProductMatches.slice(0, 30);
-    const totalProductMatches = allProductMatches.length;
 
     orderedProducts.forEach((product) => {
       // Skip if already added as exact SKU match
@@ -256,6 +255,14 @@ export function useSearch(products: Product[] = []) {
 
     return results;
   }, [query, history, availableProducts, productFuse, categoryFuse, supplierFuse]);
+
+  // Total count of products matching the search term (including those beyond
+  // the 30-item display limit). Used by SmartSearchInput "Ver todos N resultados".
+  const totalProductMatches = useMemo(() => {
+    const searchTerm = query.trim();
+    if (!searchTerm || searchTerm.length < 2) return 0;
+    return rankProductSearchResults(availableProducts, searchTerm, productFuse).length;
+  }, [query, availableProducts, productFuse]);
 
   // FIX 2026-06-15 (quick-suggestions-real-categories): chips derivados das top-5
   // categorias REAIS do DB (por contagem de produtos no catálogo carregado).
