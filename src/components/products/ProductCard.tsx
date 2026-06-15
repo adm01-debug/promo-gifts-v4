@@ -125,6 +125,14 @@ export const ProductCard = memo(
       categoryName: leafCategory?.name,
       categoryPath: leafCategory?.path,
     });
+    const { badges: intelligenceBadges } = useProductIntelligenceBadges(product.id, {
+      featured: product.featured,
+      new_arrival: (product as { new_arrival?: boolean }).new_arrival,
+    });
+    const cardIntelligenceBadges = useMemo(
+      () => intelligenceBadges.filter((b) => b.type === 'best-seller' || b.type === 'hot-item'),
+      [intelligenceBadges],
+    );
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
