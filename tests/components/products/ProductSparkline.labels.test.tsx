@@ -4,6 +4,7 @@
  * Changed labels:
  *   - Tooltip day header: "Vendas no fornecedor · Dia N" → "Mercado · Dia N"
  *   - Tooltip metric label: "Vendas no fornecedor 30d" → "Saídas 90d"
+ *     (janela real do agregado = SPARKLINE_WINDOW_DAYS = 90 dias)
  *
  * Removed section:
  *   - Source legend div with "Proxy: unidades depletadas no estoque do fornecedor..."

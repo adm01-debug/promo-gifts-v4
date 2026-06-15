@@ -120,7 +120,7 @@ export const test = base.extend<Fixtures>({
     await use(api);
   },
 
-  cleanup: [
+  cleanupOnFailure: [
     async ({ resources }, use, testInfo) => {
       // Setup: Limpa recursos ANTES do teste para garantir isolamento
       const cfg = loadCleanupConfig();
