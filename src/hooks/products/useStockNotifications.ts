@@ -5,17 +5,19 @@ import { shouldRetry } from '@/lib/db/postgrest';
 /**
  * Hooks DEDICADOS do módulo "Notificações de Estoque" (sino do header,
  * `StockAlertsIndicator`). Cada categoria é alimentada por uma RPC server-side
- * alinhada à fonte de verdade — diferente dos hooks compartilhados
- * (`useNovelties`, `useReplenishments`, `useStockAlerts`), que continuam
- * servindo outros módulos sem alteração.
+ * alinhada à fonte de verdade — sem alterar os hooks compartilhados
+ * (`useNovelties`, `useReplenishments`, `useStockAlerts`).
  *
- * Fontes de verdade (ver auditoria em docs/notifications-module-audit.md):
- *   - Zerou    → products.is_stockout = true            (fn_get_stockout_alerts)
- *   - Baixo    → stock <= suppliers.low_stock_threshold (fn_get_low_stock_alerts) [badge #8]
- *   - Novidade → product_novelties ativas + qualidade   (fn_get_novelty_alerts)
- *   - Chegou   → stock_daily_summary 0→positivo (Cenário A), atualmente disponível
- *               (fn_get_recent_restocks) — mesma semântica de fn_get_replenishment_stats
- *   - Contadores exatos das 4 categorias em 1 round-trip (fn_get_stock_notification_counts)
+ * Fontes de verdade (ver docs/notifications-module-audit.md):
+ *   Zerou    -> products.is_stockout = true            (fn_get_stockout_alerts)
+ *   Baixo    -> stock <= suppliers.low_stock_threshold (fn_get_low_stock_alerts) [badge #8]
+ *   Novidade -> product_novelties ativas + qualidade   (fn_get_novelty_alerts)
+ *   Chegou   -> stock_daily_summary 0->positivo, disponível (fn_get_recent_restocks)
+ *   Contadores das 4 categorias em 1 round-trip          (fn_get_stock_notification_counts)
+ *
+ * As RPCs não estão nos tipos gerados do Supabase, então usamos `untypedRpc`
+ * (escape hatch) e tipamos a resposta no call site via `RpcResult<T>` para não
+ * deixar `any` vazar (mantém o lint type-aware satisfeito).
  */
 
 const STALE = 2 * 60 * 1000;
@@ -31,7 +33,7 @@ export interface StockNotificationCounts {
 }
 
 export interface StockNotificationItem {
-  /** id sintético, único por categoria+produto (evita colisão de keys entre abas) */
+  /** id sintético único por categoria+produto (evita colisão de keys entre abas) */
   id: string;
   productId: string;
   productName: string;
@@ -46,7 +48,11 @@ export interface StockNotificationItem {
   lastRestockDate?: string | null;
 }
 
-// ─── Row shapes (colunas das RPCs) ───────────────────────────────
+/** Shape da resposta do PostgREST/Supabase, tipada no call site. */
+interface RpcResult<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
 
 interface BaseRow {
   product_id: string;
@@ -68,6 +74,12 @@ interface NoveltyRow extends BaseRow {
   days_remaining: number | null;
   is_highlighted: boolean | null;
 }
+interface CountsRow {
+  stockout: number;
+  low_stock: number;
+  novelties: number;
+  restocks: number;
+}
 
 const baseItem = (
   r: BaseRow,
@@ -84,25 +96,21 @@ const baseItem = (
   stockQuantity: r.stock_quantity,
 });
 
-// ─── Contadores (server-side, exatos) ────────────────────────────
-
 export function useStockNotificationCounts() {
-  return useQuery<StockNotificationCounts>({
+  return useQuery<StockNotificationCounts, Error>({
     queryKey: ['stock-notif-counts'],
     queryFn: async () => {
-      const { data, error } = await untypedRpc('fn_get_stock_notification_counts');
-      if (error) throw error;
-      const d = (data ?? {}) as Record<string, unknown>;
-      const stockout = Number(d.stockout ?? 0);
-      const low_stock = Number(d.low_stock ?? 0);
-      const novelties = Number(d.novelties ?? 0);
-      const restocks = Number(d.restocks ?? 0);
+      const { data, error } = (await untypedRpc(
+        'fn_get_stock_notification_counts',
+      )) as RpcResult<CountsRow>;
+      if (error) throw new Error(error.message);
+      const d = data ?? { stockout: 0, low_stock: 0, novelties: 0, restocks: 0 };
       return {
-        stockout,
-        low_stock,
-        novelties,
-        restocks,
-        total: stockout + low_stock + novelties + restocks,
+        stockout: d.stockout,
+        low_stock: d.low_stock,
+        novelties: d.novelties,
+        restocks: d.restocks,
+        total: d.stockout + d.low_stock + d.novelties + d.restocks,
       };
     },
     staleTime: STALE,
@@ -110,15 +118,15 @@ export function useStockNotificationCounts() {
   });
 }
 
-// ─── Listas (limitadas; "ver todos" leva ao módulo completo) ─────
-
 export function useStockoutAlerts(limit = 50) {
-  return useQuery<StockNotificationItem[]>({
+  return useQuery<StockNotificationItem[], Error>({
     queryKey: ['stock-notif-stockout', limit],
     queryFn: async () => {
-      const { data, error } = await untypedRpc('fn_get_stockout_alerts', { p_limit: limit });
-      if (error) throw error;
-      return ((data ?? []) as BaseRow[]).map((r) => baseItem(r, 'stockout', 'stockout'));
+      const { data, error } = (await untypedRpc('fn_get_stockout_alerts', {
+        p_limit: limit,
+      })) as RpcResult<BaseRow[]>;
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => baseItem(r, 'stockout', 'stockout'));
     },
     staleTime: STALE,
     retry: shouldRetry,
@@ -126,12 +134,14 @@ export function useStockoutAlerts(limit = 50) {
 }
 
 export function useLowStockAlerts(limit = 50) {
-  return useQuery<StockNotificationItem[]>({
+  return useQuery<StockNotificationItem[], Error>({
     queryKey: ['stock-notif-low', limit],
     queryFn: async () => {
-      const { data, error } = await untypedRpc('fn_get_low_stock_alerts', { p_limit: limit });
-      if (error) throw error;
-      return ((data ?? []) as LowStockRow[]).map((r) => ({
+      const { data, error } = (await untypedRpc('fn_get_low_stock_alerts', {
+        p_limit: limit,
+      })) as RpcResult<LowStockRow[]>;
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => ({
         ...baseItem(r, 'low', 'low'),
         lowStockThreshold: r.low_stock_threshold,
       }));
@@ -142,12 +152,14 @@ export function useLowStockAlerts(limit = 50) {
 }
 
 export function useNoveltyAlerts(limit = 30) {
-  return useQuery<StockNotificationItem[]>({
+  return useQuery<StockNotificationItem[], Error>({
     queryKey: ['stock-notif-novelty', limit],
     queryFn: async () => {
-      const { data, error } = await untypedRpc('fn_get_novelty_alerts', { p_limit: limit });
-      if (error) throw error;
-      return ((data ?? []) as NoveltyRow[]).map((r) => ({
+      const { data, error } = (await untypedRpc('fn_get_novelty_alerts', {
+        p_limit: limit,
+      })) as RpcResult<NoveltyRow[]>;
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => ({
         ...baseItem(r, 'new', 'new'),
         daysRemaining: r.days_remaining,
         isHighlighted: r.is_highlighted ?? false,
@@ -159,12 +171,14 @@ export function useNoveltyAlerts(limit = 30) {
 }
 
 export function useRecentRestocks(limit = 30) {
-  return useQuery<StockNotificationItem[]>({
+  return useQuery<StockNotificationItem[], Error>({
     queryKey: ['stock-notif-restocks', limit],
     queryFn: async () => {
-      const { data, error } = await untypedRpc('fn_get_recent_restocks', { p_limit: limit });
-      if (error) throw error;
-      return ((data ?? []) as RestockRow[]).map((r) => ({
+      const { data, error } = (await untypedRpc('fn_get_recent_restocks', {
+        p_limit: limit,
+      })) as RpcResult<RestockRow[]>;
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => ({
         ...baseItem(r, 'restocked', 'restocked'),
         lastRestockDate: r.last_restock_date,
       }));
