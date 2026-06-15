@@ -24,6 +24,7 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
