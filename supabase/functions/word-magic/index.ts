@@ -199,9 +199,8 @@ Deno.serve(async (req) => {
       queueId = existing.id;
     }
 
-    // 9. Obter chave DeepSeek (DB-first → env fallback)
-    const deepseekKey = await getCredential('DEEPSEEK_API_KEY')
-      ?? Deno.env.get('DEEPSEEK_API_KEY');
+    // 9. Obter chave DeepSeek via credential system (DB-first → env fallback interno)
+    const deepseekKey = await getCredential('DEEPSEEK_API_KEY');
 
     if (!deepseekKey) {
       // Marcar fila como erro antes de lançar

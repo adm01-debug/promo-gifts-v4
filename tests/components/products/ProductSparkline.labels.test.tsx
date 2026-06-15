@@ -3,7 +3,7 @@
  *
  * Changed labels:
  *   - Tooltip day header: "Vendas no fornecedor · Dia N" → "Mercado · Dia N"
- *   - Tooltip metric label: "Vendas no fornecedor 30d" → "Saídas 30d"
+ *   - Tooltip metric label: "Vendas no fornecedor 30d" → "Saídas 90d"
  *
  * Removed section:
  *   - Source legend div with "Proxy: unidades depletadas no estoque do fornecedor..."
@@ -56,7 +56,7 @@ describe("ProductSparkline — PR label changes", () => {
     expect(screen.queryByText(/Vendas no fornecedor · Dia/i)).not.toBeInTheDocument();
   });
 
-  it("shows 'Saídas 30d' in tooltip metrics grid (new label)", async () => {
+  it("shows 'Saídas 90d' in tooltip metrics grid (new label)", async () => {
     const { ProductSparkline } = await import("@/components/products/ProductSparkline");
     renderWithProviders(<ProductSparkline productId="test-product" />);
 
@@ -68,7 +68,7 @@ describe("ProductSparkline — PR label changes", () => {
     }
 
     // New label should be visible
-    expect(screen.getByText("Saídas 30d")).toBeInTheDocument();
+    expect(screen.getByText("Saídas 90d")).toBeInTheDocument();
   });
 
   it("shows 'Mercado · Dia N' header in tooltip (new label)", async () => {
@@ -114,7 +114,7 @@ describe("ProductSparkline — PR label changes", () => {
     }
 
     // After mouse leaves, tooltip data should not be visible
-    expect(screen.queryByText("Saídas 30d")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saídas 90d")).not.toBeInTheDocument();
   });
 
   it("returns null when product has no real data (no render)", async () => {
