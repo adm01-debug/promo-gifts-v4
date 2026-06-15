@@ -34,6 +34,9 @@ import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
 // BUG-SORT-01 FIX: importar SORT_OPTIONS para derivar VALID_SORT_VALUES e
 // validar sort params de URL/localStorage antes de aplicar ao state.
 import { SORT_OPTIONS } from '@/constants/filters';
+// Reset diário de defaults do catálogo (regra do PO): no primeiro acesso
+// do dia, viewMode='grid', colunas=6, sortBy='newest'.
+import { ensureDailyCatalogDefaults } from '@/hooks/products/dailyCatalogDefaults';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
