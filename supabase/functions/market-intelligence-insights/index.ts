@@ -377,8 +377,9 @@ Deno.serve(async (req) => {
           cache_key: cacheKey,
           payload: parsed,
           model: "google/gemini-2.5-flash",
-          tokens_input: usage.prompt_tokens ?? null,
-          tokens_output: usage.completion_tokens ?? null,
+          // NOTE: tokens_input and tokens_output removed — columns dropped from
+          // dashboard_insights_cache by migration 20260615172748.
+          // Token counts are still available in ai_usage_events.metadata below.
           duration_ms: aiDuration,
           expires_at: expiresAt,
           created_at: new Date().toISOString(),
