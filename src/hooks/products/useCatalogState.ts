@@ -121,6 +121,11 @@ function getPersistedViewMode(): ViewMode {
 const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
+  // PO rule: primeiro acesso do dia → grid 6 colunas + sort 'Mais recentes'.
+  // Roda ANTES dos useState para que os inicializadores leiam os defaults.
+  // Idempotente após o primeiro acesso do dia (marca em localStorage).
+  ensureDailyCatalogDefaults();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
