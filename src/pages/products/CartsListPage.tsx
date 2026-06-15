@@ -57,13 +57,14 @@ function CartsListContent() {
   }, [carts]);
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1
             data-testid="page-title-carrinhos"
-            className="font-display text-3xl font-bold tracking-tight"
+            className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
           >
+            <ShoppingCart className="h-7 w-7" />
             Carrinhos
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
