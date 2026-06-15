@@ -231,6 +231,22 @@ const SEARCH_COLUMNS: Record<string, string | string[]> = {
   personalization_techniques: 'name',
 };
 
+// FIX 2026-06-15 (catalog-search-audit #2): tabelas com search_vector usam FTS via
+// .textSearch() — acento-insensível (vetor construído com unaccent), stemming PT-BR,
+// multi-palavra AND, frase exacta, OR e negação; muito mais abrangente que ILIKE.
+// Prova: 'termica' ILIKE=11 produtos vs FTS=827 (+7418%); 'sustentavel' ILIKE=0 vs FTS=252.
+// O termo é normalizado (NFD + strip) antes do FTS para garantir match mesmo com acento.
+const FTS_TABLES: Record<string, { column: string; config: string }> = {
+  v_products_public: { column: 'search_vector', config: 'portuguese' },
+  products:          { column: 'search_vector', config: 'portuguese' },
+};
+
+/** Strip accents via NFD decomposition (mirrors normalizeProductSearch no cliente). */
+function stripAccents(s: string): string {
+  // Strip combining diacritical marks (U+0300-U+036F) — mirrors normalizeProductSearch.
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
 /**
  * Helper de retry: do not retry 4xx errors (client bugs, not transient).
  * Only 5xx (server errors) justify a retry.
@@ -278,28 +294,56 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     : untypedFrom(table).select(remappedSelect);
 
   if (searchTerm) {
-    const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
-    if (searchCfg) {
-      const cols = Array.isArray(searchCfg) ? searchCfg : [searchCfg];
-      if (cols.length === 1) {
-        // Caminho legado: 1 coluna -> ilike parametrizado (comportamento idêntico ao anterior).
-        query = query.ilike(cols[0], `%${searchTerm}%`);
-      } else {
-        // Multi-coluna: PostgREST .or() recebe uma STRING de filtro, então o termo precisa ser
-        // sanitizado — vírgula, parênteses e curingas (*,%) são metacaracteres de controle do
-        // or()/ilike e, sem isso, permitiriam quebra/injeção de filtro. Dentro do .or() o curinga
-        // do ilike é '*' (não '%').
-        const safe = searchTerm.replace(/[,()*%]/g, ' ').trim();
-        if (safe.length > 0) {
-          const orExpr = cols.map((c) => `${c}.ilike.*${safe}*`).join(',');
-          query = query.or(orExpr);
-        } else {
-          // termo composto só de metacaracteres -> degrada para ilike na 1ª coluna.
-          query = query.ilike(cols[0], `%${searchTerm}%`);
+    const ftsCfg = FTS_TABLES[table] ?? FTS_TABLES[options.table];
+    if (ftsCfg) {
+      // FTS: normaliza o termo (strip accents) p/ casar com o vetor construído via unaccent().
+      // websearch_to_tsquery: suporta AND implícito, "frase exacta", OR, -negação.
+      // Fallback gracioso p/ ILIKE se o textSearch falhar (e.g. coluna ainda não existe).
+      const normalized = stripAccents(searchTerm);
+      if (normalized.length > 0) {
+        try {
+          query = (query as unknown as { textSearch: Function }).textSearch(
+            ftsCfg.column,
+            normalized,
+            { type: 'websearch', config: ftsCfg.config },
+          ) as typeof query;
+        } catch {
+          // Coluna ainda não existe / Supabase SDK incompatível -> degrada p/ ILIKE multi-coluna.
+          const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+          if (searchCfg) {
+            const cols = Array.isArray(searchCfg) ? searchCfg : [searchCfg];
+            const safe = normalized.replace(/[,()*%]/g, ' ').trim();
+            if (safe.length > 0) {
+              if (cols.length > 1) {
+                query = query.or(cols.map((c) => `${c}.ilike.*${safe}*`).join(','));
+              } else {
+                query = query.ilike(cols[0], `%${safe}%`);
+              }
+            }
+          }
         }
       }
     } else {
-      logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
+      // Tabela sem FTS: ILIKE (comportamento anterior inalterado para todas as outras tabelas).
+      const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+      if (searchCfg) {
+        const cols = Array.isArray(searchCfg) ? searchCfg : [searchCfg];
+        if (cols.length === 1) {
+          // Caminho legado: 1 coluna -> ilike parametrizado.
+          query = query.ilike(cols[0], `%${searchTerm}%`);
+        } else {
+          // Multi-coluna: sanitizar metacaracteres do .or()/ilike.
+          const safe = searchTerm.replace(/[,()*%]/g, ' ').trim();
+          if (safe.length > 0) {
+            const orExpr = cols.map((c) => `${c}.ilike.*${safe}*`).join(',');
+            query = query.or(orExpr);
+          } else {
+            query = query.ilike(cols[0], `%${searchTerm}%`);
+          }
+        }
+      } else {
+        logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
+      }
     }
   }
 
