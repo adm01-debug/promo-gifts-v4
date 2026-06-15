@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+        "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+      },
+      "gitCommit": {
+        "shortHash": "4e724c8",
+        "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+        "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+        "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781528763000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781528763000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "commitHash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27548307073"
+          },
+          "gitCommit": {
+            "shortHash": "4e724c8",
+            "hash": "4e724c8919a5430ca91038a929bdf9d3e1b2b490",
+            "subject": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)",
+            "body": "perf: deep optimization — lazy dialogs, bundle split, SW v3, CWV monitoring (#758)\n\n* perf: deep optimization — bundle split, lazy dialogs, SW v3, CWV\n\n## Arquivos modificados (15 arquivos)\n\n### 🔥 CRÍTICO — src/components/products/ProductCard.tsx\n- 6 dialogs lazificados via React.lazy() + Suspense + guard condicional:\n  VariantPickerDialog, CartSelectorDialog, CartCompanyPickerDialog,\n  SharePreviewDialog, AddToCollectionModal, ProductQuickView\n- Chunks carregam apenas na PRIMEIRA abertura de cada dialog\n- Com 200 cards: elimina ~1.200 instâncias de componentes desnecessárias\n- React.lazy() + import type para VariantActionMode (type-only import)\n\n### 🔥 CRÍTICO — framer-motion (ProductCardImage + CatalogToolbar)\n- motion → m as motion em ambos os componentes\n- Ambos bypassavam o LazyMotion provider puxando domMax no critical path\n\n### 🚀 ALTO — vite.config.ts\n- manualChunks com splits de domínio: admin-domain, bi-domain,\n  kit-domain, quotes-domain, tools-domain\n- Novos vendor chunks: utils-vendor (clsx+tw-merge), zustand-vendor, xlsx-vendor\n- Esperado: reduzir index.js de 884KB para ~300-400KB\n- chunkFileNames com pattern legível\n\n### 🚀 ALTO — VirtualizedProductGrid\n- React.memo aplicado (evita re-render em scroll/debounce do catálogo)\n\n### ⚡ MÉDIO — public/sw.js (v3.0.0)\n- Cache de imagens com LRU eviction (max 500, TTL 90 dias)\n- Cache de Google Fonts separado em fonts-cache-v7\n- Supabase API → Network Only (dados dinâmicos não cacheados)\n- Skip automático de requests com Authorization header\n- Página offline aprimorada com botão de retry\n\n### ⚡ MÉDIO — src/routes/RoutePrefetcher.tsx (v2)\n- requestIdleCallback para prefetch secundário (non-blocking)\n- Respeita 2G, slow-2g, saveData\n- Cleanup adequado no unmount (cancelIdleCallback/clearTimeout)\n\n### ⚡ MÉDIO — index.html\n- preconnect para imagedelivery.net (CDN Cloudflare Images)\n- meta color-scheme para evitar FOUC em dark mode\n- Inline script anti-FOUC para tema escuro (localStorage)\n\n### ⚡ MÉDIO — src/components/ui/OptimizedImage.tsx\n- decoding=async para imagens non-priority (libera main thread)\n- decoding=sync para LCP images (priority=true)\n\n### 📊 src/index.css\n- .catalog-card-contain: content-visibility:auto + contain-intrinsic-size\n- .gpu-layer: compositor layer antecipada para animações\n- .scroll-smooth-native: overscroll-behavior-y:contain\n- @font-face font-display:swap inline para Outfit e Plus Jakarta Sans\n\n### 🔧 vercel.json\n- sw.js: no-store + Service-Worker-Allowed:/ header\n- manifest.json: stale-while-revalidate=604800 (1 semana)\n\n### 🆕 src/hooks/common/useIdleEffect.ts (novo)\n- Executa efeitos durante idle time (requestIdleCallback com fallback)\n- Zero custo no thread principal durante carregamento\n\n### 🆕 src/hooks/common/useIntersectionObserver.ts (novo)\n- Observer compartilhado singleton por config (rootMargin+threshold)\n- Com 200 cards: ~60% menos overhead vs 200 observers individuais\n- Suporte a one-shot (para de observar após primeira intersecção)\n\n### 🆕 src/utils/performance-budget.ts (novo)\n- Monitora LCP, CLS, INP, TTFB via PerformanceObserver em dev\n- Thresholds Google CWV 2024 com saída colorida no console\n- Ativado apenas em import.meta.env.DEV\n\n### src/main.tsx\n- CWV monitoring ativado em dev via import dinâmico\n\n* chore(eslint): atualiza baseline após deep optimization\n\nErros congelados: eqeqeq + react-hooks/exhaustive-deps em\nStockAlertsIndicator.tsx (pré-existentes, não introduzidos nesta branch).\n\n* perf: fix import * lucide + memo em CatalogHeader/Toolbar + _headers\n\n### Otimizações adicionais (perf/deep-optimization-2026)\n\n#### ALTO — Lucide React tree-shaking corrigido (7 arquivos)\nTodos os componentes do kit-builder e kit-library usavam:\n  import * as Lucide from 'lucide-react'\nIsso desabilita tree-shaking e importa TODOS os 1.000+ ícones do lucide,\ncontribuindo para o chunk icons-vendor de 441KB.\n\nConvertidos para imports específicos:\n  import { Package } from 'lucide-react'\n  import { Package, type LucideIcon } from 'lucide-react'\n\nArquivos corrigidos:\n  - src/components/kit-library/KitTemplatePreviewDialog.tsx\n  - src/components/kit-library/RelatedTemplates.tsx\n  - src/components/kit-library/KitCard.tsx\n  - src/components/kit-builder/SimilarKitsWidget.tsx\n  - src/components/kit-builder/KitBuilderHeader.tsx\n  - src/components/kit-builder/KitIdentityPicker.tsx\n  - src/components/kit-builder/IdentitySuggestionButton.tsx\n  - src/pages/admin/KitTemplatesAdminPage.tsx\n\n#### ALTO — React.memo em componentes de catálogo\n- CatalogHeader: memo aplicado (re-renderizava a cada filtro/search)\n- CatalogToolbar: memo aplicado (re-renderizava junto com o grid)\nEstes dois componentes ficam no topo da página e re-renderizavam\na cada mudança de estado do catálogo, mesmo sem mudança de props.\n\n#### MÉDIO — public/_headers atualizado\n- sw.js: no-store + no-cache + Service-Worker-Allowed: /\n  (garante que o browser sempre verifique a versão do SW, mesmo em CDN)\n- manifest.json: stale-while-revalidate=604800\n\n* chore(eslint): atualizar baseline pós lucide tree-shaking fix\n\n---------\n\nCo-authored-by: PromoGifts Agent <agent@promogifts.local>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781528763000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781528763000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T13:12:45.988Z",
+    "duration": 4083.2860000000005,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
