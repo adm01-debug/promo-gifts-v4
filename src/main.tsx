@@ -19,6 +19,13 @@ initSentry();
 installGlobalErrorHandlers();
 installSafeToast();
 
+// ── Core Web Vitals monitoring (dev only) ─────────────────────────────────────
+if (import.meta.env.DEV) {
+  import('@/utils/performance-budget').then(({ initPerformanceBudget }) => {
+    initPerformanceBudget();
+  });
+}
+
 // ── Vite chunk-load recovery ─────────────────────────────────────────────────
 // When Vercel deploys a new build, old chunk hashes are invalidated.
 // Any user who has the app open will fail to lazy-load those stale chunks.

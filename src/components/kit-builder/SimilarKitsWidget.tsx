@@ -3,7 +3,7 @@
  * semelhantes ao kit atual (overlap >=30% por SKU).
  */
 import { useNavigate } from 'react-router-dom';
-import * as Lucide from 'lucide-react';
+import { Package, type LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,8 +17,8 @@ interface Props {
 }
 
 function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, Lucide.LucideIcon>)[name];
-  return I ?? Lucide.Package;
+  const I = (Lucide as unknown as Record<string, LucideIcon>)[name];
+  return I ?? Package;
 }
 
 export function SimilarKitsWidget({ currentSkus, excludeId }: Props) {

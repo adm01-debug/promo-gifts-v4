@@ -1,7 +1,7 @@
 /**
  * Preview rico do template antes de clonar — com seção "Quem usou também usou".
  */
-import * as Lucide from 'lucide-react';
+import { Package } from 'lucide-react';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import {
   Dialog,
@@ -42,7 +42,7 @@ export function KitTemplatePreviewDialog({
   const Icon =
     (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
       template.icon
-    ] || Lucide.Package;
+    ] || Package;
 
   const items = Array.isArray(template.items_data) ? template.items_data : [];
   const box = template.box_data as { name?: string; sku?: string } | null;

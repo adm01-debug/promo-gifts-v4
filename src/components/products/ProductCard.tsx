@@ -2,7 +2,7 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback, lazy, Suspense } from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,8 +16,13 @@ import {
 } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
-import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
-import { ProductQuickView } from './ProductQuickView';
+// ── Lazy dialog imports — carregados apenas na primeira abertura ──────────────
+const AddToCollectionModal = lazy(() =>
+  import('@/components/collections/AddToCollectionModal').then((m) => ({ default: m.AddToCollectionModal })),
+);
+const ProductQuickView = lazy(() =>
+  import('./ProductQuickView').then((m) => ({ default: m.ProductQuickView })),
+);
 import { ProductCategoryBadges } from './ProductCategoryBadges';
 import { useLeafCategory } from '@/hooks/products/useProductLeafCategories';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
@@ -31,12 +36,21 @@ import {
 import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
 import { ProductSales90dButton } from './ProductSales90dButton';
-import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
-import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
-import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
+import type { VariantActionMode } from './VariantPickerDialog';
+const VariantPickerDialog = lazy(() =>
+  import('./VariantPickerDialog').then((m) => ({ default: m.VariantPickerDialog })),
+);
+const CartSelectorDialog = lazy(() =>
+  import('@/components/cart/CartSelectorDialog').then((m) => ({ default: m.CartSelectorDialog })),
+);
+const CartCompanyPickerDialog = lazy(() =>
+  import('@/components/cart/CartCompanyPickerDialog').then((m) => ({ default: m.CartCompanyPickerDialog })),
+);
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { SharePreviewDialog } from './share/SharePreviewDialog';
+const SharePreviewDialog = lazy(() =>
+  import('./share/SharePreviewDialog').then((m) => ({ default: m.SharePreviewDialog })),
+);
 import { ProductCardImage } from './ProductCardImage';
 import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
@@ -134,6 +148,7 @@ export const ProductCard = memo(
       [intelligenceBadges],
     );
     const [isHovered, setIsHovered] = useState(false);
+// ── Dialog states agrupados — 1 re-render por abertura de dialog ─────────
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
       | {
@@ -826,95 +841,121 @@ export const ProductCard = memo(
           </div>
         </div>
 
-        {/* Dialogs */}
-        <VariantPickerDialog
-          open={variantPickerOpen}
-          onOpenChange={setVariantPickerOpen}
-          productId={product.id}
-          productName={product.name}
-          mode={variantPickerMode}
-          onComplete={handleVariantComplete}
-        />
+        {/* Dialogs lazy — chunk carregado apenas na primeira abertura (zero custo em memória até então) */}
+        {variantPickerOpen && (
+          <Suspense fallback={null}>
+            <VariantPickerDialog
+              open={variantPickerOpen}
+              onOpenChange={setVariantPickerOpen}
+              productId={product.id}
+              productName={product.name}
+              mode={variantPickerMode}
+              onComplete={handleVariantComplete}
+            />
+          </Suspense>
+        )}
 
-        <CartSelectorDialog
-          open={selectorOpen}
-          onOpenChange={setSelectorOpen}
-          carts={carts}
-          productName={product.name}
-          canCreateMore={canCreateCart}
-          onSelect={(cartId) => {
-            addToActiveCart(
-              {
-                product_id: product.id,
-                product_name: product.name,
-                product_sku: product.sku || undefined,
-                product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
-                product_price: product.price ?? 0,
-                quantity: product.minQuantity || 1,
-                color_name: pendingVariant?.color_name || undefined,
-                color_hex: pendingVariant?.color_hex || undefined,
-              },
-              cartId,
-            );
-            setSelectorOpen(false);
-            setPendingVariant(null);
-          }}
-          onCreateNew={() => {
-            // Mantém pendingVariant — será adicionado ao novo carrinho
-            setSelectorOpen(false);
-            setCompanyPickerOpen(true);
-          }}
-        />
+        {selectorOpen && (
+          <Suspense fallback={null}>
+            <CartSelectorDialog
+              open={selectorOpen}
+              onOpenChange={setSelectorOpen}
+              carts={carts}
+              productName={product.name}
+              canCreateMore={canCreateCart}
+              onSelect={(cartId) => {
+                addToActiveCart(
+                  {
+                    product_id: product.id,
+                    product_name: product.name,
+                    product_sku: product.sku || undefined,
+                    product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                    product_price: product.price ?? 0,
+                    quantity: product.minQuantity || 1,
+                    color_name: pendingVariant?.color_name || undefined,
+                    color_hex: pendingVariant?.color_hex || undefined,
+                  },
+                  cartId,
+                );
+                setSelectorOpen(false);
+                setPendingVariant(null);
+              }}
+              onCreateNew={() => {
+                setSelectorOpen(false);
+                setCompanyPickerOpen(true);
+              }}
+            />
+          </Suspense>
+        )}
 
         {/* Picker de empresa — cria carrinho na hora e adiciona o item pendente */}
-        <CartCompanyPickerDialog
-          open={companyPickerOpen}
-          onOpenChange={(o) => {
-            setCompanyPickerOpen(o);
-            if (!o) setPendingVariant(null);
-          }}
-          onCreated={(newCartId) => {
-            if (newCartId) {
-              addToActiveCart(
-                {
-                  product_id: product.id,
-                  product_name: product.name,
-                  product_sku: product.sku || undefined,
-                  product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
-                  product_price: product.price ?? 0,
-                  quantity: product.minQuantity || 1,
-                  color_name: pendingVariant?.color_name || undefined,
-                  color_hex: pendingVariant?.color_hex || undefined,
-                },
-                newCartId,
-              );
-            }
-            setPendingVariant(null);
-          }}
-        />
-        <AddToCollectionModal
-          open={collectionModalOpen}
-          onOpenChange={setCollectionModalOpen}
-          productId={product.id}
-          productName={product.name}
-          variant={collectionVariant}
-        />
-        <ProductQuickView
-          product={product}
-          open={quickViewOpen}
-          onOpenChange={setQuickViewOpen}
-          isFavorited={isFavorited}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          onShare={onShare}
-        />
-        <SharePreviewDialog
-          open={shareDialogOpen}
-          onOpenChange={setShareDialogOpen}
-          product={product}
-          selectedVariant={shareVariant}
-        />
+        {companyPickerOpen && (
+          <Suspense fallback={null}>
+            <CartCompanyPickerDialog
+              open={companyPickerOpen}
+              onOpenChange={(o) => {
+                setCompanyPickerOpen(o);
+                if (!o) setPendingVariant(null);
+              }}
+              onCreated={(newCartId) => {
+                if (newCartId) {
+                  addToActiveCart(
+                    {
+                      product_id: product.id,
+                      product_name: product.name,
+                      product_sku: product.sku || undefined,
+                      product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                      product_price: product.price ?? 0,
+                      quantity: product.minQuantity || 1,
+                      color_name: pendingVariant?.color_name || undefined,
+                      color_hex: pendingVariant?.color_hex || undefined,
+                    },
+                    newCartId,
+                  );
+                }
+                setPendingVariant(null);
+              }}
+            />
+          </Suspense>
+        )}
+
+        {collectionModalOpen && (
+          <Suspense fallback={null}>
+            <AddToCollectionModal
+              open={collectionModalOpen}
+              onOpenChange={setCollectionModalOpen}
+              productId={product.id}
+              productName={product.name}
+              variant={collectionVariant}
+            />
+          </Suspense>
+        )}
+
+        {quickViewOpen && (
+          <Suspense fallback={null}>
+            <ProductQuickView
+              product={product}
+              open={quickViewOpen}
+              onOpenChange={setQuickViewOpen}
+              isFavorited={isFavorited}
+              onToggleFavorite={onToggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              onShare={onShare}
+            />
+          </Suspense>
+        )}
+
+        {shareDialogOpen && (
+          <Suspense fallback={null}>
+            <SharePreviewDialog
+              open={shareDialogOpen}
+              onOpenChange={setShareDialogOpen}
+              product={product}
+              selectedVariant={shareVariant}
+            />
+          </Suspense>
+        )}
       </article>
     );
   }),

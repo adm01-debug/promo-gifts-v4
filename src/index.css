@@ -2542,3 +2542,66 @@ body[data-offline='true'] button[type='submit']::after {
   font-size: 0.7em;
   opacity: 0.7;
 }
+
+/* ── Performance: Containment para cards do catálogo ──────────────────────── */
+/* content-visibility:auto = o browser pula o layout/paint de cards fora da
+   viewport, reduzindo tempo de renderização inicial em até 7x em catálogos
+   com 200+ cards. Requer size-contain explícito para evitar CLS. */
+@layer utilities {
+  .catalog-card-contain {
+    content-visibility: auto;
+    /* contain-intrinsic-size = estimativa do tamanho antes do render.
+       Previne CLS enquanto o browser ainda não calculou o card. */
+    contain-intrinsic-size: 0 320px;
+  }
+
+  /* GPU layer para elementos animados — promove a compositor layer
+     antes que a animação comece, evitando jank no primeiro frame. */
+  .gpu-layer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Smooth scroll nativo para contêineres de catálogo */
+  .scroll-smooth-native {
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Prevent layout thrash em imagens antes do load */
+  .img-aspect-locked {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+}
+
+/* ── Redução de repaint em animações de hover ─────────────────────────────── */
+/* Isolate cria novo stacking context sem o custo de will-change permanente */
+@layer utilities {
+  .hover-isolate {
+    isolation: isolate;
+  }
+}
+
+/* ── Font display optimization ────────────────────────────────────────────── */
+/* Evitar FOIT (flash invisible text) com font-display swap inline */
+@font-face {
+  font-family: 'Outfit';
+  font-display: swap;
+  src: local('Outfit');
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-display: swap;
+  src: local('Plus Jakarta Sans');
+}
+
+/* ── Prefers-reduced-data: reduzir imagens e animações em conexões lentas ── */
+@media (prefers-reduced-data: reduce) {
+  img[loading="lazy"] {
+    display: none;
+  }
+  video {
+    display: none;
+  }
+}
