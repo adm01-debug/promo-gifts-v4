@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+        "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+      },
+      "gitCommit": {
+        "shortHash": "b47c865",
+        "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+        "subject": "Moved comment out of JSX",
+        "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+        "author": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781537207000
+        },
+        "committer": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1781537207000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "commitHash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27557100255"
+          },
+          "gitCommit": {
+            "shortHash": "b47c865",
+            "hash": "b47c865f1a2eafbe835ca2f36688a26148dd8ba2",
+            "subject": "Moved comment out of JSX",
+            "body": "Moved comment out of JSX\n\nX-Lovable-Edit-ID: edt-a2052b16-7e6f-4d5e-905d-7633e48a0d93\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1781537207000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T15:28:25.136Z",
+    "duration": 4271.460999999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
