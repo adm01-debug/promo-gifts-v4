@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+        "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+      },
+      "gitCommit": {
+        "shortHash": "72c2900",
+        "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+        "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+        "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781532671000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781532671000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "commitHash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552276634"
+          },
+          "gitCommit": {
+            "shortHash": "72c2900",
+            "hash": "72c2900d9e3687b0d0c72af9999709f169f43a5c",
+            "subject": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)",
+            "body": "fix(data): remove artificial ' – dims' suffix from 297 Asia Import product names (#766)\n\nRoot cause: a historical migration appended the 'dimensions_display' value\nto the product name using ' – ' separator (e.g. 'Copo térmico – 11,3xø8,5cm (AxøD)'),\nthen locked 'name' in locked_fields to prevent the pipeline from correcting it.\n\nFix:\n- Restore clean name from Silver (fn_display_product_name) for 297 products\n- Remove 'name' from locked_fields so pipeline maintains quality going forward\n- Pattern A (66 products where API natively includes dims) left untouched\n\nPre-flight simulation: 10 adversarial scenarios (write_source guard, collision\nanalysis, idempotency, locked_fields null check, AI fields, Silver sync)\n\nAssertions: 8/10 PASS. 2 false-negatives recalibrated:\n- A05: 95 vs 66 — 29 Pattern B products had organic dims in base name (expected)\n- A09: avg 7 vs 8 — correct, some products had fewer locked_fields\n\nResult: Pattern B = 0, total products = 901 (unchanged), CO9250P = 'Copo térmico'",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781532671000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781532671000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T14:13:27.745Z",
+    "duration": 4446.321,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
