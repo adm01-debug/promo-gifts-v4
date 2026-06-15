@@ -59,7 +59,7 @@ test.describe('Novidades — scroll + virtualizer', () => {
     const afterCount = await page.locator('div[role="listitem"]').count();
     expect(afterCount).toBeGreaterThan(0);
 
-    // 4) Volta ao topo — scrollY ~ 0 e itens continuam renderizando.
+    // 4) Volta ao topo — scrollTop ~ 0 e itens continuam renderizando.
     await list.evaluate((el) => el.scrollTo(0, 0));
     await page.waitForTimeout(300);
     const topY = await list.evaluate((el) => el.scrollTop);
