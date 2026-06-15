@@ -18,12 +18,17 @@ import { logger } from '@/lib/logger';
 export interface ProductColorDot {
   name: string;
   hex: string | null;
+  /** Imagem da variante (primary_image_url) — usada pelos cards para trocar a
+   *  foto principal ao clicar no swatch (mini-carrossel de variantes). */
+  image: string | null;
 }
 
 type VariantRow = {
   product_id: string;
   color_name: string | null;
   color_hex: string | null;
+  selected_thumbnail: string | null;
+  images: string[] | null;
 };
 
 /**
@@ -99,7 +104,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           let from = 0;
           for (let page = 0; page < MAX_PAGES; page += 1) {
             const { data, error } = await untypedFrom(resolveTable('product_variants'))
-              .select('product_id, color_name, color_hex')
+              .select('product_id, color_name, color_hex, selected_thumbnail, images')
               .in('product_id', chunk)
               .eq('is_active', true)
               .not('color_name', 'is', null)
@@ -129,6 +134,9 @@ export function useProductsColorsBatch(productIds: string[]) {
             const name = (row.color_name || '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
+            const image =
+              row.selected_thumbnail?.trim() ||
+              (Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : null);
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
             let dedupMap = results.get(pid);
@@ -136,8 +144,13 @@ export function useProductsColorsBatch(productIds: string[]) {
               dedupMap = new Map();
               results.set(pid, dedupMap);
             }
-            if (!dedupMap.has(key)) {
-              dedupMap.set(key, { name, hex });
+            // Mantém a primeira ocorrência (já ordenada por color_name/color_hex),
+            // mas se a primeira não tinha imagem e a próxima tem, preenche.
+            const existing = dedupMap.get(key);
+            if (!existing) {
+              dedupMap.set(key, { name, hex, image });
+            } else if (!existing.image && image) {
+              dedupMap.set(key, { ...existing, image });
             }
           }
 

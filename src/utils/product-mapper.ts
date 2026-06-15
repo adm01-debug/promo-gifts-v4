@@ -3,6 +3,7 @@
  *
  * Converts raw PromobrindProduct to the internal Product format.
  */
+import { getCatalogStockStatus, type CatalogStockStatus } from '@/lib/catalog-stock-status';
 import type { Product } from '@/types/product-catalog';
 import {
   type PromobrindProduct,
@@ -12,10 +13,18 @@ import {
 } from '@/lib/external-db';
 import { normalizeColors } from '@/utils/product-colors';
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  if (stock <= 0) return 'out-of-stock';
-  if (stock < 10) return 'low-stock';
-  return 'in-stock';
+function getStockStatus(stock: number): CatalogStockStatus {
+  return getCatalogStockStatus(stock);
+}
+
+// Janela de novidade alinhada ao módulo Novidades (useNovelties.NOVELTY_WINDOW_DAYS = 30)
+const NOVELTY_WINDOW_DAYS = 30;
+function isWithinNoveltyWindow(createdAt: unknown): boolean {
+  if (typeof createdAt !== 'string' || !createdAt) return false;
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  const elapsedDays = (Date.now() - ts) / 86400000;
+  return elapsedDays >= 0 && elapsedDays <= NOVELTY_WINDOW_DAYS;
 }
 
 function parseMaterials(materials: unknown): string[] {
@@ -133,7 +142,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: Boolean(p.is_featured || p.is_bestseller),
-    newArrival: Boolean(p.is_new),
+    newArrival: Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
     onSale: Boolean(p.is_on_sale),
     isKit: Boolean(p.is_kit),
     gender: p.gender || null,

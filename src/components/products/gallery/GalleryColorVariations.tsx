@@ -126,7 +126,7 @@ export function GalleryColorVariations({
             const stockStatus =
               displayStock !== undefined
                 ? displayStock === 0
-                  ? { color: 'text-destructive', label: 'Sem estoque' }
+                  ? { color: 'text-destructive', label: 'Estoque zerado' }
                   : displayStock < 100
                     ? { color: 'text-warning', label: 'Estoque baixo' }
                     : { color: 'text-success', label: 'Em estoque' }

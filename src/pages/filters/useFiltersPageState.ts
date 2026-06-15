@@ -11,8 +11,10 @@ import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import { useDebounce } from '@/hooks/common/useDebounce';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
+import { isProductKit } from '@/lib/products/kit-detection';
 import { toast } from 'sonner';
 import type { ProductVariation } from '@/types/product-catalog';
 
@@ -99,6 +101,16 @@ export function useFiltersPageState() {
       const parsedMs = parseInt(ms, 10);
       if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
     }
+    const mss = get('minSupplierSales90d') ?? get('minSupplierSales30d'); // back-compat URL
+    if (mss) {
+      const n = parseInt(mss, 10);
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales90d = n;
+    }
+    const mps = get('minPromoSales90d');
+    if (mps) {
+      const n = parseInt(mps, 10);
+      if (Number.isFinite(n) && n >= 0) f.minPromoSales90d = n;
+    }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
     if (get('featured') === '1') f.featured = true;
@@ -109,8 +121,20 @@ export function useFiltersPageState() {
     // FIX-28/B5: só aceitar sortBy da URL se for um valor conhecido — evita
     // que o Select fique sem opção correspondente (placeholder vazio) e que o
     // pipeline de sort receba um valor que cai no no-op silencioso.
+    //
+    // Padrão de ordenação (PO):
+    //  - 1º acesso da sessão (sem URL sortBy e sem sessionStorage) → 'newest'.
+    //  - Durante a sessão, mantém a última escolha do usuário (sessionStorage).
+    //  - URL sortBy (ex.: link compartilhado) sempre vence.
     const sortByParam = get('sortBy');
-    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) f.sortBy = sortByParam;
+    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) {
+      f.sortBy = sortByParam;
+    } else if (typeof window !== 'undefined') {
+      const stored = window.sessionStorage.getItem('catalog:sortBy');
+      f.sortBy = stored && VALID_SORT_VALUES.has(stored) ? stored : 'newest';
+    } else {
+      f.sortBy = 'newest';
+    }
     return f;
   });
 
@@ -198,6 +222,10 @@ export function useFiltersPageState() {
     if (filters.priceRange[0] > 0) params.set('priceMin', String(filters.priceRange[0]));
     if (filters.priceRange[1] < 9999) params.set('priceMax', String(filters.priceRange[1]));
     if (filters.minStock > 0) params.set('minStock', String(filters.minStock));
+    if (filters.minSupplierSales90d > 0)
+      params.set('minSupplierSales90d', String(filters.minSupplierSales90d));
+    if (filters.minPromoSales90d > 0)
+      params.set('minPromoSales90d', String(filters.minPromoSales90d));
     if (filters.inStock) params.set('inStock', '1');
     if (filters.isKit) params.set('isKit', '1');
     if (filters.featured) params.set('featured', '1');
@@ -205,7 +233,7 @@ export function useFiltersPageState() {
     if (filters.hasPersonalization) params.set('hasPersonalization', '1');
     if (filters.onSale) params.set('onSale', '1');
     if (filters.hasCommercialPackaging) params.set('hasCommercialPackaging', '1');
-    if (filters.sortBy && filters.sortBy !== 'name') params.set('sortBy', filters.sortBy);
+    if (filters.sortBy && filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
     setSearchParams(params, { replace: true });
   }, [filters, setSearchParams]);
 
@@ -264,14 +292,23 @@ export function useFiltersPageState() {
     return () => clearTimeout(timer);
   }, [filtersJson]);
 
-  const sortBy = filters.sortBy || 'name';
+  const sortBy = filters.sortBy || 'newest';
   const setSortBy = useCallback((value: string) => {
     setFilters((prev) => ({ ...prev, sortBy: value }));
+    // Persiste a escolha do usuário durante a sessão (limpo no logout/nova aba).
+    if (typeof window !== 'undefined' && VALID_SORT_VALUES.has(value)) {
+      try {
+        window.sessionStorage.setItem('catalog:sortBy', value);
+      } catch {
+        /* sessionStorage indisponível — ignora */
+      }
+    }
   }, []);
 
   // Promo Brindes sales ranking (lazy — only fetched when needed)
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
@@ -308,6 +345,8 @@ export function useFiltersPageState() {
       count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.minStock > 0) count++;
+    if (filters.minSupplierSales90d > 0) count++;
+    if (filters.minPromoSales90d > 0) count++;
     if (filters.inStock) count++;
     if (filters.isKit) count++;
     if (filters.featured) count++;
@@ -441,6 +480,19 @@ export function useFiltersPageState() {
           );
         return (product.stock || 0) >= filters.minStock;
       });
+    // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3 (MV expõe apenas total_depleted_30d).
+    // Padroniza janela com o filtro Promo Brindes (90d). Map inerte enquanto carrega.
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales90d;
+      result = result.filter(
+        (p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) * 3 >= threshold,
+      );
+    }
+    // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+      const threshold = filters.minPromoSales90d;
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
+    }
     // FIX-03: verificar variações além do estoque agregado.
     // Produto com stock=0 mas com variações em estoque era incorretamente excluído.
     if (filters.inStock)
@@ -451,7 +503,7 @@ export function useFiltersPageState() {
       });
     if (filters.hasCommercialPackaging)
       result = result.filter((product) => product.hasCommercialPackaging === true);
-    if (filters.isKit) result = result.filter((product) => product.isKit === true);
+    if (filters.isKit) result = result.filter((product) => isProductKit(product));
     // BUG-15a FIX: featured era contabilizado/chipeado mas nunca filtrava produtos.
     if (filters.featured) result = result.filter((product) => product.featured === true);
     // BUG-15b FIX: isNew mapeia para product.newArrival (campo correto no tipo Product).
@@ -536,6 +588,7 @@ export function useFiltersPageState() {
     isLoadingColorFilter,
     promoSalesMap,
     supplierSalesMap,
+    promoSales90dMap,
   ]);
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
@@ -701,6 +754,18 @@ export function useFiltersPageState() {
     }
     if (filters.minStock > 0)
       summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
+    if (filters.minSupplierSales90d > 0)
+      summary.push({
+        label: 'Vendas fornec.',
+        value: `≥ ${filters.minSupplierSales90d} un./90d`,
+        key: 'minSupplierSales90d',
+      });
+    if (filters.minPromoSales90d > 0)
+      summary.push({
+        label: 'Vendas Promo',
+        value: `≥ ${filters.minPromoSales90d} un./90d`,
+        key: 'minPromoSales90d',
+      });
     if (filters.inStock) summary.push({ label: 'Em estoque', value: 'Sim', key: 'inStock' });
     if (filters.isKit) summary.push({ label: 'Kit', value: 'Sim', key: 'isKit' });
     if (filters.featured) summary.push({ label: 'Destaque', value: 'Sim', key: 'featured' });

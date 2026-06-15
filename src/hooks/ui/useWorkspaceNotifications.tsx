@@ -90,6 +90,7 @@ export function useWorkspaceNotifications() {
   const badgeSourceRef = useRef<'pending' | 'cache' | 'network'>('pending');
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
+  const didInitialFetchRef = useRef(false);
 
   /**
    * BUG-08 FIX: remover notifications.length das deps de fetchNotifications.
@@ -275,7 +276,9 @@ export function useWorkspaceNotifications() {
 
     // Use a small delay for search to avoid too many requests if not handled by caller
     // but the Drawer already has a 400ms debounce.
-    fetchNotifications({ source: 'mutation' });
+    const source: FetchSource = didInitialFetchRef.current ? 'filter-change' : 'initial';
+    didInitialFetchRef.current = true;
+    fetchNotifications({ source });
   }, [user, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
 
   // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length

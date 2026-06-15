@@ -1,28 +1,29 @@
 // Utilitário para ordenação padronizada de cores
-// Ordem: Preto → Branco → Azuis → Verdes → Vermelhos → Amarelos → Laranjas → Rosas → Roxos → Marrons → Cinzas → Outros
+// Ordem definida pelo PO (2026-06-14):
+// 1-Preto → 2-Branco → 3-Prata/Cinza → 4-Verde → 5-Laranja → 6-Azul → 7-Vermelho
+// → 8-Amarelo → 9-Rosa → 10-Roxo → 11-Marrom → 99-Outros
 // Dentro de cada grupo: Escuro → Claro
 
 const COLOR_GROUP_ORDER: Record<string, number> = {
-  // Neutros primeiro
+  // 1 - Preto
   preto: 1,
   negro: 1,
   black: 1,
 
+  // 2 - Branco
   branco: 2,
   white: 2,
 
-  // Azuis
-  azul: 3,
-  blue: 3,
-  marinho: 3, // Azul marinho
-  navy: 3,
-  royal: 3,
-  celeste: 3,
-  turquesa: 3,
-  cobalto: 3,
-  indigo: 3,
+  // 3 - Prata / Cinza
+  prata: 3,
+  silver: 3,
+  cinza: 3,
+  gray: 3,
+  grey: 3,
+  chumbo: 3,
+  grafite: 3,
 
-  // Verdes
+  // 4 - Verde
   verde: 4,
   green: 4,
   musgo: 4,
@@ -31,68 +32,70 @@ const COLOR_GROUP_ORDER: Record<string, number> = {
   menta: 4,
   esmeralda: 4,
 
-  // Vermelhos
-  vermelho: 5,
-  red: 5,
-  bordô: 5,
-  vinho: 5,
-  burgundy: 5,
-  escarlate: 5,
-  carmim: 5,
-  rubi: 5,
+  // 5 - Laranja
+  laranja: 5,
+  orange: 5,
+  coral: 5,
+  salmão: 5,
+  tangerina: 5,
+  pêssego: 5,
 
-  // Amarelos
-  amarelo: 6,
-  yellow: 6,
-  dourado: 6,
-  gold: 6,
-  ouro: 6,
-  mostarda: 6,
+  // 6 - Azul
+  azul: 6,
+  blue: 6,
+  marinho: 6,
+  navy: 6,
+  royal: 6,
+  celeste: 6,
+  turquesa: 6,
+  cobalto: 6,
+  indigo: 6,
 
-  // Laranjas
-  laranja: 7,
-  orange: 7,
-  coral: 7,
-  salmão: 7,
-  tangerina: 7,
-  pêssego: 7,
+  // 7 - Vermelho
+  vermelho: 7,
+  red: 7,
+  bordô: 7,
+  vinho: 7,
+  burgundy: 7,
+  escarlate: 7,
+  carmim: 7,
+  rubi: 7,
 
-  // Rosas
-  rosa: 8,
-  pink: 8,
-  magenta: 8,
-  fúcsia: 8,
-  fucsia: 8,
+  // 8 - Amarelo
+  amarelo: 8,
+  yellow: 8,
+  dourado: 8,
+  gold: 8,
+  ouro: 8,
+  mostarda: 8,
 
-  // Roxos
-  roxo: 9,
-  purple: 9,
-  violeta: 9,
-  lilás: 9,
-  lavanda: 9,
-  uva: 9,
-  berinjela: 9,
+  // 9 - Rosa
+  rosa: 9,
+  pink: 9,
+  magenta: 9,
+  fúcsia: 9,
+  fucsia: 9,
 
-  // Marrons
-  marrom: 10,
-  brown: 10,
-  caramelo: 10,
-  chocolate: 10,
-  café: 10,
-  bege: 10,
-  nude: 10,
-  creme: 10,
-  terra: 10,
-  mogno: 10,
+  // 10 - Roxo
+  roxo: 10,
+  purple: 10,
+  violeta: 10,
+  lilás: 10,
+  lavanda: 10,
+  uva: 10,
+  berinjela: 10,
 
-  // Cinzas
-  cinza: 11,
-  gray: 11,
-  grey: 11,
-  prata: 11,
-  silver: 11,
-  chumbo: 11,
-  grafite: 11,
+  // 11 - Marrom
+  marrom: 11,
+  brown: 11,
+  caramelo: 11,
+  chocolate: 11,
+  café: 11,
+  bege: 11,
+  nude: 11,
+  creme: 11,
+  terra: 11,
+  mogno: 11,
 };
 
 // Palavras que indicam tons ESCUROS dentro de um grupo (prioridade 1 = aparece primeiro)

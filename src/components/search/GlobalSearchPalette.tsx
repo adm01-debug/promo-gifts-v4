@@ -198,7 +198,7 @@ export function GlobalSearchPalette() {
         open={s.open}
         onOpenChange={s.setOpen}
         dialogTitle="Busca global"
-        contentClassName="top-[12%] max-w-[532px] translate-y-0 border border-[hsl(var(--command-border))] !rounded-xl bg-[hsl(var(--command-surface))] shadow-[0_36px_120px_hsl(var(--command-shadow)),0_0_0_1px_hsl(var(--command-border-strong))] data-[state=open]:slide-in-from-top-6 data-[state=closed]:slide-out-to-top-6"
+        contentClassName="top-[12%] max-w-[426px] translate-y-0 border border-[hsl(var(--command-border))] !rounded-xl bg-[hsl(var(--command-surface))] shadow-[0_36px_120px_hsl(var(--command-shadow)),0_0_0_1px_hsl(var(--command-border-strong))] data-[state=open]:slide-in-from-top-6 data-[state=closed]:slide-out-to-top-6"
       >
         <div className="relative border-b [border-color:hsl(var(--command-border))]">
           <CommandInput

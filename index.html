@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Priority hints: melhoram LCP instruindo o browser a priorizar imagens críticas -->
+    <meta name="color-scheme" content="dark light" />
 
     <!-- Security Headers -->
     <!--
@@ -51,6 +53,9 @@
     <link rel="dns-prefetch" href="https://doufsxqlfjyuvxuezpln.supabase.co" />
     <link rel="preconnect" href="https://doufsxqlfjyuvxuezpln.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://imagedelivery.net" />
+    <link rel="preconnect" href="https://imagedelivery.net" crossorigin />
+    <!-- Preconnect para o CDN de imagens do Cloudflare Stream -->
+    <link rel="dns-prefetch" href="https://customer-jxe2o7frs8e8iu04.cloudflarestream.com" />
     
     <!-- Load Google Fonts — non-render-blocking via media swap -->
     <!-- Apenas Outfit (display) e Plus Jakarta Sans (sans).o. Inter foi removido
@@ -132,5 +137,17 @@
   <body style="background-color: #0a0a0a; margin: 0;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Inline critical: previne FOUC em temas escuros sem JS -->
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('gifts-store-theme') || localStorage.getItem('vibe-theme');
+          if (t && t !== 'system') {
+            document.documentElement.setAttribute('data-theme', t);
+            if (t === 'light') document.documentElement.classList.remove('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </body>
 </html>

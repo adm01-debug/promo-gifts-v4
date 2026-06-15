@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { cn } from '@/lib/utils';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
@@ -47,6 +47,9 @@ export function QuickAddToQuote({
   const [isOpen, setIsOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [showSelector, setShowSelector] = useState(false);
+  // Quando o vendedor pede explicitamente para criar um NOVO carrinho (mesmo já
+  // tendo um ativo), forçamos o seletor de empresa (CartCompanyPicker) abaixo.
+  const [creatingNewCart, setCreatingNewCart] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ExternalVariantStock | null | undefined>(
     undefined,
   );
@@ -85,6 +88,7 @@ export function QuickAddToQuote({
       setIsOpen(false);
       setQuantity(minQuantity);
       setSelectedVariant(undefined);
+      setCreatingNewCart(false);
     }, 1200);
   };
 
@@ -93,17 +97,20 @@ export function QuickAddToQuote({
     setIsOpen(open);
     if (!open) {
       setSelectedVariant(undefined);
+      setCreatingNewCart(false);
     }
   };
 
   const handleCompanyCreated = () => {
-    // Company created, activeCart will update via context
+    // Novo carrinho criado e já ativo via contexto — segue para a etapa de quantidade.
+    setCreatingNewCart(false);
   };
 
   // Whether variant has been chosen (null = skipped, undefined = not yet chosen)
   const variantChosen = selectedVariant !== undefined;
-  // Need company picker if variant chosen but no active cart
-  const needsCompanyPicker = variantChosen && !activeCart;
+  // Mostra o seletor de empresa quando: (a) não há carrinho ativo, ou
+  // (b) o vendedor pediu explicitamente para criar um novo carrinho.
+  const needsCompanyPicker = variantChosen && (!activeCart || creatingNewCart);
 
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
@@ -124,25 +131,21 @@ export function QuickAddToQuote({
             <span className="text-xs">Orçar</span>
           </Badge>
         ) : variant === 'icon' ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon"
-                aria-label="Adicionar ao Carrinho"
-                disabled={disabled}
-                className={cn(
-                  'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
-                  'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
-                  className,
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ShoppingCart className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
-          </Tooltip>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label="Adicionar ao Carrinho"
+            title="Adicionar ao Carrinho"
+            disabled={disabled}
+            className={cn(
+              'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
+              'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
+              className,
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </Button>
         ) : (
           <Button
             size={buttonSize}
@@ -175,8 +178,10 @@ export function QuickAddToQuote({
           productName={productName}
           onSelect={(id) => handleAddToQuote(id)}
           onCreateNew={() => {
+            // Em vez de descartar a seleção, abrimos o seletor de empresa para
+            // criar um novo carrinho preservando cor/quantidade já escolhidas.
             setShowSelector(false);
-            setSelectedVariant(undefined);
+            setCreatingNewCart(true);
           }}
           canCreateMore={canCreateCart}
         />
@@ -198,8 +203,18 @@ export function QuickAddToQuote({
             <SingleVariantPicker productId={productId} onSelect={handleVariantSelect} compact />
           </div>
         ) : needsCompanyPicker ? (
-          /* Step 2: Company picker (only if no active cart) */
-          <CartCompanyPicker onCreated={handleCompanyCreated} onCancel={() => setIsOpen(false)} />
+          /* Step 2: Company picker (sem carrinho ativo OU criando um novo) */
+          <CartCompanyPicker
+            onCreated={handleCompanyCreated}
+            onCancel={() => {
+              if (creatingNewCart) {
+                // Volta para a etapa de quantidade com o carrinho ativo atual.
+                setCreatingNewCart(false);
+              } else {
+                setIsOpen(false);
+              }
+            }}
+          />
         ) : (
           /* Step 3: Quantity + Add */
           <div className="space-y-3">
@@ -207,9 +222,18 @@ export function QuickAddToQuote({
               <h4 className="mb-1 pr-6 text-sm font-medium">Adicionar ao carrinho</h4>
               <p className="line-clamp-1 text-xs text-muted-foreground">{productName}</p>
               {activeCart && (
-                <p className="mt-1 truncate text-[10px] font-medium text-primary">
-                  → {activeCart.company_name}
-                </p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-primary">
+                    → {activeCart.company_name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowSelector(true)}
+                    className="shrink-0 text-[10px] font-medium text-primary hover:underline"
+                  >
+                    Trocar
+                  </button>
+                </div>
               )}
             </div>
 

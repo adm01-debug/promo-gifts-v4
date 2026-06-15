@@ -42,7 +42,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('ProductCard Layout and Typography', () => {
-  it('should have supplier on the left and SKU on the right with correct font size', () => {
+  it('should render supplier and SKU badge with accessible label', () => {
     render(
       <Wrapper>
         <ProductCard product={mockProduct} />
@@ -55,15 +55,16 @@ describe('ProductCard Layout and Typography', () => {
     expect(supplier).toBeDefined();
     expect(sku).toBeDefined();
 
-    // Verificação de ordem visual via classes do container
+    // SKU badge é posicionado absoluto no canto inferior direito da imagem
     const container = sku.parentElement;
-    expect(container?.className).toContain('justify-between');
+    expect(container?.className).toContain('absolute');
+    expect(container?.className).toContain('bottom-1.5');
+    expect(container?.className).toContain('right-1.5');
 
-    // O SKU deve ter a classe de fonte aumentada (11.5px mobile / 13.8px desktop)
-    expect(sku.className).toContain('text-[11.5px]');
-    expect(sku.className).toContain('sm:text-[13.8px]');
+    // Fonte atual do SKU badge
+    expect(sku.className).toContain('text-[10.5px]');
 
-    // Verificação de acessibilidade
+    // Acessibilidade
     expect(sku.getAttribute('aria-label')).toBe('Código do produto: SKU12345');
   });
 });

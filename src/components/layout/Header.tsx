@@ -452,6 +452,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   Tooltips: {tooltipStyle === 'compact' ? 'Standard' : 'Compact'}
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  data-testid="header-toggle-badges"
                   onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)}
                   className="cursor-pointer"
                 >

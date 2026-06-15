@@ -37,6 +37,8 @@ import { useComparisonStore } from '@/stores/useComparisonStore';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { toast } from 'sonner';
 import { showErrorToast } from '@/utils/undoToast';
+// FIX(catalog-table-cores): hidratacao de cores client-side — mesmo SSOT do grid/lista.
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 
 interface ProductTableViewProps {
   products: Product[];
@@ -61,6 +63,9 @@ interface ProductTableViewProps {
   loadMoreRef?: React.RefObject<HTMLDivElement>;
   itemsPerPage?: number;
   onLoadMore?: () => void;
+  // GAP-20 FIX: chave de reset de scroll (mesma de useCatalogState/VirtualizedProductGrid).
+  // Quando muda (filtro/sort/view), reseta o scrollTop do container interno da tabela ao topo.
+  scrollResetKey?: string;
 }
 
 type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
@@ -156,9 +161,21 @@ export const ProductTableView = memo(function ProductTableView({
   loadMoreRef,
   itemsPerPage: _itemsPerPage,
   onLoadMore,
+  scrollResetKey,
 }: ProductTableViewProps) {
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // GAP-20 FIX: a tabela usa um virtualizer ELEMENT-scoped (container overflow-y-auto
+  // de altura fixa), então é imune ao snap-back de carga progressiva — mas, ao contrário
+  // do grid/list (que rolam a window ao topo via scrollResetKey), seu scrollTop interno
+  // NÃO era resetado ao trocar filtro/sort/view: o usuário rolado para baixo permanecia
+  // numa posição arbitrária (ou no fim, pelo clamp do browser) do novo conjunto. Resetamos
+  // o scrollTop ao topo SOMENTE quando scrollResetKey muda — nunca durante a carga
+  // progressiva (load-more não altera scrollResetKey), preservando o scroll do usuário.
+  useEffect(() => {
+    if (parentRef.current) parentRef.current.scrollTop = 0;
+  }, [scrollResetKey]);
   const [sortCol, setSortCol] = useState<SortCol>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -192,6 +209,29 @@ export const ProductTableView = memo(function ProductTableView({
   const favStore = useFavoritesStore();
   const compStore = useComparisonStore();
 
+  // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
+  // (chega `[]`), entao a tabela caia no placeholder "–". Grid/Lista ja hidratam
+  // via useProductsColorsBatch (SSOT, cache global compartilhado). Replicamos o
+  // MESMO padrao aqui para exibir os swatches na coluna CORES — sem alterar o
+  // restante da UI nem o caminho de filtro por cor.
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+  const hydratedProducts = useMemo(() => {
+    if (colorsByProduct.size === 0) return products;
+    return products.map((p) => {
+      if (p.colors && p.colors.length > 0) return p;
+      const batch = colorsByProduct.get(p.id);
+      if (!batch || batch.length === 0) return p;
+      return {
+        ...p,
+        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+      };
+    });
+  }, [products, colorsByProduct]);
+
   const handleSort = useCallback(
     (col: SortCol) => {
       if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -210,7 +250,7 @@ export const ProductTableView = memo(function ProductTableView({
         (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
       );
     }
-    return [...products].sort((a, b) => {
+    return [...hydratedProducts].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
       switch (sortCol) {
         case 'name':
@@ -228,7 +268,7 @@ export const ProductTableView = memo(function ProductTableView({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, sortCol, sortDir]);
+  }, [hydratedProducts, sortCol, sortDir]);
 
   const virtualizer = useVirtualizer({
     count: sorted.length + (hasMore ? 1 : 0),
@@ -313,10 +353,19 @@ export const ProductTableView = memo(function ProductTableView({
 
   return (
     <div ref={parentRef} className={CONTAINER_CLASS}>
-      <div className="min-w-[900px]">
+      <div className="min-w-0">
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center border-b border-border/50 bg-muted/90 px-4 py-2.5 shadow-sm backdrop-blur-md">
           {selectionMode && <div className="w-10 px-2" />}
+          <div className="hidden w-40 px-3 lg:block">
+            <SortHeader
+              label="Fornecedor"
+              col="supplier"
+              activeCol={sortCol}
+              activeDir={sortDir}
+              onSort={handleSort}
+            />
+          </div>
           <div className="w-12 px-2" />
           <div className="flex-1 px-3">
             <SortHeader
@@ -336,27 +385,8 @@ export const ProductTableView = memo(function ProductTableView({
               onSort={handleSort}
             />
           </div>
-          <div className="hidden w-40 px-3 lg:block">
-            <SortHeader
-              label="Fornecedor"
-              col="supplier"
-              activeCol={sortCol}
-              activeDir={sortDir}
-              onSort={handleSort}
-            />
-          </div>
           <div className="hidden w-32 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:block">
             Cores
-          </div>
-          <div className="w-32 px-3 text-right">
-            <SortHeader
-              label="Preço"
-              col="price"
-              activeCol={sortCol}
-              activeDir={sortDir}
-              onSort={handleSort}
-              className="justify-end"
-            />
           </div>
           <div className="w-32 px-3 text-right">
             <SortHeader
@@ -368,7 +398,17 @@ export const ProductTableView = memo(function ProductTableView({
               className="justify-end"
             />
           </div>
-          <div className="w-48 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="w-32 px-3 text-right">
+            <SortHeader
+              label="Preço"
+              col="price"
+              activeCol={sortCol}
+              activeDir={sortDir}
+              onSort={handleSort}
+              className="justify-end"
+            />
+          </div>
+          <div className="w-48 shrink-0 px-1 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Ações
           </div>
         </div>
@@ -421,6 +461,9 @@ export const ProductTableView = memo(function ProductTableView({
                       <Skeleton className="h-4 w-4 rounded" />
                     </div>
                   )}
+                  <div className="hidden w-40 px-3 lg:block">
+                    <Skeleton className="h-3 w-24" />
+                  </div>
                   <div className="w-12 px-2">
                     <Skeleton className="h-10 w-10 rounded-md" />
                   </div>
@@ -431,19 +474,16 @@ export const ProductTableView = memo(function ProductTableView({
                   <div className="hidden w-32 px-3 md:block">
                     <Skeleton className="h-3 w-20" />
                   </div>
-                  <div className="hidden w-40 px-3 lg:block">
-                    <Skeleton className="h-3 w-24" />
-                  </div>
                   <div className="hidden w-32 gap-1 px-3 sm:flex">
                     {[1, 2, 3].map((i) => (
                       <Skeleton key={i} className="h-3.5 w-3.5 rounded-full" />
                     ))}
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-16" />
+                    <Skeleton className="ml-auto h-4 w-12" />
                   </div>
                   <div className="w-32 px-3 text-right">
-                    <Skeleton className="ml-auto h-4 w-12" />
+                    <Skeleton className="ml-auto h-4 w-16" />
                   </div>
                   <div className="flex w-48 justify-center gap-2 px-3">
                     {[1, 2, 3].map((i) => (
@@ -508,6 +548,10 @@ export const ProductTableView = memo(function ProductTableView({
                   </div>
                 )}
 
+                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
+                  {product.supplier?.name}
+                </div>
+
                 <div className="w-12 px-2">
                   <div className="h-10 w-10 overflow-hidden rounded-md border border-border/30 bg-muted/30">
                     <img
@@ -539,9 +583,6 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
                   {product.sku}
                 </div>
-                <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
-                  {product.supplier?.name}
-                </div>
 
                 <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
                   {product.colors.length > 0 ? (
@@ -570,14 +611,6 @@ export const ProductTableView = memo(function ProductTableView({
                   )}
                 </div>
 
-                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
-                  {formatPrice(product.price)}
-                  <PriceFreshnessBadge
-                    priceUpdatedAt={product.priceUpdatedAt}
-                    variant="icon-only"
-                  />
-                </div>
-
                 <div
                   className={cn(
                     'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
@@ -597,7 +630,15 @@ export const ProductTableView = memo(function ProductTableView({
                   {(displayStock || 0).toLocaleString('pt-BR')}
                 </div>
 
-                <div className="w-48 px-3">
+                <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
+                  {formatPrice(product.price)}
+                  <PriceFreshnessBadge
+                    priceUpdatedAt={product.priceUpdatedAt}
+                    variant="icon-only"
+                  />
+                </div>
+
+                <div className="w-48 shrink-0 px-1">
                   <TableRowActions
                     product={product}
                     isFavorite={isFavorite?.(product.id) || false}

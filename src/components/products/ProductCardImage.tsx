@@ -16,13 +16,15 @@
  */
 import { memo } from 'react';
 import { Package } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
+import { isProductKit } from '@/lib/products/kit-detection';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
@@ -74,6 +76,9 @@ interface ProductCardImageProps {
   onStatusClick?: (type: string) => void;
   /** Whether a color update is in progress (shows loading state) */
   isUpdatingColor?: boolean;
+  /** Leaf category name/path resolved outside the card, used as fallback for kit detection */
+  categoryName?: string | null;
+  categoryPath?: readonly string[] | null;
 }
 
 export const ProductCardImage = memo(function ProductCardImage({
@@ -96,6 +101,8 @@ export const ProductCardImage = memo(function ProductCardImage({
   priority = false,
   onStatusClick,
   isUpdatingColor = false,
+  categoryName,
+  categoryPath,
 }: ProductCardImageProps) {
   // Resolve the active image: prefer the variant-specific image (if a color is
   // selected in the carousel), otherwise fall back to the card image URL.
@@ -116,15 +123,34 @@ export const ProductCardImage = memo(function ProductCardImage({
   // Derive badge flags from the product object
   const featured = product.featured;
   const newArrival = product.newArrival;
-  const isKit = product.isKit;
+  const isKit = isProductKit(product, { categoryName, categoryPath });
   const onSale = product.onSale;
   const hasPackaging = product.hasCommercialPackaging === true;
+  // Status de estoque para badges. Fallback defensivo: quando `product.stockStatus`
+  // vem ausente/inválido ou divergente de `product.stock` (ex.: marcado como
+  // "low-stock" porém quantidade = 0), derivamos do número via SSOT
+  // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
+  // quando o backend devolve um payload parcial.
+  const validStatuses = new Set(['in-stock', 'low-stock', 'out-of-stock']);
+  const stockQty = typeof product.stock === 'number' && Number.isFinite(product.stock)
+    ? product.stock
+    : null;
+  const rawStatus = validStatuses.has(product.stockStatus as string)
+    ? product.stockStatus
+    : stockQty !== null
+      ? getCatalogStockStatus(stockQty)
+      : undefined;
+  const reconciledStatus =
+    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0
+      ? 'out-of-stock'
+      : rawStatus;
   const stockStatus: 'ok' | 'low' | 'unavailable' =
-    product.stockStatus === 'out-of-stock'
+    reconciledStatus === 'out-of-stock'
       ? 'unavailable'
-      : product.stockStatus === 'low-stock'
+      : reconciledStatus === 'low-stock'
         ? 'low'
         : 'ok';
+
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
@@ -218,23 +244,29 @@ export const ProductCardImage = memo(function ProductCardImage({
             />
           )}
 
-          {isNovelty && noveltyDaysRemaining !== undefined ? (
-            <ProductStatusBadge
-              type="novelty"
-              daysRemaining={noveltyDaysRemaining}
-              size="sm"
-              onClick={() => onStatusClick?.('novelty')}
-            />
-          ) : (
-            newArrival && (
+          {(() => {
+            // Compute days remaining from product.created_at when explicit
+            // novelty props are not provided (catálogo/super filtro/etc).
+            let resolvedDaysRemaining = noveltyDaysRemaining;
+            if (resolvedDaysRemaining === undefined && newArrival && product.created_at) {
+              const ts = Date.parse(product.created_at);
+              if (!Number.isNaN(ts)) {
+                const elapsed = Math.floor((Date.now() - ts) / 86400000);
+                const remaining = 30 - elapsed;
+                if (remaining > 0 && remaining <= 30) resolvedDaysRemaining = remaining;
+              }
+            }
+            const showNovelty = (isNovelty && noveltyDaysRemaining !== undefined) || newArrival;
+            if (!showNovelty) return null;
+            return (
               <ProductStatusBadge
                 type="novelty"
-                value="Novo"
+                daysRemaining={resolvedDaysRemaining}
                 size="sm"
                 onClick={() => onStatusClick?.('novelty')}
               />
-            )
-          )}
+            );
+          })()}
 
           {isKit && (
             <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
@@ -278,11 +310,12 @@ export const ProductCardImage = memo(function ProductCardImage({
             <ProductStatusBadge
               type="urgency"
               urgencyType="limited-stock"
-              value="Baixo"
+              value="Estoque baixo"
               size="sm"
               onClick={() => onStatusClick?.('urgency')}
             />
           )}
+
         </div>
       </div>
 

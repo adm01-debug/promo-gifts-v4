@@ -139,7 +139,7 @@ export function SingleVariantPicker({
                 <div className="mt-0.5 flex items-center gap-1">
                   {isOutOfStock ? (
                     <span className="flex items-center gap-0.5 text-[9px] text-destructive">
-                      <AlertTriangle className="h-2 w-2" /> Sem estoque
+                      <AlertTriangle className="h-2 w-2" /> Estoque zerado
                     </span>
                   ) : (
                     <span

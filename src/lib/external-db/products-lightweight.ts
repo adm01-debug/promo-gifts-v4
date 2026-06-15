@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 import { type InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 const LIGHTWEIGHT_PAGE_SIZE = 500;
 const LIGHTWEIGHT_MAX_CONCURRENCY = 3;
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
@@ -39,6 +39,8 @@ export interface LightweightProduct {
   stock_quantity?: number | null;
   min_quantity?: number | null;
   is_kit?: boolean | null;
+  is_new?: boolean | null;
+  created_at?: string | null;
   gender?: string | null;
   short_description?: string | null;
   price_updated_at?: string | null;

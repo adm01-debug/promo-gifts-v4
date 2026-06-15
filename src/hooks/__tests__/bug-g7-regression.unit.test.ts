@@ -232,3 +232,33 @@ describe('SORT-VAL — validateSortOption normaliza e protege o state', () => {
     }
   });
 });
+
+describe('SORT-SESSION — ranking do catálogo não alterna após seleção', () => {
+  it('SORT_OPTIONS inicia em newest, preservando o default global Mais Recentes', () => {
+    expect(readSrc('src/constants/filters.ts')).toMatch(
+      /export const SORT_OPTIONS = \[\s*\{ value: 'newest', label: 'Mais Recentes' \}/,
+    );
+  });
+
+  it('useCatalogState consulta o catálogo com sortBy no queryKey/fetch servidor', () => {
+    expect(catalogState()).toMatch(
+      /useProductsCatalog\(\{\s*search: debouncedServerSearch,\s*categories: filters\.categories,\s*suppliers: filters\.suppliers,\s*sortBy,/,
+    );
+  });
+
+  it('preferências persistidas fora da sessão não sobrescrevem o ranking escolhido na sessão', () => {
+    const src = catalogState();
+    expect(src).toContain("const SORT_SESSION_KEY = 'catalog:sortBy'");
+    expect(src).toContain('validateSortOption(getSessionSortPreference())');
+    expect(src).not.toContain('prefsLoaded');
+    expect(src).not.toContain('preferences.sortBy');
+  });
+
+  it('bloqueia URL stale de sobrescrever a escolha local enquanto a navegação sincroniza', () => {
+    const src = catalogState();
+    expect(src).toContain('const pendingLocalSortRef = useRef<SortOption | null>(null)');
+    expect(src).toContain('pendingLocalSortRef.current = validated');
+    expect(src).toContain('if (!urlMatchesPendingSort) return');
+    expect(src).toContain('pendingLocalSortRef.current = null');
+  });
+});

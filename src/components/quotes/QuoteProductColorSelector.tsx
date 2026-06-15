@@ -151,7 +151,7 @@ export function QuoteProductColorSelector({
                   {isOutOfStock ? (
                     <span className="flex items-center gap-0.5 text-[10px] text-destructive">
                       <AlertTriangle className="h-2.5 w-2.5" />
-                      Sem estoque
+                      Estoque zerado
                     </span>
                   ) : (
                     <span

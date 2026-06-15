@@ -46,6 +46,10 @@ import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
+import { isProductKit } from '@/lib/products/kit-detection';
 
 interface ProductListItemProps {
   product: Product;
@@ -82,6 +86,7 @@ export const ProductListItem = memo(function ProductListItem({
   onStatusClick,
 }: ProductListItemProps) {
   const navigate = useNavigate();
+  const detectedIsKit = isProductKit(product);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [collectionVariant, setCollectionVariant] = useState<
     | {
@@ -101,8 +106,14 @@ export const ProductListItem = memo(function ProductListItem({
   } | null>(null);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
+  const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
+  const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
   const actionBusyRef = useRef(false);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  // Cor selecionada manualmente via swatch (bolinha) — sobrescreve imagem/estoque exibidos
+  const [userSelectedColorName, setUserSelectedColorName] = useState<string | null>(null);
 
   // Reset variant index when color filter changes
   const listFilterKey = activeColorFilter
@@ -180,18 +191,15 @@ export const ProductListItem = memo(function ProductListItem({
         setCollectionVariant(variantInfo);
         setCollectionModalOpen(true);
       } else if (variantPickerMode === 'quote') {
-        const params = new URLSearchParams({
-          product_id: product.id,
-          product_name: product.name,
-          product_sku: product.sku || '',
-          product_price: String(product.price ?? 0),
-        });
-        if (variant?.color_name) params.set('color_name', variant.color_name);
-        if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-        if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-        if (product.images?.[0])
-          params.set('product_image', variant?.selected_thumbnail || product.images[0]);
-        setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+        // Fluxo: variação já escolhida → seletor de cliente/carrinho.
+        // Sempre abre o seletor (mesmo com 0/1 carrinho) para permitir criar carrinho
+        // para outro cliente naquele momento.
+        setPendingVariant(variant);
+        if (carts.length === 0) {
+          setCompanyPickerOpen(true);
+        } else {
+          setSelectorOpen(true);
+        }
       } else if (variantPickerMode === 'share') {
         setShareVariant(
           variant
@@ -205,7 +213,7 @@ export const ProductListItem = memo(function ProductListItem({
         setShareDialogOpen(true);
       }
     },
-    [variantPickerMode, product, favStore, compStore, navigate],
+    [variantPickerMode, product, favStore, compStore, carts],
   );
 
   const formatPrice = (price: number) =>
@@ -231,7 +239,7 @@ export const ProductListItem = memo(function ProductListItem({
       case 'low-stock':
         return 'Estoque baixo';
       case 'out-of-stock':
-        return 'Sem estoque';
+        return 'Estoque zerado';
       default:
         return 'Em estoque';
     }
@@ -309,17 +317,33 @@ export const ProductListItem = memo(function ProductListItem({
     : 0;
   const currentVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
 
-  const variantImage = currentVariant?.image;
+  // Match do swatch clicado pelo usuário (prioridade máxima sobre filtro/carousel)
+  const userSelectedColor = userSelectedColorName
+    ? (product.colors?.find((c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase()) ??
+      null)
+    : null;
+  const userSelectedImage = userSelectedColor?.images?.[0] || userSelectedColor?.image || undefined;
+
+  const variantImage = userSelectedImage || currentVariant?.image;
   const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
   // primary_image_url (is_primary=true) é a imagem capa canônica — deve ser a primeira exibida
-  const rawImageUrl = colorSpecificImage || product.primary_image_url || product.og_image_url || product.images[0] || null;
+  const rawImageUrl =
+    colorSpecificImage ||
+    product.primary_image_url ||
+    product.og_image_url ||
+    product.images[0] ||
+    null;
   const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
-  const colorStock = resolveColorStock(product, activeColorFilter);
+  const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
+  // Estoque por cor resolvido pela fonte única (resolveColorStock já considera a cor selecionada pelo usuário via userSelectedColorName).
   const displayStock = colorStock?.stock ?? product.stock;
   const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
 
-  const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
+  const activeColorName =
+    userSelectedColor?.name ||
+    currentVariant?.name ||
+    getActiveColorName(product, activeColorFilter);
 
   const matchedHighlightColor =
     currentVariant?.hex || resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
@@ -433,7 +457,7 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Info — main content block */}
-        <div className="min-w-0 flex-1 py-0.5">
+        <div className="min-w-0 flex-1 py-0.5 md:flex-[0_1_42%]">
           {/* Top meta row */}
           <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
             {product.featured && (
@@ -457,7 +481,7 @@ export const ProductListItem = memo(function ProductListItem({
                 onClick={() => handleStatusClick('promotion')}
               />
             )}
-            {product.isKit && (
+            {detectedIsKit && (
               <ProductStatusBadge type="kit" size="sm" onClick={() => handleStatusClick('kit')} />
             )}
             {product.hasCommercialPackaging && (
@@ -509,8 +533,13 @@ export const ProductListItem = memo(function ProductListItem({
             </Badge>
           )}
 
-          {/* Stock + SKU row */}
+          {/* SKU + Stock row — SKU em destaque, antes do estoque */}
           <div className="mt-0.5 flex items-center gap-2">
+            {product.sku && (
+              <span className="rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
+                {product.sku}
+              </span>
+            )}
             <span
               className={cn(
                 'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
@@ -520,33 +549,37 @@ export const ProductListItem = memo(function ProductListItem({
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
             </span>
-            {product.sku && (
-              <span className="hidden font-mono text-[10px] text-muted-foreground/50 sm:inline">
-                {product.sku}
-              </span>
-            )}
-            {/* Inline color dots */}
-            <ProductColorSwatches
-              colors={product.colors}
-              max={5}
-              size="xs"
-              hideWhenEmpty={false}
-              className="ml-1 hidden md:flex"
-            />
           </div>
+        </div>
+
+        {/* Center — full color swatches, sempre iniciam na mesma posição (esquerda) */}
+        <div className="hidden min-w-0 flex-1 items-center justify-start pl-4 pr-2 md:flex">
+          <ProductColorSwatches
+            colors={product.colors}
+            max={product.colors?.length || 0}
+            size="sm"
+            hideWhenEmpty
+            className="flex-wrap justify-start"
+            selectedName={activeColorName}
+            onSelect={(c) => {
+              setUserSelectedColorName((prev) =>
+                prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
+              );
+            }}
+          />
         </div>
 
         {/* Price column — right-aligned, always visible */}
         <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
-          <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
-            {formatPrice(product.price)}
-          </span>
-          <div className="mt-0.5 flex justify-end">
+          <div className="flex items-center justify-end gap-1.5">
             <PriceFreshnessBadge
               priceUpdatedAt={product.priceUpdatedAt}
               thresholdDays={product.priceFreshnessThresholdDays}
-              variant="compact"
+              variant="icon-only"
             />
+            <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
+              {formatPrice(product.price)}
+            </span>
           </div>
         </div>
 
@@ -608,6 +641,64 @@ export const ProductListItem = memo(function ProductListItem({
         onOpenChange={setShareDialogOpen}
         product={product}
         selectedVariant={shareVariant}
+      />
+
+      {/* Cart/Cliente Selector — exibido após a escolha da variação */}
+      <CartSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        carts={carts}
+        productName={product.name}
+        canCreateMore={canCreateCart}
+        onSelect={(cartId) => {
+          addToActiveCart(
+            {
+              product_id: product.id,
+              product_name: product.name,
+              product_sku: product.sku || undefined,
+              product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+              product_price: product.price ?? 0,
+              quantity: product.minQuantity || 1,
+              color_name: pendingVariant?.color_name || undefined,
+              color_hex: pendingVariant?.color_hex || undefined,
+            },
+            cartId,
+          );
+          setSelectorOpen(false);
+          setPendingVariant(null);
+        }}
+        onCreateNew={() => {
+          // Mantém pendingVariant — será adicionado ao carrinho recém-criado
+          setSelectorOpen(false);
+          setCompanyPickerOpen(true);
+        }}
+      />
+
+      {/* Picker de empresa — cria carrinho na hora para outro cliente e adiciona o item */}
+      <CartCompanyPickerDialog
+        open={companyPickerOpen}
+        onOpenChange={(o) => {
+          setCompanyPickerOpen(o);
+          if (!o) setPendingVariant(null);
+        }}
+        onCreated={(newCartId) => {
+          if (newCartId) {
+            addToActiveCart(
+              {
+                product_id: product.id,
+                product_name: product.name,
+                product_sku: product.sku || undefined,
+                product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                product_price: product.price ?? 0,
+                quantity: product.minQuantity || 1,
+                color_name: pendingVariant?.color_name || undefined,
+                color_hex: pendingVariant?.color_hex || undefined,
+              },
+              newCartId,
+            );
+          }
+          setPendingVariant(null);
+        }}
       />
     </>
   );

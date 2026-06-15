@@ -1,5 +1,9 @@
 const CLOUDFLARE_STREAM_ID_REGEX = /(?:^|\/)([a-f0-9]{32})(?:[/?#]|$)/i;
 
+// Cloudflare Stream customer subdomain (accountHash, NOT accountId).
+// Must match the value used by the DB functions (fn_*_link_video) and the VPS importer.
+const CF_STREAM_SUBDOMAIN = 'customer-ksi0mrlcw6rwzezz.cloudflarestream.com';
+
 export function extractCloudflareStreamId(url: string | null | undefined): string | null {
   if (!url) return null;
 
@@ -41,7 +45,7 @@ export function getCloudflareThumbnailUrl(
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const thumbnailUrl = new URL(`https://videodelivery.net/${streamId}/thumbnails/thumbnail.jpg`);
+  const thumbnailUrl = new URL(`https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`);
   appendThumbnailOptions(thumbnailUrl, options);
 
   return thumbnailUrl.toString();
@@ -75,7 +79,7 @@ export function getCloudflareEmbedUrl(
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const embedUrl = new URL(`https://iframe.videodelivery.net/${streamId}`);
+  const embedUrl = new URL(`https://iframe.cloudflarestream.com/${streamId}`);
 
   if (options.autoplay) {
     embedUrl.searchParams.set('autoplay', 'true');
@@ -92,11 +96,11 @@ export function getCloudflareEmbedUrl(
 export function getCloudflareHlsUrl(url: string | null | undefined) {
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
-  return `https://videodelivery.net/${streamId}/manifest/video.m3u8`;
+  return `https://${CF_STREAM_SUBDOMAIN}/${streamId}/manifest/video.m3u8`;
 }
 
 export function getCloudflareMp4Url(url: string | null | undefined) {
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
-  return `https://videodelivery.net/${streamId}/downloads/default.mp4`;
+  return `https://${CF_STREAM_SUBDOMAIN}/${streamId}/downloads/default.mp4`;
 }

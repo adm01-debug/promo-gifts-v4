@@ -56,6 +56,9 @@ export interface FilterState {
   gender: string[];
   sizes: string[];
   sortBy: string;
+  // COMERCIAL — Filtros por vendas (somente Super Filtro) — janela padronizada 90d
+  minSupplierSales90d: number; // mín. unidades vendidas pelo fornecedor nos últimos 90 dias
+  minPromoSales90d: number;    // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
 export interface FilterPanelProps {
@@ -102,7 +105,9 @@ export const defaultFilters: FilterState = {
   hasCommercialPackaging: false,
   gender: [],
   sizes: [],
-  sortBy: 'name',
+  sortBy: 'newest',
+  minSupplierSales90d: 0,
+  minPromoSales90d: 0,
 };
 
 export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
@@ -138,6 +143,14 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Técnicas de Gravação',
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
   },
+  'vendas-fornecedor': {
+    title: 'Vendas Fornecedor (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
+  'vendas-promo': {
+    title: 'Vendas Promo Brindes (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
   // BUG-SF-18 FIX: genero usava Users (igual a publico), tamanhos usava Package (igual a estoque).
   // Ícones mais semânticos: User (singular) para gênero, Ruler para tamanhos.
   genero: { title: 'Gênero', icon: React.createElement(User, { className: 'h-4 w-4' }) },
@@ -156,7 +169,11 @@ export const SECTION_GROUPS = [
     sections: ['cores', 'categorias', 'estoque', 'preco', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
-  { label: 'COMERCIAL', sections: ['fornecedores', 'tecnicas'], icon: TrendingUp },
+  {
+    label: 'COMERCIAL',
+    sections: ['fornecedores', 'vendas-fornecedor', 'vendas-promo', 'tecnicas'],
+    icon: TrendingUp,
+  },
   {
     label: 'MARKETING',
     sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],

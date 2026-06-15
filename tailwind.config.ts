@@ -18,6 +18,10 @@ export default {
       },
     },
     extend: {
+      screens: {
+        'xs': '480px',
+        'ultra-wide': '1920px',
+      },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "system-ui", "sans-serif"],

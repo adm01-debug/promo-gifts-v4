@@ -15,6 +15,16 @@ import { fetchPromobrindCategories } from '@/lib/external-db/products-detail';
 export type { ProductLightweight } from '@/types/product-catalog';
 import type { ProductLightweight, Product } from '@/types/product-catalog';
 
+const NOVELTY_WINDOW_DAYS = 30;
+
+function isWithinNoveltyWindow(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false;
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  const elapsedDays = (Date.now() - ts) / 86400000;
+  return elapsedDays >= 0 && elapsedDays <= NOVELTY_WINDOW_DAYS;
+}
+
 function mapLightweight(p: LightweightProduct): ProductLightweight {
   const price = p.sale_price ?? p.cost_price ?? 0;
   const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
@@ -68,6 +78,7 @@ export function mapLightweightToProduct(
     images: [imageUrl],
     sku: p.sku,
     stock,
+    created_at: p.created_at ?? undefined,
     colors: [],
     materials: [],
     supplier_reference: p.supplier_reference ?? null,
@@ -76,7 +87,7 @@ export function mapLightweightToProduct(
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: false,
-    newArrival: false,
+    newArrival: Boolean(p.is_new) || isWithinNoveltyWindow(p.created_at),
     onSale: false,
     isKit: p.is_kit ?? false,
     gender: p.gender || null,
@@ -106,10 +117,15 @@ export const CATALOG_BATCH_PAGES = 4;
  * Custo: +1 campo text por linha — impacto negligenciável (~8 bytes/produto).
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, sale_price, cost_price, primary_image_url, set_image_url, ' +
+  'id, name, sku, supplier_reference, short_description, ' +
+  'sale_price, cost_price, primary_image_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
-  'stock_quantity, min_quantity, is_kit, gender, price_updated_at, ' +
+  'stock_quantity, min_quantity, is_kit, is_new, created_at, gender, price_updated_at, ' +
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+// FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
+// Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
+// description='' em TODO produto da grade, neutralizando o re-rank/substring client-side por
+// referência do fornecedor e descrição. Mantidos is_new/created_at (feature newArrival).
 
 interface CatalogPage {
   products: Product[];
@@ -270,7 +286,7 @@ export function useProductsCatalog(filters?: {
   const search = filters?.search || '';
   const categories = filters?.categories || [];
   const suppliers = filters?.suppliers || [];
-  const sortBy = filters?.sortBy || 'name';
+  const sortBy = filters?.sortBy || 'newest';
   return useInfiniteQuery<CatalogPage, Error>({
     queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],
     queryFn: ({ pageParam }) =>

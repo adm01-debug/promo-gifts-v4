@@ -2,7 +2,7 @@
  * Admin: gerenciar templates de kits sugeridos pelo sistema.
  */
 import { useMemo, useState } from 'react';
-import * as Lucide from 'lucide-react';
+import { Package } from 'lucide-react';
 import { Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -179,7 +179,7 @@ export default function KitTemplatesAdminPage() {
               const Icon =
                 (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
                   t.icon
-                ] || Lucide.Package;
+                ] || Package;
               return (
                 <Card key={t.id} className={cn('overflow-hidden', !t.is_active && 'opacity-60')}>
                   <div className="h-1.5 w-full" style={{ background: t.color }} />

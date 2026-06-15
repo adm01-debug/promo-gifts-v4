@@ -7,6 +7,7 @@
  * 3. Retorna color.image (thumbnail da variante daquela cor)
  */
 
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import type { Product, ProductColor } from '@/hooks/products';
 import type { ProductVariation } from '@/types/product-catalog';
 
@@ -112,7 +113,7 @@ export function resolveColorStock(
       const s = variant.stock ?? 0;
       return {
         stock: s,
-        stockStatus: s <= 0 ? 'out-of-stock' : s < 10 ? 'low-stock' : 'in-stock',
+        stockStatus: getCatalogStockStatus(s),
       };
     }
   }
@@ -171,7 +172,7 @@ export function resolveColorStock(
         stock = v.stock ?? 0;
         return {
           stock,
-          stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock',
+          stockStatus: getCatalogStockStatus(stock),
         };
       }
     }
@@ -185,7 +186,7 @@ export function resolveColorStock(
         stock = result.stock ?? 0;
         return {
           stock,
-          stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock',
+          stockStatus: getCatalogStockStatus(stock),
         };
       }
     }

@@ -4,26 +4,27 @@ import { cn } from '@/lib/utils';
 interface ContainerProps {
   children: React.ReactNode;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'ultrawide' | 'full';
   centered?: boolean;
 }
 
-/**
- * Container responsivo com tamanhos pré-definidos
- */
+/** Container responsivo. xs=512px sm=672px md=896px lg=1152px xl=1280px 2xl=1400px 3xl=1600px ultrawide=1920px */
 export function Container({ children, className, size = 'lg', centered = true }: ContainerProps) {
-  const sizeClasses = {
+  const sizeClasses: Record<NonNullable<ContainerProps['size']>, string> = {
+    xs: 'max-w-lg',
     sm: 'max-w-2xl',
     md: 'max-w-4xl',
     lg: 'max-w-6xl',
     xl: 'max-w-7xl',
+    '2xl': 'max-w-screen-2xl',
+    '3xl': 'max-w-[1600px]',
+    ultrawide: 'max-w-[1920px]',
     full: 'max-w-full',
   };
-
   return (
     <div
       className={cn(
-        'w-full px-4 sm:px-6 lg:px-8',
+        'w-full px-4 sm:px-6 lg:px-8 xl:px-10',
         sizeClasses[size],
         centered && 'mx-auto',
         className,
@@ -42,19 +43,20 @@ interface SectionProps {
   action?: React.ReactNode;
 }
 
-/**
- * Section com título e descrição opcionais
- */
 export function Section({ children, className, title, description, action }: SectionProps) {
   return (
-    <section className={cn('py-8', className)}>
+    <section className={cn('py-6 sm:py-8', className)}>
       {(title || description || action) && (
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
+        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0 flex-1">
             {title && (
-              <h2 className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
+              <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+                {title}
+              </h2>
             )}
-            {description && <p className="mt-1 text-muted-foreground">{description}</p>}
+            {description && (
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">{description}</p>
+            )}
           </div>
           {action && <div className="shrink-0">{action}</div>}
         </div>
@@ -68,28 +70,27 @@ interface GridProps {
   children: React.ReactNode;
   className?: string;
   cols?: 1 | 2 | 3 | 4 | 5 | 6;
-  gap?: 'sm' | 'md' | 'lg';
+  gap?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
   responsive?: boolean;
 }
 
-/**
- * Grid layout responsivo
- */
+/** Grid mobile-first com suporte a ultra-wide (1920px+) */
 export function Grid({ children, className, cols = 3, gap = 'md', responsive = true }: GridProps) {
   const gapClasses = {
-    sm: 'gap-2',
-    md: 'gap-4',
-    lg: 'gap-6',
+    none: 'gap-0',
+    xs: 'gap-1.5 sm:gap-2',
+    sm: 'gap-2 sm:gap-3',
+    md: 'gap-3 sm:gap-4',
+    lg: 'gap-4 sm:gap-5 lg:gap-6',
   };
-
   const colClasses = responsive
     ? {
         1: 'grid-cols-1',
-        2: 'grid-cols-1 sm:grid-cols-2',
-        3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-        4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
-        5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
-        6: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6',
+        2: 'grid-cols-1 xs:grid-cols-2',
+        3: 'grid-cols-1 xs:grid-cols-2 lg:grid-cols-3',
+        4: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
+        5: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 ultra-wide:grid-cols-5',
+        6: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ultra-wide:grid-cols-6',
       }
     : {
         1: 'grid-cols-1',
@@ -99,7 +100,6 @@ export function Grid({ children, className, cols = 3, gap = 'md', responsive = t
         5: 'grid-cols-5',
         6: 'grid-cols-6',
       };
-
   return <div className={cn('grid', colClasses[cols], gapClasses[gap], className)}>{children}</div>;
 }
 
@@ -113,9 +113,6 @@ interface StackProps {
   wrap?: boolean;
 }
 
-/**
- * Stack layout para empilhar elementos
- */
 export function Stack({
   children,
   className,
@@ -125,38 +122,28 @@ export function Stack({
   justify = 'start',
   wrap = false,
 }: StackProps) {
-  const gapClasses = {
-    none: 'gap-0',
-    xs: 'gap-1',
-    sm: 'gap-2',
-    md: 'gap-4',
-    lg: 'gap-6',
-    xl: 'gap-8',
-  };
-
-  const alignClasses = {
+  const g = { none: 'gap-0', xs: 'gap-1', sm: 'gap-2', md: 'gap-4', lg: 'gap-6', xl: 'gap-8' };
+  const a = {
     start: 'items-start',
     center: 'items-center',
     end: 'items-end',
     stretch: 'items-stretch',
   };
-
-  const justifyClasses = {
+  const j = {
     start: 'justify-start',
     center: 'justify-center',
     end: 'justify-end',
     between: 'justify-between',
     around: 'justify-around',
   };
-
   return (
     <div
       className={cn(
         'flex',
         direction === 'vertical' ? 'flex-col' : 'flex-row',
-        gapClasses[gap],
-        alignClasses[align],
-        justifyClasses[justify],
+        g[gap],
+        a[align],
+        j[justify],
         wrap && 'flex-wrap',
         className,
       )}
@@ -172,11 +159,8 @@ interface DividerProps {
   label?: string;
 }
 
-/**
- * Divider com label opcional
- */
 export function Divider({ className, orientation = 'horizontal', label }: DividerProps) {
-  if (orientation === 'vertical') {
+  if (orientation === 'vertical')
     return (
       <div
         className={cn('h-full w-px bg-border', className)}
@@ -184,18 +168,14 @@ export function Divider({ className, orientation = 'horizontal', label }: Divide
         aria-orientation="vertical"
       />
     );
-  }
-
-  if (label) {
+  if (label)
     return (
       <div className={cn('flex items-center gap-4', className)} role="separator">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
         <div className="h-px flex-1 bg-border" />
       </div>
     );
-  }
-
   return (
     <div
       className={cn('h-px w-full bg-border', className)}
@@ -210,20 +190,17 @@ interface SpacerProps {
   className?: string;
 }
 
-/**
- * Spacer para adicionar espaço vertical/horizontal
- */
+/** Spacer responsivo: menor em mobile, maior em desktop. */
 export function Spacer({ size = 'md', className }: SpacerProps) {
-  const sizeClasses = {
-    xs: 'h-2',
-    sm: 'h-4',
-    md: 'h-6',
-    lg: 'h-8',
-    xl: 'h-12',
-    '2xl': 'h-16',
+  const s = {
+    xs: 'h-1 sm:h-2',
+    sm: 'h-2 sm:h-4',
+    md: 'h-4 sm:h-6',
+    lg: 'h-6 sm:h-8',
+    xl: 'h-8 sm:h-12',
+    '2xl': 'h-10 sm:h-16',
   };
-
-  return <div className={cn(sizeClasses[size], className)} aria-hidden="true" />;
+  return <div className={cn(s[size], className)} aria-hidden="true" />;
 }
 
 interface AnimatedContainerProps {
@@ -232,14 +209,11 @@ interface AnimatedContainerProps {
   delay?: number;
 }
 
-/**
- * Container com animação de entrada (CSS-only)
- */
 export function AnimatedContainer({ children, className, delay = 0 }: AnimatedContainerProps) {
   return (
     <div
       className={cn('animate-fade-in-up', className)}
-      style={delay > 0 ? { animationDelay: `${delay}s` } : undefined}
+      style={delay > 0 ? { animationDelay: delay + 's' } : undefined}
     >
       {children}
     </div>

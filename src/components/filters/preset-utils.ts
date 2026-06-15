@@ -80,8 +80,8 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.isNew) count++;
   if (filters.hasPersonalization) count++;
   if (filters.hasCommercialPackaging) count++;
-  // BUG-SF-17 FIX: sortBy != 'name' também é um filtro ativo para efeito de preset
-  if (filters.sortBy && filters.sortBy !== 'name') count++;
+  // Ordenação só conta como filtro ativo quando foge do padrão global "Mais Recentes".
+  if (filters.sortBy && filters.sortBy !== 'newest') count++;
   return count;
 }
 
@@ -132,6 +132,6 @@ export function summarizeFilters(filters: FilterState): string {
   if (filters.isNew) parts.push('novidades');
   if (filters.hasPersonalization) parts.push('personalizável');
   if (filters.hasCommercialPackaging) parts.push('embalagem nativa');
-  if (filters.sortBy && filters.sortBy !== 'name') parts.push(`ordenado por ${filters.sortBy}`);
+  if (filters.sortBy && filters.sortBy !== 'newest') parts.push(`ordenado por ${filters.sortBy}`);
   return parts.length > 0 ? parts.join(' · ') : 'Sem filtros';
 }

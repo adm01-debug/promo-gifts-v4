@@ -1,10 +1,20 @@
 import { useState, useMemo, useCallback, useContext } from 'react';
 import Fuse from 'fuse.js';
+import { useQuery } from '@tanstack/react-query';
 import { type Product } from '@/hooks/products';
 import { CATEGORIES, SUPPLIERS } from '@/data/mockData';
 import { ProductsContext } from '@/contexts/ProductsContext';
-import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
+import { dbInvoke } from '@/lib/db/postgrest';
+import {
+  createProductFuseOptions,
+  normalizeProductSearch,
+  rankProductSearchResults,
+} from '@/utils/product-search';
 import { useSearchHistory } from '@/hooks/common/useSearchHistory';
+
+// FIX 2026-06-14 (#5-raiz): categorias/fornecedores REAIS do DB (ids = UUID).
+interface RealCategory { id: string; name: string; icon?: string | null }
+interface RealSupplier  { id: string; name: string }
 
 export interface SearchResult {
   type: 'product' | 'category' | 'supplier' | 'history';
@@ -29,6 +39,60 @@ export function useSearch(products: Product[] = []) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableProducts = products.length > 0 ? products : productsContext?.products || [];
+
+  // FIX 2026-06-14 (#5-raiz): categorias e fornecedores REAIS (fallback p/ mock enquanto carrega).
+  const { data: realCategories } = useQuery<RealCategory[]>({
+    queryKey: ['search-autocomplete-categories'],
+    queryFn: async () => (await dbInvoke<RealCategory>({
+      table: 'categories', operation: 'select', select: 'id, name, icon',
+      filters: { is_active: true }, orderBy: { column: 'name', ascending: true },
+      limit: 1000, countMode: 'none',
+    })).records,
+    staleTime: 30 * 60 * 1000, gcTime: 60 * 60 * 1000, refetchOnWindowFocus: false,
+  });
+  const { data: realSuppliers } = useQuery<RealSupplier[]>({
+    queryKey: ['search-autocomplete-suppliers'],
+    queryFn: async () => (await dbInvoke<RealSupplier>({
+      table: 'suppliers', operation: 'select', select: 'id, name',   // -> v_suppliers_public
+      filters: { active: true }, orderBy: { column: 'name', ascending: true },
+      limit: 200, countMode: 'none',
+    })).records,
+    staleTime: 30 * 60 * 1000, gcTime: 60 * 60 * 1000, refetchOnWindowFocus: false,
+  });
+  const categorySource = useMemo<RealCategory[]>(
+    () => realCategories?.length
+      ? realCategories
+      : CATEGORIES.map((c) => ({ id: String(c.id), name: c.name, icon: c.icon })),
+    [realCategories],
+  );
+  const supplierSource = useMemo<RealSupplier[]>(
+    () => realSuppliers?.length
+      ? realSuppliers
+      : SUPPLIERS.map((s) => ({ id: s.id, name: s.name })),
+    [realSuppliers],
+  );
+  // Produtos referenciam categorias-FOLHA: pré-filtra fontes aos ids PRESENTES no catálogo
+  // carregado -> Fuse só ranqueia categorias/fornecedores que TÊM produtos (evita ruído).
+  const presentCategoryIds = useMemo(
+    () => new Set(availableProducts.map((p) => p.category_id).filter(Boolean) as string[]),
+    [availableProducts],
+  );
+  const presentSupplierIds = useMemo(
+    () => new Set(availableProducts.map((p) => p.supplier?.id).filter(Boolean) as string[]),
+    [availableProducts],
+  );
+  const effectiveCategorySource = useMemo<RealCategory[]>(
+    () => presentCategoryIds.size > 0
+      ? categorySource.filter((c) => presentCategoryIds.has(String(c.id)))
+      : categorySource,
+    [categorySource, presentCategoryIds],
+  );
+  const effectiveSupplierSource = useMemo<RealSupplier[]>(
+    () => presentSupplierIds.size > 0
+      ? supplierSource.filter((s) => presentSupplierIds.has(String(s.id)))
+      : supplierSource,
+    [supplierSource, presentSupplierIds],
+  );
 
   const addToHistory = useCallback(
     (term: string) => {
@@ -57,23 +121,23 @@ export function useSearch(products: Product[] = []) {
   // Criar instância Fuse.js para busca fuzzy de categorias
   const categoryFuse = useMemo(
     () =>
-      new Fuse(CATEGORIES, {
+      new Fuse(effectiveCategorySource, {
         keys: ['name'],
         threshold: 0.35,
         ignoreLocation: true,
       }),
-    [],
+    [effectiveCategorySource],
   );
 
   // Criar instância Fuse.js para busca fuzzy de fornecedores
   const supplierFuse = useMemo(
     () =>
-      new Fuse(SUPPLIERS, {
+      new Fuse(effectiveSupplierSource, {
         keys: ['name'],
         threshold: 0.35,
         ignoreLocation: true,
       }),
-    [],
+    [effectiveSupplierSource],
   );
 
   // Generate suggestions based on query - usando busca fuzzy
@@ -118,11 +182,13 @@ export function useSearch(products: Product[] = []) {
       });
     }
 
-    const orderedProducts = rankProductSearchResults(
+    // FIX: era slice(0,6) → agora 30 com scrollbar no dropdown
+    const allProductMatches = rankProductSearchResults(
       availableProducts,
       searchTerm,
       productFuse,
-    ).slice(0, 6);
+    );
+    const orderedProducts = allProductMatches.slice(0, 30);
 
     orderedProducts.forEach((product) => {
       // Skip if already added as exact SKU match
@@ -142,16 +208,18 @@ export function useSearch(products: Product[] = []) {
 
     matchingCategories.forEach((result) => {
       const category = result.item;
-      const productCount = availableProducts.filter(
-        (p) =>
-          p.category_id === String(category.id) || parseInt(p.category_id || '0') === category.id,
-      ).length;
+      // FIX 2026-06-14 (catalog-search-audit): removido o ramo parseInt(p.category_id) === category.id.
+      // category_id é UUID; parseInt('192e45...') retornava 192 (falso-positivo) e ainda gerava NaN
+      // para UUIDs não-numéricos. Mantém-se apenas a comparação estrita por id (string).
+      const cid = String(category.id);
+      const productCount = availableProducts.filter((p) => p.category_id === cid).length;
+      if (productCount === 0 && availableProducts.length > 0) return;
       results.push({
         type: 'category',
-        id: String(category.id),
+        id: cid,
         label: category.name,
         sublabel: `${productCount} produtos`,
-        icon: category.icon || '📁',
+        icon: (category as RealCategory).icon || '📁',
       });
     });
 
@@ -160,12 +228,25 @@ export function useSearch(products: Product[] = []) {
 
     matchingSuppliers.forEach((result) => {
       const supplier = result.item;
-      const productCount = availableProducts.filter(
-        (p) => p.brand === supplier.id || p.supplier_reference === supplier.id,
-      ).length;
+      // FIX 2026-06-14 (catalog-search-audit): o brand do produto é o NOME do fornecedor
+      // (ex.: 'XBZ', 'Spot | Stricker', 'Asia Import', 'Só Marcas'), nunca o id mockado
+      // ('xbz'|'stricker'|'asia'|'somarcas'). A comparação antiga (p.brand === supplier.id e
+      // p.supplier_reference === supplier.id) jamais casava -> contagem sempre 0. Passamos a casar
+      // por tokens normalizados (>=3 chars) do nome do fornecedor presentes no brand.
+      const sid = supplier.id;
+      const supTokens = normalizeProductSearch(supplier.name)
+        .split(/[\s|]+/)
+        .filter((t) => t.length >= 3);
+      const productCount = availableProducts.filter((p) => {
+        if (p.supplier?.id && p.supplier.id === sid) return true;
+        if (!p.brand) return false;
+        const normalizedBrand = normalizeProductSearch(p.brand); // const estreita o tipo antes do closure
+        return supTokens.some((t) => normalizedBrand.includes(t));
+      }).length;
+      if (productCount === 0 && availableProducts.length > 0) return;
       results.push({
         type: 'supplier',
-        id: supplier.id,
+        id: sid,
         label: supplier.name,
         sublabel: `${productCount} produtos`,
         icon: '🏭',
@@ -175,16 +256,38 @@ export function useSearch(products: Product[] = []) {
     return results;
   }, [query, history, availableProducts, productFuse, categoryFuse, supplierFuse]);
 
-  // Quick suggestions (popular/trending)
-  const quickSuggestions = useMemo(() => {
-    return [
-      { label: 'Canetas', icon: '🖊️' },
-      { label: 'Garrafas', icon: '🍶' },
-      { label: 'Ecológico', icon: '🌱' },
-      { label: 'Tecnologia', icon: '💻' },
-      { label: 'Kits', icon: '🎁' },
-    ];
-  }, []);
+  // Total count of products matching the search term (including those beyond
+  // the 30-item display limit). Used by SmartSearchInput "Ver todos N resultados".
+  const totalProductMatches = useMemo(() => {
+    const searchTerm = query.trim();
+    if (!searchTerm || searchTerm.length < 2) return 0;
+    return rankProductSearchResults(availableProducts, searchTerm, productFuse).length;
+  }, [query, availableProducts, productFuse]);
+
+  // FIX 2026-06-15 (quick-suggestions-real-categories): chips derivados das top-5
+  // categorias REAIS do DB (por contagem de produtos no catálogo carregado).
+  // Cada chip tem type:'category' + id UUID → click aplica filtro real via onSelect,
+  // não busca textual. Enquanto carrega (availableProducts vazio) retorna [] (sem chips).
+  const quickSuggestions = useMemo<SearchResult[]>(() => {
+    if (!realCategories?.length || availableProducts.length === 0) return [];
+    // Contagem O(n): Map de category_id → count
+    const catCounts = new Map<string, number>();
+    for (const p of availableProducts) {
+      if (p.category_id) catCounts.set(p.category_id, (catCounts.get(p.category_id) ?? 0) + 1);
+    }
+    return effectiveCategorySource
+      .map((c) => ({ c, count: catCounts.get(String(c.id)) ?? 0 }))
+      .filter((x) => x.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(({ c, count }) => ({
+        type:     'category' as const,
+        id:       String(c.id),
+        label:    c.name,
+        sublabel: `${count} produtos`,
+        icon:     (c as RealCategory).icon ?? '📁',
+      }));
+  }, [realCategories, availableProducts, effectiveCategorySource]);
 
   return {
     query,
@@ -196,5 +299,6 @@ export function useSearch(products: Product[] = []) {
     removeFromHistory: (term: string) => removeFromHistory(`history-${term}`),
     clearHistory,
     isLoaded: true,
+    totalProductMatches,
   };
 }

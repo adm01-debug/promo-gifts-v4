@@ -62,7 +62,7 @@ const getStockStatusInfo = (status: string) => {
       return { label: 'Estoque baixo', class: 'bg-warning/10 text-warning border-warning/20' };
     case 'out-of-stock':
       return {
-        label: 'Sem estoque',
+        label: 'Estoque zerado',
         class: 'bg-destructive/10 text-destructive border-destructive/20',
       };
     default:

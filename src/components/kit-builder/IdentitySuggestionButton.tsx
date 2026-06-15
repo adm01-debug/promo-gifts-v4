@@ -3,7 +3,7 @@
  * tag+cor+ícone. Usado quando a identidade está vazia ou genérica.
  */
 import { useState } from 'react';
-import * as Lucide from 'lucide-react';
+import { Package, type LucideIcon } from 'lucide-react';
 import { Sparkles, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +20,8 @@ interface Props {
 }
 
 function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, Lucide.LucideIcon>)[name];
-  return I ?? Lucide.Package;
+  const I = (Lucide as unknown as Record<string, LucideIcon>)[name];
+  return I ?? Package;
 }
 
 export function IdentitySuggestionButton({ kitName, items, description, current, onApply }: Props) {

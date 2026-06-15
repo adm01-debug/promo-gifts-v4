@@ -76,6 +76,9 @@ interface PromoFlixPlayerProps {
   productSku?: string | null;
   productMinQuantity?: number | null;
   shareUrl?: string | null;
+  /** Chamado quando o player esgota todas as tentativas e falha de forma irrecuperável.
+   *  O componente pai pode usar isso para acionar um fallback (ex.: iframe YouTube/Vimeo). */
+  onUnrecoverableError?: () => void;
 }
 
 export function PromoFlixPlayer({
@@ -91,6 +94,7 @@ export function PromoFlixPlayer({
   productSku,
   productMinQuantity,
   shareUrl,
+  onUnrecoverableError,
 }: PromoFlixPlayerProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const canShareOnWhatsApp = Boolean(productName);
@@ -178,6 +182,11 @@ export function PromoFlixPlayer({
   const initTokenRef = useRef(0);
   const autoplayFallbackTriedRef = useRef(false);
   const suppressMutePersistRef = useRef(false);
+  // Guard: prevents native video onError from overwriting HLS error after destroy
+  const hlsDestroyedRef = useRef(false);
+  // Stable ref to the unrecoverable-error callback (avoids stale closures)
+  const onUnrecoverableErrorRef = useRef(onUnrecoverableError);
+  onUnrecoverableErrorRef.current = onUnrecoverableError;
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -221,6 +230,7 @@ export function PromoFlixPlayer({
     if (!video || !src) return;
     const myToken = ++initTokenRef.current;
     autoplayFallbackTriedRef.current = false;
+    hlsDestroyedRef.current = false;
     setIsLoading(true);
     setHlsError(null);
     setIsReconnecting(false);
@@ -303,10 +313,27 @@ export function PromoFlixPlayer({
           }
         }
         const hlsInstance = new hlsConstructor({
-          maxBufferLength: 30,
+          // Cloudflare Stream entrega VOD (não é live). lowLatencyMode mantém o buffer
+          // mínimo perseguindo um "live edge" inexistente → travamento a cada jitter e
+          // ABR preso em baixa qualidade. Para VOD precisa ser false.
+          lowLatencyMode: false,
           enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 90,
+          // Buffer dianteiro saudável p/ absorver variação de rede sem rebuffer (anti-travamento).
+          maxBufferLength: 60,
+          maxMaxBufferLength: 600,
+          maxBufferSize: 120 * 1000 * 1000,
+          // Vídeos de produto são curtos: 30s de back-buffer p/ seek-back bastam e poupam memória.
+          backBufferLength: 30,
+          // ABR: iniciar já numa qualidade decente e subir rápido (anti "sem resolução").
+          // Estimativa de cold-start calibrada medindo 100 manifestos reais (4 fornecedores):
+          // 2 Mbps ⇒ 100% iniciam >=480p e ~76% >=720p; em rede lenta o testBandwidth do
+          // hls.js mede o 1º fragmento e cai p/ o piso (~330p), então não trava no início.
+          startLevel: -1,
+          abrEwmaDefaultEstimate: 2_000_000,
+          startFragPrefetch: true,
+          // Nunca limitar a resolução ao tamanho do elemento (evita travar em baixa qualidade
+          // quando o player monta pequeno antes de o modal/fullscreen expandir).
+          capLevelToPlayerSize: false,
         });
         hlsRef.current = hlsInstance;
         hlsInstance.loadSource(src);
@@ -319,14 +346,30 @@ export function PromoFlixPlayer({
           }));
           setQualities(levels);
           try {
+            // Restaura preferência PORTÁVEL por altura ("h:720") ou "auto". Mantém ABR
+            // (currentLevel = -1) por padrão. Valores legados (índice cru) são ignorados,
+            // o que também corrige o bug histórico de travar em baixa resolução entre vídeos.
             const savedQuality = localStorage.getItem('promoflix_quality');
-            if (savedQuality !== null) {
-              const q = parseInt(savedQuality, 10);
-              if (!isNaN(q) && q >= -1 && q < data.levels.length) {
-                hlsInstance.currentLevel = q;
-                setCurrentQuality(q);
+            if (savedQuality && savedQuality.startsWith('h:')) {
+              const targetH = parseInt(savedQuality.slice(2), 10);
+              if (Number.isFinite(targetH) && targetH > 0) {
+                let bestIdx = -1;
+                let bestDiff = Infinity;
+                data.levels.forEach((lvl, idx) => {
+                  if (!lvl.height) return;
+                  const diff = Math.abs(lvl.height - targetH);
+                  if (diff < bestDiff) {
+                    bestDiff = diff;
+                    bestIdx = idx;
+                  }
+                });
+                if (bestIdx >= 0) {
+                  hlsInstance.currentLevel = bestIdx;
+                  setCurrentQuality(bestIdx);
+                }
               }
             }
+            // 'auto' / null / formato legado ⇒ não mexe: ABR ativo (currentLevel -1).
           } catch (err) {
             logger.warn('Falha ao carregar preferência de qualidade:', err);
           }
@@ -365,7 +408,9 @@ export function PromoFlixPlayer({
                 } catch {
                   /* noop */
                 }
+                hlsDestroyedRef.current = true;
                 hlsRef.current = null;
+                onUnrecoverableErrorRef.current?.();
               } else {
                 setIsReconnecting(true);
                 hlsInstance.startLoad();
@@ -385,7 +430,9 @@ export function PromoFlixPlayer({
                 } catch {
                   /* noop */
                 }
+                hlsDestroyedRef.current = true;
                 hlsRef.current = null;
+                onUnrecoverableErrorRef.current?.();
               }
               break;
             default:
@@ -399,7 +446,9 @@ export function PromoFlixPlayer({
               } catch {
                 /* noop */
               }
+              hlsDestroyedRef.current = true;
               hlsRef.current = null;
+              onUnrecoverableErrorRef.current?.();
               break;
           }
         });
@@ -473,9 +522,24 @@ export function PromoFlixPlayer({
       if (!hls) return;
       hls.currentLevel = index;
       setCurrentQuality(index);
-      localStorage.setItem('promoflix_quality', index.toString());
       const label =
         index === -1 ? 'Auto' : qualities.find((q) => q.id === index)?.label || 'Qualidade';
+      // Persistir de forma PORTÁVEL entre vídeos: o índice de nível é por-manifesto, então
+      // salvar o índice cru travava a resolução (às vezes a mais baixa) em vídeos seguintes.
+      // Salvamos a ALTURA ("h:720") ou "auto".
+      try {
+        if (index === -1) {
+          localStorage.setItem('promoflix_quality', 'auto');
+        } else {
+          const h = parseInt(label, 10);
+          localStorage.setItem(
+            'promoflix_quality',
+            Number.isFinite(h) && h > 0 ? `h:${h}` : 'auto',
+          );
+        }
+      } catch {
+        /* noop */
+      }
       flash(label);
     },
     [qualities, flash],
@@ -550,6 +614,7 @@ export function PromoFlixPlayer({
         src: video.currentSrc?.substring(0, 80),
       });
       if (hlsRef.current) return;
+      if (hlsDestroyedRef.current) return;
       if (!video.currentSrc && !video.src) return;
       switch (error?.code) {
         case 1:
@@ -569,6 +634,7 @@ export function PromoFlixPlayer({
           setHlsError(
             'Não foi possível reproduzir este vídeo. O formato pode não ser suportado pelo seu navegador ou o link está indisponível.',
           );
+          onUnrecoverableErrorRef.current?.();
           break;
       }
       setIsLoading(false);

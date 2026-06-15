@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Search, X, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce, useSearch, useSearchHistory, type SearchResult } from '@/hooks/common';
+import { type Product } from '@/hooks/products';
 import { useSpeechRecognition } from '@/hooks/intelligence';
 import { GroupedSearchResults } from './SearchResultGroups';
 
@@ -27,6 +28,8 @@ interface SmartSearchInputProps {
   onSearch?: (query: string) => void;
   className?: string;
   autoFocus?: boolean;
+  /** Produto já carregados para autocomplete preciso de categoria/fornecedor (#4). */
+  products?: Product[];
 }
 
 export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps>(
@@ -38,6 +41,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
       className,
       autoFocus = false,
       inputId = 'search',
+      products,
     },
     _ref,
   ) {
@@ -59,7 +63,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
     const [tooltipVisible, setTooltipVisible] = useState(false);
     // ──────────────────────────────────────────────────────────────────────────
 
-    const { query, setQuery, suggestions, quickSuggestions, clearHistory } = useSearch();
+    const { query, setQuery, suggestions, quickSuggestions, clearHistory, totalProductMatches } = useSearch(products);
 
     const { history, addToHistory, removeFromHistory } = useSearchHistory('general');
 
@@ -266,7 +270,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
             className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-border bg-popover shadow-xl duration-150 animate-in fade-in zoom-in-[0.98] slide-in-from-top-1"
             role="listbox"
           >
-            <ScrollArea className="max-h-[420px]">
+            <ScrollArea className="max-h-[520px]">
               {query && suggestions.length > 0 && (
                 <GroupedSearchResults
                   suggestions={suggestions}
@@ -336,14 +340,16 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     <div className="flex flex-wrap gap-2 px-2 py-2">
                       {quickSuggestions.map((suggestion, index) => (
                         <div
-                          key={suggestion.label}
+                          key={suggestion.id ?? suggestion.label}
                           className="animate-in fade-in zoom-in-90"
                           style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
                         >
                           <Badge
                             variant="secondary"
                             className="cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-primary-foreground"
-                            onClick={() => submitSearch(suggestion.label)}
+                            // FIX 2026-06-15: handleSelectResult com type:'category' + UUID
+                            // → onSelect em FiltersPage aplica filtro real (não busca textual).
+                            onClick={() => handleSelectResult(suggestion)}
                           >
                             {suggestion.icon} {suggestion.label}
                           </Badge>
@@ -372,6 +378,22 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     <Search className="mr-1.5 h-3 w-3" />
                     Buscar "{query}" no catálogo completo
                   </Button>
+                </div>
+              )}
+              {/* Rodapé: quando Fuse encontrou mais de 30, oferece 'ver todos' */}
+              {query.trim().length >= 2 && totalProductMatches > 30 && (
+                <div className="border-t border-border/40 bg-muted/20 px-3 py-2">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => submitSearch(query)}
+                  >
+                    <span>
+                      Ver todos <strong className="text-foreground">{totalProductMatches}</strong> resultados
+                      {' '}para &ldquo;<span className="text-primary">{query}</span>&rdquo;
+                    </span>
+                    <span className="text-primary text-sm">→</span>
+                  </button>
                 </div>
               )}
             </ScrollArea>

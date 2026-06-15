@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AnimatePresence, m as motion } from 'framer-motion';
@@ -52,7 +52,7 @@ interface VirtualizedProductGridProps {
   scrollResetKey?: string;
 }
 
-export function VirtualizedProductGrid({
+function VirtualizedProductGridInner({
   products,
   isLoading = false,
   hasMore = false,
@@ -454,3 +454,6 @@ export function VirtualizedProductGrid({
     </div>
   );
 }
+
+export const VirtualizedProductGrid = memo(VirtualizedProductGridInner);
+VirtualizedProductGrid.displayName = 'VirtualizedProductGrid';

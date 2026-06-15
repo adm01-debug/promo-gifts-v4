@@ -6,6 +6,10 @@
  * 3. Restock cadence (frequent_restock flag)
  * Uses real data from mv_product_intelligence + mv_stock_velocity,
  * falls back to seeded mock data for demo/loading states.
+ *
+ * Os limiares e o liga/desliga de `hot-item` / `best-seller` vêm de
+ * `admin_settings.intelligence_badges` via {@link useIntelligenceBadgeSettingsValue},
+ * permitindo ajuste sem deploy.
  */
 import { useMemo } from 'react';
 import {
@@ -15,6 +19,7 @@ import {
   type ProductIntelligenceData,
 } from '@/hooks/intelligence';
 import { generateMockVelocities, generateMockIntelligence } from '@/lib/stock-chart-utils';
+import { useIntelligenceBadgeSettingsValue } from '@/hooks/admin/useIntelligenceBadgeSettings';
 
 type BadgeType =
   | 'featured'
@@ -23,16 +28,18 @@ type BadgeType =
   | 'emerging'
   | 'declining'
   | 'frequent-restock'
-  | 'last-units' // low stock + high velocity (stockout risk)
-  | 'best-seller' // top tier velocity
-  | 'class-a'; // ABC classification A
+  | 'last-units'
+  | 'best-seller'
+  | 'class-a';
 
 export interface IntelligenceBadge {
   type: BadgeType;
   label: string;
   icon: string;
-  color: string; // Tailwind class
+  color: string;
   priority: number;
+  /** Texto explicativo exibido no tooltip — descreve o critério/valor usado. */
+  description?: string;
 }
 
 export function useProductIntelligenceBadges(
@@ -44,10 +51,9 @@ export function useProductIntelligenceBadges(
 ) {
   const { data: intelligence, isLoading: loadingIntel } = useProductIntelligenceData(productId);
   const { data: velocity, isLoading: loadingVel } = useStockVelocity(productId);
+  const settings = useIntelligenceBadgeSettingsValue();
 
   const badges = useMemo((): IntelligenceBadge[] => {
-    // Mock types are structural supersets of the real types, so they assign
-    // cleanly. Annotating avoids the union collapsing to `{}`.
     const mockVels: StockVelocity[] = productId ? generateMockVelocities(productId) : [];
     const mockIntel: ProductIntelligenceData | null = productId
       ? generateMockIntelligence(productId)
@@ -56,40 +62,41 @@ export function useProductIntelligenceBadges(
     const effectiveIntel: ProductIntelligenceData | null = intelligence ?? mockIntel;
     const effectiveVels: StockVelocity[] = velocity?.length ? velocity : mockVels;
 
-    const badges: IntelligenceBadge[] = [];
+    const out: IntelligenceBadge[] = [];
 
-    // === 1. Catalog flags (real data from product table) ===
     if (catalogFlags?.featured) {
-      badges.push({
+      out.push({
         type: 'featured',
         label: 'Destaque',
         icon: '⭐',
         color: 'bg-amber-100 text-amber-800 border-amber-200',
         priority: 100,
+        description: 'Produto marcado como Destaque na ficha cadastral.',
       });
     }
     if (catalogFlags?.new_arrival) {
-      badges.push({
+      out.push({
         type: 'new-arrival',
         label: 'Lançamento',
         icon: '🌟',
         color: 'bg-blue-100 text-blue-800 border-blue-200',
         priority: 90,
+        description: 'Produto recém-cadastrado, sinalizado como Lançamento.',
       });
     }
 
-    // === 2. Hot item (from intelligence mv) ===
-    if (effectiveIntel?.is_hot_product) {
-      badges.push({
+    if (effectiveIntel?.is_hot_product && settings.hotItem.enabled) {
+      out.push({
         type: 'hot-item',
         label: 'Hot Item',
         icon: '🔥',
         color: 'bg-brand-primary-100 text-brand-primary-800 border-brand-primary-200',
         priority: 80,
+        description:
+          'Sinalizado como Hot Item pela Inteligência Comercial (alta procura + reposição recente).',
       });
     }
 
-    // === 3. Emergente (trend > 1.3) ===
     const bestVel = effectiveVels.length
       ? effectiveVels.reduce(
           (best: StockVelocity, v: StockVelocity) =>
@@ -100,70 +107,77 @@ export function useProductIntelligenceBadges(
     const trend = bestVel?.velocity_trend;
 
     if (trend && trend > 1.3) {
-      badges.push({
+      out.push({
         type: 'emerging',
         label: 'Emergente',
         icon: '📈',
         color: 'bg-green-100 text-green-800 border-green-200',
         priority: 70,
+        description: `Velocidade de venda subiu ${Math.round((trend - 1) * 100)}% vs período anterior.`,
       });
     } else if (trend && trend < 0.7) {
-      badges.push({
+      out.push({
         type: 'declining',
         label: 'Em queda',
         icon: '📉',
         color: 'bg-red-100 text-red-800 border-red-200',
         priority: 65,
+        description: `Velocidade de venda caiu ${Math.round((1 - trend) * 100)}% vs período anterior.`,
       });
     }
 
-    // === 4. ABC Class A ===
     if (effectiveIntel?.abc_classification === 'A') {
-      badges.push({
+      out.push({
         type: 'class-a',
         label: 'Classe A',
         icon: '🏆',
         color: 'bg-purple-100 text-purple-800 border-purple-200',
         priority: 60,
+        description: 'Classificação ABC: top de receita/giro no portfólio do fornecedor.',
       });
     }
 
-    // === 5. Restock freqüente ===
     if (effectiveIntel?.has_frequent_restock) {
-      badges.push({
+      out.push({
         type: 'frequent-restock',
         label: 'Reposição freq.',
         icon: '🔄',
         color: 'bg-cyan-100 text-cyan-800 border-cyan-200',
         priority: 50,
+        description: 'Fornecedor repõe estoque com frequência — baixo risco de ruptura.',
       });
     }
 
-    // === 6. Last units (stockout risk + high velocity) ===
     if (effectiveIntel?.is_stockout_risk) {
-      badges.push({
+      out.push({
         type: 'last-units',
         label: 'Últ. unidades',
         icon: '⚠️',
         color: 'bg-red-50 text-red-700 border-red-200',
         priority: 85,
+        description: 'Risco alto de ruptura: estoque baixo + velocidade alta.',
       });
     }
 
-    // === 7. Best-seller (top velocity) ===
     const avgDepletion = bestVel?.avg_daily_depletion_7d ?? 0;
-    if (avgDepletion >= 15) {
-      badges.push({
+    const minDepletion = settings.bestSeller.minAvgDailyDepletion7d;
+    if (
+      settings.bestSeller.enabled &&
+      Number.isFinite(avgDepletion) &&
+      avgDepletion >= minDepletion
+    ) {
+      out.push({
         type: 'best-seller',
         label: 'Best-seller',
         icon: '🏅',
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         priority: 75,
+        description: `Vende em média ${avgDepletion.toFixed(1)} un/dia nos últimos 7 dias (limite ≥ ${minDepletion}).`,
       });
     }
 
-    return badges.sort((a, b) => b.priority - a.priority);
-  }, [intelligence, velocity, catalogFlags, productId]);
+    return out.sort((a, b) => b.priority - a.priority);
+  }, [intelligence, velocity, catalogFlags, productId, settings]);
 
   return {
     badges,

@@ -2,7 +2,7 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback, lazy, Suspense } from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,8 +16,13 @@ import {
 } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
-import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
-import { ProductQuickView } from './ProductQuickView';
+// ── Lazy dialog imports — carregados apenas na primeira abertura ──────────────
+const AddToCollectionModal = lazy(() =>
+  import('@/components/collections/AddToCollectionModal').then((m) => ({ default: m.AddToCollectionModal })),
+);
+const ProductQuickView = lazy(() =>
+  import('./ProductQuickView').then((m) => ({ default: m.ProductQuickView })),
+);
 import { ProductCategoryBadges } from './ProductCategoryBadges';
 import { useLeafCategory } from '@/hooks/products/useProductLeafCategories';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
@@ -30,16 +35,29 @@ import {
 } from '@/utils/color-image-resolver';
 import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
-import { ProductSparkline } from './ProductSparkline';
-import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
-import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { ProductSales90dButton } from './ProductSales90dButton';
+import type { VariantActionMode } from './VariantPickerDialog';
+const VariantPickerDialog = lazy(() =>
+  import('./VariantPickerDialog').then((m) => ({ default: m.VariantPickerDialog })),
+);
+const CartSelectorDialog = lazy(() =>
+  import('@/components/cart/CartSelectorDialog').then((m) => ({ default: m.CartSelectorDialog })),
+);
+const CartCompanyPickerDialog = lazy(() =>
+  import('@/components/cart/CartCompanyPickerDialog').then((m) => ({ default: m.CartCompanyPickerDialog })),
+);
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { SharePreviewDialog } from './share/SharePreviewDialog';
+const SharePreviewDialog = lazy(() =>
+  import('./share/SharePreviewDialog').then((m) => ({ default: m.SharePreviewDialog })),
+);
 import { ProductCardImage } from './ProductCardImage';
 import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
+import { isProductKit } from '@/lib/products/kit-detection';
+import { useProductIntelligenceBadges } from '@/hooks/products/useProductIntelligenceBadges';
+import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
@@ -60,7 +78,7 @@ const getStockStatusColor = (status: string) => STOCK_STATUS_COLOR[status] ?? 'i
 const STOCK_STATUS_LABEL: Record<string, string> = {
   'in-stock': 'Em estoque',
   'low-stock': 'Estoque baixo',
-  'out-of-stock': 'Sem estoque',
+  'out-of-stock': 'Estoque zerado',
 };
 const getStockStatusLabel = (status: string) => STOCK_STATUS_LABEL[status] ?? 'Em estoque';
 
@@ -117,7 +135,20 @@ export const ProductCard = memo(
     const navigate = useNavigate();
     const { prefetchProduct } = usePrefetchProduct();
     const leafCategory = useLeafCategory(product.id);
+    const detectedIsKit = isProductKit(product, {
+      categoryName: leafCategory?.name,
+      categoryPath: leafCategory?.path,
+    });
+    const { badges: intelligenceBadges } = useProductIntelligenceBadges(product.id, {
+      featured: product.featured,
+      new_arrival: (product as { new_arrival?: boolean }).new_arrival,
+    });
+    const cardIntelligenceBadges = useMemo(
+      () => intelligenceBadges.filter((b) => b.type === 'best-seller' || b.type === 'hot-item'),
+      [intelligenceBadges],
+    );
     const [isHovered, setIsHovered] = useState(false);
+// ── Dialog states agrupados — 1 re-render por abertura de dialog ─────────
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
       | {
@@ -253,6 +284,7 @@ export const ProductCard = memo(
     const { displayName, isAIActive } = useWordMagic(product);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
     const [selectorOpen, setSelectorOpen] = useState(false);
+    const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
     const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
 
     const handleStatusClick = useCallback(
@@ -316,27 +348,14 @@ export const ProductCard = memo(
           setCollectionVariant(variantInfo);
           setCollectionModalOpen(true);
         } else if (variantPickerMode === 'quote') {
-          // Se temos múltiplos carrinhos, mostramos o seletor primeiro
-          if (carts.length > 1) {
-            setPendingVariant(variant);
+          // Sempre abre o seletor de carrinho/cliente (mesmo com 0/1 carrinhos),
+          // para permitir criar um carrinho novo para outro cliente naquele momento.
+          setPendingVariant(variant);
+          if (carts.length === 0) {
+            setCompanyPickerOpen(true);
+          } else {
             setSelectorOpen(true);
-            return;
           }
-
-          // Se tiver apenas 1 ou nenhum, segue o fluxo normal
-          addToActiveCart(
-            {
-              product_id: product.id,
-              product_name: product.name,
-              product_sku: product.sku || undefined,
-              product_image_url: variant?.selected_thumbnail || product.images?.[0],
-              product_price: product.price ?? 0,
-              quantity: product.minQuantity || 1,
-              color_name: variant?.color_name || undefined,
-              color_hex: variant?.color_hex || undefined,
-            },
-            carts.length === 1 ? carts[0].id : undefined,
-          );
         } else if (variantPickerMode === 'share') {
           setShareVariant(
             variant
@@ -350,7 +369,7 @@ export const ProductCard = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, product, addFavorite, addToCompare, carts, addToActiveCart],
+      [variantPickerMode, product, addFavorite, addToCompare, carts],
     );
 
     const markBusy = () => {
@@ -480,6 +499,10 @@ export const ProductCard = memo(
         ref={ref}
         data-testid="product-card"
         data-product-id={product.id}
+        data-product-name={product.name}
+        data-product-price={product.price ?? ''}
+        data-product-stock={product.stock ?? ''}
+        data-product-created-at={product.created_at ?? ''}
         className={cn(
           'card-lift card-glow group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card sm:rounded-2xl',
           'touch-manipulation transition-all duration-500 ease-out',
@@ -568,6 +591,8 @@ export const ProductCard = memo(
           priority={priority}
           onStatusClick={handleStatusClick}
           isUpdatingColor={isUpdatingColor}
+          categoryName={leafCategory?.name}
+          categoryPath={leafCategory?.path}
         />
 
 
@@ -640,9 +665,23 @@ export const ProductCard = memo(
               groups={product.groups}
               categoryUuid={leafCategory?.id ?? product.category_id}
               categoryPath={leafCategory?.path}
+              isKit={detectedIsKit}
               className="flex-wrap"
             />
           )}
+
+          {cardIntelligenceBadges.length > 0 && (
+            <div
+              className="mt-0.5 flex w-full min-w-0 flex-wrap items-center gap-1.5"
+              data-testid="product-card-intelligence-badges"
+            >
+              <IntelligenceBadges badges={cardIntelligenceBadges} className="gap-1.5" />
+            </div>
+          )}
+
+
+
+
 
           <div className="flex min-w-0 items-center justify-start gap-1.5">
             <div className="shrink-1 flex min-w-0 items-center gap-1">
@@ -747,12 +786,16 @@ export const ProductCard = memo(
                       'stock-indicator flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight sm:text-[10px]',
                       displayStatus === 'out-of-stock'
                         ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
-                        : getStockStatusColor(displayStatus),
+                        : displayStatus === 'low-stock'
+                          ? 'bg-warning text-warning-foreground'
+
+                          : getStockStatusColor(displayStatus),
                     )}
                   >
                     <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
                     <span className="whitespace-nowrap">{getStockStatusLabel(displayStatus)}</span>
                   </span>
+
                   <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
                     {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                   </span>
@@ -780,77 +823,139 @@ export const ProductCard = memo(
           )}
 
           <div className="border-t border-border/30 pt-1 sm:pt-1.5">
-            <div className="mb-0.5 flex items-center justify-between">
-              <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                Vendas 30d
-              </span>
-            </div>
-            <ProductSparkline productId={product.id} />
+            {(() => {
+              const activeVariantId =
+                activeColorName && liveVariants?.length
+                  ? (liveVariants.find(
+                      (v) => v.color_name?.toLowerCase() === activeColorName.toLowerCase(),
+                    )?.id ?? null)
+                  : null;
+              return (
+                <ProductSales90dButton
+                  productId={product.id}
+                  variantId={activeVariantId}
+                  variantLabel={activeVariantId ? activeColorName : null}
+                />
+              );
+            })()}
           </div>
         </div>
 
-        {/* Dialogs */}
-        <VariantPickerDialog
-          open={variantPickerOpen}
-          onOpenChange={setVariantPickerOpen}
-          productId={product.id}
-          productName={product.name}
-          mode={variantPickerMode}
-          onComplete={handleVariantComplete}
-        />
+        {/* Dialogs lazy — chunk carregado apenas na primeira abertura (zero custo em memória até então) */}
+        {variantPickerOpen && (
+          <Suspense fallback={null}>
+            <VariantPickerDialog
+              open={variantPickerOpen}
+              onOpenChange={setVariantPickerOpen}
+              productId={product.id}
+              productName={product.name}
+              mode={variantPickerMode}
+              onComplete={handleVariantComplete}
+            />
+          </Suspense>
+        )}
 
-        <CartSelectorDialog
-          open={selectorOpen}
-          onOpenChange={setSelectorOpen}
-          carts={carts}
-          productName={product.name}
-          canCreateMore={canCreateCart}
-          onSelect={(cartId) => {
-            addToActiveCart(
-              {
-                product_id: product.id,
-                product_name: product.name,
-                product_sku: product.sku || undefined,
-                product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
-                product_price: product.price ?? 0,
-                quantity: product.minQuantity || 1,
-                color_name: pendingVariant?.color_name || undefined,
-                color_hex: pendingVariant?.color_hex || undefined,
-              },
-              cartId,
-            );
-            setSelectorOpen(false);
-            setPendingVariant(null);
-          }}
-          onCreateNew={() => {
-            setSelectorOpen(false);
-            setPendingVariant(null);
-            // Redireciona para criação de novo carrinho se necessário ou deixa o usuário criar via header
-          }}
-        />
-        <AddToCollectionModal
-          open={collectionModalOpen}
-          onOpenChange={setCollectionModalOpen}
-          productId={product.id}
-          productName={product.name}
-          variant={collectionVariant}
-        />
-        <ProductQuickView
-          product={product}
-          open={quickViewOpen}
-          onOpenChange={setQuickViewOpen}
-          isFavorited={isFavorited}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          onShare={onShare}
-        />
-        <SharePreviewDialog
-          open={shareDialogOpen}
-          onOpenChange={setShareDialogOpen}
-          product={product}
-          selectedVariant={shareVariant}
-        />
+        {selectorOpen && (
+          <Suspense fallback={null}>
+            <CartSelectorDialog
+              open={selectorOpen}
+              onOpenChange={setSelectorOpen}
+              carts={carts}
+              productName={product.name}
+              canCreateMore={canCreateCart}
+              onSelect={(cartId) => {
+                addToActiveCart(
+                  {
+                    product_id: product.id,
+                    product_name: product.name,
+                    product_sku: product.sku || undefined,
+                    product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                    product_price: product.price ?? 0,
+                    quantity: product.minQuantity || 1,
+                    color_name: pendingVariant?.color_name || undefined,
+                    color_hex: pendingVariant?.color_hex || undefined,
+                  },
+                  cartId,
+                );
+                setSelectorOpen(false);
+                setPendingVariant(null);
+              }}
+              onCreateNew={() => {
+                setSelectorOpen(false);
+                setCompanyPickerOpen(true);
+              }}
+            />
+          </Suspense>
+        )}
+
+        {/* Picker de empresa — cria carrinho na hora e adiciona o item pendente */}
+        {companyPickerOpen && (
+          <Suspense fallback={null}>
+            <CartCompanyPickerDialog
+              open={companyPickerOpen}
+              onOpenChange={(o) => {
+                setCompanyPickerOpen(o);
+                if (!o) setPendingVariant(null);
+              }}
+              onCreated={(newCartId) => {
+                if (newCartId) {
+                  addToActiveCart(
+                    {
+                      product_id: product.id,
+                      product_name: product.name,
+                      product_sku: product.sku || undefined,
+                      product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                      product_price: product.price ?? 0,
+                      quantity: product.minQuantity || 1,
+                      color_name: pendingVariant?.color_name || undefined,
+                      color_hex: pendingVariant?.color_hex || undefined,
+                    },
+                    newCartId,
+                  );
+                }
+                setPendingVariant(null);
+              }}
+            />
+          </Suspense>
+        )}
+
+        {collectionModalOpen && (
+          <Suspense fallback={null}>
+            <AddToCollectionModal
+              open={collectionModalOpen}
+              onOpenChange={setCollectionModalOpen}
+              productId={product.id}
+              productName={product.name}
+              variant={collectionVariant}
+            />
+          </Suspense>
+        )}
+
+        {quickViewOpen && (
+          <Suspense fallback={null}>
+            <ProductQuickView
+              product={product}
+              open={quickViewOpen}
+              onOpenChange={setQuickViewOpen}
+              isFavorited={isFavorited}
+              onToggleFavorite={onToggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              onShare={onShare}
+            />
+          </Suspense>
+        )}
+
+        {shareDialogOpen && (
+          <Suspense fallback={null}>
+            <SharePreviewDialog
+              open={shareDialogOpen}
+              onOpenChange={setShareDialogOpen}
+              product={product}
+              selectedVariant={shareVariant}
+            />
+          </Suspense>
+        )}
       </article>
     );
   }),

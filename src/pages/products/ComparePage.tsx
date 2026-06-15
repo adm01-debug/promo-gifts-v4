@@ -12,6 +12,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
+import { getCatalogStockStatusLabel } from '@/lib/catalog-stock-status';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,18 +95,16 @@ export default function ComparePage() {
 
   const products: Product[] = compareEntries.map((e) => e.product);
 
-  const getStockStatusLabel = (status: string) => {
-    switch (status) {
-      case 'in-stock':
-        return { label: 'Em estoque', color: 'text-success' };
-      case 'low-stock':
-        return { label: 'Estoque baixo', color: 'text-warning' };
-      case 'out-of-stock':
-        return { label: 'Sem estoque', color: 'text-destructive' };
-      default:
-        return { label: 'Em estoque', color: 'text-success' };
-    }
+  // Rótulo vem da fonte única (catalog-stock-status); cor Tailwind é presentational, fica local.
+  const STATUS_COLOR: Record<string, string> = {
+    'in-stock': 'text-success',
+    'low-stock': 'text-warning',
+    'out-of-stock': 'text-destructive',
   };
+  const getStockStatusLabel = (status: string) => ({
+    label: getCatalogStockStatusLabel(status),
+    color: STATUS_COLOR[status] ?? 'text-success',
+  });
 
   const handleCreateQuote = () => {
     const productParams = compareItems.map((i) => i.productId).join(',');

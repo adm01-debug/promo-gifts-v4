@@ -28,7 +28,7 @@ const formatPrice = (price: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
 const getStockStatus = (qty: number) => {
-  if (qty <= 0) return { label: 'Sem estoque', color: 'text-destructive' };
+  if (qty <= 0) return { label: 'Estoque zerado', color: 'text-destructive' };
   if (qty <= 10) return { label: 'Estoque baixo', color: 'text-warning' };
   return { label: 'Em estoque', color: 'text-success' };
 };

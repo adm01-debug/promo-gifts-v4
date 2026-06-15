@@ -3,7 +3,7 @@
  * Follows the same info pattern as ProductCard (catalog).
  */
 
-import { memo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -25,6 +25,8 @@ import {
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
+import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { getSupplierColors } from '@/lib/supplier-colors';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
@@ -33,6 +35,12 @@ interface NoveltyCardProps {
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
   colors?: readonly ColorDotLike[];
+  /**
+   * Quando true, renderiza placeholders no lugar do preço e do estoque.
+   * Útil enquanto os dados de pricing/estoque ainda estão sendo carregados
+   * (ex.: hidratação assíncrona após o primeiro paint do card).
+   */
+  isPriceStockLoading?: boolean;
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
@@ -74,15 +82,31 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   onSelect,
   onStatusClick,
   colors,
+  isPriceStockLoading = false,
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
+
+  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+  // num swatch troca a foto principal pela imagem da variante selecionada.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
 
   return (
     <article
       className={cn(
         'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-md',
-        'h-[420px] max-h-[420px] min-h-[420px]', // Altura fixa para paridade no grid
+        // Altura mínima estável para o grid não "quicar"; sem `max-h` para
+        // permitir crescimento com conteúdo (categoria/SKU/nome longos) e
+        // evitar overflow clipping que invalida a medição do virtualizer
+        // (causa de scroll inconsistente no /novidades).
+        'min-h-[420px]',
         isSelected && 'border-primary ring-2 ring-primary/20',
       )}
       onClick={() => onSelect?.(product.product_id)}
@@ -117,7 +141,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           productId={product.product_id}
           productName={product.product_name}
           productSku={product.product_sku}
-          productImageUrl={product.product_image}
+          productImageUrl={activeImage}
           productPrice={product.base_price ?? 0}
           productMinQuantity={product.min_quantity || 1}
           isOutOfStock={product.stock_status === 'out-of-stock'}
@@ -127,8 +151,11 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
         <HoverSetImage
-          primary={product.product_image}
-          set={product.product_set_image}
+          key={activeImage ?? product.product_image ?? 'placeholder'}
+          primary={activeImage}
+          // Desativa o crossfade "todas as cores" quando o usuário está navegando
+          // pelas variantes — a foto da cor selecionada tem prioridade.
+          set={activeColorName ? null : product.product_set_image}
           alt={product.product_name}
           fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
         />
@@ -158,49 +185,121 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-0.5">
-        <p className="line-clamp-2 text-sm font-medium leading-tight">
+      <div className="flex flex-1 flex-col gap-1">
+        {/* 1 — Categoria */}
+        {product.category_id && product.category_name && (
+          <ProductCategoryBadges
+            category={{ id: product.category_id, name: product.category_name }}
+            categoryUuid={product.category_id}
+            className="flex-wrap"
+          />
+        )}
+
+        {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
+        {(product.supplier_name || product.product_sku) && (
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            {product.supplier_name ? (
+              <span
+                className="flex min-w-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                title={`Fornecedor: ${product.supplier_name}`}
+              >
+                <Building2
+                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier_name).text)}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{product.supplier_name}</span>
+              </span>
+            ) : (
+              <span />
+            )}
+            {product.product_sku && (
+              <span
+                className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
+                aria-label={`Código do produto: ${product.product_sku}`}
+              >
+                {product.product_sku}
+              </span>
+            )}
+          </div>
+        )}
+
+
+        {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
+        <p
+          className="line-clamp-2 min-h-[2.5rem] break-words text-sm font-medium leading-tight"
+          title={product.product_name ?? undefined}
+        >
           {product.product_name ?? '—'}
         </p>
-        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
-
-        {/* Categoria + Fornecedor */}
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          {product.category_name && (
-            <span className="flex items-center gap-0.5 truncate" title={product.category_name}>
-              <FolderTree className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{product.category_name}</span>
-            </span>
-          )}
-          {product.supplier_name && (
-            <span className="flex items-center gap-0.5 truncate" title={product.supplier_name}>
-              <Building2 className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{product.supplier_name}</span>
-            </span>
-          )}
-        </div>
 
         <div className="mt-0.5">
-          <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="sm"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
 
-        {/* Preço + Estoque */}
-        <div className="flex items-center justify-between gap-2">
-          {product.base_price !== null && (
-            <p className="text-sm font-semibold text-primary">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                product.base_price,
-              )}
-            </p>
+        {/* Preço + Estoque — ancorados ao final do card; altura mínima reservada
+            para não colapsar enquanto carrega ou quando os valores faltam. */}
+        <div
+          data-testid="novelty-card-footer"
+          className="mt-auto flex min-h-[2.75rem] items-end justify-between gap-2 pt-2"
+        >
+          {isPriceStockLoading ? (
+            <div
+              data-testid="novelty-card-price-skeleton"
+              className="flex flex-col gap-1"
+              aria-busy="true"
+              aria-label="Carregando preço"
+            >
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ) : product.base_price !== null &&
+            product.base_price !== undefined &&
+            Number.isFinite(product.base_price) &&
+            product.base_price > 0 ? (
+            <div data-testid="novelty-card-price" className="flex flex-col leading-tight">
+              <span
+                data-testid="novelty-card-price-prefix"
+                className="text-[10px] font-medium text-muted-foreground"
+              >
+                A partir de
+              </span>
+              <p className="text-sm font-semibold text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  product.base_price,
+                )}
+              </p>
+            </div>
+          ) : (
+            <span
+              data-testid="novelty-card-price-unavailable"
+              className="text-xs italic text-muted-foreground"
+            >
+              Sob consulta
+            </span>
           )}
-          <StockBadge
-            status={
-              product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
-            }
-            quantity={product.stock_quantity ?? 0}
-            showQuantity
-            size="sm"
-          />
+          {isPriceStockLoading ? (
+            <Skeleton
+              data-testid="novelty-card-stock-skeleton"
+              className="h-5 w-16 rounded-full"
+              aria-label="Carregando estoque"
+            />
+          ) : (
+            <StockBadge
+              status={
+                product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
+              }
+              quantity={product.stock_quantity ?? 0}
+              showQuantity
+              size="sm"
+            />
+          )}
         </div>
       </div>
     </article>
@@ -217,6 +316,16 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   colors,
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
+
+  // Mini-carrossel de variantes — mesmo comportamento do grid.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
 
   return (
     <article
@@ -252,11 +361,12 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {product.product_image ? (
+        {activeImage ? (
           <img
-            src={product.product_image}
+            key={activeImage}
+            src={activeImage}
             alt={product.product_name}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-contain transition-opacity duration-200"
             loading="lazy"
           />
         ) : (
@@ -304,7 +414,14 @@ export const NoveltyListCard = memo(function NoveltyListCard({
               {product.supplier_name}
             </span>
           )}
-          <ProductColorSwatches colors={colors} max={5} size="xs" hideWhenEmpty={false} />
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="xs"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
         </div>
       </div>
 

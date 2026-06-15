@@ -10,6 +10,13 @@
  * 5 - Comparar
  * 6 - Quick View
  * 7 - Compartilhar
+ *
+ * FIX 2026-06-15: Removido disabled={isOutOfStock} de ambos os botões.
+ * Em brindes corporativos, orçamentos e pré-pedidos para produtos sem
+ * estoque são práticas normais — itens são produzidos/importados sob
+ * demanda. O badge 'ESTOQUE ZERADO' já comunica a situação visualmente.
+ * disabled em <button> bloqueia TODOS os eventos de clique silenciosamente
+ * (comportamento nativo HTML), causando a percepção de "nada acontece".
  */
 import { memo } from 'react';
 import { Heart, Share2, Eye, GitCompare, FolderPlus, FileText, Plus } from 'lucide-react';
@@ -52,7 +59,7 @@ export const ProductCardActions = memo(function ProductCardActions({
   canAddToCompare,
   actionsOpen,
   onToggleActions,
-  isOutOfStock = false,
+  isOutOfStock: _isOutOfStock = false,
   onFavorite,
   onCompare,
   onOpenVariantPicker,
@@ -105,7 +112,9 @@ export const ProductCardActions = memo(function ProductCardActions({
             : 'pointer-events-none -translate-y-4 scale-75 opacity-0',
         )}
       >
-        {/* 1 - Carrinho */}
+        {/* 1 - Carrinho
+            FIX 2026-06-15: disabled removido — pré-pedidos/orçamentos para
+            produtos sem estoque são válidos em brindes corporativos. */}
         <QuickAddToQuote
           productId={productId}
           productName={productName}
@@ -114,18 +123,20 @@ export const ProductCardActions = memo(function ProductCardActions({
           productPrice={productPrice}
           minQuantity={productMinQuantity}
           variant="icon"
-          disabled={isOutOfStock}
-          className="h-9 min-h-[36px] w-9 min-w-[36px] border-primary/20 bg-primary text-primary-foreground shadow-primary/20 hover:scale-110 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 md:h-11 md:min-h-[44px] md:w-11 md:min-w-[44px]"
+          disabled={false}
+          className="h-9 min-h-[36px] w-9 min-w-[36px] border-primary/20 bg-primary text-primary-foreground shadow-primary/20 hover:scale-110 hover:bg-primary/90 md:h-11 md:min-h-[44px] md:w-11 md:min-w-[44px]"
         />
 
-        {/* 2 - Orçamento */}
+        {/* 2 - Orçamento
+            FIX 2026-06-15: disabled removido — orçamentos para produtos sem
+            estoque são padrão em brindes (produção/importação sob demanda).
+            O badge 'ESTOQUE ZERADO' já comunica a situação ao usuário. */}
         <ActionButton
           icon={FileText}
-          label={isOutOfStock ? 'Produto sem estoque' : 'Orçamento'}
-          disabled={isOutOfStock}
+          label="Orçamento"
           className={cn(
             btnClass,
-            'border-success/20 bg-success text-success-foreground shadow-success/20 hover:scale-110 hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100',
+            'border-success/20 bg-success text-success-foreground shadow-success/20 hover:scale-110 hover:bg-success/90',
           )}
           testId="product-card-quote"
           onClick={(e) => {

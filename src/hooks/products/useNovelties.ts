@@ -1,3 +1,4 @@
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
@@ -162,8 +163,7 @@ function toNovelty(p: RawProduct): NoveltyWithDetails {
   ).toISOString();
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
-  const stockStatus: NoveltyWithDetails['stock_status'] =
-    stock === 0 ? 'out-of-stock' : stock < minQty ? 'low-stock' : 'in-stock';
+  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
 
   return {
     novelty_id: p.id,

@@ -153,7 +153,7 @@ export function StockBadge({ product, quantity, className }: StockAlertProps) {
             {alertLevel === 'ok' && `${stockInfo.available} un`}
             {alertLevel === 'caution' && 'Estoque baixo'}
             {alertLevel === 'warning' && 'Verificar'}
-            {alertLevel === 'critical' && 'Sem estoque'}
+            {alertLevel === 'critical' && 'Estoque zerado'}
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="top">

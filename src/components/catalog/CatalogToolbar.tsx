@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, memo } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import type { ViewMode, SortOption } from '@/hooks/products/useCatalogState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 
 const LazyFilterPanel = lazyWithRetry(() =>
   import('@/components/filters/FilterPanel').then((m) => ({ default: m.FilterPanel })),
@@ -57,7 +57,7 @@ interface CatalogToolbarProps {
   selectedCount?: number;
 }
 
-export function CatalogToolbar({
+function CatalogToolbarInner({
   filters,
   setFilters,
   activeFiltersCount,
@@ -214,3 +214,6 @@ export function CatalogToolbar({
     </div>
   );
 }
+
+export const CatalogToolbar = memo(CatalogToolbarInner);
+CatalogToolbar.displayName = 'CatalogToolbar';

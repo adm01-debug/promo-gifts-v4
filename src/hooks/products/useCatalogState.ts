@@ -34,6 +34,9 @@ import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
 // BUG-SORT-01 FIX: importar SORT_OPTIONS para derivar VALID_SORT_VALUES e
 // validar sort params de URL/localStorage antes de aplicar ao state.
 import { SORT_OPTIONS } from '@/constants/filters';
+// Reset diário de defaults do catálogo (regra do PO): no primeiro acesso
+// do dia, viewMode='grid', colunas=6, sortBy='newest'.
+import { ensureDailyCatalogDefaults } from '@/hooks/products/dailyCatalogDefaults';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
@@ -47,10 +50,27 @@ export type SortOption =
   | 'best-seller-promo';
 
 const VIEW_MODE_KEY = 'catalog-view-mode';
+const SORT_SESSION_KEY = 'catalog:sortBy';
 
 // BUG-SORT-01 FIX: Conjunto dos valores válidos derivado do SSOT (SORT_OPTIONS).
 // Declarado fora do hook para não ser recriado a cada render.
 const VALID_SORT_VALUES = new Set<string>(SORT_OPTIONS.map((o) => o.value));
+
+function getSessionSortPreference(): string | null {
+  try {
+    return typeof window !== 'undefined' ? window.sessionStorage.getItem(SORT_SESSION_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionSortPreference(sortBy: SortOption): void {
+  try {
+    if (typeof window !== 'undefined') window.sessionStorage.setItem(SORT_SESSION_KEY, sortBy);
+  } catch {
+    /* sessionStorage indisponivel — mantém somente em memoria */
+  }
+}
 
 /**
  * BUG-SORT-09 FIX: Mapa de aliases conhecidos → valores canônicos de SortOption.
@@ -68,7 +88,7 @@ const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
 /**
  * BUG-SORT-01 FIX: Valida e normaliza um sort value arbitrário.
  * BUG-SORT-09 FIX: Normaliza aliases conhecidos para o valor canônico antes
- * de validar no SSOT. Retorna 'name' (default seguro) para qualquer valor
+ * de validar no SSOT. Retorna 'newest' (default seguro) para qualquer valor
  * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
  * de voice agent quebrem o Select UI e o URL sync loop.
  */
@@ -101,6 +121,11 @@ function getPersistedViewMode(): ViewMode {
 const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
+  // PO rule: primeiro acesso do dia → grid 6 colunas + sort 'Mais recentes'.
+  // Roda ANTES dos useState para que os inicializadores leiam os defaults.
+  // Idempotente após o primeiro acesso do dia (marca em localStorage).
+  ensureDailyCatalogDefaults();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -124,7 +149,7 @@ export function useCatalogState() {
   const { registerProducts } = useProductsContext();
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
-  const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
+  const { updatePreferences } = useCatalogPreferences();
   // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
   // dispara render extra (ref não re-renderiza) e a escrita via effect é
   // concurrent-safe. O valor só é LIDO quando isTransitioning=true.
@@ -169,17 +194,19 @@ export function useCatalogState() {
   const rawUrlSort = searchParams.get('sort');
   const initialSortBy: SortOption = rawUrlSort
     ? validateSortOption(rawUrlSort)
-    : validateSortOption(preferences.sortBy);
+    : validateSortOption(getSessionSortPreference());
 
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
+  const pendingLocalSortRef = useRef<SortOption | null>(null);
 
-  // Sync sortBy with preferences once loaded
+  // Sync sortBy with the current browser session only.
+  // PO rule: a fresh login/tab starts in "Mais Recentes"; old cloud/local prefs must not override it.
   useEffect(() => {
-    if (prefsLoaded && preferences.sortBy && !searchParams.get('sort')) {
-      // BUG-SORT-01 FIX: validar o valor de preferência antes de aplicar ao state.
-      setSortByState(validateSortOption(preferences.sortBy));
+    const storedSort = getSessionSortPreference();
+    if (storedSort && !searchParams.get('sort')) {
+      setSortByState(validateSortOption(storedSort));
     }
-  }, [prefsLoaded, preferences.sortBy, searchParams]);
+  }, [searchParams]);
 
   const setSortBy = useCallback(
     (s: SortOption | string) => {
@@ -190,6 +217,8 @@ export function useCatalogState() {
       const validated = validateSortOption(s);
       if (validated === sortBy) return;
       setIsTransitioning(true);
+      pendingLocalSortRef.current = validated;
+      setSessionSortPreference(validated);
       setSortByState(validated);
     },
     [sortBy],
@@ -212,7 +241,7 @@ export function useCatalogState() {
     if (sortBy === 'newest') {
       // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
       // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
-      // selecionava 'Nome A-Z'. O URL sync effect lia o param stale e revertia
+      // selecionava 'Mais Recentes'. O URL sync effect lia o param stale e revertia
       // o state imediatamente — tornando impossível selecionar o item default.
       newParams.delete('sort');
     } else {
@@ -289,6 +318,7 @@ export function useCatalogState() {
     search: debouncedServerSearch,
     categories: filters.categories,
     suppliers: filters.suppliers,
+    sortBy,
   });
 
   const realProducts = useMemo(() => {
@@ -375,10 +405,19 @@ export function useCatalogState() {
   }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
   // BUG-SORT-01 FIX: Validar o sort param da URL antes de sincronizar com o state.
-  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=name) e
+  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=newest) e
   // canonicalizar aliases (?sort=popularity → ?sort=best-seller-promo).
   useEffect(() => {
     const urlSort = searchParams.get('sort');
+    const pendingLocalSort = pendingLocalSortRef.current;
+    if (pendingLocalSort) {
+      const urlMatchesPendingSort =
+        pendingLocalSort === 'newest' ? !urlSort : validateSortOption(urlSort) === pendingLocalSort;
+
+      if (!urlMatchesPendingSort) return;
+      pendingLocalSortRef.current = null;
+    }
+
     if (urlSort) {
       const validated = validateSortOption(urlSort);
 
@@ -389,7 +428,7 @@ export function useCatalogState() {
 
       // Normalizar URL: remover sort=default ou substituir alias por canonical.
       // Cobre dois casos:
-      //   1. ?sort=name        → remover (é o default; param redundante)
+      //   1. ?sort=newest      → remover (é o default; param redundante)
       //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
       const urlNeedsNormalization = validated === 'newest' || urlSort !== validated;
       if (urlNeedsNormalization) {
@@ -708,7 +747,7 @@ export function useCatalogState() {
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('newest');
     setSearchQuery('');
     navigate('/', { replace: true });
   }, [navigate, setSortBy]);

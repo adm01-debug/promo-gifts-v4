@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -11,7 +11,6 @@ import {
 import {
   Package,
   Building2,
-  FolderTree,
 } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +26,8 @@ import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 import { productCardStyles } from '@/components/products/product-card-styles';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
+import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { getSupplierColors } from '@/lib/supplier-colors';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobi
   {
     'in-stock': { className: 'in-stock', label: 'Em estoque', mobileIcon: '✓' },
     'low-stock': { className: 'low-stock', label: 'Estoque baixo', mobileIcon: '!' },
-    'out-of-stock': { className: 'out-of-stock', label: 'Sem estoque', mobileIcon: '✗' },
+    'out-of-stock': { className: 'out-of-stock', label: 'Estoque zerado', mobileIcon: '✗' },
   };
 
 // ─── Grid Card ───────────────────────────────────────────────────
@@ -89,6 +90,17 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
   const stockConfig = STOCK_CONFIG[product.stock_status];
+
+  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+  // num swatch troca a foto principal pela imagem da variante selecionada.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find(
+      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
+    );
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
 
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
@@ -127,7 +139,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           productId={product.product_id}
           productName={product.product_name}
           productSku={product.product_sku}
-          productImageUrl={product.product_image}
+          productImageUrl={activeImage}
           productPrice={product.base_price ?? 0}
           productMinQuantity={product.min_quantity || 1}
           isOutOfStock={product.stock_status === 'out-of-stock'}
@@ -137,8 +149,11 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
           <HoverSetImage
-            primary={product.product_image}
-            set={product.product_set_image}
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            // Desativa o crossfade "todas as cores" quando o usuário está
+            // navegando pelas variantes — a foto da cor selecionada vence.
+            set={activeColorName ? null : product.product_set_image}
             alt={`Foto de ${product.product_name}`}
           />
 
@@ -178,29 +193,54 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
         {/* Content Section */}
         <div className={cn(productCardStyles.infoSection, 'flex flex-1 flex-col')}>
-          {/* Meta line — SKU · Fornecedor (hierarquia: menor, muted) */}
-          <div className="flex items-center justify-between gap-2">
-            {product.product_sku && (
-              <span className="truncate font-mono text-[10px] text-muted-foreground sm:text-xs">
-                {product.product_sku}
-              </span>
-            )}
-            {product.supplier_name && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="flex max-w-[120px] shrink-0 items-center gap-1 truncate rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground sm:px-2 sm:text-xs">
-                    <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{product.supplier_name}</span>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Fornecedor: {product.supplier_name}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+          {/* 1 — Categoria */}
+          {product.category_id && product.category_name && (
+            <ProductCategoryBadges
+              category={{ id: product.category_id, name: product.category_name }}
+              categoryUuid={product.category_id}
+              className="flex-wrap"
+            />
+          )}
 
-          {/* Name — hierarquia principal */}
+          {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
+          {(product.supplier_name || product.product_sku) && (
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              {product.supplier_name ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="flex min-w-0 max-w-[160px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                      title={`Fornecedor: ${product.supplier_name}`}
+                    >
+                      <Building2
+                        className={cn(
+                          'h-3 w-3 shrink-0',
+                          getSupplierColors(product.supplier_name).text,
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{product.supplier_name}</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Fornecedor: {product.supplier_name}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <span />
+              )}
+              {product.product_sku && (
+                <span
+                  className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
+                  aria-label={`Código do produto: ${product.product_sku}`}
+                >
+                  {product.product_sku}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* 4 — Nome do produto */}
           <h3 className={productCardStyles.title}>{product.product_name}</h3>
 
           {/* Price + Stock */}
@@ -242,19 +282,17 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           </div>
 
-          {/* Category */}
-          {product.category_name && (
-            <div className={productCardStyles.categoryBadgeSection}>
-              <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary shadow-sm shadow-primary/10 sm:text-xs">
-                <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />
-                {product.category_name}
-              </span>
-            </div>
-          )}
 
-          {/* Cores disponíveis */}
-          <div className="flex items-center gap-1">
-            <ProductColorSwatches colors={colors} max={5} size="sm" hideWhenEmpty={false} />
+          {/* Cores disponíveis — mini-carrossel de variantes */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <ProductColorSwatches
+              colors={colors}
+              max={5}
+              size="sm"
+              hideWhenEmpty={false}
+              selectedName={activeColorName}
+              onSelect={(c) => setActiveColorName(c.name)}
+            />
           </div>
 
           {/* Sparkline */}

@@ -4,6 +4,13 @@
  *
  * FIX 2026-06-12: usa useSellerCartContextSafe (null-guard) para evitar
  * 26.787 crashes por contexto ausente em Suspense fallbacks / HMR.
+ *
+ * FIX 2026-06-14: o fallback do null-guard agora NAVEGA para /carrinhos ao
+ * clicar (antes era um botão inerte que "engolia" o clique). Assim o ícone do
+ * carrinho nunca fica morto, mesmo se o Provider não estiver montado acima.
+ * O rodapé "Gerar Orçamento" usa handoff de pré-preenchimento (navega para
+ * /orcamentos/novo com state.fromCart) em vez da RPC fn_convert_cart_to_quote
+ * (removida do banco), e é protegido por guard de activeCart.
  */
 
 import {
@@ -59,15 +66,18 @@ export function CartHeaderButton() {
   // Resolve 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
   const cartContext = useSellerCartContextSafe();
 
-  // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery).
-  // Renderiza ícone estático em vez de crashar o React tree.
+  // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery,
+  // ou Provider fora da árvore). Em vez de um botão inerte, o ícone NAVEGA para a página de
+  // carrinhos — garante que o clique no carrinho do header nunca fique morto.
   if (!cartContext) {
     return (
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-8 w-8 rounded-full text-muted-foreground"
-        aria-label="Carrinho"
+        data-testid="cart-trigger-fallback"
+        className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
+        aria-label="Abrir carrinhos"
+        onClick={() => navigate('/carrinhos')}
       >
         <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
       </Button>
@@ -496,28 +506,27 @@ export function CartHeaderButton() {
                         <Button
                           className="h-10 w-full gap-2 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                           onClick={() => {
-                            const cartIdToDelete = activeCart.id;
+                            if (!activeCart) return;
                             setOpen(false);
+                            // Handoff de pré-preenchimento: leva os itens do carrinho para o
+                            // builder de orçamento SEM persistir nada (a RPC eager foi removida).
                             navigate('/orcamentos/novo', {
                               state: {
                                 fromCart: true,
-                                cartId: cartIdToDelete,
                                 companyId: activeCart.company_id,
                                 companyName: activeCart.company_name,
-                                companyLocation: activeCart.company_location,
-                                items: activeCart.items.map((i) => ({
-                                  product_id: i.product_id,
-                                  product_name: i.product_name,
-                                  product_sku: i.product_sku,
-                                  product_image_url: i.product_image_url,
-                                  unit_price: i.product_price,
-                                  quantity: i.quantity,
-                                  color_name: i.color_name,
-                                  color_hex: i.color_hex,
+                                companyLocation: activeCart.company_location ?? null,
+                                items: activeCart.items.map((item) => ({
+                                  product_id: item.product_id,
+                                  product_name: item.product_name,
+                                  product_image_url: item.product_image_url ?? null,
+                                  quantity: item.quantity,
+                                  unit_price: item.product_price,
+                                  color_name: item.color_name ?? null,
+                                  color_hex: item.color_hex ?? null,
                                 })),
                               },
                             });
-                            deleteCart(cartIdToDelete);
                           }}
                         >
                           <ArrowRight className="h-3.5 w-3.5" />

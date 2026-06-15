@@ -55,7 +55,8 @@ function writeList(key: string, list: CompanyItem[]) {
 interface CartCompanyPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated?: () => void;
+  /** Recebe o carrinho recém-criado (id) para permitir ações encadeadas (ex.: adicionar item pendente). */
+  onCreated?: (cartId?: string) => void;
 }
 
 export function CartCompanyPickerDialog({
@@ -184,7 +185,7 @@ export function CartCompanyPickerDialog({
         );
         writeList(RECENT_KEY, nextRecents);
         setRecents(nextRecents);
-        onCreated?.();
+        onCreated?.(result.id);
         onOpenChange(false);
       }
     },

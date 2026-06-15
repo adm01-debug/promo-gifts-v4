@@ -295,28 +295,31 @@ export function useSellerCartsPage() {
 
   const confirmGenerateQuote = useCallback(() => {
     if (!confirmQuoteCart) return;
+    const cart = confirmQuoteCart;
+    setConfirmQuoteCart(null);
+    // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
+    // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
+    // consome número de orçamento — o orçamento só se torna real quando o vendedor
+    // preenche gravação/pagamento/entrega e clica em Salvar. O carrinho é PRESERVADO.
     navigate('/orcamentos/novo', {
       state: {
         fromCart: true,
-        cartId: confirmQuoteCart.id,
-        companyId: confirmQuoteCart.company_id,
-        companyName: confirmQuoteCart.company_name,
-        companyLocation: confirmQuoteCart.company_location,
-        items: confirmQuoteCart.items.map((i) => ({
+        companyId: cart.company_id,
+        companyName: cart.company_name,
+        companyLocation: cart.company_location || undefined,
+        items: cart.items.map((i) => ({
           product_id: i.product_id,
           product_name: i.product_name,
-          product_sku: i.product_sku,
-          product_image_url: i.product_image_url,
-          unit_price: i.product_price,
+          product_sku: i.product_sku || undefined,
+          product_image_url: i.product_image_url || undefined,
           quantity: i.quantity,
-          color_name: i.color_name,
-          color_hex: i.color_hex,
+          unit_price: i.product_price,
+          color_name: i.color_name || undefined,
+          color_hex: i.color_hex || undefined,
         })),
       },
     });
-    deleteCart(confirmQuoteCart.id);
-    setConfirmQuoteCart(null);
-  }, [confirmQuoteCart, navigate, deleteCart]);
+  }, [confirmQuoteCart, navigate]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),

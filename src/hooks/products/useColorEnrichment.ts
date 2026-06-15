@@ -8,6 +8,7 @@
  * Uses incremental enrichment: keeps a growing cache of results and only
  * fetches data for NEW product IDs that haven't been enriched yet.
  */
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useMemo, useEffect } from 'react';
 import { dbInvoke } from '@/lib/db/postgrest';
@@ -328,8 +329,7 @@ export function useColorEnrichment({
         accumulatedMapRef.current.set(productId, {
           image: bestImage,
           stock: totalStock,
-          stockStatus:
-            totalStock <= 0 ? 'out-of-stock' : totalStock < 10 ? 'low-stock' : 'in-stock',
+          stockStatus: getCatalogStockStatus(totalStock),
           colorName: bestColorName,
           colorHex: bestColorHex,
         });

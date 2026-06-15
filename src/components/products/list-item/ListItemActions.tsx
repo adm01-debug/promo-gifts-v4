@@ -33,30 +33,23 @@ export function ListItemActions({
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-0.5',
+        'flex shrink-0 items-center gap-0.5 pr-1',
         'opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
         'transition-opacity duration-200',
-        'overflow-x-auto no-scrollbar max-w-full'
       )}
     >
-      {/* 1 - Carrinho */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <QuickAddToQuote
-              productId={product.id}
-              productName={product.name}
-              productSku={product.sku}
-              productImageUrl={product.og_image_url || product.images[0]}
-              productPrice={product.price}
-              minQuantity={product.minQuantity || 1}
-              variant="icon"
-              className="h-8 w-8"
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Adicionar ao Carrinho</TooltipContent>
-      </Tooltip>
+      {/* 1 - Carrinho (QuickAddToQuote já tem Tooltip + Popover próprios) */}
+      <QuickAddToQuote
+        productId={product.id}
+        productName={product.name}
+        productSku={product.sku}
+        productImageUrl={product.og_image_url || product.images[0]}
+        productPrice={product.price}
+        minQuantity={product.minQuantity || 1}
+        variant="icon"
+        className="h-8 w-8"
+      />
+
 
       {/* 2 - Orçamento (desktop) */}
       <div className="hidden items-center gap-0.5 sm:flex">

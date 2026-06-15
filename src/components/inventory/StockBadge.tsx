@@ -34,7 +34,7 @@ const statusConfig: Record<
   },
   'low-stock': {
     label: 'Estoque Baixo',
-    shortLabel: 'Baixo',
+    shortLabel: 'Estoque baixo',
     icon: AlertTriangle,
     className: 'text-warning dark:text-warning',
     bgClass: 'bg-warning/10 dark:bg-warning/15 border-warning/20 dark:border-warning/40',
