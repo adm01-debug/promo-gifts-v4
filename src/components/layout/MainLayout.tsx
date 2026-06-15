@@ -76,7 +76,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    <div className="min-h-screen bg-background print:min-h-0" role="document">
+    // overflow-x-hidden previne bleed horizontal de elementos internos
+    // sem quebrar posicionamentos fixed/sticky que usam transform proprio
+    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />
@@ -93,7 +95,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <Suspense
             fallback={
               <div className="hidden h-screen w-16 flex-shrink-0 border-r border-sidebar-border/10 bg-sidebar/5 lg:block lg:w-64">
-                <div className="ultra-wide:px-6 ultra-wide:py-6 flex flex-col items-center justify-center px-3 py-4 sm:px-4 2xl:px-5 2xl:py-5">
+                <div className="flex flex-col items-center justify-center px-3 py-4 sm:px-4 2xl:px-5 2xl:py-5 ultra-wide:px-6 ultra-wide:py-6">
                   <div className="h-7 w-7 animate-pulse rounded-lg bg-sidebar-foreground/10" />
                   <div className="mt-4 hidden h-4 w-32 animate-pulse rounded bg-sidebar-foreground/5 lg:block" />
                 </div>
@@ -160,9 +162,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <OnboardingProvider>
-      <SellerCartProvider>
-        {layoutContent}
-      </SellerCartProvider>
+      <SellerCartProvider>{layoutContent}</SellerCartProvider>
     </OnboardingProvider>
   );
 }
