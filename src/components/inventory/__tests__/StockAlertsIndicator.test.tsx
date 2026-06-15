@@ -9,7 +9,7 @@ import type {
   StockNotificationCounts,
 } from '@/hooks/products/useStockNotifications';
 
-// ── Mock dos hooks dedicados (camada de dados) ─────────────────
+// ── Mock dos hooks dedicados ────────────────────────────────────
 const mockCounts = vi.fn();
 const mockStockout = vi.fn();
 const mockLow = vi.fn();
@@ -24,7 +24,6 @@ vi.mock('@/hooks/products/useStockNotifications', () => ({
   useRecentRestocks: () => mockRestocks(),
 }));
 
-// Radix Popover/Tooltip precisam destes em jsdom
 beforeAll(() => {
   const proto = Element.prototype as unknown as Record<string, unknown>;
   proto.hasPointerCapture = vi.fn(() => false);
@@ -32,6 +31,8 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
   proto.scrollIntoView = vi.fn();
 });
+
+// ── Factories ───────────────────────────────────────────────────
 
 const item = (over: Partial<StockNotificationItem>): StockNotificationItem => ({
   id: over.id ?? `x-${Math.random()}`,
@@ -42,6 +43,7 @@ const item = (over: Partial<StockNotificationItem>): StockNotificationItem => ({
   supplier: over.supplier ?? 'XBZ Brindes',
   kind: over.kind ?? 'stockout',
   stockQuantity: over.stockQuantity ?? 0,
+  eventDate: over.eventDate ?? null, // novo campo obrigatorio
   ...over,
 });
 
@@ -86,6 +88,8 @@ beforeEach(() => {
   setLists();
 });
 
+// ── Testes: trigger ─────────────────────────────────────────────
+
 describe('StockAlertsIndicator — trigger', () => {
   it('mostra o sino com aria-label dedicado (distinto do sino de workspace)', () => {
     renderIndicator();
@@ -111,16 +115,13 @@ describe('StockAlertsIndicator — trigger', () => {
   });
 
   it('cor dominante = vermelho quando há esgotados', () => {
-    mockCounts.mockReturnValue({
-      data: counts({ stockout: 1, novelties: 9 }),
-      isLoading: false,
-    });
+    mockCounts.mockReturnValue({ data: counts({ stockout: 1, novelties: 9 }), isLoading: false });
     renderIndicator();
     const badge = screen.getByText('10');
     expect(badge.className).toContain('bg-destructive');
   });
 
-  it('cor dominante = âmbar quando só há baixo+novidade (sem esgotado)', () => {
+  it('cor dominante = âmbar quando só há baixo+novidade', () => {
     mockCounts.mockReturnValue({
       data: counts({ low_stock: 2, novelties: 3 }),
       isLoading: false,
@@ -137,7 +138,7 @@ describe('StockAlertsIndicator — trigger', () => {
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
-  it('durante o carregamento dos contadores marca aria-busy e não mostra badge', () => {
+  it('durante carregamento marca aria-busy e não mostra badge', () => {
     mockCounts.mockReturnValue({ data: undefined, isLoading: true });
     renderIndicator();
     const btn = screen.getByRole('button', { name: 'Alertas de estoque' });
@@ -145,8 +146,10 @@ describe('StockAlertsIndicator — trigger', () => {
   });
 });
 
-describe('StockAlertsIndicator — painel e abas', () => {
-  it('renderiza as 4 abas com contadores exatos por categoria', async () => {
+// ── Testes: painel, abas e período ─────────────────────────────
+
+describe('StockAlertsIndicator — painel, abas e período', () => {
+  it('renderiza as 4 abas e a barra de período', async () => {
     const user = userEvent.setup();
     mockCounts.mockReturnValue({
       data: counts({ stockout: 3, low_stock: 2, novelties: 5, restocks: 4 }),
@@ -155,14 +158,16 @@ describe('StockAlertsIndicator — painel e abas', () => {
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
 
-    // Quando os tabs têm contagem, o textContent do <button> é "Zerou3" (texto + span
-    // concatenados), por isso usamos getByRole com name regex em vez de getByText exact.
     for (const label of ['Zerou', 'Baixo', 'Novidade', 'Chegou']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
     }
+    // barra de período
+    for (const label of ['Hoje', '7 dias', '30 dias', 'Tudo']) {
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    }
   });
 
-  it('aba Chegou: itens "Reposto" e NENHUM com "0 un." (invariante anti Reposto+0un)', async () => {
+  it('aba Chegou: itens "Reposto" e NENHUM com "0 un."', async () => {
     const user = userEvent.setup();
     mockCounts.mockReturnValue({ data: counts({ restocks: 2 }), isLoading: false });
     setLists({
@@ -173,11 +178,8 @@ describe('StockAlertsIndicator — painel e abas', () => {
     });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
-    // Tab "Chegou" tem textContent "Chegou2" (label + span de contagem), então
-    // usamos getByRole com name regex para encontrar o botão pelo accessible name.
     await user.click(screen.getByRole('button', { name: /Chegou/ }));
 
-    // Badges têm texto exato "Reposto" (sem contagem apendada), então exact=true funciona.
     expect(screen.getAllByText('Reposto').length).toBe(2);
     expect(screen.getByText('500 un.')).toBeInTheDocument();
     expect(screen.queryByText('0 un.')).not.toBeInTheDocument();
@@ -188,27 +190,47 @@ describe('StockAlertsIndicator — painel e abas', () => {
     mockCounts.mockReturnValue({ data: counts({ low_stock: 1 }), isLoading: false });
     setLists({
       low: [
+        item({ id: 'l1', kind: 'low', productName: 'Mochila Z', stockQuantity: 7, lowStockThreshold: 10 }),
+      ],
+    });
+    renderIndicator();
+    await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
+    await user.click(screen.getByRole('button', { name: /Baixo/ }));
+
+    expect(screen.getAllByText(/Baixo/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/7 un\./)).toBeInTheDocument();
+    expect(screen.getByText(/\/ 10/)).toBeInTheDocument();
+  });
+
+  it('eventDate = "2026-06-15" formata como "15/06/2026" no card', async () => {
+    const user = userEvent.setup();
+    mockCounts.mockReturnValue({ data: counts({ stockout: 1 }), isLoading: false });
+    setLists({
+      stockout: [
         item({
-          id: 'l1',
-          kind: 'low',
-          productName: 'Mochila Z',
-          stockQuantity: 7,
-          lowStockThreshold: 10,
+          id: 's1',
+          kind: 'stockout',
+          productName: 'Produto Data',
+          stockQuantity: 0,
+          eventDate: '2026-06-15T07:30:00.000Z',
         }),
       ],
     });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
-    // Tab "Baixo" tem textContent "Baixo1" → accessible name regex para clique.
-    await user.click(screen.getByRole('button', { name: /Baixo/ }));
+    expect(screen.getByText('15/06/2026')).toBeInTheDocument();
+  });
 
-    // Após clicar no tab Baixo:
-    // - Tab button "Baixo1" (contagem apendada): textContent contém "Baixo" → match com regex
-    // - ItemBadge "Baixo": texto exato "Baixo" → match com regex
-    // Total: 2 elementos contendo "Baixo"
-    expect(screen.getAllByText(/Baixo/).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/7 un\./)).toBeInTheDocument();
-    expect(screen.getByText(/\/ 10/)).toBeInTheDocument();
+  it('eventDate = null → não exibe data no card', async () => {
+    const user = userEvent.setup();
+    mockCounts.mockReturnValue({ data: counts({ stockout: 1 }), isLoading: false });
+    setLists({
+      stockout: [item({ id: 's1', kind: 'stockout', stockQuantity: 0, eventDate: null })],
+    });
+    renderIndicator();
+    await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
+    // não deve aparecer nenhuma string de data no painel
+    expect(screen.queryByText(/\d{2}\/\d{2}\/\d{4}/)).not.toBeInTheDocument();
   });
 
   it('estado vazio com itens dispensados: "Tudo visto nesta categoria"', async () => {
@@ -232,9 +254,7 @@ describe('StockAlertsIndicator — painel e abas', () => {
   it('footer "Ver todos os N" aparece quando há mais no servidor do que na lista', async () => {
     const user = userEvent.setup();
     mockCounts.mockReturnValue({ data: counts({ stockout: 50 }), isLoading: false });
-    setLists({
-      stockout: [item({ id: 's1', kind: 'stockout', stockQuantity: 0 })],
-    });
+    setLists({ stockout: [item({ id: 's1', kind: 'stockout', stockQuantity: 0 })] });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
     expect(screen.getByText(/Ver todos os 50/)).toBeInTheDocument();
@@ -248,7 +268,6 @@ describe('StockAlertsIndicator — painel e abas', () => {
     });
     renderIndicator();
     await user.click(screen.getByRole('button', { name: 'Alertas de estoque' }));
-    // Zerou é a aba ativa por padrão — sem necessidade de clicar na aba
     expect(screen.getByText('Esgotado')).toBeInTheDocument();
   });
 });
