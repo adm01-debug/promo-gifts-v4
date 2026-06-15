@@ -8,6 +8,12 @@
  * Diálogos pesados (ProductQuickView, SharePreviewDialog) recebem o `Product`
  * carregado sob demanda via useProduct(id) — só dispara o fetch quando o
  * usuário abre uma ação que precisa.
+ *
+ * FIX 2026-06-15: handleVariantComplete mode='quote' agora espelha ProductCard.tsx:
+ * - 0 carrinhos → abre CartCompanyPickerDialog (cria carrinho na hora)
+ * - 1+ carrinhos → abre CartSelectorDialog (escolher carrinho ou criar novo)
+ * Antes: chamava addToActiveCart diretamente sem carrinho → toast de erro
+ * silencioso que o usuário não percebia.
  */
 import { memo, useCallback, useState } from 'react';
 import { toast } from 'sonner';
@@ -22,6 +28,7 @@ import { ProductCardActions } from './ProductCardActions';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
+import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { ProductQuickView } from './ProductQuickView';
 import { SharePreviewDialog } from './share/SharePreviewDialog';
 
@@ -63,6 +70,7 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [collectionVariant, setCollectionVariant] = useState<CollectionVariant | undefined>();
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
   const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -78,7 +86,7 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
   const canAddToCompare = useComparisonStore((s) => s.canAddMore);
 
   // Carrinho (orçamento)
-  const { carts, addToActiveCart } = useSellerCartContext();
+  const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
 
   // Produto completo (lazy — só busca quando QuickView/Share abrir)
   const needsFullProduct = quickViewOpen || shareDialogOpen;
@@ -157,24 +165,16 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
         setCollectionVariant(variantInfo);
         setCollectionModalOpen(true);
       } else if (variantPickerMode === 'quote') {
-        if (carts.length > 1) {
-          setPendingVariant(variant);
+        // FIX 2026-06-15: espelha ProductCard.tsx — sempre abre diálogo para
+        // permitir criar um carrinho para outro cliente naquele momento.
+        // ANTES: addToActiveCart diretamente (toast de erro silencioso se 0 carrinhos)
+        // DEPOIS: 0 carrinhos → CartCompanyPickerDialog | 1+ carrinhos → CartSelectorDialog
+        setPendingVariant(variant);
+        if (carts.length === 0) {
+          setCompanyPickerOpen(true);
+        } else {
           setSelectorOpen(true);
-          return;
         }
-        addToActiveCart(
-          {
-            product_id: productId,
-            product_name: productName,
-            product_sku: productSku || undefined,
-            product_image_url: variant?.selected_thumbnail || productImageUrl || undefined,
-            product_price: productPrice ?? 0,
-            quantity: productMinQuantity,
-            color_name: variant?.color_name || undefined,
-            color_hex: variant?.color_hex || undefined,
-          },
-          carts.length === 1 ? carts[0].id : undefined,
-        );
       } else if (variantPickerMode === 'share') {
         setShareVariant(
           variant
@@ -192,14 +192,9 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
       variantPickerMode,
       productId,
       productName,
-      productSku,
-      productImageUrl,
-      productPrice,
-      productMinQuantity,
       addFavorite,
       addToCompare,
       carts,
-      addToActiveCart,
     ],
   );
 
@@ -241,12 +236,13 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
         onComplete={handleVariantComplete}
       />
 
+      {/* Seletor de carrinho existente (1+ carrinhos) */}
       <CartSelectorDialog
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         carts={carts}
         productName={productName}
-        canCreateMore={false}
+        canCreateMore={canCreateCart}
         onSelect={(cartId) => {
           addToActiveCart(
             {
@@ -265,7 +261,37 @@ export const ProductQuickActionsFAB = memo(function ProductQuickActionsFAB({
           setPendingVariant(null);
         }}
         onCreateNew={() => {
+          // Mantém pendingVariant — será adicionado ao novo carrinho
           setSelectorOpen(false);
+          setCompanyPickerOpen(true);
+        }}
+      />
+
+      {/* Picker de empresa — cria carrinho na hora e adiciona o item pendente
+          FIX 2026-06-15: adicionado para paridade com ProductCard.tsx (0-cart case) */}
+      <CartCompanyPickerDialog
+        open={companyPickerOpen}
+        onOpenChange={(o) => {
+          setCompanyPickerOpen(o);
+          if (!o) setPendingVariant(null);
+        }}
+        onCreated={(newCartId) => {
+          if (newCartId) {
+            addToActiveCart(
+              {
+                product_id: productId,
+                product_name: productName,
+                product_sku: productSku || undefined,
+                product_image_url:
+                  pendingVariant?.selected_thumbnail || productImageUrl || undefined,
+                product_price: productPrice ?? 0,
+                quantity: productMinQuantity,
+                color_name: pendingVariant?.color_name || undefined,
+                color_hex: pendingVariant?.color_hex || undefined,
+              },
+              newCartId,
+            );
+          }
           setPendingVariant(null);
         }}
       />
