@@ -2,6 +2,7 @@
  * Admin: gerenciar templates de kits sugeridos pelo sistema.
  */
 import { useMemo, useState } from 'react';
+import * as Lucide from 'lucide-react';
 import { Package } from 'lucide-react';
 import { Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';

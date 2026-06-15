@@ -1,6 +1,7 @@
 /**
  * RelatedTemplates — Mostra 2-3 templates da mesma categoria sob o template atual.
  */
+import * as Lucide from 'lucide-react';
 import { Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';

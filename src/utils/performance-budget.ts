@@ -79,7 +79,7 @@ export function initPerformanceBudget(): void {
         if (value > 0) reportMetric('INP', value, getRating('INP', value));
       }
     });
-    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 });
+    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number });
   } catch { /* Observer not supported */ }
 
   // TTFB — Time to First Byte

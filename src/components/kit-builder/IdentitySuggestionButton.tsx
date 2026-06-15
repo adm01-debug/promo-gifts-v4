@@ -3,6 +3,7 @@
  * tag+cor+ícone. Usado quando a identidade está vazia ou genérica.
  */
 import { useState } from 'react';
+import * as Lucide from 'lucide-react';
 import { Package, type LucideIcon } from 'lucide-react';
 import { Sparkles, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

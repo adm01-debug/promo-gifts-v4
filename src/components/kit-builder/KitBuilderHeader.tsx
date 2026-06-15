@@ -3,6 +3,7 @@
  * Tier 1: Identity (name + status badges) — stripe + colored icon refletem identidade
  * Tier 2: Primary actions (Save, New, Library)
  */
+import * as Lucide from 'lucide-react';
 import {
   Save,
   Cloud,
