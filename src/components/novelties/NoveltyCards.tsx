@@ -35,6 +35,12 @@ interface NoveltyCardProps {
   onSelect?: (id: string) => void;
   onStatusClick?: (type: string) => void;
   colors?: readonly ColorDotLike[];
+  /**
+   * Quando true, renderiza placeholders no lugar do preço e do estoque.
+   * Útil enquanto os dados de pricing/estoque ainda estão sendo carregados
+   * (ex.: hidratação assíncrona após o primeiro paint do card).
+   */
+  isPriceStockLoading?: boolean;
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
