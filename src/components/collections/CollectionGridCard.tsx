@@ -50,7 +50,8 @@ function DynamicCollage({ images }: { images: string[] }) {
   if (count === 1) {
     return (
       <div className="absolute inset-0">
-        <img src={images[0]} alt="" className={imgClass} loading="lazy" />
+        <img src={images[0]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       </div>
     );
   }
@@ -59,10 +60,12 @@ function DynamicCollage({ images }: { images: string[] }) {
     return (
       <div className="absolute inset-0 grid grid-cols-2 gap-0">
         <div className="overflow-hidden">
-          <img src={images[0]} alt="" className={imgClass} loading="lazy" />
+          <img src={images[0]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         </div>
         <div className="overflow-hidden">
-          <img src={images[1]} alt="" className={imgClass} loading="lazy" />
+          <img src={images[1]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         </div>
       </div>
     );
@@ -72,13 +75,16 @@ function DynamicCollage({ images }: { images: string[] }) {
     return (
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0">
         <div className="row-span-2 overflow-hidden">
-          <img src={images[0]} alt="" className={imgClass} loading="lazy" />
+          <img src={images[0]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         </div>
         <div className="overflow-hidden">
-          <img src={images[1]} alt="" className={imgClass} loading="lazy" />
+          <img src={images[1]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         </div>
         <div className="overflow-hidden">
-          <img src={images[2]} alt="" className={imgClass} loading="lazy" />
+          <img src={images[2]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         </div>
       </div>
     );
@@ -88,16 +94,20 @@ function DynamicCollage({ images }: { images: string[] }) {
   return (
     <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0">
       <div className="overflow-hidden">
-        <img src={display[0]} alt="" className={imgClass} loading="lazy" />
+        <img src={display[0]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       </div>
       <div className="overflow-hidden">
-        <img src={display[1]} alt="" className={imgClass} loading="lazy" />
+        <img src={display[1]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       </div>
       <div className="overflow-hidden">
-        <img src={display[2]} alt="" className={imgClass} loading="lazy" />
+        <img src={display[2]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       </div>
       <div className="overflow-hidden">
-        <img src={display[3]} alt="" className={imgClass} loading="lazy" />
+        <img src={display[3]} alt="" className={imgClass} loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       </div>
     </div>
   );

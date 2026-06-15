@@ -84,7 +84,7 @@ const App = () => {
         <ThemeInitializer />
         <Suspense fallback={<div className="min-h-screen bg-[#030508]" />}>
           <AccessibilityProvider>
-          <AriaLiveProvider>
+            <AriaLiveProvider>
             <TooltipProvider delayDuration={400} skipDelayDuration={200}>
               {/*
                * Keep v7_startTransition disabled: under concurrent root work it can
@@ -111,7 +111,7 @@ const App = () => {
                 </AuthProvider>
               </BrowserRouter>
             </TooltipProvider>
-          </AriaLiveProvider>
+            </AriaLiveProvider>
           </AccessibilityProvider>
         </Suspense>
       </ThemeProvider>

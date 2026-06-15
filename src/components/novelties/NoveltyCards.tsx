@@ -366,6 +366,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
             key={activeImage}
             src={activeImage}
             alt={product.product_name}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
             className="h-full w-full object-contain transition-opacity duration-200"
             loading="lazy"
           />
@@ -510,6 +511,7 @@ export function NoveltyTableView({
                         <img
                           src={product.product_image}
                           alt={product.product_name}
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                           className="h-full w-full object-contain"
                           loading="lazy"
                         />

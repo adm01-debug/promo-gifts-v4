@@ -496,6 +496,11 @@ export function PromoFlixPlayer({
     return () => {
       initTokenRef.current += 1;
       clearLoadingTimeout();
+      // FIX: clear controls hide timer on unmount to prevent state update on unmounted component
+      if (controlsTimeoutRef.current) {
+        window.clearTimeout(controlsTimeoutRef.current);
+        controlsTimeoutRef.current = null;
+      }
       if (hlsRef.current) {
         try {
           hlsRef.current.destroy();

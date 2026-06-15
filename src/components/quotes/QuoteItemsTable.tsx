@@ -89,6 +89,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded border border-border object-cover print:hidden"
                 loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
               />
             )}
             <div>

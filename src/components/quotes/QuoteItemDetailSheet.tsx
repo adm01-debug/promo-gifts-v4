@@ -146,6 +146,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded-lg border border-border object-cover"
                 loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
               />
             )}
             <div className="min-w-0 flex-1">

@@ -18,12 +18,17 @@ export const useProductSelectionStore = create<ProductSelectionState & ProductSe
       selectedColors: {},
 
       setSelectedColor: (productId, colorName) => {
-        set((state) => ({
-          selectedColors: {
-            ...state.selectedColors,
-            [productId]: colorName,
-          },
-        }));
+        set((state) => {
+          const next = { ...state.selectedColors, [productId]: colorName };
+          // FIX: cap a 200 entradas para não crescer indefinidamente no localStorage.
+          // Remove as entradas mais antigas (primeiras inseridas) quando o limite é atingido.
+          const keys = Object.keys(next);
+          if (keys.length > 200) {
+            const excess = keys.slice(0, keys.length - 200);
+            for (const k of excess) delete next[k];
+          }
+          return { selectedColors: next };
+        });
       },
 
       getSelectedColor: (productId) => {

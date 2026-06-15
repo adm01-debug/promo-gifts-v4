@@ -31,7 +31,7 @@ export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props
       onMouseLeave={() => setShow(false)}
       onMouseMove={onMove}
     >
-      <img src={src} alt={alt} loading="lazy" className="h-full w-full object-contain" />
+      <img src={src} alt={alt} loading="lazy" className="h-full w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
       {show && (
         <div
           aria-hidden

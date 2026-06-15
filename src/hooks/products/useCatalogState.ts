@@ -794,6 +794,12 @@ export function useCatalogState() {
   }, [handleFavoriteProduct]);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // FIX: cleanup searchDebounceRef no unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
   const handleSearch = useCallback(
     (query: string) => {
       setIsSearching(true);

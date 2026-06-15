@@ -129,7 +129,7 @@ function CollectionTableRow({
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-2.5">
           {previewImage ? (
-            <img src={previewImage} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+            <img src={previewImage} alt="" className="h-8 w-8 shrink-0 rounded object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
           ) : (
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm"

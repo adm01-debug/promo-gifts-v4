@@ -40,6 +40,7 @@ export function CompanyAvatar({
           dim,
           'flex-shrink-0 rounded-full border border-border bg-background object-cover',
         )}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
         loading="lazy"
       />
     );

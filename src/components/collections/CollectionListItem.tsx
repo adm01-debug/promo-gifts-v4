@@ -65,7 +65,7 @@ export function CollectionListItem({
         style={{ backgroundColor: `${collection.color}20` }}
       >
         {previewImage ? (
-          <img src={previewImage} alt="" className="h-full w-full object-cover" />
+          <img src={previewImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
         ) : (
           <span>{collection.icon}</span>
         )}

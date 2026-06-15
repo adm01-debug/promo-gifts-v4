@@ -118,6 +118,14 @@ export function useSellerCartsPage() {
     setCartNotesOpen(!!activeCart?.notes);
   }, [activeCart?.id, activeCart?.notes]);
 
+  // FIX: cleanup debounceNotesRef no unmount — sem isso, o timer dispara
+  // e chama updateCartNotes após a navegação para fora da página.
+  useEffect(() => {
+    return () => {
+      if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
+    };
+  }, []);
+
   const handleCartNotesChange = (value: string) => {
     setLocalCartNotes(value);
     if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);

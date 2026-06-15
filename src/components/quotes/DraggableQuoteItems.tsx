@@ -139,6 +139,7 @@ function SortableItem({
                   alt={item.product_name}
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
@@ -387,6 +388,7 @@ export function DraggableQuoteItems({
                       alt={activeItem.product_name}
                       className="h-full w-full rounded-lg object-cover"
                       loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                     />
                   ) : (
                     <Package className="h-5 w-5 text-muted-foreground" />
