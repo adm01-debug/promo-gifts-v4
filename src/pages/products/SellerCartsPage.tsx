@@ -11,7 +11,7 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { Trash2 as Trash2Icon } from 'lucide-react';
+
 
 import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
