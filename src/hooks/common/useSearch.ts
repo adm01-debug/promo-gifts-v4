@@ -150,7 +150,7 @@ export function useSearch(products: Product[] = []) {
   // Both memos had identical dependencies; now they share this single computation.
   const allProductMatches = useMemo(() => {
     const searchTerm = query.trim();
-    if (!searchTerm || searchTerm.length < 2) return [] as ReturnType<typeof rankProductSearchResults>;
+    if (!searchTerm || searchTerm.length < 2) return [] as Product[];
     return rankProductSearchResults(availableProducts, searchTerm, productFuse);
   }, [query, availableProducts, productFuse]);
 
