@@ -97,12 +97,11 @@ function CartsListContent() {
           variant="cart"
           title="Nenhum carrinho aberto"
           description="Crie um carrinho para começar a montar uma proposta para um cliente."
-          action={
-            canCreateCart
-              ? { label: 'Novo carrinho', onClick: () => setPickerOpen(true) }
-              : undefined
-          }
-        />
+        >
+          <Button onClick={() => setPickerOpen(true)} disabled={!canCreateCart} className="gap-2">
+            <Plus className="h-4 w-4" /> Novo carrinho
+          </Button>
+        </EmptyState>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm">
           <Table>
