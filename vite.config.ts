@@ -152,49 +152,10 @@ export default defineConfig(({ mode }) => {
             // ── Zustand ────────────────────────────────────────────────────
             if (id.includes('node_modules/zustand/')) return 'zustand-vendor';
 
-            // ── App src: split por domínio para reduzir o chunk index ───────
-            // Páginas de Admin (raramente visitadas — split agressivo)
-            if (id.includes('/src/pages/admin/') || id.includes('/src/components/admin/')) {
-              return 'admin-domain';
-            }
-
-            // Páginas de BI / Intelligence
-            if (
-              id.includes('/src/pages/bi/') ||
-              id.includes('/src/components/bi/') ||
-              id.includes('/src/hooks/bi/') ||
-              id.includes('/src/hooks/intelligence/')
-            ) {
-              return 'bi-domain';
-            }
-
-            // Kit builder
-            if (
-              id.includes('/src/pages/kit-') ||
-              id.includes('/src/components/kit-') ||
-              id.includes('/src/hooks/kit-builder/')
-            ) {
-              return 'kit-domain';
-            }
-
-            // Quotes / Orçamentos
-            if (
-              id.includes('/src/pages/quotes/') ||
-              id.includes('/src/components/quotes/') ||
-              id.includes('/src/hooks/quotes/')
-            ) {
-              return 'quotes-domain';
-            }
-
-            // Magic Up / Mockup
-            if (
-              id.includes('/src/pages/magic-up/') ||
-              id.includes('/src/pages/mockups/') ||
-              id.includes('/src/components/magic-up/') ||
-              id.includes('/src/components/mockup/')
-            ) {
-              return 'tools-domain';
-            }
+            // NOTA: domain splits (admin, bi, kit, quotes, tools) removidos.
+            // React.lazy() + dynamic imports já criam chunks automáticos por
+            // rota. O manualChunks manual gerava circular deps que causavam
+            // TDZ em runtime: 'Cannot access X before initialization'.
           },
         },
       },
