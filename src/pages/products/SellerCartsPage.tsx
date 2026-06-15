@@ -77,6 +77,35 @@ function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
+  // View mode + grid columns (persisted)
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (localStorage.getItem('cart-view-mode') as 'grid' | 'list' | 'table') || 'grid';
+  });
+  const [gridColumns, setGridColumns] = useState<ColumnCount>(() => {
+    if (typeof window === 'undefined') return 3;
+    const v = Number(localStorage.getItem('cart-grid-columns'));
+    return ([3, 4, 5, 6, 8].includes(v) ? v : 3) as ColumnCount;
+  });
+  useEffect(() => {
+    localStorage.setItem('cart-view-mode', viewMode);
+  }, [viewMode]);
+  useEffect(() => {
+    localStorage.setItem('cart-grid-columns', String(gridColumns));
+  }, [gridColumns]);
+
+  const gridColsClass = useMemo(() => {
+    if (viewMode !== 'grid') return 'grid-cols-1';
+    const map: Record<ColumnCount, string> = {
+      3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+      4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+      5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+      6: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6',
+      8: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-8',
+    };
+    return map[gridColumns];
+  }, [viewMode, gridColumns]);
+
   const focusNotes = useCallback(() => {
     notesRef.current?.focus();
     notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
