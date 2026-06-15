@@ -34,6 +34,9 @@ import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
 // BUG-SORT-01 FIX: importar SORT_OPTIONS para derivar VALID_SORT_VALUES e
 // validar sort params de URL/localStorage antes de aplicar ao state.
 import { SORT_OPTIONS } from '@/constants/filters';
+// Reset diário de defaults do catálogo (regra do PO): no primeiro acesso
+// do dia, viewMode='grid', colunas=6, sortBy='newest'.
+import { ensureDailyCatalogDefaults } from '@/hooks/products/dailyCatalogDefaults';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
@@ -118,6 +121,11 @@ function getPersistedViewMode(): ViewMode {
 const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
+  // PO rule: primeiro acesso do dia → grid 6 colunas + sort 'Mais recentes'.
+  // Roda ANTES dos useState para que os inicializadores leiam os defaults.
+  // Idempotente após o primeiro acesso do dia (marca em localStorage).
+  ensureDailyCatalogDefaults();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
