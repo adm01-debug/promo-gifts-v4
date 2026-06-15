@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+        "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+      },
+      "gitCommit": {
+        "shortHash": "63dac73",
+        "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+        "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+        "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781555022000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781555106000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "commitHash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27574189659"
+          },
+          "gitCommit": {
+            "shortHash": "63dac73",
+            "hash": "63dac73e1dd273100aaf0d18cb2c8265677810c8",
+            "subject": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children",
+            "body": "fix(ts): TS2739 CartsListPage — EmptyState icon→variant + action JSX→children\n\nLovable commit 917aef4 introduced 2 violations in CartsListPage.tsx:\n\n1. icon={ShoppingCart} — EmptyStateProps has no 'icon' prop.\n   Fix: variant=\"cart\" (pre-existing variant that renders ShoppingCart).\n\n2. action={<Button>} — EmptyState.action expects\n   { label: string; onClick: () => void }, not ReactNode.\n   TS2739: Element is missing 'label' and 'onClick' properties.\n   Fix: move Button to children (rendered in mt-6 animate-fade-in div).\n   Preserves disabled={!canCreateCart} which the action object cannot express.\n\nAlso removes unused ShoppingCart from lucide-react import.\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555022000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781555106000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T20:27:48.491Z",
+    "duration": 4205.755,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
