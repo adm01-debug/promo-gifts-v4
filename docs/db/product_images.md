@@ -58,6 +58,29 @@ schema. O job autoritativo atual popula `format` mas não dimensões. Pipeline r
    classificar APROVADO/REPROVADO em vez de `SEM_DIMENSOES`).
 4. Monitorar progresso por `SELECT * FROM v_product_images_quality_gap`.
 
+## 5b. Validação adversarial (2026-06-15) — 5 gaps encontrados e corrigidos
+
+Bateria de centenas de cenários (replicação fiel + inserts reais em transação abortada +
+simulação de papéis `anon`/`authenticated`):
+
+| Gap | Severidade | Descoberta | Correção (migration) |
+|---|---|---|---|
+| `format` com tab/newline/CR/`;`/espaço interno (ex.: `image/jpeg; charset=utf-8`) passava no trigger antigo (`btrim` só remove espaços) e era **rejeitado pelo CHECK → linha inteira falhava** | Alta (quebra ingestão) | replicação de 40 entradas hostis | `..._format_normalize_robust` — normaliza extraindo 1ª seq. `[a-z0-9]` (fail-open) |
+| `anon` **sem EXECUTE** em `is_org_owner_or_admin`, que a policy de SELECT (alterada pelo ambiente) passou a referenciar → **`permission denied` quebrava leitura anônima** (imagens fora do ar) ao tocar qualquer linha inativa | **SEV-1** | simulação `SET ROLE anon` | `..._grant_anon_execute_is_org_owner_or_admin` |
+| `UPDATE` só do texto `image_type` (sem id) criava **drift** (afeta ordenação em `products`) | Média | cenário D do teste M3 | `..._sync_image_type_code_close_drift` (trigger passa a cobrir `UPDATE OF image_type`) |
+| `fn_resync_product_media` continuava **callable por anon/authenticated** (grant default a PUBLIC venceu o REVOKE) — SECURITY DEFINER + escreve em `products` → risco DoS/escrita | Alta | `has_function_privilege` | `..._resync_lockdown_execute` (REVOKE de PUBLIC, GRANT service_role) |
+| View `v_product_images_quality_gap` **exposta a anon** no GraphQL (lint 0026) | Baixa | `get_advisors` | `..._quality_gap_view_lockdown` |
+
+Achados sem ação (documentados): `format` é `varchar(20)` e a coerção de tipo ocorre **antes**
+do trigger; um valor > 20 chars é rejeitado por "value too long" independentemente da
+normalização (baixo risco — o pipeline grava tokens curtos). O ambiente também tornou
+`image_type_id` **NOT NULL** e reescreveu a policy de SELECT (org-scoped) — ambos compatíveis
+com os guards.
+
+**Pós-validação:** integração E2E confirma os 13 triggers cooperando (insert realista →
+`image_type=set`, `format=jpeg`, `alt_text` gerado, `products` sincronizado); invariantes
+globais = 0 violações de format, 0 drift, 0 `image_type_id` nulo, 1 primária/produto.
+
 ## 6. Operação de carga em massa (anti-write-amplification)
 
 ```sql
