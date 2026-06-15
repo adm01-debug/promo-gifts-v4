@@ -42,6 +42,8 @@ import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { useProductIntelligenceBadges } from '@/hooks/products/useProductIntelligenceBadges';
+import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
