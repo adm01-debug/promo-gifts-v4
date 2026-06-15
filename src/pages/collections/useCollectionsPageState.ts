@@ -233,17 +233,22 @@ export function useCollectionsPageState() {
 
   const filteredExternal = useMemo(() => {
     if (!searchQuery.trim()) return externalCollections;
-    const q = searchQuery.toLowerCase();
+    // FIX 2026-06-15 (collections-search-accent): NFD strip.
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = norm(searchQuery.trim());
     return externalCollections.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q),
+      (c) => norm(c.name).includes(q) || (c.description && norm(c.description).includes(q)),
     );
   }, [externalCollections, searchQuery]);
 
   const filteredLocal = useMemo(() => {
     if (!searchQuery.trim()) return localCollections;
-    const q = searchQuery.toLowerCase();
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = norm(searchQuery.trim());
     return localCollections.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q),
+      (c) => norm(c.name).includes(q) || (c.description && norm(c.description).includes(q)),
     );
   }, [localCollections, searchQuery]);
 
