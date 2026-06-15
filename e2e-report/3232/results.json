@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+        "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+      },
+      "gitCommit": {
+        "shortHash": "0ef1709",
+        "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+        "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+        "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781531123000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781531123000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/0ef170907402b4a31f3fdd0b32b0140add006728",
+            "commitHash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27550670628"
+          },
+          "gitCommit": {
+            "shortHash": "0ef1709",
+            "hash": "0ef170907402b4a31f3fdd0b32b0140add006728",
+            "subject": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)",
+            "body": "fix(ts): restaurar import * as Lucide + durationThreshold type cast [DEPLOY BLOCKER] (#762)\n\n* feat(images): fallback CF Images -> origem do fornecedor no OptimizedImage (catalogo)\n\nReabilita a feature da branch fix/ci-ts-regressions (sem PR, fork muito antigo\nque regrediria a main se mesclado inteiro). Porte CIRURGICO sobre a main atual,\napenas a capacidade de fallback de imagem — sem tocar em tipos/SELECT/mapper/DB.\n\n- imageProxy.ts: deriveOriginalUrl(cfUrl) reconstroi a origem SPOT a partir do\n  CF image id (spot-{ref}_{color} -> spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg).\n- OptimizedImage.tsx: nova prop opcional urlOriginal + maquina de fallback em 2\n  estagios (0=CF, 1=origem fornecedor, 2=icone). Reset ao trocar src (variante de\n  cor). Preserva blur/zoom/lqip/detection-rule/IntersectionObserver da main.\n- ProductCardImage.tsx (catalogo): passa urlOriginal={deriveOriginalUrl(activeSrc)}.\n\nImagens nao-SPOT (derive=null) caem direto no icone no erro = comportamento atual,\nzero regressao. Sem mudanca de query (sem risco de 400 por coluna inexistente).\n\nGates locais: tsc baseline 0 erros/0 regressao, eslint --max-warnings=0 PASS,\nprettier --check PASS.\n\n* fix(ts): restaurar import * as Lucide + durationThreshold type cast\n\n## Root cause\nO PR #758 (perf/deep-optimization) fez tree-shaking de lucide-react,\nsubstituindo 'import * as Lucide' por named imports em 8 arquivos do\nkit-builder/kit-library. Porém esses arquivos usam o padrão de lookup\ndinâmico (Lucide as unknown as Record<string, LucideIcon>)[name] para\nrenderizar ícones configuráveis — o namespace import é obrigatório.\n\nResultado: TS2304 'Cannot find name Lucide' em 8 arquivos (10 ocorrências)\n+ TS2353 em performance-budget.ts → gate check-tsc-baseline bloqueia deploy\n(baseline=0, atual=11 → regressão detectada → build exit 1).\n\n## Fixes aplicados\n\n### 1. import * as Lucide restaurado (8 arquivos)\nAdicionado 'import * as Lucide from lucide-react' ANTES do primeiro\nnamed import de lucide-react em cada arquivo. Named imports mantidos\n(tree-shaking para os ícones usados estáticamente).\n\n- src/components/kit-builder/IdentitySuggestionButton.tsx\n- src/components/kit-builder/KitBuilderHeader.tsx\n- src/components/kit-builder/KitIdentityPicker.tsx\n- src/components/kit-builder/SimilarKitsWidget.tsx\n- src/components/kit-library/KitCard.tsx\n- src/components/kit-library/KitTemplatePreviewDialog.tsx\n- src/components/kit-library/RelatedTemplates.tsx\n- src/pages/admin/KitTemplatesAdminPage.tsx\n\n### 2. durationThreshold type cast (performance-budget.ts:82)\ndurationThreshold é propriedade válida da Web Performance API (spec)\nmas ausente no PerformanceObserverInit do lib.dom.d.ts do TS.\nFix: cast semântico com type intersection:\n  { ..., durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number }\n\n## Validação\n- tsconfig.fixcheck.json scoped sobre os 9 arquivos → 0 erros (era 11)\n- Baseline gate passa: 0 atual vs 0 baseline = sem regressão",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781531123000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781531123000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T13:49:32.162Z",
+    "duration": 3327.8250000000003,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
