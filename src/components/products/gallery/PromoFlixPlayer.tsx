@@ -1085,7 +1085,7 @@ export function PromoFlixPlayer({
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            className="absolute bottom-0 right-0 top-0 z-40 flex w-72 flex-col border-l border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-xl"
+            className="absolute bottom-0 right-0 top-0 z-40 flex w-52 flex-col border-l border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-xl"
           >
             <div className="mb-8 flex items-center justify-between">
               <div className="flex items-center gap-2">
