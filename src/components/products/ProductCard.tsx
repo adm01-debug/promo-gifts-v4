@@ -42,6 +42,8 @@ import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { useProductIntelligenceBadges } from '@/hooks/products/useProductIntelligenceBadges';
+import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { feedback } from '@/lib/feedback';
 import { telemetryService } from '@/services/telemetryService';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
@@ -123,6 +125,14 @@ export const ProductCard = memo(
       categoryName: leafCategory?.name,
       categoryPath: leafCategory?.path,
     });
+    const { badges: intelligenceBadges } = useProductIntelligenceBadges(product.id, {
+      featured: product.featured,
+      new_arrival: (product as { new_arrival?: boolean }).new_arrival,
+    });
+    const cardIntelligenceBadges = useMemo(
+      () => intelligenceBadges.filter((b) => b.type === 'best-seller' || b.type === 'hot-item'),
+      [intelligenceBadges],
+    );
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -644,6 +654,12 @@ export const ProductCard = memo(
               className="flex-wrap"
             />
           )}
+
+          {cardIntelligenceBadges.length > 0 && (
+            <IntelligenceBadges badges={cardIntelligenceBadges} className="gap-1.5" />
+          )}
+
+
 
           <div className="flex min-w-0 items-center justify-start gap-1.5">
             <div className="shrink-1 flex min-w-0 items-center gap-1">
