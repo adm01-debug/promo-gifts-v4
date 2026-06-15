@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Search, X, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce, useSearch, useSearchHistory, type SearchResult } from '@/hooks/common';
+import { type Product } from '@/hooks/products';
 import { useSpeechRecognition } from '@/hooks/intelligence';
 import { GroupedSearchResults } from './SearchResultGroups';
 
@@ -27,6 +28,8 @@ interface SmartSearchInputProps {
   onSearch?: (query: string) => void;
   className?: string;
   autoFocus?: boolean;
+  /** Produto já carregados para autocomplete preciso de categoria/fornecedor (#4). */
+  products?: Product[];
 }
 
 export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps>(
@@ -38,6 +41,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
       className,
       autoFocus = false,
       inputId = 'search',
+      products,
     },
     _ref,
   ) {
@@ -59,7 +63,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
     const [tooltipVisible, setTooltipVisible] = useState(false);
     // ──────────────────────────────────────────────────────────────────────────
 
-    const { query, setQuery, suggestions, quickSuggestions, clearHistory } = useSearch();
+    const { query, setQuery, suggestions, quickSuggestions, clearHistory } = useSearch(products);
 
     const { history, addToHistory, removeFromHistory } = useSearchHistory('general');
 
