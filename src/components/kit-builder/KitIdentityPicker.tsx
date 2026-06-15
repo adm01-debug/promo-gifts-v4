@@ -3,8 +3,7 @@
  */
 import { useState } from 'react';
 import * as Lucide from 'lucide-react';
-import { Package } from 'lucide-react';
-import { Palette } from 'lucide-react';
+import { Package, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

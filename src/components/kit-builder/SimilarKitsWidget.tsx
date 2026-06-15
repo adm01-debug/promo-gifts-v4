@@ -4,13 +4,12 @@
  */
 import { useNavigate } from 'react-router-dom';
 import * as Lucide from 'lucide-react';
-import { Package, type LucideIcon } from 'lucide-react';
+import { Package, type LucideIcon, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSimilarKits } from '@/hooks/kit-builder';
 import { formatCurrency } from '@/lib/kit-builder';
-import { Sparkles } from 'lucide-react';
 
 interface Props {
   currentSkus: string[];
