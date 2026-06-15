@@ -187,6 +187,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
                   alt="Preview"
                   className="h-48 w-full bg-muted object-contain"
                   loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
 
                 {isLoading ? (
