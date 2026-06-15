@@ -92,6 +92,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
   return (
     <article
+      data-testid="novelty-grid-card"
       className={cn(
         'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-md',
@@ -228,19 +229,34 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           />
         </div>
 
-        {/* Preço + Estoque — ancorados ao final do card */}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          {product.base_price !== null ? (
-            <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-medium text-muted-foreground">A partir de</span>
-              <p className="text-sm font-semibold text-primary">
+        {/* Preço + Estoque — ancorados ao rodapé do card em todos os breakpoints */}
+        <div
+          className="mt-auto flex items-end justify-between gap-2 pt-2"
+          data-testid="novelty-card-footer"
+        >
+          {typeof product.base_price === 'number' &&
+          Number.isFinite(product.base_price) &&
+          product.base_price > 0 ? (
+            <div className="flex min-w-0 flex-col leading-tight" data-testid="novelty-card-price">
+              <span
+                className="text-[10px] font-medium text-muted-foreground"
+                data-testid="novelty-card-price-prefix"
+              >
+                A partir de
+              </span>
+              <p className="truncate text-sm font-semibold text-primary">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                   product.base_price,
                 )}
               </p>
             </div>
           ) : (
-            <span />
+            <span
+              className="text-xs italic text-muted-foreground"
+              data-testid="novelty-card-price-unavailable"
+            >
+              Sob consulta
+            </span>
           )}
           <StockBadge
             status={
