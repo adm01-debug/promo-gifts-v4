@@ -740,6 +740,24 @@ function SellerCartsContent() {
         onConfirm={s.handleClearCart}
         testId="cart-clear-dialog"
       />
+      <ConfirmDialog
+        open={!!pendingRemoveItem}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemoveItem(null);
+        }}
+        variant="destructive"
+        title="Remover item do carrinho?"
+        description={
+          pendingRemoveItem
+            ? `O item "${pendingRemoveItem.name}" será removido. Você poderá desfazer pelo toast.`
+            : ''
+        }
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        onConfirm={confirmRemoveItem}
+        testId="cart-remove-item-dialog"
+      />
     </div>
+
   );
 }
