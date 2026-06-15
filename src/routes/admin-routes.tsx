@@ -30,6 +30,7 @@ import {
   OwnershipAuditAdminPage,
   PermissionsPage,
   PriceFreshnessSettingsPage,
+  IntelligenceBadgeSettingsPage,
   QAPage,
   RateLimitDashboard,
   RlsDenialsAdminPage,
@@ -112,6 +113,7 @@ export const adminRoutes = (
       <Route path="/admin/seguranca/migracao-papeis" element={<AdminMigracaoPapeisPage />} />
       <Route path="/admin/prompts-ia" element={<AdminPromptsIAPage />} />
       <Route path="/admin/validade-precos" element={<PriceFreshnessSettingsPage />} />
+      <Route path="/admin/badges-inteligencia" element={<IntelligenceBadgeSettingsPage />} />
       <Route path="/admin/telemetria" element={<AdminTelemetriaPage />} />
       <Route path="/admin/design-tokens" element={<AdminDesignTokensPage />} />
       <Route path="/admin/client-performance" element={<AdminClientPerformancePage />} />
