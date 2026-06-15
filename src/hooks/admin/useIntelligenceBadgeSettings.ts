@@ -104,7 +104,7 @@ export function useIntelligenceBadgeSettings() {
       const clean = sanitize(next);
       const { error } = await supabase
         .from('admin_settings')
-        .upsert({ key: SETTING_KEY, value: clean }, { onConflict: 'key' });
+        .upsert({ key: SETTING_KEY, value: clean as unknown as Json }, { onConflict: 'key' });
       if (error) {
         toast.error('Não foi possível salvar as badges', { description: sanitizeError(error) });
         return false;
