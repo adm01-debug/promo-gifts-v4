@@ -3,8 +3,7 @@
  */
 import { useMemo, useState } from 'react';
 import * as Lucide from 'lucide-react';
-import { Package } from 'lucide-react';
-import { Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

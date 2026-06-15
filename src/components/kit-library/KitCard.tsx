@@ -2,8 +2,7 @@
  * Kit Card — Cartão visual rico para "Meus Kits" e "Sugeridos".
  */
 import * as Lucide from 'lucide-react';
-import { Package } from 'lucide-react';
-import { Star, Pencil, Copy, Trash2, Wand2, Tag as TagIcon, Layers, Pin } from 'lucide-react';
+import { Package, Star, Pencil, Copy, Trash2, Wand2, Tag as TagIcon, Layers, Pin } from 'lucide-react';
 import { TruncatedTooltip } from '@/components/ui/truncated-tooltip';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

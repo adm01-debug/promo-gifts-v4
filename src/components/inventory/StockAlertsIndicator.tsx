@@ -392,6 +392,7 @@ export function StockAlertsIndicator() {
                       alt=""
                       className="h-10 w-10 flex-shrink-0 rounded-lg border border-border/30 bg-background object-contain p-0.5"
                       loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                     />
                   ) : (
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-muted/40">

@@ -2596,12 +2596,4 @@ body[data-offline='true'] button[type='submit']::after {
   src: local('Plus Jakarta Sans');
 }
 
-/* ── Prefers-reduced-data: reduzir imagens e animações em conexões lentas ── */
-@media (prefers-reduced-data: reduce) {
-  img[loading="lazy"] {
-    display: none;
-  }
-  video {
-    display: none;
-  }
-}
+/* NOTE: prefers-reduced-data block removed — hid ALL lazy images (= product catalog) */

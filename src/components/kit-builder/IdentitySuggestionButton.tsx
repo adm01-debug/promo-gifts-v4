@@ -4,8 +4,7 @@
  */
 import { useState } from 'react';
 import * as Lucide from 'lucide-react';
-import { Package, type LucideIcon } from 'lucide-react';
-import { Sparkles, Check, X, Loader2 } from 'lucide-react';
+import { Package, type LucideIcon, Sparkles, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
