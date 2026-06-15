@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+        "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+      },
+      "gitCommit": {
+        "shortHash": "981fe43",
+        "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+        "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+        "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781526663000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781526663000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/981fe4371d1da4c2f9237de622adfad3e9163348",
+            "commitHash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27546381008"
+          },
+          "gitCommit": {
+            "shortHash": "981fe43",
+            "hash": "981fe4371d1da4c2f9237de622adfad3e9163348",
+            "subject": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx",
+            "body": "fix(ts): TS2339 + no-unused-vars em ProductCardActions.tsx\n\nFix anterior (d353571) renomeou incorretamente o parâmetro destructurado:\n  ERRADO: _isOutOfStock = false    ← TypeScript busca _isOutOfStock no tipo → TS2339\n  CERTO:  isOutOfStock: _isOutOfStock = false  ← alias de destructuring ES6/TS\n\nA sintaxe correta para renomear um parâmetro destructurado e satisfazer\nno-unused-vars (/^_/ pattern) é o alias: { propName: _localName = default }.\nIsso diz ao TypeScript \"leia isOutOfStock (que existe no tipo), chame-o de\n_isOutOfStock localmente\". ESLint vê _isOutOfStock e ignora.\n\nResultado: TS2339 resolvido, no-unused-vars resolvido, tipo preservado.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781526663000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T12:32:51.270Z",
+    "duration": 4220.96,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
