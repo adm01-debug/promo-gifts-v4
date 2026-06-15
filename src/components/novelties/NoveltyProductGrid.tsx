@@ -179,8 +179,8 @@ export function NoveltyProductGrid() {
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
   const hasMore = visibleCount < filteredProducts.length;
-  // BUG-SCROLL-03 FIX: handler com ref-guard + useCallback para estabilidade
-  // na dep do useInfiniteScroll (evita recrear o IntersectionObserver a cada render).
+  // Handler estável para carregar mais itens quando o wrapper virtualizado
+  // chega perto do fim do scroll interno.
   const handleLoadMore = useCallback(() => {
     if (isLoadingMoreLocalRef.current) return; // Guard: evita cascata de increments
     isLoadingMoreLocalRef.current = true;
@@ -271,7 +271,7 @@ export function NoveltyProductGrid() {
             data-testid="novelty-loading-grid"
             // Reserva altura mínima do bloco da lista durante o loading para que
             // a transição skeleton→cards não cause oscilação na medição do
-            // virtualizer (scrollMargin/offsetTop estáveis).
+            // virtualizer.
             style={{ minHeight: viewMode === 'list' ? 600 : 1260 }}
             className={cn(
               'grid',
