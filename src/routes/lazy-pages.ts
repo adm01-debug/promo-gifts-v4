@@ -41,6 +41,7 @@ export const ReplenishmentsPage = lazyWithRetry(
 );
 export const FavoritesPage = lazyWithRetry(() => import('@/pages/products/FavoritesPage'));
 export const SellerCartsPage = lazyWithRetry(() => import('@/pages/products/SellerCartsPage'));
+export const CartsListPage = lazyWithRetry(() => import('@/pages/products/CartsListPage'));
 export const ComparePage = lazyWithRetry(() => import('@/pages/products/ComparePage'));
 export const CollectionsPage = lazyWithRetry(() => import('@/pages/collections/CollectionsPage'));
 export const CollectionDetailPage = lazyWithRetry(
