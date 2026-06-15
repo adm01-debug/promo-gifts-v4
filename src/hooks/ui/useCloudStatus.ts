@@ -3,7 +3,7 @@
  *
  * Polling adaptativo:
  *   - `healthy`            → re-checa a cada 60s
- *   - `warming`/`degraded` → re-checa em 5s, 10s, 15s (cap 15s)
+ *   - `warming`/`degraded` → re-checa em 20s, 40s, 60s (cap 60s)
  *   - `down`               → para automático após 30s; usuário aciona retry
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,7 +18,12 @@ interface UseCloudStatusReturn {
 }
 
 const HEALTHY_INTERVAL = 60_000;
-const DEGRADED_BACKOFF = [5_000, 10_000, 15_000];
+// Backoff menos agressivo em degraded/warming. Cada probe dispara auth+rest com
+// force=true (ignora o cache de 15s do cloud-status.ts); a cadência antiga de
+// [5s,10s,15s] amplificava a carga sobre um backend já saturado, criando um loop
+// de realimentação que prolongava o próprio estado degradado. [20s,40s,60s] corta
+// ~4x a carga auto-infligida e ainda detecta recuperação em ~1 min.
+const DEGRADED_BACKOFF = [20_000, 40_000, 60_000];
 const DOWN_AUTO_STOP_MS = 30_000;
 const loadCloudStatus = () => import('@/lib/cloud-status');
 
