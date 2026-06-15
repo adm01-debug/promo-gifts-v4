@@ -207,8 +207,17 @@ function CartRow({ cart, onOpen }: CartRowProps) {
           {formatDistanceToNow(updatedAt, { addSuffix: true, locale: ptBR })}
         </div>
       </TableCell>
-      <TableCell>
-        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onOpen}
+          data-testid={`cart-row-open-${cart.id}`}
+          className="gap-1"
+        >
+          Abrir
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
       </TableCell>
     </TableRow>
   );
