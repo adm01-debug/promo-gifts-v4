@@ -210,11 +210,19 @@ function SellerCartsContent() {
         setRowError(itemId, 'Valor numérico inválido.');
         return;
       }
+      if (raw < 0) {
+        setRowError(itemId, 'Não use valores negativos.');
+        return;
+      }
       if (raw < 1) {
         setRowError(itemId, 'Mínimo 1 unidade.');
         return;
       }
-      const qty = Math.floor(raw);
+      if (!Number.isInteger(raw)) {
+        setRowError(itemId, 'Use apenas números inteiros.');
+        return;
+      }
+      const qty = raw;
       if (qty > 999999) {
         setRowError(itemId, 'Máximo 999.999.');
         toast.warning(`Quantidade máxima para "${productName}" é 999.999.`);
