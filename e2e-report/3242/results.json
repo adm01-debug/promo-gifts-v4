@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+        "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+      },
+      "gitCommit": {
+        "shortHash": "b220a41",
+        "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+        "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+        "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781533021000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781533021000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b220a41ab57511c334a224f1b36602af78094c48",
+            "commitHash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27552652045"
+          },
+          "gitCommit": {
+            "shortHash": "b220a41",
+            "hash": "b220a41ab57511c334a224f1b36602af78094c48",
+            "subject": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)",
+            "body": "fix(audit-50): 10 correções pós-análise exaustiva de commits (#768)\n\n## ESLint: no-duplicate-imports (6 arquivos) — baseline 8→4 erros\nRaiz: PR #758 (deep-optimization) removeu `import * as Lucide` para tree-shaking,\nmas deixou os nomes dinâmicos nas chamadas; PR #762 restaurou o wildcard sem mesclar\nos imports existentes → arquivos com 2-3 declarações separadas de `from 'lucide-react'`.\n\nFix: mesclar as duas declarações named em uma única por arquivo.\n\n- IdentitySuggestionButton.tsx: 3 imports → wildcard + 1 named\n- KitIdentityPicker.tsx:        3 imports → wildcard + 1 named (Package + Palette)\n- SimilarKitsWidget.tsx:        3 imports → wildcard + 1 named (+ remove import isolado de Sparkles)\n- KitCard.tsx:                  3 imports → wildcard + 1 named (Package + Star/Pencil/…)\n- KitTemplatePreviewDialog.tsx: 3 imports → wildcard + 1 named (Package + Loader2/Sparkles/Wand2)\n- KitTemplatesAdminPage.tsx:    3 imports → wildcard + 1 named (Package + Plus/Pencil/…)\n\n## StockAlertsIndicator.tsx — onError ausente no thumbnail do produto\nBug-6..12 do PR #763 (audit) adicionou onError em 20+ componentes, mas deixou\npassar a imagem do painel de notificações de estoque. CDN indisponível exibia\nícone de imagem quebrada do browser em vez do /placeholder.svg.\n\n## index.css — remove @media (prefers-reduced-data) agressivo\nO bloco adicionado em #758 escondia TODAS as imagens com `loading=\"lazy\"` para\nusuários com preferência de dados reduzidos. Como o catálogo inteiro usa lazy,\nisso quebrava todas as fotos de produto. Bloco removido (feature experimental,\nsem suporte mainstream, impacto catastrófico no catálogo).\n\n## vercel.json — adiciona newline final\nArquivo terminava sem LF, violando POSIX e gerando diff sujo em editores.\n\n## .eslint-baseline.json — atualiza contagem (8 → 4)\nRemove as 6 entradas no-duplicate-imports corrigidas acima.\nMantém as 4 violações congeladas de StockAlertsIndicator (eqeqeq + exhaustive-deps).\n\nASSERTIONS:\n- 10/10 PASS\n- Todos os kit-builder/library: 2 linhas lucide (1 wildcard + 1 named) ✅\n- StockAlertsIndicator: onError presente no img do item ✅\n- index.css: bloco prefers-reduced-data removido ✅\n- vercel.json: trailing newline presente ✅\n- baseline: totalErrors=4 ✅",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781533021000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781533021000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T14:26:28.635Z",
+    "duration": 4213.367,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
