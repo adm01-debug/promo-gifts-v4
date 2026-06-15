@@ -1,0 +1,392 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+        "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+      },
+      "gitCommit": {
+        "shortHash": "d169e5b",
+        "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+        "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+        "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781536188000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781536188000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "commitHash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27556022696"
+          },
+          "gitCommit": {
+            "shortHash": "d169e5b",
+            "hash": "d169e5bc358e79c27b8fea37ef5fd034fa01b693",
+            "subject": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)",
+            "body": "fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido (#773) (#773)\n\n* fix(ts): useSearch.ts TS2740 — Product[] em vez de ReturnType<typeof rankProductSearchResults>\n\nTS2740: Type 'SearchableProductLike' is missing properties from type 'Product'\n  at src/hooks/common/useSearch.ts:211\n\n## Root cause\n\nBUG-E fix (PR #769) extraiu allProductMatches para um useMemo próprio e\nusou a seguinte expressão no early-return:\n\n  return [] as ReturnType<typeof rankProductSearchResults>;\n\nrankProductSearchResults é genérica: rankProductSearchResults<T extends\nSearchableProductLike>(products: T[], ...) : T[].\n\nReturnType<typeof genericFn> sem argumento de tipo resolve para o tipo\ndo constraint — SearchableProductLike[] — não para Product[].\n\nO useMemo então infere tipo SearchableProductLike[] (via union) e a\natribuição data: product no push de SearchResult (que exige data: Product)\nfalha com TS2740.\n\n## Fix\n\nSubstituir a cast do early-return:\n  ANTES: return [] as ReturnType<typeof rankProductSearchResults>;\n  DEPOIS: return [] as Product[];\n\nAgora ambos os ramos do useMemo retornam Product[], que é compatível\ncom SearchResult.data: Product.\n\n* fix(player): Raio-X panel w-72→w-52 — proporcional ao modal reduzido\n\nModal: 44.8rem (717px). Antes (modal 1024px): w-72=288px=28.1%.\nAgora (modal 717px):  w-72=288px=40.2% — dominante demais.\nFix:                  w-52=208px=29.0% — Δ0.9pp vs proporção original.\n\nInner content: 240px→160px (p-6=24px×2). Legível em zoom até 0.8×.\nAnimação framer-motion x:'100%'→0 agora percorre 208px (era 288px).",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781536188000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781536188000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+      "stack": "Error: Cannot find module '/home/runner/work/promo-gifts-v4/promo-gifts-v4/fixtures/test-base' imported from /home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-06-15T15:14:51.184Z",
+    "duration": 4181.844,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
