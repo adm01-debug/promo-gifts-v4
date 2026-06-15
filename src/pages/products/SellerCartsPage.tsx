@@ -133,7 +133,56 @@ function SellerCartsContent() {
 
   const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
-  // Confirmação de remoção de item (tabela)
+  // Ordenação + paginação (persistidas)
+  type SortKey = 'name' | 'price' | 'total';
+  type SortDir = 'asc' | 'desc';
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    if (typeof window === 'undefined') return 'name';
+    return (localStorage.getItem('cart-table-sort-key') as SortKey) || 'name';
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    if (typeof window === 'undefined') return 'asc';
+    return (localStorage.getItem('cart-table-sort-dir') as SortDir) || 'asc';
+  });
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === 'undefined') return 25;
+    const v = Number(localStorage.getItem('cart-table-page-size'));
+    return [10, 25, 50, 100].includes(v) ? v : 25;
+  });
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-key', sortKey);
+  }, [sortKey]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-dir', sortDir);
+  }, [sortDir]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-page-size', String(pageSize));
+  }, [pageSize]);
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortDir('asc');
+      return key;
+    });
+    setPage(1);
+  }, []);
+
+  // Erros inline por linha (qty) — impedem persistir valor inválido
+  const [qtyErrors, setQtyErrors] = useState<Record<string, string>>({});
+  const setRowError = useCallback((id: string, msg: string | null) => {
+    setQtyErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[id] = msg;
+      else delete next[id];
+      return next;
+    });
+  }, []);
+
+  // Confirmação de remoção de item (tabela) — otimista; hook já oferece desfazer
   const [pendingRemoveItem, setPendingRemoveItem] = useState<{ id: string; name: string } | null>(
     null,
   );
@@ -141,7 +190,6 @@ function SellerCartsContent() {
     if (!pendingRemoveItem) return;
     try {
       s.handleRemoveItem(pendingRemoveItem.id, pendingRemoveItem.name);
-      toast.success(`"${pendingRemoveItem.name}" removido do carrinho`);
     } catch {
       toast.error('Não foi possível remover o item. Tente novamente.');
     } finally {
@@ -149,24 +197,37 @@ function SellerCartsContent() {
     }
   }, [pendingRemoveItem, s]);
 
-  // Validação + feedback ao alterar qtd
+  // Validação + feedback inline ao alterar qtd
   const safeUpdateQuantity = useCallback(
-    (itemId: string, raw: number, productName: string) => {
-      if (!Number.isFinite(raw) || raw < 1) {
-        toast.warning(`Quantidade inválida para "${productName}". Ajustada para 1.`);
-        s.handleUpdateQuantity(itemId, 1);
+    (itemId: string, rawValue: string, productName: string) => {
+      const trimmed = rawValue.trim();
+      if (trimmed === '') {
+        setRowError(itemId, 'Informe uma quantidade.');
+        return;
+      }
+      const raw = Number(trimmed);
+      if (!Number.isFinite(raw) || Number.isNaN(raw)) {
+        setRowError(itemId, 'Valor numérico inválido.');
+        return;
+      }
+      if (raw < 1) {
+        setRowError(itemId, 'Mínimo 1 unidade.');
         return;
       }
       const qty = Math.floor(raw);
       if (qty > 999999) {
-        toast.warning('Quantidade máxima é 999.999.');
+        setRowError(itemId, 'Máximo 999.999.');
+        toast.warning(`Quantidade máxima para "${productName}" é 999.999.`);
         s.handleUpdateQuantity(itemId, 999999);
         return;
       }
+      setRowError(itemId, null);
       s.handleUpdateQuantity(itemId, qty);
     },
-    [s],
+    [s, setRowError],
   );
+
+
 
 
   const gridColsClass = useMemo(() => {
@@ -492,6 +553,37 @@ function SellerCartsContent() {
                 </div>
 
                 {viewMode === 'table' ? (
+                  (() => {
+                    const items = s.activeCart.items;
+                    const sorted = [...items].sort((a, b) => {
+                      const dir = sortDir === 'asc' ? 1 : -1;
+                      if (sortKey === 'name') return a.product_name.localeCompare(b.product_name, 'pt-BR') * dir;
+                      if (sortKey === 'price') return (a.product_price - b.product_price) * dir;
+                      const ta = a.product_price * a.quantity;
+                      const tb = b.product_price * b.quantity;
+                      return (ta - tb) * dir;
+                    });
+                    const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+                    const safePage = Math.min(page, totalPages);
+                    const start = (safePage - 1) * pageSize;
+                    const pageItems = sorted.slice(start, start + pageSize);
+                    const renderSortHdr = (key: SortKey, label: string, align: 'left' | 'right') => (
+                      <th className={cn(rowPad, align === 'right' ? 'text-right' : 'text-left', 'font-semibold')}>
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(key)}
+                          className="inline-flex items-center gap-1 hover:text-primary"
+                          data-testid={`cart-sort-${key}`}
+                          aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        >
+                          {label}
+                          <span className="text-[10px] opacity-70">
+                            {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                    return (
                   <div
                     className="overflow-x-auto rounded-xl border border-border/40 bg-card/40"
                     data-testid="cart-table"
@@ -499,22 +591,20 @@ function SellerCartsContent() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                         <tr>
-                          <th className={cn(rowPad, 'text-left font-semibold')}>Produto</th>
+                          {renderSortHdr('name', 'Produto', 'left')}
                           {visibleColumns.color && (
                             <th className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
                           )}
                           <th className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
-                          {visibleColumns.price && (
-                            <th className={cn(rowPad, 'text-right font-semibold')}>Preço</th>
-                          )}
-                          {visibleColumns.total && (
-                            <th className={cn(rowPad, 'text-right font-semibold')}>Total</th>
-                          )}
+                          {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
+                          {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
                           <th className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {s.activeCart.items.map((item) => (
+                        {pageItems.map((item) => {
+                          const err = qtyErrors[item.id];
+                          return (
                           <tr
                             key={item.id}
                             data-testid={`cart-row-${item.id}`}
@@ -557,28 +647,44 @@ function SellerCartsContent() {
                                 )}
                               </td>
                             )}
-                            <td className={cn(rowPad, 'text-right')}>
+                            <td className={cn(rowPad, 'text-right align-top')}>
                               <input
                                 type="number"
                                 min={1}
                                 max={999999}
                                 step={1}
-                                value={item.quantity}
+                                defaultValue={item.quantity}
+                                key={`${item.id}-${item.quantity}`}
                                 data-testid={`cart-qty-input-${item.id}`}
+                                aria-invalid={err ? true : undefined}
+                                aria-describedby={err ? `qty-err-${item.id}` : undefined}
                                 onChange={(e) =>
-                                  safeUpdateQuantity(
-                                    item.id,
-                                    Number(e.target.value),
-                                    item.product_name,
-                                  )
+                                  safeUpdateQuantity(item.id, e.target.value, item.product_name)
                                 }
                                 onBlur={(e) => {
-                                  if (!e.target.value || Number(e.target.value) < 1) {
-                                    safeUpdateQuantity(item.id, 1, item.product_name);
+                                  // Se valor inválido permaneceu, restaura ao último válido (não persiste lixo)
+                                  if (qtyErrors[item.id]) {
+                                    e.target.value = String(item.quantity);
+                                    setRowError(item.id, null);
                                   }
                                 }}
-                                className="h-8 w-20 rounded-md border border-border/40 bg-background px-2 text-right text-sm tabular-nums focus:border-primary/40 focus:outline-none"
+                                className={cn(
+                                  'h-8 w-20 rounded-md border bg-background px-2 text-right text-sm tabular-nums focus:outline-none',
+                                  err
+                                    ? 'border-destructive focus:border-destructive ring-1 ring-destructive/30'
+                                    : 'border-border/40 focus:border-primary/40',
+                                )}
                               />
+                              {err && (
+                                <p
+                                  id={`qty-err-${item.id}`}
+                                  role="alert"
+                                  data-testid={`cart-qty-error-${item.id}`}
+                                  className="mt-1 text-[10px] font-medium text-destructive"
+                                >
+                                  {err}
+                                </p>
+                              )}
                             </td>
                             {visibleColumns.price && (
                               <td
@@ -619,10 +725,68 @@ function SellerCartsContent() {
                               </Button>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
+                    {/* Paginação */}
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-2 border-t border-border/30 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+                      data-testid="cart-table-pagination"
+                    >
+                      <span>
+                        {sorted.length === 0
+                          ? '0 itens'
+                          : `${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length}`}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1">
+                          <span>Por página:</span>
+                          <select
+                            value={pageSize}
+                            onChange={(e) => {
+                              setPageSize(Number(e.target.value));
+                              setPage(1);
+                            }}
+                            data-testid="cart-page-size"
+                            className="h-7 rounded-md border border-border/40 bg-background px-1.5"
+                          >
+                            {[10, 25, 50, 100].map((n) => (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          disabled={safePage <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          data-testid="cart-page-prev"
+                        >
+                          ‹
+                        </Button>
+                        <span className="tabular-nums">
+                          {safePage} / {totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          disabled={safePage >= totalPages}
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          data-testid="cart-page-next"
+                        >
+                          ›
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+                    );
+                  })()
+
 
                 ) : (
                   <DndContext
