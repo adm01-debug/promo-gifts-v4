@@ -238,7 +238,8 @@ export function useSearch(products: Product[] = []) {
       const productCount = availableProducts.filter((p) => {
         if (p.supplier?.id && p.supplier.id === sid) return true;
         if (!p.brand) return false;
-        return supTokens.some((t) => normalizeProductSearch(p.brand).includes(t));
+        const normalizedBrand = normalizeProductSearch(p.brand); // const estreita o tipo antes do closure
+        return supTokens.some((t) => normalizedBrand.includes(t));
       }).length;
       if (productCount === 0 && availableProducts.length > 0) return;
       results.push({
