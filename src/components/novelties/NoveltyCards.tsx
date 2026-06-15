@@ -174,7 +174,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-1 flex-col gap-1">
         {/* 1 — Categoria */}
         {product.category_id && product.category_name && (
           <ProductCategoryBadges
@@ -217,7 +217,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           {product.product_name ?? '—'}
         </p>
 
-
         <div className="mt-0.5">
           <ProductColorSwatches
             colors={colors}
@@ -229,14 +228,34 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           />
         </div>
 
-        {/* Preço + Estoque */}
-        <div className="flex items-center justify-between gap-2">
-          {product.base_price !== null && (
-            <p className="text-sm font-semibold text-primary">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                product.base_price,
-              )}
-            </p>
+        {/* Preço + Estoque — ancorados ao rodapé do card em todos os breakpoints */}
+        <div
+          className="mt-auto flex items-end justify-between gap-2 pt-2"
+          data-testid="novelty-card-footer"
+        >
+          {typeof product.base_price === 'number' &&
+          Number.isFinite(product.base_price) &&
+          product.base_price > 0 ? (
+            <div className="flex min-w-0 flex-col leading-tight" data-testid="novelty-card-price">
+              <span
+                className="text-[10px] font-medium text-muted-foreground"
+                data-testid="novelty-card-price-prefix"
+              >
+                A partir de
+              </span>
+              <p className="truncate text-sm font-semibold text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  product.base_price,
+                )}
+              </p>
+            </div>
+          ) : (
+            <span
+              className="text-xs italic text-muted-foreground"
+              data-testid="novelty-card-price-unavailable"
+            >
+              Sob consulta
+            </span>
           )}
           <StockBadge
             status={
