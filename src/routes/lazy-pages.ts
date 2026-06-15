@@ -98,6 +98,9 @@ export const KitTemplatesMetricsPage = lazyWithRetry(
 export const PriceFreshnessSettingsPage = lazyWithRetry(
   () => import('@/pages/admin/PriceFreshnessSettings'),
 );
+export const IntelligenceBadgeSettingsPage = lazyWithRetry(
+  () => import('@/pages/admin/IntelligenceBadgeSettingsPage'),
+);
 export const AdminSegurancaAcessoPage = lazyWithRetry(
   () => import('@/pages/admin/AdminSegurancaAcessoPage'),
 );

@@ -97,10 +97,14 @@ export function IntelligenceBadges({
                 </Badge>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-center">
-              <p>{badge.label}</p>
+            <TooltipContent side="bottom" className="max-w-[260px] text-center">
+              <p className="font-medium">{badge.label}</p>
+              {badge.description ? (
+                <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
+              ) : null}
             </TooltipContent>
           </Tooltip>
+
         );
       })}
 
