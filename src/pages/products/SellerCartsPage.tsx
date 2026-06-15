@@ -101,6 +101,74 @@ function SellerCartsContent() {
     localStorage.setItem('cart-grid-columns', String(gridColumns));
   }, [gridColumns]);
 
+  // Tabela: colunas visíveis + densidade (persistidos)
+  const DEFAULT_COLS: Record<CartTableColumnKey, boolean> = {
+    color: true,
+    quantity: true,
+    price: true,
+    total: true,
+    actions: true,
+  };
+  const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(() => {
+    if (typeof window === 'undefined') return DEFAULT_COLS;
+    try {
+      const raw = localStorage.getItem('cart-table-columns');
+      if (!raw) return DEFAULT_COLS;
+      const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
+      return { ...DEFAULT_COLS, ...parsed, quantity: true, actions: true };
+    } catch {
+      return DEFAULT_COLS;
+    }
+  });
+  const [density, setDensity] = useState<CartTableDensity>(() => {
+    if (typeof window === 'undefined') return 'comfortable';
+    return (localStorage.getItem('cart-table-density') as CartTableDensity) || 'comfortable';
+  });
+  useEffect(() => {
+    localStorage.setItem('cart-table-columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-density', density);
+  }, [density]);
+
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+
+  // Confirmação de remoção de item (tabela)
+  const [pendingRemoveItem, setPendingRemoveItem] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const confirmRemoveItem = useCallback(() => {
+    if (!pendingRemoveItem) return;
+    try {
+      s.handleRemoveItem(pendingRemoveItem.id, pendingRemoveItem.name);
+      toast.success(`"${pendingRemoveItem.name}" removido do carrinho`);
+    } catch {
+      toast.error('Não foi possível remover o item. Tente novamente.');
+    } finally {
+      setPendingRemoveItem(null);
+    }
+  }, [pendingRemoveItem, s]);
+
+  // Validação + feedback ao alterar qtd
+  const safeUpdateQuantity = useCallback(
+    (itemId: string, raw: number, productName: string) => {
+      if (!Number.isFinite(raw) || raw < 1) {
+        toast.warning(`Quantidade inválida para "${productName}". Ajustada para 1.`);
+        s.handleUpdateQuantity(itemId, 1);
+        return;
+      }
+      const qty = Math.floor(raw);
+      if (qty > 999999) {
+        toast.warning('Quantidade máxima é 999.999.');
+        s.handleUpdateQuantity(itemId, 999999);
+        return;
+      }
+      s.handleUpdateQuantity(itemId, qty);
+    },
+    [s],
+  );
+
+
   const gridColsClass = useMemo(() => {
     if (viewMode !== 'grid') return 'grid-cols-1';
     const map: Record<ColumnCount, string> = {
