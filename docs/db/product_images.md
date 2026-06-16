@@ -107,3 +107,36 @@ ALTER TABLE product_images ENABLE TRIGGER trg_sync_product_images_update;
 ALTER TABLE product_images ENABLE TRIGGER trg_sync_set_image_url;
 SELECT fn_resync_product_media(ARRAY(SELECT DISTINCT product_id FROM staging_lote));
 ```
+
+## 7. Camada estrutural — 19 colunas novas (2026-06-16, pós-auditoria CF↔DB)
+
+Motivação: a auditoria forense `product_images` × Cloudflare revelou que ~70% das referências
+ativas apontavam para IDs inexistentes no CF, sem **nenhuma coluna que registrasse o estado de
+sincronização** (os campos eram "aspiracionais"). A tabela passou de **27 → 46 colunas** em 6
+migrations aditivas/idempotentes (`IF NOT EXISTS` + guards `DO $$`), todas aplicadas e verificadas.
+
+| Bloco | Migration | Colunas |
+|---|---|---|
+| 1 — Observabilidade CF | `..._cf_sync_observability` | `cf_sync_status` (CHECK + índice parcial), `cf_uploaded_at`, `cf_verified_at`, `cf_check_attempts`, `cf_last_error`, `cf_id_scheme` (GENERATED) |
+| 2 — Dedup/canonical | `..._content_dedup_canonical` | `content_hash`, `canonical_image_id` (self-FK + CHECK não-self + índice), `is_shared` |
+| 3 — Linhagem R2 | `..._r2_origin_lineage` | `r2_bucket`, `r2_object_key`, `source_fetched_at` |
+| 4 — Governança | `..._governance_provenance` | `import_batch_id`, `last_modified_source` (CHECK), `deleted_at`, `deleted_reason` |
+| 5 — UX/perf | `..._ux_perf_media` | `blurhash`, `requires_signed_url`, `aspect_ratio` (GENERATED) |
+| 6 — Backfill | `..._backfill_canonical_shared` | (dados) canonicaliza 593 aliases; marca 579 canônicas `is_shared` |
+
+**Colunas derivadas (GENERATED STORED, auto-mantidas, sem trigger):**
+- `cf_id_scheme` — classifica a convenção do `cloudflare_image_id`. Distribuição inicial:
+  `seq` 30.355 · `legacy_cor` 19.268 · `slug_ts` 19.106 · `main_gal` 2.740 · `detail_dn` 914 ·
+  `hash_legacy` 519 · `synthetic` 454 · `uuid` 2.
+- `aspect_ratio` — `width_px/height_px` (4 casas); NULL quando sem dimensões (293 linhas). Média 1.0 (768×768).
+
+**Verificação pós-aplicação:** 46 colunas · 593 `canonical_image_id` preenchidos (63 ativos) ·
+579 `is_shared` · `get_advisors`: 0 findings de segurança novos, 1 INFO de performance esperado
+(`idx_pi_content_hash` unused até o pipeline popular `content_hash`).
+
+**Próximos passos (povoamento, fora deste PR):**
+1. Reconciliação CF→DB (varredura paginada + `meta.product_id`) populando `cf_sync_status`/`cf_verified_at`
+   (`missing` para os ~50k quebrados, `orphaned` para os ~61k do CF).
+2. Pipeline de ingestão grava `content_hash` (etag R2/CF), `r2_object_key`, `import_batch_id`, `last_modified_source`.
+3. Geração de `blurhash` na Edge Function `backfill-image-dimensions` (já lê o binário via Range).
+
