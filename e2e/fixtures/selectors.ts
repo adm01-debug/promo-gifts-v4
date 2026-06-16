@@ -217,6 +217,16 @@ export const Sel = {
     prev: TID("wizard-prev-button"),
   },
 
+  // ---------- Estoque (Stock Dashboard) ----------
+  stock: {
+    /** Botão dedicado "Em Estoque / Estoque Futuro" no toolbar. */
+    futureStockToggleButton: TID("future-stock-toggle-button"),
+    /** Switch dentro do popover do botão dedicado. */
+    futureStockSwitch: TID("future-stock-switch"),
+    /** Pílulas de janela (7/15/30 dias). */
+    futureStockWindow: (d: 7 | 15 | 30) => TID(`future-stock-window-${d}`),
+  },
+
   // ---------- App genérico ----------
   app: {
     toast: "[data-sonner-toast]",
