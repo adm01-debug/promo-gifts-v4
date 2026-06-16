@@ -498,7 +498,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           )}
         </div>
 
-        {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
+        {/* Chips de filtro por status — sempre sobre variações/SKUs individuais. */}
         <div
           className="flex flex-wrap items-center gap-1"
           role="group"
@@ -537,71 +537,17 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {filteredProducts.length > PAGE_SIZE ? (
+            {variantRows.length > PAGE_SIZE ? (
               <>
                 {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, filteredProducts.length)} de{' '}
-                {filteredProducts.length}
+                {Math.min((safePage + 1) * PAGE_SIZE, variantRows.length)} de{' '}
+                {variantRows.length}
               </>
             ) : (
-              <>{filteredProducts.length} produtos</>
+              <>{variantRows.length} variações</>
             )}
 
           </span>
-
-          {/* Toggle de agrupamento: Agrupar por produto ↔ Listar variações */}
-          <div
-            className="inline-flex items-center rounded-md border border-border/60 bg-background p-0.5"
-            role="group"
-            aria-label="Modo de visualização da tabela de estoque"
-            data-testid="stock-grouping-toggle"
-          >
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={groupingMode === 'grouped' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-6 gap-1 px-2 text-[11px]"
-                    onClick={() => setGroupingMode('grouped')}
-                    aria-pressed={groupingMode === 'grouped'}
-                  >
-                    <LayoutList className="h-3 w-3" />
-                    Agrupar
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Agrupa variações sob cada produto pai</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={groupingMode === 'flat' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-6 gap-1 px-2 text-[11px]"
-                    onClick={() => setGroupingMode('flat')}
-                    aria-pressed={groupingMode === 'flat'}
-                  >
-                    <Rows3 className="h-3 w-3" />
-                    Por variação
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>1 linha por SKU vendável (cor/tamanho)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
-          {groupingMode === 'grouped' && (
-            <>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>
-                Expandir Todos
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>
-                Recolher Todos
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -616,40 +562,24 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
           >
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[280px]">
-                {groupingMode === 'flat' ? 'Variação / Cor' : 'Produto / Cor'}
-              </TableHead>
-              <TableHead className="hidden w-[120px] md:table-cell">
-                {groupingMode === 'flat' ? 'Categoria' : 'Cores'}
-              </TableHead>
+              <TableHead className="w-[280px]">Variação / Cor</TableHead>
+              <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
               <TableHead className="hidden lg:table-cell">Reservado</TableHead>
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">
-                {groupingMode === 'flat' ? 'Ações' : 'Alertas'}
-              </TableHead>
+              <TableHead className="hidden sm:table-cell">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {groupingMode === 'flat' && flatRows.length > 0 ? (
-              flatRows.map(({ product, variant }) => (
+            {paginatedVariantRows.length > 0 ? (
+              paginatedVariantRows.map(({ product, variant }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
                   variant={variant}
-                />
-              ))
-            ) : groupingMode === 'grouped' && paginatedProducts.length > 0 ? (
-              paginatedProducts.map((product) => (
-
-                <ProductRow
-                  key={product.productId}
-                  product={product}
-                  isExpanded={expandedProducts.has(product.productId)}
-                  onToggle={() => toggleProduct(product.productId)}
                 />
               ))
             ) : (
