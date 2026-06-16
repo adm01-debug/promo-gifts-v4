@@ -136,10 +136,12 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
 
       // Esperas explícitas: fontes + dados + scrollHeight estável
       await waitForFontsAndRows(page);
+      await pinToolbarForMeasurement(page);
 
       const fontBefore = await thead.evaluate(
         (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
       );
+      const stickyOffset = await getStickyOffset(page);
 
       const toolbarBefore = await toolbar.boundingBox();
       const theadBefore = await thead.boundingBox();
@@ -148,15 +150,23 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         return;
       }
 
+      expect(toolbarBefore.y, `toolbar deve ficar abaixo do header/breadcrumb em ${vp.name}`).toBeGreaterThanOrEqual(
+        stickyOffset - 2,
+      );
+      expect(theadBefore.y, `thead não pode sobrepor a toolbar em ${vp.name}`).toBeGreaterThanOrEqual(
+        toolbarBefore.y + toolbarBefore.height - 2,
+      );
+
       // Visual regression before/after em memória: evita depender de baselines
       // PNG ausentes na primeira execução da pipeline e ainda detecta mudança
-      // visual na toolbar/thead após o scroll interno.
+      // visual na toolbar/thead após o scroll da página.
       const toolbarBeforePng = await toolbar.screenshot({ animations: "disabled" });
       const theadBeforePng = await thead.screenshot({ animations: "disabled" });
 
       // Métrica: tempo de scroll + nº de frames (proxy de fluidez)
-      const metrics = await scroll.evaluate(async (el) => {
-        const maxScroll = el.scrollHeight - el.clientHeight;
+      const metrics = await page.evaluate(async (delta) => {
+        const root = document.scrollingElement ?? document.documentElement;
+        const maxScroll = root.scrollHeight - window.innerHeight;
         if (maxScroll <= 0) return { scrolled: 0, ms: 0, frames: 0, maxScroll };
         let frames = 0;
         const rafTick = () => {
@@ -164,17 +174,18 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
           handle = requestAnimationFrame(rafTick);
         };
         let handle = requestAnimationFrame(rafTick);
+        const before = window.scrollY;
         const t0 = performance.now();
-        el.scrollTo({ top: Math.min(maxScroll, 400), behavior: "auto" });
+        window.scrollTo({ top: Math.min(maxScroll, before + delta), behavior: "auto" });
         await new Promise((r) => setTimeout(r, 200));
         cancelAnimationFrame(handle);
-        return { scrolled: el.scrollTop, ms: performance.now() - t0, frames, maxScroll };
-      });
+        return { scrolled: Math.max(0, window.scrollY - before), ms: performance.now() - t0, frames, maxScroll };
+      }, SCROLL_DELTA);
       // eslint-disable-next-line no-console
       console.log(`[stock-sticky:${vp.name}] metrics=${JSON.stringify(metrics)}`);
 
       if (metrics.scrolled <= 0) {
-        test.skip(true, "conteúdo não excede a altura interna — sem scroll a validar");
+        test.skip(true, "conteúdo não excede a altura da página — sem scroll a validar");
         return;
       }
 
@@ -197,9 +208,12 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
 
       expect(Math.abs((toolbarAfter!.y ?? 0) - toolbarBefore.y)).toBeLessThanOrEqual(2);
       expect(Math.abs((theadAfter!.y ?? 0) - theadBefore.y)).toBeLessThanOrEqual(2);
+      expect(toolbarAfter!.y, `toolbar sobrepôs o header/breadcrumb em ${vp.name}`).toBeGreaterThanOrEqual(
+        stickyOffset - 2,
+      );
 
       expect((theadAfter!.y ?? 0)).toBeGreaterThanOrEqual(
-        toolbarAfter!.y + Math.min(toolbarAfter!.height, 16),
+        toolbarAfter!.y + toolbarAfter!.height - 2,
       );
 
       // Tipografia inalterada após o scroll
@@ -214,14 +228,17 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       expect(toolbarAfterPng.equals(toolbarBeforePng), `toolbar mudou visualmente após scroll em ${vp.name}`).toBe(true);
       expect(theadAfterPng.equals(theadBeforePng), `thead mudou visualmente após scroll em ${vp.name}`).toBe(true);
 
-      // Conteúdo da última linha visível NÃO pode estar cortado pelo container
+      // Conteúdo da última linha visível NÃO pode estar cortado pelo viewport
       const scrollRect = await scroll.boundingBox();
-      const lastRow = page.locator(`${SCROLL} tbody tr`).last();
-      if (await lastRow.isVisible().catch(() => false)) {
-        const rowBox = await lastRow.boundingBox();
-        if (rowBox && scrollRect) {
-          expect(rowBox.y + rowBox.height).toBeGreaterThan(scrollRect.y);
-          expect(rowBox.y).toBeLessThan(scrollRect.y + scrollRect.height);
+      const visibleRows = page.locator(`${SCROLL} tbody tr`).filter({ visible: true });
+      const visibleRowCount = await visibleRows.count();
+      expect(visibleRowCount, `nenhuma linha visível após scroll em ${vp.name}`).toBeGreaterThan(0);
+      const lastVisibleRow = visibleRows.nth(visibleRowCount - 1);
+      const rowBox = await lastVisibleRow.boundingBox();
+      if (rowBox && scrollRect) {
+        expect(rowBox.y + rowBox.height).toBeGreaterThan(Math.max(scrollRect.y, 0));
+        if (rowBox.y + rowBox.height <= vp.height) {
+          expect(rowBox.y).toBeGreaterThanOrEqual(stickyOffset - 2);
         }
       }
     });
