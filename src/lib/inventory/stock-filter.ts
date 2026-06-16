@@ -14,11 +14,11 @@
  */
 import {
   aggregateVariantsToProduct,
-  ProductStockSummary,
-  StockFilters,
-  StockAlert,
-  VariantStock,
-  StockStatus,
+  type ProductStockSummary,
+  type StockFilters,
+  type StockAlert,
+  type VariantStock,
+  type StockStatus,
 } from '@/types/stock';
 
 // ---------- normalização ----------
