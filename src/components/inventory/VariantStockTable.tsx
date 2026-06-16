@@ -789,8 +789,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [products, inlineSearch]);
 
   /**
-   * Contagem de variações por status sobre o universo pós-busca.
-   * Usada nos chips do filtro para feedback imediato e consistência entre modos.
+   * Contagem de variações (SKUs) por status — base para chips de filtro.
+   * Indexa por status uma única vez por mudança de busca.
    */
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -812,21 +812,18 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [searchedProducts]);
 
   /**
-   * Aplica filtro de status mantendo coerência entre grouped/flat:
-   *  - grouped: mantém produto se ALGUMA variação bate; recorta lista de variantes ao filtro.
-   *  - flat: filtragem efetiva acontece em flatRows.
+   * Filtra produtos pais que tenham ao menos 1 variação no status escolhido
+   * (paginação opera sobre produtos para preservar a UX "X de Y").
+   * A filtragem efetiva por SKU acontece em `flatRows`.
    */
   const filteredProducts = useMemo(() => {
     if (statusFilter === 'all') return searchedProducts;
     const result: ProductStockSummary[] = [];
     for (const p of searchedProducts) {
-      const matched = p.variants.filter((v) => v.status === statusFilter);
-      if (matched.length > 0) {
-        result.push(groupingMode === 'grouped' ? { ...p, variants: matched } : p);
-      }
+      if (p.variants.some((v) => v.status === statusFilter)) result.push(p);
     }
     return result;
-  }, [searchedProducts, statusFilter, groupingMode]);
+  }, [searchedProducts, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages - 1);
@@ -838,12 +835,10 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [filteredProducts, safePage]);
 
   /**
-   * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
-   * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
-   * Aplica statusFilter na variação para consistência absoluta com os chips.
+   * Modo variação-first: 1 linha = 1 SKU. Estoque exibido é SEMPRE da variação,
+   * nunca do produto pai. Aplica statusFilter por variação.
    */
   const flatRows = useMemo(() => {
-    if (groupingMode !== 'flat') return [];
     const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
     for (const product of paginatedProducts) {
       for (const variant of product.variants) {
@@ -852,8 +847,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
       }
     }
     return rows;
-
-  }, [groupingMode, paginatedProducts, statusFilter]);
+  }, [paginatedProducts, statusFilter]);
 
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => {
