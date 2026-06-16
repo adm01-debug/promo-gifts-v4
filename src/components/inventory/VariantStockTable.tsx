@@ -1035,18 +1035,17 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             </TableRow>
           </TableHeader>
           <TableBody>
-            {groupingMode === 'flat' ? (
-              flatRows.length > 0 ? (
-                flatRows.map(({ product, variant }) => (
-                  <FlatVariantRow
-                    key={`${product.productId}::${variant.id}`}
-                    product={product}
-                    variant={variant}
-                  />
-                ))
-              ) : null
-            ) : paginatedProducts.length > 0 ? (
+            {groupingMode === 'flat' && flatRows.length > 0 ? (
+              flatRows.map(({ product, variant }) => (
+                <FlatVariantRow
+                  key={`${product.productId}::${variant.id}`}
+                  product={product}
+                  variant={variant}
+                />
+              ))
+            ) : groupingMode === 'grouped' && paginatedProducts.length > 0 ? (
               paginatedProducts.map((product) => (
+
                 <ProductRow
                   key={product.productId}
                   product={product}
