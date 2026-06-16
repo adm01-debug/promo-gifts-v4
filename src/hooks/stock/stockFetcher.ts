@@ -204,37 +204,69 @@ export async function fetchAndProcessStockData(): Promise<{
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
 }> {
-  const [allProducts, allVariants, allSupplierSources, allCategories, allSuppliers] =
-    await Promise.all([
-      fetchPaginatedFromBridge<ExternalProductWithVariants>(
-        'products',
-        'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
-        1000,
-        100000,
-        { active: true },
-      ),
-      fetchPaginatedFromBridge<ExternalVariantStock>(
-        'product_variants',
-        'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
-        1000,
-        100000,
-        { is_active: true },
-      ),
-      fetchPaginatedFromBridge<ExternalSupplierSource>(
-        'variant_supplier_sources',
-        'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,is_active,updated_at',
-        1000,
-        100000,
-        { is_active: true },
-      ),
-      fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
-      fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
-        'suppliers',
-        'id,name,code',
-        1000,
-        100000,
-      ),
-    ]);
+  const [
+    allProducts,
+    allVariants,
+    allSupplierSources,
+    allCategories,
+    allSuppliers,
+    allImages,
+  ] = await Promise.all([
+    fetchPaginatedFromBridge<ExternalProductWithVariants>(
+      'products',
+      'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
+      1000,
+      100000,
+      { active: true },
+    ),
+    fetchPaginatedFromBridge<ExternalVariantStock>(
+      'product_variants',
+      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
+      1000,
+      100000,
+      { is_active: true },
+    ),
+    fetchPaginatedFromBridge<ExternalSupplierSource>(
+      'variant_supplier_sources',
+      'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,is_active,updated_at',
+      1000,
+      100000,
+      { is_active: true },
+    ),
+    fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+    fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
+      'suppliers',
+      'id,name,code',
+      1000,
+      100000,
+    ),
+    // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
+    // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
+    fetchPaginatedFromBridge<{
+      id: string;
+      product_id: string | null;
+      variant_id: string | null;
+      supplier_code: string | null;
+      url_cdn: string | null;
+      is_primary: boolean | null;
+      is_og_image: boolean | null;
+      image_type: string | null;
+    }>(
+      'product_images',
+      'id,product_id,variant_id,supplier_code,url_cdn,is_primary,is_og_image,image_type',
+      1000,
+      200000,
+    ).catch(() => [] as Array<{
+      id: string;
+      product_id: string | null;
+      variant_id: string | null;
+      supplier_code: string | null;
+      url_cdn: string | null;
+      is_primary: boolean | null;
+      is_og_image: boolean | null;
+      image_type: string | null;
+    }>),
+  ]);
 
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
@@ -242,9 +274,35 @@ export async function fetchAndProcessStockData(): Promise<{
   const supplierMap = new Map<string, string>();
   allSuppliers.forEach((s) => supplierMap.set(s.id, s.name));
 
+  // Index images. Priorizamos: is_og_image > is_primary > qualquer outra.
+  const productImageByProductId = new Map<string, string>();
+  const imageByVariantId = new Map<string, string>();
+  const imageBySupplierCode = new Map<string, string>();
+  for (const img of allImages) {
+    if (!img.url_cdn || img.image_type === 'box') continue;
+    if (img.variant_id) {
+      if (!imageByVariantId.has(img.variant_id) || img.is_og_image) {
+        imageByVariantId.set(img.variant_id, img.url_cdn);
+      }
+    }
+    if (img.supplier_code) {
+      const code = img.supplier_code.toUpperCase();
+      if (!imageBySupplierCode.has(code) || img.is_og_image) {
+        imageBySupplierCode.set(code, img.url_cdn);
+      }
+    }
+    if (img.product_id) {
+      const existing = productImageByProductId.get(img.product_id);
+      if (!existing || img.is_og_image || img.is_primary) {
+        productImageByProductId.set(img.product_id, img.url_cdn);
+      }
+    }
+  }
+
   logger.log(
-    `[Stock] Carregados: ${allProducts.length} produtos, ${allVariants.length} variantes, ${allSupplierSources.length} sources`,
+    `[Stock] Carregados: ${allProducts.length} produtos, ${allVariants.length} variantes, ${allSupplierSources.length} sources, ${allImages.length} imagens`,
   );
+
 
   const variantsByProduct = new Map<string, ExternalVariantStock[]>();
   allVariants.forEach((v) => {
