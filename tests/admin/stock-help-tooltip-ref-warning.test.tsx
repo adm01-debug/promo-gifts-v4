@@ -29,8 +29,8 @@ describe('StockHelpTooltip — Radix asChild nesting', () => {
       </Popover>,
     );
     fireEvent.click(getByRole('button', { name: /filtros/i }));
-    guard.assertNoWarnings();
-    guard.restore();
+    guard.expectNoRefWarning('popover-asChild');
+    guard.dispose();
   });
 
   it('não emite warning com <div> simples (busca)', () => {
