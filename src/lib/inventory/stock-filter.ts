@@ -19,6 +19,7 @@ import type {
   VariantStock,
   StockStatus,
 } from '@/types/stock';
+import { aggregateVariantsToProduct } from '@/types/stock';
 
 // ---------- normalização ----------
 export const normalize = (s: string | undefined | null): string =>
@@ -59,8 +60,9 @@ export function selectMatchingVariants(
   if (!ctx.hasVariantFilter) return product.variants;
   return product.variants.filter((v) => {
     const cn = normalize(v.colorName);
+    const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
-    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN)) return false;
+    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN)) return false;
     return true;
   });
 }
@@ -102,7 +104,7 @@ export function projectProduct(
   variants: VariantStock[],
 ): ProductStockSummary {
   if (variants.length === product.variants.length) return product;
-  return { ...product, ...aggregateVariantTotals(variants), variants };
+  return { ...product, ...aggregateVariantsToProduct(variants) };
 }
 
 // ---------- estágio 0: índices reutilizáveis ----------
@@ -141,6 +143,9 @@ function matchStatus(
 ): boolean {
   if (status === 'all') return true;
   if (status === 'incoming') {
+    if (hasVariantFilter) {
+      return variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0);
+    }
     return (
       product.totalInTransitStock > 0 ||
       variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
