@@ -40,6 +40,32 @@ const viewports = [
   { name: "desktop-tall", width: 1536, height: 1440 },
 ] as const;
 
+// Limites de jank (ajustáveis via env p/ CI lento)
+const MAX_SCROLL_MS = Number(process.env.STOCK_STICKY_MAX_MS ?? 250);
+const MIN_FRAMES = Number(process.env.STOCK_STICKY_MIN_FRAMES ?? 3);
+
+async function waitForFontsAndRows(page: Page) {
+  // 1) Fontes prontas (evita reflow que altera boundingBox depois da medição)
+  await page.evaluate(async () => {
+    const fonts = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts;
+    if (fonts?.ready) await fonts.ready;
+  });
+  // 2) Pelo menos uma linha de dados renderizada (não skeleton)
+  await expect(page.locator(`${SCROLL} tbody tr`).first()).toBeVisible({ timeout: 30_000 });
+  // 3) scrollHeight estabilizado por 2 medições consecutivas
+  await page.locator(SCROLL).evaluate(async (el) => {
+    const stable = async () => {
+      let last = el.scrollHeight;
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        if (el.scrollHeight === last && el.scrollHeight > 0) return;
+        last = el.scrollHeight;
+      }
+    };
+    await stable();
+  });
+}
+
 test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => {
   for (const vp of viewports) {
     test(`@stock-table-sticky permanece fixo no scroll — ${vp.name}`, async ({ page }) => {
@@ -56,8 +82,9 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       await expect(thead).toBeVisible();
       await expect(scroll).toBeVisible();
 
-      // Snapshot do tamanho de fonte do thead para garantir que o redimensionamento
-      // do container NÃO alterou tipografia (regressão de "diminuir/aumentar textos")
+      // Esperas explícitas: fontes + dados + scrollHeight estável
+      await waitForFontsAndRows(page);
+
       const fontBefore = await thead.evaluate(
         (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
       );
@@ -69,7 +96,17 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         return;
       }
 
-      // Métrica: tempo de scroll programático + nº de frames (proxy de fluidez)
+      // Visual regression — antes do scroll (toolbar + thead)
+      await expect(toolbar).toHaveScreenshot(`toolbar-${vp.name}-before.png`, {
+        animations: "disabled",
+        maxDiffPixelRatio: 0.02,
+      });
+      await expect(thead).toHaveScreenshot(`thead-${vp.name}-before.png`, {
+        animations: "disabled",
+        maxDiffPixelRatio: 0.02,
+      });
+
+      // Métrica: tempo de scroll + nº de frames (proxy de fluidez)
       const metrics = await scroll.evaluate(async (el) => {
         const maxScroll = el.scrollHeight - el.clientHeight;
         if (maxScroll <= 0) return { scrolled: 0, ms: 0, frames: 0, maxScroll };
@@ -80,13 +117,11 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         };
         let handle = requestAnimationFrame(rafTick);
         const t0 = performance.now();
-        const target = Math.min(maxScroll, 400);
-        el.scrollTo({ top: target, behavior: "auto" });
-        await new Promise((r) => setTimeout(r, 120));
+        el.scrollTo({ top: Math.min(maxScroll, 400), behavior: "auto" });
+        await new Promise((r) => setTimeout(r, 200));
         cancelAnimationFrame(handle);
         return { scrolled: el.scrollTop, ms: performance.now() - t0, frames, maxScroll };
       });
-      // Log estruturado p/ a aba "test results"
       // eslint-disable-next-line no-console
       console.log(`[stock-sticky:${vp.name}] metrics=${JSON.stringify(metrics)}`);
 
@@ -94,6 +129,16 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         test.skip(true, "conteúdo não excede a altura interna — sem scroll a validar");
         return;
       }
+
+      // Asserções de jank: tempo total e mínimo de frames durante a janela
+      expect(
+        metrics.ms,
+        `scroll demorou ${metrics.ms.toFixed(1)}ms (>${MAX_SCROLL_MS}ms) em ${vp.name}`,
+      ).toBeLessThanOrEqual(MAX_SCROLL_MS);
+      expect(
+        metrics.frames,
+        `apenas ${metrics.frames} frames durante o scroll em ${vp.name} (mín ${MIN_FRAMES}) — possível jank`,
+      ).toBeGreaterThanOrEqual(MIN_FRAMES);
 
       await expect(toolbar).toBeVisible();
       await expect(thead).toBeVisible();
@@ -109,11 +154,21 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         toolbarAfter!.y + Math.min(toolbarAfter!.height, 16),
       );
 
-      // Tipografia inalterada após o scroll/resize
+      // Tipografia inalterada após o scroll
       const fontAfter = await thead.evaluate(
         (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
       );
       expect(fontAfter).toBe(fontBefore);
+
+      // Visual regression — depois do scroll (mesmas baselines devem casar)
+      await expect(toolbar).toHaveScreenshot(`toolbar-${vp.name}-after.png`, {
+        animations: "disabled",
+        maxDiffPixelRatio: 0.02,
+      });
+      await expect(thead).toHaveScreenshot(`thead-${vp.name}-after.png`, {
+        animations: "disabled",
+        maxDiffPixelRatio: 0.02,
+      });
 
       // Conteúdo da última linha visível NÃO pode estar cortado pelo container
       const scrollRect = await scroll.boundingBox();
@@ -121,7 +176,6 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       if (await lastRow.isVisible().catch(() => false)) {
         const rowBox = await lastRow.boundingBox();
         if (rowBox && scrollRect) {
-          // pelo menos parte da linha precisa estar dentro da janela do container
           expect(rowBox.y + rowBox.height).toBeGreaterThan(scrollRect.y);
           expect(rowBox.y).toBeLessThan(scrollRect.y + scrollRect.height);
         }
