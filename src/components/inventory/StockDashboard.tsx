@@ -129,12 +129,15 @@ export function StockDashboard() {
 
   const isFiltered = filters.status !== 'all';
 
-  // Health score calculation
-  const healthScore = useMemo(() => {
-    if (summary.totalProducts === 0) return 100;
-    const healthy = summary.productsInStock;
-    return Math.round((healthy / summary.totalProducts) * 100);
-  }, [summary]);
+  // Health score calculation (SSOT em src/lib/inventory/health-score.ts)
+  const healthScore = useMemo(
+    () =>
+      calcHealthScore({
+        productsInStock: summary.productsInStock,
+        totalProducts: summary.totalProducts,
+      }),
+    [summary.productsInStock, summary.totalProducts],
+  );
 
   const _healthColor =
     healthScore >= 80 ? 'text-success' : healthScore >= 50 ? 'text-warning' : 'text-destructive';
