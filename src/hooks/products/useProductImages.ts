@@ -30,6 +30,8 @@ export interface ProductImage {
   supplier_code: string | null;
   /** Sinal semântico: true = imagem pertence a uma cor específica (use este, não supplier_code) */
   applies_to_color: boolean | null;
+  /** ID da imagem no Cloudflare Images — use com getCdnVariantUrl() para gerar URLs de variantes */
+  cloudflare_image_id: string;
   url_cdn: string;
   url_original: string | null;
   image_type: string;
@@ -39,6 +41,10 @@ export interface ProductImage {
   is_active: boolean;
   alt_text: string | null;
   title_text: string | null;
+  /** Largura em pixels — disponível após processamento pelo image-dimensions-worker */
+  width_px: number | null;
+  /** Altura em pixels — disponível após processamento pelo image-dimensions-worker */
+  height_px: number | null;
 }
 
 export interface ProductImageForDisplay {
@@ -47,6 +53,21 @@ export interface ProductImageForDisplay {
   alt: string | null;
   order: number;
   isPrimary: boolean;
+  width: number | null;
+  height: number | null;
+}
+
+const CF_BASE = 'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw';
+
+/**
+ * Gera URL de variante do Cloudflare Images.
+ * Variantes disponíveis: public, thumbnail, small, medium, large
+ */
+export function getCdnVariantUrl(
+  cloudflareImageId: string,
+  variant: 'public' | 'thumbnail' | 'small' | 'medium' | 'large' = 'public',
+): string {
+  return `${CF_BASE}/${cloudflareImageId}/${variant}`;
 }
 
 // ============================================
@@ -62,7 +83,7 @@ export async function fetchProductImages(productId: string): Promise<ProductImag
       table: 'product_images',
       operation: 'select',
       select:
-        'id, product_id, variant_id, color_id, supplier_code, applies_to_color, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
+        'id, product_id, variant_id, color_id, supplier_code, applies_to_color, cloudflare_image_id, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text, width_px, height_px',
       filters: {
         product_id: productId,
         is_active: true,
@@ -111,7 +132,7 @@ export async function fetchProductImagesBatch(
           table: 'product_images',
           operation: 'select',
           select:
-            'id, product_id, variant_id, color_id, supplier_code, applies_to_color, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text',
+            'id, product_id, variant_id, color_id, supplier_code, applies_to_color, cloudflare_image_id, url_cdn, url_original, image_type, is_primary, is_og_image, display_order, is_active, alt_text, title_text, width_px, height_px',
           filters: { is_active: true, product_id: chunk },
           orderBy: { column: 'display_order', ascending: true },
           limit: 1000,
@@ -170,6 +191,8 @@ export function transformToDisplayImages(images: ProductImage[]): ProductImageFo
     alt: img.alt_text,
     order: img.display_order,
     isPrimary: img.is_primary,
+    width: img.width_px,
+    height: img.height_px,
   }));
 }
 
