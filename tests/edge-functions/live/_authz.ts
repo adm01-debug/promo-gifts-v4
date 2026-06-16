@@ -48,6 +48,10 @@ export const VERIFY_JWT_FALSE = new Set<string>([
   "send-notification",
   "send-scheduled-reports",
   "sync-external-db",
+  // Cron functions with verify_jwt=false — called by pg_cron, not browsers.
+  // Auth is enforced inline via x-cron-secret, so anon reaches the handler.
+  "asia-ingestion",
+  "backfill-image-dimensions",
 ]);
 
 /**

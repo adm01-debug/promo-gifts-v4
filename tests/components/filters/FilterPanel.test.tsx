@@ -102,7 +102,7 @@ describe("FilterPanel", () => {
     const { defaultFilters } = await import("@/components/filters/FilterPanel");
     expect(defaultFilters).toBeDefined();
     expect(defaultFilters.search).toBe("");
-    expect(defaultFilters.sortBy).toBe("name");
+    expect(defaultFilters.sortBy).toBe("newest");
     expect(defaultFilters.priceRange).toEqual([0, 9999]);
     expect(Array.isArray(defaultFilters.categories)).toBe(true);
     expect(Array.isArray(defaultFilters.colors)).toBe(true);

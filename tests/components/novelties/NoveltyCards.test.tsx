@@ -69,11 +69,11 @@ describe("NoveltyGridCard", () => {
     expect(screen.getByText(/R\$.*12,99/)).toBeInTheDocument();
   });
 
-  it("shows dash when SKU is null", async () => {
+  it("hides SKU element when product_sku is null", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     const productNoSku = { ...baseProduct, product_sku: null };
     renderWithProviders(<NoveltyGridCard {...baseCardProps} product={productNoSku as any} />);
-    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(document.querySelector('[aria-label^="Código do produto"]')).not.toBeInTheDocument();
   });
 
   it("calls onSelect with product_id when clicked", async () => {

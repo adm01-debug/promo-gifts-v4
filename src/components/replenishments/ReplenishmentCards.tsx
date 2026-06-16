@@ -289,7 +289,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                Vendas 30d
+                Saídas 90d
               </span>
             </div>
             <ProductSparkline productId={product.product_id} />
@@ -392,7 +392,9 @@ export function ReplenishmentTableView({
                         src={product.product_image}
                         alt={`Foto de ${product.product_name}`}
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                          const img = e.currentTarget as HTMLImageElement;
+                          img.onerror = null;
+                          img.src = '/placeholder.svg';
                         }}
                         className="h-full w-full object-contain"
                         loading="lazy"

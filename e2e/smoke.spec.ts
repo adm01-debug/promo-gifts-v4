@@ -51,7 +51,7 @@ test.describe("Auth Critical Flow @smoke", () => {
     
     // Deve redirecionar para /auth ou /login
     await expect(page, "deveria redirecionar para /auth ou /login").toHaveURL(
-      /\/(auth|login)(\?|#|$)/,
+      /\/(auth|login)(\/|\?|#|$)/,
       { timeout: 5_000 },
     );
     expect(page.url()).toMatch(/\/(auth|login)/);

@@ -50,6 +50,13 @@ Deno.serve(async (req: Request) => {
     const ipAddress  = extractIP(req);
     const userAgent  = req.headers.get('user-agent') ?? null;
 
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return new Response(
+        JSON.stringify({ error: 'invalid_email' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,

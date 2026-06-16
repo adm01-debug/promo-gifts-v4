@@ -15,6 +15,16 @@ SET
 WHERE source_supplier = '88BRINDES'
   AND is_active = true;
 
+DO $$
+DECLARE
+  v_active_remaining int;
+BEGIN
+  SELECT COUNT(*) INTO v_active_remaining
+    FROM public.product_images
+   WHERE source_supplier = '88BRINDES' AND is_active = true;
+  RAISE NOTICE 'E10: Purge 88BRINDES concluído. Imagens ativas restantes: %', v_active_remaining;
+END $$;
+
 COMMENT ON TABLE public.product_images IS
 'Tabela-fato de mídia do catálogo (camada Gold). 1 linha = 1 imagem física de produto
 hospedada no Cloudflare Images. É a fonte da verdade de imagens; os campos

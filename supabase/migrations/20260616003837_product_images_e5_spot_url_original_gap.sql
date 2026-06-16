@@ -38,7 +38,7 @@ SELECT
     WHERE pi.url_original IS NULL
       AND it.code IN ('component','location','area')
   )                                                                            AS gap_url_original_estrutural,
-  round(100.0 * count(*) FILTER (WHERE pi.width_px IS NULL)
+  round(100.0 * count(*) FILTER (WHERE pi.width_px IS NULL OR pi.height_px IS NULL)
         / nullif(count(*), 0), 2)                                             AS pct_sem_dimensoes,
   round(100.0 * count(*) FILTER (WHERE pi.format IS NULL)
         / nullif(count(*), 0), 2)                                             AS pct_sem_format
