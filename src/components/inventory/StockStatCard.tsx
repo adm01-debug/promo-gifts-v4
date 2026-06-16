@@ -103,9 +103,18 @@ export function StatCard({
 
   const displayValue = isNumeric ? animatedValue.toLocaleString('pt-BR') : value;
 
+  const slug = title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
   return (
     <button
       type="button"
+      data-testid="stock-stat-card"
+      data-stat-slug={slug}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -134,27 +143,41 @@ export function StatCard({
         )}
       />
 
-      <div className="px-4 py-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1 text-left">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="px-3 py-2.5 sm:px-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="min-w-0 flex-1 space-y-0.5 text-left sm:space-y-1">
+            <p
+              data-testid="stock-stat-card-title"
+              className="truncate text-[11px] font-medium uppercase leading-tight tracking-wider text-muted-foreground"
+            >
               {title}
             </p>
-            <p className="text-2xl font-bold tabular-nums tracking-tight">{displayValue}</p>
+            <p
+              data-testid="stock-stat-card-value"
+              className="truncate text-xl font-bold leading-tight tabular-nums tracking-tight sm:text-2xl"
+            >
+              {displayValue}
+            </p>
             {subtitle && (
-              <p className="truncate text-[10px] text-muted-foreground/70">{subtitle}</p>
+              <p
+                data-testid="stock-stat-card-subtitle"
+                className="truncate text-[10px] leading-tight text-muted-foreground/70"
+              >
+                {subtitle}
+              </p>
             )}
             {trend && (
               <p
+                data-testid="stock-stat-card-trend"
                 className={cn(
-                  'flex items-center gap-1 text-xs font-medium',
+                  'flex items-center gap-1 text-[11px] font-medium leading-tight sm:text-xs',
                   trend.value >= 0 ? 'text-success' : 'text-destructive',
                 )}
               >
                 {trend.value >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-3 w-3 shrink-0" />
                 ) : (
-                  <TrendingDown className="h-3 w-3" />
+                  <TrendingDown className="h-3 w-3 shrink-0" />
                 )}
                 <span className="truncate">{trend.label}</span>
               </p>
@@ -162,7 +185,7 @@ export function StatCard({
           </div>
           <div
             className={cn(
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:h-12 sm:w-12',
               isActive ? `${styles.iconBg} shadow-sm` : 'bg-muted/50 group-hover:scale-110',
               styles.iconColor,
             )}
@@ -172,6 +195,7 @@ export function StatCard({
           </div>
         </div>
       </div>
+
 
       {/* Click hint on hover */}
       {clickHint && onClick && (
