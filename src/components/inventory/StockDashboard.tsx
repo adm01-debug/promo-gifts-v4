@@ -311,7 +311,6 @@ export function StockDashboard() {
               criticalAlerts={criticalAlerts.length}
             />
           </div>
-          
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -430,9 +429,6 @@ export function StockDashboard() {
         </div>
       )}
 
-
-
-
       {/* Stock Table */}
       <Card>
         <CardHeader className="pb-3">
@@ -452,7 +448,6 @@ export function StockDashboard() {
               </CardDescription>
             </div>
           </div>
-
         </CardHeader>
         <CardContent className="pt-0">
           <ScrollArea className="h-[min(600px,_60vh)]">
