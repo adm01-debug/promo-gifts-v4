@@ -233,7 +233,7 @@ export function useFilterPanelState(
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
-      estoque: filters.minStock > 0 ? 1 : 0,
+      
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
       fornecedores: filters.suppliers?.length || 0,
       publico: filters.publicoAlvo?.length || 0,
