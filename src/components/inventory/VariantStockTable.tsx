@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useLayoutEffect, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronDown,
@@ -544,8 +544,38 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   const [inlineSearch, setInlineSearch] = useState('');
+  const [toolbarHeight, setToolbarHeight] = useState(44);
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+
+    let frame = 0;
+    const measure = () => {
+      const nextHeight = Math.ceil(toolbar.getBoundingClientRect().height);
+      setToolbarHeight((prevHeight) => (Math.abs(prevHeight - nextHeight) > 1 ? nextHeight : prevHeight));
+    };
+
+    measure();
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(measure);
+          })
+        : null;
+    resizeObserver?.observe(toolbar);
+    window.addEventListener('resize', measure);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', measure);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
   // Deep link: auto-expand product from URL ?product=ID
   useEffect(() => {
@@ -667,11 +697,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }
 
   return (
-    <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
+    <div
+      className={cn('space-y-2', className)}
+      data-testid="variant-stock-table"
+      style={{ '--variant-stock-toolbar-h': `${toolbarHeight}px` } as CSSProperties}
+    >
       {/* Toolbar sticky — fica visível ao rolar a tabela */}
       <div
+        ref={toolbarRef}
         data-testid="variant-stock-toolbar"
-        className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center"
+        className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center"
       >
 
         {/* Inline Search */}
@@ -726,7 +761,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         <Table className="min-w-[700px]">
           <TableHeader
             data-testid="variant-stock-thead"
-            className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
+            className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px)+var(--variant-stock-toolbar-h,44px))] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]"
           >
             <TableRow className="bg-muted/50">
               <TableHead className="w-[250px]">Produto / Cor</TableHead>
