@@ -26,8 +26,8 @@ test.describe('Estoque — layout e responsividade', () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await setup(page);
 
-      // Título da página
-      const title = page.getByRole('heading', { level: 1 }).first();
+      // Título da página (testid SSOT — política proíbe getByRole para títulos)
+      const title = page.getByTestId('page-title-estoque');
       await expect(title).toBeVisible();
 
       // Badge Saúde sempre presente
