@@ -1,7 +1,7 @@
 import { PageSEO } from '@/components/seo/PageSEO';
 import { StockDashboard } from '@/components/inventory/StockDashboard';
 
-const DESCRIPTION = 'Acompanhe níveis de estoque e disponibilidade dos produtos em tempo real.';
+
 
 export default function StockDashboardPage() {
   return (
