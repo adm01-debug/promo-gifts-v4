@@ -556,7 +556,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     let frame = 0;
     const measure = () => {
       const nextHeight = Math.ceil(toolbar.getBoundingClientRect().height);
-      setToolbarHeight((prevHeight) => (Math.abs(prevHeight - nextHeight) > 1 ? nextHeight : prevHeight));
+      if (nextHeight > 0) {
+        setToolbarHeight((prevHeight) => (Math.abs(prevHeight - nextHeight) > 1 ? nextHeight : prevHeight));
+      }
     };
 
     measure();
