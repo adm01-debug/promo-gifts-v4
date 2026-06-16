@@ -121,7 +121,7 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
     const p2 = filtered.find((x) => x.productId === 'p2')!;
     expect(p2.totalCurrentStock).toBe(200);
     expect(p2.totalAvailableStock).toBe(200);
-    expect(p2.variantsOutOfStock).toBe(0); // preto excluído
+    expect(p2.variants.every((x) => x.colorName === 'Azul')).toBe(true);
   });
 
   it('sem filtro de cor, variants do produto são preservadas (não mutadas)', () => {
