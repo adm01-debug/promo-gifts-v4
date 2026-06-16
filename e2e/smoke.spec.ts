@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures/test-base";
 import { Sel } from "./fixtures/selectors";
 import { gotoAndSettle } from "./helpers/nav";
-import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "./helpers/auth";
+import { loginViaUI, expectAuthenticated } from "./helpers/auth";
 
 /**
  * Smoke Test: Fluxo Crítico de Autenticação @smoke
@@ -50,8 +50,11 @@ test.describe("Auth Critical Flow @smoke", () => {
     await gotoAndSettle(page, "/produtos");
     
     // Deve redirecionar para /auth ou /login
-    await expectUnauthenticated(page);
-    expect(page.url()).toContain("/auth");
+    await expect(page, "deveria redirecionar para /auth ou /login").toHaveURL(
+      /\/(auth|login)(\?|#|$)/,
+      { timeout: 5_000 },
+    );
+    expect(page.url()).toMatch(/\/(auth|login)/);
   });
 
   test("deve exibir formulário de esqueci minha senha", async ({ page }) => {
