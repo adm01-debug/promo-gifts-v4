@@ -6,7 +6,7 @@
  * SSOT do storage key e dos valores válidos para a janela.
  * Defensivo contra SSR, JSON inválido e janelas fora do conjunto permitido.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const FUTURE_STOCK_STORAGE_KEY = 'stock-filter:future-stock-pref:v1';
 export const FUTURE_STOCK_WINDOWS = [7, 15, 30] as const;
@@ -80,7 +80,7 @@ export function useFutureStockPreference(
   useEffect(() => {
     if (!hydratedRef.current) return;
     writeFutureStockPreference(current);
-  }, [current.includeFutureStock, current.futureStockWindowDays]);
+  }, [current]);
 }
 
 /**
