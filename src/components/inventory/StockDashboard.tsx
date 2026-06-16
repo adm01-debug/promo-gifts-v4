@@ -492,39 +492,8 @@ export function StockDashboard() {
                 Visualização detalhada do estoque segmentado por cores e variações
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportCSV}
-                      disabled={productStocks.length === 0}
-                      className="gap-1.5"
-                      aria-label="Exportar Estoque em CSV"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Exportar</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">Exportar dados filtrados em CSV</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchStockData}
-                disabled={isFetching}
-                className="gap-1.5"
-                aria-label="Atualizar dados do Estoque"
-              >
-                <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
-                {isFetching ? 'Atualizando...' : 'Atualizar'}
-              </Button>
-            </div>
+          </div>
+
           </div>
         </CardHeader>
         <CardContent className="pt-0">
