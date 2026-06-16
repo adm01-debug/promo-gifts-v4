@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures/test-base";
 import { Sel } from "./fixtures/selectors";
 import { gotoAndSettle } from "./helpers/nav";
-import { loginViaUI, expectAuthenticated } from "./helpers/auth";
+import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "./helpers/auth";
 
 /**
  * Smoke Test: Fluxo Crítico de Autenticação @smoke
