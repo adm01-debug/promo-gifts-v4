@@ -823,6 +823,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     }
   }, [groupingMode]);
 
+  // Filtro por status (persistido). Sincroniza com ambos os modos grouped/flat.
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
+    return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
+  });
+  useEffect(() => {
+    writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
+  }, [statusFilter]);
+
+
 
 
   // Deep link: auto-expand product from URL ?product=ID
