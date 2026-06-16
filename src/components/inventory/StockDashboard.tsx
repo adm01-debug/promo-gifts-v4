@@ -34,7 +34,6 @@ import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
 import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
-import { StockThresholdsLegend } from './StockThresholdsLegend';
 import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
