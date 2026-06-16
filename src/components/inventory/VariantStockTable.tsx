@@ -43,6 +43,28 @@ type GroupingMode = 'grouped' | 'flat';
 const GROUPING_STORAGE_KEY = 'stock.groupBy';
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
+const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+
+/** Filtro rápido por status — 'all' = sem filtro. */
+type StatusFilter = StockStatus | 'all';
+const STATUS_FILTER_VALUES: StatusFilter[] = [
+  'all',
+  'in_stock',
+  'low_stock',
+  'critical',
+  'out_of_stock',
+  'incoming',
+];
+const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
+  all: 'Todos',
+  in_stock: 'Em estoque',
+  low_stock: 'Baixo',
+  critical: 'Crítico',
+  out_of_stock: 'Esgotado',
+  overstocked: 'Excesso',
+  incoming: 'Chegando',
+};
+
 
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
