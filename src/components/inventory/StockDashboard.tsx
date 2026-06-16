@@ -33,11 +33,16 @@ import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
+import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
+import { StockThresholdsLegend } from './StockThresholdsLegend';
+import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
+import { calcHealthScore } from '@/lib/inventory/health-score';
 
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
   const [futureStockDialogOpen, setFutureStockDialogOpen] = useState(false);
+  const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
   const [riskPanelOpen, setRiskPanelOpen] = useState(true);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
@@ -124,12 +129,15 @@ export function StockDashboard() {
 
   const isFiltered = filters.status !== 'all';
 
-  // Health score calculation
-  const healthScore = useMemo(() => {
-    if (summary.totalProducts === 0) return 100;
-    const healthy = summary.productsInStock;
-    return Math.round((healthy / summary.totalProducts) * 100);
-  }, [summary]);
+  // Health score calculation (SSOT em src/lib/inventory/health-score.ts)
+  const healthScore = useMemo(
+    () =>
+      calcHealthScore({
+        productsInStock: summary.productsInStock,
+        totalProducts: summary.totalProducts,
+      }),
+    [summary.productsInStock, summary.totalProducts],
+  );
 
   const _healthColor =
     healthScore >= 80 ? 'text-success' : healthScore >= 50 ? 'text-warning' : 'text-destructive';
@@ -269,49 +277,69 @@ export function StockDashboard() {
         onOpenChange={setFutureStockDialogOpen}
         entries={futureStock}
       />
+      <StockHealthBreakdownDrawer
+        open={healthDrawerOpen}
+        onOpenChange={setHealthDrawerOpen}
+        products={allProductStocks ?? productStocks}
+      />
+
+
 
       {/* Header with Health Score */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold">Visão Geral</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'gap-1 text-xs font-semibold',
-                    healthScore >= 80 && 'border-success/20 bg-success/10 text-success',
-                    healthScore >= 50 &&
-                      healthScore < 80 &&
-                      'border-warning/20 bg-warning/10 text-warning',
-                    healthScore < 50 && 'border-destructive/20 bg-destructive/10 text-destructive',
-                  )}
-                >
-                  <Shield className="h-3 w-3" />
-                  Saúde: {healthScore}%
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-[200px] text-xs">
-                  Saúde do Estoque: {summary.productsInStock} de {summary.totalProducts} produtos
-                  com estoque adequado.
-                  {healthScore < 50 && ' ⚠️ Atenção: muitos produtos precisam de reposição.'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {criticalAlerts.length > 0 && (
-            <Badge
-              variant="destructive"
-              className="animate-pulse cursor-pointer gap-1 text-xs"
-              onClick={() => setOutOfStockDialogOpen(true)}
-            >
-              <AlertCircle className="h-3 w-3" />
-              {criticalAlerts.length} alertas
-            </Badge>
-          )}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Visão Geral</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="health-score-badge"
+                    aria-label={`Saúde do estoque: ${healthScore}%. Clique para detalhar.`}
+                    onClick={() => setHealthDrawerOpen(true)}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      healthScore >= 80 && 'border-success/20 bg-success/10 text-success',
+                      healthScore >= 50 &&
+                        healthScore < 80 &&
+                        'border-warning/20 bg-warning/10 text-warning',
+                      healthScore < 50 &&
+                        'border-destructive/20 bg-destructive/10 text-destructive',
+                    )}
+                  >
+                    <Shield className="h-3 w-3" />
+                    Saúde: {healthScore}%
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-[220px] text-xs">
+                    {summary.productsInStock} de {summary.totalProducts} produtos com estoque
+                    adequado. Clique para ver a lista por faixa.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {criticalAlerts.length > 0 && (
+              <Badge
+                variant="destructive"
+                data-testid="critical-alerts-badge"
+                className="animate-pulse cursor-pointer gap-1 text-xs"
+                onClick={() => setOutOfStockDialogOpen(true)}
+              >
+                <AlertCircle className="h-3 w-3" />
+                {criticalAlerts.length} alertas
+              </Badge>
+            )}
+            <HealthScoreInfoDialog
+              productsInStock={summary.productsInStock}
+              totalProducts={summary.totalProducts}
+              criticalAlerts={criticalAlerts.length}
+            />
+          </div>
+          <StockThresholdsLegend />
         </div>
+
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {lastRefreshRef.current.toLocaleString('pt-BR', {
