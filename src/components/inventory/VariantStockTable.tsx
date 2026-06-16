@@ -870,29 +870,71 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     );
   }, [products, inlineSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(searchedProducts.length / PAGE_SIZE));
+  /**
+   * Contagem de variações por status sobre o universo pós-busca.
+   * Usada nos chips do filtro para feedback imediato e consistência entre modos.
+   */
+  const statusCounts = useMemo(() => {
+    const counts: Record<StatusFilter, number> = {
+      all: 0,
+      in_stock: 0,
+      low_stock: 0,
+      critical: 0,
+      out_of_stock: 0,
+      overstocked: 0,
+      incoming: 0,
+    };
+    for (const p of searchedProducts) {
+      for (const v of p.variants) {
+        counts.all += 1;
+        counts[v.status] = (counts[v.status] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [searchedProducts]);
+
+  /**
+   * Aplica filtro de status mantendo coerência entre grouped/flat:
+   *  - grouped: mantém produto se ALGUMA variação bate; recorta lista de variantes ao filtro.
+   *  - flat: filtragem efetiva acontece em flatRows.
+   */
+  const filteredProducts = useMemo(() => {
+    if (statusFilter === 'all') return searchedProducts;
+    const result: ProductStockSummary[] = [];
+    for (const p of searchedProducts) {
+      const matched = p.variants.filter((v) => v.status === statusFilter);
+      if (matched.length > 0) {
+        result.push(groupingMode === 'grouped' ? { ...p, variants: matched } : p);
+      }
+    }
+    return result;
+  }, [searchedProducts, statusFilter, groupingMode]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages - 1);
   if (safePage !== currentPage) setCurrentPage(safePage);
 
   const paginatedProducts = useMemo(() => {
     const start = safePage * PAGE_SIZE;
-    return searchedProducts.slice(start, start + PAGE_SIZE);
-  }, [searchedProducts, safePage]);
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredProducts, safePage]);
 
   /**
    * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
    * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
-   * Custo: O(produtos × variações da página) — limitado por PAGE_SIZE (50).
+   * Aplica statusFilter na variação para consistência absoluta com os chips.
    */
   const flatRows = useMemo(() => {
     if (groupingMode !== 'flat') return [];
     const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
     for (const product of paginatedProducts) {
       for (const variant of product.variants) {
+        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
         rows.push({ product, variant });
       }
     }
     return rows;
+
   }, [groupingMode, paginatedProducts]);
 
   const toggleProduct = (productId: string) => {
