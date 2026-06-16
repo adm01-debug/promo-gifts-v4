@@ -105,7 +105,6 @@ function makeFilters(rnd: () => number): StockFilters {
 
 describe('stock-filter — fuzz determinístico 1000x', () => {
   it('idempotência + ausência de duplicatas em 1000 simulações (seed fixa)', () => {
-    void SEED; // referencia o placeholder para evitar lint unused
     const rnd = mulberry32(0xc0ffee16);
     const universe = Array.from({ length: 80 }, (_, i) => makeProduct(rnd, i));
     const ids = new Set(universe.map((p) => p.productId));
