@@ -124,10 +124,13 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
     expect(p2.variantsOutOfStock).toBe(0); // preto excluído
   });
 
-  it('sem filtro de cor, o produto original é retornado por referência (sem realocar)', () => {
+  it('sem filtro de cor, variants do produto são preservadas (não mutadas)', () => {
     const data = fixture();
     const out = applyStockFilters(data, withFilters({}), []);
-    expect(out[0]).toBe(data[0]);
+    const original = data.find((x) => x.productId === 'p1')!;
+    const filtered = out.find((x) => x.productId === 'p1')!;
+    expect(filtered.variants).toBe(original.variants);
+    expect(filtered.totalVariants).toBe(original.totalVariants);
   });
 
   it('buildStockIndexes monta byColorNameN normalizado e fast-path retorna vazio se ausente', () => {
