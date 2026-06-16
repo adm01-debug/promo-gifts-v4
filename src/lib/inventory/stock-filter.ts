@@ -281,7 +281,7 @@ export function applyStockFilters(
     if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
     if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
     if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
-    if (!matchMinQuantity(p, variantsForFilter, ctx.minQty, ctx.hasVariantFilter)) continue;
+    if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
