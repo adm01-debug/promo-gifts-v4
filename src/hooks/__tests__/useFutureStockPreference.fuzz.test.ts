@@ -191,7 +191,7 @@ describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () 
   it('ignora quando contentEditable', () => {
     renderHook(() => useFutureStockShortcut(toggle));
     const div = document.createElement('div');
-    div.contentEditable = 'true';
+    div.setAttribute('contenteditable', 'true');
     document.body.appendChild(div);
     div.focus();
     act(() => {
