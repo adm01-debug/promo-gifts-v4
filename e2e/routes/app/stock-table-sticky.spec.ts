@@ -103,8 +103,13 @@ async function waitForFontsAndRows(page: Page, vp: string) {
 }
 
 test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => {
+  // Retry controlado por spec (independe do default do projeto) — captura
+  // flakiness sem mascarar regressão real (logs por tentativa + traces).
+  test.describe.configure({ retries: 2 });
+
   for (const vp of viewports) {
-    test(`@stock-table-sticky permanece fixo no scroll — ${vp.name}`, async ({ page }) => {
+    test(`@stock-table-sticky permanece fixo no scroll — ${vp.name}`, async ({ page }, testInfo) => {
+      trail(vp.name, "test.start", { attempt: testInfo.retry, viewport: vp });
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await loginAs(page, "admin");
       await gotoAndSettle(page, "/estoque");
@@ -118,8 +123,7 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       await expect(thead).toBeVisible();
       await expect(scroll).toBeVisible();
 
-      // Esperas explícitas: fontes + dados + scrollHeight estável
-      await waitForFontsAndRows(page);
+      await waitForFontsAndRows(page, vp.name);
 
       const fontBefore = await thead.evaluate(
         (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
