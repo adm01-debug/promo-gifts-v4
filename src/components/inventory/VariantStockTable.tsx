@@ -727,11 +727,12 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
 
   // Modo de visualização persistido — cada vendedor tem sua preferência.
-  // Default = 'grouped' (não muda comportamento atual ao subir).
+  // Default = 'flat' (variação-first): cada variação/cor é uma linha individual,
+  // com foto, código de cor e estoque próprios — alinhado ao fluxo do vendedor.
   const [groupingMode, setGroupingMode] = useState<GroupingMode>(() => {
-    if (typeof window === 'undefined') return 'grouped';
+    if (typeof window === 'undefined') return 'flat';
     const stored = window.localStorage.getItem(GROUPING_STORAGE_KEY);
-    return stored === 'flat' ? 'flat' : 'grouped';
+    return stored === 'grouped' ? 'grouped' : 'flat';
   });
   useEffect(() => {
     try {
