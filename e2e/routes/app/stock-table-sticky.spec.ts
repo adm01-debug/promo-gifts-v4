@@ -96,15 +96,11 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         return;
       }
 
-      // Visual regression — antes do scroll (toolbar + thead)
-      await expect(toolbar).toHaveScreenshot(`toolbar-${vp.name}-before.png`, {
-        animations: "disabled",
-        maxDiffPixelRatio: 0.02,
-      });
-      await expect(thead).toHaveScreenshot(`thead-${vp.name}-before.png`, {
-        animations: "disabled",
-        maxDiffPixelRatio: 0.02,
-      });
+      // Visual regression before/after em memória: evita depender de baselines
+      // PNG ausentes na primeira execução da pipeline e ainda detecta mudança
+      // visual na toolbar/thead após o scroll interno.
+      const toolbarBeforePng = await toolbar.screenshot({ animations: "disabled" });
+      const theadBeforePng = await thead.screenshot({ animations: "disabled" });
 
       // Métrica: tempo de scroll + nº de frames (proxy de fluidez)
       const metrics = await scroll.evaluate(async (el) => {
@@ -160,15 +156,11 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       );
       expect(fontAfter).toBe(fontBefore);
 
-      // Visual regression — depois do scroll (mesmas baselines devem casar)
-      await expect(toolbar).toHaveScreenshot(`toolbar-${vp.name}-after.png`, {
-        animations: "disabled",
-        maxDiffPixelRatio: 0.02,
-      });
-      await expect(thead).toHaveScreenshot(`thead-${vp.name}-after.png`, {
-        animations: "disabled",
-        maxDiffPixelRatio: 0.02,
-      });
+      // Visual regression — depois do scroll deve permanecer idêntico ao antes.
+      const toolbarAfterPng = await toolbar.screenshot({ animations: "disabled" });
+      const theadAfterPng = await thead.screenshot({ animations: "disabled" });
+      expect(toolbarAfterPng.equals(toolbarBeforePng), `toolbar mudou visualmente após scroll em ${vp.name}`).toBe(true);
+      expect(theadAfterPng.equals(theadBeforePng), `thead mudou visualmente após scroll em ${vp.name}`).toBe(true);
 
       // Conteúdo da última linha visível NÃO pode estar cortado pelo container
       const scrollRect = await scroll.boundingBox();
