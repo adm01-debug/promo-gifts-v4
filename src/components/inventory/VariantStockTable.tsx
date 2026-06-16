@@ -222,13 +222,6 @@ function FlatVariantRow({
       <TableCell className="hidden sm:table-cell">
         <StockProgressBar current={variant.currentStock} min={variant.minStock} />
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {variant.reservedStock > 0 ? (
-          <span className="text-sm tabular-nums text-warning">-{variant.reservedStock}</span>
-        ) : (
-          <EmptyCell />
-        )}
-      </TableCell>
       <TableCell>
         <span
           className={cn(
@@ -450,7 +443,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
             <TableHead className="hidden w-[120px] sm:table-cell">Progresso</TableHead>
-            <TableHead className="hidden lg:table-cell">Reservado</TableHead>
             <TableHead>Disponível</TableHead>
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
@@ -481,9 +473,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               </TableCell>
               <TableCell className="hidden sm:table-cell">
                 <div className="h-2 w-full animate-pulse rounded bg-muted" />
-              </TableCell>
-              <TableCell className="hidden lg:table-cell">
-                <div className="h-4 w-8 animate-pulse rounded bg-muted" />
               </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
@@ -606,7 +595,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
-              <TableHead className="hidden lg:table-cell">Reservado</TableHead>
+              
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
