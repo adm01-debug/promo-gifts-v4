@@ -116,6 +116,9 @@ export function projectProduct(
 // ---------- estágio 0: índices reutilizáveis ----------
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
+  byColorGroupN: Map<string, Set<string>>; // tokens da cor → productIds (inclui substrings de colorGroup)
+  byCategoryN: Map<string, Set<string>>; // categoryN → productIds
+  bySupplierN: Map<string, Set<string>>; // supplierN → productIds
   productsWithAlerts: Set<string>;
 }
 
@@ -124,21 +127,32 @@ export function buildStockIndexes(
   alerts: StockAlert[],
 ): StockIndexes {
   const byColorNameN = new Map<string, Set<string>>();
+  const byColorGroupN = new Map<string, Set<string>>();
+  const byCategoryN = new Map<string, Set<string>>();
+  const bySupplierN = new Map<string, Set<string>>();
+  const addTo = (m: Map<string, Set<string>>, key: string, id: string) => {
+    if (!key) return;
+    let set = m.get(key);
+    if (!set) {
+      set = new Set();
+      m.set(key, set);
+    }
+    set.add(id);
+  };
   for (const p of products) {
+    addTo(byCategoryN, normalize(p.categoryName), p.productId);
+    addTo(bySupplierN, normalize(p.supplierName), p.productId);
     for (const v of p.variants) {
       const cn = normalize(v.colorName);
-      if (!cn) continue;
-      let set = byColorNameN.get(cn);
-      if (!set) {
-        set = new Set();
-        byColorNameN.set(cn, set);
-      }
-      set.add(p.productId);
+      addTo(byColorNameN, cn, p.productId);
+      const cg = normalize(v.colorGroup);
+      if (cg) addTo(byColorGroupN, cg, p.productId);
     }
   }
   const productsWithAlerts = new Set(alerts.map((a) => a.productId));
-  return { byColorNameN, productsWithAlerts };
+  return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
 }
+
 
 // ---------- predicados auxiliares ----------
 function matchStatus(
