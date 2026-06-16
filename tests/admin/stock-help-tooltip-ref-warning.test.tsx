@@ -52,7 +52,7 @@ describe('StockHelpTooltip — Radix asChild nesting', () => {
       <StockHelpTooltip title="ajuda" description="d" />,
     );
     expect(getByLabelText(/ajuda: ajuda/i)).toBeTruthy();
-    guard.assertNoWarnings();
-    guard.restore();
+    guard.expectNoRefWarning('default-icon');
+    guard.dispose();
   });
 });
