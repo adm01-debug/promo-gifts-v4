@@ -56,7 +56,7 @@ export function getHealthBand(score: number): HealthBand {
  */
 export type DaysCoverBand = HealthBand;
 export function getDaysCoverBand(days: number | undefined | null): DaysCoverBand {
-  if (days == null || !Number.isFinite(days) || days < 7) return 'danger';
+  if (days === null || days === undefined || !Number.isFinite(days) || days < 7) return 'danger';
   if (days < 30) return 'warning';
   return 'good';
 }
