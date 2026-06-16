@@ -758,7 +758,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
       <div
         data-testid="variant-stock-scroll"
-        className="overflow-x-auto rounded-lg border [contain:content] [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
+        className="overflow-x-auto rounded-lg border [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
       >
         <Table className="min-w-[700px]">
           <TableHeader
