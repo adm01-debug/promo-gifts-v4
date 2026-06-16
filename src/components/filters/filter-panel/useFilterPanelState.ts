@@ -255,9 +255,6 @@ export function useFilterPanelState(
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
       summaries.preco = `R$${filters.priceRange[0]}–${filters.priceRange[1] >= 9999 ? '∞' : filters.priceRange[1]}`;
     }
-    if (filters.minStock > 0) {
-      summaries.estoque = `≥${filters.minStock} un.`;
-    }
     if (filters.sortBy !== 'newest') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);
       summaries.ordenacao = opt?.label || '';
