@@ -216,7 +216,7 @@ function FlatVariantRow({
           >
             {variant.currentStock.toLocaleString('pt-BR')}
           </span>
-          <span className="text-[10px] text-muted-foreground">/ {variant.minStock} mín</span>
+          <span className="text-[10px] text-muted-foreground">un</span>
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">
