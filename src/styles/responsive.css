@@ -500,7 +500,7 @@ iframe {
     background: white !important;
     color: black !important;
     box-shadow: none !important;
-    text-shadow: none !important;
+    text-shadow: none !important; /* NO_ORANGE_GLOW_POLICY — reset, not a glow */
   }
   html,
   body {
