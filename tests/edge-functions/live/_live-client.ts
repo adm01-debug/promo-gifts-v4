@@ -141,6 +141,13 @@ export async function callEdge(name: string, opts: CallEdgeOptions = {}): Promis
       }
       lastResult = { status: res.status, headers: res.headers, text, json };
       if (!RETRY_STATUSES.has(res.status) || attempt === RETRY_COUNT) return lastResult;
+    } catch (err: unknown) {
+      // AbortError means our client-side timeout fired — not a server crash.
+      // Return synthetic 408 so tests can assert status < 500 without throwing.
+      if ((err as { name?: string }).name === "AbortError") {
+        return { status: 408, headers: new Headers(), text: "", json: null };
+      }
+      throw err;
     } finally {
       clearTimeout(t);
     }

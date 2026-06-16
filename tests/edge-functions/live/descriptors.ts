@@ -121,6 +121,21 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   "connections-auto-test": {},
   "ownership-audit": {},
 
+  // ---------------- Cron functions (x-cron-secret, verify_jwt=false) ----------------
+  // These are pg_cron-called functions; not browser-facing. CORS and auth
+  // boundary behave differently from JWT-gated functions.
+  "asia-ingestion": {
+    skipCors: true,
+    // Auth is x-cron-secret header; anon POSTs reach the handler (verify_jwt=false).
+    // No happy-path: full catalog sync is expensive and destructive.
+    invalidInputs: [],
+  },
+  "backfill-image-dimensions": {
+    skipCors: true,
+    // Same auth pattern as asia-ingestion.
+    invalidInputs: [],
+  },
+
   // ---------------- Geração de IA cara (gate COSTLY) ----------------
   "word-magic": {
     // Copywriting B2B via DeepSeek — escreve em ai_enrichment_queue/products e
