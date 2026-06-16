@@ -162,86 +162,124 @@ export function useVariantStock() {
   }, [productStocks]);
 
   const filteredProducts = useMemo(() => {
-    let items = [...productStocks];
+    const searchLower = filters.search?.toLowerCase().trim();
+    const colorName = filters.colorName;
+    const colorGroupLower = filters.colorGroup?.toLowerCase();
+    const minQuantityNeeded = filters.minQuantityNeeded ?? 0;
+
+    // Variant-level matcher: projeta apenas variações que casam com cor/grupo.
+    const matchVariant = (v: (typeof productStocks)[number]['variants'][number]) => {
+      if (colorName && v.colorName !== colorName) return false;
+      if (colorGroupLower && !v.colorName?.toLowerCase().includes(colorGroupLower)) return false;
+      return true;
+    };
+
+    const hasVariantFilter = Boolean(colorName) || Boolean(colorGroupLower);
+
+    let items = productStocks
+      .map((p) => ({
+        product: p,
+        variantsForFilter: hasVariantFilter ? p.variants.filter(matchVariant) : p.variants,
+      }))
+      // Drop produtos sem variação compatível quando filtro de cor está ativo
+      .filter(({ variantsForFilter }) => (hasVariantFilter ? variantsForFilter.length > 0 : true));
 
     if (filters.status !== 'all') {
-      items = items.filter((p) => {
-        if (p.overallStatus === filters.status) return true;
-        // "low_stock" filter should also include "critical" products
-        if (filters.status === 'low_stock' && p.overallStatus === 'critical') return true;
+      items = items.filter(({ product: p, variantsForFilter }) => {
         if (filters.status === 'incoming') {
           return (
             p.totalInTransitStock > 0 ||
-            p.variants.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
+            variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
           );
         }
+        if (hasVariantFilter) {
+          return variantsForFilter.some(
+            (v) =>
+              v.status === filters.status ||
+              (filters.status === 'low_stock' && v.status === 'critical'),
+          );
+        }
+        if (p.overallStatus === filters.status) return true;
+        if (filters.status === 'low_stock' && p.overallStatus === 'critical') return true;
         return p.variants.some((v) => v.status === filters.status);
       });
     }
 
-    if (filters.search) {
-      const s = filters.search.toLowerCase();
-      items = items.filter(
-        (p) =>
-          p.productName.toLowerCase().includes(s) ||
-          p.productSku.toLowerCase().includes(s) ||
-          p.variants.some(
-            (v) => v.colorName?.toLowerCase().includes(s) || v.variantSku.toLowerCase().includes(s),
-          ),
-      );
+    if (searchLower) {
+      items = items.filter(({ product: p, variantsForFilter }) => {
+        if (
+          p.productName.toLowerCase().includes(searchLower) ||
+          p.productSku.toLowerCase().includes(searchLower)
+        )
+          return true;
+        return variantsForFilter.some(
+          (v) =>
+            v.colorName?.toLowerCase().includes(searchLower) ||
+            v.variantSku.toLowerCase().includes(searchLower),
+        );
+      });
     }
 
     if (filters.categoryId) {
-      items = items.filter((p) => p.categoryName === filters.categoryId);
+      items = items.filter(({ product: p }) => p.categoryName === filters.categoryId);
     }
 
     if (filters.supplierId) {
-      items = items.filter((p) => p.supplierName === filters.supplierId);
+      items = items.filter(({ product: p }) => p.supplierName === filters.supplierId);
     }
 
-    if (filters.colorName) {
-      items = items.filter((p) => p.variants.some((v) => v.colorName === filters.colorName));
-    }
-
-    if (filters.colorGroup) {
-      const groupLower = filters.colorGroup.toLowerCase();
-      items = items.filter((p) =>
-        p.variants.some((v) => v.colorName?.toLowerCase().includes(groupLower)),
-      );
-    }
-
-    const minQuantityNeeded = filters.minQuantityNeeded;
-    if (minQuantityNeeded && minQuantityNeeded > 0) {
-      items = items.filter((p) => p.totalAvailableStock >= minQuantityNeeded);
+    // minQuantityNeeded avaliado sobre o pool das variações compatíveis quando há filtro de cor.
+    if (minQuantityNeeded > 0) {
+      items = items.filter(({ product: p, variantsForFilter }) => {
+        const pool = hasVariantFilter
+          ? variantsForFilter.reduce((sum, v) => sum + v.availableStock, 0)
+          : p.totalAvailableStock;
+        return pool >= minQuantityNeeded;
+      });
     }
 
     if (filters.showOnlyWithAlerts) {
       const ids = new Set(alerts.map((a) => a.productId));
-      items = items.filter((p) => ids.has(p.productId));
+      items = items.filter(({ product: p }) => ids.has(p.productId));
     }
+
+    // Projeta produto com somente as variações filtradas e totais recalculados.
+    const projected = items.map(({ product: p, variantsForFilter }) => {
+      if (!hasVariantFilter || variantsForFilter.length === p.variants.length) return p;
+      return {
+        ...p,
+        variants: variantsForFilter,
+        totalVariants: variantsForFilter.length,
+        totalCurrentStock: variantsForFilter.reduce((s, v) => s + v.currentStock, 0),
+        totalMinStock: variantsForFilter.reduce((s, v) => s + v.minStock, 0),
+        totalReservedStock: variantsForFilter.reduce((s, v) => s + v.reservedStock, 0),
+        totalInTransitStock: variantsForFilter.reduce((s, v) => s + v.inTransitStock, 0),
+        totalAvailableStock: variantsForFilter.reduce((s, v) => s + v.availableStock, 0),
+      };
+    });
 
     const dir = filters.sortDirection === 'asc' ? 1 : -1;
     switch (filters.sortBy) {
       case 'name':
-        items.sort((a, b) => a.productName.localeCompare(b.productName) * dir);
+        projected.sort((a, b) => a.productName.localeCompare(b.productName) * dir);
         break;
       case 'sku':
-        items.sort((a, b) => a.productSku.localeCompare(b.productSku) * dir);
+        projected.sort((a, b) => a.productSku.localeCompare(b.productSku) * dir);
         break;
       case 'stock_quantity':
-        items.sort((a, b) => (a.totalCurrentStock - b.totalCurrentStock) * dir);
+        projected.sort((a, b) => (a.totalCurrentStock - b.totalCurrentStock) * dir);
         break;
       case 'available_stock':
-        items.sort((a, b) => (a.totalAvailableStock - b.totalAvailableStock) * dir);
+        projected.sort((a, b) => (a.totalAvailableStock - b.totalAvailableStock) * dir);
         break;
       case 'days_remaining':
-        items.sort(
+        projected.sort(
           (a, b) => ((a.daysUntilFullStockout ?? 999) - (b.daysUntilFullStockout ?? 999)) * dir,
         );
         break;
     }
 
-    return items;
+    return projected;
   }, [productStocks, filters, alerts]);
 
   const allColors = useMemo(() => {
