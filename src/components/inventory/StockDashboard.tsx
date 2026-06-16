@@ -471,22 +471,8 @@ export function StockDashboard() {
         </div>
       )}
 
-      {/* Advanced Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <StockFilterToolbar
-            filters={filters}
-            onUpdateFilter={updateFilter}
-            onResetFilters={resetFilters}
-            categories={availableCategories}
-            suppliers={availableSuppliers}
-            colors={allColors}
-            colorGroups={availableColorGroups}
-            totalProducts={allProductStocks.length}
-            filteredCount={productStocks.length}
-          />
-        </CardContent>
-      </Card>
+
+
 
       {/* Stock Table */}
       <Card>
