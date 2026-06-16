@@ -299,6 +299,8 @@ export const defaultStockFilters: StockFilters = {
   groupBy: 'product',
   showOnlyWithVariants: false,
   showOnlyWithAlerts: false,
+  includeFutureStock: false,
+  futureStockWindowDays: 15,
 };
 
 // ============================================
