@@ -1,6 +1,7 @@
 /**
  * Preview rico do template antes de clonar — com seção "Quem usou também usou".
  */
+import type { ComponentType } from 'react';
 import * as Lucide from 'lucide-react';
 import { Package, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import {
@@ -40,7 +41,7 @@ export function KitTemplatePreviewDialog({
   if (!template) return null;
 
   const Icon =
-    (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+    (Lucide as unknown as Record<string, ComponentType<{ className?: string }>>)[
       template.icon
     ] || Package;
 

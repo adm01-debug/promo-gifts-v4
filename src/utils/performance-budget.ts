@@ -72,6 +72,8 @@ export function initPerformanceBudget(): void {
   } catch { /* Observer not supported */ }
 
   // INP — Interaction to Next Paint
+  // durationThreshold não está no PerformanceObserverInit do lib.dom.d.ts;
+  // usa double-cast para passar o parâmetro sem TS2353.
   try {
     const inpObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -80,7 +82,7 @@ export function initPerformanceBudget(): void {
         if (value > 0) reportMetric('INP', value, getRating('INP', value));
       }
     });
-    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 } as PerformanceObserverInit & { durationThreshold?: number });
+    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 } as unknown as PerformanceObserverInit);
   } catch { /* Observer not supported */ }
 
   // TTFB — Time to First Byte

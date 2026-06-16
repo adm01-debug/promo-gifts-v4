@@ -3,8 +3,11 @@
  * semelhantes ao kit atual (overlap >=30% por SKU).
  */
 import { useNavigate } from 'react-router-dom';
-import * as Lucide from 'lucide-react';
-import { Package, type LucideIcon, Sparkles } from 'lucide-react';
+import {
+  Package, Sparkles,
+  Gift, Heart, Star, Crown, Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,9 +19,14 @@ interface Props {
   excludeId?: string;
 }
 
-function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, LucideIcon>)[name];
-  return I ?? Package;
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
+
+function getIcon(name: string): LucideIcon {
+  return ICON_MAP[name] ?? Package;
 }
 
 export function SimilarKitsWidget({ currentSkus, excludeId }: Props) {

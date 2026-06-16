@@ -3,7 +3,6 @@
  * Tier 1: Identity (name + status badges) — stripe + colored icon refletem identidade
  * Tier 2: Primary actions (Save, New, Library)
  */
-import * as Lucide from 'lucide-react';
 import {
   Save,
   Cloud,
@@ -15,6 +14,17 @@ import {
   Library,
   Sparkles,
   Package,
+  Gift,
+  Heart,
+  Star,
+  Crown,
+  Briefcase,
+  Coffee,
+  Laptop,
+  Leaf,
+  Trophy,
+  Users,
+  type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,6 +38,12 @@ import { useRBAC } from '@/hooks/auth';
 import { useTemplateSnapshot } from '@/hooks/kit-builder';
 import type { KitIdentity, KitState } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';
+
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
 
 interface KitBuilderHeaderProps {
   kitName: string;
@@ -83,13 +99,7 @@ export function KitBuilderHeader({
 
   const identityColor = identity?.color || '#3B82F6';
   const identityIconName = identity?.icon || 'Package';
-  const IdentityIcon =
-    (
-      Lucide as unknown as Record<
-        string,
-        React.ComponentType<{ className?: string; strokeWidth?: number }>
-      >
-    )[identityIconName] || Package;
+  const IdentityIcon = ICON_MAP[identityIconName] ?? Package;
 
   return (
     <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-md">

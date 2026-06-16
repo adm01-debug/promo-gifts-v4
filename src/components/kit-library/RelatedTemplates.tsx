@@ -1,6 +1,7 @@
 /**
  * RelatedTemplates — Mostra 2-3 templates da mesma categoria sob o template atual.
  */
+import type { ComponentType } from 'react';
 import * as Lucide from 'lucide-react';
 import { Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
@@ -28,7 +29,7 @@ export function RelatedTemplates({ current, all, onSelect }: Props) {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {related.map((t) => {
           const Icon =
-            (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+            (Lucide as unknown as Record<string, ComponentType<{ className?: string }>>)[
               t.icon
             ] || Package;
           return (
