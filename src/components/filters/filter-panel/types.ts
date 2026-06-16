@@ -116,7 +116,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Categorias',
     icon: React.createElement(LayoutGrid, { className: 'h-4 w-4' }),
   },
-  estoque: { title: 'Estoque', icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+  
   preco: {
     title: 'Faixa de Preço',
     icon: React.createElement(DollarSign, { className: 'h-4 w-4' }),
@@ -166,7 +166,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
 export const SECTION_GROUPS = [
   {
     label: 'PRODUTO',
-    sections: ['cores', 'categorias', 'estoque', 'preco', 'materiais', 'genero', 'tamanhos'],
+    sections: ['cores', 'categorias', 'preco', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
   {

@@ -233,7 +233,7 @@ export function useFilterPanelState(
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
-      estoque: filters.minStock > 0 ? 1 : 0,
+      
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
       fornecedores: filters.suppliers?.length || 0,
       publico: filters.publicoAlvo?.length || 0,
@@ -254,9 +254,6 @@ export function useFilterPanelState(
     const summaries: Record<string, string> = {};
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
       summaries.preco = `R$${filters.priceRange[0]}–${filters.priceRange[1] >= 9999 ? '∞' : filters.priceRange[1]}`;
-    }
-    if (filters.minStock > 0) {
-      summaries.estoque = `≥${filters.minStock} un.`;
     }
     if (filters.sortBy !== 'newest') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);
