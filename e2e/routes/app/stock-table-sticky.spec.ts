@@ -158,23 +158,22 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         cancelAnimationFrame(handle);
         return { scrolled: el.scrollTop, ms: performance.now() - t0, frames, maxScroll };
       });
-      // eslint-disable-next-line no-console
-      console.log(`[stock-sticky:${vp.name}] metrics=${JSON.stringify(metrics)}`);
+      trail(vp.name, "scroll.metrics", metrics);
 
       if (metrics.scrolled <= 0) {
         test.skip(true, "conteúdo não excede a altura interna — sem scroll a validar");
         return;
       }
 
-      // Asserções de jank: tempo total e mínimo de frames durante a janela
+      const budget = JANK_BUDGET[vp.name] ?? { maxMs: MAX_SCROLL_MS, minFrames: MIN_FRAMES };
       expect(
         metrics.ms,
-        `scroll demorou ${metrics.ms.toFixed(1)}ms (>${MAX_SCROLL_MS}ms) em ${vp.name}`,
-      ).toBeLessThanOrEqual(MAX_SCROLL_MS);
+        `scroll demorou ${metrics.ms.toFixed(1)}ms (>${budget.maxMs}ms) em ${vp.name}`,
+      ).toBeLessThanOrEqual(budget.maxMs);
       expect(
         metrics.frames,
-        `apenas ${metrics.frames} frames durante o scroll em ${vp.name} (mín ${MIN_FRAMES}) — possível jank`,
-      ).toBeGreaterThanOrEqual(MIN_FRAMES);
+        `apenas ${metrics.frames} frames durante o scroll em ${vp.name} (mín ${budget.minFrames}) — possível jank`,
+      ).toBeGreaterThanOrEqual(budget.minFrames);
 
       await expect(toolbar).toBeVisible();
       await expect(thead).toBeVisible();
