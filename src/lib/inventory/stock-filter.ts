@@ -161,41 +161,22 @@ export function buildStockIndexes(
 
 
 // ---------- predicados auxiliares ----------
-function matchStatus(
-  product: ProductStockSummary,
-  variantsForFilter: VariantStock[],
-  status: StockStatus | 'all',
-  hasVariantFilter: boolean,
-): boolean {
+function variantMatchesStatus(variant: VariantStock, status: StockStatus | 'all'): boolean {
   if (status === 'all') return true;
-  if (status === 'incoming') {
-    if (hasVariantFilter) {
-      return variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0);
-    }
-    return (
-      product.totalInTransitStock > 0 ||
-      variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
-    );
-  }
-  if (hasVariantFilter) {
-    return variantsForFilter.some(
-      (v) => v.status === status || (status === 'low_stock' && v.status === 'critical'),
-    );
-  }
-  if (product.overallStatus === status) return true;
-  if (status === 'low_stock' && product.overallStatus === 'critical') return true;
-  return product.variants.some((v) => v.status === status);
+  if (status === 'incoming') return variant.status === 'incoming' || variant.inTransitStock > 0;
+  if (status === 'low_stock') return variant.status === 'low_stock' || variant.status === 'critical';
+  return variant.status === status;
 }
 
-function matchSearch(
+function variantsAfterSearch(
   product: ProductStockSummary,
   variantsForFilter: VariantStock[],
   searchN: string,
-): boolean {
-  if (!searchN) return true;
-  if (normalize(product.productName).includes(searchN)) return true;
-  if (normalize(product.productSku).includes(searchN)) return true;
-  return variantsForFilter.some(
+): VariantStock[] {
+  if (!searchN) return variantsForFilter;
+  if (normalize(product.productName).includes(searchN)) return variantsForFilter;
+  if (normalize(product.productSku).includes(searchN)) return variantsForFilter;
+  return variantsForFilter.filter(
     (v) => normalize(v.colorName).includes(searchN) || normalize(v.variantSku).includes(searchN),
   );
 }
@@ -209,20 +190,8 @@ function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
   return v.futureStock;
 }
 
-function matchMinQuantity(
-  product: ProductStockSummary,
-  variantsForFilter: VariantStock[],
-  ctx: FilterContext,
-): boolean {
-  if (ctx.minQty <= 0) return true;
-  let pool = ctx.hasVariantFilter
-    ? variantsForFilter.reduce((sum, v) => sum + v.availableStock, 0)
-    : product.totalAvailableStock;
-  if (ctx.includeFutureStock) {
-    const source = ctx.hasVariantFilter ? variantsForFilter : product.variants;
-    for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
-  }
-  return pool >= ctx.minQty;
+function variantAvailableForRequest(variant: VariantStock, ctx: FilterContext): number {
+  return variant.availableStock + (ctx.includeFutureStock ? futureWithinWindow(variant, ctx.futureCutoffMs) : 0);
 }
 
 // ---------- estágio 3: orquestrador ----------
