@@ -362,11 +362,17 @@ export async function fetchAndProcessStockData(): Promise<{
         const availableStock = calculateAvailableStock(currentStock, reservedStock);
         const status = calculateStockStatus(currentStock, minStock, undefined, inTransitStock);
 
+        const variantImage =
+          imageByVariantId.get(pv.id) ||
+          (pv.color_code ? imageBySupplierCode.get(pv.color_code.toUpperCase()) : undefined) ||
+          undefined;
+
         variants.push({
           id: pv.id,
           productId: product.id,
           variantId: pv.id,
           variantSku: pv.sku || `${product.sku}-${pv.color_code || 'VAR'}`,
+          imageUrl: variantImage,
           colorId: pv.color_id,
           colorName: pv.color_name || 'Padrao',
           colorHex: pv.color_hex,
@@ -381,6 +387,7 @@ export async function fetchAndProcessStockData(): Promise<{
           futureStockDate: supplierSource?.next_date_1 || undefined,
           updatedAt: pv.updated_at || product.updated_at || new Date().toISOString(),
         });
+
       });
 
       // Fallback: estoque no nivel do produto
