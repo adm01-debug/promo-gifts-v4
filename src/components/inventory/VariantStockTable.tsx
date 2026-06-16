@@ -43,6 +43,28 @@ type GroupingMode = 'grouped' | 'flat';
 const GROUPING_STORAGE_KEY = 'stock.groupBy';
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
+const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+
+/** Filtro rápido por status — 'all' = sem filtro. */
+type StatusFilter = StockStatus | 'all';
+const STATUS_FILTER_VALUES: StatusFilter[] = [
+  'all',
+  'in_stock',
+  'low_stock',
+  'critical',
+  'out_of_stock',
+  'incoming',
+];
+const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
+  all: 'Todos',
+  in_stock: 'Em estoque',
+  low_stock: 'Baixo',
+  critical: 'Crítico',
+  out_of_stock: 'Esgotado',
+  overstocked: 'Excesso',
+  incoming: 'Chegando',
+};
+
 
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
@@ -801,6 +823,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     }
   }, [groupingMode]);
 
+  // Filtro por status (persistido). Sincroniza com ambos os modos grouped/flat.
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
+    return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
+  });
+  useEffect(() => {
+    writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
+  }, [statusFilter]);
+
+
 
 
   // Deep link: auto-expand product from URL ?product=ID
@@ -838,29 +870,71 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     );
   }, [products, inlineSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(searchedProducts.length / PAGE_SIZE));
+  /**
+   * Contagem de variações por status sobre o universo pós-busca.
+   * Usada nos chips do filtro para feedback imediato e consistência entre modos.
+   */
+  const statusCounts = useMemo(() => {
+    const counts: Record<StatusFilter, number> = {
+      all: 0,
+      in_stock: 0,
+      low_stock: 0,
+      critical: 0,
+      out_of_stock: 0,
+      overstocked: 0,
+      incoming: 0,
+    };
+    for (const p of searchedProducts) {
+      for (const v of p.variants) {
+        counts.all += 1;
+        counts[v.status] = (counts[v.status] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [searchedProducts]);
+
+  /**
+   * Aplica filtro de status mantendo coerência entre grouped/flat:
+   *  - grouped: mantém produto se ALGUMA variação bate; recorta lista de variantes ao filtro.
+   *  - flat: filtragem efetiva acontece em flatRows.
+   */
+  const filteredProducts = useMemo(() => {
+    if (statusFilter === 'all') return searchedProducts;
+    const result: ProductStockSummary[] = [];
+    for (const p of searchedProducts) {
+      const matched = p.variants.filter((v) => v.status === statusFilter);
+      if (matched.length > 0) {
+        result.push(groupingMode === 'grouped' ? { ...p, variants: matched } : p);
+      }
+    }
+    return result;
+  }, [searchedProducts, statusFilter, groupingMode]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages - 1);
   if (safePage !== currentPage) setCurrentPage(safePage);
 
   const paginatedProducts = useMemo(() => {
     const start = safePage * PAGE_SIZE;
-    return searchedProducts.slice(start, start + PAGE_SIZE);
-  }, [searchedProducts, safePage]);
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredProducts, safePage]);
 
   /**
    * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
    * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
-   * Custo: O(produtos × variações da página) — limitado por PAGE_SIZE (50).
+   * Aplica statusFilter na variação para consistência absoluta com os chips.
    */
   const flatRows = useMemo(() => {
     if (groupingMode !== 'flat') return [];
     const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
     for (const product of paginatedProducts) {
       for (const variant of product.variants) {
+        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
         rows.push({ product, variant });
       }
     }
     return rows;
+
   }, [groupingMode, paginatedProducts]);
 
   const toggleProduct = (productId: string) => {
@@ -971,18 +1045,55 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           )}
         </div>
 
+        {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
+        <div
+          className="flex flex-wrap items-center gap-1"
+          role="group"
+          aria-label="Filtrar por status de estoque"
+          data-testid="stock-status-filter"
+        >
+          {STATUS_FILTER_VALUES.map((value) => {
+            const active = statusFilter === value;
+            const count = statusCounts[value] ?? 0;
+            const disabled = value !== 'all' && count === 0;
+            return (
+              <Button
+                key={value}
+                type="button"
+                variant={active ? 'secondary' : 'ghost'}
+                size="sm"
+                disabled={disabled}
+                aria-pressed={active}
+                data-testid={`stock-status-chip-${value}`}
+                onClick={() => {
+                  setStatusFilter(value);
+                  setCurrentPage(0);
+                }}
+                className="h-6 gap-1 px-2 text-[11px]"
+              >
+                <span>{STATUS_FILTER_LABEL[value]}</span>
+                <span className="rounded-sm bg-muted px-1 text-[10px] text-muted-foreground">
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
+
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {searchedProducts.length > PAGE_SIZE ? (
+            {filteredProducts.length > PAGE_SIZE ? (
               <>
                 {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, searchedProducts.length)} de{' '}
-                {searchedProducts.length}
+                {Math.min((safePage + 1) * PAGE_SIZE, filteredProducts.length)} de{' '}
+                {filteredProducts.length}
               </>
             ) : (
-              <>{searchedProducts.length} produtos</>
+              <>{filteredProducts.length} produtos</>
             )}
+
           </span>
 
           {/* Toggle de agrupamento: Agrupar por produto ↔ Listar variações */}
