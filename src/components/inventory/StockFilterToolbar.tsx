@@ -128,7 +128,9 @@ export function StockFilterToolbar({
     () => ({
       cores: (filters.colorGroup ? 1 : 0) + (filters.colorName ? 1 : 0),
       categorias: filters.categoryId ? 1 : 0,
-      estoque: filters.minQuantityNeeded && filters.minQuantityNeeded > 0 ? 1 : 0,
+      estoque:
+        (filters.minQuantityNeeded && filters.minQuantityNeeded > 0 ? 1 : 0) +
+        (filters.includeFutureStock ? 1 : 0),
       fornecedores: filters.supplierId ? 1 : 0,
       ordenacao: filters.sortBy !== 'stock_quantity' ? 1 : 0,
     }),
@@ -291,7 +293,7 @@ export function StockFilterToolbar({
                   filters.minQuantityNeeded ? `≥${filters.minQuantityNeeded}` : undefined
                 }
               >
-                <div className="px-1">
+                <div className="space-y-3 px-1">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
                       Mínimo por cor
@@ -309,6 +311,48 @@ export function StockFilterToolbar({
                       }
                     />
                     <span className="text-xs text-muted-foreground">un.</span>
+                  </div>
+
+                  {/* Em Estoque vs incluir Estoque Futuro */}
+                  <div className="space-y-2 rounded-md border border-border/40 bg-muted/30 p-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex cursor-pointer items-center gap-1.5 text-xs">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        Incluir Estoque Futuro
+                      </Label>
+                      <Switch
+                        checked={!!filters.includeFutureStock}
+                        onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+                      />
+                    </div>
+                    <p className="text-[11px] leading-snug text-muted-foreground">
+                      {filters.includeFutureStock
+                        ? 'Somando o que chega dentro da janela ao estoque atual.'
+                        : 'Considerando apenas o que está disponível agora.'}
+                    </p>
+                    {filters.includeFutureStock && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">Janela</span>
+                        <Select
+                          value={String(filters.futureStockWindowDays ?? 15)}
+                          onValueChange={(v) =>
+                            onUpdateFilter(
+                              'futureStockWindowDays',
+                              Number(v) as 7 | 15 | 30,
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7" className="text-xs">Próximos 7 dias</SelectItem>
+                            <SelectItem value="15" className="text-xs">Próximos 15 dias</SelectItem>
+                            <SelectItem value="30" className="text-xs">Próximos 30 dias</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 </div>
               </FilterSection>

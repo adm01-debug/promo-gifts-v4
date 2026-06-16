@@ -39,12 +39,16 @@ export interface FilterContext {
   supplierN: string;
   minQty: number;
   hasVariantFilter: boolean;
+  includeFutureStock: boolean;
+  futureCutoffMs: number; // 0 quando desativado
 }
 
 
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
+  const includeFutureStock = Boolean(filters.includeFutureStock);
+  const windowDays = filters.futureStockWindowDays ?? 15;
   return {
     searchN: normalize(filters.search),
     colorName,
@@ -54,6 +58,8 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
+    includeFutureStock,
+    futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
   };
 }
 
@@ -194,17 +200,29 @@ function matchSearch(
   );
 }
 
+function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
+  if (!v.futureStock || v.futureStock <= 0) return 0;
+  const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
+  if (!dateStr) return 0;
+  const t = Date.parse(dateStr);
+  if (Number.isNaN(t) || t > cutoffMs) return 0;
+  return v.futureStock;
+}
+
 function matchMinQuantity(
   product: ProductStockSummary,
   variantsForFilter: VariantStock[],
-  minQty: number,
-  hasVariantFilter: boolean,
+  ctx: FilterContext,
 ): boolean {
-  if (minQty <= 0) return true;
-  const pool = hasVariantFilter
+  if (ctx.minQty <= 0) return true;
+  let pool = ctx.hasVariantFilter
     ? variantsForFilter.reduce((sum, v) => sum + v.availableStock, 0)
     : product.totalAvailableStock;
-  return pool >= minQty;
+  if (ctx.includeFutureStock) {
+    const source = ctx.hasVariantFilter ? variantsForFilter : product.variants;
+    for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
+  }
+  return pool >= ctx.minQty;
 }
 
 // ---------- estágio 3: orquestrador ----------
@@ -263,7 +281,7 @@ export function applyStockFilters(
     if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
     if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
     if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
-    if (!matchMinQuantity(p, variantsForFilter, ctx.minQty, ctx.hasVariantFilter)) continue;
+    if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
