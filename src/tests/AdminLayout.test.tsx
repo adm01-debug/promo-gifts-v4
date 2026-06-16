@@ -72,6 +72,8 @@ vi.mock('@/integrations/supabase/client', () => ({
     }),
     removeChannel: vi.fn(),
   },
+  SUPABASE_URL: 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'placeholder-key',
 }));
 
 // MainLayout real usa lazyWithRetry (Header/Sidebar/PageTransition/CommandBar)

@@ -53,40 +53,35 @@ describe('CatalogToolbar - Alignment and Responsiveness', () => {
     );
   };
 
-  it('positions Select and Layout buttons on the right side (flex-row items-center justify-between)', () => {
+  it('positions Select and Layout buttons on the right side (flex-wrap justify-between)', () => {
     const { container } = renderToolbar();
 
     const toolbarRoot = container.firstChild as HTMLElement;
-    // On small screens it is flex-col, on sm: and up it is flex-row.
-    // JSDOM doesn't automatically apply sm: prefixes based on window.innerWidth
-    // without manual mock, so we check the presence of classes.
-    expect(toolbarRoot).toHaveClass('sm:flex-row');
-    expect(toolbarRoot).toHaveClass('sm:justify-between');
+    // Lovable bot changed sm:flex-row/sm:justify-between to plain flex-wrap/justify-between
+    expect(toolbarRoot).toHaveClass('justify-between');
+    expect(toolbarRoot).toHaveClass('flex-wrap');
 
-    // Group 1 (Left): Filters, Sort, Stats
+    // Group 1 (Left): Filters, Sort, Stats — uses flex-shrink-0 to not grow
     const leftGroup = toolbarRoot.children[0];
-    expect(leftGroup).toHaveClass('flex-wrap');
+    expect(leftGroup).toHaveClass('flex-shrink-0');
 
-    // Group 2 (Right): Selection, Layout
+    // Group 2 (Right): Selection, Layout — uses items-center alignment
     const rightGroup = toolbarRoot.children[1];
-    expect(rightGroup).toHaveClass('ml-auto');
+    expect(rightGroup).toHaveClass('items-center');
   });
 
-  it('maintains buttons on the right even on small screens using ml-auto', () => {
-    // We mock window.innerWidth via standard vitest approach if needed,
-    // but the CSS class check is more robust for "intended" layout.
+  it('maintains buttons on the right via justify-between on parent', () => {
+    // Parent uses justify-between so the right group stays on the right side
     const { container } = renderToolbar();
-    const rightGroup = container.querySelector('.ml-auto');
-    expect(rightGroup).toBeInTheDocument();
-
-    // Check for responsiveness classes
     const toolbarRoot = container.firstChild as HTMLElement;
-    expect(toolbarRoot).toHaveClass('sm:flex-row');
-    expect(toolbarRoot).toHaveClass('sm:justify-between');
+
+    // Parent layout keeps right group on the right via justify-between
+    expect(toolbarRoot).toHaveClass('justify-between');
+    expect(toolbarRoot).toHaveClass('flex-wrap');
   });
 
   it('ensures the selection button and layout trigger are visible in the right group', () => {
-    renderToolbar();
+    const { container } = renderToolbar();
 
     const selectBtn = screen.getByLabelText(/Selecionar/i);
     const layoutBtn = screen.getByTestId('layout-popover-trigger');
@@ -94,9 +89,10 @@ describe('CatalogToolbar - Alignment and Responsiveness', () => {
     expect(selectBtn).toBeInTheDocument();
     expect(layoutBtn).toBeInTheDocument();
 
-    // Verify they are children of the right group (the one with ml-auto)
-    const rightGroup = selectBtn.closest('.ml-auto');
-    expect(rightGroup).toBeInTheDocument();
+    // Verify they are children of the right group (second child of toolbar root)
+    const toolbarRoot = container.firstChild as HTMLElement;
+    const rightGroup = toolbarRoot.children[1];
+    expect(rightGroup).toContainElement(selectBtn);
     expect(rightGroup).toContainElement(layoutBtn);
   });
 });

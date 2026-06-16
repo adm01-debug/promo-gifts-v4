@@ -41,7 +41,7 @@ describe('SidebarBrandHeader — logo click', () => {
   it('navega para "/" e NÃO chama restartTour (expanded)', () => {
     restartTour.mockClear();
     renderAt('/catalogo');
-    const logo = screen.getByText('PROMO BRINDES');
+    const logo = screen.getByText('Promo Gifts');
     fireEvent.click(logo);
     expect(screen.getByTestId('loc').textContent).toBe('/');
     expect(restartTour).not.toHaveBeenCalled();
@@ -50,7 +50,7 @@ describe('SidebarBrandHeader — logo click', () => {
   it('navega para "/" e NÃO chama restartTour (collapsed)', () => {
     restartTour.mockClear();
     const { container } = renderAt('/orcamentos', true);
-    const logo = container.querySelector('.group') as HTMLElement;
+    const logo = container.querySelector('[data-testid="sidebar-brand-header"] div') as HTMLElement;
     fireEvent.click(logo);
     expect(screen.getByTestId('loc').textContent).toBe('/');
     expect(restartTour).not.toHaveBeenCalled();

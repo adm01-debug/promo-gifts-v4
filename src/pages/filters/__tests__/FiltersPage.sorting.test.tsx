@@ -44,6 +44,14 @@ vi.mock('@/hooks/products/useProductsByMaterial', () => ({
   })),
 }));
 
+vi.mock('@/hooks/intelligence/usePromoSalesRanking', () => ({
+  usePromoSalesRanking: vi.fn(() => ({ data: undefined })),
+}));
+
+vi.mock('@/hooks/intelligence/usePromoSales90dByProduct', () => ({
+  usePromoSales90dByProduct: vi.fn(() => ({ data: undefined })),
+}));
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });

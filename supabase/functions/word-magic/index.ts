@@ -3,7 +3,7 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 import { z } from '../_shared/zod-validate.ts';
-import { getCredential } from '../_shared/credentials.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -199,8 +199,10 @@ Deno.serve(async (req) => {
       queueId = existing.id;
     }
 
-    // 9. Obter chave DeepSeek via credential system (DB-first → env fallback interno)
-    const deepseekKey = await getCredential('DEEPSEEK_API_KEY');
+    // 9. Obter chave DeepSeek (DB-first → env fallback) via SSOT resolveCredential.
+    //    Reusa o service client já criado; nunca ler credencial user-configurável
+    //    direto de Deno.env (ssot-bypass — ver scripts/audit-credentials.mjs).
+    const { value: deepseekKey } = await resolveCredential('DEEPSEEK_API_KEY', supabase);
 
     if (!deepseekKey) {
       // Marcar fila como erro antes de lançar

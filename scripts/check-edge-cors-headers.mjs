@@ -54,6 +54,9 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   "test-cart-concurrency",
   "test-cart-limit",
   "test-cart-rls",
+  // pg_cron jobs — called via net.http_post internally, never by a browser.
+  "backfill-image-dimensions",
+  "asia-ingestion",
 ]);
 
 function listFunctionDirs() {

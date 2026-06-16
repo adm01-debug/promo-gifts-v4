@@ -99,6 +99,8 @@ vi.mock('@/integrations/supabase/client', () => {
         signOut: vi.fn().mockResolvedValue({ error: null }),
       },
     },
+    SUPABASE_URL: 'https://placeholder.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'placeholder-key',
   };
 });
 

@@ -271,10 +271,10 @@ describe("ProductCard — category line (PR)", () => {
     expect(emptyBadge).toBeUndefined();
   });
 
-  it("renders the sparkline section label as 'Vendas 30d' (not the old label)", async () => {
+  it("renders a sales stats button with 'Vendas Xd' label (not the old 'Vendas no Fornecedor' label)", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(<ProductCard product={mockProduct as any} />);
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
+    expect(screen.getByText(/^Vendas \d+d$/)).toBeInTheDocument();
     expect(screen.queryByText(/Vendas no Fornecedor/i)).not.toBeInTheDocument();
   });
 

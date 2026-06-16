@@ -79,6 +79,8 @@ vi.mock('@/integrations/supabase/client', () => ({
       invoke: vi.fn(),
     },
   },
+  SUPABASE_URL: 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'placeholder-key',
 }));
 
 // Mock IntersectionObserver
