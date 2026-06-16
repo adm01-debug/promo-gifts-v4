@@ -244,15 +244,20 @@ export function applyStockFilters(
 
   const out: ProductStockSummary[] = [];
   for (const p of candidates) {
-    const variantsForFilter = selectMatchingVariants(p, ctx);
-    if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
-    if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
-    if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
+    let variantsForFilter = selectMatchingVariants(p, ctx);
+    if (variantsForFilter.length === 0) continue;
+    variantsForFilter = variantsForFilter.filter((v) => variantMatchesStatus(v, filters.status));
+    if (variantsForFilter.length === 0) continue;
+    variantsForFilter = variantsAfterSearch(p, variantsForFilter, ctx.searchN);
+    if (variantsForFilter.length === 0) continue;
     if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
     if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
-    if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
+    if (ctx.minQty > 0) {
+      variantsForFilter = variantsForFilter.filter((v) => variantAvailableForRequest(v, ctx) >= ctx.minQty);
+      if (variantsForFilter.length === 0) continue;
+    }
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
-    out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
+    out.push(projectProduct(p, variantsForFilter));
   }
 
 
