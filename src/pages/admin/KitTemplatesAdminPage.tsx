@@ -1,8 +1,7 @@
 /**
  * Admin: gerenciar templates de kits sugeridos pelo sistema.
  */
-import { useMemo, useState } from 'react';
-import type { ComponentType } from 'react';
+import { useMemo, useState, type ComponentType } from 'react';
 import * as Lucide from 'lucide-react';
 import { Package, Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
