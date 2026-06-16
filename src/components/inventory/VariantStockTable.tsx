@@ -572,8 +572,15 @@ function ProductRow({
           )}
         </TableCell>
         <TableCell>
-          <StockStatusBadge status={product.overallStatus} />
+          <StockStatusChip
+            status={product.overallStatus}
+            current={product.totalCurrentStock}
+            min={product.totalMinStock}
+            reserved={product.totalReservedStock}
+            inTransit={product.totalInTransitStock}
+          />
         </TableCell>
+
         <TableCell className="hidden sm:table-cell">
           <div className="flex items-center gap-1">
             {product.variantsCritical > 0 && (
