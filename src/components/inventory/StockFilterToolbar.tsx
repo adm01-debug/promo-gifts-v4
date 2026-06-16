@@ -41,6 +41,12 @@ import { FilterSection } from '@/components/filters/filter-panel/FilterSection';
 import { StockHelpTooltip } from '@/components/inventory/StockHelpTooltip';
 import type { StockFilters, StockStatus } from '@/types/stock';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import {
+  useFutureStockPreference,
+  useFutureStockShortcut,
+  FUTURE_STOCK_WINDOWS,
+  type FutureStockWindow,
+} from '@/hooks/useFutureStockPreference';
 
 interface FilterOption {
   name: string;
@@ -117,6 +123,23 @@ export function StockFilterToolbar({
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() || '');
   const [openSections, setOpenSections] = useState<string[]>([]);
+
+  // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
+  useFutureStockPreference(
+    {
+      includeFutureStock: !!filters.includeFutureStock,
+      futureStockWindowDays: (filters.futureStockWindowDays ?? 15) as FutureStockWindow,
+    },
+    (pref) => {
+      onUpdateFilter('includeFutureStock', pref.includeFutureStock);
+      onUpdateFilter('futureStockWindowDays', pref.futureStockWindowDays);
+    },
+  );
+
+  // Atalho: Shift+F alterna inclusão do Estoque Futuro.
+  useFutureStockShortcut(() => {
+    onUpdateFilter('includeFutureStock', !filters.includeFutureStock);
+  });
 
   // Accordion behavior: only one section open at a time
   const toggleSection = (id: string) => {
@@ -396,18 +419,28 @@ export function StockFilterToolbar({
               <Button
                 variant="outline"
                 size="default"
+                data-testid="future-stock-toggle-button"
+                aria-pressed={!!filters.includeFutureStock}
+                aria-label={
+                  filters.includeFutureStock
+                    ? `Estoque Futuro ativo, janela ${filters.futureStockWindowDays ?? 15} dias. Atalho: Shift+F`
+                    : 'Considerando apenas estoque atual. Atalho Shift+F para incluir Estoque Futuro'
+                }
                 className={cn(
                   'relative gap-2 font-normal text-muted-foreground hover:text-foreground',
                   filters.includeFutureStock &&
                     'border-border/60 text-foreground [&_svg]:text-primary',
                 )}
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">
                   {filters.includeFutureStock ? 'Estoque Futuro' : 'Em Estoque'}
                 </span>
                 {filters.includeFutureStock && (
-                  <span className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <span
+                    aria-hidden="true"
+                    className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  >
                     {filters.futureStockWindowDays ?? 15}d
                   </span>
                 )}
@@ -417,36 +450,51 @@ export function StockFilterToolbar({
           <PopoverContent className="w-72 p-0" align="start">
             <div className="space-y-2 px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
-                <Label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-foreground">
-                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label
+                  htmlFor="future-stock-switch"
+                  className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-foreground"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                   Incluir Estoque Futuro
                 </Label>
                 <Switch
+                  id="future-stock-switch"
+                  data-testid="future-stock-switch"
                   checked={!!filters.includeFutureStock}
                   onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+                  aria-label="Incluir Estoque Futuro no cálculo"
                 />
               </div>
               <p className="text-[11px] leading-snug text-muted-foreground">
                 {filters.includeFutureStock
                   ? 'Somando o que chega na janela ao estoque atual.'
                   : 'Considerando apenas o que está disponível agora.'}
+                <span className="ml-1 opacity-70">Atalho: Shift+F</span>
               </p>
             </div>
             {filters.includeFutureStock && (
               <div className="space-y-1.5 border-t border-border/40 px-3 py-2.5">
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                <span
+                  id="future-stock-window-label"
+                  className="text-[10px] uppercase tracking-wide text-muted-foreground"
+                >
                   Janela de chegada
                 </span>
-                <div className="grid grid-cols-3 gap-1">
-                  {[7, 15, 30].map((d) => {
+                <div
+                  role="radiogroup"
+                  aria-labelledby="future-stock-window-label"
+                  className="grid grid-cols-3 gap-1"
+                >
+                  {FUTURE_STOCK_WINDOWS.map((d) => {
                     const active = filters.futureStockWindowDays === d;
                     return (
                       <button
                         key={d}
                         type="button"
-                        onClick={() =>
-                          onUpdateFilter('futureStockWindowDays', d as 7 | 15 | 30)
-                        }
+                        role="radio"
+                        aria-checked={active}
+                        data-testid={`future-stock-window-${d}`}
+                        onClick={() => onUpdateFilter('futureStockWindowDays', d)}
                         className={cn(
                           'h-7 rounded-md border text-xs transition-colors',
                           active
