@@ -1048,15 +1048,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {searchedProducts.length > PAGE_SIZE ? (
+            {filteredProducts.length > PAGE_SIZE ? (
               <>
                 {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, searchedProducts.length)} de{' '}
-                {searchedProducts.length}
+                {Math.min((safePage + 1) * PAGE_SIZE, filteredProducts.length)} de{' '}
+                {filteredProducts.length}
               </>
             ) : (
-              <>{searchedProducts.length} produtos</>
+              <>{filteredProducts.length} produtos</>
             )}
+
           </span>
 
           {/* Toggle de agrupamento: Agrupar por produto ↔ Listar variações */}
