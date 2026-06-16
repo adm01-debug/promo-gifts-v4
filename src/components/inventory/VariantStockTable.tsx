@@ -222,13 +222,6 @@ function FlatVariantRow({
       <TableCell className="hidden sm:table-cell">
         <StockProgressBar current={variant.currentStock} min={variant.minStock} />
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {variant.reservedStock > 0 ? (
-          <span className="text-sm tabular-nums text-warning">-{variant.reservedStock}</span>
-        ) : (
-          <EmptyCell />
-        )}
-      </TableCell>
       <TableCell>
         <span
           className={cn(
