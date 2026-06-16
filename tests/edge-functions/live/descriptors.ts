@@ -122,6 +122,19 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
   "ownership-audit": {},
 
   // ---------------- Geração de IA cara (gate COSTLY) ----------------
+  "word-magic": {
+    // Copywriting B2B via DeepSeek — escreve em ai_enrichment_queue/products e
+    // consome créditos pagos. Sem happy-path: cobrimos CORS + fronteira de auth
+    // + validação de input (UUID/bool) sem disparar geração real.
+    validBody: { product_id: "00000000-0000-0000-0000-000000000000" },
+    invalidInputs: [
+      { label: "product_id não-UUID", body: { product_id: "not-a-uuid" } },
+      {
+        label: "force_regenerate tipo errado",
+        body: { product_id: "00000000-0000-0000-0000-000000000000", force_regenerate: "yes" },
+      },
+    ],
+  },
   "generate-ad-image": {
     happyPath: { role: "authenticated", body: { prompt: "logo" }, costly: true, expectStatus: [200] },
   },
