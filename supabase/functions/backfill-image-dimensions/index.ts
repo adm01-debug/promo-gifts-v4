@@ -3,6 +3,7 @@
 // extract width/height/file_size. Processes BATCH_SIZE images per invocation.
 // Called by pg_cron job #125 (every 5min) via net.http_post.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { authorizeCron } from '../_shared/dispatcher-auth.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -106,7 +107,21 @@ async function fetchDims(img: ImgRow): Promise<{ id: string; width: number; heig
   }
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  const cronAuth = await authorizeCron(req, {
+    corsHeaders: { 'Content-Type': 'application/json' },
+    secretEnvName: 'BACKFILL_DIM_CRON_SECRET',
+    headerName: 'x-cron-secret',
+  })
+  if (!cronAuth.ok) return cronAuth.response
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
   // Prioritize primary images, then by insertion order
@@ -122,7 +137,8 @@ Deno.serve(async (_req: Request) => {
     .limit(BATCH_SIZE)
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('backfill-image-dimensions: select_batch_failed', { message: error.message })
+    return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500, headers: { 'Content-Type': 'application/json' }
     })
   }
@@ -159,6 +175,7 @@ Deno.serve(async (_req: Request) => {
     .is('width_px', null)
     .eq('is_active', true)
     .not('format', 'is', null)
+    .not('format', 'eq', 'gif')
 
   return new Response(
     JSON.stringify({

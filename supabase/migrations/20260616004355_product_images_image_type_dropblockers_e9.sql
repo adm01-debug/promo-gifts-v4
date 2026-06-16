@@ -44,6 +44,7 @@ view_refs AS (
   JOIN pg_namespace n ON n.oid = c.relnamespace
   JOIN pg_depend d ON d.objid = c.oid
   JOIN pg_class dep_class ON dep_class.oid = d.refobjid
+  JOIN pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid AND a.attname = 'image_type'
   WHERE dep_class.relname = 'product_images'
     AND c.relkind IN ('v', 'm')
     AND n.nspname = 'public'

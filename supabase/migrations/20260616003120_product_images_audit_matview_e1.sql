@@ -48,7 +48,7 @@ SELECT
   (pi.file_size_bytes IS NULL)                                                     AS gap_file_size,
   (pi.url_original IS NULL
     AND pi.is_active = true
-    AND it.code NOT IN ('component','location','area'))                            AS gap_url_original,
+    AND NOT (pi.source_supplier = 'SPOT' AND it.code IN ('component','location','area'))) AS gap_url_original,
   -- applies_to_color (boolean do registro) — não is_color_specific da FK
   (pi.applies_to_color = true
     AND pi.color_id IS NULL
@@ -60,22 +60,22 @@ SELECT
     (pi.format IS NOT NULL)::int +
     (pi.width_px IS NOT NULL AND pi.height_px IS NOT NULL)::int +
     (pi.file_size_bytes IS NOT NULL)::int +
-    (pi.url_original IS NOT NULL OR it.code IN ('component','location','area'))::int +
-    (pi.color_id IS NOT NULL OR pi.applies_to_color = false)::int +
+    (pi.url_original IS NOT NULL OR (pi.source_supplier = 'SPOT' AND it.code IN ('component','location','area')))::int +
+    (pi.color_id IS NOT NULL OR pi.applies_to_color IS NOT TRUE)::int +
     (pi.alt_text IS NOT NULL AND length(pi.alt_text) >= 20)::int +
     (pi.image_type = it.code OR pi.image_type IS NULL)::int
   ) / 7.0, 1)                                                                     AS score_completude,
   -- ─── PRIORIDADE DE CORREÇÃO ────────────────────────────────────────────────
   CASE
     WHEN pi.is_active = false                                                    THEN 'I-inativa'
-    WHEN pi.is_primary AND pi.width_px IS NULL AND pi.format IS NULL            THEN 'P0-primary-multi-gap'
-    WHEN pi.is_primary AND pi.width_px IS NULL                                  THEN 'P0-primary-sem-dim'
-    WHEN pi.format IS NULL AND pi.width_px IS NULL                              THEN 'P1-sem-format-dim'
-    WHEN pi.width_px IS NULL                                                     THEN 'P2-sem-dimensoes'
+    WHEN pi.is_primary AND (pi.width_px IS NULL OR pi.height_px IS NULL) AND pi.format IS NULL THEN 'P0-primary-multi-gap'
+    WHEN pi.is_primary AND (pi.width_px IS NULL OR pi.height_px IS NULL)        THEN 'P0-primary-sem-dim'
+    WHEN pi.format IS NULL AND (pi.width_px IS NULL OR pi.height_px IS NULL)    THEN 'P1-sem-format-dim'
+    WHEN (pi.width_px IS NULL OR pi.height_px IS NULL)                          THEN 'P2-sem-dimensoes'
     WHEN pi.format IS NULL                                                       THEN 'P3-sem-format'
     WHEN pi.url_original IS NULL
       AND pi.is_active
-      AND it.code NOT IN ('component','location','area')                         THEN 'P4-sem-url-original'
+      AND NOT (pi.source_supplier = 'SPOT' AND it.code IN ('component','location','area')) THEN 'P4-sem-url-original'
     WHEN pi.applies_to_color = true AND pi.color_id IS NULL AND pi.is_active    THEN 'P5-sem-color-id'
     WHEN (pi.alt_text IS NULL OR length(pi.alt_text) < 20)                      THEN 'P6-alt-curto'
     ELSE 'OK'

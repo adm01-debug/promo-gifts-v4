@@ -17,5 +17,4 @@ WHERE format IS NULL
 -- L2b: XBZ image ausente no CF → inativar
 UPDATE public.product_images
 SET is_active = false
-WHERE cloudflare_image_id = 'xbz-p-05054'
-  AND format IS NULL;
+WHERE cloudflare_image_id = 'xbz-p-05054';

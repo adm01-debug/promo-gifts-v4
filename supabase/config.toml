@@ -81,6 +81,14 @@ verify_jwt = false
 [functions.log-login-attempt]
 verify_jwt = false
 
+[functions.check-login]
+verify_jwt = false
+
+[functions.asia-ingestion]
+verify_jwt = false
+
+[functions.backfill-image-dimensions]
+verify_jwt = false
 
 [functions.word-magic]
 verify_jwt = true

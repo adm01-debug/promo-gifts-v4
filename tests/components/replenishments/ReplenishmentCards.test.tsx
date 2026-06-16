@@ -1,6 +1,6 @@
 /**
  * Tests for ReplenishmentGridCard — covers the PR text label change:
- *   "Vendas no Fornecedor 30d" → "Vendas 30d"
+ *   "Vendas no Fornecedor 30d" → "Saídas 90d"
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
@@ -52,10 +52,10 @@ describe("ReplenishmentGridCard — label changes (PR)", () => {
     vi.clearAllMocks();
   });
 
-  it("renders 'Vendas 30d' label (updated text)", async () => {
+  it("renders 'Saídas 90d' label (updated text)", async () => {
     const { ReplenishmentGridCard } = await import("@/components/replenishments/ReplenishmentCards");
     renderWithProviders(<ReplenishmentGridCard {...baseCardProps} />);
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
+    expect(screen.getByText("Saídas 90d")).toBeInTheDocument();
   });
 
   it("does NOT render the old 'Vendas no Fornecedor 30d' label", async () => {
@@ -106,13 +106,13 @@ describe("ReplenishmentGridCard — label changes (PR)", () => {
     expect(screen.getByText("Estoque baixo")).toBeInTheDocument();
   });
 
-  // Regression: label stays at "Vendas 30d" regardless of stock status
-  it("always shows 'Vendas 30d' for out-of-stock products too", async () => {
+  // Regression: label stays at "Saídas 90d" regardless of stock status
+  it("always shows 'Saídas 90d' for out-of-stock products too", async () => {
     const { ReplenishmentGridCard } = await import("@/components/replenishments/ReplenishmentCards");
     const oos = { ...baseProduct, stock_status: "out-of-stock" as const };
     renderWithProviders(
       <ReplenishmentGridCard {...baseCardProps} product={oos as any} />
     );
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
+    expect(screen.getByText("Saídas 90d")).toBeInTheDocument();
   });
 });

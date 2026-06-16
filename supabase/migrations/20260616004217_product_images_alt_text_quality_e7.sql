@@ -8,7 +8,7 @@
 -- ============================================================================
 UPDATE public.product_images
 SET
-  caption  = COALESCE(caption, alt_text),  -- preserva texto anterior
+  caption  = COALESCE(NULLIF(trim(caption), ''), alt_text),  -- preserva texto anterior
   alt_text = NULL                           -- trigger BEFORE UPDATE regenera
 WHERE (alt_text IS NULL OR (length(trim(alt_text)) < 20))
   AND is_active = true;
