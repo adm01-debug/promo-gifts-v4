@@ -731,23 +731,17 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [currentPage]);
 
 
-  // Modo de visualização persistido — cada vendedor tem sua preferência.
-  // Default = 'flat' (variação-first): cada variação/cor é uma linha individual,
-  // com foto, código de cor e estoque próprios — alinhado ao fluxo do vendedor.
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>(() => {
-    if (typeof window === 'undefined') return 'flat';
-    const stored = window.localStorage.getItem(GROUPING_STORAGE_KEY);
-    return stored === 'grouped' ? 'grouped' : 'flat';
-  });
+  // Cleanup one-shot: purga chaves legadas do modo "Agrupar" (modelo antigo).
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(GROUPING_STORAGE_KEY, groupingMode);
+      for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
     } catch {
-      /* localStorage indisponível (modo privado) — segue só em memória. */
+      /* localStorage indisponível — ignore */
     }
-  }, [groupingMode]);
+  }, []);
 
-  // Filtro por status (persistido). Sincroniza com ambos os modos grouped/flat.
+  // Filtro por status (persistido). Aplicado por variação individual.
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
     return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
