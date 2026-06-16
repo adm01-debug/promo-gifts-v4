@@ -1,47 +1,47 @@
 {
-  "generatedAt": "2026-06-16T19:19:56.504Z",
-  "skuCount": 2000,
-  "iterations": 5,
+  "generatedAt": "2026-06-16T19:43:21.622Z",
+  "skuCount": 400,
+  "iterations": 4,
   "results": [
     {
       "label": "buildStockIndexes",
-      "iterations": 5,
-      "avgMs": 2.419,
-      "p50Ms": 2.653,
-      "p95Ms": 3.287,
-      "maxMs": 3.287
+      "iterations": 4,
+      "avgMs": 0.396,
+      "p50Ms": 0.386,
+      "p95Ms": 0.434,
+      "maxMs": 0.434
     },
     {
       "label": "applyStockFilters (no filter)",
-      "iterations": 5,
-      "avgMs": 0.166,
-      "p50Ms": 0.16,
-      "p95Ms": 0.202,
-      "maxMs": 0.202
+      "iterations": 4,
+      "avgMs": 0.048,
+      "p50Ms": 0.047,
+      "p95Ms": 0.055,
+      "maxMs": 0.055
     },
     {
       "label": "applyStockFilters (search)",
-      "iterations": 5,
-      "avgMs": 0.882,
-      "p50Ms": 0.909,
-      "p95Ms": 0.911,
-      "maxMs": 0.911
+      "iterations": 4,
+      "avgMs": 0.333,
+      "p50Ms": 0.325,
+      "p95Ms": 0.384,
+      "maxMs": 0.384
     },
     {
       "label": "applyStockFilters (status=low_stock)",
-      "iterations": 5,
-      "avgMs": 0.116,
-      "p50Ms": 0.119,
-      "p95Ms": 0.138,
-      "maxMs": 0.138
+      "iterations": 4,
+      "avgMs": 0.054,
+      "p50Ms": 0.056,
+      "p95Ms": 0.06,
+      "maxMs": 0.06
     },
     {
       "label": "applyStockFilters (color=Azul)",
-      "iterations": 5,
-      "avgMs": 0.132,
-      "p50Ms": 0.122,
-      "p95Ms": 0.188,
-      "maxMs": 0.188
+      "iterations": 4,
+      "avgMs": 0.043,
+      "p50Ms": 0.038,
+      "p95Ms": 0.062,
+      "maxMs": 0.062
     }
   ]
 }

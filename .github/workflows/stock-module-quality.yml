@@ -99,7 +99,7 @@ jobs:
           THRESHOLD_PCT: '25'
           SKU_COUNT: '10000'
           ITERATIONS: '30'
-        run: npx vitest run scripts/stock-benchmark.bench.ts
+        run: npx vitest run scripts/__tests__/stock-benchmark.test.ts
 
 
       - name: Publicar relatório do PR
