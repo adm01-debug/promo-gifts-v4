@@ -56,7 +56,12 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       await expect(thead).toBeVisible();
       await expect(scroll).toBeVisible();
 
-      // Posições iniciais (top do bounding box em coords da viewport)
+      // Snapshot do tamanho de fonte do thead para garantir que o redimensionamento
+      // do container NÃO alterou tipografia (regressão de "diminuir/aumentar textos")
+      const fontBefore = await thead.evaluate(
+        (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
+      );
+
       const toolbarBefore = await toolbar.boundingBox();
       const theadBefore = await thead.boundingBox();
       if (!toolbarBefore || !theadBefore) {
@@ -64,18 +69,32 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
         return;
       }
 
-      // Rola o container interno em até 400px (ou o máximo possível)
-      const scrolled = await scroll.evaluate((el) => {
-        const start = el.scrollTop;
-        el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, 400);
-        return el.scrollTop - start;
+      // Métrica: tempo de scroll programático + nº de frames (proxy de fluidez)
+      const metrics = await scroll.evaluate(async (el) => {
+        const maxScroll = el.scrollHeight - el.clientHeight;
+        if (maxScroll <= 0) return { scrolled: 0, ms: 0, frames: 0, maxScroll };
+        let frames = 0;
+        const rafTick = () => {
+          frames++;
+          handle = requestAnimationFrame(rafTick);
+        };
+        let handle = requestAnimationFrame(rafTick);
+        const t0 = performance.now();
+        const target = Math.min(maxScroll, 400);
+        el.scrollTo({ top: target, behavior: "auto" });
+        await new Promise((r) => setTimeout(r, 120));
+        cancelAnimationFrame(handle);
+        return { scrolled: el.scrollTop, ms: performance.now() - t0, frames, maxScroll };
       });
-      if (scrolled <= 0) {
+      // Log estruturado p/ a aba "test results"
+      // eslint-disable-next-line no-console
+      console.log(`[stock-sticky:${vp.name}] metrics=${JSON.stringify(metrics)}`);
+
+      if (metrics.scrolled <= 0) {
         test.skip(true, "conteúdo não excede a altura interna — sem scroll a validar");
         return;
       }
 
-      // Após o scroll, toolbar e thead devem continuar visíveis e na mesma faixa Y
       await expect(toolbar).toBeVisible();
       await expect(thead).toBeVisible();
       const toolbarAfter = await toolbar.boundingBox();
@@ -83,14 +102,30 @@ test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => 
       expect(toolbarAfter).not.toBeNull();
       expect(theadAfter).not.toBeNull();
 
-      // Tolerância de 2px para sub-pixel/border rounding
       expect(Math.abs((toolbarAfter!.y ?? 0) - toolbarBefore.y)).toBeLessThanOrEqual(2);
       expect(Math.abs((theadAfter!.y ?? 0) - theadBefore.y)).toBeLessThanOrEqual(2);
 
-      // thead NÃO pode sobrepor a toolbar (z-index/offset coerentes)
       expect((theadAfter!.y ?? 0)).toBeGreaterThanOrEqual(
         toolbarAfter!.y + Math.min(toolbarAfter!.height, 16),
       );
+
+      // Tipografia inalterada após o scroll/resize
+      const fontAfter = await thead.evaluate(
+        (el) => getComputedStyle(el.querySelector("th") ?? el).fontSize,
+      );
+      expect(fontAfter).toBe(fontBefore);
+
+      // Conteúdo da última linha visível NÃO pode estar cortado pelo container
+      const scrollRect = await scroll.boundingBox();
+      const lastRow = page.locator(`${SCROLL} tbody tr`).last();
+      if (await lastRow.isVisible().catch(() => false)) {
+        const rowBox = await lastRow.boundingBox();
+        if (rowBox && scrollRect) {
+          // pelo menos parte da linha precisa estar dentro da janela do container
+          expect(rowBox.y + rowBox.height).toBeGreaterThan(scrollRect.y);
+          expect(rowBox.y).toBeLessThan(scrollRect.y + scrollRect.height);
+        }
+      }
     });
   }
 });
