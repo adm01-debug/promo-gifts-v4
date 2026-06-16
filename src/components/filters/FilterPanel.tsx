@@ -91,22 +91,6 @@ export function FilterPanel({
         compact
       />
     ),
-    estoque: () => (
-      <div className="px-1">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="whitespace-nowrap text-xs text-muted-foreground">Mínimo por cor</span>
-          <DebouncedPriceInput
-            value={filters.minStock || ''}
-            onChange={(v) => onFilterChange({ ...filters, minStock: v })}
-            fallback={0}
-            placeholder="Ex: 500"
-            min={0}
-            className={filters.minStock > 0 ? 'border-brand-primary/60' : ''}
-          />
-          <span className="text-xs text-muted-foreground">un.</span>
-        </div>
-      </div>
-    ),
     preco: () => (
       <div className="px-1">
         <div className="flex items-center gap-2 text-sm">
