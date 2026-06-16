@@ -1045,6 +1045,42 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           )}
         </div>
 
+        {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
+        <div
+          className="flex flex-wrap items-center gap-1"
+          role="group"
+          aria-label="Filtrar por status de estoque"
+          data-testid="stock-status-filter"
+        >
+          {STATUS_FILTER_VALUES.map((value) => {
+            const active = statusFilter === value;
+            const count = statusCounts[value] ?? 0;
+            const disabled = value !== 'all' && count === 0;
+            return (
+              <Button
+                key={value}
+                type="button"
+                variant={active ? 'secondary' : 'ghost'}
+                size="sm"
+                disabled={disabled}
+                aria-pressed={active}
+                data-testid={`stock-status-chip-${value}`}
+                onClick={() => {
+                  setStatusFilter(value);
+                  setCurrentPage(0);
+                }}
+                className="h-6 gap-1 px-2 text-[11px]"
+              >
+                <span>{STATUS_FILTER_LABEL[value]}</span>
+                <span className="rounded-sm bg-muted px-1 text-[10px] text-muted-foreground">
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
+
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
