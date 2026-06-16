@@ -164,11 +164,17 @@ describe('stock-filter — fuzz (500 simulações)', () => {
           for (const v of prod.variants) {
             expect(normalize(v.colorName)).toBe(normalize(filters.colorName));
           }
+          for (const c of prod.availableColors) {
+            expect(normalize(c.colorName)).toBe(normalize(filters.colorName));
+          }
         }
         if (filters.colorGroup) {
           const g = normalize(filters.colorGroup);
           for (const v of prod.variants) {
             expect(normalize(v.colorName).includes(g)).toBe(true);
+          }
+          for (const c of prod.availableColors) {
+            expect(normalize(c.colorName).includes(g)).toBe(true);
           }
         }
 

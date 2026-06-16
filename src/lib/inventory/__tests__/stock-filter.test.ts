@@ -92,7 +92,31 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
     for (const prod of out) {
       expect(prod.variants.every((x) => x.colorName === 'Azul')).toBe(true);
       expect(prod.totalVariants).toBe(prod.variants.length);
+      expect(prod.availableColors.map((c) => c.colorName)).toEqual(['Azul']);
     }
+  });
+
+  it('cor filtrada também recalcula cores visíveis, badges e status da linha agregada', () => {
+    const [filtered] = applyStockFilters(fixture(), withFilters({ colorName: 'Azul' }), []);
+    expect(filtered.productId).toBe('p1');
+    expect(filtered.variants).toHaveLength(1);
+    expect(filtered.availableColors).toHaveLength(1);
+    expect(filtered.availableColors[0].colorName).toBe('Azul');
+    expect(filtered.variantsOutOfStock).toBe(0);
+    expect(filtered.variantsCritical).toBe(0);
+    expect(filtered.overallStatus).toBe('in_stock');
+  });
+
+  it('grupo de cor usa colorGroup quando disponível e projeta só as variações do grupo', () => {
+    const data = [
+      p('pg', 'Garrafa grupo', [
+        v({ id: 'pg-royal', variantSku: 'PG-AZ', colorName: 'Azul Royal', colorGroup: 'Azuis' }),
+        v({ id: 'pg-rosa', variantSku: 'PG-RO', colorName: 'Rosa', colorGroup: 'Rosas' }),
+      ]),
+    ];
+    const [filtered] = applyStockFilters(data, withFilters({ colorGroup: 'Azuis' }), []);
+    expect(filtered.variants.map((x) => x.id)).toEqual(['pg-royal']);
+    expect(filtered.availableColors.map((x) => x.colorName)).toEqual(['Azul Royal']);
   });
 
   it('"azul" + ≥500un mantém só produtos cujo POOL azul atende — não o total do produto', () => {
