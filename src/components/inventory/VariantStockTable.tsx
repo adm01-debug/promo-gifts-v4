@@ -1014,25 +1014,19 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
           >
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[280px]">
-                {groupingMode === 'flat' ? 'Variação / Cor' : 'Produto / Cor'}
-              </TableHead>
-              <TableHead className="hidden w-[120px] md:table-cell">
-                {groupingMode === 'flat' ? 'Categoria' : 'Cores'}
-              </TableHead>
+              <TableHead className="w-[280px]">Variação / Cor</TableHead>
+              <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
               <TableHead className="hidden lg:table-cell">Reservado</TableHead>
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">
-                {groupingMode === 'flat' ? 'Ações' : 'Alertas'}
-              </TableHead>
+              <TableHead className="hidden sm:table-cell">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {groupingMode === 'flat' && flatRows.length > 0 ? (
+            {flatRows.length > 0 ? (
               flatRows.map(({ product, variant }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
@@ -1040,18 +1034,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                   variant={variant}
                 />
               ))
-            ) : groupingMode === 'grouped' && paginatedProducts.length > 0 ? (
-              paginatedProducts.map((product) => (
-
-                <ProductRow
-                  key={product.productId}
-                  product={product}
-                  isExpanded={expandedProducts.has(product.productId)}
-                  onToggle={() => toggleProduct(product.productId)}
-                />
-              ))
             ) : (
-
               <TableRow>
                 <TableCell colSpan={9} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
