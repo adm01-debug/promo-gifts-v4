@@ -46,7 +46,7 @@ describe('useAdvancedFilters - Reset Logic', () => {
     expect(defaultAdvancedFilters.stockStatus).toBe('all');
     expect(defaultAdvancedFilters.minStock).toBe(0);
     expect(defaultAdvancedFilters.maxLeadTimeDays).toBeNull();
-    expect(defaultAdvancedFilters.sortBy).toBe('name');
+    expect(defaultAdvancedFilters.sortBy).toBe('newest');
   });
 
   it('resetting filters restores dirty state to defaults', () => {
