@@ -3,8 +3,11 @@
  * tag+cor+ícone. Usado quando a identidade está vazia ou genérica.
  */
 import { useState } from 'react';
-import * as Lucide from 'lucide-react';
-import { Package, type LucideIcon, Sparkles, Check, X, Loader2 } from 'lucide-react';
+import {
+  Package, Sparkles, Check, X, Loader2,
+  Gift, Heart, Star, Crown, Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,9 +22,14 @@ interface Props {
   onApply: (identity: Partial<KitIdentity>) => void;
 }
 
-function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, LucideIcon>)[name];
-  return I ?? Package;
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
+
+function getIcon(name: string): LucideIcon {
+  return ICON_MAP[name] ?? Package;
 }
 
 export function IdentitySuggestionButton({ kitName, items, description, current, onApply }: Props) {

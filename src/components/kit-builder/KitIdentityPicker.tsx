@@ -2,8 +2,11 @@
  * Kit Identity Picker — popover para definir cor, ícone e tag do kit
  */
 import { useState } from 'react';
-import * as Lucide from 'lucide-react';
-import { Package, Palette } from 'lucide-react';
+import {
+  Package, Palette,
+  Gift, Heart, Star, Crown, Sparkles, Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +40,12 @@ const PRESET_ICONS = [
   'Users',
 ] as const;
 
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
+
 interface Props {
   identity?: KitIdentity;
   onChange: (next: KitIdentity) => void;
@@ -52,10 +61,7 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
     isFavorite: identity?.isFavorite ?? false,
   };
 
-  const Icon =
-    (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
-      current.icon
-    ] || Package;
+  const Icon = ICON_MAP[current.icon] ?? Package;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,9 +109,7 @@ export function KitIdentityPicker({ identity, onChange }: Props) {
           <Label className="text-xs">Ícone</Label>
           <div className="grid grid-cols-6 gap-2">
             {PRESET_ICONS.map((name) => {
-              const Cmp = (
-                Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>
-              )[name];
+              const Cmp = ICON_MAP[name];
               if (!Cmp) return null;
               const active = current.icon === name;
               return (

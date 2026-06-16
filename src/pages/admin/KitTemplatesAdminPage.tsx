@@ -2,6 +2,7 @@
  * Admin: gerenciar templates de kits sugeridos pelo sistema.
  */
 import { useMemo, useState } from 'react';
+import type { ComponentType } from 'react';
 import * as Lucide from 'lucide-react';
 import { Package, Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -177,7 +178,7 @@ export default function KitTemplatesAdminPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((t) => {
               const Icon =
-                (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+                (Lucide as unknown as Record<string, ComponentType<{ className?: string }>>)[
                   t.icon
                 ] || Package;
               return (
@@ -357,7 +358,7 @@ export default function KitTemplatesAdminPage() {
                       const Cmp = (
                         Lucide as unknown as Record<
                           string,
-                          React.ComponentType<{ className?: string }>
+                          ComponentType<{ className?: string }>
                         >
                       )[name];
                       if (!Cmp) return null;
