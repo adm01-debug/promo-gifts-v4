@@ -101,11 +101,17 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
       const target = e.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
+        const ceAttr = target.getAttribute?.('contenteditable');
+        const isCE =
+          target.isContentEditable === true ||
+          ceAttr === '' ||
+          ceAttr === 'true' ||
+          ceAttr === 'plaintext-only';
         if (
           tag === 'INPUT' ||
           tag === 'TEXTAREA' ||
           tag === 'SELECT' ||
-          target.isContentEditable
+          isCE
         ) {
           return;
         }
