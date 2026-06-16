@@ -751,6 +751,23 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
 
+  // Modo de visualização persistido — cada vendedor tem sua preferência.
+  // Default = 'grouped' (não muda comportamento atual ao subir).
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>(() => {
+    if (typeof window === 'undefined') return 'grouped';
+    const stored = window.localStorage.getItem(GROUPING_STORAGE_KEY);
+    return stored === 'flat' ? 'flat' : 'grouped';
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(GROUPING_STORAGE_KEY, groupingMode);
+    } catch {
+      /* localStorage indisponível (modo privado) — segue só em memória. */
+    }
+  }, [groupingMode]);
+
+
+
   // Deep link: auto-expand product from URL ?product=ID
   useEffect(() => {
     const productId = searchParams.get('product');
