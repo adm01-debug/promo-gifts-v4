@@ -504,14 +504,14 @@ function ProductRow({
         onClick={onToggle}
       >
         <TableCell>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               aria-label={
                 isExpanded ? `Recolher ${product.productName}` : `Expandir ${product.productName}`
               }
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
             >
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
@@ -519,8 +519,14 @@ function ProductRow({
                 <ChevronRight className="h-4 w-4" />
               )}
             </Button>
-            <div className="flex flex-col">
-              <span className="max-w-[200px] truncate font-medium">{product.productName}</span>
+            <VariantThumb
+              imageUrl={product.productImageUrl}
+              productName={product.productName}
+              size="sm"
+              showColorRing={false}
+            />
+            <div className="flex min-w-0 flex-col">
+              <span className="max-w-[220px] truncate font-medium">{product.productName}</span>
               <span className="text-xs text-muted-foreground">
                 {product.productSku} • {product.totalVariants}{' '}
                 {product.totalVariants === 1 ? 'variação' : 'variações'}
@@ -528,6 +534,7 @@ function ProductRow({
             </div>
           </div>
         </TableCell>
+
         <TableCell className="hidden md:table-cell">
           <ProductColorSwatches
             colors={product.availableColors.map((c) => ({ name: c.colorName, hex: c.colorHex || null }))}
