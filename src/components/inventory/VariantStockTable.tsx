@@ -41,6 +41,26 @@ import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVi
 /** Modos de agrupamento da tabela. Persistido em localStorage. */
 type GroupingMode = 'grouped' | 'flat';
 const GROUPING_STORAGE_KEY = 'stock.groupBy';
+const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
+const PAGE_STORAGE_KEY = 'stock.currentPage';
+
+function readStored(key: string, fallback = ''): string {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    return window.localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeStored(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* modo privado — ignora */
+  }
+}
+
 
 
 // ============================================
