@@ -29,9 +29,15 @@ async function maybeSkipIfEmpty(page: Page) {
 }
 
 const viewports = [
+  { name: "mobile-sm", width: 360, height: 640 },
   { name: "mobile", width: 375, height: 812 },
+  { name: "mobile-tall", width: 414, height: 896 },
   { name: "tablet", width: 820, height: 1180 },
-  { name: "desktop", width: 1366, height: 768 },
+  { name: "tablet-short", width: 1024, height: 768 },
+  { name: "laptop-short", width: 1366, height: 700 },
+  { name: "desktop", width: 1366, height: 900 },
+  { name: "desktop-fhd", width: 1920, height: 1080 },
+  { name: "desktop-tall", width: 1536, height: 1440 },
 ] as const;
 
 test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => {
