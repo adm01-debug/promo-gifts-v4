@@ -140,3 +140,16 @@ migrations aditivas/idempotentes (`IF NOT EXISTS` + guards `DO $$`), todas aplic
 2. Pipeline de ingestão grava `content_hash` (etag R2/CF), `r2_object_key`, `import_batch_id`, `last_modified_source`.
 3. Geração de `blurhash` na Edge Function `backfill-image-dimensions` (já lê o binário via Range).
 
+## 8. Engine de reconciliação CF↔DB (2026-06-16) — popula `cf_sync_status`
+
+Mecanismo **100% Postgres** (`pg_net` + `pg_cron`), sem Edge Function nem exposição de segredos.
+
+- **Autoridade:** Cloudflare **Images API** `GET /accounts/{CF_ACCOUNT_ID}/images/v1/{id}` → `200`=`verified`, `404`=`missing`, resto=`failed`. Credenciais lidas do **Vault** (`CF_ACCOUNT_ID`, `CF_API_TOKEN`) em runtime.
+- **⚠️ Lição de campo:** a 1ª tentativa sondava o **CDN** (`imagedelivery.net`, `Range:0-0`), mas ele retorna **206 mesmo para IDs inexistentes** (placeholder) → inválido. Validação com IDs sabidamente ausentes pegou o gap antes do rollout. Migramos para a API de controle.
+- **Objetos:** `cf_recon_inflight` (mapa request_id→image_id), `fn_cf_recon_dispatch(p_batch)` (enfileira, prioriza primárias, `cf_check_attempts<5`), `fn_cf_recon_collect()` (grava status; usa `session_replication_role=replica` p/ evitar amplificação de triggers; idempotente), view `v_cf_recon_progress`.
+- **Cron:** `cf-recon-dispatch` (200/min) + `cf-recon-collect` (1/min) → ~73k convergem em ~6h, dentro do rate limit; `failed` re-tentado até 5x (self-healing).
+- **Validação:** lote de 100 reconciliado in-session com **100% de concordância** vs. `cf_images_batch_check` (MCP). Observado em tempo real: itens antes `missing` já viram `verified` conforme o pipeline de upload sobe imagens.
+- **Monitorar:** `SELECT * FROM public.v_cf_recon_progress;`
+
+> `types.ts` **não** foi regenerado: é um arquivo **curado/parcial** (não inclui `product_images`); regenerar adicionaria centenas de tabelas (risco REGRA #4) e não é exigido pelo CI (o contrato testa apenas presença de chaves de tabela). Acesso tipado às novas colunas, se desejado, deve ser uma curadoria manual separada.
+
