@@ -34,16 +34,31 @@ export interface ProductBuckets {
  * Quando não há produtos, retornamos 100 (não há nada para alertar).
  */
 export function calcHealthScore({ productsInStock, totalProducts }: HealthScoreInput): number {
+  // Defesa contra NaN/Infinity/negativos vindos de agregações tortas.
+  if (!Number.isFinite(productsInStock) || !Number.isFinite(totalProducts)) return 0;
   if (totalProducts <= 0) return 100;
-  const ratio = productsInStock / totalProducts;
+  const safeIn = Math.max(0, productsInStock);
+  const ratio = safeIn / totalProducts;
   return Math.round(Math.max(0, Math.min(1, ratio)) * 100);
 }
 
 /** Faixa visual do score: ≥80 verde · 50–79 amarelo · <50 vermelho. */
 export function getHealthBand(score: number): HealthBand {
+  if (!Number.isFinite(score)) return 'danger';
   if (score >= 80) return 'good';
   if (score >= 50) return 'warning';
   return 'danger';
+}
+
+/**
+ * SSOT da faixa de cobertura em dias (`daysCover = floor(stockOnHand / avgDailySales)`).
+ *   ≥ 30d → good · 7–29d → warning · <7d ou indefinido/0 → danger
+ */
+export type DaysCoverBand = HealthBand;
+export function getDaysCoverBand(days: number | undefined | null): DaysCoverBand {
+  if (days == null || !Number.isFinite(days) || days < 7) return 'danger';
+  if (days < 30) return 'warning';
+  return 'good';
 }
 
 const STATUS_BUCKET: Record<StockStatus, keyof ProductBuckets | null> = {

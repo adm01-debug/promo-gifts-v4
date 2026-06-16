@@ -359,6 +359,8 @@ export function calculateDaysUntilStockout(
   currentStock: number,
   avgDailySales: number = 2,
 ): number | undefined {
+  // Guarda defensiva: NaN, Infinity, negativos e zero → indefinido.
+  if (!Number.isFinite(currentStock) || !Number.isFinite(avgDailySales)) return undefined;
   if (avgDailySales <= 0 || currentStock <= 0) return undefined;
   return Math.floor(currentStock / avgDailySales);
 }
