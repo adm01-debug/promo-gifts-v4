@@ -721,10 +721,13 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
       <div
         data-testid="variant-stock-scroll"
-        className="max-h-[min(1200px,_120vh)] overflow-auto rounded-lg border [contain:content] [will-change:scroll-position] [-webkit-overflow-scrolling:touch] [overscroll-behavior:contain]"
+        className="overflow-x-auto rounded-lg border [contain:content] [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
       >
         <Table className="min-w-[700px]">
-          <TableHeader data-testid="variant-stock-thead" className="sticky top-0 z-10 bg-background">
+          <TableHeader
+            data-testid="variant-stock-thead"
+            className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
+          >
             <TableRow className="bg-muted/50">
               <TableHead className="w-[250px]">Produto / Cor</TableHead>
               <TableHead className="hidden w-[100px] md:table-cell">Cores</TableHead>
