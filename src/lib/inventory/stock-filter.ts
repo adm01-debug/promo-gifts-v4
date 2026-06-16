@@ -35,9 +35,12 @@ export interface FilterContext {
   colorName?: string;
   colorNameN: string;
   colorGroupN: string;
+  categoryN: string;
+  supplierN: string;
   minQty: number;
   hasVariantFilter: boolean;
 }
+
 
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
