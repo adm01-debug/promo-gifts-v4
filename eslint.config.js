@@ -6,6 +6,26 @@ import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STUB: @next/next — este projeto usa Vite, não Next.js.
+// O bot Lovable escreve "// eslint-disable-next-line @next/next/no-img-element"
+// sempre que toca em <img>. Sem este stub, ESLint reporta
+// "Definition for rule not found" e estoura o baseline (0→1), quebrando produção.
+//
+// Solução: registrar @next/next como plugin com a regra como no-op e desabilitada.
+// O disable comment passa a ser um "suppress de regra conhecida mas off" — silencioso.
+// reportUnusedDisableDirectives: 'off' garante que nenhum warning extra aparece.
+// ─────────────────────────────────────────────────────────────────────────────
+const nextPluginStub = {
+  rules: {
+    'no-img-element': {
+      meta: { type: 'suggestion', docs: { description: 'Stub no-op — next/image não se aplica em Vite' } },
+      create: () => ({}),
+    },
+  },
+};
+
 // Parser options compartilhados — apontam para o tsconfig.eslint.json que
 // inclui src/, e2e/, tests/ e scripts/.
 const tsParserOptions = {
@@ -36,6 +56,14 @@ export default [
   // ──────────────────────────────────────────────────────────────────────
   // src/** — código de aplicação React (browser globals)
   // ──────────────────────────────────────────────────────────────────────
+
+  // ── Stub @next/next ── evita "Definition for rule not found" em disable comments do Lovable
+  {
+    plugins: { '@next/next': nextPluginStub },
+    rules:   { '@next/next/no-img-element': 'off' },
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
+  },
+
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
