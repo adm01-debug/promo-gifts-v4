@@ -715,7 +715,14 @@ function ProductRow({
 
       {isExpanded &&
         product.variants.map((variant) => (
-          <VariantRow key={variant.id} variant={variant} isNested />
+          <VariantRow
+            key={variant.id}
+            variant={variant}
+            isNested
+            parentImageUrl={product.productImageUrl}
+            parentName={product.productName}
+          />
+
         ))}
     </>
   );
