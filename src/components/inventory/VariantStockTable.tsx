@@ -667,9 +667,12 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
       {/* Toolbar sticky — fica visível ao rolar a tabela */}
-      <div className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center">
+      <div
+        data-testid="variant-stock-toolbar"
+        className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center"
+      >
 
         {/* Inline Search */}
         <div className="relative w-full sm:w-64">
@@ -716,9 +719,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         </div>
       </div>
 
-      <div className="max-h-[min(600px,_60vh)] overflow-auto rounded-lg border">
+      <div data-testid="variant-stock-scroll" className="max-h-[min(600px,_60vh)] overflow-auto rounded-lg border">
         <Table className="min-w-[700px]">
-          <TableHeader className="sticky top-0 z-10 bg-background">
+          <TableHeader data-testid="variant-stock-thead" className="sticky top-0 z-10 bg-background">
             <TableRow className="bg-muted/50">
               <TableHead className="w-[250px]">Produto / Cor</TableHead>
               <TableHead className="hidden w-[100px] md:table-cell">Cores</TableHead>
