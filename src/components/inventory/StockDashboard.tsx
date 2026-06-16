@@ -282,9 +282,25 @@ export function StockDashboard() {
         products={allProductStocks ?? productStocks}
       />
 
-
+      {/* Advanced Filters (topo, logo após o título "Estoque") */}
+      <Card>
+        <CardContent className="p-4">
+          <StockFilterToolbar
+            filters={filters}
+            onUpdateFilter={updateFilter}
+            onResetFilters={resetFilters}
+            categories={availableCategories}
+            suppliers={availableSuppliers}
+            colors={allColors}
+            colorGroups={availableColorGroups}
+            totalProducts={allProductStocks.length}
+            filteredCount={productStocks.length}
+          />
+        </CardContent>
+      </Card>
 
       {/* Header with Health Score */}
+
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
