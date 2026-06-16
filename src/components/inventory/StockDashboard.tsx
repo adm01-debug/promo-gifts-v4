@@ -42,6 +42,7 @@ export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
   const [futureStockDialogOpen, setFutureStockDialogOpen] = useState(false);
+  const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
   const [riskPanelOpen, setRiskPanelOpen] = useState(true);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
