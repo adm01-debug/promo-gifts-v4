@@ -13,6 +13,11 @@ export interface VariantStock {
   variantId: string;
   variantSku: string;
 
+  /** Imagem da variação quando disponível (fallback para a do produto pai). */
+  imageUrl?: string;
+
+
+
   // Identificação da variação
   colorId?: string;
   colorName?: string;

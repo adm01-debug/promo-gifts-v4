@@ -17,6 +17,8 @@ import {
   Search,
   X,
   Copy,
+  LayoutList,
+  Rows3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +36,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
+import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
+
+/** Modos de agrupamento da tabela. Persistido em localStorage. */
+type GroupingMode = 'grouped' | 'flat';
+const GROUPING_STORAGE_KEY = 'stock.groupBy';
+
 
 // ============================================
 // CONFIGURAÇÕES DE STATUS
@@ -179,24 +187,56 @@ function StockProgressBar({ current, min }: { current: number; min: number; max?
 }
 
 // ============================================
-// LINHA DE VARIANTE (COR/TAMANHO)
+// LINHA DE VARIANTE (COR/TAMANHO) — modo agrupado
 // ============================================
 
-function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNested?: boolean }) {
+/**
+ * Helper para célula vazia limpa (sem `—` repetido em todas as colunas).
+ * `aria-hidden` no span vazio mantém o tabular layout sem ruído de leitor de tela.
+ */
+function EmptyCell() {
+  return <span className="text-muted-foreground/30" aria-hidden="true">·</span>;
+}
+
+function VariantRow({
+  variant,
+  isNested = false,
+  parentImageUrl,
+  parentName,
+}: {
+  variant: VariantStock;
+  isNested?: boolean;
+  parentImageUrl?: string;
+  parentName?: string;
+}) {
+  const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
   return (
     <TableRow className={cn(isNested && 'bg-muted/30')}>
       <TableCell className={cn(isNested && 'pl-12')}>
-        <ColorSwatch hex={variant.colorHex} name={variant.colorName} />
+        <div className="flex items-center gap-3">
+          <VariantThumb
+            imageUrl={variant.imageUrl || parentImageUrl}
+            productName={parentName || variant.colorName || variant.variantSku}
+            colorName={variant.colorName}
+            colorHex={variant.colorHex}
+            size="sm"
+          />
+          <RichColorSwatch
+            hex={variant.colorHex}
+            name={variant.colorName}
+            isOutOfStock={isOut}
+          />
+        </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
         <span className="font-mono text-xs text-muted-foreground">{variant.variantSku}</span>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex items-baseline gap-1.5">
           <span
             className={cn(
-              'font-semibold',
-              variant.currentStock <= 0
+              'text-base font-semibold tabular-nums',
+              isOut
                 ? 'text-destructive'
                 : variant.currentStock <= variant.minStock * 0.25
                   ? 'text-destructive'
@@ -205,9 +245,9 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
                     : 'text-foreground',
             )}
           >
-            {variant.currentStock}
+            {variant.currentStock.toLocaleString('pt-BR')}
           </span>
-          <span className="text-xs text-muted-foreground">/ {variant.minStock} mín</span>
+          <span className="text-[10px] text-muted-foreground">/ {variant.minStock} mín</span>
         </div>
       </TableCell>
       <TableCell className="hidden sm:table-cell">
@@ -222,7 +262,9 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <span className="text-sm text-warning">-{variant.reservedStock}</span>
+                <span className="text-sm tabular-nums text-warning">
+                  -{variant.reservedStock}
+                </span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{variant.reservedStock} unidades reservadas em pedidos</p>
@@ -230,17 +272,17 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <EmptyCell />
         )}
       </TableCell>
       <TableCell>
         <span
           className={cn(
-            'font-medium',
+            'font-medium tabular-nums',
             variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
           )}
         >
-          {variant.availableStock}
+          {variant.availableStock.toLocaleString('pt-BR')}
         </span>
       </TableCell>
       <TableCell className="hidden md:table-cell">
@@ -248,7 +290,7 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <span className="flex items-center gap-1 text-sm text-primary/80">
+                <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
                   <Truck className="h-3 w-3" />+{variant.inTransitStock}
                 </span>
               </TooltipTrigger>
@@ -258,11 +300,17 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <EmptyCell />
         )}
       </TableCell>
       <TableCell>
-        <StockStatusBadge status={variant.status} />
+        <StockStatusChip
+          status={variant.status}
+          current={variant.currentStock}
+          min={variant.minStock}
+          reserved={variant.reservedStock}
+          inTransit={variant.inTransitStock}
+        />
       </TableCell>
       <TableCell className="hidden sm:table-cell">
         {variant.daysUntilStockout !== undefined ? (
@@ -271,7 +319,7 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
               <TooltipTrigger>
                 <div
                   className={cn(
-                    'flex items-center gap-1 text-sm',
+                    'flex items-center gap-1 text-sm tabular-nums',
                     variant.daysUntilStockout <= 7
                       ? 'text-destructive'
                       : variant.daysUntilStockout <= 14
@@ -289,12 +337,147 @@ function VariantRow({ variant, isNested = false }: { variant: VariantStock; isNe
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <EmptyCell />
         )}
       </TableCell>
     </TableRow>
   );
 }
+
+// ============================================
+// LINHA FLAT (modo "Listar variações" — 1 SKU = 1 linha)
+// ============================================
+
+function FlatVariantRow({
+  variant,
+  product,
+}: {
+  variant: VariantStock;
+  product: ProductStockSummary;
+}) {
+  const navigate = useNavigate();
+  const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
+  return (
+    <TableRow className="group hover:bg-muted/40">
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <VariantThumb
+            imageUrl={variant.imageUrl || product.productImageUrl}
+            productName={product.productName}
+            colorName={variant.colorName}
+            colorHex={variant.colorHex}
+            size="md"
+          />
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => navigate(`/produto/${product.productId}`)}
+              className="block max-w-[260px] truncate text-left font-medium text-foreground hover:text-primary"
+            >
+              {product.productName}
+            </button>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+              <span className="font-mono">{variant.variantSku}</span>
+              <span aria-hidden>·</span>
+              <RichColorSwatch
+                hex={variant.colorHex}
+                name={variant.colorName}
+                isOutOfStock={isOut}
+              />
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        {product.categoryName ? (
+          <Badge variant="outline" className="text-[10px] font-normal">
+            {product.categoryName}
+          </Badge>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className={cn(
+              'text-base font-semibold tabular-nums',
+              isOut ? 'text-destructive' : 'text-foreground',
+            )}
+          >
+            {variant.currentStock.toLocaleString('pt-BR')}
+          </span>
+          <span className="text-[10px] text-muted-foreground">/ {variant.minStock} mín</span>
+        </div>
+      </TableCell>
+      <TableCell className="hidden sm:table-cell">
+        <StockProgressBar current={variant.currentStock} min={variant.minStock} />
+      </TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {variant.reservedStock > 0 ? (
+          <span className="text-sm tabular-nums text-warning">-{variant.reservedStock}</span>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+      <TableCell>
+        <span
+          className={cn(
+            'font-medium tabular-nums',
+            variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
+          )}
+        >
+          {variant.availableStock.toLocaleString('pt-BR')}
+        </span>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        {variant.inTransitStock > 0 ? (
+          <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
+            <Truck className="h-3 w-3" />+{variant.inTransitStock}
+          </span>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+      <TableCell>
+        <StockStatusChip
+          status={variant.status}
+          current={variant.currentStock}
+          min={variant.minStock}
+          reserved={variant.reservedStock}
+          inTransit={variant.inTransitStock}
+        />
+      </TableCell>
+      <TableCell className="hidden sm:table-cell">
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => navigator.clipboard.writeText(variant.variantSku)}
+            aria-label={`Copiar SKU ${variant.variantSku}`}
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() =>
+              navigate(
+                `/orcamentos/novo?productId=${product.productId}&variantId=${variant.variantId}&productName=${encodeURIComponent(product.productName)}`,
+              )
+            }
+            aria-label={`Criar orçamento para ${product.productName} ${variant.colorName ?? ''}`}
+          >
+            <ShoppingCart className="h-3 w-3" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 
 // ============================================
 // LINHA DO PRODUTO (EXPANSÍVEL)
@@ -321,14 +504,14 @@ function ProductRow({
         onClick={onToggle}
       >
         <TableCell>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               aria-label={
                 isExpanded ? `Recolher ${product.productName}` : `Expandir ${product.productName}`
               }
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
             >
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
@@ -336,8 +519,14 @@ function ProductRow({
                 <ChevronRight className="h-4 w-4" />
               )}
             </Button>
-            <div className="flex flex-col">
-              <span className="max-w-[200px] truncate font-medium">{product.productName}</span>
+            <VariantThumb
+              imageUrl={product.productImageUrl}
+              productName={product.productName}
+              size="sm"
+              showColorRing={false}
+            />
+            <div className="flex min-w-0 flex-col">
+              <span className="max-w-[220px] truncate font-medium">{product.productName}</span>
               <span className="text-xs text-muted-foreground">
                 {product.productSku} • {product.totalVariants}{' '}
                 {product.totalVariants === 1 ? 'variação' : 'variações'}
@@ -345,6 +534,7 @@ function ProductRow({
             </div>
           </div>
         </TableCell>
+
         <TableCell className="hidden md:table-cell">
           <ProductColorSwatches
             colors={product.availableColors.map((c) => ({ name: c.colorName, hex: c.colorHex || null }))}
@@ -382,8 +572,15 @@ function ProductRow({
           )}
         </TableCell>
         <TableCell>
-          <StockStatusBadge status={product.overallStatus} />
+          <StockStatusChip
+            status={product.overallStatus}
+            current={product.totalCurrentStock}
+            min={product.totalMinStock}
+            reserved={product.totalReservedStock}
+            inTransit={product.totalInTransitStock}
+          />
         </TableCell>
+
         <TableCell className="hidden sm:table-cell">
           <div className="flex items-center gap-1">
             {product.variantsCritical > 0 && (
@@ -518,7 +715,14 @@ function ProductRow({
 
       {isExpanded &&
         product.variants.map((variant) => (
-          <VariantRow key={variant.id} variant={variant} isNested />
+          <VariantRow
+            key={variant.id}
+            variant={variant}
+            isNested
+            parentImageUrl={product.productImageUrl}
+            parentName={product.productName}
+          />
+
         ))}
     </>
   );
@@ -546,6 +750,23 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   const [inlineSearch, setInlineSearch] = useState('');
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
+
+  // Modo de visualização persistido — cada vendedor tem sua preferência.
+  // Default = 'grouped' (não muda comportamento atual ao subir).
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>(() => {
+    if (typeof window === 'undefined') return 'grouped';
+    const stored = window.localStorage.getItem(GROUPING_STORAGE_KEY);
+    return stored === 'flat' ? 'flat' : 'grouped';
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(GROUPING_STORAGE_KEY, groupingMode);
+    } catch {
+      /* localStorage indisponível (modo privado) — segue só em memória. */
+    }
+  }, [groupingMode]);
+
+
 
   // Deep link: auto-expand product from URL ?product=ID
   useEffect(() => {
@@ -591,6 +812,22 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     return searchedProducts.slice(start, start + PAGE_SIZE);
   }, [searchedProducts, safePage]);
 
+  /**
+   * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
+   * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
+   * Custo: O(produtos × variações da página) — limitado por PAGE_SIZE (50).
+   */
+  const flatRows = useMemo(() => {
+    if (groupingMode !== 'flat') return [];
+    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    for (const product of paginatedProducts) {
+      for (const variant of product.variants) {
+        rows.push({ product, variant });
+      }
+    }
+    return rows;
+  }, [groupingMode, paginatedProducts]);
+
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => {
       const next = new Set(prev);
@@ -602,6 +839,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
   const expandAll = () => setExpandedProducts(new Set(paginatedProducts.map((p) => p.productId)));
   const collapseAll = () => setExpandedProducts(new Set());
+
+
 
   if (isLoading) {
     return (
@@ -710,14 +949,63 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <>{searchedProducts.length} produtos</>
             )}
           </span>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>
-            Expandir Todos
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>
-            Recolher Todos
-          </Button>
+
+          {/* Toggle de agrupamento: Agrupar por produto ↔ Listar variações */}
+          <div
+            className="inline-flex items-center rounded-md border border-border/60 bg-background p-0.5"
+            role="group"
+            aria-label="Modo de visualização da tabela de estoque"
+            data-testid="stock-grouping-toggle"
+          >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={groupingMode === 'grouped' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-[11px]"
+                    onClick={() => setGroupingMode('grouped')}
+                    aria-pressed={groupingMode === 'grouped'}
+                  >
+                    <LayoutList className="h-3 w-3" />
+                    Agrupar
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Agrupa variações sob cada produto pai</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={groupingMode === 'flat' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-[11px]"
+                    onClick={() => setGroupingMode('flat')}
+                    aria-pressed={groupingMode === 'flat'}
+                  >
+                    <Rows3 className="h-3 w-3" />
+                    Por variação
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>1 linha por SKU vendável (cor/tamanho)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {groupingMode === 'grouped' && (
+            <>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>
+                Expandir Todos
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>
+                Recolher Todos
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
 
       <div
         data-testid="variant-stock-scroll"
@@ -729,20 +1017,35 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
           >
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[250px]">Produto / Cor</TableHead>
-              <TableHead className="hidden w-[100px] md:table-cell">Cores</TableHead>
+              <TableHead className="w-[280px]">
+                {groupingMode === 'flat' ? 'Variação / Cor' : 'Produto / Cor'}
+              </TableHead>
+              <TableHead className="hidden w-[120px] md:table-cell">
+                {groupingMode === 'flat' ? 'Categoria' : 'Cores'}
+              </TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
               <TableHead className="hidden lg:table-cell">Reservado</TableHead>
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Alertas</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {groupingMode === 'flat' ? 'Ações' : 'Alertas'}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedProducts.length > 0 ? (
+            {groupingMode === 'flat' && flatRows.length > 0 ? (
+              flatRows.map(({ product, variant }) => (
+                <FlatVariantRow
+                  key={`${product.productId}::${variant.id}`}
+                  product={product}
+                  variant={variant}
+                />
+              ))
+            ) : groupingMode === 'grouped' && paginatedProducts.length > 0 ? (
               paginatedProducts.map((product) => (
+
                 <ProductRow
                   key={product.productId}
                   product={product}
@@ -751,6 +1054,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                 />
               ))
             ) : (
+
               <TableRow>
                 <TableCell colSpan={9} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
