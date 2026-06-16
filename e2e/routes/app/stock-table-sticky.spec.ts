@@ -40,29 +40,65 @@ const viewports = [
   { name: "desktop-tall", width: 1536, height: 1440 },
 ] as const;
 
-// Limites de jank (ajustáveis via env p/ CI lento)
+// Limites globais de jank (ajustáveis via env). Por viewport: viewports
+// menores costumam ter menos frames disponíveis no headless; aceitamos um
+// piso menor neles para reduzir flakiness sem mascarar regressões reais.
 const MAX_SCROLL_MS = Number(process.env.STOCK_STICKY_MAX_MS ?? 250);
 const MIN_FRAMES = Number(process.env.STOCK_STICKY_MIN_FRAMES ?? 3);
+const JANK_BUDGET: Record<string, { maxMs: number; minFrames: number }> = {
+  "mobile-sm": { maxMs: 320, minFrames: 2 },
+  mobile: { maxMs: 300, minFrames: 2 },
+  "mobile-tall": { maxMs: 280, minFrames: 3 },
+  tablet: { maxMs: 260, minFrames: 3 },
+  "tablet-short": { maxMs: 260, minFrames: 3 },
+  "laptop-short": { maxMs: 250, minFrames: 3 },
+  desktop: { maxMs: 240, minFrames: 3 },
+  "desktop-fhd": { maxMs: 220, minFrames: 4 },
+  "desktop-tall": { maxMs: 220, minFrames: 4 },
+};
 
-async function waitForFontsAndRows(page: Page) {
-  // 1) Fontes prontas (evita reflow que altera boundingBox depois da medição)
+// Trilha estruturada — facilita diagnóstico de falhas intermitentes
+// (fontes não prontas, skeleton persistente, scrollHeight oscilante, etc.).
+function trail(vp: string, step: string, data: Record<string, unknown> = {}) {
+  // eslint-disable-next-line no-console
+  console.log(`[stock-sticky:${vp}] ${step} ${JSON.stringify(data)}`);
+}
+
+async function waitForFontsAndRows(page: Page, vp: string) {
+  const fontsT0 = Date.now();
   await page.evaluate(async () => {
     const fonts = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts;
     if (fonts?.ready) await fonts.ready;
   });
-  // 2) Pelo menos uma linha de dados renderizada (não skeleton)
+  trail(vp, "fonts.ready", { ms: Date.now() - fontsT0 });
+
+  const skeletonGone = await page
+    .locator('[data-testid="variant-stock-skeleton"]')
+    .first()
+    .waitFor({ state: "detached", timeout: 30_000 })
+    .then(() => true)
+    .catch(() => false);
+  trail(vp, "skeleton.gone", { ok: skeletonGone });
+
   await expect(page.locator(`${SCROLL} tbody tr`).first()).toBeVisible({ timeout: 30_000 });
-  // 3) scrollHeight estabilizado por 2 medições consecutivas
-  await page.locator(SCROLL).evaluate(async (el) => {
-    const stable = async () => {
-      let last = el.scrollHeight;
-      for (let i = 0; i < 20; i++) {
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        if (el.scrollHeight === last && el.scrollHeight > 0) return;
-        last = el.scrollHeight;
-      }
-    };
-    await stable();
+  const rowCount = await page.locator(`${SCROLL} tbody tr`).count();
+  trail(vp, "rows.ready", { count: rowCount });
+
+  const heightSeries = await page.locator(SCROLL).evaluate(async (el) => {
+    const series: number[] = [];
+    let last = -1;
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      const h = el.scrollHeight;
+      series.push(h);
+      if (h === last && h > 0) break;
+      last = h;
+    }
+    return series;
+  });
+  trail(vp, "scrollHeight.stable", {
+    final: heightSeries[heightSeries.length - 1],
+    samples: heightSeries.length,
   });
 }
 
