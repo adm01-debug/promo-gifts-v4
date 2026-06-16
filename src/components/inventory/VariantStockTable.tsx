@@ -294,7 +294,6 @@ interface VariantStockTableProps {
 }
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
     const n = Number.parseInt(raw, 10);
@@ -315,23 +314,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [currentPage]);
 
 
-  // Modo de visualização persistido — cada vendedor tem sua preferência.
-  // Default = 'flat' (variação-first): cada variação/cor é uma linha individual,
-  // com foto, código de cor e estoque próprios — alinhado ao fluxo do vendedor.
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>(() => {
-    if (typeof window === 'undefined') return 'flat';
-    const stored = window.localStorage.getItem(GROUPING_STORAGE_KEY);
-    return stored === 'grouped' ? 'grouped' : 'flat';
-  });
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(GROUPING_STORAGE_KEY, groupingMode);
-    } catch {
-      /* localStorage indisponível (modo privado) — segue só em memória. */
-    }
-  }, [groupingMode]);
-
-  // Filtro por status (persistido). Sincroniza com ambos os modos grouped/flat.
+  // Filtro por status persistido; a unidade de negócio é sempre a variação/SKU.
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
     return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
@@ -342,19 +325,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
 
 
-
-  // Deep link: auto-expand product from URL ?product=ID
-  useEffect(() => {
-    const productId = searchParams.get('product');
-    if (productId) {
-      const idx = products.findIndex((p) => p.productId === productId);
-      if (idx >= 0) {
-        const page = Math.floor(idx / PAGE_SIZE);
-        setCurrentPage(page);
-        setExpandedProducts(new Set([productId]));
-      }
-    }
-  }, [searchParams, products]);
 
   // Reset page when product list changes (filter applied)
   useEffect(() => {
@@ -401,61 +371,36 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     return counts;
   }, [searchedProducts]);
 
-  /**
-   * Aplica filtro de status mantendo coerência entre grouped/flat:
-   *  - grouped: mantém produto se ALGUMA variação bate; recorta lista de variantes ao filtro.
-   *  - flat: filtragem efetiva acontece em flatRows.
-   */
-  const filteredProducts = useMemo(() => {
-    if (statusFilter === 'all') return searchedProducts;
-    const result: ProductStockSummary[] = [];
-    for (const p of searchedProducts) {
-      const matched = p.variants.filter((v) => v.status === statusFilter);
-      if (matched.length > 0) {
-        result.push(groupingMode === 'grouped' ? { ...p, variants: matched } : p);
-      }
-    }
-    return result;
-  }, [searchedProducts, statusFilter, groupingMode]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages - 1);
-  if (safePage !== currentPage) setCurrentPage(safePage);
-
-  const paginatedProducts = useMemo(() => {
-    const start = safePage * PAGE_SIZE;
-    return filteredProducts.slice(start, start + PAGE_SIZE);
-  }, [filteredProducts, safePage]);
-
-  /**
-   * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
-   * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
-   * Aplica statusFilter na variação para consistência absoluta com os chips.
-   */
-  const flatRows = useMemo(() => {
-    if (groupingMode !== 'flat') return [];
+  const variantRows = useMemo(() => {
     const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
-    for (const product of paginatedProducts) {
+    for (const product of searchedProducts) {
       for (const variant of product.variants) {
         if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
         rows.push({ product, variant });
       }
     }
     return rows;
+  }, [searchedProducts, statusFilter]);
 
-  }, [groupingMode, paginatedProducts, statusFilter]);
+  const totalPages = Math.max(1, Math.ceil(variantRows.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages - 1);
 
-  const toggleProduct = (productId: string) => {
-    setExpandedProducts((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
-  };
+  useEffect(() => {
+    if (safePage !== currentPage) setCurrentPage(safePage);
+  }, [currentPage, safePage]);
 
-  const expandAll = () => setExpandedProducts(new Set(paginatedProducts.map((p) => p.productId)));
-  const collapseAll = () => setExpandedProducts(new Set());
+  const paginatedVariantRows = useMemo(() => {
+    const start = safePage * PAGE_SIZE;
+    return variantRows.slice(start, start + PAGE_SIZE);
+  }, [variantRows, safePage]);
+
+  // Deep link: leva para a página da primeira variação do produto informado.
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (!productId) return;
+    const idx = variantRows.findIndex(({ product }) => product.productId === productId);
+    if (idx >= 0) setCurrentPage(Math.floor(idx / PAGE_SIZE));
+  }, [searchParams, variantRows]);
 
 
 
