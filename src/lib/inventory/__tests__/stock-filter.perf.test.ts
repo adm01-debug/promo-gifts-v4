@@ -22,7 +22,7 @@ import {
   type VariantStock,
 } from '@/types/stock';
 
-const SEED = 0x5_t0c_k as unknown as number; // literal não usado — placeholder visual
+
 function mulberry32(seed: number) {
   let a = seed >>> 0;
   return () => {
