@@ -47,10 +47,13 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     colorName,
     colorNameN: normalize(colorName),
     colorGroupN,
+    categoryN: normalize(filters.categoryId),
+    supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
   };
 }
+
 
 // ---------- estágio 1: seleção de variações ----------
 export function selectMatchingVariants(
