@@ -386,6 +386,74 @@ export function StockFilterToolbar({
           </PopoverContent>
         </Popover>
 
+        {/* Botão dedicado: Estoque Futuro */}
+        <Popover>
+          <StockHelpTooltip
+            title="Estoque Futuro"
+            description="Inclui no cálculo o que está chegando dentro da janela escolhida (7, 15 ou 30 dias). Quando desligado, considera apenas o que está disponível agora."
+            example="Janela 15 dias: soma reposições confirmadas com chegada até daqui a 15 dias."
+            emptyHint="Sem reposições previstas? Aumente a janela para 30 dias."
+          >
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="default"
+                className={cn(
+                  'relative gap-2',
+                  filters.includeFutureStock && 'border-primary/50 bg-primary/5 text-primary',
+                )}
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {filters.includeFutureStock
+                    ? `Futuro: ${filters.futureStockWindowDays ?? 15}d`
+                    : 'Em Estoque'}
+                </span>
+              </Button>
+            </PopoverTrigger>
+          </StockHelpTooltip>
+          <PopoverContent className="w-72 p-3" align="start">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="flex cursor-pointer items-center gap-1.5 text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Incluir Estoque Futuro
+              </Label>
+              <Switch
+                checked={!!filters.includeFutureStock}
+                onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+              {filters.includeFutureStock
+                ? 'Somando o que chega dentro da janela ao estoque atual.'
+                : 'Considerando apenas o que está disponível agora.'}
+            </p>
+            {filters.includeFutureStock && (
+              <div className="mt-3 space-y-1.5">
+                <span className="text-[11px] text-muted-foreground">Janela de chegada</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[7, 15, 30].map((d) => (
+                    <Button
+                      key={d}
+                      type="button"
+                      variant={filters.futureStockWindowDays === d ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        onUpdateFilter('futureStockWindowDays', d as 7 | 15 | 30)
+                      }
+                    >
+                      {d} dias
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+
+
+
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
           title='Calculadora "Preciso de X un…"'
