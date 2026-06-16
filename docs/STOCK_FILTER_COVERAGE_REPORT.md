@@ -14,7 +14,7 @@
 
 Linhas descobertas (287–288, 293–299) são ramos do `switch (sortBy)` para opções que não estão expostas no toolbar atual — coberta indiretamente pela ordenação default `name`.
 
-## Suítes de teste (83 testes — 100% verde)
+## Suítes de teste (85 testes — 100% verde)
 
 | Suíte | Testes | Foco | Sims |
 |---|---:|---|---:|
@@ -23,11 +23,13 @@ Linhas descobertas (287–288, 293–299) são ramos do `switch (sortBy)` para o
 | `stock-filter.unified.test.ts` | 7 | Categoria/fornecedor seguem mesmo SSOT (índice + normalize) | 300 |
 | `stock-filter.fuzz.test.ts` | 2 | Property-based: 8 invariantes mantidas | **500** |
 | `stock-filter.perf.test.ts` | 2 | Idempotência determinística (seed `0xc0ffee16`) + perf | **1000** + 60 ciclos |
+| `stock-filter.stress.test.ts` | 2 | **Fast-path (índices) vs oráculo naïve** + invariantes globais | **6000** |
 | `VariantStockTable.row-projection.test.tsx` | 3 | Linha da tabela usa apenas dados projetados | — |
 | `health-score.test.ts` | 14 | Thresholds | — |
 | `days-cover.fuzz.test.ts` | 13 | Cálculo de cobertura em dias | — |
 
-**Total de simulações executadas:** **1.800+** (500 fuzz + 1000 perf-determinístico + 300 unified-combo) — 0 falhas, 0 duplicatas, idempotência 100%.
+**Total de simulações executadas:** **7.800+** (5000 oráculo + 1000 invariantes + 500 fuzz + 1000 perf-determinístico + 300 unified-combo) — **0 discrepâncias**, **0 duplicatas**, idempotência 100%.
+
 
 ## Performance (alternância de filtros)
 
