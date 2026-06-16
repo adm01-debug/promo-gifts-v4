@@ -668,7 +668,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+      {/* Toolbar sticky — fica visível ao rolar a tabela */}
+      <div className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center">
+
         {/* Inline Search */}
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -714,7 +716,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="max-h-[min(600px,_60vh)] overflow-auto rounded-lg border">
         <Table className="min-w-[700px]">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow className="bg-muted/50">

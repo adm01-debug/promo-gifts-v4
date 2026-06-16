@@ -450,9 +450,9 @@ export function StockDashboard() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <ScrollArea className="h-[min(600px,_60vh)]">
-            <VariantStockTable products={productStocks} isLoading={isFetching} />
-          </ScrollArea>
+          {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
+              do toolbar (busca + paginação) e do <thead>. */}
+          <VariantStockTable products={productStocks} isLoading={isFetching} />
         </CardContent>
       </Card>
 
