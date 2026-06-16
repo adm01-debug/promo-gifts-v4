@@ -39,12 +39,16 @@ export interface FilterContext {
   supplierN: string;
   minQty: number;
   hasVariantFilter: boolean;
+  includeFutureStock: boolean;
+  futureCutoffMs: number; // 0 quando desativado
 }
 
 
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
+  const includeFutureStock = Boolean(filters.includeFutureStock);
+  const windowDays = filters.futureStockWindowDays ?? 15;
   return {
     searchN: normalize(filters.search),
     colorName,
@@ -54,6 +58,8 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
+    includeFutureStock,
+    futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
   };
 }
 
