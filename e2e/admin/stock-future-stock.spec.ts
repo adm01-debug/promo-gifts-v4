@@ -11,7 +11,8 @@
  *
  * Política: usa exclusivamente seletores do SSOT (`Sel.stock.*`).
  */
-import { test, expect, type Page } from '../fixtures/test-base';
+import { test, expect } from '../fixtures/test-base';
+import type { Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 import { Sel } from '../fixtures/selectors';
