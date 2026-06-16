@@ -225,7 +225,15 @@ export const Sel = {
     futureStockSwitch: TID("future-stock-switch"),
     /** Pílulas de janela (7/15/30 dias). */
     futureStockWindow: (d: 7 | 15 | 30) => TID(`future-stock-window-${d}`),
+    /** Grid de cards de estatística do dashboard de estoque. */
+    statCard: TID("stock-stat-card"),
+    statCardBySlug: (slug: string) => `[data-testid="stock-stat-card"][data-stat-slug="${slug}"]`,
+    statCardTitle: TID("stock-stat-card-title"),
+    statCardValue: TID("stock-stat-card-value"),
+    statCardSubtitle: TID("stock-stat-card-subtitle"),
+    statCardTrend: TID("stock-stat-card-trend"),
   },
+
 
   // ---------- App genérico ----------
   app: {
