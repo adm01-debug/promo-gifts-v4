@@ -762,7 +762,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
       if (idx >= 0) {
         const page = Math.floor(idx / PAGE_SIZE);
         setCurrentPage(page);
-        setExpandedProducts(new Set([productId]));
       }
     }
   }, [searchParams, products]);
