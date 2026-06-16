@@ -68,6 +68,8 @@ const fixture = (): ProductStockSummary[] => [
 
 const withFilters = (over: Partial<StockFilters>): StockFilters => ({
   ...defaultStockFilters,
+  sortBy: 'name',
+  sortDirection: 'asc',
   ...over,
 });
 
