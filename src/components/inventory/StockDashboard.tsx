@@ -277,6 +277,13 @@ export function StockDashboard() {
         onOpenChange={setFutureStockDialogOpen}
         entries={futureStock}
       />
+      <StockHealthBreakdownDrawer
+        open={healthDrawerOpen}
+        onOpenChange={setHealthDrawerOpen}
+        products={allProductStocks ?? productStocks}
+      />
+
+
 
       {/* Header with Health Score */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
