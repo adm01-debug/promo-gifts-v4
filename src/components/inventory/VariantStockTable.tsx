@@ -1,10 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  ChevronDown,
   ChevronRight,
   Package,
+  Clock,
   Truck,
+  AlertTriangle,
+  XCircle,
   ChevronLeft,
+  ExternalLink,
   ShoppingCart,
   Search,
   X,
@@ -25,11 +30,22 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
+import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 
+/**
+ * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
+ * Não existe mais "agrupar por produto pai" — ver memo `flat-only` no inventário.
+ */
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+
+/**
+ * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
+ * estado obsoleto após a mudança de modelo de negócio (variação-first).
+ */
+const LEGACY_STORAGE_KEYS = ['stock.groupBy', 'stock.viewMode', 'stock.groupingMode'] as const;
 
 /** Filtro rápido por status — 'all' = sem filtro. */
 type StatusFilter = StockStatus | 'all';
@@ -135,6 +151,10 @@ function StockProgressBar({ current, min }: { current: number; min: number; max?
   );
 }
 
+// ============================================
+// LINHA DE VARIANTE (COR/TAMANHO) — modo agrupado
+// ============================================
+
 /**
  * Helper para célula vazia limpa (sem `—` repetido em todas as colunas).
  * `aria-hidden` no span vazio mantém o tabular layout sem ruído de leitor de tela.
@@ -143,8 +163,154 @@ function EmptyCell() {
   return <span className="text-muted-foreground/30" aria-hidden="true">·</span>;
 }
 
+function VariantRow({
+  variant,
+  isNested = false,
+  parentImageUrl,
+  parentName,
+}: {
+  variant: VariantStock;
+  isNested?: boolean;
+  parentImageUrl?: string;
+  parentName?: string;
+}) {
+  const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
+  return (
+    <TableRow className={cn(isNested && 'bg-muted/30')}>
+      <TableCell className={cn(isNested && 'pl-12')}>
+        <div className="flex items-center gap-3">
+          <VariantThumb
+            imageUrl={variant.imageUrl || parentImageUrl}
+            productName={parentName || variant.colorName || variant.variantSku}
+            colorName={variant.colorName}
+            colorHex={variant.colorHex}
+            size="sm"
+          />
+          <RichColorSwatch
+            hex={variant.colorHex}
+            name={variant.colorName}
+            isOutOfStock={isOut}
+          />
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        <span className="font-mono text-xs text-muted-foreground">{variant.variantSku}</span>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className={cn(
+              'text-base font-semibold tabular-nums',
+              isOut
+                ? 'text-destructive'
+                : variant.currentStock <= variant.minStock * 0.25
+                  ? 'text-destructive'
+                  : variant.currentStock <= variant.minStock
+                    ? 'text-warning'
+                    : 'text-foreground',
+            )}
+          >
+            {variant.currentStock.toLocaleString('pt-BR')}
+          </span>
+          <span className="text-[10px] text-muted-foreground">/ {variant.minStock} mín</span>
+        </div>
+      </TableCell>
+      <TableCell className="hidden sm:table-cell">
+        <StockProgressBar
+          current={variant.currentStock}
+          min={variant.minStock}
+          max={variant.maxStock}
+        />
+      </TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {variant.reservedStock > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="text-sm tabular-nums text-warning">
+                  -{variant.reservedStock}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{variant.reservedStock} unidades reservadas em pedidos</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+      <TableCell>
+        <span
+          className={cn(
+            'font-medium tabular-nums',
+            variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
+          )}
+        >
+          {variant.availableStock.toLocaleString('pt-BR')}
+        </span>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        {variant.inTransitStock > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
+                  <Truck className="h-3 w-3" />+{variant.inTransitStock}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{variant.inTransitStock} unidades em trânsito</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+      <TableCell>
+        <StockStatusChip
+          status={variant.status}
+          current={variant.currentStock}
+          min={variant.minStock}
+          reserved={variant.reservedStock}
+          inTransit={variant.inTransitStock}
+        />
+      </TableCell>
+      <TableCell className="hidden sm:table-cell">
+        {variant.daysUntilStockout !== undefined ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div
+                  className={cn(
+                    'flex items-center gap-1 text-sm tabular-nums',
+                    variant.daysUntilStockout <= 7
+                      ? 'text-destructive'
+                      : variant.daysUntilStockout <= 14
+                        ? 'text-warning'
+                        : 'text-muted-foreground',
+                  )}
+                >
+                  <Clock className="h-3 w-3" />
+                  {variant.daysUntilStockout}d
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Previsão de esgotamento em {variant.daysUntilStockout} dias</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <EmptyCell />
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 // ============================================
-// LINHA DE VARIAÇÃO — 1 SKU/COR = 1 linha
+// LINHA FLAT (modo "Listar variações" — 1 SKU = 1 linha)
 // ============================================
 
 function FlatVariantRow({
@@ -276,6 +442,257 @@ function FlatVariantRow({
     </TableRow>
   );
 }
+
+
+// ============================================
+// LINHA DO PRODUTO (EXPANSÍVEL)
+// ============================================
+
+function ProductRow({
+  product,
+  isExpanded,
+  onToggle,
+}: {
+  product: ProductStockSummary;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <TableRow
+        className={cn(
+          'group cursor-pointer transition-colors hover:bg-muted/50',
+          isExpanded && 'bg-muted/30',
+        )}
+        onClick={onToggle}
+      >
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={
+                isExpanded ? `Recolher ${product.productName}` : `Expandir ${product.productName}`
+              }
+              className="h-6 w-6 shrink-0"
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+            <VariantThumb
+              imageUrl={product.productImageUrl}
+              productName={product.productName}
+              size="sm"
+              showColorRing={false}
+            />
+            <div className="flex min-w-0 flex-col">
+              <span className="max-w-[220px] truncate font-medium">{product.productName}</span>
+              <span className="text-xs text-muted-foreground">
+                {product.productSku} • {product.totalVariants}{' '}
+                {product.totalVariants === 1 ? 'variação' : 'variações'}
+              </span>
+            </div>
+          </div>
+        </TableCell>
+
+        <TableCell className="hidden md:table-cell">
+          <ProductColorSwatches
+            colors={product.availableColors.map((c) => ({ name: c.colorName, hex: c.colorHex || null }))}
+            max={5}
+            size="sm"
+            hideWhenEmpty={false}
+          />
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{product.totalCurrentStock}</span>
+            <span className="text-xs text-muted-foreground">/ {product.totalMinStock} mín</span>
+          </div>
+        </TableCell>
+        <TableCell className="hidden sm:table-cell">
+          <StockProgressBar current={product.totalCurrentStock} min={product.totalMinStock} />
+        </TableCell>
+        <TableCell className="hidden lg:table-cell">
+          {product.totalReservedStock > 0 ? (
+            <span className="text-sm text-warning">-{product.totalReservedStock}</span>
+          ) : (
+            '-'
+          )}
+        </TableCell>
+        <TableCell>
+          <span className="font-medium">{product.totalAvailableStock}</span>
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          {product.totalInTransitStock > 0 ? (
+            <span className="flex items-center gap-1 text-sm text-primary/80">
+              <Truck className="h-3 w-3" />+{product.totalInTransitStock}
+            </span>
+          ) : (
+            '-'
+          )}
+        </TableCell>
+        <TableCell>
+          <StockStatusChip
+            status={product.overallStatus}
+            current={product.totalCurrentStock}
+            min={product.totalMinStock}
+            reserved={product.totalReservedStock}
+            inTransit={product.totalInTransitStock}
+          />
+        </TableCell>
+
+        <TableCell className="hidden sm:table-cell">
+          <div className="flex items-center gap-1">
+            {product.variantsCritical > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge
+                      variant="outline"
+                      className="gap-0.5 border-destructive/20 bg-destructive/10 text-xs text-destructive"
+                    >
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      {product.variantsCritical} crítico
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      {product.variantsCritical} variante(s) em nível crítico — considere solicitar
+                      reposição urgente
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {product.variantsOutOfStock > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge
+                      variant="outline"
+                      className="gap-0.5 border-destructive/20 bg-destructive/10 text-xs text-destructive"
+                    >
+                      <XCircle className="h-2.5 w-2.5" />
+                      {product.variantsOutOfStock} esgotado
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      {product.variantsOutOfStock} variante(s) sem estoque — produto indisponível
+                      nestas cores
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {product.totalInTransitStock > 0 && product.variantsOutOfStock > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge
+                      variant="outline"
+                      className="gap-0.5 border-primary/20 bg-primary/10 text-[10px] text-primary"
+                    >
+                      <Truck className="h-2.5 w-2.5" />
+                      reposição
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      +{product.totalInTransitStock} un. em trânsito — reposição a caminho
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {/* Quick Actions on Hover */}
+            <div className="ml-auto flex gap-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 hover:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(product.productSku);
+                      }}
+                      aria-label={`Copiar SKU ${product.productSku}`}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Copiar SKU</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/produto/${product.productId}`);
+                      }}
+                      aria-label={`Ver produto ${product.productName}`}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Ver produto</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(
+                          `/orcamentos/novo?productId=${product.productId}&productName=${encodeURIComponent(product.productName)}`,
+                        );
+                      }}
+                      aria-label={`Criar orçamento para ${product.productName}`}
+                    >
+                      <ShoppingCart className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Criar orçamento</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+
+      {isExpanded &&
+        product.variants.map((variant) => (
+          <VariantRow
+            key={variant.id}
+            variant={variant}
+            isNested
+            parentImageUrl={product.productImageUrl}
+            parentName={product.productName}
+          />
+
+        ))}
+    </>
+  );
+}
+
 // ============================================
 // PAGINAÇÃO
 // ============================================
@@ -293,6 +710,8 @@ interface VariantStockTableProps {
 }
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
+  // expandedProducts removido — UI flat-only não expande filhos. Mantido placeholder vazio
+  // apenas para evitar refactor amplo nos callbacks abaixo (sem efeito visual).
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
     const n = Number.parseInt(raw, 10);
@@ -313,7 +732,17 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [currentPage]);
 
 
-  // Filtro por status persistido; a unidade de negócio é sempre a variação/SKU.
+  // Cleanup one-shot: purga chaves legadas do modo "Agrupar" (modelo antigo).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
+    } catch {
+      /* localStorage indisponível — ignore */
+    }
+  }, []);
+
+  // Filtro por status (persistido). Aplicado por variação individual.
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
     return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
@@ -324,6 +753,18 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
 
 
+
+  // Deep link: auto-expand product from URL ?product=ID
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (productId) {
+      const idx = products.findIndex((p) => p.productId === productId);
+      if (idx >= 0) {
+        const page = Math.floor(idx / PAGE_SIZE);
+        setCurrentPage(page);
+      }
+    }
+  }, [searchParams, products]);
 
   // Reset page when product list changes (filter applied)
   useEffect(() => {
@@ -348,8 +789,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [products, inlineSearch]);
 
   /**
-   * Contagem de variações por status sobre o universo pós-busca.
-   * Usada nos chips do filtro para feedback imediato e consistência entre modos.
+   * Contagem de variações (SKUs) por status — base para chips de filtro.
+   * Indexa por status uma única vez por mudança de busca.
    */
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -370,36 +811,46 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     return counts;
   }, [searchedProducts]);
 
-  const variantRows = useMemo(() => {
+  /**
+   * Filtra produtos pais que tenham ao menos 1 variação no status escolhido
+   * (paginação opera sobre produtos para preservar a UX "X de Y").
+   * A filtragem efetiva por SKU acontece em `flatRows`.
+   */
+  const filteredProducts = useMemo(() => {
+    if (statusFilter === 'all') return searchedProducts;
+    const result: ProductStockSummary[] = [];
+    for (const p of searchedProducts) {
+      if (p.variants.some((v) => v.status === statusFilter)) result.push(p);
+    }
+    return result;
+  }, [searchedProducts, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages - 1);
+  if (safePage !== currentPage) setCurrentPage(safePage);
+
+  const paginatedProducts = useMemo(() => {
+    const start = safePage * PAGE_SIZE;
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredProducts, safePage]);
+
+  /**
+   * Modo variação-first: 1 linha = 1 SKU. Estoque exibido é SEMPRE da variação,
+   * nunca do produto pai. Aplica statusFilter por variação.
+   */
+  const flatRows = useMemo(() => {
     const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
-    for (const product of searchedProducts) {
+    for (const product of paginatedProducts) {
       for (const variant of product.variants) {
         if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
         rows.push({ product, variant });
       }
     }
     return rows;
-  }, [searchedProducts, statusFilter]);
+  }, [paginatedProducts, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(variantRows.length / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages - 1);
 
-  useEffect(() => {
-    if (safePage !== currentPage) setCurrentPage(safePage);
-  }, [currentPage, safePage]);
 
-  const paginatedVariantRows = useMemo(() => {
-    const start = safePage * PAGE_SIZE;
-    return variantRows.slice(start, start + PAGE_SIZE);
-  }, [variantRows, safePage]);
-
-  // Deep link: leva para a página da primeira variação do produto informado.
-  useEffect(() => {
-    const productId = searchParams.get('product');
-    if (!productId) return;
-    const idx = variantRows.findIndex(({ product }) => product.productId === productId);
-    if (idx >= 0) setCurrentPage(Math.floor(idx / PAGE_SIZE));
-  }, [searchParams, variantRows]);
 
 
 
@@ -497,7 +948,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           )}
         </div>
 
-        {/* Chips de filtro por status — sempre sobre variações/SKUs individuais. */}
+        {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
           className="flex flex-wrap items-center gap-1"
           role="group"
@@ -536,17 +987,19 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {variantRows.length > PAGE_SIZE ? (
+            {filteredProducts.length > PAGE_SIZE ? (
               <>
                 {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, variantRows.length)} de{' '}
-                {variantRows.length}
+                {Math.min((safePage + 1) * PAGE_SIZE, filteredProducts.length)} de{' '}
+                {filteredProducts.length}
               </>
             ) : (
-              <>{variantRows.length} variações</>
+              <>{filteredProducts.length} produtos</>
             )}
 
           </span>
+
+          {/* Modelo de negócio: variação-first. Toggle de "Agrupar" removido. */}
         </div>
       </div>
 
@@ -573,8 +1026,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedVariantRows.length > 0 ? (
-              paginatedVariantRows.map(({ product, variant }) => (
+            {flatRows.length > 0 ? (
+              flatRows.map(({ product, variant }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
@@ -582,7 +1035,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                 />
               ))
             ) : (
-
               <TableRow>
                 <TableCell colSpan={9} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">

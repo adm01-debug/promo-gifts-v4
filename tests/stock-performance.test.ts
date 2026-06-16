@@ -648,7 +648,7 @@ describe('defaultStockFilters', () => {
     expect(defaultStockFilters.search).toBe('');
     expect(defaultStockFilters.sortBy).toBe('stock_quantity');
     expect(defaultStockFilters.sortDirection).toBe('asc');
-    expect(defaultStockFilters.groupBy).toBe('none');
+    expect(defaultStockFilters.groupBy).toBe('product');
     expect(defaultStockFilters.showOnlyWithVariants).toBe(false);
     expect(defaultStockFilters.showOnlyWithAlerts).toBe(false);
   });

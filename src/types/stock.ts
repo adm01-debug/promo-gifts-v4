@@ -270,7 +270,7 @@ export interface StockFilters {
   sortBy: StockSortOption;
   sortDirection: 'asc' | 'desc';
 
-  // Visão canônica: variações/SKUs individuais, sem agrupamento por produto.
+  // Agrupamento
   groupBy: StockGroupOption;
 
   // Flags
@@ -301,7 +301,7 @@ export const defaultStockFilters: StockFilters = {
   search: '',
   sortBy: 'stock_quantity',
   sortDirection: 'asc',
-  groupBy: 'none',
+  groupBy: 'product',
   showOnlyWithVariants: false,
   showOnlyWithAlerts: false,
   includeFutureStock: false,
