@@ -33,12 +33,19 @@ import { type ProductStockSummary, type VariantStock, type StockStatus, calculat
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 
-/** Modos de agrupamento da tabela. Persistido em localStorage. */
-type GroupingMode = 'grouped' | 'flat';
-const GROUPING_STORAGE_KEY = 'stock.groupBy';
+/**
+ * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
+ * Não existe mais "agrupar por produto pai" — ver memo `flat-only` no inventário.
+ */
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+
+/**
+ * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
+ * estado obsoleto após a mudança de modelo de negócio (variação-first).
+ */
+const LEGACY_STORAGE_KEYS = ['stock.groupBy', 'stock.viewMode', 'stock.groupingMode'] as const;
 
 /** Filtro rápido por status — 'all' = sem filtro. */
 type StatusFilter = StockStatus | 'all';
