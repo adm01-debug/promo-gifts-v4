@@ -17,6 +17,21 @@ import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 vi.mock('@/components/products/ProductQuickActionsFAB', () => ({
   ProductQuickActionsFAB: () => null,
 }));
+vi.mock('@/components/products/ProductCategoryBadges', () => ({
+  ProductCategoryBadges: () => null,
+}));
+vi.mock('@/components/products/HoverSetImage', () => ({
+  HoverSetImage: () => null,
+}));
+vi.mock('@/components/products/ProductColorSwatches', () => ({
+  ProductColorSwatches: () => null,
+}));
+vi.mock('@/components/products/NoveltyBadge', () => ({
+  NoveltyBadge: () => null,
+}));
+vi.mock('@/components/products/ProductStatusBadge', () => ({
+  ProductStatusBadge: () => null,
+}));
 
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
