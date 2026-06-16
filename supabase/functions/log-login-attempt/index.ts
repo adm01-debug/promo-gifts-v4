@@ -50,7 +50,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     const parsed = LoginAttemptSchema.safeParse(body);
     if (!parsed.success) {
       log.warn("invalid_payload", { errors: parsed.error.flatten().fieldErrors });
