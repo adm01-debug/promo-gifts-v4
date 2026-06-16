@@ -850,17 +850,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     return rows;
   }, [paginatedProducts, statusFilter]);
 
-  const toggleProduct = (productId: string) => {
-    setExpandedProducts((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
-  };
 
-  const expandAll = () => setExpandedProducts(new Set(paginatedProducts.map((p) => p.productId)));
-  const collapseAll = () => setExpandedProducts(new Set());
+
 
 
 
