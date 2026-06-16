@@ -475,9 +475,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableCell className="hidden sm:table-cell">
                 <div className="h-2 w-full animate-pulse rounded bg-muted" />
               </TableCell>
-              <TableCell className="hidden lg:table-cell">
-                <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-              </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
               </TableCell>
