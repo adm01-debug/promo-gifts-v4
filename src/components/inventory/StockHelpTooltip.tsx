@@ -33,14 +33,13 @@ export function StockHelpTooltip({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          {children ?? (
-            <span
-              className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-              aria-label={`Ajuda: ${title}`}
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-            </span>
-          )}
+          <span className="inline-flex" aria-label={`Ajuda: ${title}`}>
+            {children ?? (
+              <span className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full text-muted-foreground hover:text-foreground">
+                <HelpCircle className="h-3.5 w-3.5" />
+              </span>
+            )}
+          </span>
         </TooltipTrigger>
         <TooltipContent side={side} className="max-w-xs space-y-1.5">
           <p className="text-xs font-semibold">{title}</p>
