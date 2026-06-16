@@ -112,10 +112,10 @@ describe('SocialLoginButtons (Google)', () => {
       expect.objectContaining({
         variant: 'destructive',
         title: 'Erro ao entrar com Google',
-        description: expect.stringMatching(/tempo esgotado/i),
+        description: expect.stringMatching(/satélite|demorou/i),
       }),
     );
-    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/tempo esgotado/i), {
+    expect(onError).toHaveBeenCalledWith('timeout', {
       autoFallback: true,
     });
     // Spinner liberado

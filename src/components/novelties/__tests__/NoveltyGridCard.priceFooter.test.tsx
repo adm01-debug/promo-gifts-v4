@@ -7,12 +7,16 @@
  *  - fallback "Sob consulta" quando preço é null/0/NaN/negativo
  *  - StockBadge sempre presente no mesmo footer
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
+
+vi.mock('@/components/products/ProductQuickActionsFAB', () => ({
+  ProductQuickActionsFAB: () => null,
+}));
 
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {

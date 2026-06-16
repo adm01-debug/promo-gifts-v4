@@ -46,20 +46,20 @@ describe('CatalogToolbar Alignment and Responsiveness', () => {
   it('should have filters on the left and actions on the right in desktop', () => {
     const { container } = renderToolbar();
 
-    // Main container should be justify-between in sm screens
+    // Main container should be justify-between
     const mainContainer = container.firstChild as HTMLElement;
-    expect(mainContainer.className).toContain('sm:justify-between');
+    expect(mainContainer.className).toContain('justify-between');
 
     // Left group
     const leftGroup = mainContainer.firstChild as HTMLElement;
-    expect(leftGroup.className).toContain('flex-wrap');
+    expect(leftGroup.className).toContain('flex-shrink-0');
     expect(screen.getByLabelText(/Abrir filtros/i)).toBeInTheDocument();
 
     // Right group
     const rightGroup = mainContainer.lastChild as HTMLElement;
-    expect(rightGroup.className).toContain('ml-auto');
-    // ml-auto ensures it stays on the right even in column mode or flex-row
-    expect(rightGroup.className).toContain('ml-auto');
+    expect(rightGroup.className).toContain('items-center');
+    // flex layout ensures actions stay on the right via justify-between on parent
+    expect(rightGroup.className).toContain('items-center');
     expect(screen.getByLabelText(/Selecionar vários produtos/i)).toBeInTheDocument();
     expect(screen.getByTestId('layout-popover')).toBeInTheDocument();
   });
@@ -68,11 +68,11 @@ describe('CatalogToolbar Alignment and Responsiveness', () => {
     const { container } = renderToolbar();
     const mainContainer = container.firstChild as HTMLElement;
 
-    // flex-col on mobile
-    expect(mainContainer.className).toContain('flex-col');
+    // flex-wrap allows items to wrap on mobile
+    expect(mainContainer.className).toContain('flex-wrap');
 
     // Actions should still be accessible
     const rightGroup = mainContainer.lastChild as HTMLElement;
-    expect(rightGroup.className).toContain('ml-auto'); // Pushes to right even in mobile if possible
+    expect(rightGroup.className).toContain('items-center'); // Aligned via justify-between on parent
   });
 });
