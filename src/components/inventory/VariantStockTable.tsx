@@ -766,10 +766,25 @@ interface VariantStockTableProps {
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(0);
-  const [inlineSearch, setInlineSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const raw = readStored(PAGE_STORAGE_KEY, '0');
+    const n = Number.parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  });
+  const [inlineSearch, setInlineSearch] = useState<string>(() => readStored(SEARCH_STORAGE_KEY, ''));
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
+
+  // Persiste busca inline (debounce simples via efeito)
+  useEffect(() => {
+    writeStored(SEARCH_STORAGE_KEY, inlineSearch);
+  }, [inlineSearch]);
+
+  // Persiste página atual
+  useEffect(() => {
+    writeStored(PAGE_STORAGE_KEY, String(currentPage));
+  }, [currentPage]);
+
 
   // Modo de visualização persistido — cada vendedor tem sua preferência.
   // Default = 'grouped' (não muda comportamento atual ao subir).
