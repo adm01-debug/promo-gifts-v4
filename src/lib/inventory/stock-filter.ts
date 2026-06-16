@@ -35,9 +35,12 @@ export interface FilterContext {
   colorName?: string;
   colorNameN: string;
   colorGroupN: string;
+  categoryN: string;
+  supplierN: string;
   minQty: number;
   hasVariantFilter: boolean;
 }
+
 
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
@@ -47,10 +50,13 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     colorName,
     colorNameN: normalize(colorName),
     colorGroupN,
+    categoryN: normalize(filters.categoryId),
+    supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
   };
 }
+
 
 // ---------- estágio 1: seleção de variações ----------
 export function selectMatchingVariants(
@@ -110,6 +116,9 @@ export function projectProduct(
 // ---------- estágio 0: índices reutilizáveis ----------
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
+  byColorGroupN: Map<string, Set<string>>; // tokens da cor → productIds (inclui substrings de colorGroup)
+  byCategoryN: Map<string, Set<string>>; // categoryN → productIds
+  bySupplierN: Map<string, Set<string>>; // supplierN → productIds
   productsWithAlerts: Set<string>;
 }
 
@@ -118,21 +127,32 @@ export function buildStockIndexes(
   alerts: StockAlert[],
 ): StockIndexes {
   const byColorNameN = new Map<string, Set<string>>();
+  const byColorGroupN = new Map<string, Set<string>>();
+  const byCategoryN = new Map<string, Set<string>>();
+  const bySupplierN = new Map<string, Set<string>>();
+  const addTo = (m: Map<string, Set<string>>, key: string, id: string) => {
+    if (!key) return;
+    let set = m.get(key);
+    if (!set) {
+      set = new Set();
+      m.set(key, set);
+    }
+    set.add(id);
+  };
   for (const p of products) {
+    addTo(byCategoryN, normalize(p.categoryName), p.productId);
+    addTo(bySupplierN, normalize(p.supplierName), p.productId);
     for (const v of p.variants) {
       const cn = normalize(v.colorName);
-      if (!cn) continue;
-      let set = byColorNameN.get(cn);
-      if (!set) {
-        set = new Set();
-        byColorNameN.set(cn, set);
-      }
-      set.add(p.productId);
+      addTo(byColorNameN, cn, p.productId);
+      const cg = normalize(v.colorGroup);
+      if (cg) addTo(byColorGroupN, cg, p.productId);
     }
   }
   const productsWithAlerts = new Set(alerts.map((a) => a.productId));
-  return { byColorNameN, productsWithAlerts };
+  return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
 }
+
 
 // ---------- predicados auxiliares ----------
 function matchStatus(
@@ -197,12 +217,42 @@ export function applyStockFilters(
   const ctx = buildFilterContext(filters);
   const idx = indexes ?? buildStockIndexes(products, alerts);
 
-  // Pré-seleção via índice de cor (fast path quando filtro de cor exata é usado).
+  // Pré-seleção via interseção de índices (fast path). Aplica todos os filtros
+  // discretos disponíveis (cor exata, grupo de cor, categoria, fornecedor) antes
+  // de varrer linearmente — mantém O(min(idx)) em vez de O(N).
+  const idSets: Set<string>[] = [];
+  if (ctx.colorNameN) {
+    const s = idx.byColorNameN.get(ctx.colorNameN);
+    if (!s || s.size === 0) return [];
+    idSets.push(s);
+  }
+  if (ctx.colorGroupN && !ctx.colorNameN) {
+    const s = idx.byColorGroupN.get(ctx.colorGroupN);
+    // colorGroup pode bater por substring em colorName → fallback p/ scan se sem índice.
+    if (s && s.size > 0) idSets.push(s);
+  }
+  if (ctx.categoryN) {
+    const s = idx.byCategoryN.get(ctx.categoryN);
+    if (!s || s.size === 0) return [];
+    idSets.push(s);
+  }
+  if (ctx.supplierN) {
+    const s = idx.bySupplierN.get(ctx.supplierN);
+    if (!s || s.size === 0) return [];
+    idSets.push(s);
+  }
+
   let candidates: ProductStockSummary[] = products;
-  if (ctx.hasVariantFilter && ctx.colorNameN && !ctx.colorGroupN) {
-    const ids = idx.byColorNameN.get(ctx.colorNameN);
-    if (!ids || ids.size === 0) return [];
-    candidates = products.filter((p) => ids.has(p.productId));
+  if (idSets.length > 0) {
+    // menor set primeiro para minimizar interseção
+    idSets.sort((a, b) => a.size - b.size);
+    const [first, ...rest] = idSets;
+    const allowed = new Set<string>();
+    for (const id of first) {
+      if (rest.every((s) => s.has(id))) allowed.add(id);
+    }
+    if (allowed.size === 0) return [];
+    candidates = products.filter((p) => allowed.has(p.productId));
   }
 
   const out: ProductStockSummary[] = [];
@@ -211,12 +261,13 @@ export function applyStockFilters(
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
     if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
     if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
-    if (filters.categoryId && p.categoryName !== filters.categoryId) continue;
-    if (filters.supplierId && p.supplierName !== filters.supplierId) continue;
+    if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
+    if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
     if (!matchMinQuantity(p, variantsForFilter, ctx.minQty, ctx.hasVariantFilter)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
+
 
   return sortProducts(out, filters);
 }
