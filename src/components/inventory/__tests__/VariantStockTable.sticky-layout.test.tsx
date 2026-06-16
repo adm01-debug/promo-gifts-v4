@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VariantStockTable } from "../VariantStockTable";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { type ProductStockSummary, type VariantStock } from "@/types/stock";
 
 vi.mock("@/utils/color-group-hex", () => ({ COLOR_GROUP_HEX: {}, resolveHighlightHex: () => "#000" }));
@@ -85,7 +86,11 @@ describe("VariantStockTable — contrato sticky", () => {
   });
 
   it("ancora toolbar abaixo do header/breadcrumb e thead abaixo da altura real da toolbar", async () => {
-    render(<VariantStockTable products={Array.from({ length: 60 }, (_, index) => makeProduct(index + 1))} />);
+    render(
+      <TooltipProvider>
+        <VariantStockTable products={Array.from({ length: 60 }, (_, index) => makeProduct(index + 1))} />
+      </TooltipProvider>,
+    );
 
     const table = screen.getByTestId("variant-stock-table");
     const toolbar = screen.getByTestId("variant-stock-toolbar");
