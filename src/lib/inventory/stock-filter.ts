@@ -12,14 +12,14 @@
  *   - buildStockIndexes() pré-computa índices por cor/categoria/fornecedor/produto
  *     para reuso entre filtros e paginação (evita varrer N×M).
  */
-import type {
+import {
+  aggregateVariantsToProduct,
   ProductStockSummary,
   StockFilters,
   StockAlert,
   VariantStock,
   StockStatus,
 } from '@/types/stock';
-import { aggregateVariantsToProduct } from '@/types/stock';
 
 // ---------- normalização ----------
 export const normalize = (s: string | undefined | null): string =>
