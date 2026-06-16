@@ -384,33 +384,7 @@ export function StockFilterToolbar({
           </PopoverContent>
         </Popover>
 
-        {/* 2. Search */}
-        <StockHelpTooltip
-          title="Busca no Estoque"
-          description="Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens). Debounce de 300ms."
-          example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
-          emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
-        >
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar no Estoque (Nome, SKU ou Cor)... "
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="pl-9 pr-8"
-            />
-            {localSearch && (
-              <button
-                onClick={() => setLocalSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </StockHelpTooltip>
-
-        {/* 3. Smart Quantity Filter (Tiragem) */}
+        {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
           title='Calculadora "Preciso de X un…"'
           description={
@@ -434,6 +408,32 @@ export function StockFilterToolbar({
               className="pl-9"
               min={0}
             />
+          </div>
+        </StockHelpTooltip>
+
+        {/* 3. Search */}
+        <StockHelpTooltip
+          title="Busca no Estoque"
+          description="Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens). Debounce de 300ms."
+          example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
+          emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
+        >
+          <div className="relative max-w-md flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar no Estoque (Nome, SKU ou Cor)... "
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="pl-9 pr-8"
+            />
+            {localSearch && (
+              <button
+                onClick={() => setLocalSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </StockHelpTooltip>
 
