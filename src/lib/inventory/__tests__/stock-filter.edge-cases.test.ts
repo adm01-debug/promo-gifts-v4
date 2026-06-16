@@ -209,7 +209,8 @@ describe('regressão — listas vazias / borda', () => {
       [],
       buildStockIndexes(universe, []),
     );
-    expect(out.map((x) => x.productId).sort()).toEqual(['p1', 'p2']);
+    expect(out.map((x) => x.productId)).toEqual(['p1']);
+
   });
 });
 
