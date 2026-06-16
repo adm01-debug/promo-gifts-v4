@@ -397,53 +397,67 @@ export function StockFilterToolbar({
                 variant="outline"
                 size="default"
                 className={cn(
-                  'relative gap-2',
-                  filters.includeFutureStock && 'border-primary/50 bg-primary/5 text-primary',
+                  'relative gap-2 font-normal text-muted-foreground hover:text-foreground',
+                  filters.includeFutureStock &&
+                    'border-border/60 text-foreground [&_svg]:text-primary',
                 )}
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">
-                  {filters.includeFutureStock
-                    ? `Futuro: ${filters.futureStockWindowDays ?? 15}d`
-                    : 'Em Estoque'}
+                  {filters.includeFutureStock ? 'Estoque Futuro' : 'Em Estoque'}
                 </span>
+                {filters.includeFutureStock && (
+                  <span className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {filters.futureStockWindowDays ?? 15}d
+                  </span>
+                )}
               </Button>
             </PopoverTrigger>
           </StockHelpTooltip>
-          <PopoverContent className="w-72 p-3" align="start">
-            <div className="flex items-center justify-between gap-2">
-              <Label className="flex cursor-pointer items-center gap-1.5 text-sm font-medium">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Incluir Estoque Futuro
-              </Label>
-              <Switch
-                checked={!!filters.includeFutureStock}
-                onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
-              />
+          <PopoverContent className="w-72 p-0" align="start">
+            <div className="space-y-2 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                  Incluir Estoque Futuro
+                </Label>
+                <Switch
+                  checked={!!filters.includeFutureStock}
+                  onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+                />
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {filters.includeFutureStock
+                  ? 'Somando o que chega na janela ao estoque atual.'
+                  : 'Considerando apenas o que está disponível agora.'}
+              </p>
             </div>
-            <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-              {filters.includeFutureStock
-                ? 'Somando o que chega dentro da janela ao estoque atual.'
-                : 'Considerando apenas o que está disponível agora.'}
-            </p>
             {filters.includeFutureStock && (
-              <div className="mt-3 space-y-1.5">
-                <span className="text-[11px] text-muted-foreground">Janela de chegada</span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[7, 15, 30].map((d) => (
-                    <Button
-                      key={d}
-                      type="button"
-                      variant={filters.futureStockWindowDays === d ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() =>
-                        onUpdateFilter('futureStockWindowDays', d as 7 | 15 | 30)
-                      }
-                    >
-                      {d} dias
-                    </Button>
-                  ))}
+              <div className="space-y-1.5 border-t border-border/40 px-3 py-2.5">
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Janela de chegada
+                </span>
+                <div className="grid grid-cols-3 gap-1">
+                  {[7, 15, 30].map((d) => {
+                    const active = filters.futureStockWindowDays === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() =>
+                          onUpdateFilter('futureStockWindowDays', d as 7 | 15 | 30)
+                        }
+                        className={cn(
+                          'h-7 rounded-md border text-xs transition-colors',
+                          active
+                            ? 'border-foreground/30 bg-muted/60 font-medium text-foreground'
+                            : 'border-border/40 text-muted-foreground hover:border-border hover:text-foreground',
+                        )}
+                      >
+                        {d} dias
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
