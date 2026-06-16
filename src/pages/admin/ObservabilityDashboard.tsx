@@ -12,6 +12,7 @@
  */
 import { useKillSwitchObservability } from '@/hooks/admin/useKillSwitchObservability';
 import { useSmokeTests } from '@/hooks/admin/useSmokeTests';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
@@ -40,6 +41,10 @@ export default function ObservabilityDashboard(): JSX.Element {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-6">
+      <PageSEO
+        title="Observabilidade do Sistema"
+        description="Dashboard de observabilidade — kill-switches, hits e smoke tests"
+      />
       <header className="flex items-start justify-between border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold">Observabilidade do Sistema</h1>

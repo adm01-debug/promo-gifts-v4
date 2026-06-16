@@ -16,7 +16,6 @@ import { gotoAndSettle } from "../helpers/nav";
 import { waitForTestIdVisible, pollUntil } from "../helpers/waits";
 import { Sel } from "../fixtures/selectors";
 import type { Page } from "@playwright/test";
-import type { Page } from "@playwright/test";
 
 const MIN_CARDS = 3;
 const SAMPLE_SIZE = 20;

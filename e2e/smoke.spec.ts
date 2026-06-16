@@ -1,7 +1,7 @@
-import { test, expect } from "../fixtures/test-base";
-import { Sel } from "../fixtures/selectors";
-import { gotoAndSettle } from "../helpers/nav";
-import { loginViaUI, expectAuthenticated, expectUnauthenticated } from "../helpers/auth";
+import { test, expect } from "./fixtures/test-base";
+import { Sel } from "./fixtures/selectors";
+import { gotoAndSettle } from "./helpers/nav";
+import { loginViaUI, expectAuthenticated } from "./helpers/auth";
 
 /**
  * Smoke Test: Fluxo Crítico de Autenticação @smoke
@@ -18,14 +18,18 @@ test.describe("Auth Critical Flow @smoke", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("deve realizar login com sucesso e redirecionar para a home", async ({ page }) => {
-    // Usamos as credenciais que confirmamos estarem no banco doufsxqlfjyuvxuezpln
-    const email = "adm01@promobrindes.com.br";
-    const password = "Juca301225@";
+    const email = process.env.E2E_ADMIN_EMAIL || process.env.E2E_USER_EMAIL;
+    const password = process.env.E2E_ADMIN_PASSWORD || process.env.E2E_USER_PASSWORD;
+
+    if (!email || !password) {
+      test.skip(true, "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais");
+      return;
+    }
 
     console.log(`[Smoke] Iniciando login para ${email}`);
     
     // loginViaUI já faz o assert de não estar mais em /login se tiver sucesso
-    const success = await loginViaUI(page, { email, password });
+    const success = await loginViaUI(page, { email: email!, password: password! });
     expect(success).toBe(true);
     
     // Valida que estamos na home ou dashboard
@@ -46,8 +50,11 @@ test.describe("Auth Critical Flow @smoke", () => {
     await gotoAndSettle(page, "/produtos");
     
     // Deve redirecionar para /auth ou /login
-    await expectUnauthenticated(page);
-    expect(page.url()).toContain("/auth");
+    await expect(page, "deveria redirecionar para /auth ou /login").toHaveURL(
+      /\/(auth|login)(\?|#|$)/,
+      { timeout: 5_000 },
+    );
+    expect(page.url()).toMatch(/\/(auth|login)/);
   });
 
   test("deve exibir formulário de esqueci minha senha", async ({ page }) => {

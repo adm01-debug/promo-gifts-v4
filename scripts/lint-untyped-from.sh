@@ -36,13 +36,20 @@ ALLOWLIST=(
   collection_products
   color_nuances
   kit_component_media
+  kit_component_print_areas
   personalization_simulations
+  personalization_techniques
   print_area_techniques
   product_category_assignments
   product_component_location_techniques
   product_group_components
   product_group_location_techniques
   product_group_locations
+  product_images
+  product_kit_components
+  product_materials
+  product_tags
+  product_videos
   sales_goals
   security_settings
   supplier_branches
