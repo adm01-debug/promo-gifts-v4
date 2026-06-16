@@ -949,14 +949,63 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <>{searchedProducts.length} produtos</>
             )}
           </span>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>
-            Expandir Todos
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>
-            Recolher Todos
-          </Button>
+
+          {/* Toggle de agrupamento: Agrupar por produto ↔ Listar variações */}
+          <div
+            className="inline-flex items-center rounded-md border border-border/60 bg-background p-0.5"
+            role="group"
+            aria-label="Modo de visualização da tabela de estoque"
+            data-testid="stock-grouping-toggle"
+          >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={groupingMode === 'grouped' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-[11px]"
+                    onClick={() => setGroupingMode('grouped')}
+                    aria-pressed={groupingMode === 'grouped'}
+                  >
+                    <LayoutList className="h-3 w-3" />
+                    Agrupar
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Agrupa variações sob cada produto pai</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={groupingMode === 'flat' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-[11px]"
+                    onClick={() => setGroupingMode('flat')}
+                    aria-pressed={groupingMode === 'flat'}
+                  >
+                    <Rows3 className="h-3 w-3" />
+                    Por variação
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>1 linha por SKU vendável (cor/tamanho)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {groupingMode === 'grouped' && (
+            <>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>
+                Expandir Todos
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>
+                Recolher Todos
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
 
       <div
         data-testid="variant-stock-scroll"
