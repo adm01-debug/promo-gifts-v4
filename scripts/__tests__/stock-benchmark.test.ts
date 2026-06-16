@@ -2,10 +2,10 @@
  * Benchmark do módulo de Estoque — 10k SKUs, gera relatório antes/depois.
  *
  * Rodar como teste vitest para reutilizar resolução de paths `@/`:
- *   npx vitest run scripts/stock-benchmark.bench.ts
+ *   npx vitest run scripts/__tests__/stock-benchmark.test.ts
  *
  * Comparação vs baseline:
- *   BASELINE=stock-benchmark-baseline.json THRESHOLD_PCT=25 npx vitest run scripts/stock-benchmark.bench.ts
+ *   BASELINE=stock-benchmark-baseline.json THRESHOLD_PCT=25 npx vitest run scripts/__tests__/stock-benchmark.test.ts
  *
  * Saída sempre escrita em ./stock-benchmark-report.json
  * Falha quando p95 piora mais que THRESHOLD_PCT (default 25%).

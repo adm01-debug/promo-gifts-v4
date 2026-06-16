@@ -49,6 +49,7 @@ const STATUS_FILTER_VALUES: StatusFilter[] = [
   'low_stock',
   'critical',
   'out_of_stock',
+  'overstocked',
   'incoming',
 ];
 const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
@@ -78,11 +79,6 @@ function writeStored(key: string, value: string): void {
     /* modo privado — ignora */
   }
 }
-
-
-
-// ============================================
-
 
 function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
   const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
@@ -267,7 +263,9 @@ function FlatVariantRow({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => navigator.clipboard.writeText(variant.variantSku)}
+            onClick={() => {
+              void navigator.clipboard?.writeText(variant.variantSku).catch(() => {});
+            }}
             aria-label={`Copiar SKU ${variant.variantSku}`}
           >
             <Copy className="h-3 w-3" />
@@ -309,8 +307,8 @@ interface VariantStockTableProps {
 }
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
-  // expandedProducts removido — UI flat-only não expande filhos. Mantido placeholder vazio
-  // apenas para evitar refactor amplo nos callbacks abaixo (sem efeito visual).
+  // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
+  // estado de "linhas expandidas". Toda a renderização opera sobre flatRows.
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
     const n = Number.parseInt(raw, 10);
@@ -320,7 +318,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
 
-  // Persiste busca inline (debounce simples via efeito)
+  // Persiste busca inline (persistência simples no localStorage)
   useEffect(() => {
     writeStored(SEARCH_STORAGE_KEY, inlineSearch);
   }, [inlineSearch]);
@@ -426,7 +424,11 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages - 1);
-  if (safePage !== currentPage) setCurrentPage(safePage);
+  // Clamp da página fora de faixa via efeito — NUNCA setState durante o render
+  // (evita warning "Cannot update a component while rendering" e re-render extra no React 18).
+  useEffect(() => {
+    if (currentPage > totalPages - 1) setCurrentPage(Math.max(0, totalPages - 1));
+  }, [currentPage, totalPages]);
 
   const paginatedProducts = useMemo(() => {
     const start = safePage * PAGE_SIZE;
@@ -447,11 +449,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     }
     return rows;
   }, [paginatedProducts, statusFilter]);
-
-
-
-
-
 
   if (isLoading) {
     return (
