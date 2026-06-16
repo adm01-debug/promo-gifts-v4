@@ -710,7 +710,8 @@ interface VariantStockTableProps {
 }
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  // expandedProducts removido — UI flat-only não expande filhos. Mantido placeholder vazio
+  // apenas para evitar refactor amplo nos callbacks abaixo (sem efeito visual).
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
     const n = Number.parseInt(raw, 10);
