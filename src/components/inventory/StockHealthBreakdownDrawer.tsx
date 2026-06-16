@@ -50,7 +50,6 @@ function ProductRow({ p }: { p: ProductStockSummary }) {
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
         {p.productImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={p.productImageUrl}
             alt=""
