@@ -18,7 +18,7 @@ export default function StockDashboardPage() {
           >
             Estoque
           </h1>
-          <p className="max-w-lg text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground whitespace-nowrap">
             Acompanhe níveis de estoque e disponibilidade dos produtos em tempo real.
           </p>
         </div>
