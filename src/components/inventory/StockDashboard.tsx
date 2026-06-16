@@ -494,7 +494,6 @@ export function StockDashboard() {
             </div>
           </div>
 
-          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <ScrollArea className="h-[min(600px,_60vh)]">
