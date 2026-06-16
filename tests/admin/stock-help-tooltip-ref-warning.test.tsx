@@ -42,8 +42,8 @@ describe('StockHelpTooltip — Radix asChild nesting', () => {
         </div>
       </StockHelpTooltip>,
     );
-    guard.assertNoWarnings();
-    guard.restore();
+    guard.expectNoRefWarning('div-children');
+    guard.dispose();
   });
 
   it('não emite warning sem children (ícone padrão)', () => {
