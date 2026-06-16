@@ -308,7 +308,7 @@ interface VariantStockTableProps {
 
 export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
   // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
-  // estado de "linhas expandidas". Toda a renderização opera sobre flatRows.
+  // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
     const n = Number.parseInt(raw, 10);
@@ -317,6 +317,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   const [inlineSearch, setInlineSearch] = useState<string>(() => readStored(SEARCH_STORAGE_KEY, ''));
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
+  const deepLinkConsumedRef = useRef<string | null>(null);
 
   // Persiste busca inline (persistência simples no localStorage)
   useEffect(() => {
@@ -347,21 +348,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   useEffect(() => {
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
-
-
-
-
-  // Deep link: auto-expand product from URL ?product=ID
-  useEffect(() => {
-    const productId = searchParams.get('product');
-    if (productId) {
-      const idx = products.findIndex((p) => p.productId === productId);
-      if (idx >= 0) {
-        const page = Math.floor(idx / PAGE_SIZE);
-        setCurrentPage(page);
-      }
-    }
-  }, [searchParams, products]);
 
   // Reset page when product list changes (filter applied)
   useEffect(() => {
@@ -409,20 +395,24 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [searchedProducts]);
 
   /**
-   * Filtra produtos pais que tenham ao menos 1 variação no status escolhido
-   * (paginação opera sobre produtos para preservar a UX "X de Y").
-   * A filtragem efetiva por SKU acontece em `flatRows`.
+   * Modo variação-first: 1 linha = 1 SKU. A LISTA COMPLETA de linhas (todas as
+   * variações de todos os produtos buscados, já filtradas por status) é a unidade
+   * de paginação — assim chips, contador e linhas falam a MESMA unidade (SKU).
+   * Estoque exibido é SEMPRE da variação, nunca do produto pai.
    */
-  const filteredProducts = useMemo(() => {
-    if (statusFilter === 'all') return searchedProducts;
-    const result: ProductStockSummary[] = [];
-    for (const p of searchedProducts) {
-      if (p.variants.some((v) => v.status === statusFilter)) result.push(p);
+  const allFlatRows = useMemo(() => {
+    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    for (const product of searchedProducts) {
+      for (const variant of product.variants) {
+        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
+        rows.push({ product, variant });
+      }
     }
-    return result;
+    return rows;
   }, [searchedProducts, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const totalRows = allFlatRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages - 1);
   // Clamp da página fora de faixa via efeito — NUNCA setState durante o render
   // (evita warning "Cannot update a component while rendering" e re-render extra no React 18).
@@ -430,25 +420,23 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     if (currentPage > totalPages - 1) setCurrentPage(Math.max(0, totalPages - 1));
   }, [currentPage, totalPages]);
 
-  const paginatedProducts = useMemo(() => {
+  const pagedRows = useMemo(() => {
     const start = safePage * PAGE_SIZE;
-    return filteredProducts.slice(start, start + PAGE_SIZE);
-  }, [filteredProducts, safePage]);
+    return allFlatRows.slice(start, start + PAGE_SIZE);
+  }, [allFlatRows, safePage]);
 
-  /**
-   * Modo variação-first: 1 linha = 1 SKU. Estoque exibido é SEMPRE da variação,
-   * nunca do produto pai. Aplica statusFilter por variação.
-   */
-  const flatRows = useMemo(() => {
-    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
-    for (const product of paginatedProducts) {
-      for (const variant of product.variants) {
-        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
-        rows.push({ product, variant });
-      }
+  // Deep link ?product=ID: posiciona na página que contém a 1a linha (SKU) do
+  // produto, respeitando busca+filtro atuais. Consome o ID uma única vez (ref)
+  // para NÃO re-arrastar o usuário a cada troca de filtro/busca.
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (!productId || productId === deepLinkConsumedRef.current) return;
+    const rowIdx = allFlatRows.findIndex((r) => r.product.productId === productId);
+    if (rowIdx >= 0) {
+      setCurrentPage(Math.floor(rowIdx / PAGE_SIZE));
+      deepLinkConsumedRef.current = productId;
     }
-    return rows;
-  }, [paginatedProducts, statusFilter]);
+  }, [searchParams, allFlatRows]);
 
   if (isLoading) {
     return (
@@ -583,14 +571,15 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {filteredProducts.length > PAGE_SIZE ? (
+            {totalRows > PAGE_SIZE ? (
               <>
                 {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, filteredProducts.length)} de{' '}
-                {filteredProducts.length}
+                {Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de {totalRows} variações
               </>
             ) : (
-              <>{filteredProducts.length} produtos</>
+              <>
+                {totalRows} {totalRows === 1 ? 'variação' : 'variações'}
+              </>
             )}
 
           </span>
@@ -622,8 +611,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             </TableRow>
           </TableHeader>
           <TableBody>
-            {flatRows.length > 0 ? (
-              flatRows.map(({ product, variant }) => (
+            {pagedRows.length > 0 ? (
+              pagedRows.map(({ product, variant }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
@@ -637,11 +626,11 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
                     </div>
-                    <p className="mb-1 font-semibold text-foreground">Nenhum produto encontrado</p>
+                    <p className="mb-1 font-semibold text-foreground">Nenhuma variação encontrada</p>
                     <p className="max-w-xs text-sm">
                       {inlineSearch
                         ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
-                        : 'Ajuste os filtros para visualizar os produtos.'}
+                        : 'Ajuste os filtros para visualizar os SKUs.'}
                     </p>
                   </div>
                 </TableCell>
