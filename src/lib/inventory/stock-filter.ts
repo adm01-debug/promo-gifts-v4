@@ -200,17 +200,29 @@ function matchSearch(
   );
 }
 
+function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
+  if (!v.futureStock || v.futureStock <= 0) return 0;
+  const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
+  if (!dateStr) return 0;
+  const t = Date.parse(dateStr);
+  if (Number.isNaN(t) || t > cutoffMs) return 0;
+  return v.futureStock;
+}
+
 function matchMinQuantity(
   product: ProductStockSummary,
   variantsForFilter: VariantStock[],
-  minQty: number,
-  hasVariantFilter: boolean,
+  ctx: FilterContext,
 ): boolean {
-  if (minQty <= 0) return true;
-  const pool = hasVariantFilter
+  if (ctx.minQty <= 0) return true;
+  let pool = ctx.hasVariantFilter
     ? variantsForFilter.reduce((sum, v) => sum + v.availableStock, 0)
     : product.totalAvailableStock;
-  return pool >= minQty;
+  if (ctx.includeFutureStock) {
+    const source = ctx.hasVariantFilter ? variantsForFilter : product.variants;
+    for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
+  }
+  return pool >= ctx.minQty;
 }
 
 // ---------- estágio 3: orquestrador ----------
