@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-06-16T19:19:56.504Z",
+  "skuCount": 2000,
+  "iterations": 5,
+  "results": [
+    {
+      "label": "buildStockIndexes",
+      "iterations": 5,
+      "avgMs": 2.419,
+      "p50Ms": 2.653,
+      "p95Ms": 3.287,
+      "maxMs": 3.287
+    },
+    {
+      "label": "applyStockFilters (no filter)",
+      "iterations": 5,
+      "avgMs": 0.166,
+      "p50Ms": 0.16,
+      "p95Ms": 0.202,
+      "maxMs": 0.202
+    },
+    {
+      "label": "applyStockFilters (search)",
+      "iterations": 5,
+      "avgMs": 0.882,
+      "p50Ms": 0.909,
+      "p95Ms": 0.911,
+      "maxMs": 0.911
+    },
+    {
+      "label": "applyStockFilters (status=low_stock)",
+      "iterations": 5,
+      "avgMs": 0.116,
+      "p50Ms": 0.119,
+      "p95Ms": 0.138,
+      "maxMs": 0.138
+    },
+    {
+      "label": "applyStockFilters (color=Azul)",
+      "iterations": 5,
+      "avgMs": 0.132,
+      "p50Ms": 0.122,
+      "p95Ms": 0.188,
+      "maxMs": 0.188
+    }
+  ]
+}
