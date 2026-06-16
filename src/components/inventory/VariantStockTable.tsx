@@ -413,7 +413,10 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
   const totalRows = allFlatRows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages - 1);
+  // safePage SEMPRE em [0, totalPages-1]. O Math.max(0, ...) e defense-in-depth contra
+  // um currentPage negativo vindo de codigo futuro (NaN ja e barrado no init via
+  // Number.isFinite; todos os setCurrentPage atuais passam valores >= 0).
+  const safePage = Math.max(0, Math.min(currentPage, totalPages - 1));
   // Clamp da página fora de faixa via efeito — NUNCA setState durante o render
   // (evita warning "Cannot update a component while rendering" e re-render extra no React 18).
   useEffect(() => {
