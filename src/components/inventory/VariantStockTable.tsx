@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronRight,
   Package,
-  Clock,
   Truck,
   ChevronLeft,
   ShoppingCart,
