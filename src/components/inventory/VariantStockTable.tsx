@@ -719,9 +719,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         </div>
       </div>
 
-      <div className="max-h-[min(600px,_60vh)] overflow-auto rounded-lg border">
+      <div data-testid="variant-stock-scroll" className="max-h-[min(600px,_60vh)] overflow-auto rounded-lg border">
         <Table className="min-w-[700px]">
-          <TableHeader className="sticky top-0 z-10 bg-background">
+          <TableHeader data-testid="variant-stock-thead" className="sticky top-0 z-10 bg-background">
             <TableRow className="bg-muted/50">
               <TableHead className="w-[250px]">Produto / Cor</TableHead>
               <TableHead className="hidden w-[100px] md:table-cell">Cores</TableHead>
