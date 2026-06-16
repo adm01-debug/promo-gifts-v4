@@ -1,4 +1,0 @@
-
-> @adm01-debug/gifts-store@2.0.0 test:quality
-> TZ=America/Sao_Paulo vitest run --exclude 'tests/hooks/**' --reporter=json
-
