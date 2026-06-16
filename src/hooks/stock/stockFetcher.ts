@@ -451,10 +451,15 @@ export async function fetchAndProcessStockData(): Promise<{
     const supplierName = product.supplier_id
       ? supplierMap.get(product.supplier_id)
       : product.brand || undefined;
+    const productImageUrl =
+      productImageByProductId.get(product.id) ||
+      variants.find((v) => v.imageUrl)?.imageUrl ||
+      undefined;
     return {
       productId: product.id,
       productName: product.name,
       productSku: product.sku || '',
+      productImageUrl,
       categoryName,
       supplierName,
       ...aggregated,
@@ -467,3 +472,4 @@ export async function fetchAndProcessStockData(): Promise<{
   );
   return { productStocks: summaries, alerts, futureStock: futureEntries };
 }
+
