@@ -8,7 +8,8 @@
  * Atualizar baselines:
  *   npx playwright test e2e/admin/stock-future-stock-visual.spec.ts --update-snapshots
  */
-import { test, expect, type Page } from '../fixtures/test-base';
+import { test, expect } from '../fixtures/test-base';
+import type { Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 import { Sel } from '../fixtures/selectors';
