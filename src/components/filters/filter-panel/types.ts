@@ -166,7 +166,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
 export const SECTION_GROUPS = [
   {
     label: 'PRODUTO',
-    sections: ['cores', 'categorias', 'estoque', 'preco', 'materiais', 'genero', 'tamanhos'],
+    sections: ['cores', 'categorias', 'preco', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
   {
