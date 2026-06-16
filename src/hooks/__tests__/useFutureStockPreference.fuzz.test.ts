@@ -147,7 +147,7 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
 });
 
 describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () => {
-  let toggle: ReturnType<typeof vi.fn>;
+  let toggle: () => void;
   beforeEach(() => {
     toggle = vi.fn();
   });
