@@ -1,21 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ChevronDown,
   ChevronRight,
   Package,
   Clock,
   Truck,
-  AlertTriangle,
-  XCircle,
   ChevronLeft,
-  ExternalLink,
   ShoppingCart,
   Search,
   X,
   Copy,
-  LayoutList,
-  Rows3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,12 +26,8 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
-import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 
-/** Modos de agrupamento da tabela. Persistido em localStorage. */
-type GroupingMode = 'grouped' | 'flat';
-const GROUPING_STORAGE_KEY = 'stock.groupBy';
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
