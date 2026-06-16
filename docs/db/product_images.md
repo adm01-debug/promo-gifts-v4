@@ -1,6 +1,6 @@
 # `product_images` — Laudo técnico e hardening (Gold / `doufsxqlfjyuvxuezpln`)
 
-> Última atualização: 2026-06-15. Análise + execução de melhorias por sessão de DBA.
+> Última atualização: 2026-06-16. Análise + hardening + melhorias E1-E10 (score 59.7% → 72.5%).
 
 ## 1. O que é
 
@@ -12,8 +12,8 @@ classificação semântica, ordenação, metadados SEO e rastreabilidade de forn
 projeções desnormalizadas (`images`, `primary_image_url`, `og_image_url`, `set_image_url`,
 `primary_image_fallback_url`) **mantidas pelos triggers** desta tabela.
 
-Perfil (2026-06-15): **73.210 linhas / 82 MB / ~7.118 produtos** (~10 imagens/produto),
-73.187 ativas, **exatamente 1 primária por produto**.
+Perfil (2026-06-16): **73.210 linhas / ~7.118 produtos** (~10 imagens/produto),
+73.194 ativas (16 inativas), **exatamente 1 primária por produto**.
 
 ## 2. Relacionamentos ("com quem convive")
 
@@ -40,25 +40,36 @@ Perfil (2026-06-15): **73.210 linhas / 82 MB / ~7.118 produtos** (~10 imagens/pr
 | 4 | amplificação de escrita + observabilidade | `..._observability_and_resync` + `..._resync_deterministic` | View `v_product_images_quality_gap` + `fn_resync_product_media()` determinística/idempotente (run1=1, run2=0). |
 | 5 | documentação de schema | `..._schema_documentation` | COMMENTs em tabela + 19 colunas + objetos novos. |
 
-### Decisão data-driven: índices NÃO foram podados
-A hipótese inicial de "sobre-indexação" foi **refutada por `pg_stat_user_indexes`**: os 13
-índices têm `idx_scan > 0` (menor = `image_type_id` com 14; maior = `cloudflare_image_id` com
-34M). Remover qualquer um seria otimização prematura com risco. **Mantidos todos.**
+### Decisão data-driven: índices — 3 redundantes removidos em E8
+Análise via `pg_stat_user_indexes` identificou 3 índices com 0–67 scans e cobertura
+duplicada (`idx_product_images_og`, `idx_product_images_organization_id` single-tenant,
+`idx_product_images_type` coberto por `product_type_active`). **Removidos em E8 (~3.2 MB
+recuperados).** Restam 13 índices, todos com `idx_scan > 0` (mín 22, máx 34M).
 
-## 5. Gap aberto: dimensões/peso (`width_px`, `height_px`, `file_size_bytes`)
+## 5. Melhorias de conteúdo E1-E10 (PR #787, 2026-06-16)
 
-~99,9% nulo (100% em `file_size_bytes`). É um problema de **aquisição de dado externo**, não de
-schema. O job autoritativo atual popula `format` mas não dimensões. Pipeline recomendado
-(infra já instalada: `pg_net`, `pg_cron`, `pgmq`):
+Score de completude: **59.7% → 72.5% (+12.82pp)**. Gargalo restante: dimensões (backfill async).
 
-1. Edge Function com credencial da **Cloudflare Images API** (`GET /images/v1/{id}` → retorna
-   `width`/`height`/`size`).
-2. `pg_cron` agenda lotes; enfileira via `pgmq` os `id` com `width_px IS NULL`.
-3. Worker drena a fila, busca metadados e faz `UPDATE` (o trigger de validação então passa a
-   classificar APROVADO/REPROVADO em vez de `SEM_DIMENSOES`).
-4. Monitorar progresso por `SELECT * FROM v_product_images_quality_gap`.
+| Step | Escopo | Resultado |
+|---|---|---|
+| E1 | `mv_product_images_audit` | Matview populada: 7 gaps, `score_completude` 0-100, `prioridade_correcao`, refresh pg_cron 6h |
+| E2 | format backfill | L1 regex url_original (20.116 img jpg→jpeg/webp) + L2a SPOT spot-pa-*=PNG (11.947) + L2b XBZ órfão→inativo. **Resultado: 73.209/73.210 com format (1 inativa XBZ sem format — zero impacto)** |
+| E3 | Dimensões ASIA | Invariante 768×768 confirmado (60/60=100%). Bulk update 5.937 img. |
+| E4 | Edge Function `backfill-image-dimensions` | Parseia headers JPEG/PNG/WebP via Range:0-32KB, captura `file_size_bytes`. pg_cron 5min. **Status: 10.081 com dimensões (13.8%), backfill assíncrono em andamento.** |
+| E5 | SPOT `url_original` | Gap estrutural documentado (spot-pa-* sem CDN intermediário). `v_product_images_quality_gap` distingue `gap_url_original_real` vs `gap_url_original_estrutural`. |
+| E6 | `color_id` backfill | L1 via variant_id→product_variants.color_id (1.781 img) + L2 mono-variante inequívoco (323 img). **42.599 imagens com color_id (58.2%).** Residual multi-variante: requer re-importação. |
+| E7 | `alt_text` quality | 531 imagens com alt curto/NULL resetadas → trigger SEO regenera. **73.194/73.194 ativas com alt_text válido (100%).** |
+| E8 | Índices | Drop 3 redundantes (~3.2 MB). Ver acima. |
+| E9 | `vw_image_type_dropblockers` | Mapa de 66 objetos (52 funções + 14 triggers) bloqueando `DROP COLUMN image_type`. Roadmap de migração `image_type → image_type_id`. |
+| E10 | 88BRINDES purge | 14 imagens do piloto descontinuado → inativas. Produto `is_active=false`, sync limpou `primary_image_url`. |
 
-## 5b. Validação adversarial (2026-06-15) — 5 gaps encontrados e corrigidos
+## 5b. Gap remanescente: dimensões/peso (`width_px`, `height_px`, `file_size_bytes`)
+
+63.113 imagens ativas sem dimensões (86.2%), incluindo 2.163 primárias (P0). Backfill
+assíncrono via Edge Function `backfill-image-dimensions` (pg_cron 5min) em andamento.
+Monitorar: `SELECT * FROM mv_product_images_audit WHERE prioridade_correcao = 'P0-primary-sem-dim';`
+
+## 5c. Validação adversarial (2026-06-15/16) — 5 gaps encontrados e corrigidos
 
 Bateria de centenas de cenários (replicação fiel + inserts reais em transação abortada +
 simulação de papéis `anon`/`authenticated`):
@@ -77,9 +88,12 @@ normalização (baixo risco — o pipeline grava tokens curtos). O ambiente tamb
 `image_type_id` **NOT NULL** e reescreveu a policy de SELECT (org-scoped) — ambos compatíveis
 com os guards.
 
-**Pós-validação:** integração E2E confirma os 13 triggers cooperando (insert realista →
-`image_type=set`, `format=jpeg`, `alt_text` gerado, `products` sincronizado); invariantes
-globais = 0 violações de format, 0 drift, 0 `image_type_id` nulo, 1 primária/produto.
+**Pós-validação (2026-06-16, pós-PR #787):** todas as correções intactas. Invariantes globais:
+- 0 violações de format · 0 drift · 0 `image_type_id` nulo · 0 multi-primary · 0 órfãos · 0 alt_text inválido em ativas
+- RLS anon: 73.194 ativas visíveis, 0 inativas visíveis, sem `permission denied`
+- `fn_resync_product_media`: anon=false, authenticated=false, service_role=true
+- `v_product_images_quality_gap`: anon=false, authenticated=false, service_role=true
+- Format normalization: JPG→jpeg ✅ JPEG→jpeg ✅ MAIN→main (bidirecional+case-insensitive) ✅
 
 ## 6. Operação de carga em massa (anti-write-amplification)
 
