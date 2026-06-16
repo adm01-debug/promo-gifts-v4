@@ -16,6 +16,9 @@ import { loginAs } from "../../helpers/auth";
 const TOOLBAR = TID("variant-stock-toolbar");
 const THEAD = TID("variant-stock-thead");
 const SCROLL = TID("variant-stock-scroll");
+const HEADER = TID("app-header");
+const BREADCRUMB = TID("breadcrumb-bar");
+const SCROLL_DELTA = 400;
 
 async function maybeSkipIfEmpty(page: Page) {
   const syncing = page.getByText(/Sincronizando estoque/i);
@@ -52,18 +55,67 @@ async function waitForFontsAndRows(page: Page) {
   });
   // 2) Pelo menos uma linha de dados renderizada (não skeleton)
   await expect(page.locator(`${SCROLL} tbody tr`).first()).toBeVisible({ timeout: 30_000 });
-  // 3) scrollHeight estabilizado por 2 medições consecutivas
-  await page.locator(SCROLL).evaluate(async (el) => {
+  // 3) scrollHeight da página estabilizado antes de medir sticky/boundingBox
+  await page.evaluate(async () => {
     const stable = async () => {
-      let last = el.scrollHeight;
+      let last = document.documentElement.scrollHeight;
       for (let i = 0; i < 20; i++) {
         await new Promise((r) => requestAnimationFrame(() => r(null)));
-        if (el.scrollHeight === last && el.scrollHeight > 0) return;
-        last = el.scrollHeight;
+        if (document.documentElement.scrollHeight === last && last > 0) return;
+        last = document.documentElement.scrollHeight;
       }
     };
     await stable();
   });
+}
+
+async function waitForAnimationFrames(page: Page, frames = 4) {
+  await page.evaluate(async (frameCount) => {
+    for (let i = 0; i < frameCount; i++) {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    }
+  }, frames);
+}
+
+async function getStickyOffset(page: Page) {
+  return page.evaluate(({ headerSelector, breadcrumbSelector }) => {
+    const rectHeight = (selector: string) => {
+      const el = document.querySelector(selector);
+      if (!el) return 0;
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden" || el.getAttribute("aria-hidden") === "true") {
+        return 0;
+      }
+      return el.getBoundingClientRect().height;
+    };
+
+    const cssPx = (name: string, fallback: number) => {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      const parsed = Number.parseFloat(raw);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    return Math.max(rectHeight(headerSelector), cssPx("--header-h", 56)) + rectHeight(breadcrumbSelector);
+  }, { headerSelector: HEADER, breadcrumbSelector: BREADCRUMB });
+}
+
+async function pinToolbarForMeasurement(page: Page) {
+  await page.locator(TOOLBAR).evaluate((el) => {
+    const cssPx = (name: string, fallback: number) => {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      const parsed = Number.parseFloat(raw);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+    const breadcrumb = document.querySelector('[data-testid="breadcrumb-bar"]');
+    const breadcrumbVisible =
+      breadcrumb &&
+      breadcrumb.getAttribute("aria-hidden") !== "true" &&
+      getComputedStyle(breadcrumb).display !== "none";
+    const stickyTop = cssPx("--header-h", 56) + (breadcrumbVisible ? breadcrumb.getBoundingClientRect().height : 0);
+    const target = window.scrollY + el.getBoundingClientRect().top - stickyTop - 8;
+    window.scrollTo({ top: Math.max(0, target), behavior: "auto" });
+  });
+  await waitForAnimationFrames(page);
 }
 
 test.describe("@regression /estoque — tabela sticky (toolbar + thead)", () => {
