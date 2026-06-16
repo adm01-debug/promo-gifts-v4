@@ -32,6 +32,7 @@ const baseProduct = {
   stock_quantity: 500,
   stock_status: "in-stock" as const,
   replenished_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+  category_id: "cat-garrafas",
   category_name: "Garrafas",
   supplier_name: "FornecedorY",
   images: [],

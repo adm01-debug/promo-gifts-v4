@@ -8,10 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Package,
-  Building2,
-} from 'lucide-react';
+import { Package, Building2 } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
@@ -69,7 +66,6 @@ const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobi
 
 // ─── Grid Card ───────────────────────────────────────────────────
 
-
 export interface ReplenishmentCardProps {
   readonly product: ReplenishmentWithDetails;
   readonly onClick: () => void;
@@ -96,9 +92,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
   const activeImage = useMemo(() => {
     if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find(
-      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
-    );
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
     return match?.image || product.product_image;
   }, [activeColorName, colors, product.product_image]);
 
@@ -157,15 +151,12 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             alt={`Foto de ${product.product_name}`}
           />
 
-
           {/* Badge superior esquerdo — Reposição */}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
             <ReplenishmentBadge daysSince={product.days_since} size="sm" />
           </div>
 
           {/* FAB "+" — paridade total com ProductCard (renderizado fora da área da imagem para overlay) */}
-
-
 
           {/* Checkbox de seleção em massa (mantém posição quando ativa) */}
           {selectionMode && (
@@ -282,7 +273,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
           </div>
 
-
           {/* Cores disponíveis — mini-carrossel de variantes */}
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <ProductColorSwatches
@@ -299,14 +289,12 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                Tendência 30d
+                Vendas 30d
               </span>
             </div>
             <ProductSparkline productId={product.product_id} />
           </div>
-
         </div>
-
       </CardContent>
     </Card>
   );
@@ -403,7 +391,9 @@ export function ReplenishmentTableView({
                       <img
                         src={product.product_image}
                         alt={`Foto de ${product.product_name}`}
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                        }}
                         className="h-full w-full object-contain"
                         loading="lazy"
                         decoding="async"
