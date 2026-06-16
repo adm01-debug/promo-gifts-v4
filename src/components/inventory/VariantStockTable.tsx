@@ -812,6 +812,22 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     return searchedProducts.slice(start, start + PAGE_SIZE);
   }, [searchedProducts, safePage]);
 
+  /**
+   * Modo flat: 1 linha = 1 variação (SKU). Paginação continua sobre PRODUTOS
+   * para preservar a UX de "X de Y", mas flatRows é o que efetivamente renderiza.
+   * Custo: O(produtos × variações da página) — limitado por PAGE_SIZE (50).
+   */
+  const flatRows = useMemo(() => {
+    if (groupingMode !== 'flat') return [];
+    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    for (const product of paginatedProducts) {
+      for (const variant of product.variants) {
+        rows.push({ product, variant });
+      }
+    }
+    return rows;
+  }, [groupingMode, paginatedProducts]);
+
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => {
       const next = new Set(prev);
@@ -823,6 +839,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
 
   const expandAll = () => setExpandedProducts(new Set(paginatedProducts.map((p) => p.productId)));
   const collapseAll = () => setExpandedProducts(new Set());
+
+
 
   if (isLoading) {
     return (
