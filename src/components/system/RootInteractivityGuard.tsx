@@ -53,7 +53,7 @@ function isElementVisiblyEmpty(el: HTMLElement): boolean {
   if (style.visibility === 'hidden') return true;
   const bg = style.backgroundColor || '';
   const transparentBg = bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)' || bg === '';
-  const hasText = (el.textContent || '').trim().length > 0;
+  const hasText = (el.textContent || '').trim() !== '';
   return transparentBg && !hasText;
 }
 

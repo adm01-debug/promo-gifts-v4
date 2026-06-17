@@ -46,7 +46,7 @@ export function MaskedSuffixBadge({
   // Sempre usa o resolvedor com fallback derivado — garante layout estável
   // mesmo quando o sufixo cru é nulo/curto.
   const display = formatDisplaySuffix(suffix, { length });
-  const isFallback = diagnosis.status !== 'valid' && (suffix ?? '').trim().length === 0;
+  const isFallback = diagnosis.status !== 'valid' && (suffix ?? '').trim() === '';
 
   if (diagnosis.status === 'valid' && !showWhenValid) {
     return showSuffix ? (

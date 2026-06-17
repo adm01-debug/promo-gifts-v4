@@ -592,7 +592,7 @@ export function useCatalogState() {
   }, [sortBy, debouncedSearch, viewMode, filters]);
 
   const hasActiveCatalogConstraints = useMemo(
-    () => activeFiltersCount > 0 || searchQuery.trim().length > 0,
+    () => activeFiltersCount > 0 || searchQuery.trim() !== '',
     [activeFiltersCount, searchQuery],
   );
 
@@ -660,7 +660,7 @@ export function useCatalogState() {
   }, [hasMoreProducts, isLoadingMore, isFetchingNextPage, loadMore]);
 
   const statBadges = useMemo(() => {
-    const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+    const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim() !== '';
     const seen = new Set<string>();
     const deduped = filteredProducts.filter((p) => {
       if (seen.has(p.id)) return false;
