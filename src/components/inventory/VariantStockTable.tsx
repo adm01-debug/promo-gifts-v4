@@ -47,19 +47,18 @@ type StatusFilter = StockStatus | 'all';
 const STATUS_FILTER_VALUES: StatusFilter[] = [
   'all',
   'in_stock',
+  'incoming',
   'low_stock',
   'critical',
   'out_of_stock',
-  'overstocked',
-  'incoming',
 ];
 const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   all: 'Todos',
-  in_stock: 'Em estoque',
-  low_stock: 'Baixo',
+  in_stock: 'Em Estoque',
+  low_stock: 'Risco de Ruptura',
   critical: 'Crítico',
   out_of_stock: 'Esgotado',
-  overstocked: 'Excesso',
+  overstocked: 'Em Estoque',
   incoming: 'Chegando',
 };
 
