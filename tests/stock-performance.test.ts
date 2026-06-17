@@ -82,15 +82,16 @@ describe('calculateStockStatus', () => {
   it('returns incoming when current=0 but inTransit>0', () => {
     expect(calculateStockStatus(0, 10, undefined, 50)).toBe('incoming');
   });
-  it('returns critical when current<=25% of min', () => {
-    expect(calculateStockStatus(2, 10)).toBe('critical');
-    expect(calculateStockStatus(1, 100)).toBe('critical');
+  // NOTA: a régua baseada em `min` (low_stock/critical) foi descontinuada.
+  // Agora só geram low_stock/critical via camada preditiva (rupture-risk).
+  it('does NOT return critical or low_stock from min (deprecated)', () => {
+    expect(calculateStockStatus(2, 10)).toBe('in_stock');
+    expect(calculateStockStatus(1, 100)).toBe('in_stock');
+    expect(calculateStockStatus(5, 10)).toBe('in_stock');
+    expect(calculateStockStatus(10, 10)).toBe('in_stock');
+    expect(calculateStockStatus(25, 100)).toBe('in_stock');
   });
-  it('returns low_stock when current<=min but >25%', () => {
-    expect(calculateStockStatus(5, 10)).toBe('low_stock');
-    expect(calculateStockStatus(10, 10)).toBe('low_stock');
-  });
-  it('returns in_stock when current>min', () => {
+  it('returns in_stock when current>0 and no max', () => {
     expect(calculateStockStatus(100, 10)).toBe('in_stock');
   });
   it('returns overstocked when current>max*1.5', () => {
@@ -106,10 +107,6 @@ describe('calculateStockStatus', () => {
   it('handles very large numbers', () => {
     expect(calculateStockStatus(999999, 10)).toBe('in_stock');
     expect(calculateStockStatus(999999, 10, 100)).toBe('overstocked');
-  });
-  it('boundary: exactly 25% of min', () => {
-    // 25 is exactly 25% of 100 → critical
-    expect(calculateStockStatus(25, 100)).toBe('critical');
   });
 });
 

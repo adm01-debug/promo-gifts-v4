@@ -99,7 +99,7 @@ export function StockHealthBreakdownDrawer({ open, onOpenChange, products }: Pro
           <SheetTitle>Produtos por faixa de estoque</SheetTitle>
           <SheetDescription>
             Detalhamento dos {products.length.toLocaleString('pt-BR')} produtos do dataset atual,
-            classificados pela regra de estoque mínimo de cada produto.
+            classificados pela faixa de estoque de cada produto.
           </SheetDescription>
         </SheetHeader>
 

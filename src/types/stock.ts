@@ -258,10 +258,14 @@ export interface StockFilters {
 
   // Quantidade mínima necessária (smart filter)
   minQuantityNeeded?: number;
+  // Quando true, soma o Estoque Futuro (dentro da janela) ao pool da régua
+  // "Preciso de X un". Padrão: false (estrito sobre disponível agora).
+  minQtyIncludesFutureStock?: boolean;
 
   // Estoque futuro — quando true, soma futureStock dentro da janela
   includeFutureStock?: boolean;
   futureStockWindowDays?: 7 | 15 | 30;
+
 
   // Busca
   search: string;
@@ -352,19 +356,23 @@ export interface StockDashboardSummary {
 
 export function calculateStockStatus(
   current: number,
-  min: number,
+  _min: number,
   max?: number,
   inTransit?: number,
 ): StockStatus {
+  // NOTA: a régua histórica baseada em `min` (low_stock/critical) foi
+  // descontinuada na UI por gerar confusão. O parâmetro é mantido por
+  // compatibilidade de contrato. O nível "Risco de Ruptura" agora é
+  // calculado exclusivamente pela camada preditiva (rupture-risk.ts),
+  // que usa média de baixa real × horizonte × alvo do vendedor.
   if (current <= 0) {
     if (inTransit && inTransit > 0) return 'incoming';
     return 'out_of_stock';
   }
-  if (current <= min * 0.25) return 'critical';
-  if (current <= min) return 'low_stock';
   if (max && current > max * 1.5) return 'overstocked';
   return 'in_stock';
 }
+
 
 export function calculateDaysUntilStockout(
   currentStock: number,

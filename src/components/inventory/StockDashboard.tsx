@@ -34,6 +34,7 @@ import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
 import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
 import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
+import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
 export function StockDashboard() {
@@ -447,6 +448,16 @@ export function StockDashboard() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
+          {productStocks.length === 0 && allProductStocks.length > 0 && (
+            <div className="mb-4">
+              <StockEmptyFiltersHint
+                filters={filters}
+                totalProducts={allProductStocks.length}
+                onResetFilters={resetFilters}
+                onUpdateFilter={updateFilter}
+              />
+            </div>
+          )}
           {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
               do toolbar (busca + paginação) e do <thead>. */}
           <VariantStockTable

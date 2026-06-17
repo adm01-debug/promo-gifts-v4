@@ -95,7 +95,7 @@ export function HealthScoreInfoDialog({ productsInStock, totalProducts, critical
           <h3 className="text-sm font-semibold">Alertas críticos</h3>
           <p className="text-xs text-muted-foreground">
             Contagem dos itens classificados como <code>severity === "error"</code> (sem estoque ou
-            abaixo de 25% do mínimo). Hoje:{' '}
+            em nível crítico). Hoje:{' '}
             <span className="font-semibold text-destructive">
               {criticalAlerts.toLocaleString('pt-BR')}
             </span>

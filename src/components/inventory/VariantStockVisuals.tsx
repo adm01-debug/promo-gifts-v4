@@ -131,23 +131,15 @@ export function RichColorSwatch({
     <span className="inline-flex items-center gap-2">
       <span
         className={cn(
-          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-opacity',
           isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
           !bg && 'border-dashed border-muted-foreground/40',
+          isOutOfStock && 'opacity-50',
         )}
         style={bg ? { background: bg } : undefined}
         aria-hidden="true"
-      >
-        {isOutOfStock && (
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                'linear-gradient(135deg, transparent calc(50% - 1px), hsl(var(--destructive)) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px))',
-            }}
-          />
-        )}
-      </span>
+      />
+
       <span
         className={cn(
           'truncate text-sm',
@@ -203,7 +195,6 @@ const CHIP_CONFIG: Record<
 export function StockStatusChip({
   status,
   current,
-  min,
   reserved = 0,
   inTransit = 0,
   showLabel = true,
@@ -211,7 +202,8 @@ export function StockStatusChip({
 }: {
   status: StockStatus;
   current: number;
-  min: number;
+  /** @deprecated mantido por compatibilidade — não é mais exibido na UI. */
+  min?: number;
   reserved?: number;
   inTransit?: number;
   showLabel?: boolean;
@@ -225,7 +217,6 @@ export function StockStatusChip({
   };
 }) {
   const cfg = CHIP_CONFIG[status] ?? CHIP_CONFIG.in_stock;
-  const pct = min > 0 ? Math.min(Math.round((current / min) * 100), 999) : current > 0 ? 100 : 0;
   return (
     <TooltipProvider>
       <Tooltip>
@@ -237,14 +228,12 @@ export function StockStatusChip({
           >
             {cfg.icon}
             {showLabel && <span>{cfg.label}</span>}
-            <span className="text-[10px] tabular-nums opacity-80">· {pct}%</span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-0.5 text-xs">
             <p>
-              <strong>{current.toLocaleString('pt-BR')}</strong> em estoque · mínimo{' '}
-              <strong>{min.toLocaleString('pt-BR')}</strong>
+              <strong>{current.toLocaleString('pt-BR')}</strong> un. em estoque
             </p>
             {reserved > 0 && (
               <p className="text-warning">{reserved.toLocaleString('pt-BR')} reservadas</p>

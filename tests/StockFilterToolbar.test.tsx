@@ -34,18 +34,14 @@ const defaultProps = {
 };
 
 
-// TODO(test-debt): 4 testes falham — placeholder do componente mudou.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip("StockFilterToolbar", () => {
+describe("StockFilterToolbar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("renders search input", () => {
     render(<StockFilterToolbar {...defaultProps} />);
-    expect(screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)... ")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)...")).toBeInTheDocument();
   });
 
   it("renders quantity input", () => {
@@ -61,13 +57,13 @@ describe.skip("StockFilterToolbar", () => {
 
   it("renders search and quantity inputs", () => {
     render(<StockFilterToolbar {...defaultProps} />);
-    expect(screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)... ")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)...")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Preciso de X un...")).toBeInTheDocument();
   });
 
   it("debounces search input", async () => {
     render(<StockFilterToolbar {...defaultProps} />);
-    const input = screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)... ");
+    const input = screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)...");
     fireEvent.change(input, { target: { value: "caneta" } });
     await waitFor(() => {
       expect(defaultProps.onUpdateFilter).toHaveBeenCalledWith("search", "caneta");
@@ -126,7 +122,7 @@ describe.skip("StockFilterToolbar", () => {
     };
     render(<StockFilterToolbar {...defaultProps} filters={activeFilters} />);
     // Clear search via the X button inside the search input
-    const clearButton = screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)... ").parentElement?.querySelector("button");
+    const clearButton = screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)...").parentElement?.querySelector("button");
     if (clearButton) fireEvent.click(clearButton);
     // search should be cleared locally
   });
