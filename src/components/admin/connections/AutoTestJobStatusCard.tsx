@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, CheckCircle2, XCircle, RefreshCw, Clock, Repeat2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -63,11 +63,21 @@ export function AutoTestJobStatusCard() {
   }, [fetchRuns]);
 
   const lastRun = runs[0];
-  const last24 = runs.filter((r) => Date.now() - new Date(r.run_started_at).getTime() < 86_400_000);
-  const total24 = last24.reduce((acc, r) => acc + r.total_tested, 0);
-  const ok24 = last24.reduce((acc, r) => acc + r.ok_count, 0);
-  const fail24 = last24.reduce((acc, r) => acc + r.fail_count, 0);
-  const successRate24 = total24 > 0 ? Math.round((ok24 / total24) * 100) : null;
+  const { ok24, fail24, successRate24, runsCount24 } = useMemo(() => {
+    const last24 = runs.filter(
+      (r) => Date.now() - new Date(r.run_started_at).getTime() < 86_400_000,
+    );
+    const t = last24.reduce((acc, r) => acc + r.total_tested, 0);
+    const ok = last24.reduce((acc, r) => acc + r.ok_count, 0);
+    const fail = last24.reduce((acc, r) => acc + r.fail_count, 0);
+    return {
+      total24: t,
+      ok24: ok,
+      fail24: fail,
+      successRate24: t > 0 ? Math.round((ok / t) * 100) : null,
+      runsCount24: last24.length,
+    };
+  }, [runs]);
 
   return (
     <div className="space-y-4 rounded-lg border bg-card p-4">
@@ -157,7 +167,7 @@ export function AutoTestJobStatusCard() {
                 {successRate24 !== null ? `${successRate24}%` : '—'}
               </div>
               <div className="text-[11px] tabular-nums text-muted-foreground">
-                {ok24} OK · {fail24} falha · {last24.length} runs
+                {ok24} OK · {fail24} falha · {runsCount24} runs
               </div>
             </div>
           </div>
