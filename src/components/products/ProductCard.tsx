@@ -45,7 +45,6 @@ import {
   getActiveColorName,
   type ActiveColorFilter,
 } from '@/utils/color-image-resolver';
-import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
 import { ProductSales90dButton } from './ProductSales90dButton';
 import type { VariantActionMode } from './VariantPickerDialog';
@@ -436,13 +435,7 @@ export const ProductCard = memo(
       ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)
       : 0;
     const currentVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
-    const matchedHighlightColor =
-      currentVariant?.hex ||
-      resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
-    const _hasHighlightedColor = !!matchedHighlightColor;
-
     const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
-    const _activeColorHex = currentVariant?.hex || null;
 
     // Se houver uma cor ativa (selecionada ou filtrada), forçamos a imagem dessa cor
     const currentImageUrl = useMemo(() => {
@@ -493,8 +486,6 @@ export const ProductCard = memo(
       effectiveImageUrl !== '/placeholder.svg'
         ? getCdnUrl(effectiveImageUrl, 'card')
         : '/placeholder.svg';
-    const _hasNoImage = effectiveImageUrl === '/placeholder.svg';
-
     const cardSrcSet =
       effectiveImageUrl !== '/placeholder.svg' &&
       (effectiveImageUrl === product.primary_image_url ||

@@ -18,7 +18,6 @@ import {
   getActiveColorName,
   type ActiveColorFilter,
 } from '@/utils/color-image-resolver';
-import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -154,7 +153,7 @@ export const ProductTableView = memo(function ProductTableView({
   onToggleCompare,
   canAddToCompare = true,
   onShareProduct,
-  highlightColors = [],
+  highlightColors: _highlightColors = [],
   activeColorFilter,
   selectionMode,
   selectedIds,
@@ -512,11 +511,6 @@ export const ProductTableView = memo(function ProductTableView({
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             const activeColorName = getActiveColorName(product, activeColorFilter);
             const isSelected = selectionMode && selectedIds?.has(product.id);
-            const _matchedColor = resolveHighlightHex(
-              product.colors,
-              activeColorFilter,
-              highlightColors,
-            );
 
             return (
               <div

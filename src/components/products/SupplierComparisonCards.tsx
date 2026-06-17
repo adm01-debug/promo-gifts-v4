@@ -31,8 +31,6 @@ export function SupplierComparisonCards({
     (a, b) => b.avg_daily_depletion_7d - a.avg_daily_depletion_7d,
   );
 
-  const bestVelocity = sorted[0]?.avg_daily_depletion_7d ?? 0;
-
   return (
     <div className="space-y-1.5">
       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -44,8 +42,6 @@ export function SupplierComparisonCards({
             supplierNames.get(v.supplier_id) ?? `Fornecedor ${v.supplier_id.slice(0, 6)}`;
           const trend = v.velocity_trend;
           const isBest = idx === 0 && sorted.length > 1;
-          const _sharePercent =
-            bestVelocity > 0 ? Math.round((v.avg_daily_depletion_7d / bestVelocity) * 100) : 0;
 
           return (
             <div
