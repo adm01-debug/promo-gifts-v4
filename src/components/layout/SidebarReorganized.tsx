@@ -435,3 +435,4 @@ export const SidebarReorganized = React.memo(
     );
   }),
 );
+SidebarReorganized.displayName = 'SidebarReorganized';
