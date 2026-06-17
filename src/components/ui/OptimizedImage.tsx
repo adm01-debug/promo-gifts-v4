@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ImageOff, Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { getBlurhashDominantColor } from '@/utils/image-utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -57,8 +58,7 @@ export function OptimizedImage({
       }
       const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
       if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
+        logger.info(
           `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
         );
       }
@@ -72,8 +72,7 @@ export function OptimizedImage({
       url.searchParams.set('blur', '10');
       const thumbUrl = url.toString();
       if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
+        logger.info(
           `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
         );
       }
@@ -83,8 +82,7 @@ export function OptimizedImage({
     if (src.includes('/storage/v1/object/public/')) {
       const thumbUrl = `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
       if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
+        logger.info(
           `[OptimizedImage] Supabase Storage detected. Rule: SUPABASE_TRANSFORM. Generated thumbnail: ${thumbUrl}`,
         );
       }
@@ -166,7 +164,7 @@ export function OptimizedImage({
         {
           aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto',
           contain: 'layout paint',
-          backgroundColor: (!isLoaded && blurhashColor) ? blurhashColor : undefined,
+          backgroundColor: !isLoaded && blurhashColor ? blurhashColor : undefined,
           transition: 'background-color 0.3s ease',
         } as React.CSSProperties
       }
