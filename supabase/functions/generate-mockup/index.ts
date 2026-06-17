@@ -142,12 +142,20 @@ async function compositeImages(
   ]);
 
   // BUG-A15 FIX: const/let em vez de var
-  // Product -- cover-fill crop
+  // AUDIT 2026-06-17 — WYSIWYG parity: the on-screen preview (LogoPreviewCanvas)
+  // renders the product with `object-contain` on a neutral background and positions
+  // the logo as a percentage of that full square frame. The previous cover-fill crop
+  // here zoomed/cropped the product, so the generated mockup did NOT match the
+  // preview and the logo's %-position drifted (worst on non-square products: mugs,
+  // pens, bottles). Switch to contain + white letterbox so the output mirrors the
+  // preview frame and nothing on the product gets cropped.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
   const pa = prodBmp.width / prodBmp.height;
-  let sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
-  if (pa > 1) { sw = prodBmp.height; sx = (prodBmp.width - sw) / 2; }
-  else        { sh = prodBmp.width;  sy = (prodBmp.height - sh) / 2; }
-  ctx.drawImage(prodBmp, sx, sy, sw, sh, 0, 0, CANVAS_PX, CANVAS_PX);
+  let dw = CANVAS_PX, dh = CANVAS_PX, dx = 0, dy = 0;
+  if (pa > 1) { dh = CANVAS_PX / pa; dy = (CANVAS_PX - dh) / 2; }
+  else        { dw = CANVAS_PX * pa; dx = (CANVAS_PX - dw) / 2; }
+  ctx.drawImage(prodBmp, 0, 0, prodBmp.width, prodBmp.height, dx, dy, dw, dh);
 
   // Logo -- positioned, rotated, scaled
   const cx = (posXPct / 100) * CANVAS_PX;
