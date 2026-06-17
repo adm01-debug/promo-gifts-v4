@@ -38,6 +38,7 @@ import { ColorSwatchBar, type ColorFilterSelection } from '@/components/filters/
 import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface VisualSearchResult {
   analysis: {
@@ -220,10 +221,7 @@ export default function VisualSearchPage() {
 
   const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Formato inválido. Selecione uma imagem (JPG, PNG, WEBP, GIF).');
       return;
@@ -238,12 +236,17 @@ export default function VisualSearchPage() {
     }
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       const base64 = e.target?.result as string;
       setPreviewUrl(base64);
       processImage(base64);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) handleFile(file);
   };
 
   const processImage = async (base64: string, manualKeywords?: string) => {
@@ -532,7 +535,7 @@ export default function VisualSearchPage() {
                       e.preventDefault();
                       setIsDragging(false);
                       const file = e.dataTransfer.files?.[0];
-                      if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
+                      if (file) handleFile(file);
                     }}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -775,7 +778,7 @@ export default function VisualSearchPage() {
                   e.preventDefault();
                   setIsDragging(false);
                   const file = e.dataTransfer.files?.[0];
-                  if (file) handleFileUpload({ target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>);
+                  if (file) handleFile(file);
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
@@ -1029,7 +1032,7 @@ export default function VisualSearchPage() {
                                     {/* Original Texture Snippet */}
                                     <div className="flex-1 flex flex-col items-center gap-2">
                                       <div className="h-24 w-24 rounded-full border-2 border-white/50 overflow-hidden shadow-2xl bg-black">
-                                        <img src={previewUrl || '/placeholder.svg'} className="h-full w-full object-cover scale-[2.5]" alt="Original Texture" />
+                                        <OptimizedImage src={previewUrl || '/placeholder.svg'} alt="Original Texture" className="object-cover scale-[2.5]" containerClassName="h-full w-full" />
                                       </div>
                                       <span className="text-[8px] font-black text-white uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded">Sua Foto</span>
                                     </div>
@@ -1039,7 +1042,7 @@ export default function VisualSearchPage() {
                                     {/* Catalog Texture Snippet */}
                                     <div className="flex-1 flex flex-col items-center gap-2">
                                       <div className="h-24 w-24 rounded-full border-2 border-primary/50 overflow-hidden shadow-2xl bg-white">
-                                        <img src={product.images?.[0] || '/placeholder.svg'} className="h-full w-full object-contain scale-[2.5]" alt="Catalog Texture" />
+                                        <OptimizedImage src={getCdnUrl(product.images?.[0], 'card') || '/placeholder.svg'} alt="Catalog Texture" className="object-contain scale-[2.5]" containerClassName="h-full w-full" />
                                       </div>
                                       <span className="text-[8px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded backdrop-blur-sm">Catálogo</span>
                                     </div>
