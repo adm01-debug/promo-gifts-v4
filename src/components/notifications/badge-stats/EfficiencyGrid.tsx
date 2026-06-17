@@ -58,7 +58,7 @@ export function EfficiencyGrid({
           </span>
         ))}
         {Object.entries(byTrigger).map(([source, count]) => (
-          <span key={source + '-val'} className="text-right tabular-nums">
+          <span key={`${source}-val`} className="text-right tabular-nums">
             {count}
           </span>
         ))}
@@ -74,7 +74,7 @@ export function EfficiencyGrid({
           </span>
         ))}
         {Object.entries(byFetch).map(([type, count]) => (
-          <span key={type + '-val'} className="text-right tabular-nums">
+          <span key={`${type}-val`} className="text-right tabular-nums">
             {count}
           </span>
         ))}

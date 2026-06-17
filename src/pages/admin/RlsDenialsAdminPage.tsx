@@ -259,7 +259,7 @@ export default function RlsDenialsAdminPage() {
                   {stats.topUsers.map(([uid, v]) => (
                     <li key={uid} className="flex items-center justify-between">
                       <span className="truncate" title={uid}>
-                        {v.email ?? uid.slice(0, 8) + '…'}
+                        {v.email ?? `${uid.slice(0, 8)}…`}
                       </span>
                       <Badge variant="destructive">{v.count}</Badge>
                     </li>
