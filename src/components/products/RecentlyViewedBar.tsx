@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface RecentlyViewedBarProps {
   className?: string;
@@ -65,11 +66,11 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                         'hover:scale-110 hover:shadow-md',
                       )}
                     >
-                      <img
+                      <OptimizedImage
                         src={product.images[0]}
                         alt={product.name}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
+                        className="object-cover"
+                        containerClassName="h-full w-full"
                       />
                     </button>
                   </TooltipTrigger>

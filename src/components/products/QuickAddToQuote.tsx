@@ -11,6 +11,7 @@ import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
 import type { ExternalVariantStock } from '@/hooks/products';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -241,10 +242,11 @@ export function QuickAddToQuote({
             {selectedVariant && (
               <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/40 p-2">
                 {selectedVariant.selected_thumbnail ? (
-                  <img
+                  <OptimizedImage
                     src={`${selectedVariant.selected_thumbnail}/thumbnail`}
                     alt={selectedVariant.color_name ?? ''}
-                    className="h-7 w-7 rounded-md border border-border/50 object-cover"
+                    className="rounded-md border border-border/50 object-cover"
+                    containerClassName="h-7 w-7"
                   />
                 ) : selectedVariant.color_hex ? (
                   <div

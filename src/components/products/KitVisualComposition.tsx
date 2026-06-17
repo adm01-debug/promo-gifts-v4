@@ -4,6 +4,7 @@
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Package } from 'lucide-react';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 export interface KitItem {
   id: string;
@@ -31,11 +32,11 @@ export function KitVisualComposition({ items, className }: KitVisualCompositionP
         <Card key={item.id} className="overflow-hidden">
           <div className="flex aspect-square items-center justify-center bg-muted">
             {item.imageUrl ? (
-              <img
+              <OptimizedImage
                 src={item.imageUrl}
                 alt={item.name}
-                className="h-full w-full object-cover"
-                loading="lazy"
+                className="object-cover"
+                containerClassName="h-full w-full"
               />
             ) : (
               <Package className="h-8 w-8 text-muted-foreground" />
