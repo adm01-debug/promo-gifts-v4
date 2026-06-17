@@ -419,8 +419,8 @@ export function VariantStockTable({
           if (
             risk.atRisk &&
             risk.projectedStock !== null &&
-            targetQuantity != null &&
-            variant.avgDailySales != null
+            typeof targetQuantity === 'number' &&
+            typeof variant.avgDailySales === 'number'
           ) {
             effectiveStatus = 'low_stock';
             projection = {
