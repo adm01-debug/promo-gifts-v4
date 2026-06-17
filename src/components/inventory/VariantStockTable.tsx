@@ -27,6 +27,19 @@ import {
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
+import {
+  computeRuptureRisk,
+  DEFAULT_RUPTURE_HORIZON,
+  RUPTURE_HORIZON_OPTIONS,
+  type RuptureHorizonDays,
+} from '@/lib/inventory/rupture-risk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
@@ -35,6 +48,7 @@ import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVi
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+const RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
 
 /**
  * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
