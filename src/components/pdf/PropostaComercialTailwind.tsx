@@ -7,7 +7,7 @@
  *  a variável `let itemIndex` acumulava o dobro dos índices na segunda passagem,
  *  causando numeração errada das linhas na tabela do PDF.
  */
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { ProposalTemplateData, ProposalItem } from './ProposalHtmlTemplate';
 import { ProposalHeader } from './proposal/ProposalHeader';
 import { ProposalClientBar } from './proposal/ProposalClientBar';
