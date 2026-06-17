@@ -16,6 +16,8 @@ import { ShareContactSelector, type ShareContactSelection } from './ShareContact
 import { WhatsAppPreview } from './WhatsAppPreview';
 import { openWhatsAppShare } from './whatsapp';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface ShareAllColorsDialogProps {
   open: boolean;
@@ -188,11 +190,11 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
                         >
                           {/* Color thumbnail */}
                           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-secondary">
-                            <img
-                              src={thumb}
+                            <OptimizedImage
+                              src={getCdnUrl(thumb, 'thumbnail')}
                               alt={color.name}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
+                              className="object-cover"
+                              containerClassName="h-full w-full"
                             />
                             {isSelected && (
                               <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
