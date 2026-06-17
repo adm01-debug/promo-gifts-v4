@@ -56,6 +56,15 @@ export function PresentationMode({
     setShowGrid(false);
   }, []);
 
+  const exitFullscreen = useCallback(() => {
+    document.exitFullscreen?.();
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) exitFullscreen();
+    else containerRef.current?.requestFullscreen?.();
+  }, [exitFullscreen, containerRef]);
+
   // Keyboard navigation
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -97,8 +106,17 @@ export function PresentationMode({
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goNext, goPrev, goTo, totalSlides, onClose, showGrid, isFullscreen]);
+  }, [
+    goNext,
+    goPrev,
+    goTo,
+    totalSlides,
+    onClose,
+    showGrid,
+    isFullscreen,
+    exitFullscreen,
+    toggleFullscreen,
+  ]);
 
   // Hide cursor after inactivity
   useEffect(() => {
@@ -113,16 +131,6 @@ export function PresentationMode({
       clearTimeout(cursorTimer.current);
     };
   }, []);
-
-  // Fullscreen API
-  function toggleFullscreen() {
-    if (document.fullscreenElement) exitFullscreen();
-    else containerRef.current?.requestFullscreen?.();
-  }
-
-  function exitFullscreen() {
-    document.exitFullscreen?.();
-  }
 
   useEffect(() => {
     function onFsChange() {
