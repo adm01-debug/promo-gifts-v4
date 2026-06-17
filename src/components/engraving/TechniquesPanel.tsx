@@ -53,21 +53,6 @@ const CATEGORIA_COLORS: Record<string, string> = {
   transfer: 'bg-success/10 text-success border-success/20',
 } as const;
 
-const CATEGORIA_LABELS: Record<string, string> = {
-  impression: 'Impressão',
-  engraving: 'Gravação',
-  textile: 'Têxtil',
-  embroidery: 'Bordado',
-  transfer: 'Transfer',
-} as const;
-
-const CATEGORIA_COLORS: Record<string, string> = {
-  impression: 'bg-info/10 text-info border-info/20',
-  engraving: 'bg-warning/10 text-warning border-warning/20',
-  textile: 'bg-primary/10 text-primary border-primary/20',
-  embroidery: 'bg-primary/10 text-primary border-primary/20',
-  transfer: 'bg-success/10 text-success border-success/20',
-} as const;
 
 export function TechniquesPanel() {
   const [searchQuery, setSearchQuery] = useState('');
