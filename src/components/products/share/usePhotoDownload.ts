@@ -54,8 +54,7 @@ export function usePhotoDownload() {
           title: 'Download concluído',
           description: `${images.length} foto(s) baixada(s)`,
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_e: unknown) {
+      } catch {
         toast({
           title: 'Erro no download',
           description: 'Não foi possível baixar as fotos',

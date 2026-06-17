@@ -107,23 +107,6 @@ function StatCard({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function StatCardSkeleton() {
-  return (
-    <Card className="border-border/50">
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-center gap-3">
-          <div className="shimmer h-10 w-10 rounded-lg sm:h-11 sm:w-11" />
-          <div className="space-y-2">
-            <div className="shimmer h-6 w-16 rounded" style={{ animationDelay: '100ms' }} />
-            <div className="shimmer h-4 w-24 rounded" style={{ animationDelay: '200ms' }} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function NoveltyStatsCards() {
   const {
     data: stats,
