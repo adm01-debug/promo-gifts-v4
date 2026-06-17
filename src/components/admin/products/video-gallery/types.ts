@@ -122,20 +122,21 @@ export function extractThumbnailFromVideo(file: File): Promise<Blob | null> {
   });
 }
 
+const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+const YOUTUBE_URL_PATTERNS = [
+  /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+];
+
 /**
  * Parse YouTube URL or ID and return the video ID, or null if not valid.
  */
 export function parseYouTubeId(input: string): string | null {
   if (!input) return null;
-  // Already an ID (11 chars alphanumeric + - _)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) return input.trim();
-  // URL patterns
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const p of patterns) {
-    const m = input.match(p);
+  const trimmed = input.trim();
+  if (YOUTUBE_ID_RE.test(trimmed)) return trimmed;
+  for (const p of YOUTUBE_URL_PATTERNS) {
+    const m = trimmed.match(p);
     if (m) return m[1];
   }
   return null;

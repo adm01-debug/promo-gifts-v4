@@ -5,6 +5,11 @@ import { toast } from 'sonner';
 import { type AppRole, type UserWithRole } from './types';
 import { isDuplicateAccountError } from '@/lib/auth/is-duplicate-account-error';
 
+const HAS_UPPERCASE_RE = /[A-Z]/;
+const HAS_LOWERCASE_RE = /[a-z]/;
+const HAS_DIGIT_RE = /[0-9]/;
+const HAS_SPECIAL_RE = /[!@#$%^&*(),.?":{}|<>]/;
+
 /**
  * Forma explícita do row de `profiles` com o embed `user_roles(role)`.
  * O relacionamento profiles↔user_roles (via user_id) não é reconhecido pelos
@@ -112,10 +117,10 @@ export function useUserManagement() {
       return false;
     }
     if (
-      !/[A-Z]/.test(form.password) ||
-      !/[a-z]/.test(form.password) ||
-      !/[0-9]/.test(form.password) ||
-      !/[!@#$%^&*(),.?":{}|<>]/.test(form.password)
+      !HAS_UPPERCASE_RE.test(form.password) ||
+      !HAS_LOWERCASE_RE.test(form.password) ||
+      !HAS_DIGIT_RE.test(form.password) ||
+      !HAS_SPECIAL_RE.test(form.password)
     ) {
       toast.error('A senha deve conter maiúscula, minúscula, número e caractere especial');
       return false;

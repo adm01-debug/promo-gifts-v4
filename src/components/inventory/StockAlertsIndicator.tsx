@@ -27,6 +27,8 @@ import {
   type StockNotificationKind,
 } from '@/hooks/products/useStockNotifications';
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Sino de ESTOQUE do header (`aria-label="Alertas de estoque"`).
  *
@@ -64,9 +66,7 @@ function getSince(period: DatePeriod): string | null {
 function formatEventDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   try {
-    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
-      ? `${dateStr}T12:00:00`
-      : dateStr;
+    const normalized = DATE_ONLY_RE.test(dateStr) ? `${dateStr}T12:00:00` : dateStr;
     const d = new Date(normalized);
     if (isNaN(d.getTime())) return '';
     return d.toLocaleDateString('pt-BR', {
@@ -264,8 +264,7 @@ export function StockAlertsIndicator() {
     return 'bg-primary';
   }, [counts]);
 
-  const dismiss = (id: string) =>
-    setDismissedIds((prev) => new Set([...prev, id]));
+  const dismiss = (id: string) => setDismissedIds((prev) => new Set([...prev, id]));
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -392,7 +391,9 @@ export function StockAlertsIndicator() {
                       alt=""
                       className="h-10 w-10 flex-shrink-0 rounded-lg border border-border/30 bg-background object-contain p-0.5"
                       loading="lazy"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                   ) : (
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-muted/40">
@@ -410,7 +411,7 @@ export function StockAlertsIndicator() {
                       <div className="flex shrink-0 flex-col items-end gap-0.5">
                         {getKindBadge(item.kind)}
                         {item.eventDate && (
-                          <span className="tabular-nums text-[9px] text-muted-foreground/80">
+                          <span className="text-[9px] tabular-nums text-muted-foreground/80">
                             {formatEventDate(item.eventDate)}
                           </span>
                         )}
