@@ -30,7 +30,7 @@ export function QuantityCalculator({
   isLoading = false,
 }: QuantityCalculatorProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    onQuantityChange(Math.max(minQuantity, parseInt(e.target.value) || minQuantity));
+    onQuantityChange(Math.max(minQuantity, parseInt(e.target.value, 10) || minQuantity));
 
   if (compact) {
     return (

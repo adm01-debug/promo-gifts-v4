@@ -64,7 +64,7 @@ export function SecuritySettingsCard({ settings, onUpdate }: SecuritySettingsCar
               type="number"
               min={0}
               value={settings?.max_failed_attempts ?? 5}
-              onChange={(e) => onUpdate({ max_failed_attempts: parseInt(e.target.value) || 0 })}
+              onChange={(e) => onUpdate({ max_failed_attempts: parseInt(e.target.value, 10) || 0 })}
               className="w-32"
             />
           </div>
@@ -75,7 +75,7 @@ export function SecuritySettingsCard({ settings, onUpdate }: SecuritySettingsCar
               min={1}
               value={settings?.lockout_duration_minutes ?? 15}
               onChange={(e) =>
-                onUpdate({ lockout_duration_minutes: parseInt(e.target.value) || 15 })
+                onUpdate({ lockout_duration_minutes: parseInt(e.target.value, 10) || 15 })
               }
               className="w-32"
             />

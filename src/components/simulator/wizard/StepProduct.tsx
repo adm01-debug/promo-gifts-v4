@@ -114,7 +114,7 @@ export function StepProduct({ wizard }: StepProductProps) {
           <Input
             type="number"
             value={wizard.quantity}
-            onChange={(e) => wizard.setQuantity(parseInt(e.target.value) || 1)}
+            onChange={(e) => wizard.setQuantity(parseInt(e.target.value, 10) || 1)}
             min={1}
             className="h-9 w-24 rounded-xl text-center text-lg font-bold"
           />

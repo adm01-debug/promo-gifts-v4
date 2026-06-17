@@ -91,7 +91,7 @@ export function AiQuotaManager() {
                       onChange={(e) =>
                         setEditing((prev) => ({
                           ...prev,
-                          [q.id]: { limit: parseInt(e.target.value) || 0, unlimited: false },
+                          [q.id]: { limit: parseInt(e.target.value, 10) || 0, unlimited: false },
                         }))
                       }
                     />

@@ -392,7 +392,7 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
     }
 
     if (dateRange !== 'all') {
-      const days = parseInt(dateRange);
+      const days = parseInt(dateRange, 10);
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() + days);
       items = items.filter((e) => new Date(e.expectedDate) <= cutoff);

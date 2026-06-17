@@ -153,7 +153,7 @@ export function MultiEngravingResult({
               min={1}
               max={50000}
               value={quantity}
-              onChange={(e) => onQuantityChange(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => onQuantityChange(Math.max(1, parseInt(e.target.value, 10) || 1))}
               className="w-28 text-right"
             />
             <span className="text-sm text-muted-foreground">unidades</span>

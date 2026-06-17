@@ -170,7 +170,7 @@ export default function AdvancedPriceSearchPage() {
               <FilterSection title="Tiragem Mínima" icon={Hash}>
                 <Select
                   value={filters.minQuantity.toString()}
-                  onValueChange={(v) => updateFilter('minQuantity', parseInt(v))}
+                  onValueChange={(v) => updateFilter('minQuantity', parseInt(v, 10))}
                 >
                   <SelectTrigger>
                     <SelectValue />

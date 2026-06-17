@@ -48,16 +48,16 @@ export function validateCpfDigits(value: string): boolean {
   if (/^(\d)\1{10}$/.test(digits)) return false; // todos iguais
 
   let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i], 10) * (10 - i);
   let check = 11 - (sum % 11);
   if (check >= 10) check = 0;
-  if (parseInt(digits[9]) !== check) return false;
+  if (parseInt(digits[9], 10) !== check) return false;
 
   sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i], 10) * (11 - i);
   check = 11 - (sum % 11);
   if (check >= 10) check = 0;
-  return parseInt(digits[10]) === check;
+  return parseInt(digits[10], 10) === check;
 }
 
 /** Valida dígitos verificadores de CNPJ */
@@ -68,15 +68,15 @@ export function validateCnpjDigits(value: string): boolean {
 
   const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   let sum = 0;
-  for (let i = 0; i < 12; i++) sum += parseInt(digits[i]) * weights1[i];
+  for (let i = 0; i < 12; i++) sum += parseInt(digits[i], 10) * weights1[i];
   let check = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (parseInt(digits[12]) !== check) return false;
+  if (parseInt(digits[12], 10) !== check) return false;
 
   const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   sum = 0;
-  for (let i = 0; i < 13; i++) sum += parseInt(digits[i]) * weights2[i];
+  for (let i = 0; i < 13; i++) sum += parseInt(digits[i], 10) * weights2[i];
   check = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  return parseInt(digits[13]) === check;
+  return parseInt(digits[13], 10) === check;
 }
 
 /** Valida chave PIX conforme o tipo. Retorna mensagem de erro ou null se válido. */

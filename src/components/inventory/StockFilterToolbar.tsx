@@ -122,7 +122,7 @@ export function StockFilterToolbar({
   // Debounce quantity
   useEffect(() => {
     const t = setTimeout(() => {
-      const num = parseInt(quantityInput) || 0;
+      const num = parseInt(quantityInput, 10) || 0;
       onUpdateFilter('minQuantityNeeded', num > 0 ? num : undefined);
     }, 500);
     return () => clearTimeout(t);

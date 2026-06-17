@@ -55,7 +55,7 @@ export function NoveltiesSection() {
     let filtered = [...allNovelties];
 
     if (periodFilter !== 'all') {
-      const maxDays = parseInt(periodFilter);
+      const maxDays = parseInt(periodFilter, 10);
       filtered = filtered.filter((p) => {
         const elapsed = Math.floor((Date.now() - new Date(p.detected_at).getTime()) / 86400000);
         return elapsed <= maxDays;

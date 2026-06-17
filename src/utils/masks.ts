@@ -21,18 +21,18 @@ export function validateCnpj(value: string): boolean {
   if (/^(\d)\1{13}$/.test(digits)) return false;
 
   const calc = (slice: string, weights: number[]) =>
-    weights.reduce((sum, w, i) => sum + parseInt(slice[i]) * w, 0);
+    weights.reduce((sum, w, i) => sum + parseInt(slice[i], 10) * w, 0);
 
   const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 
   let remainder = calc(digits, w1) % 11;
   const d1 = remainder < 2 ? 0 : 11 - remainder;
-  if (parseInt(digits[12]) !== d1) return false;
+  if (parseInt(digits[12], 10) !== d1) return false;
 
   remainder = calc(digits, w2) % 11;
   const d2 = remainder < 2 ? 0 : 11 - remainder;
-  return parseInt(digits[13]) === d2;
+  return parseInt(digits[13], 10) === d2;
 }
 
 export function maskCep(value: string): string {
