@@ -69,6 +69,8 @@ type FnGlobalSearchRow = {
   result_relevance: number;
 };
 
+const SEARCH_SUPPORTED_TYPES = ['product', 'quote'];
+
 export function GlobalSearch({
   isOpen,
   onClose,
@@ -128,8 +130,8 @@ export function GlobalSearch({
     setIsLoading(true);
 
     try {
-      const supportedTypes = ['product', 'quote'];
-      const types = filter && supportedTypes.includes(filter) ? [filter] : supportedTypes;
+      const types =
+        filter && SEARCH_SUPPORTED_TYPES.includes(filter) ? [filter] : SEARCH_SUPPORTED_TYPES;
 
       const { data: rawData, error } = await untypedRpc('fn_global_search', {
         p_term: searchQuery.trim(),

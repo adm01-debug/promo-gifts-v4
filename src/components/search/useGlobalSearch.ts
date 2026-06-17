@@ -83,6 +83,8 @@ export interface QuickSuggestion {
   icon: string;
 }
 
+const RERANK_TYPES: SearchResultType[] = ['quote', 'conversation', 'reminder'];
+
 /**
  * FIX BUG-GS-14: Redact potential PII from search queries before logging to analytics.
  * Patterns: CPF (###.###.###-##), CNPJ (##.###.###/####-##), e-mail addresses.
@@ -672,8 +674,6 @@ export function useGlobalSearch() {
           }));
         allResults.push(...matchedCmds);
       }
-
-      const RERANK_TYPES: SearchResultType[] = ['quote', 'conversation', 'reminder'];
 
       const candidates = allResults
         .filter((r) => RERANK_TYPES.includes(r.type))
