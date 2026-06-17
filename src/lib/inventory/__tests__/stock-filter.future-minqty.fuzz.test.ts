@@ -89,12 +89,16 @@ function makeProduct(rng: () => number, idx: number): ProductStockSummary {
   };
 }
 
+// O cast `as StockFilters` é necessário: ao espalhar `over: Partial<StockFilters>`,
+// TypeScript infere campos obrigatórios como `T | undefined`, o que não é
+// assignável a StockFilters sem o cast. O cast é seguro porque defaultStockFilters
+// provê todos os campos obrigatórios antes do spread de `over`.
 const baseFilters = (over: Partial<StockFilters>): StockFilters => ({
   ...defaultStockFilters,
   sortBy: 'name',
   sortDirection: 'asc',
   ...over,
-});
+}) as StockFilters;
 
 describe('stock-filter.future-minqty.fuzz — invariantes do sub-toggle', () => {
   it('500 simulações respeitam I1, I2, I3 e I4', () => {
