@@ -123,27 +123,27 @@ export function StatusBadge({ status, label, showIcon = true, size, className }:
   );
 }
 
+const STATUS_ALIAS_MAP: Record<string, keyof typeof statusLabels> = {
+  rascunho: 'draft',
+  pendente: 'pending',
+  aguardando: 'pending',
+  enviado: 'sent',
+  aprovado: 'approved',
+  rejeitado: 'rejected',
+  expirado: 'expired',
+  processando: 'processing',
+  emprocessamento: 'processing',
+  entregue: 'delivered',
+  cancelado: 'cancelled',
+  ativo: 'active',
+  inativo: 'inactive',
+} as const;
+
 // Utility function to map any status string to a valid status
 export function mapToStatus(status: string): keyof typeof statusLabels {
   const normalized = status.toLowerCase().replace(/[_-]/g, '');
-
-  const mappings: Record<string, keyof typeof statusLabels> = {
-    rascunho: 'draft',
-    pendente: 'pending',
-    aguardando: 'pending',
-    enviado: 'sent',
-    aprovado: 'approved',
-    rejeitado: 'rejected',
-    expirado: 'expired',
-    processando: 'processing',
-    emprocessamento: 'processing',
-    entregue: 'delivered',
-    cancelado: 'cancelled',
-    ativo: 'active',
-    inativo: 'inactive',
-  };
-
   return (
-    mappings[normalized] || (statusLabels[status] ? (status as keyof typeof statusLabels) : 'info')
+    STATUS_ALIAS_MAP[normalized] ||
+    (statusLabels[status] ? (status as keyof typeof statusLabels) : 'info')
   );
 }
