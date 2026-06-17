@@ -20,6 +20,14 @@ import { cn } from '@/lib/utils';
 import { IntelligenceEmptyState } from './IntelligenceEmptyState';
 
 type SortMode = 'combined' | 'internal' | 'market';
+
+const MEDAL_EMOJIS = ['🥇', '🥈', '🥉'] as const;
+
+const MODE_LABELS: Record<SortMode, string> = {
+  combined: 'Combinado',
+  internal: 'Receita Interna',
+  market: 'Volume Mercado',
+};
 type ViewMode = 'list' | 'chart';
 
 interface PieDatum {
@@ -167,14 +175,6 @@ export function CategoryRanking({
   // Use opacity-based approach so bars follow the skin
   const getBarOpacity = (i: number) => Math.max(1 - i * 0.06, 0.35);
 
-  const medalEmojis = ['🥇', '🥈', '🥉'];
-
-  const modeLabels: Record<SortMode, string> = {
-    combined: 'Combinado',
-    internal: 'Receita Interna',
-    market: 'Volume Mercado',
-  };
-
   const CustomTooltipContent = ({
     active,
     payload,
@@ -215,7 +215,7 @@ export function CategoryRanking({
             </CardTitle>
             <CardDescription className="mt-0.5 text-xs">
               {categoryName ? `Sub-categorias de "${categoryName}"` : 'Categorias mais vendidas'} ·{' '}
-              {modeLabels[sortMode].toLowerCase()} · {days} dias
+              {MODE_LABELS[sortMode].toLowerCase()} · {days} dias
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ export function CategoryRanking({
                                       : 'bg-muted text-muted-foreground',
                                   )}
                                 >
-                                  {i < 3 ? medalEmojis[i] : i + 1}
+                                  {i < 3 ? MEDAL_EMOJIS[i] : i + 1}
                                 </span>
                                 <span className="truncate text-xs font-medium">
                                   {cat.categoryName}
