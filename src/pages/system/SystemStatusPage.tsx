@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -299,9 +299,15 @@ export default function SystemStatusPage() {
     }
   };
 
-  const overallStatus = statuses.every((s) => s.status === 'ok') ? 'ok' : 'error';
-  const crmOkCount = crmTables.filter((t) => t.status === 'ok').length;
-  const crmErrorCount = crmTables.filter((t) => t.status === 'error').length;
+  const overallStatus = useMemo(
+    () => (statuses.every((s) => s.status === 'ok') ? 'ok' : 'error'),
+    [statuses],
+  );
+  const crmOkCount = useMemo(() => crmTables.filter((t) => t.status === 'ok').length, [crmTables]);
+  const crmErrorCount = useMemo(
+    () => crmTables.filter((t) => t.status === 'error').length,
+    [crmTables],
+  );
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1920px] animate-fade-in space-y-3 bg-background px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
