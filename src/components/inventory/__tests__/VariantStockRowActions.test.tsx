@@ -234,14 +234,13 @@ describe('VariantStockRowActions · Comparar', () => {
     renderActions();
     const btn = screen.getByTestId('stock-row-compare');
     await user.click(btn);
-    expect(useComparisonStore.getState().items.length).toBe(1);
+    expect(useComparisonStore.getState().compareItems.length).toBe(1);
 
     await user.click(screen.getByTestId('stock-row-compare'));
-    expect(useComparisonStore.getState().items.length).toBe(0);
+    expect(useComparisonStore.getState().compareItems.length).toBe(0);
   });
 
   it('mostra erro se exceder o limite de 4 itens', async () => {
-    // Pré-popula 4 itens
     const store = useComparisonStore.getState();
     ['a', 'b', 'c', 'd'].forEach((id) => store.addToCompare(id));
 
@@ -270,7 +269,7 @@ describe('VariantStockRowActions · Visualizar', () => {
 describe('VariantStockRowActions · Compartilhar', () => {
   it('usa navigator.share quando disponível', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { ...navigator, share, clipboard: navigator.clipboard });
+    setShare(share);
     const user = userEvent.setup();
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
@@ -279,8 +278,9 @@ describe('VariantStockRowActions · Compartilhar', () => {
   });
 
   it('faz fallback para clipboard quando share não existe', async () => {
+    setShare(undefined);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText } });
+    setClipboard(writeText);
     const user = userEvent.setup();
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
@@ -291,7 +291,7 @@ describe('VariantStockRowActions · Compartilhar', () => {
   it('não exibe erro quando o usuário cancela o share (AbortError)', async () => {
     const abort = Object.assign(new Error('cancel'), { name: 'AbortError' });
     const share = vi.fn().mockRejectedValue(abort);
-    vi.stubGlobal('navigator', { ...navigator, share, clipboard: navigator.clipboard });
+    setShare(share);
     const user = userEvent.setup();
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
