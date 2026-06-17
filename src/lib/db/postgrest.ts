@@ -27,7 +27,11 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   id?: string;
   filters?: Record<string, unknown>;
   select?: string;
-  orderBy?: { column: string; ascending?: boolean };
+  orderBy?: { column: string; ascending?: boolean; nullsFirst?: boolean };
+  // Desempate determinístico opcional (ex.: { column: 'id', ascending: true }).
+  // Sem ele, um ORDER BY por coluna NÃO-única + paginação OFFSET produz ordem
+  // não-determinística entre páginas → produtos duplicados/pulados no scroll.
+  secondaryOrderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
@@ -384,7 +388,19 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
   }
 
   if (options.orderBy && remappedOrderCol) {
-    query = query.order(remappedOrderCol, { ascending: options.orderBy.ascending ?? true });
+    query = query.order(remappedOrderCol, {
+      ascending: options.orderBy.ascending ?? true,
+      ...(options.orderBy.nullsFirst !== undefined
+        ? { nullsFirst: options.orderBy.nullsFirst }
+        : {}),
+    });
+    // Desempate determinístico → estabiliza a paginação OFFSET (sem duplicar/pular linhas).
+    if (options.secondaryOrderBy) {
+      const secondaryCol = remapColumnName(table, options.secondaryOrderBy.column);
+      query = query.order(secondaryCol, {
+        ascending: options.secondaryOrderBy.ascending ?? true,
+      });
+    }
   }
   if (typeof options.limit === 'number') {
     const from = options.offset || 0;
