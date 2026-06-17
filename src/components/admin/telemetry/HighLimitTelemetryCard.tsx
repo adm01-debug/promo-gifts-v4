@@ -84,10 +84,7 @@ export function HighLimitTelemetryCard() {
       p99: p.p99,
       samples: p.samples,
       recordsAvg: p.recordsAvg,
-      ...ERROR_KINDS_FOR_STACK.reduce<Record<string, number>>((acc, kind) => {
-        acc[kind] = p.errorsByKind[kind] ?? 0;
-        return acc;
-      }, {}),
+      ...Object.fromEntries(ERROR_KINDS_FOR_STACK.map((kind) => [kind, p.errorsByKind[kind] ?? 0])),
     }));
   }, [data]);
 
