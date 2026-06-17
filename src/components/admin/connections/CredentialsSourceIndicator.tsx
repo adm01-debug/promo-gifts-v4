@@ -155,11 +155,11 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
 
   return (
     <div
-      className={[
+      className={cn(
         'rounded-lg border bg-card px-4 py-3',
         'flex flex-wrap items-start gap-3',
-        className ?? '',
-      ].join(' ')}
+        className,
+      )}
       role="status"
       aria-live="polite"
       data-testid="credentials-source-indicator"

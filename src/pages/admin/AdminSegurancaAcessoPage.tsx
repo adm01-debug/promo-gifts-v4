@@ -735,7 +735,7 @@ function StatCard({
         {icon}
       </CardHeader>
       <CardContent>
-        <div className={cn('text-2xl font-bold', valueClass ?? '')}>{value}</div>
+        <div className={cn('text-2xl font-bold', valueClass)}>{value}</div>
       </CardContent>
     </Card>
   );

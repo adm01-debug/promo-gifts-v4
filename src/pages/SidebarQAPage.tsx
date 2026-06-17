@@ -85,7 +85,7 @@ function SidebarPreview({ width, dark }: { width: number; dark: boolean }) {
   const collapsed = width < 768;
   return (
     <div
-      className={cn('overflow-hidden rounded-xl border border-border', dark ? 'dark' : '')}
+      className={cn('overflow-hidden rounded-xl border border-border', dark && 'dark')}
       style={{ width: collapsed ? 72 : Math.min(width, 280) }}
     >
       <div className="space-y-3 bg-sidebar p-3 text-sidebar-foreground">

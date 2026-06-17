@@ -71,10 +71,7 @@ export function MarginInsightBadge({
           <TooltipTrigger asChild>
             <Badge
               variant="outline"
-              className={cn(
-                'gap-1.5 border-warning/30 bg-warning/10 text-warning',
-                className ?? '',
-              )}
+              className={cn('gap-1.5 border-warning/30 bg-warning/10 text-warning', className)}
             >
               <Info className="h-3 w-3" />
               <span className="text-[11px] font-medium">

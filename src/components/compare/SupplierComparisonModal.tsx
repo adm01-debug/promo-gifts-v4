@@ -777,7 +777,7 @@ function ComparisonCard({ row, formatCurrency, formatPercent }: ComparisonItemPr
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Pedido Mínimo
             </span>
-            <span className={cn('text-sm font-bold', p.minQuantity > 10 ? 'text-warning' : '')}>
+            <span className={cn('text-sm font-bold', p.minQuantity > 10 && 'text-warning')}>
               {p.minQuantity} un.
             </span>
           </div>

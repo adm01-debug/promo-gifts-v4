@@ -140,13 +140,11 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
   return (
     <Alert
       variant={tone === 'destructive' ? 'destructive' : 'default'}
-      className={
-        tone === 'warning'
-          ? `border-warning/40 bg-warning/5 ${className ?? ''}`
-          : tone === 'info'
-            ? `border-primary/30 bg-primary/5 ${className ?? ''}`
-            : className
-      }
+      className={cn(
+        tone === 'warning' && 'border-warning/40 bg-warning/5',
+        tone === 'info' && 'border-primary/30 bg-primary/5',
+        className,
+      )}
     >
       <Icon className="h-4 w-4" />
       <AlertTitle className="text-sm">{title}</AlertTitle>

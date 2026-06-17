@@ -216,7 +216,7 @@ export function NoveltiesSection() {
                           {item.product_name}
                         </h4>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span className={cn(fresh ? 'font-medium text-brand-primary' : '')}>
+                          <span className={cn(fresh && 'font-medium text-brand-primary')}>
                             {formatDaysAgo(item.detected_at)}
                           </span>
                           {item.supplier_name && (

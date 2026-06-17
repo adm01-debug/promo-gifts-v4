@@ -103,7 +103,7 @@ export function CredentialsSourceFilter({ secrets, className }: Props) {
           >
             <Icon className="h-3 w-3" />
             {c.label}
-            <span className={cn('tabular-nums', active ? '' : 'opacity-70')}>({c.count})</span>
+            <span className={cn('tabular-nums', !active && 'opacity-70')}>({c.count})</span>
           </button>
         );
       })}

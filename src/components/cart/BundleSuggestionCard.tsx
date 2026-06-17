@@ -46,7 +46,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
     <Card
       className={cn(
         'border-primary/20 shadow-sm transition-shadow duration-300 animate-in zoom-in-95 hover:shadow-md',
-        className ?? '',
+        className,
       )}
     >
       <CardHeader className="pb-2">

@@ -235,7 +235,7 @@ export function AIMockupAssistant({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className={cn('flex gap-2', message.role === 'user' ? 'flex-row-reverse' : '')}
+                    className={cn('flex gap-2', message.role === 'user' && 'flex-row-reverse')}
                   >
                     <div
                       className={cn(
