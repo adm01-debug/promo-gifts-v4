@@ -21,7 +21,6 @@ import { Badge } from '@/components/ui/badge';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { deriveOriginalUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 import { isProductKit } from '@/lib/products/kit-detection';
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
@@ -199,7 +198,7 @@ export const ProductCardImage = memo(function ProductCardImage({
                   transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
                 }}
                 containerClassName="h-full w-full"
-                urlOriginal={deriveOriginalUrl(activeSrc)}
+                urlOriginal={product.primary_image_fallback_url || null}
                 priority={priority}
                 onLoad={onImageLoad}
                 {...DEFAULT_IMAGE_CONFIG}
