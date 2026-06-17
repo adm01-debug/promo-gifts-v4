@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface GalleryFullscreenProps {
   open: boolean;
@@ -192,11 +193,11 @@ export function GalleryFullscreen({
                     <Play className="h-4 w-4 text-foreground" />
                   </div>
                 ) : (
-                  <img
+                  <OptimizedImage
                     src={getCdnUrl(media, 'thumbnail')}
                     alt={`${productName} - ${index + 1}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
+                    className="object-cover"
+                    containerClassName="h-full w-full"
                   />
                 )}
               </button>

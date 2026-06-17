@@ -2,7 +2,7 @@
  * GalleryColorVariations — Cards de variações de cor abaixo da galeria
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { ColorTooltipContent, colorTooltipClassName } from '../ColorTooltipContent';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface ColorMedia {
   name: string;
@@ -19,22 +20,6 @@ interface ColorMedia {
   image?: string;
   images?: string[];
   videos?: string[];
-}
-
-function ColorThumb({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={cn(
-        'h-full w-full object-cover transition-all duration-700 ease-out group-hover/color:scale-110',
-        loaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-40 blur-sm',
-      )}
-      onLoad={() => setLoaded(true)}
-      loading="lazy"
-    />
-  );
 }
 
 interface GalleryColorVariationsProps {
@@ -150,9 +135,11 @@ export function GalleryColorVariations({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="h-full w-full">
-                          <ColorThumb
+                          <OptimizedImage
                             src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
                             alt={color.name}
+                            className="object-cover transition-transform duration-700 ease-out group-hover/color:scale-110"
+                            containerClassName="h-full w-full"
                           />
                         </div>
                       </TooltipTrigger>
