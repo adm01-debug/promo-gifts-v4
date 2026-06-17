@@ -235,7 +235,7 @@ export default function ProductMatchPage() {
                 <Separator />
 
                 {/* Match results list */}
-                {matches.length > 0 && matches.length > 0 ? (
+                {matches.length > 0 ? (
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-2">
                       {matches.map((match) => (
