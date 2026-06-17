@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Cloud, CloudOff, Loader2, AlertCircle, RefreshCw, Search, ImageIcon } from 'lucide-react';
+import {
+  Cloud,
+  CloudOff,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  Search,
+  ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -154,9 +164,12 @@ function computeStats(images: CfImage[]): CfStats {
   return stats;
 }
 
+const PAGE_SIZE = 100;
+
 export default function AdminCloudflareImagesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | CfSyncStatus | 'none'>('all');
+  const [page, setPage] = useState(0);
 
   const {
     data: images = [],
@@ -281,13 +294,19 @@ export default function AdminCloudflareImagesPage() {
             <Input
               placeholder="Buscar por produto, CF ID, URL..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               className="pl-9"
             />
           </div>
           <Select
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+            onValueChange={(v) => {
+              setStatusFilter(v as typeof statusFilter);
+              setPage(0);
+            }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
@@ -343,7 +362,7 @@ export default function AdminCloudflareImagesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.slice(0, 500).map((img) => (
+                    filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((img) => (
                       <TableRow key={img.id}>
                         <TableCell>
                           {img.url_cdn ? (
@@ -398,11 +417,40 @@ export default function AdminCloudflareImagesPage() {
                 </TableBody>
               </Table>
             </div>
-            {filtered.length > 500 && (
-              <p className="border-t px-4 py-2 text-xs text-muted-foreground">
-                Exibindo 500 de {filtered.length.toLocaleString('pt-BR')} resultados. Refine o
-                filtro para ver mais.
-              </p>
+            {filtered.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between border-t px-4 py-2">
+                <p className="text-xs text-muted-foreground">
+                  {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} de{' '}
+                  {filtered.length.toLocaleString('pt-BR')} resultados
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="h-7 gap-1 px-2 text-xs"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    Anterior
+                  </Button>
+                  <span className="px-2 text-xs text-muted-foreground">
+                    {page + 1} / {Math.ceil(filtered.length / PAGE_SIZE)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setPage((p) => Math.min(Math.ceil(filtered.length / PAGE_SIZE) - 1, p + 1))
+                    }
+                    disabled={(page + 1) * PAGE_SIZE >= filtered.length}
+                    className="h-7 gap-1 px-2 text-xs"
+                  >
+                    Próxima
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
