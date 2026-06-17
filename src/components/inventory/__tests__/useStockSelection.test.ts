@@ -10,8 +10,7 @@ import { toast } from 'sonner';
 
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { rowKey, useStockSelection } from '../useStockSelection';
-import type { StockSelectionRow } from '../useStockSelection';
+import { rowKey, useStockSelection, type StockSelectionRow } from '../useStockSelection';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 const mockNavigate = vi.fn();
