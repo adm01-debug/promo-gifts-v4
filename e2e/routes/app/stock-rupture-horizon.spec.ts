@@ -53,7 +53,7 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
 
     // 3. Persistência: localStorage guarda o horizonte escolhido.
     const stored = await page.evaluate(() =>
-      window.localStorage.getItem('stock.ruptureHorizonDays'),
+      window.localStorage.getItem('stock.ruptureHorizon'),
     );
     expect(stored).toBe('30');
 
