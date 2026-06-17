@@ -103,8 +103,6 @@ export const STOCK_THRESHOLD_RULES: ReadonlyArray<{
   label: string;
   rule: string;
 }> = [
-  { key: 'healthy', label: 'Adequado', rule: 'estoque atual em nível saudável' },
-  { key: 'low', label: 'Baixo', rule: 'estoque atual em nível baixo' },
-  { key: 'critical', label: 'Crítico', rule: 'estoque atual em nível crítico (próximo do esgotamento)' },
-  { key: 'out', label: 'Sem estoque', rule: 'estoque = 0 (sem reposição em trânsito)' },
+  { key: 'healthy', label: 'Em estoque', rule: 'há saldo disponível na variação' },
+  { key: 'out', label: 'Sem estoque', rule: 'saldo zerado (sem reposição em trânsito)' },
 ];
