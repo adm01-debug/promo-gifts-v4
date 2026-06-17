@@ -16,6 +16,14 @@ interface SpeechRecognitionResult {
   error: string | null;
 }
 
+const SPEECH_ERROR_MESSAGES: Record<string, string> = {
+  'not-allowed': 'Permissao de microfone negada',
+  'no-speech': 'Nenhuma fala detectada',
+  'audio-capture': 'Nao foi possivel capturar audio',
+  network: 'Erro de rede',
+  aborted: 'Reconhecimento cancelado',
+} as const;
+
 export function useSpeechRecognition({
   onResult,
   onError,
@@ -82,15 +90,7 @@ export function useSpeechRecognition({
     };
 
     recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
-      const errorMessages: Record<string, string> = {
-        'not-allowed': 'Permissao de microfone negada',
-        'no-speech': 'Nenhuma fala detectada',
-        'audio-capture': 'Nao foi possivel capturar audio',
-        network: 'Erro de rede',
-        aborted: 'Reconhecimento cancelado',
-      };
-
-      const message = errorMessages[event.error] || `Erro: ${event.error}`;
+      const message = SPEECH_ERROR_MESSAGES[event.error] || `Erro: ${event.error}`;
       setError(message);
       // BUG-VOICE-01 FIX: chama via ref
       onErrorRef.current?.(message);
