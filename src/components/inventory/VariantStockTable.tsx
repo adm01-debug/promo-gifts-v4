@@ -628,11 +628,13 @@ export function VariantStockTable({
           </TableHeader>
           <TableBody>
             {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant }) => (
+              pagedRows.map(({ product, variant, effectiveStatus, projection }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
                   variant={variant}
+                  effectiveStatus={effectiveStatus}
+                  projection={projection}
                 />
               ))
             ) : (
