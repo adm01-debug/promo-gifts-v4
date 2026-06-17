@@ -37,23 +37,24 @@ export const quoteService = {
   },
 
   async fetchQuote(quoteId: string): Promise<Quote | null> {
-    const { data: quoteData, error: qErr } = await supabase
-      // rls-allow: lookup por id; RLS (can_access_quote) valida ownership
-      .from('quotes')
-      .select('*')
-      .eq('id', quoteId)
-      .single();
+    // Both queries depend only on quoteId — run in parallel.
+    const [{ data: quoteData, error: qErr }, { data: itemsData, error: iErr }] = await Promise.all([
+      supabase
+        // rls-allow: lookup por id; RLS (can_access_quote) valida ownership
+        .from('quotes')
+        .select('*')
+        .eq('id', quoteId)
+        .single(),
+      supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quoteId)
+        .order('sort_order', { ascending: true }),
+    ]);
 
     if (qErr) throw qErr;
-    if (!quoteData) return null;
-
-    const { data: itemsData, error: iErr } = await supabase
-      .from('quote_items')
-      .select('*')
-      .eq('quote_id', quoteId)
-      .order('sort_order', { ascending: true });
-
     if (iErr) throw iErr;
+    if (!quoteData) return null;
 
     const itemIds = (itemsData || []).map((i) => i.id);
     let allPersonalizations: Array<Record<string, unknown>> = [];
