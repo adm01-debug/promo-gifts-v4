@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useTecnicasUnificadas, useCategoriasTecnicas } from '@/hooks/simulation';
 import type { TecnicaUnificada, TecnicaFiltros } from '@/types/tecnica-unificada';
+import { cn } from '@/lib/utils';
 
 const CATEGORIA_LABELS: Record<string, string> = {
   impression: 'Impressão',
@@ -114,7 +115,7 @@ export function TechniquesPanel() {
             </CardDescription>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            <RotateCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RotateCcw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Atualizar
           </Button>
         </div>

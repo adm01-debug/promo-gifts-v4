@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { cn } from '@/lib/utils';
 
 export default function ExternalDatabaseTest() {
   const [activeTab, setActiveTab] = useState('companies');
@@ -138,7 +139,7 @@ export default function ExternalDatabaseTest() {
                 disabled={loadingCompanies}
                 className="mb-3"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loadingCompanies ? 'animate-spin' : ''}`} />
+                <RefreshCw className={cn('mr-2 h-4 w-4', loadingCompanies && 'animate-spin')} />
                 Recarregar
               </Button>
               {companiesError && (
@@ -171,7 +172,7 @@ export default function ExternalDatabaseTest() {
                 disabled={loadingProducts}
                 className="mb-3"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loadingProducts ? 'animate-spin' : ''}`} />
+                <RefreshCw className={cn('mr-2 h-4 w-4', loadingProducts && 'animate-spin')} />
                 Recarregar
               </Button>
               {productsError && (

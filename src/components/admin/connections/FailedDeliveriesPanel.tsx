@@ -19,6 +19,7 @@ import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
+import { cn } from '@/lib/utils';
 
 interface FailedDelivery {
   id: string;
@@ -125,7 +126,7 @@ export function FailedDeliveriesPanel() {
               formats={['csv', 'json']}
             />
             <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
             </Button>
           </div>
         </div>

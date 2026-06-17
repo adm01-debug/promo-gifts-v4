@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, ShieldAlert, ShieldQuestion, RefreshCw } from 'lucide-react';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { toErrorMessage } from '@/lib/to-error-message';
+import { cn } from '@/lib/utils';
 
 type BreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN' | 'UNKNOWN';
 
@@ -142,7 +143,7 @@ export function BreakerStatusCard() {
           </Badge>
         </CardTitle>
         <Button variant="outline" size="sm" onClick={fetchStatus} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', loading && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>

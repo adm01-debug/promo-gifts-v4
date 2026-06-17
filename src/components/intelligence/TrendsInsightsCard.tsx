@@ -10,6 +10,7 @@ import { Sparkles, RefreshCw, AlertTriangle, TrendingUp, Lightbulb } from 'lucid
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
+import { cn } from '@/lib/utils';
 
 interface TrendsInsightsCardProps {
   days: number;
@@ -82,7 +83,7 @@ export function TrendsInsightsCard({ days }: TrendsInsightsCardProps) {
           disabled={isFetching}
           aria-label="Regenerar insights"
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
         </Button>
       </CardHeader>
       <CardContent>

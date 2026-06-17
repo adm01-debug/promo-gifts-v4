@@ -323,7 +323,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `notificacoes_${new Date().getTime()}.csv`);
+      link.setAttribute('download', `notificacoes_${Date.now()}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();

@@ -291,7 +291,7 @@ export function VariantStockTable({
   // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
-    const n = Number.parseInt(raw, 10);
+    const n = parseInt(raw, 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
   const [inlineSearch, setInlineSearch] = useState<string>(() =>
@@ -333,7 +333,7 @@ export function VariantStockTable({
   // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
   const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
     const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
-    const n = Number.parseInt(raw, 10) as RuptureHorizonDays;
+    const n = parseInt(raw, 10) as RuptureHorizonDays;
     return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
   });
   useEffect(() => {

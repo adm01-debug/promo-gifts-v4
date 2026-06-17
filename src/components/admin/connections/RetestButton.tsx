@@ -33,7 +33,7 @@ function readPersistedCooldown(key: string | undefined): number {
   try {
     const raw = window.sessionStorage.getItem(STORAGE_PREFIX + key);
     if (!raw) return 0;
-    const parsed = Number.parseInt(raw, 10);
+    const parsed = parseInt(raw, 10);
     if (!Number.isFinite(parsed)) return 0;
     // Drop stale (already expired) entries.
     if (parsed <= Date.now()) {

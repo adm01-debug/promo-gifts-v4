@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentOrgId } from '@/hooks/common';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface WidgetConfig {
   id: string;
@@ -71,7 +72,7 @@ function SortableWidget({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`group relative ${isDragging ? 'shadow-lg ring-2 ring-primary' : ''}`}>
+      <Card className={cn('group relative', isDragging && 'shadow-lg ring-2 ring-primary')}>
         <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
           <Button
             variant="ghost"

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { MedallionPipelineCard } from '@/components/system/MedallionPipelineCard';
+import { cn } from '@/lib/utils';
 
 interface StatusItem {
   name: string;
@@ -210,7 +211,7 @@ export default function SystemStatusPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `diagnostico-sistema-${new Date().getTime()}.json`;
+    a.download = `diagnostico-sistema-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setIsChecking(false);
@@ -356,7 +357,7 @@ export default function SystemStatusPage() {
                     variant="outline"
                     size="sm"
                   >
-                    <RefreshCw className={`mr-2 h-3 w-3 ${isChecking ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={cn('mr-2 h-3 w-3', isChecking && 'animate-spin')} />
                     Verificar
                   </Button>
                   <Button onClick={downloadReport} variant="secondary" size="sm">
@@ -588,9 +589,7 @@ export default function SystemStatusPage() {
                 variant="outline"
                 size="sm"
               >
-                <RefreshCw
-                  className={`mr-1.5 h-3.5 w-3.5 ${isCheckingCrm ? 'animate-spin' : ''}`}
-                />
+                <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', isCheckingCrm && 'animate-spin')} />
                 Re-verificar
               </Button>
             </div>
