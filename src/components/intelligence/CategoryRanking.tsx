@@ -132,7 +132,7 @@ export function CategoryRanking({
 
     const items = top.map((cat, i) => ({
       name:
-        cat.categoryName.length > 18 ? cat.categoryName.substring(0, 18) + '…' : cat.categoryName,
+        cat.categoryName.length > 18 ? `${cat.categoryName.substring(0, 18)}…` : cat.categoryName,
       fullName: cat.categoryName,
       value: getBarValue(cat),
       internalRevenue: cat.internalRevenue,

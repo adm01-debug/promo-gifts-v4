@@ -412,7 +412,7 @@ export function AiRoutingTab() {
                         <span className="w-6 font-mono text-xs text-muted-foreground">
                           {idx + 1}.
                         </span>
-                        <code className="text-xs">{m?.model_id ?? id.slice(0, 8) + '…'}</code>
+                        <code className="text-xs">{m?.model_id ?? `${id.slice(0, 8)}…`}</code>
                         {m?.provider && (
                           <Badge variant="outline" className="h-4 py-0 text-[10px]">
                             {m.provider.display_name}
