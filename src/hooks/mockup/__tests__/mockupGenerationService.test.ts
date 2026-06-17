@@ -104,7 +104,7 @@ beforeEach(() => {
   (toast.warning as ReturnType<typeof vi.fn>).mockClear();
 });
 
-// ─── getTechniquePrompt (pure) ───────────────────────────────────────────────
+// ─── getTechniquePrompt (pure) ──────────────────────────────────────
 describe('getTechniquePrompt', () => {
   it('maps known technique codes to their prompts', () => {
     expect(getTechniquePrompt({ id: '1', name: 'Serigrafia', code: 'silk' })).toMatch(
@@ -128,7 +128,7 @@ describe('getTechniquePrompt', () => {
   });
 });
 
-// ─── saveMockupToDb ──────────────────────────────────────────────────────────
+// ─── saveMockupToDb ───────────────────────────────────────────────
 describe('saveMockupToDb', () => {
   it('persists rotation/scale in area_config and thumbnail_url = mockupUrl (G5/T10)', async () => {
     tableResults['products'] = { data: { id: 'prod-1' }, error: null };
@@ -187,7 +187,7 @@ describe('saveMockupToDb', () => {
   });
 });
 
-// ─── fetchMockupHistory ──────────────────────────────────────────────────────
+// ─── fetchMockupHistory ───────────────────────────────────────────
 describe('fetchMockupHistory', () => {
   it('selects layout_url + area_config, limits to 200, and scopes by owner', async () => {
     tableResults['generated_mockups'] = {
@@ -218,7 +218,7 @@ describe('fetchMockupHistory', () => {
   });
 });
 
-// ─── deleteMockupFromDb ──────────────────────────────────────────────────────
+// ─── deleteMockupFromDb ───────────────────────────────────────────
 describe('deleteMockupFromDb', () => {
   it('applies an owner-scoped filter when userId is provided (T6)', async () => {
     tableResults['generated_mockups'] = { data: null, error: null };
@@ -243,7 +243,7 @@ describe('deleteMockupFromDb', () => {
   });
 });
 
-// ─── generateMockupApi ───────────────────────────────────────────────────────
+// ─── generateMockupApi ────────────────────────────────────────────
 describe('generateMockupApi', () => {
   const baseParams = {
     productImage: 'https://cdn.example.com/product.png',
@@ -327,5 +327,68 @@ describe('generateMockupApi', () => {
         areas: [area({ name: 'Frente' }), area({ name: 'Costas' })],
       }),
     ).rejects.toThrow(/Nenhum mockup gerado/);
+  });
+});
+
+// ─── generateMockupApi → edge payload contract (AUDIT 2026-06-17) ────────────
+// Regression guards for the client→edge contract that silently broke the whole
+// generator (verified against supabase/functions/generate-mockup/index.ts):
+//   • a freshly-uploaded logo is a data: URL and MUST travel as `logoBase64` — a
+//     data: URL placed in `logoUrl` fails the edge's isValidHttpUrl() and the
+//     function returned HTTP 400 on every fresh upload;
+//   • the edge reads `logoWidthCm` / `logoHeightCm` / `techniqueName`, so the
+//     legacy `logoWidth` / `logoHeight` / `technique` keys must no longer be
+//     sent (when they were, the logo always rendered at the 5×3 cm default).
+describe('generateMockupApi → edge payload contract', () => {
+  const baseParams = {
+    productImage: 'https://cdn.example.com/product.png',
+    productName: 'Caneca',
+    technique: silk,
+  };
+
+  const bodyOf = () => invoke.mock.calls[0][1].body as Record<string, unknown>;
+
+  beforeEach(() => {
+    invoke.mockResolvedValue({
+      data: { mockupUrl: 'https://cdn.example.com/out.png' },
+      error: null,
+    });
+  });
+
+  it('routes a freshly-uploaded data: URL logo to logoBase64 (never logoUrl)', async () => {
+    await generateMockupApi({
+      ...baseParams,
+      areas: [area({ logoPreview: 'data:image/png;base64,AAAA' })],
+    });
+    const body = bodyOf();
+    expect(body.logoBase64).toBe('data:image/png;base64,AAAA');
+    expect(body.logoUrl).toBeUndefined();
+  });
+
+  it('routes an HTTPS logo preview to logoUrl (never logoBase64)', async () => {
+    await generateMockupApi({
+      ...baseParams,
+      areas: [area({ logoPreview: 'https://cdn.example.com/logo.png' })],
+    });
+    const body = bodyOf();
+    expect(body.logoUrl).toBe('https://cdn.example.com/logo.png');
+    expect(body.logoBase64).toBeUndefined();
+  });
+
+  it('sends size + technique under the keys the edge reads, and drops legacy keys', async () => {
+    await generateMockupApi({
+      ...baseParams,
+      areas: [area({ logoWidth: 8, logoHeight: 6, logoScale: 120 })],
+    });
+    const body = bodyOf();
+    // new contract — these are what generate-mockup/index.ts actually consumes
+    expect(body.logoWidthCm).toBe(8);
+    expect(body.logoHeightCm).toBe(6);
+    expect(body.logoScale).toBe(120);
+    expect(body.techniqueName).toBe('Serigrafia');
+    // legacy keys must be gone so they can never shadow the contract again
+    expect(body.logoWidth).toBeUndefined();
+    expect(body.logoHeight).toBeUndefined();
+    expect(body.technique).toBeUndefined();
   });
 });

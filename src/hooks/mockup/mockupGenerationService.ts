@@ -286,18 +286,32 @@ async function invokeMockupForArea(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
+  // AUDIT 2026-06-17 — align the payload with the contract the generate-mockup
+  // edge function actually reads (see supabase/functions/generate-mockup/index.ts
+  // and tests/edge-functions/integration/generate-mockup.test.ts):
+  //   1. A freshly-uploaded logo is a data: URL (FileReader.readAsDataURL in
+  //      useMockupGenerator.handleAreaLogoUpload). The edge accepts an HTTPS
+  //      `logoUrl` OR base64 in `logoBase64`; a data: URL placed in `logoUrl`
+  //      fails isValidHttpUrl() and the edge returned HTTP 400 on EVERY upload.
+  //      → route data: URLs to `logoBase64`; pass real HTTPS previews via `logoUrl`.
+  //   2. The edge reads `logoWidthCm` / `logoHeightCm` / `techniqueName`. The old
+  //      `logoWidth` / `logoHeight` / `technique` keys were silently dropped, so
+  //      the logo always rendered at the 5×3 cm default regardless of the sliders.
+  const preview = area.logoPreview ?? '';
+  const isDataUrl = preview.startsWith('data:');
+
   const generateCall = supabase.functions.invoke('generate-mockup', {
     body: {
       productImageUrl: params.productImage,
       productName: params.productName,
-      technique: params.technique,
+      techniqueName: params.technique.name,
       techniquePrompt: getTechniquePrompt(params.technique),
-      logoUrl: area.logoPreview,
+      ...(isDataUrl ? { logoBase64: preview } : { logoUrl: preview }),
       areaName: area.name,
       positionX: area.positionX,
       positionY: area.positionY,
-      logoWidth: area.logoWidth,
-      logoHeight: area.logoHeight,
+      logoWidthCm: area.logoWidth,
+      logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
     },
