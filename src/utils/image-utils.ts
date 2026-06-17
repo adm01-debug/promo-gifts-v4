@@ -246,13 +246,12 @@ export function categorizeImages(images: ProductImageMeta[]): GroupedImages {
  * @param colorCode  supplier_code da cor seleccionada
  */
 export function getColorImages(images: ProductImageMeta[], colorCode: string): ProductImageMeta[] {
-  // Tipos técnicos nunca aparecem na galeria de produto (ADR-001)
-  const TECHNICAL = new Set(['box', 'pouch', 'location', 'area', 'component']);
-
-  // 1) Imagens específicas desta cor (não-técnicas)
+  // 1) Imagens específicas desta cor (não-técnicas, ADR-001)
   const specific = images.filter(
     (i) =>
-      i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
+      i.applies_to_color === true &&
+      i.supplier_code === colorCode &&
+      !TECHNICAL_IMAGE_TYPES.has(i.image_type),
   );
 
   // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
@@ -335,7 +334,8 @@ export const COLOR_SPECIFIC_TYPES: ImageTypeCode[] = ['main', 'gallery', 'detail
 // BLURHASH UTILITIES (zero-dependency)
 // ============================================
 
-const BASE83 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~';
+const BASE83 =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~';
 
 function decode83(str: string, start: number, len: number): number {
   let v = 0;

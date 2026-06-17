@@ -15,6 +15,7 @@ import {
   PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
+import { TECHNICAL_IMAGE_TYPES } from '@/utils/image-utils';
 
 async function fetchProductWithRetry(
   productId: string,
@@ -308,14 +309,12 @@ export async function fetchPromobrindProductById(
     }
   }
   if (imagesAll.length > 0) {
-    // Tipos técnicos que NÃO devem aparecer na galeria do produto.
-    // Alinhado com products.ts (TECHNICAL_IMAGE_TYPES) e ADR-001.
-    const TECHNICAL_IMAGE_TYPES_PDP = new Set(['box', 'pouch', 'location', 'area', 'component']);
+    // Tipos técnicos que NÃO devem aparecer na galeria do produto. (ADR-001)
     const colorImages = imagesAll
-      .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
+      .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const generalImages = imagesAll
-      .filter((img) => !img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
+      .filter((img) => !img.supplier_code && !TECHNICAL_IMAGE_TYPES.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const mainImages = [...colorImages, ...generalImages];
     const primaryImage = mainImages.find((img) => img.is_primary) || mainImages[0];
