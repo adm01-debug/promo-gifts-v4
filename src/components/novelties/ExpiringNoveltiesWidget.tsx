@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Flame, Sparkles, ChevronRight, Package, Building2 } from 'lucide-react';
-import { useNoveltiesWithDetails } from '@/hooks/products';
+import { useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -46,23 +46,16 @@ export function ExpiringNoveltiesWidget() {
       .slice(0, 10);
   }, [allNovelties]);
 
-  // Supplier breakdown
-  const supplierBreakdown = useMemo<SupplierBreakdown[]>(() => {
-    if (!allNovelties || allNovelties.length === 0) return [];
-    const supMap = new Map<string, { id: string; name: string; count: number }>();
-    allNovelties.forEach((p) => {
-      if (p.supplier_id && p.supplier_name) {
-        const existing = supMap.get(p.supplier_id);
-        if (existing) existing.count++;
-        else supMap.set(p.supplier_id, { id: p.supplier_id, name: p.supplier_name, count: 1 });
-      }
-    });
-    const total = allNovelties.length;
-    return [...supMap.values()]
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
-      .map((s) => ({ ...s, percentage: Math.round((s.count / total) * 100) }));
-  }, [allNovelties]);
+  // FIX (auditoria Novidades, P1-A): o ranking "Por Fornecedor" vem agora do
+  // useNoveltyStats — calculado server-side sobre TODAS as novidades da janela
+  // (nao sobre os 200 itens carregados aqui). Antes este painel contradizia o
+  // card "Top Fornecedor" (ex.: dizia "Só Marcas 54%" quando a verdade, sobre o
+  // conjunto completo, era "XBZ 58%"). Fonte de verdade unica.
+  const { data: noveltyStats } = useNoveltyStats();
+  const supplierBreakdown: SupplierBreakdown[] = (noveltyStats?.supplierBreakdown ?? []).slice(
+    0,
+    5,
+  );
 
   const handleClick = (productId: string) => {
     navigate(`/produto/${productId}`);
