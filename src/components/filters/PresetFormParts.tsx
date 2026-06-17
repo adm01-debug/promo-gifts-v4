@@ -74,7 +74,7 @@ export function PresetPreviewHeader({
     <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/50 p-3">
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl transition-colors"
-        style={{ backgroundColor: color + '25' }}
+        style={{ backgroundColor: `${color}25` }}
       >
         {emoji}
       </div>

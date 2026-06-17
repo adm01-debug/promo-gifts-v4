@@ -104,7 +104,7 @@ export function TelemetryCharts({ rows, timeFilter }: TelemetryChartsProps) {
     }
     return [...stats.entries()]
       .map(([name, data]) => ({
-        name: name.length > 18 ? name.slice(0, 16) + '…' : name,
+        name: name.length > 18 ? `${name.slice(0, 16)}…` : name,
         alertas: data.count,
         mediaMs: Math.round(data.totalMs / data.count),
       }))

@@ -98,7 +98,7 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
       <CardContent className="p-0">
         {isLoading ? (
           <div className="space-y-2 p-3">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 5 }, (_, i) => (
               <Skeleton key={i} className="h-12 rounded-lg" />
             ))}
           </div>

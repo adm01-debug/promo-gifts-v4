@@ -100,7 +100,7 @@ export function playTtsAudio(
 
     const maxLen = 800;
     const ttsText =
-      text.length > maxLen ? text.substring(0, maxLen).replace(/\s+\S*$/, '') + '...' : text;
+      text.length > maxLen ? `${text.substring(0, maxLen).replace(/\s+\S*$/, '')}...` : text;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);

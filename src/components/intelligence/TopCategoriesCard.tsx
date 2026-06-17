@@ -116,7 +116,7 @@ export function TopCategoriesCard({ days }: TopCategoriesCardProps) {
       <CardContent>
         {isLoading ? (
           <div className="space-y-2">
-            {[...Array(6)].map((_, i) => (
+            {Array.from({ length: 6 }, (_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>

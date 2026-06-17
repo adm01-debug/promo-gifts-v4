@@ -31,7 +31,6 @@ import {
   Calculator,
   LifeBuoy,
   AlertCircle,
-  
   type LucideIcon,
 } from 'lucide-react';
 
@@ -356,7 +355,7 @@ export function GlobalSearchPalette() {
               return (
                 <CommandGroup
                   key={type}
-                  heading={config.label + 's'}
+                  heading={`${config.label}s`}
                   className="duration-300 animate-in fade-in-0 slide-in-from-bottom-2 [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:pt-4"
                 >
                   {(items ?? []).map((result, i) => (
@@ -469,31 +468,31 @@ export function GlobalSearchPalette() {
         <div className="flex select-none items-center gap-5 border-t px-5 py-3 [background-color:hsl(var(--command-surface-raised))] [border-color:hsl(var(--command-border))]">
           <div className="flex flex-1 flex-wrap items-center gap-x-5 gap-y-2 text-[11px] [color:hsl(var(--command-text-subtle))]">
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-bottom-color:hsl(var(--command-border-strong))] [border-color:hsl(var(--command-border))]">
                 ↵
               </kbd>
               <span>Selecionar</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-bottom-color:hsl(var(--command-border-strong))] [border-color:hsl(var(--command-border))]">
                 ↑↓
               </kbd>
               <span>Navegar</span>
             </span>
             <span className="hidden items-center gap-1.5 md:inline-flex">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-bottom-color:hsl(var(--command-border-strong))] [border-color:hsl(var(--command-border))]">
                 1-9
               </kbd>
               <span>Saltar</span>
             </span>
             <span className="hidden items-center gap-1.5 md:inline-flex">
-              <kbd className="inline-flex h-[18px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
+              <kbd className="inline-flex h-[18px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-bottom-color:hsl(var(--command-border-strong))] [border-color:hsl(var(--command-border))]">
                 ⌘↵
               </kbd>
               <span>Nova aba</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-color:hsl(var(--command-border))] [border-bottom-color:hsl(var(--command-border-strong))]">
+              <kbd className="inline-flex h-[18px] min-w-[20px] items-center justify-center rounded border border-b-2 px-1 font-mono text-[10px] font-medium leading-none text-foreground [background-color:hsl(var(--command-accent))] [border-bottom-color:hsl(var(--command-border-strong))] [border-color:hsl(var(--command-border))]">
                 ESC
               </kbd>
               <span>Fechar</span>

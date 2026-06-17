@@ -139,7 +139,7 @@ export function ConversionFunnel({ days }: ConversionFunnelProps) {
       <CardContent>
         {isLoading ? (
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => (
+            {Array.from({ length: 4 }, (_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>

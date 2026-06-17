@@ -51,6 +51,7 @@ import {
   getScoreLabel,
   type UserProfile,
 } from './useSecurityData';
+import { cn } from '@/lib/utils';
 
 function getScoreIcon(score: number) {
   if (score >= 80) return <ShieldCheck className="h-8 w-8 text-success" />;
@@ -412,7 +413,10 @@ export function SecurityDashboard() {
                     {notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`rounded-lg border p-3 ${!notif.is_read ? 'border-primary/20 bg-primary/5' : ''}`}
+                        className={cn(
+                          'rounded-lg border p-3',
+                          !notif.is_read && 'border-primary/20 bg-primary/5',
+                        )}
                       >
                         <div className="flex items-start gap-3">
                           <AlertTriangle className="mt-0.5 h-4 w-4 text-brand-primary" />
@@ -490,7 +494,10 @@ export function SecurityDashboard() {
                   {loginAttempts.map((attempt) => (
                     <div
                       key={attempt.id}
-                      className={`flex items-center justify-between rounded-lg border p-3 ${!attempt.success ? 'border-destructive/20 bg-destructive/5' : ''}`}
+                      className={cn(
+                        'flex items-center justify-between rounded-lg border p-3',
+                        !attempt.success && 'border-destructive/20 bg-destructive/5',
+                      )}
                     >
                       <div className="flex items-center gap-4">
                         {attempt.success ? (

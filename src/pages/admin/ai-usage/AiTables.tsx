@@ -51,7 +51,7 @@ export function AiTables({ byUser, byModel, logs, statsLoading, logsLoading }: A
         <CardContent>
           {statsLoading ? (
             <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-8 w-full" />
               ))}
             </div>
@@ -92,7 +92,7 @@ export function AiTables({ byUser, byModel, logs, statsLoading, logsLoading }: A
         <CardContent>
           {statsLoading ? (
             <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
+              {Array.from({ length: 3 }, (_, i) => (
                 <Skeleton key={i} className="h-8 w-full" />
               ))}
             </div>
@@ -137,7 +137,7 @@ export function AiTables({ byUser, byModel, logs, statsLoading, logsLoading }: A
         <CardContent>
           {logsLoading ? (
             <div className="space-y-2">
-              {[...Array(8)].map((_, i) => (
+              {Array.from({ length: 8 }, (_, i) => (
                 <Skeleton key={i} className="h-8 w-full" />
               ))}
             </div>

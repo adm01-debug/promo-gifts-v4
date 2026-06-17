@@ -30,7 +30,7 @@ export function CartTabsRich({
   if (isLoading) {
     return (
       <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
-        {[...Array(3)].map((_, i) => (
+        {Array.from({ length: 3 }, (_, i) => (
           <div
             key={i}
             className="flex w-[180px] flex-shrink-0 items-center gap-2.5 rounded-xl border border-border/30 bg-muted/5 px-3.5 py-2"

@@ -86,7 +86,7 @@ export default function QuotesKanbanPage() {
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
         <Skeleton className="h-10 w-64" />
         <div className="flex gap-4 overflow-x-auto">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-[500px] min-w-[280px]" />
           ))}
         </div>

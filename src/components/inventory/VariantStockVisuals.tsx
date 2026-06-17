@@ -22,6 +22,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateStockStatus, type StockStatus } from '@/types/stock';
 
+const MIXED_COLOR_RE = /color(ido)?|sortido|multi/i;
+
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
 // ============================================
@@ -118,7 +120,7 @@ export function RichColorSwatch({
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
   // "Colorido"/"Sortido" — usa gradiente conic; "Padrao" — neutro.
-  const isMixed = /color(ido)?|sortido|multi/i.test(label);
+  const isMixed = MIXED_COLOR_RE.test(label);
   const bg = hex
     ? hex
     : isMixed

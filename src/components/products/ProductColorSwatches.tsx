@@ -83,7 +83,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
         aria-label="Carregando opções de cores"
         data-testid="colors-loading-skeleton"
       >
-        {[...Array(6)].map((_, i) => (
+        {Array.from({ length: 6 }, (_, i) => (
           <div
             key={i}
             className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}

@@ -528,7 +528,7 @@ export function MarketIntelligenceChart({
               {kpis.topDepletionDay.value.toLocaleString('pt-BR')} un
             </span>{' '}
             em{' '}
-            {new Date(kpis.topDepletionDay.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+            {new Date(`${kpis.topDepletionDay.date}T00:00:00`).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: '2-digit',
             })}

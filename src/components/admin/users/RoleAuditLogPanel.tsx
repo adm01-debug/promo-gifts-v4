@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { RoleBadge } from '@/components/RoleBadge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const ROLE_ACTIONS = [
   'role.granted',
@@ -175,7 +176,7 @@ export function RoleAuditLogPanel() {
           disabled={isFetching}
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>

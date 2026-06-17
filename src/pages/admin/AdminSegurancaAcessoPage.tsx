@@ -60,6 +60,7 @@ import { RecentAuditTable } from '@/components/admin/security/RecentAuditTable';
 import { HardeningHealthCard } from '@/components/admin/security/HardeningHealthCard';
 import { ActiveIpsList } from '@/components/admin/security/ActiveIpsList';
 import { AutoDefenseTab } from '@/components/admin/security/AutoDefenseTab';
+import { cn } from '@/lib/utils';
 
 interface BotLog {
   id: string;
@@ -274,7 +275,7 @@ export default function AdminSegurancaAcessoPage() {
           <div className="flex items-center gap-2">
             <ForceGlobalLogoutDialog />
             <Button variant="outline" size="sm" onClick={fetchAll} disabled={isLoading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
               Atualizar
             </Button>
           </div>

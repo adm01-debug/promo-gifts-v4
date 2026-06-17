@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 /** Recalculate personalization total using rounded unit price to match UI display */
 function calcPersTotal(totalCost: number, qty: number): number {
@@ -83,7 +84,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     return (
       <tr
         key={item.id || `item-${index}`}
-        className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${index % 2 === 1 ? 'bg-muted/20' : ''}`}
+        className={cn(
+          'border-b border-border/50 transition-colors hover:bg-muted/40',
+          index % 2 === 1 && 'bg-muted/20',
+        )}
       >
         <td className="p-3">
           <div className="flex items-center gap-3">
@@ -138,10 +142,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
                   return (
-                    <div
-                      key={pIdx}
-                      className={`${pIdx > 0 ? 'border-t border-border/30 pt-1.5' : ''}`}
-                    >
+                    <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/30 pt-1.5')}>
                       <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
                         <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                           ✦ {p.technique_name}

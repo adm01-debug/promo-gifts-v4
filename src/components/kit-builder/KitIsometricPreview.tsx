@@ -173,9 +173,9 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
 
   // Helpers para faces de cubo
   const facePath = (pts: { px: number; py: number }[]) =>
-    pts
+    `${pts
       .map((p, i) => `${i === 0 ? 'M' : 'L'}${(p.px + tx).toFixed(1)},${(p.py + ty).toFixed(1)}`)
-      .join(' ') + ' Z';
+      .join(' ')} Z`;
 
   // Caixa: face traseira-direita + base + lateral
   const boxBack = facePath([corners[1], corners[2], corners[6], corners[5]]);

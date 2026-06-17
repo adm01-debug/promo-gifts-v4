@@ -79,7 +79,7 @@ export async function exportToExcel(config: ExcelExportConfig): Promise<void> {
     // 4. Aplicar estilos no cabeçalho (se possível)
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
     for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + '1';
+      const address = `${XLSX.utils.encode_col(C)}1`;
       if (!worksheet[address]) continue;
       if (worksheet[address].s) {
         worksheet[address].s.font = { bold: true };

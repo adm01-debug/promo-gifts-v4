@@ -78,7 +78,7 @@ function formatFieldValue(value: unknown): string {
       : value.join(', ');
   }
   if (typeof value === 'object') {
-    return JSON.stringify(value).substring(0, 50) + '...';
+    return `${JSON.stringify(value).substring(0, 50)}...`;
   }
   return String(value);
 }

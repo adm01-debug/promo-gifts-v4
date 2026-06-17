@@ -171,7 +171,7 @@ async function createCommentNotification(
 
     if (uniqueUsers.length === 0) return;
 
-    const preview = content.length > 60 ? content.slice(0, 60) + '…' : content;
+    const preview = content.length > 60 ? `${content.slice(0, 60)}…` : content;
     const notifications = uniqueUsers.map((uid) => ({
       user_id: uid,
       title: parentId ? 'Nova resposta em orçamento' : 'Novo comentário em orçamento',

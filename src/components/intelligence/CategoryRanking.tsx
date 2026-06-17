@@ -132,7 +132,7 @@ export function CategoryRanking({
 
     const items = top.map((cat, i) => ({
       name:
-        cat.categoryName.length > 18 ? cat.categoryName.substring(0, 18) + '…' : cat.categoryName,
+        cat.categoryName.length > 18 ? `${cat.categoryName.substring(0, 18)}…` : cat.categoryName,
       fullName: cat.categoryName,
       value: getBarValue(cat),
       internalRevenue: cat.internalRevenue,
@@ -161,7 +161,7 @@ export function CategoryRanking({
           <Skeleton className="h-5 w-56" />
         </CardHeader>
         <CardContent className="space-y-2">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-12 rounded" />
           ))}
         </CardContent>

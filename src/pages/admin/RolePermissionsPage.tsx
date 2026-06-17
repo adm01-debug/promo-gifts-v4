@@ -12,6 +12,7 @@ import { Shield, Key, Save, Users, CheckCircle2, XCircle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { cn } from '@/lib/utils';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -372,7 +373,10 @@ export default function RolePermissionsPage() {
                               return (
                                 <div
                                   key={perm.code}
-                                  className={`flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30 ${hasChange ? 'bg-primary/5' : ''}`}
+                                  className={cn(
+                                    'flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30',
+                                    hasChange && 'bg-primary/5',
+                                  )}
                                 >
                                   <Checkbox
                                     id={perm.code}

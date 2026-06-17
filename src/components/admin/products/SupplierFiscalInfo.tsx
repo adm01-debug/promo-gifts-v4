@@ -22,6 +22,7 @@ import {
 import { DeleteConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSupplierFiscalData, type FiscalOverrideInput } from '@/hooks/products';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Props {
   productId: string | undefined;
@@ -54,7 +55,7 @@ function EditField({
         placeholder={placeholder || label}
         type={type}
         step={type === 'number' ? '0.01' : undefined}
-        className={`h-7 w-24 px-2 text-xs ${mono ? 'font-mono' : ''}`}
+        className={cn('h-7 w-24 px-2 text-xs', mono && 'font-mono')}
       />
     </div>
   );
@@ -81,14 +82,14 @@ function FiscalFieldPair({
       {value1 && (
         <>
           <span className="whitespace-nowrap text-[11px] text-muted-foreground">{label1}:</span>
-          <span className={`text-xs font-medium ${mono ? 'font-mono' : ''}`}>{value1}</span>
+          <span className={cn('text-xs font-medium', mono && 'font-mono')}>{value1}</span>
         </>
       )}
       {value1 && value2 && <span className="mx-0.5 text-[10px] text-muted-foreground/50">/</span>}
       {value2 && (
         <>
           <span className="whitespace-nowrap text-[11px] text-muted-foreground">{label2}:</span>
-          <span className={`text-xs font-medium ${mono ? 'font-mono' : ''}`}>{value2}</span>
+          <span className={cn('text-xs font-medium', mono && 'font-mono')}>{value2}</span>
         </>
       )}
     </div>
@@ -108,7 +109,7 @@ function FiscalField({
   return (
     <div className="flex items-baseline gap-1.5">
       <span className="whitespace-nowrap text-[11px] text-muted-foreground">{label}:</span>
-      <span className={`text-xs font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className={cn('text-xs font-medium', mono && 'font-mono')}>{value}</span>
     </div>
   );
 }
