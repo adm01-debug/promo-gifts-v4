@@ -88,6 +88,7 @@ export function GalleryFullscreen({
             />
           ) : (
             <img
+              key={allMedia[selectedIndex]}
               src={allMedia[selectedIndex]}
               alt={`${productName} - Imagem ${selectedIndex + 1}`}
               className={cn(

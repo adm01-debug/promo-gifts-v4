@@ -21,7 +21,7 @@ const SANITIZE_REGEX = /[%_\\(),.*]/g;
 
 /** Sanitize a search term the same way useGlobalSearch does. */
 function sanitizeSearchTerm(raw: string): string {
-  return raw.replace(SANITIZE_REGEX, '');
+  return raw.replace(SANITIZE_REGEX, '').trim();
 }
 
 /** Characters that must never survive sanitization. */
