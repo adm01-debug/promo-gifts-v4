@@ -138,10 +138,10 @@ afterEach(() => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Copiar SKU', () => {
   it('copia o SKU da variação no clipboard e emite toast de sucesso', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
     const writeText = vi.fn().mockResolvedValue(undefined);
     setClipboard(writeText);
 
-    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
 
     await user.click(screen.getByTestId('stock-row-copy-sku'));
@@ -151,12 +151,12 @@ describe('VariantStockRowActions · Copiar SKU', () => {
   });
 
   it('mostra erro profissional se clipboard falhar (sem fallback disponível)', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
     const writeText = vi.fn().mockRejectedValue(new Error('blocked'));
     setClipboard(writeText);
     const orig = document.execCommand;
     document.execCommand = vi.fn(() => false);
 
-    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-copy-sku'));
 
@@ -278,10 +278,10 @@ describe('VariantStockRowActions · Compartilhar', () => {
   });
 
   it('faz fallback para clipboard quando share não existe', async () => {
+    const user = userEvent.setup({ writeToClipboard: false });
     setShare(undefined);
     const writeText = vi.fn().mockResolvedValue(undefined);
     setClipboard(writeText);
-    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
