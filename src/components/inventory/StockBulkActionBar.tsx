@@ -2,7 +2,7 @@
  * StockBulkActionBar — Barra fixa inferior com ações em lote para o estoque
  * (paridade com o catálogo, em escala variation-aware).
  */
-import { Heart, GitCompare, FileText, X, CheckSquare } from 'lucide-react';
+import { Heart, GitCompare, FileText, X, CheckSquare, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ interface StockBulkActionBarProps {
   onBulkFavorite: () => void;
   onBulkCompare: () => void;
   onBulkQuote: () => void;
+  onBulkCollection: () => void;
 }
 
 export function StockBulkActionBar({
