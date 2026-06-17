@@ -14,7 +14,7 @@
  * expor nomes ou valores de credenciais no console.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -336,15 +336,16 @@ export function SmokeTestChecklist({ availableSecrets = [] }: Props) {
     }
   };
 
-  const summary = steps.reduce(
-    (acc, s) => {
-      acc[s.status] = (acc[s.status] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<StepStatus, number>,
-  );
-  const allPassed = summary.passed === steps.length;
-  const anyFailed = (summary.failed ?? 0) > 0;
+  const { summary, allPassed, anyFailed } = useMemo(() => {
+    const s = steps.reduce(
+      (acc, step) => {
+        acc[step.status] = (acc[step.status] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<StepStatus, number>,
+    );
+    return { summary: s, allPassed: s.passed === steps.length, anyFailed: (s.failed ?? 0) > 0 };
+  }, [steps]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
