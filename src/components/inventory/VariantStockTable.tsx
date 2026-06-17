@@ -16,6 +16,7 @@ import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-color
 import { VariantStockRowActions } from './VariantStockRowActions';
 import { useStockSelection } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
+import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
 
 
 import { Button } from '@/components/ui/button';
