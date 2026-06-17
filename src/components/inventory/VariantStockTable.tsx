@@ -157,16 +157,6 @@ function FlatVariantRow({
           <span className="text-[10px] text-muted-foreground">un</span>
         </div>
       </TableCell>
-      <TableCell>
-        <span
-          className={cn(
-            'font-medium tabular-nums',
-            variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
-          )}
-        >
-          {variant.availableStock.toLocaleString('pt-BR')}
-        </span>
-      </TableCell>
       <TableCell className="hidden md:table-cell">
         {variant.inTransitStock > 0 ? (
           <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
@@ -378,7 +368,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
             
-            <TableHead>Disponível</TableHead>
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="hidden sm:table-cell">Previsão</TableHead>
@@ -402,9 +391,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                     <div key={j} className="h-5 w-5 animate-pulse rounded-full bg-muted" />
                   ))}
                 </div>
-              </TableCell>
-              <TableCell>
-                <div className="h-4 w-12 animate-pulse rounded bg-muted" />
               </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
@@ -529,7 +515,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               
 
               
-              <TableHead>Disponível</TableHead>
+              
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
@@ -546,7 +532,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
