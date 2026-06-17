@@ -181,8 +181,7 @@ export function useStockChartData(productId: string) {
       return name ? `em ${name}` : 'fornecedor selecionado';
     }
     const count = effectiveIntelligence?.supplier_count;
-    // eslint-disable-next-line eqeqeq
-    if (count == null || count === 0) return 'no fornecedor';
+    if (!count) return 'no fornecedor';
     return `em ${count} fornecedor${count > 1 ? 'es' : ''}`;
   }, [effectiveIntelligence, selectedSupplier, supplierNamesMap]);
 

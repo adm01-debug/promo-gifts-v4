@@ -200,14 +200,13 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                   >
                     <div className="flex items-center gap-1.5">
                       <p className="truncate font-medium text-foreground">{product.name}</p>
-                      {/* eslint-disable-next-line eqeqeq */}
-                      {product.trendingScore != null && product.trendingScore > 1.3 && (
+                      {(product.trendingScore ?? 0) > 1.3 && (
                         <Badge
                           variant="outline"
                           className="h-4 shrink-0 border-success/30 bg-success/10 px-1 text-[9px] text-success"
                         >
                           <TrendingUp className="mr-0.5 h-2.5 w-2.5" />
-                          {Math.round((product.trendingScore - 1) * 100)}%
+                          {Math.round(((product.trendingScore ?? 0) - 1) * 100)}%
                         </Badge>
                       )}
                       {product.classification === 'new' && (
