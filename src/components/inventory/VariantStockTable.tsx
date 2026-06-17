@@ -76,7 +76,6 @@ const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   incoming: 'Chegando',
 };
 
-
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -94,7 +93,6 @@ function writeStored(key: string, value: string): void {
   }
 }
 
-
 // ============================================
 // LINHA DE VARIANTE (COR/TAMANHO) — modo agrupado
 // ============================================
@@ -104,7 +102,11 @@ function writeStored(key: string, value: string): void {
  * `aria-hidden` no span vazio mantém o tabular layout sem ruído de leitor de tela.
  */
 function EmptyCell() {
-  return <span className="text-muted-foreground/30" aria-hidden="true">·</span>;
+  return (
+    <span className="text-muted-foreground/30" aria-hidden="true">
+      ·
+    </span>
+  );
 }
 
 // ============================================
@@ -257,7 +259,6 @@ function FlatVariantRow({
   );
 }
 
-
 // ============================================
 // PAGINAÇÃO
 // ============================================
@@ -293,7 +294,9 @@ export function VariantStockTable({
     const n = Number.parseInt(raw, 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
-  const [inlineSearch, setInlineSearch] = useState<string>(() => readStored(SEARCH_STORAGE_KEY, ''));
+  const [inlineSearch, setInlineSearch] = useState<string>(() =>
+    readStored(SEARCH_STORAGE_KEY, ''),
+  );
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
   const deepLinkConsumedRef = useRef<string | null>(null);
@@ -307,7 +310,6 @@ export function VariantStockTable({
   useEffect(() => {
     writeStored(PAGE_STORAGE_KEY, String(currentPage));
   }, [currentPage]);
-
 
   // Cleanup one-shot: purga chaves legadas do modo "Agrupar" (modelo antigo).
   useEffect(() => {
@@ -528,7 +530,6 @@ export function VariantStockTable({
         data-testid="variant-stock-toolbar"
         className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center"
       >
-
         {/* Inline Search */}
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -578,8 +579,6 @@ export function VariantStockTable({
           </Select>
         </div>
 
-
-
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
           className="flex flex-wrap items-center gap-1"
@@ -615,31 +614,28 @@ export function VariantStockTable({
           })}
         </div>
 
-
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
             {totalRows > PAGE_SIZE ? (
               <>
-                {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de {totalRows} variações
+                {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de{' '}
+                {totalRows} variações
               </>
             ) : (
               <>
                 {totalRows} {totalRows === 1 ? 'variação' : 'variações'}
               </>
             )}
-
           </span>
 
           {/* Modelo de negócio: variação-first. Toggle de "Agrupar" removido. */}
         </div>
       </div>
 
-
       <div
         data-testid="variant-stock-scroll"
-        className="overflow-x-auto rounded-lg border [contain:content] [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
+        className="overflow-x-auto rounded-lg border [-webkit-overflow-scrolling:touch] [contain:content] [overscroll-behavior-x:contain]"
       >
         <Table className="min-w-[700px]">
           <TableHeader
@@ -650,10 +646,7 @@ export function VariantStockTable({
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
-              
 
-              
-              
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
@@ -677,7 +670,9 @@ export function VariantStockTable({
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
                     </div>
-                    <p className="mb-1 font-semibold text-foreground">Nenhuma variação encontrada</p>
+                    <p className="mb-1 font-semibold text-foreground">
+                      Nenhuma variação encontrada
+                    </p>
                     <p className="max-w-xs text-sm">
                       {inlineSearch
                         ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`

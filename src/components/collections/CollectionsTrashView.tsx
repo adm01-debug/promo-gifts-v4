@@ -2,7 +2,7 @@
  * CollectionsTrashView — Lixeira de itens removidos de uma coleção.
  * Espelho de FavoritesTrashView. TTL de 30 dias.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, Trash2 } from 'lucide-react';
@@ -35,7 +35,7 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('collection_items_trash' as never)
@@ -49,12 +49,11 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
       setItems((data as unknown as TrashRow[]) ?? []);
     }
     setIsLoading(false);
-  };
+  }, [collectionId]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId]);
+    void load();
+  }, [load]);
 
   useEffect(() => {
     onCountChange?.(items.length);

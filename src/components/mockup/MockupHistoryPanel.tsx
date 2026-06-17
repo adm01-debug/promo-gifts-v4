@@ -150,11 +150,10 @@ export function MockupHistoryPanel({
       }
       return true;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mockupHistory,
     filterClient,
-    filterProduct,
+    deferredFilterProduct,
     filterTechnique,
     filterDateRange,
     historyTechniques,

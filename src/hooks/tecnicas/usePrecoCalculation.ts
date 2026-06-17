@@ -7,6 +7,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { useTabelasPreco } from '@/hooks/tecnicas/useTabelasPreco';
 import type { TabelaPrecoTecnica, ResultadoCalculoPreco } from '@/types/tecnica-unificada';
 
+const STANDARD_QUANTITIES = [50, 100, 250, 500, 1000, 2500, 5000, 10000] as const;
+
 // ============================================
 // TIPOS DE COMPATIBILIDADE
 // ============================================
@@ -229,12 +231,10 @@ export function usePrecoCalculation() {
     }));
   }, [tabelas]);
 
-  const standardQuantities = useMemo(() => [50, 100, 250, 500, 1000, 2500, 5000, 10000], []);
-
   return {
     tabelas,
     techniques,
-    standardQuantities,
+    standardQuantities: STANDARD_QUANTITIES,
     isLoading,
     error: error?.message ?? null,
     refetch,

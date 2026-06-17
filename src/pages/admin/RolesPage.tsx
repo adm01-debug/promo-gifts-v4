@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,35 +46,37 @@ export default function RolesPage() {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const { toast } = useToast();
 
+  const fetchRoles = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const { data, error } = await db.from('roles').select('*').order('name');
+
+        if (isCancelled()) return;
+        if (error) throw error;
+        setRoles(data || []);
+      } catch (error: unknown) {
+        if (isCancelled()) return;
+        toast({
+          title: 'Erro',
+          description: sanitizeError(error),
+          variant: 'destructive',
+        });
+      } finally {
+        if (!isCancelled()) setIsLoading(false);
+      }
+    },
+    [toast],
+  );
+
   useEffect(() => {
     // Guarda de cancelamento: evita setState após o unmount (em testes, o
     // await pode resolver depois do teardown e vazar "window is not defined").
     let cancelled = false;
-    fetchRoles(() => cancelled);
+    void fetchRoles(() => cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchRoles = async (isCancelled: () => boolean = () => false) => {
-    try {
-      const { data, error } = await db.from('roles').select('*').order('name');
-
-      if (isCancelled()) return;
-      if (error) throw error;
-      setRoles(data || []);
-    } catch (error: unknown) {
-      if (isCancelled()) return;
-      toast({
-        title: 'Erro',
-        description: sanitizeError(error),
-        variant: 'destructive',
-      });
-    } finally {
-      if (!isCancelled()) setIsLoading(false);
-    }
-  };
+  }, [fetchRoles]);
 
   const handleSubmit = async () => {
     try {

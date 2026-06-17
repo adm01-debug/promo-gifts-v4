@@ -9,7 +9,7 @@
  * UI usa array internamente (mais natural pra tag-list); converte no save.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, X, Brain, ListOrdered } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,7 +126,7 @@ export function AiRoutingTab() {
   const [pendingFallback, setPendingFallback] = useState<string>('');
   const [pendingCapability, setPendingCapability] = useState<string>('');
 
-  const modelById = new Map((models ?? []).map((m) => [m.id, m]));
+  const modelById = useMemo(() => new Map((models ?? []).map((m) => [m.id, m])), [models]);
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM, fallback_model_ids: [], required_capabilities: ['chat'] });

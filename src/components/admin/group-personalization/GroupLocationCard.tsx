@@ -68,7 +68,7 @@ export function GroupLocationCard({
     onAddTechnique({
       group_location_id: location.id,
       technique_id: newTechniqueId,
-      max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+      max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
     });
     setIsAddTechniqueOpen(false);
     setNewTechniqueId('');

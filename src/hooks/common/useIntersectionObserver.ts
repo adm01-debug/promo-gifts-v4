@@ -47,22 +47,20 @@ function getSharedObserver(
   if (typeof IntersectionObserver === 'undefined') return null;
 
   const key = getObserverKey(rootMargin, threshold);
+  const cached = observerCache.get(key);
+  if (cached) return cached;
 
-  if (!observerCache.has(key)) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const cb = callbackMap.get(entry.target);
-          cb?.(entry.isIntersecting);
-        });
-      },
-      { rootMargin, threshold },
-    );
-    observerCache.set(key, observer);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return observerCache.get(key)!;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const cb = callbackMap.get(entry.target);
+        cb?.(entry.isIntersecting);
+      });
+    },
+    { rootMargin, threshold },
+  );
+  observerCache.set(key, observer);
+  return observer;
 }
 
 export function useIntersectionObserver(

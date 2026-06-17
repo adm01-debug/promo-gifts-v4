@@ -5,9 +5,6 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 const OnboardingTour = lazyWithRetry(() =>
   import('@/components/onboarding/OnboardingTour').then((m) => ({ default: m.OnboardingTour })),
 );
-const _ExpertChatButton = lazyWithRetry(() =>
-  import('@/components/expert/ExpertChatButton').then((m) => ({ default: m.ExpertChatButton })),
-);
 const EnhancedSpotlight = lazyWithRetry(() =>
   import('@/components/common/EnhancedSpotlight').then((m) => ({ default: m.EnhancedSpotlight })),
 );

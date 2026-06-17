@@ -155,7 +155,7 @@ export function ProductPersonalizationManager() {
         component_location_id: selectedLocationId,
         technique_id: newTechniqueId,
         composed_code: `${comp.component_code}-${loc.location_code}-${tech.code}`,
-        max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+        max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
       },
       {
         onSuccess: () => {

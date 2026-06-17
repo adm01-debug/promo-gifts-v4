@@ -399,7 +399,7 @@ export function ProductSupplierSection({
                           onChange={(e) =>
                             setForm((f) => ({
                               ...f,
-                              lead_time_days: e.target.value ? parseInt(e.target.value) : null,
+                              lead_time_days: e.target.value ? parseInt(e.target.value, 10) : null,
                             }))
                           }
                           className="h-9"
@@ -414,7 +414,7 @@ export function ProductSupplierSection({
                           onChange={(e) =>
                             setForm((f) => ({
                               ...f,
-                              stock_quantity: parseInt(e.target.value) || 0,
+                              stock_quantity: parseInt(e.target.value, 10) || 0,
                             }))
                           }
                           className="h-9"
@@ -429,7 +429,7 @@ export function ProductSupplierSection({
                           onChange={(e) =>
                             setForm((f) => ({
                               ...f,
-                              min_order_quantity: parseInt(e.target.value) || 1,
+                              min_order_quantity: parseInt(e.target.value, 10) || 1,
                             }))
                           }
                           className="h-9"

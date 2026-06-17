@@ -202,9 +202,14 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
     }
   }, [boot, pinging, ping]);
 
-  const recent = samples.slice(-MAX_RECENT).reverse();
-  const errorCount = samples.filter((s) => !s.ok).length;
-  const totalCount = samples.length;
+  const { recent, errorCount, totalCount } = useMemo(
+    () => ({
+      recent: samples.slice(-MAX_RECENT).reverse(),
+      errorCount: samples.filter((s) => !s.ok).length,
+      totalCount: samples.length,
+    }),
+    [samples],
+  );
 
   const bootBadge = !boot
     ? {

@@ -18,6 +18,10 @@ import { Save, X } from 'lucide-react';
 interface QuoteTemplateFormProps {
   template?: QuoteTemplate | null;
   initialItems?: QuoteTemplateItem[];
+  initialDiscountPercent?: number;
+  initialDiscountAmount?: number;
+  initialNotes?: string;
+  initialInternalNotes?: string;
   onSave?: (template: QuoteTemplate | null) => void;
   onCancel?: () => void;
 }
@@ -25,6 +29,10 @@ interface QuoteTemplateFormProps {
 export function QuoteTemplateForm({
   template,
   initialItems = [],
+  initialDiscountPercent = 0,
+  initialDiscountAmount = 0,
+  initialNotes = '',
+  initialInternalNotes = '',
   onSave,
   onCancel,
 }: QuoteTemplateFormProps) {
@@ -36,10 +44,10 @@ export function QuoteTemplateForm({
     description: template?.description || '',
     is_default: template?.is_default || false,
     items: template?.items || initialItems,
-    discount_percent: template?.discount_percent || 0,
-    discount_amount: template?.discount_amount || 0,
-    notes: template?.notes || '',
-    internal_notes: template?.internal_notes || '',
+    discount_percent: template?.discount_percent ?? initialDiscountPercent,
+    discount_amount: template?.discount_amount ?? initialDiscountAmount,
+    notes: template?.notes ?? initialNotes,
+    internal_notes: template?.internal_notes ?? initialInternalNotes,
     payment_terms: template?.payment_terms || '',
     delivery_time: template?.delivery_time || '',
     validity_days: template?.validity_days || 30,

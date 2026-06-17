@@ -31,20 +31,14 @@ import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGene
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+
+const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
 type Stage = 'preview' | 'generating' | 'ready';
 
 interface PdfGenerationDialogProps {
   proposalData: ProposalTemplateData | null;
   quoteNumber?: string;
   quoteStatus?: string;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  clientPhone?: string;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  approvalLink?: string | null;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  onWhatsApp?: () => void;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  onShareLink?: () => void;
   trigger?: React.ReactNode;
 }
 
@@ -202,10 +196,7 @@ export function PdfGenerationDialog({
           {stage === 'preview' && (
             <div className="flex h-full flex-col">
               {/* Preview area — scrollable */}
-              <div
-                className="flex-1 overflow-auto bg-muted/30 p-4"
-                style={{ maxHeight: 'calc(90vh - 160px)' }}
-              >
+              <div className="flex-1 overflow-auto bg-muted/30 p-4" style={PREVIEW_SCROLL_STYLE}>
                 <div className="mx-auto" style={{ maxWidth: '794px' }}>
                   <div className="relative overflow-hidden rounded-lg bg-white shadow-lg">
                     {/* Watermark for drafts */}

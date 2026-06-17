@@ -2,7 +2,6 @@
  * CartSelectorDialog - Dialogo para o vendedor escolher em qual carrinho adicionar o produto.
  * Exibido quando há múltiplos carrinhos ativos.
  */
-import React from 'react';
 import { Building2, ShoppingCart, Plus } from 'lucide-react';
 import {
   Dialog,
@@ -92,7 +91,12 @@ export function CartSelectorDialog({
 
         <div className="mt-4 flex flex-col gap-2">
           {canCreateMore && (
-            <Button variant="outline" className="w-full gap-2 border-dashed" onClick={onCreateNew} data-testid="cart-selector-create-new">
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-dashed"
+              onClick={onCreateNew}
+              data-testid="cart-selector-create-new"
+            >
               <Plus className="h-4 w-4" />
               Criar novo carrinho para outra empresa
             </Button>

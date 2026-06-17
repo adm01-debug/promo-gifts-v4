@@ -199,7 +199,11 @@ export function ExpandablePanel({
 
   return (
     <div className={cn('rounded-lg border bg-card', className)}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between p-4 text-left"
+      >
         <span className="font-medium">{title}</span>
         {isExpanded ? (
           <Minimize2 className="h-4 w-4 text-muted-foreground" />

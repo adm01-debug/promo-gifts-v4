@@ -120,14 +120,20 @@ export function useProductImageGallery({
     const byVariant = new Map<string, number>();
     let withAlt = 0;
     let withoutVariant = 0;
+    let cfVerified = 0;
+    let cfPending = 0;
+    let withBlurhash = 0;
     externalImages.forEach((img) => {
       byType.set(img.image_type || 'untyped', (byType.get(img.image_type || 'untyped') || 0) + 1);
       const varKey = img.supplier_code || img.variant_id;
       if (varKey) byVariant.set(varKey, (byVariant.get(varKey) || 0) + 1);
       else withoutVariant++;
       if (img.alt_text) withAlt++;
+      if (img.cf_sync_status === 'verified') cfVerified++;
+      else if (!img.cf_sync_status || img.cf_sync_status === 'pending') cfPending++;
+      if (img.blurhash) withBlurhash++;
     });
-    return { byType, byVariant, withAlt, withoutVariant, total: externalImages.length };
+    return { byType, byVariant, withAlt, withoutVariant, total: externalImages.length, cfVerified, cfPending, withBlurhash };
   }, [externalImages]);
 
   const variantMap = useMemo(() => {

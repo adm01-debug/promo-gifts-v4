@@ -44,6 +44,8 @@ import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { toast } from 'sonner';
 
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 interface Props {
   items: QuoteItem[];
   activeItemIndex: number | null;
@@ -116,13 +118,11 @@ export function QuoteBuilderSummaryColumn({
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
   const presentedSubtotal = useMemo(() => {
-    const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
     return round2((realSubtotal || 0) * (1 + (negotiationMarkup || 0) / 100));
   }, [realSubtotal, negotiationMarkup]);
 
   const handleDiscountTypeChange = (next: 'percent' | 'amount') => {
     if (next === discountType) return;
-    const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
     if (presentedSubtotal > 0 && discountValue > 0) {
       if (next === 'amount') {
         // % → R$
@@ -278,7 +278,9 @@ export function QuoteBuilderSummaryColumn({
                                 alt={item.product_name}
                                 className="h-12 w-12 rounded-lg bg-muted object-cover"
                                 loading="lazy"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                                }}
                               />
                             ) : (
                               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
@@ -785,7 +785,6 @@ export default function Auth() {
                         'Entrar na Plataforma'
                       )}
                     </button>
-
                   </form>
                 </CardContent>
               </div>

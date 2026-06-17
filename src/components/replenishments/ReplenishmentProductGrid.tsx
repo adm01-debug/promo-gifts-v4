@@ -74,8 +74,7 @@ export function ReplenishmentProductGrid() {
     isFetching,
     error,
   } = useReplenishmentsWithDetails({ limit: 200 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const products = replenishments ?? [];
+  const products = useMemo(() => replenishments ?? [], [replenishments]);
   const loadingProgress = useLoadingProgress(isLoading);
 
   const { suppliers, categories } = useMemo(() => {

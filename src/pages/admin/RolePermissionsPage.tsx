@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BackButton } from '@/components/common/BackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,41 +53,43 @@ export default function RolePermissionsPage() {
   const [pendingChanges, setPendingChanges] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
 
+  const fetchData = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const [permRes, rolePermRes] = await Promise.all([
+          supabase.from('permissions').select('*').order('category'),
+          supabase.from('role_permissions').select('*'),
+        ]);
+
+        if (isCancelled()) return;
+        if (permRes.error) throw permRes.error;
+        if (rolePermRes.error) throw rolePermRes.error;
+
+        setPermissions(permRes.data || []);
+        setRolePermissions(rolePermRes.data || []);
+      } catch (error: unknown) {
+        if (isCancelled()) return;
+        toast({
+          title: 'Erro ao carregar dados',
+          description: sanitizeError(error),
+          variant: 'destructive',
+        });
+      } finally {
+        if (!isCancelled()) setIsLoading(false);
+      }
+    },
+    [toast],
+  );
+
   useEffect(() => {
     // Guarda de cancelamento: evita setState após o unmount (em testes, o
     // await pode resolver depois do teardown e vazar "window is not defined").
     let cancelled = false;
-    fetchData(() => cancelled);
+    void fetchData(() => cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchData = async (isCancelled: () => boolean = () => false) => {
-    try {
-      const [permRes, rolePermRes] = await Promise.all([
-        supabase.from('permissions').select('*').order('category'),
-        supabase.from('role_permissions').select('*'),
-      ]);
-
-      if (isCancelled()) return;
-      if (permRes.error) throw permRes.error;
-      if (rolePermRes.error) throw rolePermRes.error;
-
-      setPermissions(permRes.data || []);
-      setRolePermissions(rolePermRes.data || []);
-    } catch (error: unknown) {
-      if (isCancelled()) return;
-      toast({
-        title: 'Erro ao carregar dados',
-        description: sanitizeError(error),
-        variant: 'destructive',
-      });
-    } finally {
-      if (!isCancelled()) setIsLoading(false);
-    }
-  };
+  }, [fetchData]);
 
   const hasPermission = (permissionId: string, role: AppRole): boolean => {
     const key = `${role}-${permissionId}`;
@@ -196,13 +198,17 @@ export default function RolePermissionsPage() {
     setPendingChanges(newChanges);
   };
 
-  const groupedPermissions = permissions.reduce(
-    (acc, perm) => {
-      if (!acc[perm.category]) acc[perm.category] = [];
-      acc[perm.category].push(perm);
-      return acc;
-    },
-    {} as Record<string, Permission[]>,
+  const groupedPermissions = useMemo(
+    () =>
+      permissions.reduce(
+        (acc, perm) => {
+          if (!acc[perm.category]) acc[perm.category] = [];
+          acc[perm.category].push(perm);
+          return acc;
+        },
+        {} as Record<string, Permission[]>,
+      ),
+    [permissions],
   );
 
   const getCategoryStats = (category: string, role: AppRole) => {

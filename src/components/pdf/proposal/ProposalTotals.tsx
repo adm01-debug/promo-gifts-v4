@@ -1,4 +1,3 @@
-import React from 'react';
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
 
 function fmt(v: number): string {

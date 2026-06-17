@@ -57,6 +57,8 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   // pg_cron jobs — called via net.http_post internally, never by a browser.
   "backfill-image-dimensions",
   "asia-ingestion",
+  "hash-product-images",
+  "generate-blurhashes",
 ]);
 
 function listFunctionDirs() {

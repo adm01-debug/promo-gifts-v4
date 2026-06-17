@@ -126,6 +126,7 @@ export function VirtualizedNoveltyGrid({
                     }
                     onStatusClick={onStatusClick}
                     colors={colorsByProduct?.get(product.product_id)}
+                    priority={virtualRow.index === 0}
                   />
                 </div>
               ))}

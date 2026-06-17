@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Flame, RefreshCw, Snowflake, Thermometer } from 'lucide-react';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 interface DiagSnapshot {
   ok: boolean;
@@ -90,7 +91,7 @@ export function ColdVsWarmCrmCard() {
       setSnap(json);
       setLastFetched(Date.now());
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toErrorMessage(e));
     } finally {
       setLoading(false);
     }

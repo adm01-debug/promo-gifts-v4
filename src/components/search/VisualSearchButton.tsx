@@ -44,73 +44,77 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
 
-  const handleFileSelect = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Arquivo inválido',
-        description: 'Por favor, selecione uma imagem.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const performVisualSearch = useCallback(
+    async (imageBase64: string) => {
+      setIsLoading(true);
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'Arquivo muito grande',
-        description: 'A imagem deve ter no máximo 10MB.',
-        variant: 'destructive',
-      });
-      return;
-    }
+      try {
+        const { data, error } = await supabase.functions.invoke('visual-search', {
+          body: { imageBase64 },
+        });
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      setPreviewImage(base64);
-      await performVisualSearch(base64);
-    };
-    reader.readAsDataURL(file);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        if (error) {
+          throw new Error(error.message);
+        }
 
-  const performVisualSearch = async (imageBase64: string) => {
-    setIsLoading(true);
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
-    try {
-      const { data, error } = await supabase.functions.invoke('visual-search', {
-        body: { imageBase64 },
-      });
+        const { products, analysis } = data;
 
-      if (error) {
-        throw new Error(error.message);
+        toast({
+          title: 'Busca concluída!',
+          description: `Encontrados ${products.length} produtos similares.`,
+        });
+
+        onResultsFound(products, analysis);
+        setIsOpen(false);
+      } catch (error) {
+        logger.error('Visual search error:', error);
+        toast({
+          title: 'Erro na busca',
+          description:
+            error instanceof Error ? error.message : 'Não foi possível processar a imagem.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [toast, onResultsFound],
+  );
+
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Arquivo inválido',
+          description: 'Por favor, selecione uma imagem.',
+          variant: 'destructive',
+        });
+        return;
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: 'Arquivo muito grande',
+          description: 'A imagem deve ter no máximo 10MB.',
+          variant: 'destructive',
+        });
+        return;
       }
 
-      const { products, analysis } = data;
-
-      toast({
-        title: 'Busca concluída!',
-        description: `Encontrados ${products.length} produtos similares.`,
-      });
-
-      onResultsFound(products, analysis);
-      setIsOpen(false);
-    } catch (error) {
-      logger.error('Visual search error:', error);
-      toast({
-        title: 'Erro na busca',
-        description:
-          error instanceof Error ? error.message : 'Não foi possível processar a imagem.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        setPreviewImage(base64);
+        await performVisualSearch(base64);
+      };
+      reader.readAsDataURL(file);
+    },
+    [toast, performVisualSearch],
+  );
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -187,7 +191,9 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
                   alt="Preview"
                   className="h-48 w-full bg-muted object-contain"
                   loading="lazy"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
 
                 {isLoading ? (

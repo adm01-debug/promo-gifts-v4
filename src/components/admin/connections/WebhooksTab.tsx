@@ -40,7 +40,7 @@ interface InboundEp {
   slug: string;
   name: string;
   source_system: string;
-  active: boolean;
+  is_active: boolean;
   total_received: number;
   total_invalid: number;
   hmac_secret_ref: string;
@@ -65,7 +65,7 @@ export function WebhooksTab() {
         .order('created_at', { ascending: false }),
     ]);
     setOutbound((o ?? []) as OutboundHook[]);
-    setInbound((i ?? []) as unknown as InboundEp[]);
+    setInbound(i ?? []);
   };
   useEffect(() => {
     load();

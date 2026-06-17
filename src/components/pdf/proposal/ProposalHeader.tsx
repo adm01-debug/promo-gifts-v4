@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
 import { LogoWithTransparentBg } from './LogoWithTransparentBg';
 

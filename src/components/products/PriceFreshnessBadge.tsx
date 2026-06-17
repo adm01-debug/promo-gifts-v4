@@ -48,9 +48,7 @@ function buildAccessibleLabel(
   priceUpdatedAt?: string | Date | null,
 ): { ariaLabel: string; title: string } {
   const absolute = priceUpdatedAt ? formatAbsoluteDateLong(priceUpdatedAt) : null;
-  const days = freshness.daysSinceUpdate;
-  const relative =
-    days === null ? null : days === 0 ? 'há 0 dias' : days === 1 ? 'há 1 dia' : `há ${days} dias`;
+  const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
 
   let ariaLabel: string;
   switch (freshness.status) {

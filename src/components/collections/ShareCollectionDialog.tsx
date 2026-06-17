@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useCollectionsContext } from '@/contexts/CollectionsContext';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 interface Props {
   open: boolean;
@@ -66,7 +67,7 @@ export function ShareCollectionDialog({
       await navigator.clipboard.writeText(url);
       toast.success('Link público gerado e copiado!');
     } catch (e) {
-      toast.error(`Erro ao gerar link: ${(e as Error).message}`);
+      toast.error(`Erro ao gerar link: ${toErrorMessage(e)}`);
     } finally {
       setBusy(false);
     }
@@ -87,7 +88,7 @@ export function ShareCollectionDialog({
       });
       toast.success('Link público revogado');
     } catch (e) {
-      toast.error(`Erro ao revogar: ${(e as Error).message}`);
+      toast.error(`Erro ao revogar: ${toErrorMessage(e)}`);
     } finally {
       setBusy(false);
     }

@@ -5,6 +5,8 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { findMatchingColorIndex } from '@/lib/variant-matching';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface ProductColor {
   name?: string | null;
@@ -217,7 +219,7 @@ export function SyncedZoomGallery({ products, onProductClick }: SyncedZoomGaller
                 onWheel={handleWheel}
               >
                 <img
-                  src={currentImage}
+                  src={getCdnUrl(currentImage, 'large')}
                   alt={product.name}
                   className="h-full w-full select-none object-contain transition-transform duration-100"
                   style={{
@@ -269,11 +271,11 @@ export function SyncedZoomGallery({ products, onProductClick }: SyncedZoomGaller
                           : 'opacity-60 hover:opacity-100',
                       )}
                     >
-                      <img
-                        src={img}
+                      <OptimizedImage
+                        src={getCdnUrl(img, 'thumbnail')}
                         alt={`${product.name} - ${idx + 1}`}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
+                        className="object-cover"
+                        containerClassName="h-full w-full"
                       />
                     </button>
                   ))}

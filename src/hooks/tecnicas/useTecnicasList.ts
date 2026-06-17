@@ -5,6 +5,7 @@
  * Tabela real: tabela_preco_gravacao_oficial
  * O bridge mapeia 'tecnica_gravacao' → tabela real
  */
+import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dbInvoke } from '@/lib/db/postgrest';
 import { TECNICAS_QUERY_OPTIONS } from '@/lib/query-config';
@@ -182,7 +183,10 @@ export function useTecnicaByCodigo(codigo: string | undefined) {
 
 export function useCategoriasTecnicas() {
   const { data: tecnicas = [] } = useTecnicasList({ apenasAtivas: true });
-  return [...new Set(tecnicas.map((t) => t.categoria))].filter((c) => c !== 'geral').sort();
+  return useMemo(
+    () => [...new Set(tecnicas.map((t) => t.categoria))].filter((c) => c !== 'geral').sort(),
+    [tecnicas],
+  );
 }
 
 export function useInvalidateTecnicas() {

@@ -14,6 +14,8 @@
 import { memo } from 'react';
 import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface HoverSetImageProps {
   /** Imagem principal do produto (primary_image_url) */
@@ -26,6 +28,8 @@ interface HoverSetImageProps {
   primaryClassName?: string;
   /** Classes para o ícone de fallback quando não há imagem */
   fallbackIconClassName?: string;
+  /** Carrega a imagem com alta prioridade (LCP) — passar true para cards above-the-fold */
+  priority?: boolean;
 }
 
 export const HoverSetImage = memo(function HoverSetImage({
@@ -34,13 +38,12 @@ export const HoverSetImage = memo(function HoverSetImage({
   alt,
   primaryClassName,
   fallbackIconClassName,
+  priority = false,
 }: HoverSetImageProps) {
   if (!primary) {
     return (
       <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
-        <Package
-          className={cn('h-12 w-12 text-muted-foreground/20', fallbackIconClassName)}
-        />
+        <Package className={cn('h-12 w-12 text-muted-foreground/20', fallbackIconClassName)} />
       </div>
     );
   }
@@ -49,17 +52,17 @@ export const HoverSetImage = memo(function HoverSetImage({
 
   return (
     <>
-      <img
-        src={primary}
+      <OptimizedImage
+        src={getCdnUrl(primary, 'card')}
         alt={alt}
-        loading="lazy"
-        decoding="async"
         className={cn(
-          'h-full w-full object-contain transition-all duration-300 ease-out',
+          'object-contain transition-all duration-300 ease-out',
           'group-hover:scale-105',
           hasSetHover && 'group-hover:opacity-0',
           primaryClassName,
         )}
+        containerClassName="h-full w-full"
+        priority={priority}
       />
       {hasSetHover && set && (
         <img

@@ -249,10 +249,6 @@ export function CartHeaderButton() {
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
                       const isActive = cart.id === activeCartId;
-                      const _cartSubtotal = cart.items.reduce(
-                        (sum, item) => sum + item.product_price * item.quantity,
-                        0,
-                      );
                       return (
                         <div
                           key={cart.id}

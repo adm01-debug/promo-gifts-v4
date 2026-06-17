@@ -34,6 +34,7 @@ import {
   Settings,
   Plug,
   ChevronsDownUp,
+  Cloud,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -155,6 +156,12 @@ const navGroups: NavGroup[] = [
         icon: SlidersHorizontal,
         label: 'Observabilidade',
         href: '/admin/observabilidade',
+        devOnly: true,
+      },
+      {
+        icon: Cloud,
+        label: 'Cloudflare Images',
+        href: '/admin/cloudflare-images',
         devOnly: true,
       },
     ],
@@ -428,3 +435,4 @@ export const SidebarReorganized = React.memo(
     );
   }),
 );
+SidebarReorganized.displayName = 'SidebarReorganized';

@@ -1,6 +1,7 @@
 /**
  * PromobrindProduct type + helper functions.
  */
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface PromobrindProduct {
   id: string;
@@ -13,6 +14,7 @@ export interface PromobrindProduct {
   image_url?: string | null;
   images: string[] | null;
   primary_image_url: string | null;
+  primary_image_blurhash?: string | null;
   primary_image_fallback_url?: string | null;
   set_image_url?: string | null;
   og_image_url?: string | null;
@@ -269,7 +271,7 @@ export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
 
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = toErrorMessage(err);
   return /(sale_price|base_price|image_url|supplier_name|category_name|product_videos|selected_images|gender|price_updated_at|price_freshness_threshold_days|does not exist|não existe|undefined column|column .+ does not exist|could not identify an ordering operator|order by)/i.test(
     msg,
   );

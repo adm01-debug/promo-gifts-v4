@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertTriangle, Shield } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Shield, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type GalleryStats, IMAGE_TYPES } from './types';
 
@@ -47,6 +47,12 @@ export function ImageStatsBar({ stats, hasPrimary, hasOgImage }: Props) {
         {stats.withAlt}/{stats.total} com alt text
       </span>
       {stats.withoutVariant > 0 && <span>{stats.withoutVariant} gerais (sem cor)</span>}
+      {stats.total > 0 && stats.cfVerified > 0 && (
+        <span className="flex items-center gap-1">
+          <Cloud className="h-2.5 w-2.5 text-emerald-500" />
+          {stats.cfVerified}/{stats.total} no Cloudflare
+        </span>
+      )}
       {Array.from(stats.byType.entries())
         .sort((a, b) => b[1] - a[1])
         .map(([type, count]) => {

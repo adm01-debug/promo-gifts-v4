@@ -18,7 +18,6 @@ import {
   getActiveColorName,
   type ActiveColorFilter,
 } from '@/utils/color-image-resolver';
-import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +27,11 @@ import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantSt
 import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+
+type SkeletonRow = { id: string; isSkeleton: true };
+function isSkeletonRow(row: Product | SkeletonRow): row is SkeletonRow {
+  return 'isSkeleton' in row;
+}
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
@@ -149,7 +153,7 @@ export const ProductTableView = memo(function ProductTableView({
   onToggleCompare,
   canAddToCompare = true,
   onShareProduct,
-  highlightColors = [],
+  highlightColors: _highlightColors = [],
   activeColorFilter,
   selectionMode,
   selectedIds,
@@ -246,8 +250,7 @@ export const ProductTableView = memo(function ProductTableView({
   const sorted = useMemo(() => {
     if (isLoading && products.length === 0) {
       return Array.from({ length: 12 }).map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
+        (_, i): SkeletonRow => ({ id: `skeleton-${i}`, isSkeleton: true }),
       );
     }
     return [...hydratedProducts].sort((a, b) => {
@@ -441,7 +444,7 @@ export const ProductTableView = memo(function ProductTableView({
               );
             }
 
-            if (product.isSkeleton) {
+            if (isSkeletonRow(product)) {
               return (
                 <div
                   key={vr.key}
@@ -508,11 +511,6 @@ export const ProductTableView = memo(function ProductTableView({
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             const activeColorName = getActiveColorName(product, activeColorFilter);
             const isSelected = selectionMode && selectedIds?.has(product.id);
-            const _matchedColor = resolveHighlightHex(
-              product.colors,
-              activeColorFilter,
-              highlightColors,
-            );
 
             return (
               <div

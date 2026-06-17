@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { RefreshCw, RotateCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
@@ -53,7 +54,7 @@ export function FailedDeliveriesPanel() {
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
       const { data, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as unknown as FailedDelivery[], count: count ?? 0 };
+      return { rows: (data ?? []) as FailedDelivery[], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });
@@ -74,7 +75,9 @@ export function FailedDeliveriesPanel() {
       qc.invalidateQueries({ queryKey: ['failed-deliveries'] });
       qc.invalidateQueries({ queryKey: ['integrations-health'] });
     } catch (err) {
-      toast.error('Falha ao reenviar', { description: (err as Error).message });
+      toast.error('Falha ao reenviar', {
+        description: toErrorMessage(err),
+      });
     } finally {
       setReplayingId(null);
     }

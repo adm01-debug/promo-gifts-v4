@@ -74,7 +74,10 @@ export function useOptimizationQueue() {
     },
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: QUEUE_KEY });
+  const invalidate = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: QUEUE_KEY }),
+    [queryClient],
+  );
 
   const enqueue = useCallback(
     async (input: {
@@ -100,22 +103,23 @@ export function useOptimizationQueue() {
       invalidate();
       return true;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [invalidate],
   );
 
-  const remove = useCallback(async (id: string) => {
-    const { error } = await supabase
-      .from('optimization_queue' as never)
-      .delete()
-      .eq('id', id);
-    if (error) {
-      toast.error('Falha ao remover item da fila');
-      return;
-    }
-    invalidate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const remove = useCallback(
+    async (id: string) => {
+      const { error } = await supabase
+        .from('optimization_queue' as never)
+        .delete()
+        .eq('id', id);
+      if (error) {
+        toast.error('Falha ao remover item da fila');
+        return;
+      }
+      invalidate();
+    },
+    [invalidate],
+  );
 
   const resetStuck = useCallback(async () => {
     const { error } = await supabase.rpc(
@@ -128,8 +132,7 @@ export function useOptimizationQueue() {
     }
     toast.success('Fila resetada');
     invalidate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [invalidate]);
 
   /** Executa um item: simula trabalho leve + checa guardrail. */
   const runOne = useCallback(async (): Promise<'done' | 'blocked' | 'empty' | 'error'> => {
@@ -179,8 +182,7 @@ export function useOptimizationQueue() {
 
     invalidate();
     return finalStatus === 'blocked' ? 'blocked' : 'done';
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [invalidate]);
 
   /** Loop sequencial: executa enquanto houver pending e o guardrail permitir. */
   const startAuto = useCallback(async () => {
@@ -289,8 +291,7 @@ export function useOptimizationQueue() {
     toast.success('Item re-enfileirado. Iniciando execução…');
     void startAutoRef.current?.();
     return true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastBridgeFailure, enqueue]);
+  }, [lastBridgeFailure, enqueue, invalidate]);
 
   // Permite que requeue chame startAuto sem ciclo de dependência.
   const startAutoRef = useRef<typeof startAuto | null>(null);

@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface CollectionGridCardProps {
   collection: Collection;
@@ -45,13 +47,17 @@ interface CollectionGridCardProps {
 function DynamicCollage({ images }: { images: string[] }) {
   const count = images.length;
   const imgClass =
-    'w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]';
+    'object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]';
 
   if (count === 1) {
     return (
       <div className="absolute inset-0">
-        <img src={images[0]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+        <OptimizedImage
+          src={getCdnUrl(images[0], 'card')}
+          alt=""
+          className={imgClass}
+          containerClassName="h-full w-full"
+        />
       </div>
     );
   }
@@ -60,12 +66,20 @@ function DynamicCollage({ images }: { images: string[] }) {
     return (
       <div className="absolute inset-0 grid grid-cols-2 gap-0">
         <div className="overflow-hidden">
-          <img src={images[0]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(images[0], 'card')}
+            alt=""
+            className={imgClass}
+            containerClassName="h-full w-full"
+          />
         </div>
         <div className="overflow-hidden">
-          <img src={images[1]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(images[1], 'card')}
+            alt=""
+            className={imgClass}
+            containerClassName="h-full w-full"
+          />
         </div>
       </div>
     );
@@ -75,16 +89,28 @@ function DynamicCollage({ images }: { images: string[] }) {
     return (
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0">
         <div className="row-span-2 overflow-hidden">
-          <img src={images[0]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(images[0], 'card')}
+            alt=""
+            className={imgClass}
+            containerClassName="h-full w-full"
+          />
         </div>
         <div className="overflow-hidden">
-          <img src={images[1]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(images[1], 'card')}
+            alt=""
+            className={imgClass}
+            containerClassName="h-full w-full"
+          />
         </div>
         <div className="overflow-hidden">
-          <img src={images[2]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(images[2], 'card')}
+            alt=""
+            className={imgClass}
+            containerClassName="h-full w-full"
+          />
         </div>
       </div>
     );
@@ -94,20 +120,36 @@ function DynamicCollage({ images }: { images: string[] }) {
   return (
     <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0">
       <div className="overflow-hidden">
-        <img src={display[0]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+        <OptimizedImage
+          src={getCdnUrl(display[0], 'card')}
+          alt=""
+          className={imgClass}
+          containerClassName="h-full w-full"
+        />
       </div>
       <div className="overflow-hidden">
-        <img src={display[1]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+        <OptimizedImage
+          src={getCdnUrl(display[1], 'card')}
+          alt=""
+          className={imgClass}
+          containerClassName="h-full w-full"
+        />
       </div>
       <div className="overflow-hidden">
-        <img src={display[2]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+        <OptimizedImage
+          src={getCdnUrl(display[2], 'card')}
+          alt=""
+          className={imgClass}
+          containerClassName="h-full w-full"
+        />
       </div>
       <div className="overflow-hidden">
-        <img src={display[3]} alt="" className={imgClass} loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+        <OptimizedImage
+          src={getCdnUrl(display[3], 'card')}
+          alt=""
+          className={imgClass}
+          containerClassName="h-full w-full"
+        />
       </div>
     </div>
   );

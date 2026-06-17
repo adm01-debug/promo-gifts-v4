@@ -482,7 +482,7 @@ function StatusBadge({ status, success }: { status: number | null; success: bool
     );
   }
   const variant: 'default' | 'destructive' | 'secondary' =
-    status >= 500 ? 'destructive' : status >= 400 ? 'destructive' : 'secondary';
+    status >= 400 ? 'destructive' : 'secondary';
   return (
     <Badge variant={variant} className="text-[10px] tabular-nums">
       {status}

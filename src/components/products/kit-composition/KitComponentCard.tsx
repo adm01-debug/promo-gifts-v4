@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 import type { KitComponent } from '@/types/product-catalog';
 
 /* ── Copy Button ── */
@@ -147,11 +149,11 @@ export function KitComponentCard({
               }}
             >
               {item.imageUrl ? (
-                <img
-                  src={item.imageUrl}
+                <OptimizedImage
+                  src={getCdnUrl(item.imageUrl, 'thumbnail')}
                   alt={item.productName}
-                  className="h-full w-full object-contain p-1"
-                  loading="lazy"
+                  className="object-contain p-1"
+                  containerClassName="h-full w-full"
                 />
               ) : isPackaging ? (
                 <Box className="h-7 w-7 text-warning/40 dark:text-warning/40" />

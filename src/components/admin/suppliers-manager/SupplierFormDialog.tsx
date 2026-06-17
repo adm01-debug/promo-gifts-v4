@@ -815,7 +815,7 @@ export function SupplierFormDialog({
                   onChange={(e) =>
                     updateField(
                       'delivery_time_days',
-                      e.target.value ? parseInt(e.target.value) : null,
+                      e.target.value ? parseInt(e.target.value, 10) : null,
                     )
                   }
                   className={fieldClass}
@@ -846,7 +846,7 @@ export function SupplierFormDialog({
                 type="number"
                 value={editingSupplier.priority ?? 50}
                 onChange={(e) =>
-                  updateField('priority', e.target.value ? parseInt(e.target.value) : 50)
+                  updateField('priority', e.target.value ? parseInt(e.target.value, 10) : 50)
                 }
                 className={`${fieldClass} w-24`}
                 min={0}

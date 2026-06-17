@@ -22,15 +22,6 @@ import type {
 
 type Raw = Record<string, unknown>;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-function _pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
-  for (const k of keys) {
-    const v = obj[k];
-    if (v !== undefined && v !== null) return v as T;
-  }
-  return undefined;
-}
-
 function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'number' && Number.isFinite(v)) return v;

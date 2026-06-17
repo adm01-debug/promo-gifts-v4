@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Check, X, Clock, Mail, Shield, Loader2 } from 'lucide-react';
@@ -23,8 +23,11 @@ export function PasswordResetApproval() {
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const pendingRequests = requests.filter((r) => r.status === 'pending');
-  const processedRequests = requests.filter((r) => r.status !== 'pending');
+  const pendingRequests = useMemo(() => requests.filter((r) => r.status === 'pending'), [requests]);
+  const processedRequests = useMemo(
+    () => requests.filter((r) => r.status !== 'pending'),
+    [requests],
+  );
 
   const handleAction = async () => {
     if (!selectedRequest || !action) return;

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/ui';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert, TablesUpdate, Json } from '@/integrations/supabase/types';
 
 import { logger } from '@/lib/logger';
 // ============================================
@@ -196,7 +196,7 @@ export function useQuoteTemplates() {
           name: input.name,
           description: input.description || null,
           is_default: input.is_default || false,
-          items: JSON.parse(JSON.stringify(input.items || [])),
+          items: structuredClone(input.items ?? []) as unknown as Json,
           template_data: {},
           discount_percent: input.discount_percent || 0,
           discount_amount: input.discount_amount || 0,
@@ -252,7 +252,7 @@ export function useQuoteTemplates() {
           updated_at: new Date().toISOString(),
         };
         if (updates.items) {
-          updatePayload.items = JSON.parse(JSON.stringify(updates.items));
+          updatePayload.items = structuredClone(updates.items) as unknown as Json;
         }
 
         const { data: result, error: updErr } = await supabase
@@ -355,8 +355,8 @@ export function useQuoteTemplates() {
           name: `${template.name} (Clonado)`,
           description: template.description || null,
           is_default: false,
-          items: JSON.parse(JSON.stringify(template.items || [])),
-          template_data: JSON.parse(JSON.stringify(template.template_data || {})),
+          items: structuredClone(template.items ?? []) as unknown as Json,
+          template_data: structuredClone(template.template_data ?? {}) as unknown as Json,
           discount_percent: template.discount_percent || 0,
           discount_amount: template.discount_amount || 0,
           notes: template.notes || null,

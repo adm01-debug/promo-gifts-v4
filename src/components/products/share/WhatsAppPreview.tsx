@@ -47,7 +47,7 @@ export function WhatsAppPreview({
   }, [message]);
 
   const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   // WhatsApp dark mode palette
   const header = 'hsl(200, 12%, 13%)'; // #1F2C33

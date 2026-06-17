@@ -52,7 +52,14 @@ Deno.serve(async (req) => {
 
     let body: unknown;
     try {
-      body = await req.json();
+      const text = await req.text();
+      if (!text.trim()) {
+        return new Response(
+          JSON.stringify({ error: "Empty request body" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      body = JSON.parse(text);
     } catch {
       return new Response(
         JSON.stringify({ error: "Invalid JSON body" }),

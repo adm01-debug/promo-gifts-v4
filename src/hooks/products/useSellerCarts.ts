@@ -3,6 +3,7 @@
  * Persiste no banco de dados, máx 3 carrinhos simultâneos
  */
 
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -453,9 +454,14 @@ export function useSellerCarts() {
   });
 
   // Computed
-  const carts = cartsQuery.data || [];
-  const totalItems = carts.reduce((sum, c) => sum + c.items.length, 0);
-  const canCreateCart = carts.length < 3;
+  const { carts, totalItems, canCreateCart } = useMemo(() => {
+    const c = cartsQuery.data || [];
+    return {
+      carts: c,
+      totalItems: c.reduce((sum, cart) => sum + cart.items.length, 0),
+      canCreateCart: c.length < 3,
+    };
+  }, [cartsQuery.data]);
 
   // Restore multiple items (Undo Clear)
   const restoreItems = useMutation({

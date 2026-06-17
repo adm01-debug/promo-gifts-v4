@@ -23,8 +23,7 @@ export default function DropboxBrowserPage() {
     checkConnection().then((connected) => {
       if (connected) listFiles('');
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkConnection, listFiles]);
 
   const formatSize = (bytes?: number) => {
     if (!bytes) return '';

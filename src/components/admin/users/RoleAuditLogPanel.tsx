@@ -88,7 +88,7 @@ export function RoleAuditLogPanel() {
       let query = supabase
         .from('admin_audit_log')
         .select('id, created_at, user_id, action, resource_id, source, details')
-        .in('action', ROLE_ACTIONS as unknown as string[])
+        .in('action', [...ROLE_ACTIONS])
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -122,10 +122,8 @@ export function RoleAuditLogPanel() {
     refetchInterval: 30_000,
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const entries = data?.entries ?? [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const profilesMap = data?.profilesMap ?? new Map<string, ProfileLite>();
+  const entries = useMemo(() => data?.entries ?? [], [data]);
+  const profilesMap = useMemo(() => data?.profilesMap ?? new Map<string, ProfileLite>(), [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -12,6 +12,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { KitState } from '@/lib/kit-builder';
+import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 
 const AUTO_SAVE_DELAY_MS = 5000;
@@ -75,9 +76,11 @@ export function useKitAutoSave(
       name: currentKitState.name || 'Kit sem nome',
       status: 'draft' as const,
       kit_type: currentKitState.kitType || 'montado',
-      box_data: currentKitState.box ? JSON.parse(JSON.stringify(currentKitState.box)) : null,
-      items_data: JSON.parse(JSON.stringify(currentKitState.items)),
-      personalization_data: JSON.parse(JSON.stringify(currentKitState.personalization)),
+      box_data: currentKitState.box
+        ? (structuredClone(currentKitState.box) as unknown as Json)
+        : null,
+      items_data: structuredClone(currentKitState.items) as unknown as Json,
+      personalization_data: structuredClone(currentKitState.personalization) as unknown as Json,
       kit_quantity: currentKitQuantity,
       box_price: currentKitState.boxPrice,
       items_price: currentKitState.itemsPrice,

@@ -74,7 +74,7 @@ const TIER_STYLES = {
     icon: Info,
     label: 'Calculando',
   },
-};
+} as const;
 
 export function ClientHealthHero({ clientId, ramoAtividade, clientName }: Props) {
   const health = useClientHealthScore(clientId, ramoAtividade);

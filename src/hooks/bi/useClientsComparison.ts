@@ -2,6 +2,7 @@
  * useClientsComparison — paraleliza dados de até 3 clientes para comparação lado-a-lado.
  * Composição de hooks BI existentes (sem novas RPCs).
  */
+import { useMemo } from 'react';
 import { useClientHealthScore } from '@/hooks/bi/useClientHealthScore';
 import { useClientBI } from '@/hooks/bi/useClientBI';
 import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
@@ -55,12 +56,16 @@ export function useSingleClientComparisonRow(clientId: string): ClientComparison
   const favoriteCategorySharePct = Math.round(catAffinity.favorite?.revenueSharePct ?? 0);
 
   // GAP: categoria forte do setor que o cliente não compra
-  const clientSlugs = new Set(catAffinity.categories.map((c) => c.slug));
-  const opportunity = catIndustry.categories.find(
-    (ind) => !clientSlugs.has(ind.slug) && ind.revenueSharePct >= 8,
-  );
-  const opportunityCategoryLabel = opportunity?.label ?? null;
-  const opportunityCategorySharePct = Math.round(opportunity?.revenueSharePct ?? 0);
+  const { opportunityCategoryLabel, opportunityCategorySharePct } = useMemo(() => {
+    const clientSlugs = new Set(catAffinity.categories.map((c) => c.slug));
+    const opportunity = catIndustry.categories.find(
+      (ind) => !clientSlugs.has(ind.slug) && ind.revenueSharePct >= 8,
+    );
+    return {
+      opportunityCategoryLabel: opportunity?.label ?? null,
+      opportunityCategorySharePct: Math.round(opportunity?.revenueSharePct ?? 0),
+    };
+  }, [catAffinity.categories, catIndustry.categories]);
 
   const nextPeakLabel =
     seas.daysToNextPeak === 0

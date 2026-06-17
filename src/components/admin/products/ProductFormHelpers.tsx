@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import type { UseFormRegister, UseFormSetValue, FieldErrors } from 'react-hook-form';
+import type { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import type { ProductFormData } from './ProductFormSchema';
 
 // ============================================
@@ -37,7 +37,7 @@ export interface SectionDef {
 export interface FormSectionProps {
   register: UseFormRegister<ProductFormData>;
   setValue: UseFormSetValue<ProductFormData>;
-  watch: <T extends keyof ProductFormData>(name: T) => ProductFormData[T];
+  watch: UseFormWatch<ProductFormData>;
   errors: FieldErrors<ProductFormData>;
   numericProps: (name: keyof ProductFormData | (string & {})) => Record<string, unknown>;
 }

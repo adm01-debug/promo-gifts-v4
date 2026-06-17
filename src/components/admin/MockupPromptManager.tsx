@@ -2,7 +2,7 @@
  * MockupPromptManager — Orchestrator (refactored)
  * Sub-components in ./mockup-prompts/
  */
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
@@ -82,7 +82,7 @@ export function MockupPromptManager() {
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
       setConfigs((cr.data || []) as PromptConfig[]);
-      setTechniques((tr.data || []) as unknown as Technique[]);
+      setTechniques(tr.data || []);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
         description: sanitizeError(err),
@@ -154,7 +154,7 @@ export function MockupPromptManager() {
         .eq('config_id', configId)
         .order('version', { ascending: false });
       if (error) throw error;
-      setHistory((data || []) as unknown as PromptHistory[]);
+      setHistory(data || []);
     } catch {
       toast.error('Erro ao carregar histórico');
     } finally {
@@ -233,10 +233,17 @@ export function MockupPromptManager() {
     setEditedPrompts((p) => ({ ...p, [id]: { ...getEdited(config), [field]: val } }));
   };
 
-  const mainPrompt = configs.find((c) => c.config_key === 'main_prompt');
-  const techniquePrompts = configs.filter((c) => c.config_key.startsWith('technique_'));
-  const techniquesWithPrompt = new Set(techniquePrompts.map((c) => c.technique_id));
-  const techniquesWithoutPrompt = techniques.filter((t) => !techniquesWithPrompt.has(t.id));
+  const { mainPrompt, techniquePrompts, techniquesWithoutPrompt } = useMemo(() => {
+    const main = configs.find((c) => c.config_key === 'main_prompt');
+    const techPrompts = configs.filter((c) => c.config_key.startsWith('technique_'));
+    const withPrompt = new Set(techPrompts.map((c) => c.technique_id));
+    const withoutPrompt = techniques.filter((t) => !withPrompt.has(t.id));
+    return {
+      mainPrompt: main,
+      techniquePrompts: techPrompts,
+      techniquesWithoutPrompt: withoutPrompt,
+    };
+  }, [configs, techniques]);
 
   if (isLoading)
     return (

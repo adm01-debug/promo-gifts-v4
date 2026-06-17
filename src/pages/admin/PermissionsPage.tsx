@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,37 +65,39 @@ export default function PermissionsPage() {
   });
   const { toast } = useToast();
 
+  const fetchPermissions = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const { data, error } = await supabase
+          .from('permissions')
+          .select('*')
+          .order('category', { ascending: true });
+
+        if (isCancelled()) return;
+        if (error) throw error;
+        setPermissions(data || []);
+      } catch (error: unknown) {
+        if (isCancelled()) return;
+        toast({
+          title: 'Erro',
+          description: sanitizeError(error),
+          variant: 'destructive',
+        });
+      } finally {
+        if (!isCancelled()) setIsLoading(false);
+      }
+    },
+    [toast],
+  );
+
   useEffect(() => {
     // Guarda de cancelamento: evita setState após o unmount.
     let cancelled = false;
-    fetchPermissions(() => cancelled);
+    void fetchPermissions(() => cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchPermissions = async (isCancelled: () => boolean = () => false) => {
-    try {
-      const { data, error } = await supabase
-        .from('permissions')
-        .select('*')
-        .order('category', { ascending: true });
-
-      if (isCancelled()) return;
-      if (error) throw error;
-      setPermissions(data || []);
-    } catch (error: unknown) {
-      if (isCancelled()) return;
-      toast({
-        title: 'Erro',
-        description: sanitizeError(error),
-        variant: 'destructive',
-      });
-    } finally {
-      if (!isCancelled()) setIsLoading(false);
-    }
-  };
+  }, [fetchPermissions]);
 
   const handleSubmit = async () => {
     try {
@@ -150,13 +152,17 @@ export default function PermissionsPage() {
     }
   };
 
-  const groupedPermissions = permissions.reduce(
-    (acc, perm) => {
-      if (!acc[perm.category]) acc[perm.category] = [];
-      acc[perm.category].push(perm);
-      return acc;
-    },
-    {} as Record<string, Permission[]>,
+  const groupedPermissions = useMemo(
+    () =>
+      permissions.reduce(
+        (acc, perm) => {
+          if (!acc[perm.category]) acc[perm.category] = [];
+          acc[perm.category].push(perm);
+          return acc;
+        },
+        {} as Record<string, Permission[]>,
+      ),
+    [permissions],
   );
 
   return (

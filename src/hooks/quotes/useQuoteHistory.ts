@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
+import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 export interface QuoteHistoryEntry {
   id: string;
@@ -65,7 +65,7 @@ export function useQuoteHistory() {
         field_changed: options?.fieldChanged || null,
         old_value: options?.oldValue || null,
         new_value: options?.newValue || null,
-        metadata: JSON.parse(JSON.stringify(options?.metadata || {})),
+        metadata: structuredClone(options?.metadata ?? {}) as unknown as Json,
       });
       return true;
     } catch (err) {

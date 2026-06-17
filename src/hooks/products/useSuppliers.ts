@@ -20,14 +20,12 @@ export interface SupplierOption {
 export function useSuppliers() {
   const { data, isLoading, error, fetchAll, refetch } = useExternalSuppliers();
 
-  // Buscar fornecedores ao montar
   useEffect(() => {
     fetchAll({
       orderBy: { column: 'name', ascending: true },
       limit: 100,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchAll]);
 
   // Transformar dados para o formato usado pelos componentes
   const suppliers = useMemo((): SupplierOption[] => {

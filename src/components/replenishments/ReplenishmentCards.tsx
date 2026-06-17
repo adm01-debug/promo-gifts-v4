@@ -73,6 +73,8 @@ export interface ReplenishmentCardProps {
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
   readonly colors?: readonly ColorDotLike[];
+  /** Carrega imagem com alta prioridade (LCP) — true para cards above-the-fold */
+  readonly priority?: boolean;
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -82,6 +84,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   isSelected,
   onToggleSelect,
   colors,
+  priority = false,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
@@ -149,6 +152,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             // navegando pelas variantes — a foto da cor selecionada vence.
             set={activeColorName ? null : product.product_set_image}
             alt={`Foto de ${product.product_name}`}
+            priority={priority}
           />
 
           {/* Badge superior esquerdo — Reposição */}

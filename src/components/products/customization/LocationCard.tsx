@@ -160,7 +160,7 @@ export function LocationCard({
       >
         {/* Etapa 1: Header do local */}
         <CollapsibleTrigger asChild>
-          <button className="flex w-full items-center justify-between p-4 text-left">
+          <button type="button" className="flex w-full items-center justify-between p-4 text-left">
             <div className="flex items-center gap-3">
               <div
                 className={cn(

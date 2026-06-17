@@ -85,8 +85,7 @@ export function BridgeProductsPreviewPanel() {
       // ignora resposta de requisições obsoletas (race protection)
       if (reqId !== lastReqRef.current) return;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildFilters, page, pageSize]);
+  }, [buildFilters, fetchAll, page, pageSize]);
 
   const handleApplyFilters = useCallback(() => {
     setAppliedSearch(searchInput);

@@ -69,6 +69,8 @@ type FnGlobalSearchRow = {
   result_relevance: number;
 };
 
+const SEARCH_SUPPORTED_TYPES = ['product', 'quote'];
+
 export function GlobalSearch({
   isOpen,
   onClose,
@@ -128,9 +130,8 @@ export function GlobalSearch({
     setIsLoading(true);
 
     try {
-      const supportedTypes = ['product', 'quote'];
       const types =
-        filter && supportedTypes.includes(filter) ? [filter] : supportedTypes;
+        filter && SEARCH_SUPPORTED_TYPES.includes(filter) ? [filter] : SEARCH_SUPPORTED_TYPES;
 
       const { data: rawData, error } = await untypedRpc('fn_global_search', {
         p_term: searchQuery.trim(),
@@ -143,42 +144,38 @@ export function GlobalSearch({
       const data = rawData as FnGlobalSearchRow[] | null;
 
       const mapped: SearchResult[] = (data ?? []).map((row) => {
-          const cat = (['product', 'quote'] as string[]).includes(row.result_type)
-            ? (row.result_type as 'product' | 'quote')
-            : ('page' as SearchResult['category']);
+        const cat = (['product', 'quote'] as string[]).includes(row.result_type)
+          ? (row.result_type as 'product' | 'quote')
+          : ('page' as SearchResult['category']);
 
-          const meta: Record<string, string> = {};
-          if (row.result_metadata) {
-            if (cat === 'product') {
-              if (row.result_metadata.price !== null)
-                meta.Preço = `R$ ${Number(row.result_metadata.price).toLocaleString(
-                  'pt-BR',
-                  { minimumFractionDigits: 2 },
-                )}`;
-              if (row.result_metadata.stock !== null)
-                meta.Estoque = `${row.result_metadata.stock} un`;
-            } else if (cat === 'quote') {
-              if (row.result_metadata.status)
-                meta.Status = String(row.result_metadata.status);
-              if (row.result_metadata.total !== null)
-                meta.Total = `R$ ${Number(row.result_metadata.total).toLocaleString(
-                  'pt-BR',
-                  { minimumFractionDigits: 2 },
-                )}`;
-            }
+        const meta: Record<string, string> = {};
+        if (row.result_metadata) {
+          if (cat === 'product') {
+            if (row.result_metadata.price !== null)
+              meta.Preço = `R$ ${Number(row.result_metadata.price).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}`;
+            if (row.result_metadata.stock !== null)
+              meta.Estoque = `${row.result_metadata.stock} un`;
+          } else if (cat === 'quote') {
+            if (row.result_metadata.status) meta.Status = String(row.result_metadata.status);
+            if (row.result_metadata.total !== null)
+              meta.Total = `R$ ${Number(row.result_metadata.total).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}`;
           }
+        }
 
-          return {
-            id: row.result_id,
-            title: row.result_title,
-            description: row.result_description ?? undefined,
-            category: cat,
-            url: row.result_url,
-            metadata: Object.keys(meta).length > 0 ? meta : undefined,
-            score: row.result_relevance,
-          };
-        },
-      );
+        return {
+          id: row.result_id,
+          title: row.result_title,
+          description: row.result_description ?? undefined,
+          category: cat,
+          url: row.result_url,
+          metadata: Object.keys(meta).length > 0 ? meta : undefined,
+          score: row.result_relevance,
+        };
+      });
 
       // FIX race condition: só atualiza se ainda somos a busca mais recente
       if (gen === searchGenRef.current) setResults(mapped);
@@ -385,7 +382,9 @@ export function GlobalSearch({
                   ) : (
                     <div className="py-12 text-center">
                       <Search className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
-                      <p className="text-muted-foreground">Nenhum resultado para &quot;{query}&quot;</p>
+                      <p className="text-muted-foreground">
+                        Nenhum resultado para &quot;{query}&quot;
+                      </p>
                     </div>
                   )
                 ) : (
@@ -478,29 +477,4 @@ export function GlobalSearch({
       )}
     </>
   );
-}
-
-// FIX BUG-GS-13: renamed from useGlobalSearch → useLegacyGlobalSearch to avoid
-// name collision with the real hook in useGlobalSearch.ts.
-/** @deprecated Use useGlobalSearch from './useGlobalSearch' instead. */
-export function useLegacyGlobalSearch() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  return {
-    isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
-    toggle: () => setIsOpen((prev) => !prev),
-  };
 }

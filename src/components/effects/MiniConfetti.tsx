@@ -62,8 +62,7 @@ export function MiniConfetti({
 
       return () => clearTimeout(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, count, duration, colors, onComplete, isActive]);
+  }, [trigger, count, duration, colors, onComplete, isActive, reducedMotion]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">

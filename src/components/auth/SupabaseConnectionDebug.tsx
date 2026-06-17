@@ -1,14 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import {
-  CheckCircle2,
-  Database,
-  Globe,
-  Wifi,
-  Search,
-  Activity,
-  Server,
-} from 'lucide-react';
+import { CheckCircle2, Database, Globe, Wifi, Search, Activity, Server } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 

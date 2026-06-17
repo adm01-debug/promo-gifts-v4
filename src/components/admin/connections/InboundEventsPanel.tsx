@@ -76,6 +76,13 @@ interface Endpoint {
 }
 
 const PERIOD_HOURS: Record<Period, number> = { '24h': 24, '7d': 24 * 7, '30d': 24 * 30 };
+const PERIOD_LABELS: Record<Period, string> = { '24h': '1 dia', '7d': '7 dias', '30d': '30 dias' };
+const CHART_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--success))',
+  'hsl(var(--warning))',
+  'hsl(var(--destructive))',
+];
 
 export function InboundEventsPanel() {
   const [period, setPeriod] = useState<Period>('7d');
@@ -175,13 +182,6 @@ export function InboundEventsPanel() {
       destructive: 'bg-destructive/10 text-destructive border-destructive/20',
     })[t] ?? '';
 
-  const COLORS = [
-    'hsl(var(--primary))',
-    'hsl(var(--success))',
-    'hsl(var(--warning))',
-    'hsl(var(--destructive))',
-  ];
-
   return (
     <div className="space-y-4">
       <Card>
@@ -192,8 +192,7 @@ export function InboundEventsPanel() {
                 <Inbox className="h-4 w-4 text-primary" /> Eventos recebidos
               </CardTitle>
               <CardDescription>
-                Webhooks de entrada com validação HMAC nos últimos{' '}
-                {period === '24h' ? '1 dia' : period === '7d' ? '7 dias' : '30 dias'}.
+                Webhooks de entrada com validação HMAC nos últimos {PERIOD_LABELS[period]}.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -319,7 +318,12 @@ export function InboundEventsPanel() {
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   {chartData.topEps.map((n, i) => (
-                    <Bar key={n} dataKey={n} stackId="a" fill={COLORS[i % COLORS.length]} />
+                    <Bar
+                      key={n}
+                      dataKey={n}
+                      stackId="a"
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    />
                   ))}
                 </BarChart>
               </ResponsiveContainer>

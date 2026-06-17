@@ -34,6 +34,36 @@ import { StepPreview } from './bulk-import/StepPreview';
 import { StepImporting, StepComplete } from './bulk-import/StepComplete';
 import { logger } from '@/lib/logger';
 
+const NUMERIC_FIELDS = [
+  'cost_price',
+  'stock_quantity',
+  'min_quantity',
+  'height_cm',
+  'width_cm',
+  'length_cm',
+  'diameter_cm',
+  'weight_g',
+  'capacity_ml',
+  'box_width_mm',
+  'box_height_mm',
+  'box_length_mm',
+  'box_weight_kg',
+  'box_quantity',
+  'box_volume_cm3',
+] as const;
+
+const BOOLEAN_FIELDS = [
+  'is_active',
+  'is_featured',
+  'is_bestseller',
+  'is_new',
+  'is_on_sale',
+  'is_kit',
+  'has_commercial_packaging',
+] as const;
+
+const URL_FIELDS = ['image_url', 'primary_image_url', 'og_image_url', 'box_image'] as const;
+
 interface BulkImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -111,23 +141,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const NUMERIC_FIELDS = [
-        'cost_price',
-        'stock_quantity',
-        'min_quantity',
-        'height_cm',
-        'width_cm',
-        'length_cm',
-        'diameter_cm',
-        'weight_g',
-        'capacity_ml',
-        'box_width_mm',
-        'box_height_mm',
-        'box_length_mm',
-        'box_weight_kg',
-        'box_quantity',
-        'box_volume_cm3',
-      ] as const;
       for (const numField of NUMERIC_FIELDS) {
         if (mapped[numField] !== undefined && mapped[numField] !== '') {
           const val = parseFloat(String(mapped[numField]).replace(',', '.'));
@@ -142,15 +155,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const BOOLEAN_FIELDS = [
-        'is_active',
-        'is_featured',
-        'is_bestseller',
-        'is_new',
-        'is_on_sale',
-        'is_kit',
-        'has_commercial_packaging',
-      ] as const;
       for (const boolField of BOOLEAN_FIELDS) {
         if (mapped[boolField] !== undefined && mapped[boolField] !== '') {
           const raw = String(mapped[boolField]).toLowerCase().trim();
@@ -158,7 +162,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const URL_FIELDS = ['image_url', 'primary_image_url', 'og_image_url', 'box_image'] as const;
       for (const urlField of URL_FIELDS) {
         if (mapped[urlField] && typeof mapped[urlField] === 'string') {
           const url = String(mapped[urlField]).trim();

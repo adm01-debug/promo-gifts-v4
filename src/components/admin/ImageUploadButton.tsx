@@ -44,10 +44,6 @@ export function ImageUploadButton({
     setIsUploading(true);
 
     try {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const _fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);

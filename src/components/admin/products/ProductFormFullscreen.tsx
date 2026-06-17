@@ -109,7 +109,7 @@ const STEPS: StepDef[] = [
     icon: Boxes,
     requiredFields: [],
     fieldLabels: {},
-  } as unknown as StepDef,
+  },
   {
     id: 'media',
     label: 'Mídia',
@@ -244,8 +244,8 @@ export function ProductFormFullscreen({
     }
   }, [costPriceValue, supplierMarkup, priceManuallyEdited, setValue]);
 
-  const numericProps = (name: keyof ProductFormData) => ({
-    ...register(name, { valueAsNumber: true }),
+  const numericProps = (name: keyof ProductFormData | (string & {})) => ({
+    ...register(name as keyof ProductFormData, { valueAsNumber: true }),
     type: 'number' as const,
     step: name.includes('price') ? '0.01' : '1',
   });

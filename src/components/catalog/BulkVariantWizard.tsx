@@ -80,8 +80,7 @@ function ProductVariantStep({
     if (!isLoading && sortedVariants.length === 0) {
       onSkip();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, sortedVariants.length]);
+  }, [isLoading, sortedVariants.length, onSkip]);
 
   if (isLoading) {
     return (

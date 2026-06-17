@@ -40,6 +40,9 @@ export interface Product {
   set_image_url?: string | null;
   og_image_url?: string;
   primary_image_url?: string | null;
+  /** Blurhash da imagem primária — cor dominante usada como placeholder no card. */
+  primary_image_blurhash?: string | null;
+  /** URL de fallback da imagem primária (usada se a imagem principal falhar). */
   primary_image_fallback_url?: string | null;
   images: string[];
   sku: string;

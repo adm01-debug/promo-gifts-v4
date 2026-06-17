@@ -57,3 +57,20 @@ declare var SpeechRecognition: {
   prototype: SpeechRecognition;
   new (): SpeechRecognition;
 };
+
+/**
+ * Layout Instability API — not yet in lib.dom.d.ts for TypeScript < 5.x.
+ * Eliminates (entry as any).hadRecentInput / (entry as any).value casts.
+ */
+interface LayoutShift extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
+}
+
+/**
+ * Event Timing API (INP) — not yet in lib.dom.d.ts for older TypeScript.
+ * Eliminates (entry as any).duration casts in INP observer.
+ */
+interface PerformanceEventTiming extends PerformanceEntry {
+  duration: number;
+}

@@ -60,6 +60,9 @@ function csvEscape(v: string): string {
   return v;
 }
 
+const RBAC_SUMMARY = summarizeRoutes(RBAC_ROUTES);
+const RBAC_ISSUES = findInconsistencies(RBAC_ROUTES);
+
 function toCsv(rows: RbacRouteEntry[]): string {
   const header = ['path', 'label', 'guard', 'role', 'mfa_aal2', 'rls_helper', 'category', 'notes'];
   const lines = rows.map((r) =>
@@ -100,8 +103,8 @@ export default function AdminRbacRoutesPage() {
     });
   }, [query, roleFilter, guardFilter]);
 
-  const summary = useMemo(() => summarizeRoutes(RBAC_ROUTES), []);
-  const issues = useMemo(() => findInconsistencies(RBAC_ROUTES), []);
+  const summary = RBAC_SUMMARY;
+  const issues = RBAC_ISSUES;
 
   const handleExport = () => {
     const csv = toCsv(filtered);

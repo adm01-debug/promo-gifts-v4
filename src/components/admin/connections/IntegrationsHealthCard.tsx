@@ -24,6 +24,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -259,7 +260,7 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
       else if (score >= 5) toast.warning(msg);
       else toast.error(msg);
     } catch (err) {
-      toast.error(`Falha na auditoria: ${(err as Error).message}`);
+      toast.error(`Falha na auditoria: ${toErrorMessage(err)}`);
     } finally {
       setAuditing(false);
     }

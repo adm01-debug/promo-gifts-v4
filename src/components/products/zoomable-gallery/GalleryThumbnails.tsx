@@ -1,26 +1,11 @@
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface GalleryThumbnailsProps {
   images: string[];
   currentIndex: number;
   onSelect: (index: number) => void;
   className?: string;
-}
-
-function BlurThumb({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={cn(
-        'h-full w-full object-cover transition-all duration-500 ease-out',
-        loaded ? 'opacity-100 blur-0' : 'opacity-40 blur-sm',
-      )}
-      onLoad={() => setLoaded(true)}
-    />
-  );
 }
 
 export function GalleryThumbnails({
@@ -42,7 +27,12 @@ export function GalleryThumbnails({
               : 'border-transparent hover:border-primary/50',
           )}
         >
-          <BlurThumb src={image} alt={`Thumbnail ${index + 1}`} />
+          <OptimizedImage
+            src={image}
+            alt={`Thumbnail ${index + 1}`}
+            className="object-cover"
+            containerClassName="h-full w-full"
+          />
         </button>
       ))}
     </div>
@@ -63,11 +53,14 @@ export function FullscreenThumbnails({ images, currentIndex, onSelect }: Gallery
               : 'border-transparent opacity-60 hover:border-primary/50 hover:opacity-100',
           )}
         >
-          <BlurThumb src={image} alt={`Thumbnail ${index + 1}`} />
+          <OptimizedImage
+            src={image}
+            alt={`Thumbnail ${index + 1}`}
+            className="object-cover"
+            containerClassName="h-full w-full"
+          />
         </button>
       ))}
     </div>
   );
 }
-
-export { BlurThumb };

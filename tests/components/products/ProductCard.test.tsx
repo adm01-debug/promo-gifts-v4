@@ -9,6 +9,7 @@ import React from "react";
 vi.mock("@/utils/image-utils", () => ({
   getCdnUrl: vi.fn((url: string) => url),
   getSrcSet: vi.fn(() => ""),
+  getBlurhashDominantColor: vi.fn(() => null),
 }));
 
 vi.mock("@/components/collections/AddToCollectionModal", () => ({

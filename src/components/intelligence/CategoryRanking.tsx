@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, TrendingUp, Store, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -91,16 +91,19 @@ export function CategoryRanking({
     }
   }, [categories, sortMode]);
 
-  const getBarValue = (cat: CategoryRankingItem): number => {
-    switch (sortMode) {
-      case 'internal':
-        return cat.internalRevenue;
-      case 'market':
-        return cat.marketDepleted;
-      default:
-        return cat.totalScore;
-    }
-  };
+  const getBarValue = useCallback(
+    (cat: CategoryRankingItem): number => {
+      switch (sortMode) {
+        case 'internal':
+          return cat.internalRevenue;
+        case 'market':
+          return cat.marketDepleted;
+        default:
+          return cat.totalScore;
+      }
+    },
+    [sortMode],
+  );
 
   const getDisplayValue = (cat: CategoryRankingItem): string => {
     switch (sortMode) {
@@ -141,8 +144,7 @@ export function CategoryRanking({
     }
 
     return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedCategories, sortMode]);
+  }, [sortedCategories, getBarValue]);
 
   if (isLoading) {
     return (

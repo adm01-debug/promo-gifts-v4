@@ -31,6 +31,9 @@ import { type Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
 
+// Image types that are excluded from the gallery (ADR-001)
+const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
+
 interface ProductQuickViewProps {
   product: Product | null;
   open: boolean;
@@ -107,8 +110,7 @@ export const ProductQuickView = React.memo(
 
       if (imageMetas.length > 0) {
         // Tipos técnicos nunca aparecem na galeria (ADR-001)
-        const TECHNICAL = new Set(['box', 'pouch', 'location', 'area', 'component']);
-        const galleryMetas = imageMetas.filter((img) => !TECHNICAL.has(img.image_type));
+        const galleryMetas = imageMetas.filter((img) => !TECHNICAL_IMAGE_TYPES.has(img.image_type));
 
         // Hero: main com is_primary=true → qualquer main → primeiro por display_order
         const hero =

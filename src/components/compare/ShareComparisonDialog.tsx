@@ -3,6 +3,7 @@
  * Cria registro em user_comparisons com share_token + is_public + expiração.
  */
 import { useState } from 'react';
+import type { Json } from '@/integrations/supabase/types';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +64,7 @@ export function ShareComparisonDialog({
           user_id: userData.user.id,
           client_id: clientId ?? null,
           client_name: clientName ?? null,
-          items: JSON.parse(JSON.stringify(compareItems)),
+          items: structuredClone(compareItems) as unknown as Json,
           is_public: true,
           share_expires_at: expiresAt,
         })

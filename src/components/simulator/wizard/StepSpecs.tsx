@@ -44,9 +44,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
     quantity: wizard.quantity,
   });
 
-  // v6: Analyze techniques to determine which fields to show
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const techniques = selectedLocation?.availableTechniques || [];
+  const techniques = useMemo(() => selectedLocation?.availableTechniques ?? [], [selectedLocation]);
 
   const { anyUsaDimensao, anyCobraPorCor, maxColors, maxWidth, maxHeight } = useMemo(() => {
     if (!techniques.length) {

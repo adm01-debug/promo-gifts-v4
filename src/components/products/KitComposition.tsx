@@ -22,6 +22,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { KitComponent } from '@/types/product-catalog';
 import { KitComponentCard } from './kit-composition/KitComponentCard';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface KitCompositionProps {
   items: KitComponent[];
@@ -80,11 +82,11 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
                   className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border-2 border-card bg-muted"
                 >
                   {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
+                    <OptimizedImage
+                      src={getCdnUrl(item.imageUrl, 'thumbnail')}
                       alt=""
-                      className="h-full w-full object-contain p-0.5"
-                      loading="lazy"
+                      className="object-contain p-0.5"
+                      containerClassName="h-full w-full"
                     />
                   ) : (
                     <Package className="h-3.5 w-3.5 text-muted-foreground/50" />

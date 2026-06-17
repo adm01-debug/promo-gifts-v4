@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../../integrations/supabase/lazy-client';
+import { logger } from '@/lib/logger';
 
 export async function runAuthAudit() {
   try {
@@ -9,14 +10,14 @@ export async function runAuthAudit() {
     const { data, error } = await supabase.rpc('check_auth_config_status');
 
     if (error) {
-      console.error('[AuthAudit] Falha ao executar auditoria:', error.message);
+      logger.error('[AuthAudit] Falha ao executar auditoria:', error.message);
       return { success: false, error: error.message };
     }
 
-    console.warn('[AuthAudit] Resultado:', data);
+    logger.warn('[AuthAudit] Resultado:', data);
     return { success: true, data };
   } catch (err) {
-    console.error('[AuthAudit] Erro inesperado:', err);
+    logger.error('[AuthAudit] Erro inesperado:', err);
     return { success: false, error: String(err) };
   }
 }

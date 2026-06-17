@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface KitTemplateRow {
   id: string;
@@ -59,9 +60,11 @@ export function useKitTemplates() {
           name: `${template.name} (cópia)`,
           status: 'draft',
           kit_type: 'montado',
-          box_data: template.box_data ? JSON.parse(JSON.stringify(template.box_data)) : null,
-          items_data: JSON.parse(JSON.stringify(template.items_data)),
-          personalization_data: JSON.parse(JSON.stringify(template.personalization_data)),
+          box_data: template.box_data
+            ? (structuredClone(template.box_data) as unknown as Json)
+            : null,
+          items_data: structuredClone(template.items_data) as unknown as Json,
+          personalization_data: structuredClone(template.personalization_data) as unknown as Json,
           kit_quantity: 1,
           box_price: 0,
           items_price: 0,

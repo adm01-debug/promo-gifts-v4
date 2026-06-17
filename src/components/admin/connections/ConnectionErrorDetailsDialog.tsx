@@ -152,11 +152,11 @@ export function ConnectionErrorDetailsDialog({
         const { data: conns } = await q;
         let ids = (conns ?? []).map((c) => c.id);
         if (ids.length === 0 && envKey) {
-          const { data: any2 } = await supabase
+          const { data: fallbackConns } = await supabase
             .from('external_connections')
             .select('id')
             .eq('type', connectionType);
-          ids = (any2 ?? []).map((c) => c.id);
+          ids = (fallbackConns ?? []).map((c) => c.id);
         }
         if (ids.length === 0) {
           if (!cancelled) setDetail(null);

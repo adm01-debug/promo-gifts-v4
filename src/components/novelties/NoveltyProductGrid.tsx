@@ -146,7 +146,10 @@ export function NoveltyProductGrid() {
       // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
       // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
       const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       filtered = filtered.filter(
         (p) =>
@@ -397,6 +400,7 @@ export function NoveltyProductGrid() {
                       canAddToCompare={canAddToCompare}
                       isNovelty={true}
                       noveltyDaysRemaining={novelty.days_remaining}
+                      priority={index < 6}
                     />
                   </div>
                 </div>

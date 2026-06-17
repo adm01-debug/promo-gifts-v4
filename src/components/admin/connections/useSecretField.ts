@@ -97,7 +97,6 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   };
 
   useEffect(() => {
-    const _scopeKey = `${draftScope}:${secretName}`;
     const abortController = abortRef.current;
 
     // Reset transients on change
