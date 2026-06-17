@@ -29,6 +29,7 @@ const CF_STATUS_CONFIG = {
     label: 'Cloudflare: sincronizando',
   },
   pending: { icon: Cloud, className: 'text-muted-foreground/50', label: 'Cloudflare: pendente' },
+  missing: { icon: AlertCircle, className: 'text-amber-500', label: 'Cloudflare: ausente' },
   failed: { icon: CloudOff, className: 'text-destructive', label: 'Cloudflare: falhou' },
   skipped: { icon: AlertCircle, className: 'text-warning/60', label: 'Cloudflare: ignorado' },
 } as const;
@@ -123,6 +124,7 @@ export function ImageGrid({
               <OptimizedImage
                 src={img}
                 alt={ext?.alt_text || `Imagem ${index + 1}`}
+                urlOriginal={ext?.url_original ?? ext?.url ?? null}
                 blurhash={ext?.blurhash}
                 className="object-contain"
                 containerClassName="h-full w-full"
