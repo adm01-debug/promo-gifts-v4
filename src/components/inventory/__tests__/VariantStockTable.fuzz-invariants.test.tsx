@@ -105,7 +105,7 @@ function mkWorld(rng: () => number, productCount: number): ProductStockSummary[]
 }
 
 function mkFilters(rng: () => number): StockFilters {
-  const pick = <T>(arr: T[], pNone = 0.3): T | undefined =>
+  const pick = <T,>(arr: T[], pNone = 0.3): T | undefined =>
     rng() < pNone ? undefined : arr[Math.floor(rng() * arr.length)];
   const statusOptions: (StockFilters['status'])[] = ['all', 'in_stock', 'low_stock', 'critical', 'out_of_stock'];
   return {
