@@ -44,9 +44,16 @@ export function computeRuptureRisk({
   targetQty,
   horizonDays,
 }: RuptureRiskInput): RuptureRiskResult {
-  // Pré-condições: sem média/alvo/horizonte válidos, a fórmula não se aplica.
-  if (!Number.isFinite(current) || current <= 0) {
+  // Pré-condições básicas: current precisa ser numérico finito ≥ 0.
+  if (!Number.isFinite(current) || current < 0) {
     return { atRisk: false, projectedStock: null, daysToTarget: null };
+  }
+
+  // Fallback crítico: SKU já esgotada (current === 0) é risco máximo
+  // independentemente de média/alvo/horizonte. Sem isso, milhares de
+  // SKUs sem estoque ficavam fora do KPI "Risco de Ruptura".
+  if (current === 0) {
+    return { atRisk: true, projectedStock: 0, daysToTarget: 0 };
   }
   if (!isPositiveFinite(avgDailyDepletion)) {
     return { atRisk: false, projectedStock: null, daysToTarget: null };
