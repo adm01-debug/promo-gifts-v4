@@ -37,14 +37,6 @@ interface PdfGenerationDialogProps {
   proposalData: ProposalTemplateData | null;
   quoteNumber?: string;
   quoteStatus?: string;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  clientPhone?: string;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  approvalLink?: string | null;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  onWhatsApp?: () => void;
-  /** @deprecated mantido por compatibilidade de interface — não utilizado */
-  onShareLink?: () => void;
   trigger?: React.ReactNode;
 }
 

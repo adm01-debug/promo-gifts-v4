@@ -77,7 +77,6 @@ export default function QuoteViewPage() {
     clientCnpj,
     isGeneratingPDF,
     isSyncing,
-    approvalLink,
     showPresentation,
     setShowPresentation,
     proposalData,
@@ -182,10 +181,6 @@ export default function QuoteViewPage() {
                 proposalData={proposalData}
                 quoteNumber={quote.quote_number}
                 quoteStatus={quote.status}
-                clientPhone={quote.client_phone}
-                approvalLink={approvalLink}
-                onWhatsApp={handleWhatsAppShare}
-                onShareLink={handleShareLink}
                 trigger={
                   <Button className="gap-2">
                     <Eye className="h-4 w-4" /> Preview Proposta
