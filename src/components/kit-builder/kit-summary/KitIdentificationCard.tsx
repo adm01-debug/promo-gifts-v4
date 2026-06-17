@@ -42,7 +42,7 @@ export function KitIdentificationCard({
               type="number"
               min={1}
               value={kitQuantity}
-              onChange={(e) => onKitQuantityChange(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => onKitQuantityChange(Math.max(1, parseInt(e.target.value, 10) || 1))}
             />
           </div>
         </div>

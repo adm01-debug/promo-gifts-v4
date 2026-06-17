@@ -169,7 +169,7 @@ export function QuoteTemplateForm({
                 min={1}
                 max={365}
                 value={formData.validity_days}
-                onChange={(e) => updateField('validity_days', parseInt(e.target.value) || 30)}
+                onChange={(e) => updateField('validity_days', parseInt(e.target.value, 10) || 30)}
               />
             </div>
           </div>

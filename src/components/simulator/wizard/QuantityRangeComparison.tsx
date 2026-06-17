@@ -51,7 +51,7 @@ export function QuantityRangeComparison({
   const [customQty, setCustomQty] = useState('');
 
   const addQuantity = () => {
-    const qty = parseInt(customQty);
+    const qty = parseInt(customQty, 10);
     if (!qty || qty <= 0 || quantities.includes(qty)) return;
     if (quantities.length >= 6) {
       toast.warning('Máximo 6 quantidades');

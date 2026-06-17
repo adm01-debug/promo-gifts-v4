@@ -300,7 +300,7 @@ function ItemPersonalizationCard({
                 <Label>Número de Cores</Label>
                 <Select
                   value={String(personalization.colors || 1)}
-                  onValueChange={(v) => handleColorsChange(parseInt(v))}
+                  onValueChange={(v) => handleColorsChange(parseInt(v, 10))}
                 >
                   <SelectTrigger>
                     <SelectValue />
