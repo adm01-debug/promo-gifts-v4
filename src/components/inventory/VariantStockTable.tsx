@@ -114,9 +114,19 @@ function EmptyCell() {
 function FlatVariantRow({
   variant,
   product,
+  effectiveStatus,
+  projection,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
+  effectiveStatus: StockStatus;
+  projection?: {
+    targetQty: number;
+    avgDailyDepletion: number;
+    horizonDays: number;
+    projectedStock: number;
+    daysToTarget: number | null;
+  };
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
