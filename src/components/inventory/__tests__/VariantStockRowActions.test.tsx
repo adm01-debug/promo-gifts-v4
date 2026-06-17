@@ -141,7 +141,7 @@ describe('VariantStockRowActions · Copiar SKU', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     setClipboard(writeText);
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
 
     await user.click(screen.getByTestId('stock-row-copy-sku'));
@@ -156,7 +156,7 @@ describe('VariantStockRowActions · Copiar SKU', () => {
     const orig = document.execCommand;
     document.execCommand = vi.fn(() => false);
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-copy-sku'));
 
@@ -184,7 +184,7 @@ describe('VariantStockRowActions · Carrinho', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Orçamento', () => {
   it('navega para /orcamentos/novo com os parâmetros da variação', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-quote'));
     await waitFor(() => expect(screen.getByTestId('quote-page')).toBeInTheDocument());
@@ -196,7 +196,7 @@ describe('VariantStockRowActions · Orçamento', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Coleção', () => {
   it('abre o modal de coleção ao clicar', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     expect(screen.queryByTestId('mock-collection-modal')).not.toBeInTheDocument();
     await user.click(screen.getByTestId('stock-row-collection'));
@@ -209,7 +209,7 @@ describe('VariantStockRowActions · Coleção', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Favoritar', () => {
   it('adiciona aos favoritos com info de variação e alterna estado', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     const btn = screen.getByTestId('stock-row-favorite');
     expect(btn).toHaveAttribute('aria-pressed', 'false');
@@ -230,7 +230,7 @@ describe('VariantStockRowActions · Favoritar', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Comparar', () => {
   it('adiciona à comparação e remove no segundo clique', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     const btn = screen.getByTestId('stock-row-compare');
     await user.click(btn);
@@ -244,7 +244,7 @@ describe('VariantStockRowActions · Comparar', () => {
     const store = useComparisonStore.getState();
     ['a', 'b', 'c', 'd'].forEach((id) => store.addToCompare(id));
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-compare'));
     expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/limite de 4/i));
@@ -256,7 +256,7 @@ describe('VariantStockRowActions · Comparar', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('VariantStockRowActions · Visualizar', () => {
   it('navega para /produto/:id', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-view'));
     await waitFor(() => expect(screen.getByTestId('product-page')).toBeInTheDocument());
@@ -270,7 +270,7 @@ describe('VariantStockRowActions · Compartilhar', () => {
   it('usa navigator.share quando disponível', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     setShare(share);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
     await waitFor(() => expect(share).toHaveBeenCalled());
@@ -281,7 +281,7 @@ describe('VariantStockRowActions · Compartilhar', () => {
     setShare(undefined);
     const writeText = vi.fn().mockResolvedValue(undefined);
     setClipboard(writeText);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
@@ -292,7 +292,7 @@ describe('VariantStockRowActions · Compartilhar', () => {
     const abort = Object.assign(new Error('cancel'), { name: 'AbortError' });
     const share = vi.fn().mockRejectedValue(abort);
     setShare(share);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ writeToClipboard: false });
     renderActions();
     await user.click(screen.getByTestId('stock-row-share'));
     await waitFor(() => expect(share).toHaveBeenCalled());
