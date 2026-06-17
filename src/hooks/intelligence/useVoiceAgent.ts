@@ -346,7 +346,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
       }, SESSION_START_TIMEOUT_MS);
 
       await scribe.connect({
-        token: token,
+        token,
         microphone: {
           echoCancellation: true,
           noiseSuppression: true,
