@@ -114,7 +114,7 @@ export async function exportToExcel(data: ExportData) {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Personalização');
 
   // Auto-adjust column widths
-  const colWidths = Object.keys(rows[0] || {}).map((key) => ({
+  const colWidths = Object.keys(rows[0] ?? {}).map((key) => ({
     wch: Math.max(key.length, ...rows.map((row) => String(row[key] ?? '').length)) + 2,
   }));
   worksheet['!cols'] = colWidths;

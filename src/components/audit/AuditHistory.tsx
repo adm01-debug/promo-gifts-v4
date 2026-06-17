@@ -266,7 +266,7 @@ export function AuditHistory({
                     <CollapsibleContent>
                       {hasDetails && (
                         <div className="ml-13 mt-3 border-l-2 border-muted pl-4">
-                          {Object.keys(log.new_values || {}).map((field) => (
+                          {Object.keys(log.new_values ?? {}).map((field) => (
                             <FieldChange
                               key={field}
                               field={field}

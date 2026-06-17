@@ -190,7 +190,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
   function build(key: string, scope: 'product' | 'variant'): SparklineSalesData {
     const dailyQty: number[] = [];
     let totalQty = 0;
-    const dateMap = depletedByDate[scope][key] || {};
+    const dateMap = depletedByDate[scope][key] ?? {};
     for (let i = SPARKLINE_WINDOW_DAYS - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
@@ -199,7 +199,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
       dailyQty.push(v);
       totalQty += v;
     }
-    const stockByDate = stockCloseByDate[scope][key] || {};
+    const stockByDate = stockCloseByDate[scope][key] ?? {};
     const latestDate = Object.keys(stockByDate).sort().pop();
     const availableStock = latestDate ? (stockByDate[latestDate] ?? 0) : 0;
     return {

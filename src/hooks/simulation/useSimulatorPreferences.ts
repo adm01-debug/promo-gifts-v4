@@ -78,7 +78,7 @@ export function useSimulatorPreferences() {
         .eq('user_id', user.id)
         .single();
 
-      const existingPrefs = (existingData?.preferences as Record<string, unknown>) || {};
+      const existingPrefs = (existingData?.preferences as Record<string, unknown>) ?? {};
 
       const { error } = await supabase
         .from('profiles')

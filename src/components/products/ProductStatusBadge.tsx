@@ -268,7 +268,7 @@ export function ProductStatusBadge({
         );
       case 'packaging': {
         const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } =
-          packagingMetadata || {};
+          packagingMetadata ?? {};
         const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
         return (
           <div className="space-y-1.5 p-1 text-sm">

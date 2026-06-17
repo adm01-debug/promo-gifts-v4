@@ -57,7 +57,7 @@ async function fetchProductTags(productId: string): Promise<ProductTags> {
             return {};
           }
         })()
-      : raw || {};
+      : (raw ?? {});
 
   return {
     publicoAlvo: toArray(tags.publicoAlvo ?? tags.publico_alvo),

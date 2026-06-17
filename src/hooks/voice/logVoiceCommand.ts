@@ -22,7 +22,7 @@ export function logVoiceCommand(
         transcript: meta.transcript,
         action: action.action,
         response: action.response,
-        data: action.data || {},
+        data: action.data ?? {},
         duration_ms: meta.durationMs ?? null,
         success: meta.success ?? true,
       });

@@ -121,7 +121,7 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
     return {
       ...result,
       tabela: {
-        ...((result.tabela as Record<string, unknown>) || {}),
+        ...((result.tabela as Record<string, unknown>) ?? {}),
         id: t.id,
         area_maxima_texto: t.area_maxima_texto ?? null,
         max_cores: t.max_cores ?? null,

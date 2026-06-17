@@ -646,7 +646,7 @@ export function useExpertChat({
           .select('preferences')
           .eq('user_id', user.id)
           .single();
-        const currentPrefs = (profile?.preferences as Record<string, unknown>) || {};
+        const currentPrefs = (profile?.preferences as Record<string, unknown>) ?? {};
         await supabase
           .from('profiles')
           .update({ preferences: { ...currentPrefs, flow_autoplay_tts: next } })

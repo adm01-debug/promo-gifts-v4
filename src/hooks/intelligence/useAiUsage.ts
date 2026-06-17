@@ -61,7 +61,7 @@ export function useAiUsageLogs(options?: {
   limit?: number;
 }) {
   const { user } = useAuth();
-  const { userId, functionName, period = 'month', limit = 500 } = options || {};
+  const { userId, functionName, period = 'month', limit = 500 } = options ?? {};
 
   return useQuery({
     queryKey: ['ai-usage-logs', userId, functionName, period, limit],

@@ -79,7 +79,7 @@ export async function detectProductBounds(
   const cached = boundsCache.get(imageUrl);
   if (cached) return cached;
 
-  const { whiteThreshold = 245, alphaThreshold = 10, margin = 0.02, maxSize = 512 } = options || {};
+  const { whiteThreshold = 245, alphaThreshold = 10, margin = 0.02, maxSize = 512 } = options ?? {};
 
   try {
     const img = await loadImageCors(imageUrl);

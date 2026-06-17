@@ -119,7 +119,7 @@ class TelemetryService {
         event_type: payload.event_type,
         name: payload.name,
         duration_ms: payload.durationMs,
-        metadata: (payload.metadata || {}) as Json,
+        metadata: (payload.metadata ?? {}) as Json,
         url: typeof window !== 'undefined' ? window.location.href : '',
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
         session_id: this.sessionId,

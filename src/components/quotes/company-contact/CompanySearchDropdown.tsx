@@ -120,7 +120,7 @@ export function CompanySearchDropdown({
     if (term || history.length > 0) {
       const historyItems = term
         ? history.filter((h) => {
-            const meta = (h.metadata || {}) as CompanyMeta;
+            const meta = (h.metadata ?? {}) as CompanyMeta;
             return (
               h.label.toLowerCase().includes(term) ||
               (meta.cnpj ?? '').includes(term) ||
@@ -132,7 +132,7 @@ export function CompanySearchDropdown({
       for (const h of historyItems) {
         if (!seen.has(h.id)) {
           if (term) {
-            const meta = (h.metadata || {}) as CompanyMeta;
+            const meta = (h.metadata ?? {}) as CompanyMeta;
             merged.push({
               id: h.id,
               name: h.label,
@@ -344,7 +344,7 @@ export function CompanySearchDropdown({
                       </button>
                     </div>
                     {history.map((item) => {
-                      const meta = (item.metadata || {}) as {
+                      const meta = (item.metadata ?? {}) as {
                         razao_social?: string | null;
                         cnpj?: string | null;
                         logo_url?: string | null;
