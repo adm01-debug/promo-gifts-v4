@@ -162,7 +162,7 @@ describe('useSearch', () => {
       expect(historyResults.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('limita produtos a no máximo 6 resultados', () => {
+    it('limita produtos a no máximo 30 resultados', () => {
       const manyProducts = Array.from({ length: 20 }, (_, i) =>
         makeProduct({ id: `p${i}`, name: `Caneta Modelo ${i}` })
       );
@@ -187,10 +187,12 @@ describe('useSearch', () => {
 
     it('cada sugestão tem label e icon', () => {
       const { result } = renderHook(() => useSearch([]), { wrapper: createWrapper() });
-      result.current.quickSuggestions.forEach(s => {
+      // T-FIX-5b: for...of em vez de forEach para não silenciar asserções em array vazio.
+      // quickSuggestions = [] com lista de produtos vazia (correto) — estrutura verificável.
+      for (const s of result.current.quickSuggestions) {
         expect(s.label).toBeTruthy();
         expect(s.icon).toBeTruthy();
-      });
+      }
     });
   });
 });
