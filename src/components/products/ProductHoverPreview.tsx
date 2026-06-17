@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Package, Tag, Palette, Truck } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import type { Product } from '@/hooks/products';
+import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface ProductHoverPreviewProps {
   product: Product;
@@ -20,8 +20,6 @@ export function ProductHoverPreview({
   side = 'right',
   align = 'center',
 }: ProductHoverPreviewProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -40,15 +38,11 @@ export function ProductHoverPreview({
       >
         {/* Image */}
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-          {!imageLoaded && <div className="absolute inset-0 bg-muted/30" />}
-          <img
-            src={product.images[0]}
+          <OptimizedImage
+            src={getCdnUrl(product.images[0], 'medium')}
             alt={product.name}
-            className={cn(
-              'h-full w-full object-cover transition-all duration-700 ease-out',
-              imageLoaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-40 blur-md',
-            )}
-            onLoad={() => setImageLoaded(true)}
+            className="object-cover"
+            containerClassName="h-full w-full"
           />
 
           {/* Badges overlay */}
