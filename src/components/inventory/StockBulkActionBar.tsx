@@ -89,6 +89,17 @@ export function StockBulkActionBar({
         </Button>
         <Button
           size="sm"
+          variant="ghost"
+          disabled={disabled}
+          onClick={onBulkCollection}
+          data-testid="stock-bulk-collection"
+          className="h-8 gap-1"
+        >
+          <FolderPlus className="h-3.5 w-3.5" />
+          Coleção
+        </Button>
+        <Button
+          size="sm"
           variant="default"
           disabled={disabled}
           onClick={onBulkQuote}
