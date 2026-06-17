@@ -219,9 +219,6 @@ function FlatVariantRow({
           <span className="text-[10px] text-muted-foreground">un</span>
         </div>
       </TableCell>
-      <TableCell className="hidden sm:table-cell">
-        <StockProgressBar current={variant.currentStock} min={variant.minStock} />
-      </TableCell>
       <TableCell>
         <span
           className={cn(
@@ -442,7 +439,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             <TableHead className="w-[300px]">Produto</TableHead>
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
-            <TableHead className="hidden w-[120px] sm:table-cell">Progresso</TableHead>
+            
             <TableHead>Disponível</TableHead>
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
@@ -470,9 +467,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <div className="h-2 w-full animate-pulse rounded bg-muted" />
               </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
@@ -594,7 +588,8 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
-              <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
+              
+
               
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
