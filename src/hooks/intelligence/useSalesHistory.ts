@@ -49,23 +49,23 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       cutoff.setDate(cutoff.getDate() - days);
       const cutoffStr = cutoff.toISOString();
 
-      // Fetch quote items for this product (handle 1000-row limit)
-      const { data: quoteItems } = await supabase
-        .from('quote_items')
-        .select('quantity, unit_price, subtotal, created_at, quote_id')
-        .eq('product_id', productId)
-        .gte('created_at', cutoffStr)
-        .order('created_at', { ascending: true })
-        .limit(5000);
-
-      // Fetch order items for this product (handle 1000-row limit)
-      const { data: orderItems } = await supabase
-        .from('order_items')
-        .select('quantity, unit_price, created_at, order_id')
-        .eq('product_id', productId)
-        .gte('created_at', cutoffStr)
-        .order('created_at', { ascending: true })
-        .limit(5000);
+      // Both fetches are independent — run in parallel
+      const [{ data: quoteItems }, { data: orderItems }] = await Promise.all([
+        supabase
+          .from('quote_items')
+          .select('quantity, unit_price, subtotal, created_at, quote_id')
+          .eq('product_id', productId)
+          .gte('created_at', cutoffStr)
+          .order('created_at', { ascending: true })
+          .limit(5000),
+        supabase
+          .from('order_items')
+          .select('quantity, unit_price, created_at, order_id')
+          .eq('product_id', productId)
+          .gte('created_at', cutoffStr)
+          .order('created_at', { ascending: true })
+          .limit(5000),
+      ]);
 
       // Fetch related quotes for seller info
       const quoteIds = [...new Set((quoteItems || []).map((q) => q.quote_id))];
