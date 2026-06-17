@@ -13,7 +13,6 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
-import { VariantStockRowActions } from './VariantStockRowActions';
 import { useStockSelection } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
 import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
@@ -501,6 +500,15 @@ export function VariantStockTable({
     }
   }, [searchParams, allFlatRows]);
 
+  // ── Seleção em lote (paridade catálogo) ─────────────────────────────────
+  const selection = useStockSelection(
+    pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+  );
+  const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
+
+  // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
+  useSelectionShortcut(() => selection.setMode(!selection.enabled));
+
   if (isLoading) {
     return (
       <Table>
@@ -552,15 +560,6 @@ export function VariantStockTable({
       </Table>
     );
   }
-
-  // ── Seleção em lote (paridade catálogo) ─────────────────────────────────
-  const selection = useStockSelection(
-    pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
-  );
-  const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
-
-  // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
-  useSelectionShortcut(() => selection.setMode(!selection.enabled));
 
   const bulkCollectionRows: BulkCollectionRow[] = selection.selectedRows.map((r) => ({
     productId: r.product.productId,

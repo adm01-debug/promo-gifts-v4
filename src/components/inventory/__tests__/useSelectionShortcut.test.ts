@@ -1,8 +1,7 @@
 /**
  * Testes do atalho "s" para alternar modo seleção em /estoque.
  */
-import { renderHook } from '@testing-library/react';
-import { fireEvent } from '@testing-library/react';
+import { renderHook, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useSelectionShortcut } from '../useSelectionShortcut';
 

@@ -114,9 +114,6 @@ function setClipboard(writeText: (s: string) => Promise<void> | void) {
     value: { writeText },
   });
 }
-function clearClipboard() {
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
-}
 function setShare(share: ((d: ShareData) => Promise<void>) | undefined) {
   Object.defineProperty(navigator, 'share', { configurable: true, value: share });
 }
