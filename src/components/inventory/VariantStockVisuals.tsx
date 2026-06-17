@@ -18,9 +18,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { calculateStockStatus, type StockStatus } from '@/types/stock';
+import type { StockStatus } from '@/types/stock';
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
