@@ -5,7 +5,6 @@ import {
   Package,
   Truck,
   ChevronLeft,
-  ShoppingCart,
   Search,
   X,
   Copy,
@@ -13,6 +12,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+import { VariantStockRowActions } from './VariantStockRowActions';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
