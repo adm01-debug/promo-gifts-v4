@@ -16,12 +16,12 @@ export const productCardStyles = {
   recent: 'border-success/30 shadow-[0_0_16px_hsl(var(--success)/0.1)]',
   selected: 'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
 
-  // Seção de informações (texto e preços) — espaçamentos reduzidos ~20%
-  infoSection: 'relative space-y-1.5 bg-card p-2 sm:space-y-2 sm:p-3',
+  // Seção de informações (texto e preços) — paddings compactados (~20% menor)
+  infoSection: 'relative space-y-1 bg-card p-1.5 sm:space-y-1.5 sm:p-2',
 
   // Título do produto (line-clamp e min-height para alinhamento)
   title: cn(
-    'line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] font-display text-sm font-semibold leading-snug text-foreground',
+    'line-clamp-2 min-h-[1.6rem] sm:min-h-[2rem] font-display text-sm font-semibold leading-snug text-foreground',
     'transition-colors duration-300 group-hover:text-primary sm:text-base',
   ),
 
@@ -29,7 +29,7 @@ export const productCardStyles = {
   priceStockSection: 'flex items-end justify-between pt-0',
 
   // Container de preço
-  priceContainer: 'min-h-[2.5rem] sm:min-h-[3rem] flex flex-col justify-end',
+  priceContainer: 'min-h-[2rem] sm:min-h-[2.4rem] flex flex-col justify-end',
 
   // Seção de categoria
   categoryBadgeSection: 'mt-0 flex flex-wrap gap-1 border-t border-primary/20 pt-1',
