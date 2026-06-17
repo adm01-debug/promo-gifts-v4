@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface MarginInsightBadgeProps {
   /** Margem (ou desconto) aparente do orçamento atual em %. */
@@ -70,7 +71,10 @@ export function MarginInsightBadge({
           <TooltipTrigger asChild>
             <Badge
               variant="outline"
-              className={`gap-1.5 border-warning/30 bg-warning/10 text-warning ${className ?? ''}`}
+              className={cn(
+                'gap-1.5 border-warning/30 bg-warning/10 text-warning',
+                className ?? '',
+              )}
             >
               <Info className="h-3 w-3" />
               <span className="text-[11px] font-medium">

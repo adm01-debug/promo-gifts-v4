@@ -3,6 +3,7 @@
  */
 import { useRef, useState } from 'react';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { cn } from '@/lib/utils';
 
 interface Props {
   src: string;
@@ -27,7 +28,7 @@ export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props
   return (
     <div
       ref={ref}
-      className={`relative overflow-hidden ${className}`}
+      className={cn('relative overflow-hidden', className)}
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
       onMouseMove={onMove}

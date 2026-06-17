@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Check, Sparkles, PartyPopper } from 'lucide-react';
 import { MiniConfetti } from './MiniConfetti';
+import { cn } from '@/lib/utils';
 
 type CelebrationType = 'success' | 'achievement' | 'level-up' | 'milestone';
 
@@ -148,7 +149,7 @@ export function SuccessCelebration({
                     delay: 0.2,
                   }}
                 >
-                  <Icon className={`h-10 w-10 ${config.iconColor}`} />
+                  <Icon className={cn('h-10 w-10', config.iconColor)} />
                 </motion.div>
 
                 {/* Pulse rings */}

@@ -7,6 +7,7 @@ import { KeyRound, RotateCw, Pencil, XCircle, AlertTriangle } from 'lucide-react
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { AuditFeedRow } from './useMcpAuditFeed';
+import { cn } from '@/lib/utils';
 
 const META: Record<string, { label: string; Icon: typeof KeyRound; tone: string }> = {
   'mcp_key.issued': { label: 'Emitida', Icon: KeyRound, tone: 'text-emerald-600' },
@@ -47,7 +48,7 @@ export function McpAuditRow({ row }: Props) {
     <li className="rounded-md border border-border p-3 transition-colors hover:bg-muted/30">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${meta.tone}`} />
+          <Icon className={cn('h-4 w-4', meta.tone)} />
           <Badge variant="outline" className="text-xs">
             {meta.label}
           </Badge>

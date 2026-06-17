@@ -69,7 +69,7 @@ export function ConfirmDialog({
             <div
               className={`h-10 w-10 rounded-full ${config.iconBg} flex shrink-0 items-center justify-center`}
             >
-              <Icon className={`h-5 w-5 ${config.iconColor}`} />
+              <Icon className={cn('h-5 w-5', config.iconColor)} />
             </div>
             <div className="flex-1">
               <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -98,6 +98,7 @@ export function ConfirmDialog({
 
 // Hook auxiliar para uso mais fácil
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function useConfirm() {
   const [state, setState] = useState<{

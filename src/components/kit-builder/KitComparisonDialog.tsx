@@ -216,7 +216,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
         <Separator />
         <div>
           <h4 className="mb-3 font-medium">Composição Detalhada</h4>
-          <div className={`grid gap-4 ${kits.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={cn('grid gap-4', kits.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
             {kits.map((kit) => (
               <div key={kit.id} className="space-y-1.5">
                 <p className="mb-2 text-sm font-semibold">{kit.name}</p>

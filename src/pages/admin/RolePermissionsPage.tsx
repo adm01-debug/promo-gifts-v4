@@ -260,7 +260,10 @@ export default function RolePermissionsPage() {
               return (
                 <Card
                   key={role.value}
-                  className={`cursor-pointer transition-all ${selectedRole === role.value ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
+                  className={cn(
+                    'cursor-pointer transition-all',
+                    selectedRole === role.value ? 'ring-2 ring-primary' : 'hover:border-primary/50',
+                  )}
                   onClick={() => setSelectedRole(role.value)}
                 >
                   <CardHeader className="pb-2">

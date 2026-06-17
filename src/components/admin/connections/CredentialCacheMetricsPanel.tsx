@@ -275,9 +275,10 @@ export function CredentialCacheMetricsPanel() {
                         )}
                       </span>
                       <span
-                        className={`text-[10px] tabular-nums ${
-                          e.expired ? 'text-destructive' : 'text-muted-foreground'
-                        }`}
+                        className={cn(
+                          'text-[10px] tabular-nums',
+                          e.expired ? 'text-destructive' : 'text-muted-foreground',
+                        )}
                       >
                         {e.expired ? 'expirado' : `expira em ${fmtDuration(e.ttl_remaining_ms)}`}
                       </span>
@@ -327,7 +328,7 @@ function Kpi({
         <span className={toneCls}>{icon}</span>
         <span>{label}</span>
       </div>
-      <div className={`text-2xl font-bold tabular-nums ${toneCls}`}>{value}</div>
+      <div className={cn('text-2xl font-bold tabular-nums', toneCls)}>{value}</div>
       {progress !== undefined && <Progress value={progress} className="h-1" />}
       <div className="text-[10px] text-muted-foreground">{hint}</div>
     </div>

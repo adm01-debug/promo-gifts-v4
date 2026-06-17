@@ -176,7 +176,7 @@ export function SecurityDashboard() {
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-center justify-center rounded-lg bg-muted p-4">
                 {getScoreIcon(metrics.score)}
-                <span className={`mt-2 text-3xl font-bold ${getScoreColor(metrics.score)}`}>
+                <span className={cn('mt-2 text-3xl font-bold', getScoreColor(metrics.score))}>
                   {metrics.score}%
                 </span>
                 <Badge variant={metrics.score >= 60 ? 'default' : 'destructive'} className="mt-1">
@@ -191,7 +191,10 @@ export function SecurityDashboard() {
                   </div>
                   <div className="relative h-3 overflow-hidden rounded-full bg-secondary">
                     <div
-                      className={`h-full transition-all duration-500 ${getScoreProgressColor(metrics.score)}`}
+                      className={cn(
+                        'h-full transition-all duration-500',
+                        getScoreProgressColor(metrics.score),
+                      )}
                       style={{ width: `${metrics.score}%` }}
                     />
                   </div>
@@ -301,7 +304,12 @@ export function SecurityDashboard() {
                   className="flex items-start gap-3 rounded-lg bg-background p-3"
                 >
                   <div
-                    className={`rounded-full p-2 ${rec.priority === 'high' ? 'bg-destructive/10 text-destructive' : 'bg-brand-primary/10 text-brand-primary'}`}
+                    className={cn(
+                      'rounded-full p-2',
+                      rec.priority === 'high'
+                        ? 'bg-destructive/10 text-destructive'
+                        : 'bg-brand-primary/10 text-brand-primary',
+                    )}
                   >
                     {rec.icon}
                   </div>

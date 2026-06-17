@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'kit-tour-completed';
 
@@ -71,7 +72,10 @@ export function KitOnboardingTour() {
             {STEPS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-primary' : 'w-1.5 bg-muted'}`}
+                className={cn(
+                  'h-1.5 rounded-full transition-all',
+                  i === step ? 'w-6 bg-primary' : 'w-1.5 bg-muted',
+                )}
               />
             ))}
           </div>

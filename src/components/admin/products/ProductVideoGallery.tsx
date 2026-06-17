@@ -21,6 +21,7 @@ import { VideoGrid } from './video-gallery/VideoGrid';
 import { VideoUploadArea } from './video-gallery/VideoUploadArea';
 import { ConfirmDeleteDialog } from './image-gallery/ConfirmDeleteDialog';
 import { VIDEO_TYPES, formatBytes } from './video-gallery/types';
+import { cn } from '@/lib/utils';
 
 interface ProductVideoGalleryProps {
   productId?: string;
@@ -55,7 +56,7 @@ export function ProductVideoGallery({ productId }: ProductVideoGalleryProps) {
               {VIDEO_TYPES.map((t) => (
                 <SelectItem key={t.value} value={t.value} className="text-xs">
                   <span className="flex items-center gap-1.5">
-                    <t.icon className={`h-3 w-3 ${t.color}`} />
+                    <t.icon className={cn('h-3 w-3', t.color)} />
                     {t.label}
                   </span>
                 </SelectItem>

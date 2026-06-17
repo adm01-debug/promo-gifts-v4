@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Filter, Search, Eye, FileText, ShoppingBag, ArrowDown } from 'lucide-react';
 import { subDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface ConversionFunnelProps {
   days: number;
@@ -170,11 +171,14 @@ export function ConversionFunnel({ days }: ConversionFunnelProps) {
                     </div>
                   )}
                   <div
-                    className={`flex h-12 items-center rounded-lg px-3 transition-all ${stage.bgClass}`}
+                    className={cn(
+                      'flex h-12 items-center rounded-lg px-3 transition-all',
+                      stage.bgClass,
+                    )}
                     style={{ width: `${widthPercent}%`, minWidth: '180px' }}
                   >
-                    <div className={`mr-3 rounded-md p-1.5 ${stage.bgSoftClass}`}>
-                      <Icon className={`h-4 w-4 ${stage.iconClass}`} />
+                    <div className={cn('mr-3 rounded-md p-1.5', stage.bgSoftClass)}>
+                      <Icon className={cn('h-4 w-4', stage.iconClass)} />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs font-medium leading-none">{stage.label}</p>

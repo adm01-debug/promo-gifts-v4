@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Upload } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type CoverageSnapshot = {
   date: string;
@@ -154,11 +155,14 @@ export default function CoverageInsightsDashboardPage() {
                     <code>{item.route}</code>
                   </td>
                   <td
-                    className={`py-2 font-medium ${item.latest < threshold ? 'text-amber-600' : 'text-emerald-600'}`}
+                    className={cn(
+                      'py-2 font-medium',
+                      item.latest < threshold ? 'text-amber-600' : 'text-emerald-600',
+                    )}
                   >
                     {item.latest}%
                   </td>
-                  <td className={`py-2 ${item.trend < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <td className={cn('py-2', item.trend < 0 ? 'text-red-600' : 'text-emerald-600')}>
                     {item.trend > 0 ? '+' : ''}
                     {item.trend} pp
                   </td>

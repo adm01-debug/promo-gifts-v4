@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuoteVersions } from '@/hooks/quotes';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { formatCurrency } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 interface QuoteVersionHistoryProps {
   quoteId: string;
@@ -126,11 +127,12 @@ export function QuoteVersionHistory({
                     <button
                       onClick={() => !isCurrent && navigate(`/orcamentos/${version.id}`)}
                       disabled={isCurrent}
-                      className={`w-full rounded-md p-2 text-left transition-colors ${
+                      className={cn(
+                        'w-full rounded-md p-2 text-left transition-colors',
                         isCurrent
                           ? 'border border-primary/20 bg-primary/10'
-                          : 'cursor-pointer hover:bg-muted/50'
-                      }`}
+                          : 'cursor-pointer hover:bg-muted/50',
+                      )}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">

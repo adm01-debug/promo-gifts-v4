@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Package, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Props {
   name: string;
@@ -74,7 +75,7 @@ export function BIProductCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${cfg.className}`}>
+            <Badge variant="outline" className={cn('px-1.5 py-0 text-[10px]', cfg.className)}>
               {cfg.label}
             </Badge>
             <h4 className="mt-1 line-clamp-2 text-sm font-medium leading-tight">{name}</h4>

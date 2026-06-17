@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useQuotes } from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -148,7 +149,7 @@ export function QuickActionsPanel() {
             <Card key={metric.label} className="border-border/50">
               <CardContent className="flex flex-col gap-1 p-4">
                 <div className="flex items-center gap-2">
-                  <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                  <metric.icon className={cn('h-4 w-4', metric.color)} />
                   <span className="truncate text-xs text-muted-foreground">{metric.label}</span>
                 </div>
                 <span className="text-lg font-bold text-foreground">

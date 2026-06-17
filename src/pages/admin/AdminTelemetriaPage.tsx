@@ -197,7 +197,7 @@ export default function AdminTelemetriaPage() {
               Limpar +7d
             </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
-              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', isRefetching && 'animate-spin')} />
               Atualizar
             </Button>
           </div>

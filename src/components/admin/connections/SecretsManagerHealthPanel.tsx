@@ -44,6 +44,7 @@ import {
 } from '@/lib/telemetry/secretsManagerCallMetrics';
 import { useSecretsManager } from '@/hooks/admin';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const MAX_RECENT = 8;
 
@@ -261,7 +262,7 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
       <CardContent className="space-y-4">
         {/* Linha de status do boot */}
         <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/20 px-3 py-2">
-          <Badge variant="outline" className={`font-mono text-[10px] uppercase ${bootBadge.cls}`}>
+          <Badge variant="outline" className={cn('font-mono text-[10px] uppercase', bootBadge.cls)}>
             <bootBadge.Icon className="mr-1 h-3 w-3" />
             {bootBadge.label}
           </Badge>
@@ -359,11 +360,12 @@ function SampleRow({ sample }: { sample: SecretsManagerCallSample }) {
     >
       <Badge
         variant="outline"
-        className={`font-mono text-[10px] uppercase ${
+        className={cn(
+          'font-mono text-[10px] uppercase',
           sample.ok
             ? 'border-success/40 bg-success/10 text-success'
-            : 'border-destructive/40 bg-destructive/10 text-destructive'
-        }`}
+            : 'border-destructive/40 bg-destructive/10 text-destructive',
+        )}
       >
         {sample.ok ? 'OK' : 'ERR'}
       </Badge>

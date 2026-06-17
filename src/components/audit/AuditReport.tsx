@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { cn } from '@/lib/utils';
 
 interface AuditResult {
   name: string;
@@ -96,7 +97,7 @@ export function AuditReport() {
           key={idx}
           className="overflow-hidden border-border/40 shadow-sm transition-shadow hover:shadow-md"
         >
-          <div className={`h-1.5 w-full ${test.passed ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className={cn('h-1.5 w-full', test.passed ? 'bg-green-500' : 'bg-red-500')} />
           <CardHeader className="flex flex-row items-center gap-3 py-4">
             {test.passed ? (
               <CheckCircle className="h-6 w-6 text-green-500" />

@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { QuoteVersion } from '@/hooks/quotes';
 import { formatCurrency } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 interface QuoteItem {
   id: string;
@@ -300,7 +301,14 @@ export function QuoteVersionCompare({
                         return (
                           <div
                             key={item.id}
-                            className={`rounded-lg border p-2 text-xs ${isNew ? 'bg-success/5/50 border-success/30 dark:bg-success/10' : changed ? 'bg-warning/5/50 border-warning/30 dark:bg-warning/10' : 'border-border'}`}
+                            className={cn(
+                              'rounded-lg border p-2 text-xs',
+                              isNew
+                                ? 'bg-success/5/50 border-success/30 dark:bg-success/10'
+                                : changed
+                                  ? 'bg-warning/5/50 border-warning/30 dark:bg-warning/10'
+                                  : 'border-border',
+                            )}
                           >
                             <p className="truncate font-medium">{item.product_name}</p>
                             <div className="mt-1 flex justify-between text-muted-foreground">

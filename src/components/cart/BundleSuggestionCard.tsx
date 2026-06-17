@@ -12,6 +12,7 @@ import { Sparkles, Plus } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 type BundleSuggestion =
   Database['public']['Functions']['get_bundle_suggestions']['Returns'][number];
 
@@ -43,7 +44,10 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
 
   return (
     <Card
-      className={`border-primary/20 shadow-sm transition-shadow duration-300 animate-in zoom-in-95 hover:shadow-md ${className ?? ''}`}
+      className={cn(
+        'border-primary/20 shadow-sm transition-shadow duration-300 animate-in zoom-in-95 hover:shadow-md',
+        className ?? '',
+      )}
     >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">

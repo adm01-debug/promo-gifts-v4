@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 interface SimulationDetail {
   fnName: string;
   status: number;
@@ -259,7 +260,7 @@ export default function SimulationPage() {
             <div className="space-y-4">
               {report.results.map((test: SimulationTestResult, idx: number) => (
                 <Card key={idx} className="overflow-hidden">
-                  <div className={`h-1 w-full ${test.passed ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div className={cn('h-1 w-full', test.passed ? 'bg-green-500' : 'bg-red-500')} />
                   <CardHeader className="py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

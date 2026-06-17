@@ -5,6 +5,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { MicOff, Search, Filter, Navigation, ArrowUpDown, Trash2, HelpCircle } from 'lucide-react';
 import type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/intelligence';
 import type { ReactElement } from 'react';
+import { cn } from '@/lib/utils';
 
 const ACTION_META: Record<string, { icon: React.ElementType; label: string; color: string }> = {
   search: { icon: () => null, label: 'Busca', color: 'text-primary' },
@@ -98,7 +99,7 @@ export function VoiceTranscriptPanel({
                       transition={{ type: 'spring', damping: 10, stiffness: 200 }}
                       className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.08]"
                     >
-                      <Icon className={`h-4 w-4 ${actionMeta.color}`} />
+                      <Icon className={cn('h-4 w-4', actionMeta.color)} />
                     </motion.div>
                   );
                 })()}
@@ -111,7 +112,10 @@ export function VoiceTranscriptPanel({
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className={`rounded-full border border-white/[0.1] bg-white/[0.06] px-2 py-0.5 text-[9px] font-medium ${ACTION_META[currentAction.action]?.color || 'text-white/50'}`}
+                        className={cn(
+                          'rounded-full border border-white/[0.1] bg-white/[0.06] px-2 py-0.5 text-[9px] font-medium',
+                          ACTION_META[currentAction.action]?.color || 'text-white/50',
+                        )}
                       >
                         {ACTION_META[currentAction.action]?.label}
                       </motion.span>

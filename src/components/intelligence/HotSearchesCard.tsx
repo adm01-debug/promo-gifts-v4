@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Flame, Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { subDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface HotSearchItem {
   term: string;
@@ -138,7 +139,7 @@ export function HotSearchesCard({ days }: HotSearchesCardProps) {
                     <p className="truncate text-sm font-medium">"{item.term}"</p>
                     <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
                       {item.searchCount} buscas
-                      <span className={`inline-flex items-center gap-0.5 ${trendColor}`}>
+                      <span className={cn('inline-flex items-center gap-0.5', trendColor)}>
                         · <TrendIcon className="h-2.5 w-2.5" />
                         {item.delta > 0 ? '+' : ''}
                         {item.delta}%

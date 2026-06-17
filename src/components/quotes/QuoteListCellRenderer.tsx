@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import type { Quote } from '@/hooks/quotes';
+import { cn } from '@/lib/utils';
 
 const statusConfig = Object.fromEntries(
   Object.entries(QUOTE_STATUS_CONFIG).map(([k, v]) => [
@@ -66,7 +67,10 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       return (
         <Badge
           variant="outline"
-          className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${statusConfig[quote.status]?.className || ''}`}
+          className={cn(
+            'h-5 gap-1 px-1.5 py-0 text-[10px]',
+            statusConfig[quote.status]?.className || '',
+          )}
         >
           {quote.status === 'pending' && (
             <span className="relative flex h-2 w-2">

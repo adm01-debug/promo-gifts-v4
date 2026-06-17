@@ -21,7 +21,7 @@ export const BridgeMetricsSummary = memo(({ summary }: BridgeMetricsSummaryProps
       </div>
       <div>
         <div className="text-zinc-400">avg (last {summary.last20})</div>
-        <div className={`font-semibold tabular-nums ${latencyClass(summary.avg)}`}>
+        <div className={cn('font-semibold tabular-nums', latencyClass(summary.avg))}>
           {summary.avg}ms
         </div>
       </div>

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCard } from './StockAlertCard';
 import type { StockAlert } from '@/types/stock';
+import { cn } from '@/lib/utils';
 
 interface StockAlertDialogProps {
   open: boolean;
@@ -44,11 +45,17 @@ function AlertSummaryBar({
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <div
-        className={`rounded-lg border p-2.5 text-center ${isCritical ? 'border-destructive/15 bg-destructive/5' : 'border-warning/15 bg-warning/5'}`}
+        className={cn(
+          'rounded-lg border p-2.5 text-center',
+          isCritical ? 'border-destructive/15 bg-destructive/5' : 'border-warning/15 bg-warning/5',
+        )}
       >
         <p className="text-xs text-muted-foreground">Alertas</p>
         <p
-          className={`text-xl font-bold tabular-nums ${isCritical ? 'text-destructive' : 'text-warning'}`}
+          className={cn(
+            'text-xl font-bold tabular-nums',
+            isCritical ? 'text-destructive' : 'text-warning',
+          )}
         >
           {alerts.length}
         </p>

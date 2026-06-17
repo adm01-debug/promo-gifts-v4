@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'bi.tour.completed.v1';
 
@@ -207,9 +208,10 @@ export function BITourGuide({ force = false, onClose }: Props) {
             {STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  i === stepIdx ? 'bg-primary' : i < stepIdx ? 'bg-primary/40' : 'bg-muted'
-                }`}
+                className={cn(
+                  'h-1 flex-1 rounded-full transition-colors',
+                  i === stepIdx ? 'bg-primary' : i < stepIdx ? 'bg-primary/40' : 'bg-muted',
+                )}
               />
             ))}
           </div>

@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { cn } from '@/lib/utils';
 
 /**
  * /admin/design-tokens — Paleta visual viva dos tokens do sistema.
@@ -22,7 +23,7 @@ const TokenSwatch = ({ name, cssVar, twClass, description, textOn }: TokenSwatch
     <div
       className={`h-16 w-16 shrink-0 rounded-md border ${twClass} flex items-center justify-center`}
     >
-      {textOn && <span className={`text-xs font-bold ${textOn}`}>Aa</span>}
+      {textOn && <span className={cn('text-xs font-bold', textOn)}>Aa</span>}
     </div>
     <div className="flex min-w-0 flex-col justify-center">
       <div className="truncate font-display text-sm font-bold text-foreground">{name}</div>
@@ -268,7 +269,9 @@ export default function AdminDesignTokensPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
             {RADIUS_TOKENS.map((r) => (
               <div key={r.twClass} className="space-y-2 text-center">
-                <div className={`h-20 w-full border-2 border-primary bg-primary/20 ${r.twClass}`} />
+                <div
+                  className={cn('h-20 w-full border-2 border-primary bg-primary/20', r.twClass)}
+                />
                 <div className="text-xs">
                   <div className="font-bold text-foreground">{r.name}</div>
                   <code className="text-[10px] text-primary">{r.twClass}</code>

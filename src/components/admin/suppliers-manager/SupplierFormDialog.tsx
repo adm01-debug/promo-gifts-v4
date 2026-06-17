@@ -33,6 +33,7 @@ import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
 import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface SupplierFormDialogProps {
   editingSupplier: Partial<Supplier> | null;
@@ -240,7 +241,7 @@ export function SupplierFormDialog({
                   value={editingSupplier.code || ''}
                   data-testid="admin-code-input"
                   onChange={(e) => updateField('code', e.target.value)}
-                  className={`${fieldClass} font-mono uppercase`}
+                  className={cn(fieldClass, 'font-mono uppercase')}
                 />
               </div>
             </div>
@@ -263,7 +264,7 @@ export function SupplierFormDialog({
                   <Input
                     value={editingSupplier.cnpj || ''}
                     onChange={(e) => updateField('cnpj', maskCnpj(e.target.value))}
-                    className={`${fieldClass} flex-1 font-mono`}
+                    className={cn(fieldClass, 'flex-1 font-mono')}
                     maxLength={18}
                   />
                   <Button
@@ -401,7 +402,7 @@ export function SupplierFormDialog({
                         value={contact.role}
                         onValueChange={(v) => updateContact(contact.id, 'role', v)}
                       >
-                        <SelectTrigger className={`${fieldClass} w-full`}>
+                        <SelectTrigger className={cn(fieldClass, 'w-full')}>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -478,7 +479,7 @@ export function SupplierFormDialog({
                   value={editingSupplier.cep || ''}
                   onChange={(e) => handleCepLookup(e.target.value)}
                   placeholder="00000-000"
-                  className={`${fieldClass} font-mono`}
+                  className={cn(fieldClass, 'font-mono')}
                   maxLength={9}
                 />
               </div>
@@ -596,7 +597,7 @@ export function SupplierFormDialog({
                   onChange={(e) =>
                     updateField('latitude', e.target.value ? parseFloat(e.target.value) : null)
                   }
-                  className={`${fieldClass} font-mono`}
+                  className={cn(fieldClass, 'font-mono')}
                 />
               </div>
               <div>
@@ -608,7 +609,7 @@ export function SupplierFormDialog({
                   onChange={(e) =>
                     updateField('longitude', e.target.value ? parseFloat(e.target.value) : null)
                   }
-                  className={`${fieldClass} font-mono`}
+                  className={cn(fieldClass, 'font-mono')}
                 />
               </div>
             </div>
@@ -646,7 +647,7 @@ export function SupplierFormDialog({
               </Label>
               {transportadoraPadrao ? (
                 <div className="mt-1 flex items-center gap-2">
-                  <div className={`${fieldClass} flex flex-1 items-center px-3 text-sm`}>
+                  <div className={cn(fieldClass, 'flex flex-1 items-center px-3 text-sm')}>
                     {transportadoraPadrao}
                   </div>
                   <Button
@@ -680,7 +681,7 @@ export function SupplierFormDialog({
                     }}
                     onBlur={() => setTimeout(() => setShowCarrierDropdown(false), 200)}
                     placeholder="Buscar transportadora..."
-                    className={`${fieldClass} pl-9`}
+                    className={cn(fieldClass, 'pl-9')}
                   />
                   {searchingCarriers && (
                     <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -848,7 +849,7 @@ export function SupplierFormDialog({
                 onChange={(e) =>
                   updateField('priority', e.target.value ? parseInt(e.target.value, 10) : 50)
                 }
-                className={`${fieldClass} w-24`}
+                className={cn(fieldClass, 'w-24')}
                 min={0}
                 max={100}
               />
@@ -942,7 +943,7 @@ export function SupplierFormDialog({
                           value={pix.tipo}
                           onValueChange={(v) => updatePixKey(pix.id, 'tipo', v)}
                         >
-                          <SelectTrigger className={`${fieldClass} w-full`}>
+                          <SelectTrigger className={cn(fieldClass, 'w-full')}>
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>

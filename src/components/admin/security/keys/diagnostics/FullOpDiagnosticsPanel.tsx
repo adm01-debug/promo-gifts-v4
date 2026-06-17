@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type CheckStatus = 'pass' | 'fail' | 'skipped' | 'error';
 
@@ -268,7 +269,7 @@ export function FullOpDiagnosticsPanel() {
                       key={c.id}
                       className="flex items-start gap-3 rounded-lg border bg-card p-3"
                     >
-                      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${meta.className}`} />
+                      <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', meta.className)} />
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <code className="text-sm font-semibold">{c.label}</code>

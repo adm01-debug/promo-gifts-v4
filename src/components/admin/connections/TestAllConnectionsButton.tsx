@@ -41,6 +41,7 @@ import { useConnectionTester, type TestResult } from '@/hooks/intelligence';
 import { resolveSource } from './CredentialsSourceFilterContext';
 import { getErrorCopy } from '@/lib/connection-error-copy';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type EnvKey = 'promobrind' | 'crm';
 
@@ -282,7 +283,7 @@ function ResultRow({ result }: { result: PerEnvResult }) {
       : 'border-destructive/40 bg-destructive/5';
 
   return (
-    <li className={`rounded-lg border p-3 ${headerTone}`}>
+    <li className={cn('rounded-lg border p-3', headerTone)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <Database className="h-4 w-4 shrink-0 text-primary" />
@@ -351,7 +352,7 @@ function CredCell({ label, source }: { label: string; source: 'db' | 'env' | 'no
   return (
     <div className="flex items-center gap-1.5 rounded border bg-card/50 px-2 py-1">
       <span className="text-muted-foreground">{label}</span>
-      <Badge variant="outline" className={`ml-auto font-mono text-[9px] uppercase ${meta.cls}`}>
+      <Badge variant="outline" className={cn('ml-auto font-mono text-[9px] uppercase', meta.cls)}>
         {meta.label}
       </Badge>
     </div>

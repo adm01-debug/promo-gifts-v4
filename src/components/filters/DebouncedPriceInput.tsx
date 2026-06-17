@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface DebouncedPriceInputProps {
   value: number | string;
@@ -51,7 +52,7 @@ export function DebouncedPriceInput({
       value={localValue}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={`h-8 text-sm transition-colors ${className}`}
+      className={cn('h-8 text-sm transition-colors', className)}
       placeholder={placeholder}
       min={min}
     />

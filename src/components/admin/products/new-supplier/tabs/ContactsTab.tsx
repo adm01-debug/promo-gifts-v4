@@ -11,6 +11,7 @@ import {
 import { Trash2, UserPlus } from 'lucide-react';
 import { type SupplierContact, CONTACT_ROLES } from '../types';
 import { maskPhone } from '@/utils/masks';
+import { cn } from '@/lib/utils';
 
 const fieldClass = 'mt-1.5 h-9';
 
@@ -70,7 +71,7 @@ export function ContactsTab({
                   value={contact.role}
                   onValueChange={(v) => updateContact(contact.id, 'role', v)}
                 >
-                  <SelectTrigger className={`${fieldClass} w-full`}>
+                  <SelectTrigger className={cn(fieldClass, 'w-full')}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>

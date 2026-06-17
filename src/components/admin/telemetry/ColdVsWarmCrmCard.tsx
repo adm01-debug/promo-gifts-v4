@@ -155,7 +155,10 @@ export function ColdVsWarmCrmCard() {
                   client_build_ms
                 </p>
                 <p
-                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.client_build_ms, 50, 200)}`}
+                  className={cn(
+                    'font-display text-2xl font-bold tabular-nums',
+                    tone(snap.boot.client_build_ms, 50, 200),
+                  )}
                 >
                   {fmtMs(snap.boot.client_build_ms)}
                 </p>
@@ -166,7 +169,10 @@ export function ColdVsWarmCrmCard() {
                   warmup_ms
                 </p>
                 <p
-                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.warmup_ms, 1000, 3000)}`}
+                  className={cn(
+                    'font-display text-2xl font-bold tabular-nums',
+                    tone(snap.boot.warmup_ms, 1000, 3000),
+                  )}
                 >
                   {fmtMs(snap.boot.warmup_ms)}
                 </p>
@@ -183,7 +189,10 @@ export function ColdVsWarmCrmCard() {
                   first_request_ms
                 </p>
                 <p
-                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.runtime.first_request_ms, 800, 2500)}`}
+                  className={cn(
+                    'font-display text-2xl font-bold tabular-nums',
+                    tone(snap.runtime.first_request_ms, 800, 2500),
+                  )}
                 >
                   {fmtMs(snap.runtime.first_request_ms)}
                 </p>

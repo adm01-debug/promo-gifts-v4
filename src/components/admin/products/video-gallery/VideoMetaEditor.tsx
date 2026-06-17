@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
 import { type ExternalVideo, VIDEO_TYPES } from './types';
+import { cn } from '@/lib/utils';
 
 interface Props {
   video: ExternalVideo;
@@ -41,7 +42,7 @@ export function VideoMetaEditor({ video, onSave, onCancel }: Props) {
           {VIDEO_TYPES.map((t) => (
             <SelectItem key={t.value} value={t.value} className="text-xs">
               <span className="flex items-center gap-1.5">
-                <t.icon className={`h-3 w-3 ${t.color}`} />
+                <t.icon className={cn('h-3 w-3', t.color)} />
                 {t.label}
               </span>
             </SelectItem>

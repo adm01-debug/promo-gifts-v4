@@ -12,6 +12,7 @@ import {
 import { Loader2, ImagePlus, X, Search } from 'lucide-react';
 import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
 import type { NewSupplierForm } from '../useNewSupplierForm';
+import { cn } from '@/lib/utils';
 
 const fieldClass = 'mt-1.5 h-9';
 
@@ -86,7 +87,7 @@ export function BasicDataTab({ form }: BasicDataTabProps) {
             value={form.code}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => form.setCode(e.target.value)}
             placeholder="Auto-gerado"
-            className={`${fieldClass} font-mono uppercase`}
+            className={cn(fieldClass, 'font-mono uppercase')}
           />
         </div>
       </div>

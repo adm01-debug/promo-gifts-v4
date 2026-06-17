@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface KnownDevice {
   id: string;
@@ -136,9 +137,10 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
           devices.map((device) => (
             <div
               key={device.id}
-              className={`flex items-center justify-between rounded-lg border p-4 ${
-                isCurrentDevice(device) ? 'border-primary bg-primary/5' : ''
-              }`}
+              className={cn(
+                'flex items-center justify-between rounded-lg border p-4',
+                isCurrentDevice(device) ? 'border-primary bg-primary/5' : '',
+              )}
             >
               <div className="flex items-center gap-4">
                 <div className="rounded-full bg-muted p-2">{getDeviceIcon(device.device_type)}</div>

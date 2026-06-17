@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export type FieldSourceKind =
   | 'integration_credentials'
@@ -115,7 +116,7 @@ export function FieldSourceDrillDownDialog({
                   <DialogTitle className="text-base">{data.field}</DialogTitle>
                   <DialogDescription className="mt-1 text-xs">{data.description}</DialogDescription>
                 </div>
-                <Badge variant="outline" className={`shrink-0 ${sourceBadgeClass(data.source)}`}>
+                <Badge variant="outline" className={cn('shrink-0', sourceBadgeClass(data.source))}>
                   {data.source}
                 </Badge>
               </div>
@@ -194,7 +195,7 @@ export function FieldSourceDrillDownDialog({
                           {s.badge && (
                             <Badge
                               variant="outline"
-                              className={`shrink-0 text-[10px] ${toneClass(s.badge.tone)}`}
+                              className={cn('shrink-0 text-[10px]', toneClass(s.badge.tone))}
                             >
                               {s.badge.text}
                             </Badge>

@@ -55,6 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface QuoteTemplatesListProps {
   onApplyTemplate?: (template: QuoteTemplate) => void;
@@ -201,9 +202,10 @@ export function QuoteTemplatesList({
           {filteredTemplates.map((template) => (
             <Card
               key={template.id}
-              className={`group transition-shadow hover:shadow-md ${
-                selectionMode ? 'cursor-pointer hover:border-primary' : ''
-              }`}
+              className={cn(
+                'group transition-shadow hover:shadow-md',
+                selectionMode ? 'cursor-pointer hover:border-primary' : '',
+              )}
               onClick={() => selectionMode && onApplyTemplate?.(template)}
             >
               <CardHeader className="pb-2">

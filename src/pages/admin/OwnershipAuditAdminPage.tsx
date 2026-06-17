@@ -208,7 +208,10 @@ export default function OwnershipAuditAdminPage() {
             </CardHeader>
             <CardContent>
               <p
-                className={`text-3xl font-bold ${current && current.total_issues_found > 0 ? 'text-destructive' : 'text-success'}`}
+                className={cn(
+                  'text-3xl font-bold',
+                  current && current.total_issues_found > 0 ? 'text-destructive' : 'text-success',
+                )}
               >
                 {current?.total_issues_found ?? '—'}
               </p>
@@ -242,7 +245,10 @@ export default function OwnershipAuditAdminPage() {
             </CardHeader>
             <CardContent>
               <p
-                className={`text-3xl font-bold ${current && current.rls_gaps_count > 0 ? 'text-destructive' : 'text-success'}`}
+                className={cn(
+                  'text-3xl font-bold',
+                  current && current.rls_gaps_count > 0 ? 'text-destructive' : 'text-success',
+                )}
               >
                 {current?.rls_gaps_count ?? '—'}
               </p>
@@ -411,7 +417,10 @@ export default function OwnershipAuditAdminPage() {
                   {reports.map((r) => (
                     <TableRow
                       key={r.id}
-                      className={`cursor-pointer ${current?.id === r.id ? 'bg-secondary/40' : ''}`}
+                      className={cn(
+                        'cursor-pointer',
+                        current?.id === r.id ? 'bg-secondary/40' : '',
+                      )}
                       onClick={() => setSelected(r.id)}
                     >
                       <TableCell className="text-xs">

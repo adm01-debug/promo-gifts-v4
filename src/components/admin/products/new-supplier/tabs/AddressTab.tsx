@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Search, Truck, X } from 'lucide-react';
 import { maskCep, ESTADOS_BR } from '@/utils/masks';
 import type { NewSupplierForm } from '../useNewSupplierForm';
+import { cn } from '@/lib/utils';
 
 const fieldClass = 'mt-1.5 h-9';
 
@@ -25,7 +26,7 @@ export function AddressTab({ form }: AddressTabProps) {
               form.handleCepLookup(maskCep(e.target.value))
             }
             placeholder="00000-000"
-            className={`${fieldClass} font-mono`}
+            className={cn(fieldClass, 'font-mono')}
             maxLength={9}
           />
         </div>
@@ -148,7 +149,7 @@ export function AddressTab({ form }: AddressTabProps) {
             value={form.latitude}
             onChange={(e: ChangeEvent<HTMLInputElement>) => form.setLatitude(e.target.value)}
             placeholder="-23.5505"
-            className={`${fieldClass} font-mono`}
+            className={cn(fieldClass, 'font-mono')}
           />
         </div>
         <div>
@@ -159,7 +160,7 @@ export function AddressTab({ form }: AddressTabProps) {
             value={form.longitude}
             onChange={(e: ChangeEvent<HTMLInputElement>) => form.setLongitude(e.target.value)}
             placeholder="-46.6333"
-            className={`${fieldClass} font-mono`}
+            className={cn(fieldClass, 'font-mono')}
           />
         </div>
       </div>
@@ -202,7 +203,7 @@ export function AddressTab({ form }: AddressTabProps) {
         </Label>
         {form.transportadoraPadrao ? (
           <div className="mt-1 flex items-center gap-2">
-            <div className={`${fieldClass} flex flex-1 items-center px-3 text-sm`}>
+            <div className={cn(fieldClass, 'flex flex-1 items-center px-3 text-sm')}>
               {form.transportadoraPadrao}
             </div>
             <Button
@@ -236,7 +237,7 @@ export function AddressTab({ form }: AddressTabProps) {
               }}
               onBlur={() => setTimeout(() => form.setShowCarrierDropdown(false), 200)}
               placeholder="Buscar transportadora..."
-              className={`${fieldClass} pl-9`}
+              className={cn(fieldClass, 'pl-9')}
             />
             {form.searchingCarriers && (
               <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />

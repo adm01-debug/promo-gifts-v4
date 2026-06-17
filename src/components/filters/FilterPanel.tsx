@@ -34,6 +34,7 @@ import {
   QuickOptionsFilter,
 } from './filter-panel/sections/SimpleFilters';
 import { SizeFilter } from './filter-panel/sections/SizeFilter';
+import { cn } from '@/lib/utils';
 
 export function FilterPanel({
   filters,
@@ -276,11 +277,12 @@ export function FilterPanel({
               <button
                 key={g}
                 onClick={() => state.toggleArrayFilter('gender', g)}
-                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-all ${
+                className={cn(
+                  'rounded-md border px-2.5 py-1 text-xs font-medium transition-all',
                   isSelected
                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent'
-                }`}
+                    : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent',
+                )}
               >
                 {g}
               </button>

@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
+import { cn } from '@/lib/utils';
 interface RepairAction {
   table: string;
   owner_column: string;
@@ -332,7 +333,7 @@ function Stat({
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
-      <div className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</div>
+      <div className={cn('mt-1 text-2xl font-bold', toneClass)}>{value}</div>
     </div>
   );
 }

@@ -132,7 +132,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       <ul className="max-h-56 space-y-0.5 overflow-y-auto pr-1 font-mono text-[10px]">
         {visible.map((s) => (
           <li key={s.name} className="flex items-center justify-between gap-2">
-            <span className={`truncate ${toneCls}`}>{s.name}</span>
+            <span className={cn('truncate', toneCls)}>{s.name}</span>
             {s.masked_suffix ? (
               <span className="shrink-0 text-muted-foreground">••••{s.masked_suffix}</span>
             ) : (

@@ -32,6 +32,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_LIMIT = 5;
 
@@ -516,7 +517,7 @@ function KpiCard({
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <div className={`rounded-lg p-2 ${toneCls}`}>{icon}</div>
+        <div className={cn('rounded-lg p-2', toneCls)}>{icon}</div>
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
           <p className="text-2xl font-bold">{value}</p>
@@ -542,7 +543,7 @@ function ImpactPill({
         ? 'border-amber-500/30 text-amber-700'
         : 'border-destructive/30 text-destructive';
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${toneCls}`}>
+    <span className={cn('inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5', toneCls)}>
       <b>{value}</b> {label}
     </span>
   );

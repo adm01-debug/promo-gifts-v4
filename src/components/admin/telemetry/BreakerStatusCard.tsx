@@ -170,13 +170,14 @@ export function BreakerStatusCard() {
                   Falhas (janela)
                 </p>
                 <p
-                  className={`font-display text-2xl font-bold tabular-nums ${
+                  className={cn(
+                    'font-display text-2xl font-bold tabular-nums',
                     snap.breaker && snap.failures >= snap.breaker.failureThreshold
                       ? 'text-destructive'
                       : snap.failures > 0
                         ? 'text-warning'
-                        : ''
-                  }`}
+                        : '',
+                  )}
                 >
                   {snap.failures}
                   {snap.breaker && (
@@ -206,9 +207,10 @@ export function BreakerStatusCard() {
                   Reset em
                 </p>
                 <p
-                  className={`font-display text-2xl font-bold tabular-nums ${
-                    countdown !== null && countdown > 0 ? 'text-warning' : ''
-                  }`}
+                  className={cn(
+                    'font-display text-2xl font-bold tabular-nums',
+                    countdown !== null && countdown > 0 ? 'text-warning' : '',
+                  )}
                 >
                   {countdown !== null ? fmtCountdown(countdown) : '—'}
                 </p>

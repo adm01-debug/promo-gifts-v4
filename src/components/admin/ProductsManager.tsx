@@ -374,7 +374,7 @@ export function ProductsManager() {
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className={`text-sm font-semibold tabular-nums ${stockColor}`}>
+                          <span className={cn('text-sm font-semibold tabular-nums', stockColor)}>
                             {stockLevel}
                           </span>
                         </TableCell>

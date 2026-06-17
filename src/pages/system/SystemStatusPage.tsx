@@ -330,7 +330,12 @@ export default function SystemStatusPage() {
         {/* Overall Status */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Card
-            className={`h-full border-2 ${overallStatus === 'ok' ? 'border-primary/50 bg-primary/5' : 'border-destructive/50 bg-destructive/5'}`}
+            className={cn(
+              'h-full border-2',
+              overallStatus === 'ok'
+                ? 'border-primary/50 bg-primary/5'
+                : 'border-destructive/50 bg-destructive/5',
+            )}
           >
             <CardContent className="p-6">
               <div className="flex h-full items-center justify-between">
@@ -508,7 +513,14 @@ export default function SystemStatusPage() {
                   <div>
                     <p className="font-mono text-sm font-bold">{check.table}</p>
                     <p
-                      className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}
+                      className={cn(
+                        'text-xs',
+                        check.status === 'error'
+                          ? 'text-destructive'
+                          : check.status === 'warning'
+                            ? 'text-warning'
+                            : 'text-success',
+                      )}
                     >
                       {check.msg}
                     </p>

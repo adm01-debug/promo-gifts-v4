@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { invokeFullScopeFunction, type InvokeFullScopeResult } from '@/lib/auth/invoke-full-scope';
 import type { StepUpAction } from '@/hooks/auth';
+import { cn } from '@/lib/utils';
 
 type ExampleId = 'issue' | 'rotate' | 'update';
 
@@ -266,7 +267,7 @@ function ExampleCard({ config }: { config: ExampleConfig }) {
             {running ? 'Executando...' : 'Executar exemplo'}
           </Button>
           {result && (
-            <span className={`text-xs font-medium ${statusColor[result.status]}`}>
+            <span className={cn('text-xs font-medium', statusColor[result.status])}>
               {result.status} — {result.detail}
             </span>
           )}

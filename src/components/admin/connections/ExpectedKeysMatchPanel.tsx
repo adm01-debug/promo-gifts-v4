@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CheckCircle2, AlertTriangle, GitCompare, KeyRound, Database } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 /**
  * Painel de comparação: chaves esperadas (canônicas) × integration_credentials × external_connections.
@@ -165,9 +166,10 @@ export function ExpectedKeysMatchPanel({
           {diagnoses.map((d) => (
             <div
               key={d.envKey}
-              className={`space-y-2 rounded-lg border p-3 ${
-                d.ok ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'
-              }`}
+              className={cn(
+                'space-y-2 rounded-lg border p-3',
+                d.ok ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5',
+              )}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">

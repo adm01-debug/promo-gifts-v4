@@ -225,7 +225,12 @@ export default function FiltersPage() {
                   )}
               </AnimatePresence>
               <div
-                className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${state.activeFiltersCount > 0 ? 'bg-gradient-to-r from-brand-primary to-brand-primary-hover text-brand-primary-foreground shadow-md shadow-brand-primary/20' : 'bg-muted/60 text-muted-foreground'}`}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300',
+                  state.activeFiltersCount > 0
+                    ? 'bg-gradient-to-r from-brand-primary to-brand-primary-hover text-brand-primary-foreground shadow-md shadow-brand-primary/20'
+                    : 'bg-muted/60 text-muted-foreground',
+                )}
               >
                 <Filter className="h-4 w-4" />
                 <span className="tabular-nums">
@@ -323,11 +328,21 @@ export default function FiltersPage() {
                               variant="outline"
                               size="icon"
                               disabled={!hasHistory}
-                              className={`group relative h-10 w-10 shrink-0 rounded-lg border-muted-foreground/20 transition-all ${hasHistory ? 'hover:border-primary/50' : 'cursor-default opacity-60'}`}
+                              className={cn(
+                                'group relative h-10 w-10 shrink-0 rounded-lg border-muted-foreground/20 transition-all',
+                                hasHistory
+                                  ? 'hover:border-primary/50'
+                                  : 'cursor-default opacity-60',
+                              )}
                               aria-label="Histórico de buscas recentes"
                             >
                               <Clock
-                                className={`h-4 w-4 transition-colors ${hasHistory ? 'text-muted-foreground group-hover:text-primary' : 'text-muted-foreground'}`}
+                                className={cn(
+                                  'h-4 w-4 transition-colors',
+                                  hasHistory
+                                    ? 'text-muted-foreground group-hover:text-primary'
+                                    : 'text-muted-foreground',
+                                )}
                               />
                               {hasHistory && (
                                 <Badge className="pointer-events-none absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center border-2 border-background bg-primary px-1 text-[8px]">

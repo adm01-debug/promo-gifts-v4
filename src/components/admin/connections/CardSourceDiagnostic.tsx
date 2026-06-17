@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { resolveSource } from './CredentialsSourceFilterContext';
 import { useExplainMode } from './ExplainModeContext';
 import type { SecretStatus, SecretError } from '@/hooks/admin';
+import { cn } from '@/lib/utils';
 
 /**
  * CardSourceDiagnostic — modo debug por card.
@@ -161,7 +162,10 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
                       <Badge
                         variant="outline"
                         tabIndex={0}
-                        className={`cursor-help font-mono text-[10px] uppercase focus:outline-none focus:ring-2 focus:ring-ring ${meta.cls}`}
+                        className={cn(
+                          'cursor-help font-mono text-[10px] uppercase focus:outline-none focus:ring-2 focus:ring-ring',
+                          meta.cls,
+                        )}
                         aria-label={`${r.label}: origem ${meta.label}`}
                       >
                         {meta.label}

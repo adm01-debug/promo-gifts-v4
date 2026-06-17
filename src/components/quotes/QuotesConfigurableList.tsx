@@ -95,9 +95,10 @@ function SortableHeaderCell({ column }: { column: ColumnDef }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex cursor-grab select-none items-center gap-1 active:cursor-grabbing ${
-        column.align === 'right' ? 'justify-end' : ''
-      }`}
+      className={cn(
+        'flex cursor-grab select-none items-center gap-1 active:cursor-grabbing',
+        column.align === 'right' ? 'justify-end' : '',
+      )}
       {...attributes}
       {...listeners}
     >
@@ -354,9 +355,10 @@ export function QuotesConfigurableList({
           return (
             <div
               key={quoteId ?? quote.quote_number}
-              className={`group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40 ${
-                selected ? 'border-l-2 border-l-primary bg-primary/5' : ''
-              }`}
+              className={cn(
+                'group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40',
+                selected ? 'border-l-2 border-l-primary bg-primary/5' : '',
+              )}
               style={{ gridTemplateColumns: gridTemplate }}
               onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >

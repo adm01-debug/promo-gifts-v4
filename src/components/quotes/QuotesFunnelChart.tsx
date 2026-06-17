@@ -6,6 +6,7 @@ import { TrendingDown, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { QuoteFunnelData } from '@/hooks/quotes';
+import { cn } from '@/lib/utils';
 
 interface QuotesFunnelChartProps {
   data: QuoteFunnelData;
@@ -50,13 +51,14 @@ export function QuotesFunnelChart({ data }: QuotesFunnelChartProps) {
                     <span className="font-bold tabular-nums text-foreground">{stage.count}</span>
                     {idx > 0 && stage.rateFromPrev !== null && (
                       <span
-                        className={`flex items-center gap-0.5 tabular-nums ${
+                        className={cn(
+                          'flex items-center gap-0.5 tabular-nums',
                           stage.rateFromPrev >= 50
                             ? 'text-success'
                             : stage.rateFromPrev >= 20
                               ? 'text-warning'
-                              : 'text-destructive'
-                        }`}
+                              : 'text-destructive',
+                        )}
                       >
                         {stage.rateFromPrev < 50 && <TrendingDown className="h-2.5 w-2.5" />}
                         {stage.rateFromPrev.toFixed(0)}%

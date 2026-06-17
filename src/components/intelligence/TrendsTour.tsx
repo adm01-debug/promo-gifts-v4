@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'trends-tour-seen-v1';
 
@@ -78,7 +79,10 @@ export function TrendsTour() {
               {STEPS.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1 rounded-full transition-all ${i === step ? 'w-6 bg-primary' : 'w-1.5 bg-muted'}`}
+                  className={cn(
+                    'h-1 rounded-full transition-all',
+                    i === step ? 'w-6 bg-primary' : 'w-1.5 bg-muted',
+                  )}
                 />
               ))}
             </div>
