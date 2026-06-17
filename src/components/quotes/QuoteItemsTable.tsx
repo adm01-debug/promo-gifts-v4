@@ -20,6 +20,10 @@ export interface QuotePersonalization {
   technique_name?: string | null;
   unit_cost?: number | null;
   total_cost?: number | null;
+  notes?: string | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  colors_count?: number | null;
 }
 
 export interface QuoteItem {
@@ -89,7 +93,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded border border-border object-cover print:hidden"
                 loading="lazy"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
             )}
             <div>
@@ -121,8 +127,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           <td className="p-3">
             {allPersonalizations.length > 0 ? (
               <div className="space-y-1.5">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {allPersonalizations.map((p: any, pIdx: number) => {
+                {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
                   const locationLabel = locationPart ? locationPart.split(' — ')[0] : null;
@@ -203,6 +208,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 technique_name: p.technique_name ?? undefined,
                 unit_cost: p.unit_cost ?? undefined,
                 total_cost: p.total_cost ?? undefined,
+                notes: p.notes ?? undefined,
+                width_cm: p.width_cm ?? undefined,
+                height_cm: p.height_cm ?? undefined,
+                colors_count: p.colors_count ?? undefined,
               })),
             }}
           />
