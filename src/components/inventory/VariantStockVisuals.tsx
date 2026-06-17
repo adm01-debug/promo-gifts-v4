@@ -128,23 +128,15 @@ export function RichColorSwatch({
     <span className="inline-flex items-center gap-2">
       <span
         className={cn(
-          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-opacity',
           isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
           !bg && 'border-dashed border-muted-foreground/40',
+          isOutOfStock && 'opacity-50',
         )}
         style={bg ? { background: bg } : undefined}
         aria-hidden="true"
-      >
-        {isOutOfStock && (
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                'linear-gradient(135deg, transparent calc(50% - 1px), hsl(var(--destructive)) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px))',
-            }}
-          />
-        )}
-      </span>
+      />
+
       <span
         className={cn(
           'truncate text-sm',
