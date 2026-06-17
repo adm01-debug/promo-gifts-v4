@@ -602,10 +602,13 @@ export function VariantStockTable({
           )}
         </div>
 
-        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias. */}
+        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias.
+            Independente do filtro "Estoque Futuro Nd" da toolbar (que decide
+            se reposições futuras entram no cálculo da régua de quantidade). */}
         <div
           className="flex items-center gap-1.5 text-xs text-muted-foreground"
           data-testid="rupture-horizon-control"
+          title="Janela usada apenas para o cálculo de Risco de Ruptura nesta tabela. Independente do filtro 'Estoque Futuro Nd' da toolbar."
         >
           <span className="hidden whitespace-nowrap md:inline">Projetar risco em:</span>
           <Select
@@ -614,7 +617,7 @@ export function VariantStockTable({
           >
             <SelectTrigger
               className="h-8 w-[88px] text-xs"
-              aria-label="Horizonte de projeção do risco de ruptura"
+              aria-label="Horizonte de projeção do risco de ruptura (independente do filtro Estoque Futuro da toolbar)"
             >
               <SelectValue />
             </SelectTrigger>
@@ -626,7 +629,11 @@ export function VariantStockTable({
               ))}
             </SelectContent>
           </Select>
+          <span className="hidden text-[10px] text-muted-foreground/70 lg:inline">
+            (independente do Estoque Futuro)
+          </span>
         </div>
+
 
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
