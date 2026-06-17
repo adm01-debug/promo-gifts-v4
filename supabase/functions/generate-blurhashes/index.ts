@@ -1,12 +1,16 @@
-// generate-blurhashes — P2.8
-// Computes blurhash strings for verified product images (JPEG + PNG).
+// generate-blurhashes — P2.9
+// Computes blurhash strings for verified product images (JPEG + PNG + WebP + GIF).
 // Downloads each image, decodes pixels with pure-JS decoders, resizes to
-// 32×32, then encodes with wolt/blurhash. Skips WebP/GIF (unsupported decoders).
+// 32×32, then encodes with wolt/blurhash.
+//
+// WebP/GIF strategy: CF Images serves the /thumbnail variant as JPEG regardless
+// of the original upload format. For webp/gif images we fetch /thumbnail instead
+// of /public and trust the content-type header for decoder selection.
+//
 // Called by pg_cron job 'generate-blurhashes' every 5 minutes.
 //
-// Coverage: ~67,344 images (JPEG 54,866 + PNG 12,478 = 93.4% of verified).
+// Coverage: JPEG+PNG+WebP+GIF ≈ 99.9% of all verified product images.
 // Throughput: 40 images/invocation × 12/hour ≈ 480 hashes/hour.
-// ETA to full JPEG+PNG coverage: ~140 hours from first run.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { authorizeCron } from '../_shared/dispatcher-auth.ts'
 import { encode } from 'https://esm.sh/blurhash@2.0.5'
@@ -20,6 +24,11 @@ const FETCH_TIMEOUT_MS = 15000
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 const THUMB_W = 32
 const THUMB_H = 32
+
+// Formats processed via thumbnail fallback (CF converts to JPEG internally)
+const ALT_FORMATS = new Set(['webp', 'gif'])
+// All formats included in the pickup query
+const PICKUP_FORMATS = ['jpeg', 'png', 'webp', 'gif']
 
 interface ImgRow {
   id: string
@@ -67,19 +76,41 @@ function thumbResize(src: Uint8Array, srcW: number, srcH: number): Uint8ClampedA
 
 async function computeBlurhash(img: ImgRow): Promise<{ id: string; blurhash: string } | null> {
   try {
-    const res = await fetch(img.url_cdn, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    // For WebP/GIF originals: CF Images converts the /thumbnail variant to JPEG
+    // regardless of original upload format. Fetching /public would return the
+    // original WebP/GIF which our pure-JS decoders cannot handle.
+    const isAltFormat = img.format !== null && ALT_FORMATS.has(img.format)
+    const fetchUrl = isAltFormat
+      ? img.url_cdn.replace(/\/[^/]+$/, '/thumbnail')
+      : img.url_cdn
+
+    const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
     if (!res.ok) {
-      console.warn('generate-blurhashes: fetch_failed', { id: img.id, status: res.status })
+      console.warn('generate-blurhashes: fetch_failed', {
+        id: img.id,
+        status: res.status,
+        db_format: img.format,
+        fetch_url: fetchUrl,
+      })
       return null
     }
 
     const contentType = res.headers.get('content-type') ?? ''
-    const fmt = img.format ??
-      (contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpeg' :
-       contentType.includes('png') ? 'png' : null)
 
-    if (fmt !== 'jpeg' && fmt !== 'png') {
-      console.log('generate-blurhashes: skip_format', { id: img.id, fmt })
+    // CRITICAL: trust content-type, NOT img.format from DB.
+    // For webp/gif images we fetched /thumbnail which CF converts to JPEG,
+    // so img.format='webp' but content-type='image/jpeg' → must use jpeg decoder.
+    const fmt =
+      contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpeg' :
+      contentType.includes('png') ? 'png' : null
+
+    if (fmt === null) {
+      console.log('generate-blurhashes: skip_undecoded_format', {
+        id: img.id,
+        db_format: img.format,
+        content_type: contentType,
+        fetch_url: fetchUrl,
+      })
       return null
     }
 
@@ -139,7 +170,7 @@ Deno.serve(async (req: Request) => {
     .is('blurhash', null)
     .eq('cf_sync_status', 'verified')
     .is('deleted_at', null)
-    .in('format', ['jpeg', 'png'])
+    .in('format', PICKUP_FORMATS)
     .order('is_primary', { ascending: false })
     .order('id', { ascending: true })
     .limit(BATCH_SIZE)
@@ -159,12 +190,15 @@ Deno.serve(async (req: Request) => {
       .is('blurhash', null)
       .eq('cf_sync_status', 'verified')
       .is('deleted_at', null)
-      .in('format', ['jpeg', 'png'])
+      .in('format', PICKUP_FORMATS)
     return new Response(
-      JSON.stringify({ done: true, remaining: remaining ?? 0, message: 'all jpeg/png images have blurhash' }),
+      JSON.stringify({ done: true, remaining: remaining ?? 0, message: 'all processable images have blurhash' }),
       { headers: { 'Content-Type': 'application/json' } }
     )
   }
+
+  // Track webp/gif attempts separately for monitoring
+  const altFormatImages = (images as ImgRow[]).filter(i => i.format !== null && ALT_FORMATS.has(i.format))
 
   const settled = await Promise.allSettled(
     (images as ImgRow[]).map(img => computeBlurhash(img))
@@ -190,13 +224,14 @@ Deno.serve(async (req: Request) => {
     .is('blurhash', null)
     .eq('cf_sync_status', 'verified')
     .is('deleted_at', null)
-    .in('format', ['jpeg', 'png'])
+    .in('format', PICKUP_FORMATS)
 
   console.log('generate-blurhashes: batch_complete', {
     processed: images.length,
     hashed: successes.length,
     updated: updatedCount,
     failed: images.length - successes.length,
+    webp_gif_attempted: altFormatImages.length,
     remaining,
   })
 
@@ -206,6 +241,7 @@ Deno.serve(async (req: Request) => {
       hashed: successes.length,
       updated: updatedCount,
       failed: images.length - successes.length,
+      webp_gif_attempted: altFormatImages.length,
       remaining: remaining ?? 'unknown',
     }),
     { headers: { 'Content-Type': 'application/json' } }
