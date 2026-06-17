@@ -71,8 +71,11 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
                   {ext.file_size_bytes && (
                     <span>• {(ext.file_size_bytes / 1024).toFixed(0)}KB</span>
                   )}
-                  {ext.cf_sync_status && CF_BADGE[ext.cf_sync_status] && (() => {
-                    const cf = CF_BADGE[ext.cf_sync_status!]!;
+                  {(() => {
+                    const status = ext.cf_sync_status;
+                    if (!status) return null;
+                    const cf = CF_BADGE[status];
+                    if (!cf) return null;
                     return (
                       <Badge variant="outline" className={cn('flex items-center gap-1 text-[10px]', cf.className)}>
                         <cf.icon className="h-2.5 w-2.5" />
