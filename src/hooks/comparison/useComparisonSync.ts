@@ -7,7 +7,7 @@
 import { useEffect, useRef } from 'react';
 import { useComparisonStore, type CompareItem } from '@/stores/useComparisonStore';
 import { supabase } from '@/integrations/supabase/client';
-
+import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 const CURRENT_SLOT_KEY = 'current'; // marker no campo client_name para o slot "atual"
 
@@ -89,7 +89,7 @@ export function useComparisonSync() {
           await supabase
             .from('user_comparisons')
             .update({
-              items: JSON.parse(JSON.stringify(compareItems)),
+              items: structuredClone(compareItems) as unknown as Json,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existing.id);
@@ -97,7 +97,7 @@ export function useComparisonSync() {
           await supabase.from('user_comparisons').insert({
             user_id: userId,
             client_name: CURRENT_SLOT_KEY,
-            items: JSON.parse(JSON.stringify(compareItems)),
+            items: structuredClone(compareItems) as unknown as Json,
             is_public: false,
           });
         }

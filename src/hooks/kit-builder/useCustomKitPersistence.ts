@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
+import type { Json } from '@/integrations/supabase/types';
 
 // ============================================
 // TYPES
@@ -87,9 +88,9 @@ export function useCustomKitPersistence() {
         name: kitState.name || 'Kit sem nome',
         status: kitState.isValid ? 'complete' : 'draft',
         kit_type: kitState.kitType || 'montado',
-        box_data: kitState.box ? JSON.parse(JSON.stringify(kitState.box)) : null,
-        items_data: JSON.parse(JSON.stringify(kitState.items)),
-        personalization_data: JSON.parse(JSON.stringify(kitState.personalization)),
+        box_data: kitState.box ? (structuredClone(kitState.box) as unknown as Json) : null,
+        items_data: structuredClone(kitState.items) as unknown as Json,
+        personalization_data: structuredClone(kitState.personalization) as unknown as Json,
         kit_quantity: kitQuantity,
         box_price: kitState.boxPrice,
         items_price: kitState.itemsPrice,
