@@ -494,7 +494,7 @@ export function useProductVideoGallery(productId?: string) {
         toast.success('Thumbnail regenerada!');
       } catch (err: unknown) {
         toast.error(
-          'Erro ao regenerar thumbnail: ' + (err instanceof Error ? err.message : 'desconhecido'),
+          `Erro ao regenerar thumbnail: ${err instanceof Error ? err.message : 'desconhecido'}`,
         );
       } finally {
         setRegeneratingId(null);
