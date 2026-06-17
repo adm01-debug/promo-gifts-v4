@@ -44,7 +44,7 @@ export function MobilePersonalizationSummary({
           {/* Left: Summary trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <button className="flex min-w-0 flex-1 items-center gap-3">
+              <button type="button" className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="relative">
                   <ShoppingCart className="h-5 w-5 text-primary" />
                   <Badge className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center p-0 text-[10px]">

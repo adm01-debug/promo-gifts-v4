@@ -149,7 +149,11 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
         <div className="flex items-center gap-1.5 rounded bg-primary/10 px-2 py-1 text-xs text-primary">
           <FolderTree className="h-3 w-3 shrink-0" />
           <span className="flex-1 truncate">{selectedName}</span>
-          <button onClick={() => onChange(undefined)} className="hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="hover:text-foreground"
+          >
             <X className="h-3 w-3" />
           </button>
         </div>

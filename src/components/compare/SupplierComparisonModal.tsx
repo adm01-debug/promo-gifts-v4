@@ -806,7 +806,7 @@ function ScoreBreakdown({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="group inline-flex items-center gap-1.5">
+        <button type="button" className="group inline-flex items-center gap-1.5">
           {label ? (
             <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-primary transition-all hover:bg-primary/20">
               <Sparkles className="h-3.5 w-3.5" />
