@@ -105,15 +105,32 @@ function renderActions(overrides?: { variant?: Partial<VariantStock> }) {
 }
 
 // ── Setup ───────────────────────────────────────────────────────────────────
+const origClipboard = Object.getOwnPropertyDescriptor(Navigator.prototype, 'clipboard');
+const origShare = (navigator as Navigator & { share?: unknown }).share;
+
+function setClipboard(writeText: (s: string) => Promise<void> | void) {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+}
+function clearClipboard() {
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+}
+function setShare(share: ((d: ShareData) => Promise<void>) | undefined) {
+  Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+}
+
 beforeEach(() => {
-  useFavoritesStore.setState({ favorites: [] });
-  useComparisonStore.setState({ items: [] });
+  useFavoritesStore.setState({ favorites: [], favoriteCount: 0 });
+  useComparisonStore.setState({ compareItems: [], compareCount: 0, hasItems: false });
   toastSuccess.mockClear();
   toastError.mockClear();
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  if (origClipboard) Object.defineProperty(Navigator.prototype, 'clipboard', origClipboard);
+  Object.defineProperty(navigator, 'share', { configurable: true, value: origShare });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
