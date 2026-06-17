@@ -336,7 +336,11 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     if (cnpjDigits.length === 14) {
       try {
         const { untypedFrom } = await import('@/lib/supabase-untyped');
-        const { data: existingRecords } = await untypedFrom<{ id: string; name: string; cnpj: string }>('suppliers')
+        const { data: existingRecords } = await untypedFrom<{
+          id: string;
+          name: string;
+          cnpj: string;
+        }>('suppliers')
           .select('id,name,cnpj')
           .eq('cnpj', cnpj.trim())
           .limit(1);
@@ -440,10 +444,10 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         default_markup_percent: defaultMarkup ? parseFloat(defaultMarkup) : null,
         min_order_value: minOrderValue ? parseFloat(minOrderValue) : null,
         // BUG-14 FIX: removed deprecated minimum_order_value
-        delivery_time_days: deliveryTimeDays ? parseInt(deliveryTimeDays) : null,
+        delivery_time_days: deliveryTimeDays ? parseInt(deliveryTimeDays, 10) : null,
         payment_terms: paymentTerms.trim() || null,
         shipping_terms: shippingTerms.trim() || null,
-        priority: priority ? parseInt(priority) : 50,
+        priority: priority ? parseInt(priority, 10) : 50,
         notes: notesValue,
         is_product_supplier: isProductSupplier,
         is_engraving_supplier: isEngravingSupplier,

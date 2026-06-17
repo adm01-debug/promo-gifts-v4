@@ -175,7 +175,7 @@ export function TechniqueTable({
                   onUpdate(
                     buildTecnicaUpdatePayload({
                       id: tecnica.id,
-                      min_quantity: value ? parseInt(value) : null,
+                      min_quantity: value ? parseInt(value, 10) : null,
                     }),
                   )
                 }
@@ -190,7 +190,7 @@ export function TechniqueTable({
                   onUpdate(
                     buildTecnicaUpdatePayload({
                       id: tecnica.id,
-                      estimated_days: value ? parseInt(value) : null,
+                      estimated_days: value ? parseInt(value, 10) : null,
                     }),
                   )
                 }
