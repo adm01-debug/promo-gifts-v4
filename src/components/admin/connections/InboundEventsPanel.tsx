@@ -77,6 +77,12 @@ interface Endpoint {
 
 const PERIOD_HOURS: Record<Period, number> = { '24h': 24, '7d': 24 * 7, '30d': 24 * 30 };
 const PERIOD_LABELS: Record<Period, string> = { '24h': '1 dia', '7d': '7 dias', '30d': '30 dias' };
+const CHART_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--success))',
+  'hsl(var(--warning))',
+  'hsl(var(--destructive))',
+];
 
 export function InboundEventsPanel() {
   const [period, setPeriod] = useState<Period>('7d');
@@ -175,13 +181,6 @@ export function InboundEventsPanel() {
       warning: 'bg-warning/10 text-warning border-warning/20',
       destructive: 'bg-destructive/10 text-destructive border-destructive/20',
     })[t] ?? '';
-
-  const COLORS = [
-    'hsl(var(--primary))',
-    'hsl(var(--success))',
-    'hsl(var(--warning))',
-    'hsl(var(--destructive))',
-  ];
 
   return (
     <div className="space-y-4">
@@ -319,7 +318,12 @@ export function InboundEventsPanel() {
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   {chartData.topEps.map((n, i) => (
-                    <Bar key={n} dataKey={n} stackId="a" fill={COLORS[i % COLORS.length]} />
+                    <Bar
+                      key={n}
+                      dataKey={n}
+                      stackId="a"
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    />
                   ))}
                 </BarChart>
               </ResponsiveContainer>
