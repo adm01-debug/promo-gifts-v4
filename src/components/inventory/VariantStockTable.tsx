@@ -13,7 +13,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import {
   Table,
   TableBody,
@@ -22,9 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
+import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 
 /**
