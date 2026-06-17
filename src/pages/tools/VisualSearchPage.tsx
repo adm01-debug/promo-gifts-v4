@@ -37,6 +37,7 @@ import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFil
 import { ColorSwatchBar, type ColorFilterSelection } from '@/components/filters/ColorGroupFilter';
 import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface VisualSearchResult {
   analysis: {
@@ -427,7 +428,7 @@ export default function VisualSearchPage() {
                   <Card className="relative overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/5 transition-all duration-300">
                     <CardContent className="p-0">
                       <div className="relative overflow-hidden group">
-                        <img data-testid="sidebar-preview-image" src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+                        <OptimizedImage data-testid="sidebar-preview-image" src={previewUrl} alt="Preview" className="aspect-square object-cover" containerClassName="w-full" />
                         
                         {/* Visual Highlights Overlay */}
                         {results?.analysis.visualHighlights && !isSearching && showHotspots && (
@@ -752,7 +753,7 @@ export default function VisualSearchPage() {
                       }}
                       className="group relative aspect-square overflow-hidden rounded-md border border-border/40 hover:border-primary transition-all active:scale-90"
                     >
-                      <img src={item.imageUrl} alt={item.productType} className="h-full w-full object-cover transition-transform group-hover:scale-110" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+                      <OptimizedImage src={item.imageUrl} alt={item.productType} className="object-cover transition-transform group-hover:scale-110" containerClassName="h-full w-full" />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <RefreshCcw className="h-3 w-3 text-white" />
                       </div>
@@ -1005,13 +1006,14 @@ export default function VisualSearchPage() {
                           onClick={() => navigate(`/produto/${product.id}`)}
                         >
                           <div className="relative aspect-square overflow-hidden bg-white/50 p-6 flex items-center justify-center">
-                            <img 
-                              src={product.images?.[0] || '/placeholder.svg'} 
+                            <OptimizedImage
+                              src={product.images?.[0]}
                               alt={product.name}
                               className={cn(
-                                "h-full w-full object-contain transition-transform duration-700 drop-shadow-md",
+                                "object-contain transition-transform duration-700 drop-shadow-md",
                                 hoveredProduct === product.id ? "scale-[1.6] origin-center z-10" : "group-hover:scale-110"
                               )}
+                              containerClassName="h-full w-full"
                             />
                             
                             {/* Material Magnifier Overlay (Hover) - Side-by-Side Comparison */}
