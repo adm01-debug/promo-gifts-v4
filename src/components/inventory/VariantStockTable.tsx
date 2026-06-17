@@ -556,6 +556,42 @@ export function VariantStockTable({
   const selection = useStockSelection(
     pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
   );
+  const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
+
+  // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
+  // Ignora quando o foco está em input/textarea/contenteditable ou quando há modifier.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 's' && e.key !== 'S') return;
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName?.toLowerCase();
+      if (
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select' ||
+        t?.isContentEditable
+      ) {
+        return;
+      }
+      e.preventDefault();
+      selection.setMode(!selection.enabled);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selection]);
+
+  const bulkCollectionRows: BulkCollectionRow[] = selection.selectedRows.map((r) => ({
+    productId: r.product.productId,
+    productName: r.product.productName,
+    variant: {
+      color_name: r.variant.colorName,
+      color_hex: r.variant.colorHex,
+      size_code: r.variant.sizeCode,
+      variant_id: r.variant.variantId,
+      thumbnail: r.variant.imageUrl ?? r.product.productImageUrl,
+    },
+  }));
 
   return (
     <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
