@@ -41,6 +41,7 @@ export interface FilterContext {
   hasVariantFilter: boolean;
   includeFutureStock: boolean;
   futureCutoffMs: number; // 0 quando desativado
+  minQtyIncludesFutureStock: boolean;
 }
 
 
@@ -60,8 +61,10 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
     includeFutureStock,
     futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
+    minQtyIncludesFutureStock: Boolean(filters.minQtyIncludesFutureStock),
   };
 }
+
 
 
 // ---------- estágio 1: seleção de variações ----------
