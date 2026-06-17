@@ -17,6 +17,7 @@ import { VariantStockRowActions } from './VariantStockRowActions';
 import { useStockSelection } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
 import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
+import { useSelectionShortcut } from './useSelectionShortcut';
 
 
 import { Button } from '@/components/ui/button';
