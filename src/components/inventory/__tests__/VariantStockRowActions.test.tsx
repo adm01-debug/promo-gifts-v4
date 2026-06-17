@@ -139,7 +139,7 @@ afterEach(() => {
 describe('VariantStockRowActions · Copiar SKU', () => {
   it('copia o SKU da variação no clipboard e emite toast de sucesso', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    setClipboard(writeText);
 
     const user = userEvent.setup();
     renderActions();
@@ -152,8 +152,7 @@ describe('VariantStockRowActions · Copiar SKU', () => {
 
   it('mostra erro profissional se clipboard falhar (sem fallback disponível)', async () => {
     const writeText = vi.fn().mockRejectedValue(new Error('blocked'));
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
-    // Bloqueia execCommand para forçar falha total
+    setClipboard(writeText);
     const orig = document.execCommand;
     document.execCommand = vi.fn(() => false);
 
