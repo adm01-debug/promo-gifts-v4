@@ -5,6 +5,9 @@
 [![Stack](https://img.shields.io/badge/Stack-React%2018%20%2B%20TypeScript%205%20%2B%20Supabase-blue)]()
 [![Build](https://img.shields.io/badge/Build-Vite%205-purple)]()
 [![Design](https://img.shields.io/badge/UI-Tailwind%20CSS%20%2B%20shadcn%2Fui-cyan)]()
+[![Stock Rupture E2E](https://github.com/promo-gifts/promo-gifts-v4/actions/workflows/stock-rupture-horizon-e2e.yml/badge.svg)](https://github.com/promo-gifts/promo-gifts-v4/actions/workflows/stock-rupture-horizon-e2e.yml)
+
+> 📊 **Último relatório E2E (Risco de Ruptura):** abra a execução mais recente em [Actions → stock-rupture-horizon-e2e](https://github.com/promo-gifts/promo-gifts-v4/actions/workflows/stock-rupture-horizon-e2e.yml) e baixe o artefato `playwright-report-stock-rupture-horizon-*`.
 
 ---
 
