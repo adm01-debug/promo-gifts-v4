@@ -122,10 +122,8 @@ export function RoleAuditLogPanel() {
     refetchInterval: 30_000,
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const entries = data?.entries ?? [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const profilesMap = data?.profilesMap ?? new Map<string, ProfileLite>();
+  const entries = useMemo(() => data?.entries ?? [], [data]);
+  const profilesMap = useMemo(() => data?.profilesMap ?? new Map<string, ProfileLite>(), [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
