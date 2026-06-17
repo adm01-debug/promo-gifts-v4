@@ -122,7 +122,7 @@ export function StockFilterToolbar({
   // Debounce quantity
   useEffect(() => {
     const t = setTimeout(() => {
-      const num = parseInt(quantityInput) || 0;
+      const num = parseInt(quantityInput, 10) || 0;
       onUpdateFilter('minQuantityNeeded', num > 0 ? num : undefined);
     }, 500);
     return () => clearTimeout(t);
@@ -316,12 +316,11 @@ export function StockFilterToolbar({
                   </div>
                   {!filters.includeFutureStock && (
                     <p className="px-0.5 text-[10px] leading-tight text-muted-foreground">
-                      Ative primeiro o botão <strong>Estoque Futuro</strong> (na barra) para
-                      poder incluir reposições no cálculo.
+                      Ative primeiro o botão <strong>Estoque Futuro</strong> (na barra) para poder
+                      incluir reposições no cálculo.
                     </p>
                   )}
                 </div>
-
               </FilterSection>
 
               {/* FilterSection: Fornecedores */}
@@ -545,7 +544,6 @@ export function StockFilterToolbar({
               Régua estrita: ignora Estoque Futuro
             </span>
           )}
-
 
         {/* 3. Search */}
         <StockHelpTooltip

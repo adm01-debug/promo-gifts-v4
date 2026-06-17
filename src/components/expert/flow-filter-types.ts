@@ -92,8 +92,10 @@ export function getActiveFilterLabels(
     ['selectedNichos', 'selectedNichos'],
     ['selectedTags', 'selectedTags'],
   ];
-  arrayKeys.forEach(([k, key]) =>
-    (f[k] as string[]).forEach((v) => labels.push({ label: v, key, value: v })),
+  labels.push(
+    ...arrayKeys.flatMap(([k, key]) =>
+      (f[k] as string[]).map((v) => ({ label: v, key, value: v })),
+    ),
   );
   if (f.onlyInStock) labels.push({ label: 'Em estoque', key: 'onlyInStock' });
   if (f.onlyNew) labels.push({ label: 'Novidades', key: 'onlyNew' });

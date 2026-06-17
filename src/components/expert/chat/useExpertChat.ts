@@ -582,7 +582,7 @@ export function useExpertChat({
                   });
                 }
               } catch {
-                buffer = line + '\n' + buffer;
+                buffer = `${line}\n${buffer}`;
                 break;
               }
             }

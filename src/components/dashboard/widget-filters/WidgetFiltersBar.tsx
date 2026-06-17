@@ -70,7 +70,7 @@ export function WidgetFiltersBar({
   }, [value.dateRange]);
 
   const hasAnyFilter =
-    value.search.trim().length > 0 || value.status !== 'all' || !!value.dateRange?.from;
+    value.search.trim() !== '' || value.status !== 'all' || !!value.dateRange?.from;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">

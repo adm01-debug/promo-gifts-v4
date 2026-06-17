@@ -64,7 +64,7 @@ export function RecentAuditTable() {
     const list = (data || []) as AuditEntry[];
     setEntries(list);
 
-    const ids = Array.from(new Set(list.map((e) => e.user_id)));
+    const ids = [...new Set(list.map((e) => e.user_id))];
     if (ids.length > 0) {
       const { data: profs } = await supabase
         .from('profiles')

@@ -95,9 +95,9 @@ export function FavoritesSortBar({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as FavoritesSort)}>
-            {(Object.keys(LABELS) as FavoritesSort[]).map((k) => (
+            {Object.entries(LABELS).map(([k, label]) => (
               <DropdownMenuRadioItem key={k} value={k} className="text-xs">
-                {LABELS[k]}
+                {label}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

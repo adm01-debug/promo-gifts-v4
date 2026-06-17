@@ -444,7 +444,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
       deps.copyPack.whatsapp ||
       `${clientGreeting}✨ Confira a imagem publicitária: ${deps.selectedProduct?.name}${deps.selectedColor ? ` (${deps.selectedColor.name})` : ''} com ${deps.selectedTechnique?.name || 'personalização'}`;
     window.open(
-      `https://wa.me/?text=${encodeURIComponent(text + '\n' + currentVariation.imageUrl)}`,
+      `https://wa.me/?text=${encodeURIComponent(`${text}\n${currentVariation.imageUrl}`)}`,
       '_blank',
     );
   }, [currentVariation, deps]);

@@ -33,7 +33,7 @@ function CatalogHeaderInner({
   searchHistory = [],
   onClearHistory,
 }: CatalogHeaderProps) {
-  const hasActiveConstraints = searchQuery.trim().length > 0 || activeFiltersCount > 0;
+  const hasActiveConstraints = searchQuery.trim() !== '' || activeFiltersCount > 0;
   const searchRef = useRef<HTMLDivElement>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const hasHistory = searchHistory.length > 0;

@@ -59,7 +59,7 @@ export function SharePreviewDialog({
 
     if (!product.colors || product.colors.length === 0) {
       preferredImages.push(...product.images);
-      const all = Array.from(new Set(preferredImages)).filter(Boolean);
+      const all = [...new Set(preferredImages)].filter(Boolean);
       return all.length > 0 ? all : product.images?.[0] ? [product.images[0]] : [];
     }
 
@@ -73,7 +73,7 @@ export function SharePreviewDialog({
     preferredImages.push(...mainOnly);
 
     // Fallback: if everything empty, at least use the product's primary image
-    const final = Array.from(new Set(preferredImages)).filter(Boolean);
+    const final = [...new Set(preferredImages)].filter(Boolean);
     if (final.length === 0 && product.images?.[0]) return [product.images[0]];
 
     return final;

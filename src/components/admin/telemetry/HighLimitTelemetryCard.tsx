@@ -84,10 +84,7 @@ export function HighLimitTelemetryCard() {
       p99: p.p99,
       samples: p.samples,
       recordsAvg: p.recordsAvg,
-      ...ERROR_KINDS_FOR_STACK.reduce<Record<string, number>>((acc, kind) => {
-        acc[kind] = p.errorsByKind[kind] ?? 0;
-        return acc;
-      }, {}),
+      ...Object.fromEntries(ERROR_KINDS_FOR_STACK.map((kind) => [kind, p.errorsByKind[kind] ?? 0])),
     }));
   }, [data]);
 
@@ -114,9 +111,9 @@ export function HighLimitTelemetryCard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(OPERATION_LABEL) as OperationFilter[]).map((k) => (
+                {Object.entries(OPERATION_LABEL).map(([k, label]) => (
                   <SelectItem key={k} value={k}>
-                    {OPERATION_LABEL[k]}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -129,11 +126,11 @@ export function HighLimitTelemetryCard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(RANGE_LABEL) as RangePreset[])
-                  .filter((k) => k !== 'custom')
-                  .map((k) => (
+                {Object.entries(RANGE_LABEL)
+                  .filter(([k]) => k !== 'custom')
+                  .map(([k, label]) => (
                     <SelectItem key={k} value={k}>
-                      {RANGE_LABEL[k]}
+                      {label}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -146,9 +143,9 @@ export function HighLimitTelemetryCard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(ERROR_KIND_LABEL) as ErrorKindFilter[]).map((k) => (
+                {Object.entries(ERROR_KIND_LABEL).map(([k, label]) => (
                   <SelectItem key={k} value={k}>
-                    {ERROR_KIND_LABEL[k]}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>

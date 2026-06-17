@@ -32,11 +32,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { AvatarLogo } from '@/components/shared/AvatarLogo';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
-import {
-  formatCurrency,
-  getStatusCfg,
-  STATUS_CONFIG,
-} from '@/components/cart/CartUtilComponents';
+import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
 import type { SellerCart, CartStatus } from '@/hooks/products';
 
@@ -96,8 +92,7 @@ function CartsListContent() {
       if (!matchesStatus) return false;
       if (!q) return true;
       return (
-        c.company_name?.toLowerCase().includes(q) ||
-        c.company_location?.toLowerCase().includes(q)
+        c.company_name?.toLowerCase().includes(q) || c.company_location?.toLowerCase().includes(q)
       );
     });
     out = [...out].sort((a, b) => {
@@ -114,7 +109,7 @@ function CartsListContent() {
     return { totalValue, totalItems, count: filteredCarts.length };
   }, [filteredCarts]);
 
-  const hasActiveFilters = query.trim().length > 0 || statusFilter !== 'all';
+  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all';
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
@@ -128,8 +123,8 @@ function CartsListContent() {
             Carrinhos
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {totals.count} {totals.count === 1 ? 'carrinho' : 'carrinhos'} ·{' '}
-            {totals.totalItems} {totals.totalItems === 1 ? 'item' : 'itens'} ·{' '}
+            {totals.count} {totals.count === 1 ? 'carrinho' : 'carrinhos'} · {totals.totalItems}{' '}
+            {totals.totalItems === 1 ? 'item' : 'itens'} ·{' '}
             <span className="font-semibold text-foreground">
               {formatCurrency(totals.totalValue)}
             </span>
@@ -183,12 +178,14 @@ function CartsListContent() {
               count={statusCounts.all}
               testId="carts-list-chip-all"
             />
-            {(Object.keys(STATUS_CONFIG) as CartStatus[]).map((key) => (
+            {(
+              Object.entries(STATUS_CONFIG) as [CartStatus, (typeof STATUS_CONFIG)[CartStatus]][]
+            ).map(([key, cfg]) => (
               <StatusChip
                 key={key}
                 active={statusFilter === key}
                 onClick={() => setStatusFilter(key)}
-                label={STATUS_CONFIG[key].label}
+                label={cfg.label}
                 count={statusCounts[key]}
                 testId={`carts-list-chip-${key}`}
               />
@@ -347,7 +344,7 @@ function CartRow({ cart, onOpen }: CartRowProps) {
       onClick={onOpen}
       onKeyDown={handleKey}
       data-testid={`cart-row-${cart.id}`}
-      className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+      className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
       <TableCell>
         <span
@@ -360,7 +357,7 @@ function CartRow({ cart, onOpen }: CartRowProps) {
         </span>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
           <AvatarLogo
             name={cart.company_name}
             logoUrl={cart.company_logo_url}

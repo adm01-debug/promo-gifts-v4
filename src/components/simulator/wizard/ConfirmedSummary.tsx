@@ -279,7 +279,7 @@ export function ConfirmedSummary({
           <Input
             type="number"
             value={duplicateQty}
-            onChange={(e) => setDuplicateQty(parseInt(e.target.value) || 1)}
+            onChange={(e) => setDuplicateQty(parseInt(e.target.value, 10) || 1)}
             min={1}
             className="h-9 w-28 rounded-lg text-center font-bold"
           />

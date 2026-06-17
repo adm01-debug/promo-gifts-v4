@@ -59,7 +59,7 @@ export function resolveBICategory(
   explicitCategoryName?: string | null,
 ): BICategoryMeta {
   // 1) Categoria real explícita — tenta casar o nome dela contra as regras (não o nome do produto)
-  if (explicitCategoryName && explicitCategoryName.trim().length > 0) {
+  if (explicitCategoryName && explicitCategoryName.trim() !== '') {
     for (const rule of REGEX_RULES) {
       if (rule.test.test(explicitCategoryName)) return rule.meta;
     }

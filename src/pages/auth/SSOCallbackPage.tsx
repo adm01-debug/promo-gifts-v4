@@ -363,7 +363,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
         return (
           <li
             key={s.key}
-            className={'flex flex-1 flex-col items-center gap-2 ' + (done ? 'text-white' : '')}
+            className={`flex flex-1 flex-col items-center gap-2 ${done ? 'text-white' : ''}`}
           >
             <span
               className={

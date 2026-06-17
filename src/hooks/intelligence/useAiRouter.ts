@@ -398,8 +398,5 @@ export function capabilitiesToArray(caps: Record<string, boolean>): string[] {
 }
 
 export function capabilitiesFromArray(keys: string[]): Record<string, boolean> {
-  return keys.reduce<Record<string, boolean>>((acc, k) => {
-    acc[k] = true;
-    return acc;
-  }, {});
+  return Object.fromEntries(keys.map((k) => [k, true]));
 }

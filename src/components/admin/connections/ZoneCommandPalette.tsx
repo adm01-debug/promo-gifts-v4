@@ -164,21 +164,22 @@ export function ZoneCommandPalette({
         <CommandEmpty>Nenhum resultado.</CommandEmpty>
 
         <CommandGroup heading="Ir para zona">
-          {(Object.keys(ZONE_META) as ZoneId[]).map((zone) => {
-            const meta = ZONE_META[zone];
-            const Icon = meta.icon;
-            return (
-              <CommandItem
-                key={`zone-${zone}`}
-                value={`zona ${meta.label}`}
-                onSelect={() => handleSelect({ zone, jumpToZone: true })}
-              >
-                <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>{meta.label}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">Zona</span>
-              </CommandItem>
-            );
-          })}
+          {(Object.entries(ZONE_META) as [ZoneId, (typeof ZONE_META)[ZoneId]][]).map(
+            ([zone, meta]) => {
+              const Icon = meta.icon;
+              return (
+                <CommandItem
+                  key={`zone-${zone}`}
+                  value={`zona ${meta.label}`}
+                  onSelect={() => handleSelect({ zone, jumpToZone: true })}
+                >
+                  <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span>{meta.label}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Zona</span>
+                </CommandItem>
+              );
+            },
+          )}
         </CommandGroup>
 
         {(Object.keys(grouped) as ZoneId[]).map((zone) => {
