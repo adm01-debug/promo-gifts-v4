@@ -95,7 +95,10 @@ function renderActions(overrides?: { variant?: Partial<VariantStock> }) {
     <TooltipProvider>
       <MemoryRouter initialEntries={['/estoque']}>
         <Routes>
-          <Route path="/estoque" element={<VariantStockRowActions product={product} variant={v} />} />
+          <Route
+            path="/estoque"
+            element={<VariantStockRowActions product={product} variant={v} />}
+          />
           <Route path="/orcamentos/novo" element={<div data-testid="quote-page">Orçamento</div>} />
           <Route path="/produto/:id" element={<div data-testid="product-page">Produto</div>} />
         </Routes>
@@ -113,9 +116,6 @@ function setClipboard(writeText: (s: string) => Promise<void> | void) {
     configurable: true,
     value: { writeText },
   });
-}
-function clearClipboard() {
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
 }
 function setShare(share: ((d: ShareData) => Promise<void>) | undefined) {
   Object.defineProperty(navigator, 'share', { configurable: true, value: share });

@@ -90,9 +90,7 @@ export function useSuppliersManager() {
       }).catch(() => []);
       const list = (companies || []).filter((c) => c.nome_fantasia || c.razao_social);
       setCarrierResults(list);
-      if (list.length > 0) {
-        setShowCarrierDropdown(true);
-      }
+      setShowCarrierDropdown(true);
     } catch {
       setCarrierResults([]);
       setShowCarrierDropdown(false);
