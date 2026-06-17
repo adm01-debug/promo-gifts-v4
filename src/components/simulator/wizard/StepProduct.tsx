@@ -24,6 +24,9 @@ interface StepProductProps {
 }
 
 const QUANTITY_PRESETS = [50, 100, 250, 500, 1000];
+const ITEM_HEIGHT = 100;
+const ROW_GAP = 12;
+const COLUMNS = 3;
 
 export function StepProduct({ wizard }: StepProductProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,9 +76,7 @@ export function StepProduct({ wizard }: StepProductProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Virtualizer for large product lists
-  const ITEM_HEIGHT = 100;
-  const ROW_GAP = 12;
-  const COLUMNS = 3;
+
   const rowCount = Math.ceil(filteredProducts.length / COLUMNS);
 
   const virtualizer = useVirtualizer({

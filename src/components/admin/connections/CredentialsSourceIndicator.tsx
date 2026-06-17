@@ -72,6 +72,8 @@ function formatAbsolute(iso: string | null): string | null {
   });
 }
 
+const TOOLTIP_LIMIT = 12;
+
 export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, className }: Props) {
   const [refreshing, setRefreshing] = useState(false);
 
@@ -112,7 +114,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
 
   // Limita a lista exibida no tooltip para não estourar a viewport
   // quando houver muitos secrets — o restante aparece como "+ N mais".
-  const TOOLTIP_LIMIT = 12;
+
   function renderNameList(items: SecretStatus[], tone: 'success' | 'warning' | 'destructive') {
     if (items.length === 0) {
       return <p className="italic text-muted-foreground">Nenhum secret nesta categoria.</p>;
