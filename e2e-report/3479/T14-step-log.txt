@@ -1,0 +1,146 @@
+================================================================
+🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)
+================================================================
+Run:        #3479 (id 27687523119)
+SHA:        218b7e372bdabdceb4bb0a7ea45fcbe7716e7e7d
+Event:      push
+Outcome:    success
+Conclusion: success
+Marker:     present (smoke exit 0)
+
+--- Environment ---
+  pwd: /home/runner/work/promo-gifts-v4/promo-gifts-v4
+  GH_TOKEN length: 426
+  GITHUB_TOKEN length: 426
+  which gh: /usr/bin/gh
+  which curl: /usr/bin/curl
+
+--- ls -la playwright-report/ ---
+total 136
+drwxr-xr-x  2 runner runner   4096 Jun 17 12:05 .
+drwxr-xr-x 20 runner runner   4096 Jun 17 12:04 ..
+-rw-r--r--  1 runner runner      0 Jun 17 12:05 .smoke-passed
+-rw-r--r--  1 runner runner    566 Jun 17 12:05 T14-step-log.txt
+-rw-r--r--  1 runner runner 108558 Jun 17 12:05 results.json
+-rw-r--r--  1 runner runner  10679 Jun 17 12:05 smoke-summary.json
+-rw-r--r--  1 runner runner   2754 Jun 17 12:05 smoke-summary.md
+
+--- find playwright-report -type f ---
+playwright-report/smoke-summary.md
+playwright-report/results.json
+playwright-report/smoke-summary.json
+playwright-report/.smoke-passed
+playwright-report/T14-step-log.txt
+
+--- head -100 smoke-summary.md ---
+# 🚦 E2E Smoke Summary
+
+- **Project:** `chromium-smoke`
+- **Started:** 2026-06-17 12:04
+- **Wall time:** 37.4s
+- **Totals:** 38 · ✅ 4 · ❌ 0 · ⏭ 34
+
+## Status por funcionalidade
+
+| # | Funcionalidade | Status | Duração | Retries | Grupo |
+|---:|---|:---:|---:|---:|:---:|
+| 00 | Sessão autenticada carregada | ⏭ | 0.3s | — | 🔐 auth |
+| 01 | Dashboard inicial | ⏭ | 0.2s | — | 🔐 auth |
+| 02 | Dashboard customizável | ⏭ | 0.1s | — | 🔐 auth |
+| 03 | Catálogo de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 04 | Filtros avançados | ⏭ | 0.2s | — | 🔐 auth |
+| 05 | Novidades | ⏭ | 0.2s | — | 🔐 auth |
+| 06 | Tendências | ⏭ | 0.2s | — | 🔐 auth |
+| 07 | Favoritos | ⏭ | 0.2s | — | 🔐 auth |
+| 08 | Coleções | ⏭ | 0.2s | — | 🔐 auth |
+| 09 | Comparador de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 10 | Carrinhos do vendedor | ⏭ | 0.2s | — | 🔐 auth |
+| 11 | Lista de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 12 | Dashboard de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 13 | Funil (Kanban) de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 14 | Templates de orçamento | ⏭ | 0.2s | — | 🔐 auth |
+| 15 | Criar novo orçamento (wizard) | ⏭ | 0.2s | — | 🔐 auth |
+| 16 | Simulador (wizard) | ⏭ | 0.2s | — | 🔐 auth |
+| 17 | Simulador de preços | ⏭ | 0.2s | — | 🔐 auth |
+| 18 | Busca avançada de preço | ⏭ | 0.2s | — | 🔐 auth |
+| 19 | Estoque | ⏭ | 0.2s | — | 🔐 auth |
+| 20 | Reposição | ⏭ | 0.2s | — | 🔐 auth |
+| 21 | Kit Builder | ⏭ | 0.2s | — | 🔐 auth |
+| 22 | Meus Kits | ⏭ | 0.2s | — | 🔐 auth |
+| 23 | Gerador de Mockup | ⏭ | 0.2s | — | 🔐 auth |
+| 24 | Histórico de Mockups | ⏭ | 0.2s | — | 🔐 auth |
+| 25 | Magic Up (publicidade IA) | ⏭ | 0.2s | — | 🔐 auth |
+| 26 | Inteligência comercial | ⏭ | 0.2s | — | 🔐 auth |
+| 27 | Business Intelligence | ⏭ | 0.2s | — | 🔐 auth |
+| 28 | BI — Comparador de clientes | ⏭ | 0.2s | — | 🔐 auth |
+| 29 | Match de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 30 | Dropbox browser | ⏭ | 0.2s | — | 🔐 auth |
+| 90 | Tela de login renderiza | ✅ | 2.0s | — | 🌐 public |
+| 91 | Reset de senha renderiza | ✅ | 1.7s | — | 🌐 public |
+| 92 | 404 (rota inexistente) | ✅ | 1.4s | — | 🌐 public |
+| 93 | Login com credenciais inválidas permanece em /login | ⏭ | 0.0s | — | 🌐 public |
+| 94 | RLS bloqueia leitura de tabelas sensíveis para o usuário comum | ⏭ | 0.3s | — | 🔐 auth |
+| 95 | /reset-password sem token não habilita reset | ✅ | 2.0s | — | 🌐 public |
+| 99 | Cobertura smoke ↔ catálogo está sincronizada | ⏭ | 0.2s | — | 🛡 gov |
+
+✅ **Smoke verde — gate liberado.**
+================================================================
+
+=== PROBE A: curl direct heartbeat ===
+Heartbeat content (cat):
+# T14 heartbeat
+
+Run #3479 at 2026-06-17T12:05:19Z
+SHA: 218b7e372bdabdceb4bb0a7ea45fcbe7716e7e7d
+---
+Base64 length: 132
+GET HTTP: 404
+GET response (first 200 chars): {
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+  "status": "404"
+}
+Existing SHA: ''
+PUT body size: 193 bytes
+PUT HTTP: 409
+PUT response (first 500 chars): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+✗ Heartbeat FAILED (HTTP 409)
+
+=== PROBE B: Diagnostic file commits via curl ===
+  [playwright-report/results.json] exists, size=108558 bytes
+    existing SHA: '' (GET HTTP 404)
+/home/runner/work/_temp/621b8d4a-4ab5-413a-81eb-ebd60e910162.sh: line 125: /usr/bin/python3: Argument list too long
+    ✗ failed (HTTP 400): {
+  "message": "Body should be a JSON object",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "400"
+}
+  [playwright-report/smoke-summary.md] exists, size=2754 bytes
+    existing SHA: '' (GET HTTP 404)
+    ✗ failed (HTTP 409): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+  [playwright-report/smoke-summary.json] exists, size=10679 bytes
+    existing SHA: '' (GET HTTP 404)
+    ✗ failed (HTTP 409): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+
+Done.
