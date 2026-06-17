@@ -129,7 +129,7 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
     };
   } catch (e) {
     logger.warn(
-      `[rpc-native] enrichCustomizationPrice failed (non-fatal): ${(e as Error).message}`,
+      `[rpc-native] enrichCustomizationPrice failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`,
     );
     return result;
   }
@@ -171,7 +171,7 @@ export async function getProductCustomizationOptions(
     return Array.isArray(data) ? data : [];
   } catch (e) {
     logger.warn(
-      `[rpc-native] getProductCustomizationOptions(${productId}): ${(e as Error).message}`,
+      `[rpc-native] getProductCustomizationOptions(${productId}): ${e instanceof Error ? e.message : String(e)}`,
     );
     return [];
   }
@@ -188,7 +188,9 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
     });
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(`[rpc-native] getCategoryDescendants(${categoryId}): ${(e as Error).message}`);
+    logger.warn(
+      `[rpc-native] getCategoryDescendants(${categoryId}): ${e instanceof Error ? e.message : String(e)}`,
+    );
     return [];
   }
 }

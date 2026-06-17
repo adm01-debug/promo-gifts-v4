@@ -72,7 +72,10 @@ const memoryCache = new Map<string, SwitchCheck>();
  * com fallback para Date.now() + Math.random() (browsers antigos / Node SSR).
  */
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof (crypto as { randomUUID?: () => string }).randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof (crypto as { randomUUID?: () => string }).randomUUID === 'function'
+  ) {
     try {
       return (crypto as { randomUUID: () => string }).randomUUID();
     } catch {
@@ -269,7 +272,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
           }
         } catch (e) {
           logger.warn(
-            `[kill-switch-client] RPC rollout erro — assume 100%: ${(e as Error).message}`,
+            `[kill-switch-client] RPC rollout erro — assume 100%: ${e instanceof Error ? e.message : String(e)}`,
           );
           shouldApply = true;
         }
@@ -288,7 +291,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     return resolveEffectiveState(check, 'network');
   } catch (e) {
     logger.warn(
-      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`,
+      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${e instanceof Error ? e.message : String(e)}`,
     );
     return { enabled: true, source: 'fail-open' };
   }

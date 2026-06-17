@@ -135,8 +135,9 @@ async function decomposeBatchToIndividual(queries: BatchQuery[]): Promise<BatchR
       });
       return { success: true, data: { records: result.records, count: result.count } };
     } catch (e) {
-      logger.warn(`[external-db] Batch decompose: ${q.table} failed: ${(e as Error).message}`);
-      return { success: false, error: (e as Error).message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn(`[external-db] Batch decompose: ${q.table} failed: ${msg}`);
+      return { success: false, error: msg };
     }
   });
 

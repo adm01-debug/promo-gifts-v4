@@ -73,7 +73,9 @@ async function flush(): Promise<void> {
       buffer = [...toSend.slice(0, MAX_RETAINED_ON_FAILURE - buffer.length), ...buffer];
     }
   } catch (e) {
-    logger.warn(`[kill-switch-telemetry] flush erro inesperado: ${(e as Error).message}`);
+    logger.warn(
+      `[kill-switch-telemetry] flush erro inesperado: ${e instanceof Error ? e.message : String(e)}`,
+    );
     // Mesmo tratamento: devolve ao buffer com cap
     buffer = [...toSend.slice(0, MAX_RETAINED_ON_FAILURE - buffer.length), ...buffer];
   } finally {

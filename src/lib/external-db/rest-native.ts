@@ -604,7 +604,7 @@ export async function tryExecuteRestNative<T>(
       });
       return result;
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = e instanceof Error ? e.message : String(e);
       if (attempt < REST_NATIVE_RETRY_COUNT && isRetryableError(msg)) {
         logger.warn(`[rest-native] transient error for ${resolvedTable}, retrying: ${msg}`);
         await sleep(REST_NATIVE_RETRY_DELAY_MS);
@@ -778,7 +778,7 @@ export async function tryExecuteRestNativeWrite<T>(
     );
     return result;
   } catch (e) {
-    const msg = (e as Error).message;
+    const msg = e instanceof Error ? e.message : String(e);
     metrics.fail++;
     metrics.lastError = msg;
     metrics.lastErrorAt = Date.now();
