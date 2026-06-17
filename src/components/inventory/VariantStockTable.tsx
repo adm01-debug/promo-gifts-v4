@@ -416,11 +416,16 @@ export function VariantStockTable({
             targetQty: targetQuantity,
             horizonDays: ruptureHorizon,
           });
-          if (risk.atRisk && risk.projectedStock !== null) {
+          if (
+            risk.atRisk &&
+            risk.projectedStock !== null &&
+            targetQuantity != null &&
+            variant.avgDailySales != null
+          ) {
             effectiveStatus = 'low_stock';
             projection = {
-              targetQty: targetQuantity!,
-              avgDailyDepletion: variant.avgDailySales!,
+              targetQty: targetQuantity,
+              avgDailyDepletion: variant.avgDailySales,
               horizonDays: ruptureHorizon,
               projectedStock: risk.projectedStock,
               daysToTarget: risk.daysToTarget,
