@@ -43,6 +43,13 @@ interface FutureStockDialogProps {
   entries: FutureStockEntry[];
 }
 
+const STATUS_SORT_ORDER: Record<string, number> = {
+  confirmed: 0,
+  in_transit: 1,
+  pending: 2,
+  partial: 3,
+} as const;
+
 type SortField = 'date' | 'quantity' | 'product' | 'status';
 type SortDir = 'asc' | 'desc';
 type StatusFilter = 'all' | 'confirmed' | 'pending' | 'in_transit';
@@ -404,10 +411,7 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
           cmp = (a.productName || '').localeCompare(b.productName || '');
           break;
         case 'status': {
-          const order = { confirmed: 0, in_transit: 1, pending: 2, partial: 3 };
-          cmp =
-            (order[a.status as keyof typeof order] ?? 4) -
-            (order[b.status as keyof typeof order] ?? 4);
+          cmp = (STATUS_SORT_ORDER[a.status] ?? 4) - (STATUS_SORT_ORDER[b.status] ?? 4);
           break;
         }
       }
