@@ -105,12 +105,28 @@ export function useSellerCartsPage() {
     };
   }, [activeCart, allProducts]);
 
+  // C5: guarda o ultimo cartId que existiu para este vendedor, para distinguir
+  // URL invalida/de terceiro (nunca existiu -> avisa) de carrinho deletado
+  // nesta sessao (existia e sumiu -> redireciona em silencio).
+  const lastResolvedCartIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (routeCartId && carts.length > 0) {
-      const found = carts.find((c) => c.id === routeCartId);
-      if (found) setActiveCartId(routeCartId);
+    if (!routeCartId || isLoading) return;
+    const found = carts.some((c) => c.id === routeCartId);
+    if (found) {
+      lastResolvedCartIdRef.current = routeCartId;
+      setActiveCartId(routeCartId);
+      return;
     }
-  }, [routeCartId, carts, setActiveCartId]);
+    // Nao encontrado: a RLS ja oculta carrinhos de outros vendedores, entao cair
+    // silenciosamente no primeiro carrinho induziria o vendedor a editar o pedido errado.
+    if (lastResolvedCartIdRef.current !== routeCartId) {
+      toast.error('Carrinho nao encontrado', {
+        description: 'Ele pode ter sido removido ou pertence a outro vendedor.',
+      });
+    }
+    navigate('/carrinhos', { replace: true });
+  }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
   useEffect(() => {
     setLocalCartNotes(activeCart?.notes || '');
