@@ -73,7 +73,7 @@ export function ReplenishmentProductGrid() {
     isLoading,
     isFetching,
     error,
-  } = useReplenishmentsWithDetails({ limit: 200 });
+  } = useReplenishmentsWithDetails();
   const products = useMemo(() => replenishments ?? [], [replenishments]);
   const loadingProgress = useLoadingProgress(isLoading);
 

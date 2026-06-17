@@ -43,7 +43,7 @@ interface SupplierBreakdown {
 
 export function RecentReplenishmentsWidget() {
   const navigate = useNavigate();
-  const { data: allItems, isLoading } = useReplenishmentsWithDetails({ limit: 200 });
+  const { data: allItems, isLoading } = useReplenishmentsWithDetails();
 
   const recentItems = useMemo(() => {
     if (!allItems) return [];
