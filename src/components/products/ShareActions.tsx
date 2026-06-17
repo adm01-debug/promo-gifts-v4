@@ -62,7 +62,7 @@ export function ShareActions({
           : [];
 
     if (!product.colors || product.colors.length === 0) {
-      const all = Array.from(new Set([...variantImages, ...imagesArray])).filter(Boolean);
+      const all = [...new Set([...variantImages, ...imagesArray])].filter(Boolean);
       return all.length > 0 ? all.length : 1;
     }
 
@@ -73,7 +73,7 @@ export function ShareActions({
     });
 
     const mainImages = imagesArray.filter((img) => !colorImageUrls.has(img));
-    const combined = Array.from(new Set([...variantImages, ...mainImages])).filter(Boolean);
+    const combined = [...new Set([...variantImages, ...mainImages])].filter(Boolean);
 
     return combined.length > 0 ? combined.length : 1;
   }, [product.images, product.colors, selectedVariant]);

@@ -394,10 +394,10 @@ export function FutureStockModal({
               hasVariants && (
                 <div className="space-y-6">
                   {/* Agrupamento por cor */}
-                  {Array.from(new Set(sortedEntries.map((e) => e.colorName))).map((colorName) => {
+                  {[...new Set(sortedEntries.map((e) => e.colorName))].map((colorName) => {
                     const colorEntries = sortedEntries.filter((e) => e.colorName === colorName);
                     // Agrupar por variante dentro da cor
-                    const variantIds = Array.from(new Set(colorEntries.map((e) => e.variantId)));
+                    const variantIds = [...new Set(colorEntries.map((e) => e.variantId))];
                     const isExpanded =
                       expandedGroups.includes(colorName) || selectedColor === colorName;
 

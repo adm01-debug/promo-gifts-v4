@@ -32,7 +32,7 @@ export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
       if (items.length === 0)
         return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
-      const productIds = Array.from(new Set(items.map((i) => i.id).filter(Boolean)));
+      const productIds = [...new Set(items.map((i) => i.id).filter(Boolean))];
       if (productIds.length === 0)
         return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
