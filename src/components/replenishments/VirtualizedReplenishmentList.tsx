@@ -19,6 +19,8 @@ interface VirtualizedListProps {
   canAddToCompare: boolean;
 }
 
+const SCROLL_CONTAINER_STYLE = { maxHeight: 'calc(100vh - 280px)' } as const;
+
 export function VirtualizedReplenishmentList({
   products,
   productMap,
@@ -45,7 +47,7 @@ export function VirtualizedReplenishmentList({
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: 'calc(100vh - 280px)' }}
+      style={SCROLL_CONTAINER_STYLE}
       role="list"
       aria-label="Lista de produtos repostos"
     >

@@ -31,6 +31,8 @@ import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGene
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+
+const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
 type Stage = 'preview' | 'generating' | 'ready';
 
 interface PdfGenerationDialogProps {
@@ -194,10 +196,7 @@ export function PdfGenerationDialog({
           {stage === 'preview' && (
             <div className="flex h-full flex-col">
               {/* Preview area — scrollable */}
-              <div
-                className="flex-1 overflow-auto bg-muted/30 p-4"
-                style={{ maxHeight: 'calc(90vh - 160px)' }}
-              >
+              <div className="flex-1 overflow-auto bg-muted/30 p-4" style={PREVIEW_SCROLL_STYLE}>
                 <div className="mx-auto" style={{ maxWidth: '794px' }}>
                   <div className="relative overflow-hidden rounded-lg bg-white shadow-lg">
                     {/* Watermark for drafts */}
