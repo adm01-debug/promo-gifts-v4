@@ -573,7 +573,7 @@ function SellerCartsContent() {
 
                 {viewMode === 'table' ? (
                   (() => {
-                    const { sorted, start, pageItems } = cartTableData;
+                    const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
                     const renderSortHdr = (
                       key: SortKey,
                       label: string,
