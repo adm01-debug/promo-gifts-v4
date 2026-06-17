@@ -83,6 +83,7 @@ export function VirtualizedReplenishmentGrid({
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
                     colors={colorsByProduct?.get(product.product_id)}
+                    priority={virtualRow.index === 0}
                   />
                 </div>
               ))}

@@ -28,6 +28,8 @@ interface HoverSetImageProps {
   primaryClassName?: string;
   /** Classes para o ícone de fallback quando não há imagem */
   fallbackIconClassName?: string;
+  /** Carrega a imagem com alta prioridade (LCP) — passar true para cards above-the-fold */
+  priority?: boolean;
 }
 
 export const HoverSetImage = memo(function HoverSetImage({
@@ -36,6 +38,7 @@ export const HoverSetImage = memo(function HoverSetImage({
   alt,
   primaryClassName,
   fallbackIconClassName,
+  priority = false,
 }: HoverSetImageProps) {
   if (!primary) {
     return (
@@ -59,6 +62,7 @@ export const HoverSetImage = memo(function HoverSetImage({
           primaryClassName,
         )}
         containerClassName="h-full w-full"
+        priority={priority}
       />
       {hasSetHover && set && (
         <img

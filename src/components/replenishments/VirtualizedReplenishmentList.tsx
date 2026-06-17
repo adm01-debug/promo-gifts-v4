@@ -104,6 +104,7 @@ export function VirtualizedReplenishmentList({
                     isInCompare={isInCompare(item.product_id)}
                     onToggleCompare={onToggleCompare}
                     canAddToCompare={canAddToCompare}
+                    priority={virtualRow.index < 6}
                   />
                 </div>
               </div>

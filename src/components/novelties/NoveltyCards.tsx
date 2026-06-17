@@ -41,6 +41,8 @@ interface NoveltyCardProps {
    * (ex.: hidratação assíncrona após o primeiro paint do card).
    */
   isPriceStockLoading?: boolean;
+  /** Carrega imagem com alta prioridade (LCP) — true para cards above-the-fold */
+  priority?: boolean;
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
@@ -83,6 +85,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   onStatusClick,
   colors,
   isPriceStockLoading = false,
+  priority = false,
 }: NoveltyCardProps) {
   const fresh = product.days_remaining >= 25;
 
@@ -91,9 +94,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
   const activeImage = useMemo(() => {
     if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find(
-      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
-    );
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
     return match?.image || product.product_image;
   }, [activeColorName, colors, product.product_image]);
 
@@ -159,6 +160,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           set={activeColorName ? null : product.product_set_image}
           alt={product.product_name}
           fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
+          priority={priority}
         />
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           <NoveltyBadge
@@ -223,7 +225,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
             )}
           </div>
         )}
-
 
         {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
         <p
@@ -292,9 +293,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
             />
           ) : (
             <StockBadge
-              status={
-                product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
-              }
+              status={product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)}
               quantity={product.stock_quantity ?? 0}
               showQuantity
               size="sm"
@@ -321,9 +320,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
   const activeImage = useMemo(() => {
     if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find(
-      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
-    );
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
     return match?.image || product.product_image;
   }, [activeColorName, colors, product.product_image]);
 
@@ -366,7 +363,9 @@ export const NoveltyListCard = memo(function NoveltyListCard({
             key={activeImage}
             src={activeImage}
             alt={product.product_name}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+            }}
             className="h-full w-full object-contain transition-opacity duration-200"
             loading="lazy"
           />
@@ -511,7 +510,9 @@ export function NoveltyTableView({
                         <img
                           src={product.product_image}
                           alt={product.product_name}
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                          }}
                           className="h-full w-full object-contain"
                           loading="lazy"
                         />

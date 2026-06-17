@@ -68,6 +68,8 @@ interface ProductListItemProps {
   isNovelty?: boolean;
   noveltyDaysRemaining?: number;
   onStatusClick?: (type: string, value?: string | number) => void;
+  /** Carrega imagem com alta prioridade (LCP) — true para itens above-the-fold */
+  priority?: boolean;
 }
 
 export const ProductListItem = memo(function ProductListItem({
@@ -85,6 +87,7 @@ export const ProductListItem = memo(function ProductListItem({
   isNovelty = false,
   noveltyDaysRemaining,
   onStatusClick,
+  priority = false,
 }: ProductListItemProps) {
   const navigate = useNavigate();
   const detectedIsKit = isProductKit(product);
@@ -385,6 +388,7 @@ export const ProductListItem = memo(function ProductListItem({
               className="object-contain"
               containerClassName="h-full w-full"
               urlOriginal={product.images?.[0]}
+              priority={priority}
             />
           </div>
           {/* Multi-variant dots */}
