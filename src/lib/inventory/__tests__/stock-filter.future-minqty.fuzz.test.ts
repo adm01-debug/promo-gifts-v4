@@ -224,7 +224,15 @@ describe('stock-filter.future-minqty.fuzz — invariantes do sub-toggle', () => 
         variantsLowStock: 0,
         variantsCritical: 0,
         variantsOutOfStock: 1,
-        availableColors: ['Verde'],
+        availableColors: [
+          {
+            colorName: 'Verde',
+            totalStock: 0,
+            availableStock: 0,
+            status: 'out_of_stock' as const,
+            variants: [],
+          },
+        ],
         ...aggregateVariantTotals([
           {
             id: 'c-vd',

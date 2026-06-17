@@ -6,7 +6,9 @@ export interface Product {
   sku: string | null;
   name: string;
   description: string | null;
+  shortDescription?: string | null;
   price: number;
+  sale_price?: number | null;
   stock: number | null;
   stock_status: string | null;
   category_id: number | null;

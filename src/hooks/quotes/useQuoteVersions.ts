@@ -42,7 +42,7 @@ export function useQuoteVersions(quoteId?: string) {
           .eq('id', id)
           .single();
 
-        if (qErr) throw qErr;
+        if (qErr || !currentQuote) throw qErr ?? new Error('Quote not found');
 
         // Find the root quote ID (the original quote)
         const rootId = currentQuote.parent_quote_id || currentQuote.id;

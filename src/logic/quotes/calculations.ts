@@ -59,10 +59,11 @@ export const calculateDiscountAmount = (
   discountValue: number,
 ): number => {
   const safeValue = Math.max(0, discountValue || 0);
+  const safeSubtotal = Math.max(0, subtotal || 0);
   if (discountType === 'percent') {
-    return round2((subtotal || 0) * (safeValue / 100));
+    return round2(safeSubtotal * (Math.min(100, safeValue) / 100));
   }
-  return round2(safeValue);
+  return round2(Math.min(safeSubtotal, safeValue));
 };
 
 /**

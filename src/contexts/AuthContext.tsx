@@ -22,6 +22,7 @@ import { authService } from '@/services/authService';
 import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
+import { clearPostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import {
   attachSessionRevalidation,
@@ -385,8 +386,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       clearProfileRoles();
       clearMFA();
-      // Reset de preferências de sessão (ex.: sort do catálogo) para garantir que
-      // o próximo login na mesma aba comece com o padrão "Mais Recentes".
+      clearPostLoginRedirect();
       try {
         window.sessionStorage.removeItem('catalog:sortBy');
       } catch {

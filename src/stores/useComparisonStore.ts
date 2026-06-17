@@ -105,24 +105,16 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     },
 
     removeFromCompare: (productId: string, variantId?: string | null) => {
-      const key = variantId ? `${productId}::${variantId}` : productId;
-      const next = get().compareItems.filter((i) => {
-        const iKey = itemKeyFromItem(i);
-        // If removing by composite key, match exactly
-        if (variantId) return iKey !== key;
-        // If removing by productId only, remove first match with that productId
-        return true;
-      });
-      // Fallback: if variantId not provided, remove first occurrence of productId
-      if (!variantId) {
-        const idx = get().compareItems.findIndex((i) => i.productId === productId);
-        if (idx >= 0) {
-          const items = [...get().compareItems];
-          items.splice(idx, 1);
-          saveToStorage(items);
-          set(applyState(items));
-          return;
-        }
+      const items = get().compareItems;
+      let next: CompareItem[];
+      if (variantId) {
+        const key = `${productId}::${variantId}`;
+        next = items.filter((i) => itemKeyFromItem(i) !== key);
+      } else {
+        const idx = items.findIndex((i) => i.productId === productId);
+        if (idx < 0) return;
+        next = [...items];
+        next.splice(idx, 1);
       }
       saveToStorage(next);
       set(applyState(next));

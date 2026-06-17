@@ -685,6 +685,16 @@ export function SupplierFormDialog({
                   {searchingCarriers && (
                     <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
                   )}
+                  {showCarrierDropdown &&
+                    !searchingCarriers &&
+                    carrierResults.length === 0 &&
+                    carrierSearch.length >= 2 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-2 shadow-lg">
+                        <p className="text-xs text-muted-foreground">
+                          Nenhuma transportadora encontrada
+                        </p>
+                      </div>
+                    )}
                   {showCarrierDropdown && carrierResults.length > 0 && (
                     <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg">
                       {carrierResults.map((c) => (
