@@ -547,6 +547,31 @@ export function VariantStockTable({
           )}
         </div>
 
+        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias. */}
+        <div
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          data-testid="rupture-horizon-control"
+        >
+          <span className="hidden whitespace-nowrap md:inline">Projetar risco em:</span>
+          <Select
+            value={String(ruptureHorizon)}
+            onValueChange={(v) => setRuptureHorizon(Number(v) as RuptureHorizonDays)}
+          >
+            <SelectTrigger
+              className="h-8 w-[88px] text-xs"
+              aria-label="Horizonte de projeção do risco de ruptura"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RUPTURE_HORIZON_OPTIONS.map((d) => (
+                <SelectItem key={d} value={String(d)} className="text-xs">
+                  {d} dias
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
           className="flex flex-wrap items-center gap-1"
