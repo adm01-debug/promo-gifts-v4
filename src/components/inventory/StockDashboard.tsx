@@ -366,10 +366,18 @@ export function StockDashboard() {
           }}
           clickHint="Filtrar produtos com estoque baixo"
           trend={
-            summary.productsCritical > 0
-              ? { value: -1, label: `${summary.productsCritical} críticos` }
+            summary.productsLowStock + summary.productsCritical > 0
+              ? {
+                  value: -1,
+                  // Desambigua o card: o valor primário soma baixo+crítico
+                  // (regra de produto), o trend discrimina os dois. Alinha
+                  // com o chip "Crítico" da tabela (que filtra status
+                  // === 'critical' no nível variação).
+                  label: `${summary.productsLowStock.toLocaleString('pt-BR')} baixo · ${summary.productsCritical.toLocaleString('pt-BR')} crítico`,
+                }
               : undefined
           }
+
         />
         <StatCard
           title="Sem Estoque"
