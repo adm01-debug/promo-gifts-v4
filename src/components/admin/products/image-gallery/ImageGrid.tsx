@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,10 +19,15 @@ import {
 } from 'lucide-react';
 import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from './types';
 import { ImageMetaEditor } from './ImageMetaEditor';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 const CF_STATUS_CONFIG = {
   verified: { icon: Cloud, className: 'text-emerald-500', label: 'Cloudflare: sincronizado' },
-  syncing: { icon: Loader2, className: 'text-blue-400 animate-spin', label: 'Cloudflare: sincronizando' },
+  syncing: {
+    icon: Loader2,
+    className: 'text-blue-400 animate-spin',
+    label: 'Cloudflare: sincronizando',
+  },
   pending: { icon: Cloud, className: 'text-muted-foreground/50', label: 'Cloudflare: pendente' },
   failed: { icon: CloudOff, className: 'text-destructive', label: 'Cloudflare: falhou' },
   skipped: { icon: AlertCircle, className: 'text-warning/60', label: 'Cloudflare: ignorado' },
@@ -75,8 +79,6 @@ export function ImageGrid({
   requestRemove,
   updateExternalImageMeta,
 }: Props) {
-  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set());
-
   return (
     <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
       {filteredImages.map((img, index) => {
@@ -90,7 +92,6 @@ export function ImageGrid({
         const isVideo = ext?.image_type === 'video';
         const globalIndex = images.indexOf(img);
         const isSelected = selectedUrls.has(img);
-        const isLoaded = loadedUrls.has(img);
         const cfStatus = ext?.cf_sync_status;
         const cfConfig = cfStatus ? CF_STATUS_CONFIG[cfStatus] : null;
 
@@ -119,21 +120,13 @@ export function ImageGrid({
                 <Film className="h-8 w-8 text-muted-foreground/40" />
               </div>
             ) : (
-              <>
-                {!isLoaded && (
-                  <div className="absolute inset-0 animate-pulse bg-muted/40" />
-                )}
-                <img
-                  src={img}
-                  alt={ext?.alt_text || `Imagem ${index + 1}`}
-                  className={cn(
-                    'h-full w-full bg-muted/30 object-contain transition-opacity duration-300',
-                    isLoaded ? 'opacity-100' : 'opacity-0',
-                  )}
-                  loading="lazy"
-                  onLoad={() => setLoadedUrls((prev) => new Set(prev).add(img))}
-                />
-              </>
+              <OptimizedImage
+                src={img}
+                alt={ext?.alt_text || `Imagem ${index + 1}`}
+                blurhash={ext?.blurhash}
+                className="object-contain"
+                containerClassName="h-full w-full"
+              />
             )}
 
             {/* Badges top-left */}
