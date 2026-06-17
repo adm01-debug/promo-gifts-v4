@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
   Package,
