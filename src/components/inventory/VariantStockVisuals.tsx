@@ -19,7 +19,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { StockStatus } from '@/types/stock';
+import { Progress } from '@/components/ui/progress';
+import { calculateStockStatus, type StockStatus } from '@/types/stock';
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
