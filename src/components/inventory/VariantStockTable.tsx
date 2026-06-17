@@ -783,6 +783,22 @@ export function VariantStockTable({
           </Button>
         </div>
       )}
+
+      {selection.enabled && (
+        <StockBulkActionBar
+          selectedCount={selection.selectedCount}
+          totalCount={pagedRows.length}
+          onSelectAll={() =>
+            selection.selectAllVisible(
+              pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+            )
+          }
+          onClear={() => selection.setMode(false)}
+          onBulkFavorite={selection.bulkFavorite}
+          onBulkCompare={selection.bulkCompare}
+          onBulkQuote={selection.bulkQuote}
+        />
+      )}
     </div>
   );
 }
