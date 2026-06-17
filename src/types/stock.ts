@@ -258,10 +258,14 @@ export interface StockFilters {
 
   // Quantidade mínima necessária (smart filter)
   minQuantityNeeded?: number;
+  // Quando true, soma o Estoque Futuro (dentro da janela) ao pool da régua
+  // "Preciso de X un". Padrão: false (estrito sobre disponível agora).
+  minQtyIncludesFutureStock?: boolean;
 
   // Estoque futuro — quando true, soma futureStock dentro da janela
   includeFutureStock?: boolean;
   futureStockWindowDays?: 7 | 15 | 30;
+
 
   // Busca
   search: string;

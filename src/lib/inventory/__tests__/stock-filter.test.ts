@@ -218,4 +218,100 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
     expect(out[0].variants).toHaveLength(1);
     expect(dt).toBeLessThan(50);
   });
+
+  describe('matchMinQuantity — Estoque Futuro vs régua estrita', () => {
+    // Produto com variação verde: 0 disponível agora, 600 chegando em 10 dias.
+    const futureFixture = (): ProductStockSummary[] => {
+      const inTen = new Date(Date.now() + 10 * 86_400_000).toISOString();
+      return [
+        p('px', 'Chaveiro verde', [
+          v({
+            id: 'px-verde',
+            variantSku: 'PX-VD',
+            colorName: 'Verde',
+            currentStock: 0,
+            availableStock: 0,
+            status: 'out_of_stock',
+            futureStock: 600,
+            expectedReplenishDate: inTen,
+          } as Partial<VariantStock>),
+        ]),
+      ];
+    };
+
+    it('Estoque Futuro 30d ON + sub-toggle OFF → régua estrita ignora futuro (oculta produto)', () => {
+      const out = applyStockFilters(
+        futureFixture(),
+        withFilters({
+          colorName: 'Verde',
+          minQuantityNeeded: 500,
+          includeFutureStock: true,
+          futureStockWindowDays: 30,
+          minQtyIncludesFutureStock: false,
+        }),
+        [],
+      );
+      expect(out).toHaveLength(0);
+    });
+
+    it('Estoque Futuro 30d ON + sub-toggle ON → soma futuro ao pool (inclui produto)', () => {
+      const out = applyStockFilters(
+        futureFixture(),
+        withFilters({
+          colorName: 'Verde',
+          minQuantityNeeded: 500,
+          includeFutureStock: true,
+          futureStockWindowDays: 30,
+          minQtyIncludesFutureStock: true,
+        }),
+        [],
+      );
+      expect(out).toHaveLength(1);
+    });
+
+    it('Sub-toggle ON mas Estoque Futuro OFF → continua estrito (toggle global é pré-requisito)', () => {
+      const out = applyStockFilters(
+        futureFixture(),
+        withFilters({
+          colorName: 'Verde',
+          minQuantityNeeded: 500,
+          includeFutureStock: false,
+          minQtyIncludesFutureStock: true,
+        }),
+        [],
+      );
+      expect(out).toHaveLength(0);
+    });
+
+    it('Reposição fora da janela (40d com janela 30d) NÃO entra mesmo com sub-toggle ON', () => {
+      const inForty = new Date(Date.now() + 40 * 86_400_000).toISOString();
+      const data: ProductStockSummary[] = [
+        p('py', 'Garrafa verde', [
+          v({
+            id: 'py-verde',
+            variantSku: 'PY-VD',
+            colorName: 'Verde',
+            currentStock: 0,
+            availableStock: 0,
+            status: 'out_of_stock',
+            futureStock: 600,
+            expectedReplenishDate: inForty,
+          } as Partial<VariantStock>),
+        ]),
+      ];
+      const out = applyStockFilters(
+        data,
+        withFilters({
+          colorName: 'Verde',
+          minQuantityNeeded: 500,
+          includeFutureStock: true,
+          futureStockWindowDays: 30,
+          minQtyIncludesFutureStock: true,
+        }),
+        [],
+      );
+      expect(out).toHaveLength(0);
+    });
+  });
 });
+
