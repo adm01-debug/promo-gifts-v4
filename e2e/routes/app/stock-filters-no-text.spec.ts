@@ -185,10 +185,49 @@ test.describe('@regression /estoque — filtros sem texto', () => {
     await expect(qty).toHaveValue('1');
   });
 
+  test('Estoque Futuro 30d ON + minQty: régua estrita ignora futuro e exibe hint', async ({
+    page,
+  }) => {
+    await loginAs(page, 'admin');
+    await gotoAndSettle(page, '/estoque');
+
+    const initialRows = await page.locator('tbody tr').count();
+    if (initialRows === 0) test.skip(true, 'sem dados seedados');
+
+    // 1. Liga Estoque Futuro pelo atalho Shift+F (memória do projeto).
+    await page.keyboard.press('Shift+F');
+    await page.waitForTimeout(300);
+
+    // 2. Aplica quantidade mínima alta.
+    const qty = page.getByPlaceholder(/Preciso de X un/i);
+    await qty.fill('500');
+    await page.waitForTimeout(600);
+
+    // 3. Hint "régua estrita" deve aparecer (Estoque Futuro ON + sub-toggle OFF).
+    const strictHint = page.getByTestId('min-qty-strict-hint');
+    await expect(strictHint).toBeVisible();
+    await expect(strictHint).toContainText(/estrita/i);
+
+    const rowsStrict = await page.locator('tbody tr').count();
+
+    // 4. Liga o sub-toggle "Incluir Estoque Futuro no cálculo" no popover.
+    await page.getByRole('button', { name: /^Filtros/i }).first().click();
+    await page.getByRole('button', { name: /^Estoque/i }).first().click();
+    const subToggle = page.getByTestId('min-qty-include-future-switch');
+    await expect(subToggle).toBeEnabled();
+    await subToggle.click();
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+
+    // 5. Hint deve sumir; resultado pode aumentar (futuro entra no pool).
+    await expect(strictHint).not.toBeVisible();
+    const rowsWithFuture = await page.locator('tbody tr').count();
+    expect(rowsWithFuture).toBeGreaterThanOrEqual(rowsStrict);
+  });
+
   // Nota: /estoque é uma rota protegida (plataforma fechada). Não existe modo
   // anônimo — usuários sem sessão são redirecionados para /auth. Por isso o
   // "comportamento idêntico entre logado e anônimo" se reduz a validar que o
   // logado funciona corretamente; o caso anônimo é coberto pelo redirect guard.
 });
 
-});
