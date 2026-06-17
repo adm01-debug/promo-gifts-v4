@@ -217,11 +217,12 @@ function FlatVariantRow({
       </TableCell>
       <TableCell>
         <StockStatusChip
-          status={variant.status}
+          status={effectiveStatus}
           current={variant.currentStock}
           min={variant.minStock}
           reserved={variant.reservedStock}
           inTransit={variant.inTransitStock}
+          projection={projection}
         />
       </TableCell>
       <TableCell className="hidden sm:table-cell">
