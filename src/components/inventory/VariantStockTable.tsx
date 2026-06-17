@@ -118,6 +118,9 @@ function FlatVariantRow({
   product,
   effectiveStatus,
   projection,
+  selectionEnabled,
+  isSelected,
+  onToggleSelect,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
@@ -129,11 +132,30 @@ function FlatVariantRow({
     projectedStock: number;
     daysToTarget: number | null;
   };
+  selectionEnabled?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
   return (
-    <TableRow className="group hover:bg-muted/40">
+    <TableRow
+      className={cn('group hover:bg-muted/40', isSelected && 'bg-primary/5')}
+      data-testid="stock-row"
+      data-selected={isSelected ? 'true' : 'false'}
+    >
+      {selectionEnabled && (
+        <TableCell className="w-[40px] pr-0">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer accent-primary"
+            checked={!!isSelected}
+            onChange={onToggleSelect}
+            aria-label={`Selecionar ${product.productName} ${variant.colorName ?? ''}`}
+            data-testid="stock-row-select"
+          />
+        </TableCell>
+      )}
       <TableCell>
         <div className="flex items-center gap-3">
           <VariantThumb
