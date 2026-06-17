@@ -56,9 +56,9 @@ export function useKitVariants(kitMasterId: string | undefined) {
         kit_master_id: kitMasterId,
         label,
         sort_order: variants.length,
-        box_data: kitState.box ? JSON.parse(JSON.stringify(kitState.box)) : null,
-        items_data: JSON.parse(JSON.stringify(kitState.items)),
-        personalization_data: JSON.parse(JSON.stringify(kitState.personalization)),
+        box_data: kitState.box ? structuredClone(kitState.box) : null,
+        items_data: structuredClone(kitState.items),
+        personalization_data: structuredClone(kitState.personalization),
         kit_quantity: kitQuantity,
         total_price: kitState.totalPrice,
       };

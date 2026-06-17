@@ -63,7 +63,7 @@ export function ShareComparisonDialog({
           user_id: userData.user.id,
           client_id: clientId ?? null,
           client_name: clientName ?? null,
-          items: JSON.parse(JSON.stringify(compareItems)),
+          items: structuredClone(compareItems),
           is_public: true,
           share_expires_at: expiresAt,
         })
