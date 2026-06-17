@@ -17,14 +17,16 @@ describe("calculateStockStatus", () => {
     expect(calculateStockStatus(0, 50, undefined, 10)).toBe("incoming");
   });
 
-  it("returns critical when current <= 25% of min", () => {
-    expect(calculateStockStatus(10, 50)).toBe("critical");
-    expect(calculateStockStatus(12, 50)).toBe("critical");
+  // NOTA: a régua baseada em `min` (low_stock/critical) foi descontinuada
+  // — calculateStockStatus retorna `in_stock` para qualquer current > 0.
+  it("does NOT derive critical from min (deprecated)", () => {
+    expect(calculateStockStatus(10, 50)).toBe("in_stock");
+    expect(calculateStockStatus(12, 50)).toBe("in_stock");
   });
 
-  it("returns low_stock when current <= min", () => {
-    expect(calculateStockStatus(40, 50)).toBe("low_stock");
-    expect(calculateStockStatus(50, 50)).toBe("low_stock");
+  it("does NOT derive low_stock from min (deprecated)", () => {
+    expect(calculateStockStatus(40, 50)).toBe("in_stock");
+    expect(calculateStockStatus(50, 50)).toBe("in_stock");
   });
 
   it("returns in_stock for normal levels", () => {
