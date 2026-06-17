@@ -328,6 +328,16 @@ export function VariantStockTable({
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
 
+  // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
+  const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
+    const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
+    const n = Number.parseInt(raw, 10) as RuptureHorizonDays;
+    return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
+  });
+  useEffect(() => {
+    writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
+  }, [ruptureHorizon]);
+
   // Reset page when product list changes (filter applied)
   useEffect(() => {
     if (prevProductsLenRef.current !== products.length) {
