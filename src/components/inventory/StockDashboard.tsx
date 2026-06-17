@@ -448,6 +448,16 @@ export function StockDashboard() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
+          {productStocks.length === 0 && allProductStocks.length > 0 && (
+            <div className="mb-4">
+              <StockEmptyFiltersHint
+                filters={filters}
+                totalProducts={allProductStocks.length}
+                onResetFilters={resetFilters}
+                onUpdateFilter={updateFilter}
+              />
+            </div>
+          )}
           {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
               do toolbar (busca + paginação) e do <thead>. */}
           <VariantStockTable
