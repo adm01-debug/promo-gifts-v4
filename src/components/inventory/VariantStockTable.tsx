@@ -18,7 +18,6 @@ import { StockBulkActionBar } from './StockBulkActionBar';
 import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
 import { useSelectionShortcut } from './useSelectionShortcut';
 
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -517,7 +516,7 @@ export function VariantStockTable({
             <TableHead className="w-[300px]">Produto</TableHead>
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
-            
+
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="hidden sm:table-cell">Previsão</TableHead>
