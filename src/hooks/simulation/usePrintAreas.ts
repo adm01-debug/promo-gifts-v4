@@ -142,26 +142,6 @@ export function useTechniques() {
 }
 
 /**
- * @deprecated View `v_technique_stats` NÃO EXISTE no DB pqpdolkaeqlyzpdpbizo.
- * Esta query sempre retorna erro/vazio. 0 consumers em components/pages.
- * TODO: Remover quando nenhum componente importar, ou criar a view no DB.
- *
- * Hook: Busca estatisticas de uso das tecnicas
- * BUG-14 FIX: era via external-db-bridge. Substituido por PostgREST nativo.
- */
-export function useTechniqueStats() {
-  return useQuery({
-    queryKey: ['technique-stats'],
-    queryFn: async () => {
-      logger.warn('[DEPRECATED] useTechniqueStats() desativado: retornando []');
-      return [];
-    },
-    retry: false,
-    staleTime: 10 * 60 * 1000,
-  });
-}
-
-/**
  * Hook: Verifica se um produto tem areas de gravacao
  * BUG-14 FIX: era via external-db-bridge. Substituido por PostgREST nativo.
  */
