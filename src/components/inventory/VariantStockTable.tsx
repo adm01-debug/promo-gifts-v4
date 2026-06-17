@@ -658,7 +658,18 @@ export function VariantStockTable({
             )}
           </span>
 
-          {/* Modelo de negócio: variação-first. Toggle de "Agrupar" removido. */}
+          {/* Toggle de seleção em lote (paridade catálogo) */}
+          <Button
+            type="button"
+            size="sm"
+            variant={selection.enabled ? 'secondary' : 'ghost'}
+            aria-pressed={selection.enabled}
+            data-testid="stock-selection-toggle"
+            onClick={() => selection.setMode(!selection.enabled)}
+            className="h-8 gap-1 text-xs"
+          >
+            {selection.enabled ? 'Sair da seleção' : 'Selecionar'}
+          </Button>
         </div>
       </div>
 
