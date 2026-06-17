@@ -34,7 +34,7 @@ export function exportCSV(rows: TelemetryRow[], timeFilter: TimeFilter) {
   const csv = [headers.join(','), ...csvRows.map((row) => row.map((v) => `"${v}"`).join(','))].join(
     '\n',
   );
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

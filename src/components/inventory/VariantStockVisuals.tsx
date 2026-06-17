@@ -18,8 +18,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { StockStatus } from '@/types/stock';
+import { calculateStockStatus, type StockStatus } from '@/types/stock';
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
@@ -153,41 +154,39 @@ export function RichColorSwatch({
 // StockStatusChip — chip único consolidado
 // ============================================
 
-const CHIP_CONFIG: Record<
-  StockStatus,
-  { label: string; classes: string; icon: React.ReactNode }
-> = {
-  in_stock: {
-    label: 'Em Estoque',
-    classes: 'border-success/30 bg-success/10 text-success',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-  incoming: {
-    label: 'Chegando',
-    classes: 'border-primary/30 bg-primary/10 text-primary',
-    icon: <Truck className="h-3 w-3" />,
-  },
-  low_stock: {
-    label: 'Risco de Ruptura',
-    classes: 'border-warning/30 bg-warning/10 text-warning',
-    icon: <TrendingDown className="h-3 w-3" />,
-  },
-  critical: {
-    label: 'Crítico',
-    classes: 'border-destructive/30 bg-destructive/10 text-destructive',
-    icon: <AlertTriangle className="h-3 w-3" />,
-  },
-  out_of_stock: {
-    label: 'Esgotado',
-    classes: 'border-destructive/40 bg-destructive/15 text-destructive',
-    icon: <XCircle className="h-3 w-3" />,
-  },
-  overstocked: {
-    label: 'Em Estoque',
-    classes: 'border-success/30 bg-success/10 text-success',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-};
+const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: React.ReactNode }> =
+  {
+    in_stock: {
+      label: 'Em Estoque',
+      classes: 'border-success/30 bg-success/10 text-success',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    incoming: {
+      label: 'Chegando',
+      classes: 'border-primary/30 bg-primary/10 text-primary',
+      icon: <Truck className="h-3 w-3" />,
+    },
+    low_stock: {
+      label: 'Risco de Ruptura',
+      classes: 'border-warning/30 bg-warning/10 text-warning',
+      icon: <TrendingDown className="h-3 w-3" />,
+    },
+    critical: {
+      label: 'Crítico',
+      classes: 'border-destructive/30 bg-destructive/10 text-destructive',
+      icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    out_of_stock: {
+      label: 'Esgotado',
+      classes: 'border-destructive/40 bg-destructive/15 text-destructive',
+      icon: <XCircle className="h-3 w-3" />,
+    },
+    overstocked: {
+      label: 'Em Estoque',
+      classes: 'border-success/30 bg-success/10 text-success',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+  };
 
 export function StockStatusChip({
   status,
@@ -327,4 +326,3 @@ export function StockProgressBar({ current, min }: { current: number; min: numbe
     </TooltipProvider>
   );
 }
-

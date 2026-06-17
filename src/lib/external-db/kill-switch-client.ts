@@ -107,7 +107,7 @@ function generateUUID(): string {
 function getBucketKey(): string {
   if (typeof window === 'undefined' || !window.localStorage) {
     // SSR ou ambiente sem localStorage: key única por chamada para evitar bias.
-    return 'ssr-' + generateUUID();
+    return `ssr-${generateUUID()}`;
   }
   try {
     let key = window.localStorage.getItem(BUCKET_KEY_STORAGE);
@@ -117,7 +117,7 @@ function getBucketKey(): string {
     }
     return key;
   } catch {
-    return 'fallback-' + generateUUID();
+    return `fallback-${generateUUID()}`;
   }
 }
 

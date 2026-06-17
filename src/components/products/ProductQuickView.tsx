@@ -413,7 +413,7 @@ export const ProductQuickView = React.memo(
                   <p className="mb-2 text-sm font-medium">
                     Cor
                     {selectedColorId
-                      ? ': ' + (productColors.find((c) => c.id === selectedColorId)?.name || '')
+                      ? `: ${productColors.find((c) => c.id === selectedColorId)?.name || ''}`
                       : ''}
                   </p>
                   <ProductColorSelector

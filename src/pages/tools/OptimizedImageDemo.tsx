@@ -201,7 +201,7 @@ export default function OptimizedImageDemo() {
             <div className="relative aspect-video overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`lqip-${key}`}
-                src={SAMPLE_IMAGE + '&t=' + key}
+                src={`${SAMPLE_IMAGE}&t=${key}`}
                 lqip="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=1&w=50"
                 alt="LQIP Demo"
                 blurAmount={blur}
@@ -249,7 +249,7 @@ export default function OptimizedImageDemo() {
             <div className="relative aspect-video overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`fallback-${key}`}
-                src={SAMPLE_IMAGE + '&fb=' + key}
+                src={`${SAMPLE_IMAGE}&fb=${key}`}
                 alt="Fallback Demo"
                 blurAmount={blur}
                 zoomAmount={zoom}
