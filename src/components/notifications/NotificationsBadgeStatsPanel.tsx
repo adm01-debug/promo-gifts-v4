@@ -7,6 +7,9 @@ import { EfficiencyGrid } from './badge-stats/EfficiencyGrid';
 import { useMemo, useRef } from 'react';
 import { notificationsMetrics } from '@/lib/notifications-metrics';
 
+const SPARK_W = 160;
+const SPARK_H = 24;
+
 export function NotificationsBadgeStatsPanel() {
   const { isAdmin } = useAuth();
   const isDev = Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
@@ -35,12 +38,9 @@ export function NotificationsBadgeStatsPanel() {
     window.setTimeout(() => el.removeAttribute('data-jump-flash'), 1500);
   };
 
-  const SPARK_W = 160;
-  const SPARK_H = 24;
   const sparkPoints = useMemo(
     () => buildSparkPath(samples, SPARK_W, SPARK_H, SPARK_WINDOW_SECONDS),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [samples],
+    [samples, SPARK_WINDOW_SECONDS],
   );
 
   if (!visible) return null;

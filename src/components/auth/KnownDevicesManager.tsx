@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,17 +44,16 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
   const currentFingerprint = getDeviceInfo().fingerprint;
   const isManagingOther = !!targetUserId;
 
-  useEffect(() => {
-    loadDevices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUserId]);
-
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     setIsLoading(true);
     const data = await getKnownDevices();
     setDevices(data as unknown as KnownDevice[]);
     setIsLoading(false);
-  };
+  }, [getKnownDevices]);
+
+  useEffect(() => {
+    void loadDevices();
+  }, [loadDevices]);
 
   const handleRemoveDevice = async (deviceId: string) => {
     const success = await removeDevice(deviceId);
