@@ -123,7 +123,7 @@ function setShare(share: ((d: ShareData) => Promise<void>) | undefined) {
 
 beforeEach(() => {
   useFavoritesStore.setState({ favorites: [], favoriteCount: 0 });
-  useComparisonStore.setState({ compareItems: [], compareCount: 0, hasItems: false });
+  useComparisonStore.setState({ compareItems: [], compareCount: 0 });
   toastSuccess.mockClear();
   toastError.mockClear();
 });
