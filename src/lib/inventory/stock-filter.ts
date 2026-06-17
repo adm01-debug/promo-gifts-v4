@@ -218,16 +218,20 @@ function matchMinQuantity(
   ctx: FilterContext,
 ): boolean {
   if (ctx.minQty <= 0) return true;
-  // Regra de negócio (PT-BR): "Preciso de X un…" é sempre estrito sobre o
-  // estoque DISPONÍVEL AGORA (availableStock). O toggle "Estoque Futuro"
-  // controla apenas a exibição da coluna/stat de reposição — não deve inflar
-  // o pool da régua de quantidade, sob pena de listar produtos como
-  // "0 un / Esgotado" passando por um filtro de ≥ X.
-  const pool = ctx.hasVariantFilter
+  // Por padrão, "Preciso de X un…" é estrito sobre o estoque DISPONÍVEL AGORA.
+  // Só soma Estoque Futuro ao pool quando o usuário ATIVAR explicitamente o
+  // sub-toggle "Incluir Estoque Futuro no cálculo" E o toggle global de
+  // Estoque Futuro também estiver ligado (necessário para definir a janela).
+  let pool = ctx.hasVariantFilter
     ? variantsForFilter.reduce((sum, v) => sum + Math.max(0, v.availableStock), 0)
     : Math.max(0, product.totalAvailableStock);
+  if (ctx.minQtyIncludesFutureStock && ctx.includeFutureStock) {
+    const source = ctx.hasVariantFilter ? variantsForFilter : product.variants;
+    for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
+  }
   return pool >= ctx.minQty;
 }
+
 
 
 // ---------- estágio 3: orquestrador ----------
