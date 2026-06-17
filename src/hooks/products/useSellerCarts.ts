@@ -54,6 +54,7 @@ export interface AddToCartInput {
   quantity?: number;
   color_name?: string;
   color_hex?: string;
+  notes?: string | null;
 }
 
 export interface CreateCartInput {
@@ -205,6 +206,7 @@ export function useSellerCarts() {
           quantity: quantityToAdd,
           color_name: colorName,
           color_hex: item.color_hex || null,
+          notes: item.notes ?? null,
         });
 
         // Se bater no constraint (race condition), tenta o update mais uma vez
@@ -478,6 +480,7 @@ export function useSellerCarts() {
         quantity: item.quantity || 1,
         color_name: item.color_name || null,
         color_hex: item.color_hex || null,
+        notes: item.notes ?? null,
       }));
 
       const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);

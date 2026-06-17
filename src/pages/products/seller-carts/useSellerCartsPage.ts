@@ -157,21 +157,26 @@ export function useSellerCartsPage() {
       const item = activeCart?.items.find((i) => i.id === itemId);
       removeItem(itemId);
       if (item && activeCart) {
-        recordAction(activeCart.id, { type: 'remove', itemName, time: new Date() });
+        const cartId = activeCart.id;
+        recordAction(cartId, { type: 'remove', itemName, time: new Date() });
         showUndoToast({
           title: `${itemName} removido`,
           description: activeCart.company_name,
           onUndo: () => {
-            addToActiveCart({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              product_sku: item.product_sku || undefined,
-              product_image_url: item.product_image_url || undefined,
-              product_price: item.product_price,
-              quantity: item.quantity,
-              color_name: item.color_name || undefined,
-              color_hex: item.color_hex || undefined,
-            });
+            addToActiveCart(
+              {
+                product_id: item.product_id,
+                product_name: item.product_name,
+                product_sku: item.product_sku || undefined,
+                product_image_url: item.product_image_url || undefined,
+                product_price: item.product_price,
+                quantity: item.quantity,
+                color_name: item.color_name || undefined,
+                color_hex: item.color_hex || undefined,
+                notes: item.notes ?? undefined,
+              },
+              cartId,
+            );
           },
         });
       }
@@ -248,6 +253,7 @@ export function useSellerCartsPage() {
           quantity: item.quantity,
           color_name: item.color_name || undefined,
           color_hex: item.color_hex || undefined,
+          notes: item.notes ?? undefined,
         }));
         restoreItems(activeCart.id, addItems);
       },

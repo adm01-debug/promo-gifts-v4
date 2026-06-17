@@ -69,13 +69,22 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     restoreItems: restoreItemsMutation,
   } = useSellerCarts();
 
-  const [activeCartId, setActiveCartId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(ACTIVE_CART_STORAGE_KEY);
-    } catch {
-      return null;
+  const [activeCartId, setActiveCartId] = useState<string | null>(null);
+
+  // Hidrata o carrinho ativo persistido com chave namespeada por usuario — evita que,
+  // numa estacao compartilhada, um vendedor herde o carrinho ativo de outro. Enquanto
+  // nao hidrata, resolvedActiveCartId ja cai em carts[0] (sem UX quebrada).
+  useEffect(() => {
+    if (!user?.id) {
+      setActiveCartId(null);
+      return;
     }
-  });
+    try {
+      setActiveCartId(localStorage.getItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`));
+    } catch {
+      setActiveCartId(null);
+    }
+  }, [user?.id]);
 
   const resolvedActiveCartId =
     activeCartId && carts.find((c) => c.id === activeCartId)
@@ -86,18 +95,16 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const activeCart = carts.find((c) => c.id === resolvedActiveCartId) || null;
 
+  // Persiste apenas selecoes explicitas (nao-nulas) sob a chave do usuario. Nao
+  // persistir null impede o clobber do valor recem-hidratado no primeiro render.
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !activeCartId) return;
     try {
-      if (resolvedActiveCartId) {
-        localStorage.setItem(ACTIVE_CART_STORAGE_KEY, resolvedActiveCartId);
-      } else {
-        localStorage.removeItem(ACTIVE_CART_STORAGE_KEY);
-      }
+      localStorage.setItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`, activeCartId);
     } catch {
       // no-op: storage unavailable
     }
-  }, [resolvedActiveCartId, user?.id]);
+  }, [activeCartId, user?.id]);
 
   const createCart = useCallback(
     async (input: CreateCartInput) => {
