@@ -439,7 +439,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             <TableHead className="w-[300px]">Produto</TableHead>
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
-            <TableHead className="hidden w-[120px] sm:table-cell">Progresso</TableHead>
+            
             <TableHead>Disponível</TableHead>
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
