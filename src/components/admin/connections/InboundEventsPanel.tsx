@@ -76,6 +76,7 @@ interface Endpoint {
 }
 
 const PERIOD_HOURS: Record<Period, number> = { '24h': 24, '7d': 24 * 7, '30d': 24 * 30 };
+const PERIOD_LABELS: Record<Period, string> = { '24h': '1 dia', '7d': '7 dias', '30d': '30 dias' };
 
 export function InboundEventsPanel() {
   const [period, setPeriod] = useState<Period>('7d');
@@ -192,8 +193,7 @@ export function InboundEventsPanel() {
                 <Inbox className="h-4 w-4 text-primary" /> Eventos recebidos
               </CardTitle>
               <CardDescription>
-                Webhooks de entrada com validação HMAC nos últimos{' '}
-                {period === '24h' ? '1 dia' : period === '7d' ? '7 dias' : '30 dias'}.
+                Webhooks de entrada com validação HMAC nos últimos {PERIOD_LABELS[period]}.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
