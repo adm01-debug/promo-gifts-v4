@@ -23,7 +23,7 @@
  *  quebrar a linha mesmo no mobile mais estreito 320px).
  * ──────────────────────────────────────────────────────────────────────────────
  */
-import { memo, useMemo } from 'react';
+import { memo, useId } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +70,7 @@ export const ProductColorSwatches = memo(function ProductColorSwatches({
   onSelect,
   selectedName,
 }: ProductColorSwatchesProps) {
-  const idPrefix = useMemo(() => Math.random().toString(36).substring(2, 11), []);
+  const idPrefix = useId();
 
   if (colors === undefined) {
     return (

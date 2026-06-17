@@ -167,22 +167,6 @@ export function QuoteAutoSave({
     }
   }, [storageKey, quoteId]);
 
-  const _handleDiscard = () => {
-    localStorage.removeItem(storageKey);
-
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(storageKey + '_v')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach((key) => localStorage.removeItem(key));
-
-    initialDataRef.current = JSON.stringify(data);
-    setStatus('idle');
-  };
-
   const getStatusIcon = () => {
     switch (status) {
       case 'saving':

@@ -8,7 +8,6 @@ import {
   X,
   Building2,
   Palette,
-  PackageCheck,
   Package,
   ShoppingCart,
   AlertTriangle,
@@ -39,7 +38,7 @@ import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFil
 import { DebouncedPriceInput } from '@/components/filters/DebouncedPriceInput';
 import { FilterSection } from '@/components/filters/filter-panel/FilterSection';
 import { StockHelpTooltip } from '@/components/inventory/StockHelpTooltip';
-import type { StockFilters, StockStatus } from '@/types/stock';
+import type { StockFilters } from '@/types/stock';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import {
   useFutureStockPreference,
@@ -64,50 +63,6 @@ interface StockFilterToolbarProps {
   totalProducts: number;
   filteredCount: number;
 }
-
-const _STATUS_OPTIONS: {
-  value: StockStatus | 'all';
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-}[] = [
-  {
-    value: 'all',
-    label: 'Todos',
-    icon: <PackageCheck className="h-3.5 w-3.5" />,
-    color: 'text-foreground',
-  },
-  {
-    value: 'in_stock',
-    label: 'Em Estoque',
-    icon: <PackageCheck className="h-3.5 w-3.5" />,
-    color: 'text-success',
-  },
-  {
-    value: 'low_stock',
-    label: 'Estoque baixo',
-    icon: <AlertTriangle className="h-3.5 w-3.5" />,
-    color: 'text-warning',
-  },
-  {
-    value: 'critical',
-    label: 'Crítico',
-    icon: <AlertTriangle className="h-3.5 w-3.5" />,
-    color: 'text-destructive',
-  },
-  {
-    value: 'out_of_stock',
-    label: 'Esgotado',
-    icon: <X className="h-3.5 w-3.5" />,
-    color: 'text-destructive',
-  },
-  {
-    value: 'incoming',
-    label: 'Chegando',
-    icon: <ShoppingCart className="h-3.5 w-3.5" />,
-    color: 'text-primary',
-  },
-];
 
 export function StockFilterToolbar({
   filters,
@@ -512,17 +467,18 @@ export function StockFilterToolbar({
           </PopoverContent>
         </Popover>
 
-
-
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
           title='Calculadora "Preciso de X un…"'
           description={
             <>
               Compara a quantidade pedida com estoque atual + em trânsito:
-              <br />🟢 <strong>Atende agora</strong>: estoque ≥ X.
-              <br />🟡 <strong>Atende com reposição</strong>: estoque + chegando ≥ X.
-              <br />🔴 <strong>Não atende</strong>: nem com o que está chegando dá conta.
+              <br />
+              🟢 <strong>Atende agora</strong>: estoque ≥ X.
+              <br />
+              🟡 <strong>Atende com reposição</strong>: estoque + chegando ≥ X.
+              <br />
+              🔴 <strong>Não atende</strong>: nem com o que está chegando dá conta.
             </>
           }
           example="Digite 500 para ver quais produtos cobrem um pedido de 500 unidades."
