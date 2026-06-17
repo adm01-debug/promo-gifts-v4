@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,45 +36,47 @@ export default function StorageTestPage() {
 
   const bucketName = 'test-external-storage';
 
-  const fetchFiles = async (isCancelled: () => boolean = () => false) => {
-    if (!isCancelled()) setLoadingFiles(true);
-    try {
-      const { data, error } = await supabase.storage.from(bucketName).list();
-      if (isCancelled()) return;
-      if (error) {
-        if (error.message.includes('does not exist')) {
-          toast({
-            title: 'Bucket não encontrado',
-            description: `O bucket "${bucketName}" não existe no Supabase externo. Certifique-se de criá-lo.`,
-            variant: 'destructive',
-          });
-        } else {
-          throw error;
+  const fetchFiles = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      if (!isCancelled()) setLoadingFiles(true);
+      try {
+        const { data, error } = await supabase.storage.from(bucketName).list();
+        if (isCancelled()) return;
+        if (error) {
+          if (error.message.includes('does not exist')) {
+            toast({
+              title: 'Bucket não encontrado',
+              description: `O bucket "${bucketName}" não existe no Supabase externo. Certifique-se de criá-lo.`,
+              variant: 'destructive',
+            });
+          } else {
+            throw error;
+          }
         }
+        setFiles(data || []);
+      } catch (error: unknown) {
+        if (isCancelled()) return;
+        logger.error('Error fetching files:', error);
+        toast({
+          title: 'Erro ao buscar arquivos',
+          description: 'Não foi possível carregar a lista de arquivos.',
+          variant: 'destructive',
+        });
+      } finally {
+        if (!isCancelled()) setLoadingFiles(false);
       }
-      setFiles(data || []);
-    } catch (error: unknown) {
-      if (isCancelled()) return;
-      logger.error('Error fetching files:', error);
-      toast({
-        title: 'Erro ao buscar arquivos',
-        description: 'Não foi possível carregar a lista de arquivos.',
-        variant: 'destructive',
-      });
-    } finally {
-      if (!isCancelled()) setLoadingFiles(false);
-    }
-  };
+    },
+    [bucketName, toast],
+  );
 
   useEffect(() => {
     // Guarda de cancelamento: evita setState após o unmount.
     let cancelled = false;
-    fetchFiles(() => cancelled);
+    void fetchFiles(() => cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchFiles]);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

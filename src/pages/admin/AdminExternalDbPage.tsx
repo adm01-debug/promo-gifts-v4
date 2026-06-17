@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useExternalDbInspect } from '@/hooks/intelligence';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,10 +51,10 @@ export default function AdminExternalDbPage() {
   const [liveResults, setLiveResults] = useState<Record<string, ValidationResult>>({});
   const [liveLoading, setLiveLoading] = useState<string | null>(null);
 
-  const refreshTelemetry = () => {
+  const refreshTelemetry = useCallback(() => {
     setContractCounts(getContractMismatches() as Record<string, number>);
     setRecentMismatches([...getRecentMismatches()]);
-  };
+  }, []);
 
   const testContract = async (contractName: string) => {
     setLiveLoading(contractName);
@@ -140,8 +140,7 @@ export default function AdminExternalDbPage() {
     refreshTelemetry();
     const id = setInterval(refreshTelemetry, 4000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [listTables, refreshTelemetry]);
 
   const handleSelectTable = async (tableName: string) => {
     setSelectedTable(tableName);
