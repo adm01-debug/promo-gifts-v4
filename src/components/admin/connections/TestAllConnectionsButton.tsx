@@ -16,7 +16,7 @@
  *
  * Não expõe nenhum valor de segredo — apenas máscaras e metadados.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -171,18 +171,17 @@ export function TestAllConnectionsButton({ className }: { className?: string }) 
     }
   }, [list, test]);
 
-  const summary = results
-    ? (() => {
-        const tested = results.filter((r) => r.testable);
-        return {
-          total: results.length,
-          tested: tested.length,
-          ok: tested.filter((r) => r.test?.ok).length,
-          fail: tested.filter((r) => r.test && !r.test.ok).length,
-          skipped: results.length - tested.length,
-        };
-      })()
-    : null;
+  const summary = useMemo(() => {
+    if (!results) return null;
+    const tested = results.filter((r) => r.testable);
+    return {
+      total: results.length,
+      tested: tested.length,
+      ok: tested.filter((r) => r.test?.ok).length,
+      fail: tested.filter((r) => r.test && !r.test.ok).length,
+      skipped: results.length - tested.length,
+    };
+  }, [results]);
 
   return (
     <>
