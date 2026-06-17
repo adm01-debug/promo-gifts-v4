@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
   Package,
@@ -26,14 +27,19 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
-import { SupplierRiskPanel } from './SupplierRiskPanel';
+// #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
+const SupplierRiskPanel = lazyWithRetry(() =>
+  import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
+);
 import { StatCard } from './StockStatCard';
 import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
 import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
-import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
+const StockHealthBreakdownDrawer = lazyWithRetry(() =>
+  import('./StockHealthBreakdownDrawer').then((m) => ({ default: m.StockHealthBreakdownDrawer })),
+);
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
@@ -283,11 +289,15 @@ export function StockDashboard() {
         onOpenChange={setFutureStockDialogOpen}
         entries={futureStock}
       />
-      <StockHealthBreakdownDrawer
-        open={healthDrawerOpen}
-        onOpenChange={setHealthDrawerOpen}
-        products={allProductStocks ?? productStocks}
-      />
+      {healthDrawerOpen && (
+        <Suspense fallback={null}>
+          <StockHealthBreakdownDrawer
+            open={healthDrawerOpen}
+            onOpenChange={setHealthDrawerOpen}
+            products={allProductStocks ?? productStocks}
+          />
+        </Suspense>
+      )}
 
       {/* Advanced Filters (topo, logo após o título "Estoque") */}
       <Card>
@@ -567,7 +577,11 @@ export function StockDashboard() {
           <BarChart3 className="h-4 w-4" />
           Painel de Risco do Fornecedor
         </button>
-        {riskPanelOpen && <SupplierRiskPanel products={allProductStocks} />}
+        {riskPanelOpen && (
+          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <SupplierRiskPanel products={allProductStocks} />
+          </Suspense>
+        )}
       </div>
 
       {/* Info Alerts */}
