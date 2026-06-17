@@ -826,12 +826,14 @@ export function VariantStockTable({
         />
       )}
 
-      <BulkAddToCollectionModal
-        open={bulkCollectionOpen}
-        onOpenChange={setBulkCollectionOpen}
-        rows={bulkCollectionRows}
-        onApplied={() => selection.clear()}
-      />
+      {bulkCollectionOpen && (
+        <BulkAddToCollectionModal
+          open={bulkCollectionOpen}
+          onOpenChange={setBulkCollectionOpen}
+          rows={bulkCollectionRows}
+          onApplied={() => selection.clear()}
+        />
+      )}
     </div>
   );
 }
