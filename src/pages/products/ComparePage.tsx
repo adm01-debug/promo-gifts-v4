@@ -46,6 +46,12 @@ import { RecentComparisonsSidebar } from '@/components/compare/RecentComparisons
 import { FavoritesClientPicker } from '@/components/favorites/FavoritesClientPicker';
 import { useComparisonShortcuts, useComparisonSync } from '@/hooks/comparison';
 
+const COMPARE_STATUS_COLORS: Record<string, string> = {
+  'in-stock': 'text-success',
+  'low-stock': 'text-warning',
+  'out-of-stock': 'text-destructive',
+} as const;
+
 export default function ComparePage() {
   useComparisonSync();
   const navigate = useNavigate();
@@ -96,14 +102,9 @@ export default function ComparePage() {
   const products: Product[] = compareEntries.map((e) => e.product);
 
   // Rótulo vem da fonte única (catalog-stock-status); cor Tailwind é presentational, fica local.
-  const STATUS_COLOR: Record<string, string> = {
-    'in-stock': 'text-success',
-    'low-stock': 'text-warning',
-    'out-of-stock': 'text-destructive',
-  };
   const getStockStatusLabel = (status: string) => ({
     label: getCatalogStockStatusLabel(status),
-    color: STATUS_COLOR[status] ?? 'text-success',
+    color: COMPARE_STATUS_COLORS[status] ?? 'text-success',
   });
 
   const handleCreateQuote = () => {

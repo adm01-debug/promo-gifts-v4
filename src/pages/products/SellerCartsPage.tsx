@@ -77,6 +77,14 @@ const NOTES_PLACEHOLDERS = [
   'Margem-alvo: XX%. Frete por conta do cliente.',
 ];
 
+const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
+  color: true,
+  quantity: true,
+  price: true,
+  total: true,
+  actions: true,
+} as const;
+
 function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -99,22 +107,15 @@ function SellerCartsContent() {
   }, [gridColumns]);
 
   // Tabela: colunas visíveis + densidade (persistidos)
-  const DEFAULT_COLS: Record<CartTableColumnKey, boolean> = {
-    color: true,
-    quantity: true,
-    price: true,
-    total: true,
-    actions: true,
-  };
   const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(() => {
-    if (typeof window === 'undefined') return DEFAULT_COLS;
+    if (typeof window === 'undefined') return DEFAULT_CART_TABLE_COLS;
     try {
       const raw = localStorage.getItem('cart-table-columns');
-      if (!raw) return DEFAULT_COLS;
+      if (!raw) return DEFAULT_CART_TABLE_COLS;
       const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
-      return { ...DEFAULT_COLS, ...parsed, quantity: true, actions: true };
+      return { ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true };
     } catch {
-      return DEFAULT_COLS;
+      return DEFAULT_CART_TABLE_COLS;
     }
   });
   const [density, setDensity] = useState<CartTableDensity>(() => {

@@ -25,6 +25,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+const MATCH_COLOR_CLASSES: Record<MatchResult['matchType'], string> = {
+  identical: 'bg-blue-100 text-blue-700 border-blue-200',
+  similar: 'bg-green-100 text-green-700 border-green-200',
+  complementary: 'bg-amber-100 text-amber-700 border-amber-200',
+} as const;
+
+const MATCH_LABELS: Record<MatchResult['matchType'], string> = {
+  identical: 'Idêntico',
+  similar: 'Similar',
+  complementary: 'Complementar',
+} as const;
+
 export default function ProductMatchPage() {
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -70,18 +82,6 @@ export default function ProductMatchPage() {
     identical: <Zap className="h-3.5 w-3.5" />,
     similar: <Target className="h-3.5 w-3.5" />,
     complementary: <Lightbulb className="h-3.5 w-3.5" />,
-  };
-
-  const matchColor: Record<MatchResult['matchType'], string> = {
-    identical: 'bg-blue-100 text-blue-700 border-blue-200',
-    similar: 'bg-green-100 text-green-700 border-green-200',
-    complementary: 'bg-amber-100 text-amber-700 border-amber-200',
-  };
-
-  const matchLabel: Record<MatchResult['matchType'], string> = {
-    identical: 'Idêntico',
-    similar: 'Similar',
-    complementary: 'Complementar',
   };
 
   return (
@@ -202,9 +202,9 @@ export default function ProductMatchPage() {
                         <Badge
                           key={type}
                           variant="outline"
-                          className={cn('text-[10px]', matchColor[type])}
+                          className={cn('text-[10px]', MATCH_COLOR_CLASSES[type])}
                         >
-                          {matchLabel[type]}: {stats[type]}
+                          {MATCH_LABELS[type]}: {stats[type]}
                         </Badge>
                       ),
                     )}
@@ -258,11 +258,11 @@ export default function ProductMatchPage() {
                                   variant="outline"
                                   className={cn(
                                     'flex shrink-0 items-center gap-1 text-[10px]',
-                                    matchColor[match.matchType],
+                                    MATCH_COLOR_CLASSES[match.matchType],
                                   )}
                                 >
                                   {matchIcon[match.matchType]}
-                                  {matchLabel[match.matchType]}
+                                  {MATCH_LABELS[match.matchType]}
                                 </Badge>
                               </div>
                               <p className="text-[10px] text-muted-foreground">

@@ -59,6 +59,18 @@ const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverl
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
 
+// BUG-VOZ FIX: mapeamento canônico de sortBy da voz para valores aceitos pelo pipeline.
+const VOICE_SORT_MAP: Record<string, string> = {
+  'price-asc': 'price-asc',
+  'price-desc': 'price-desc',
+  name: 'name',
+  stock: 'stock',
+  newest: 'newest',
+  popularity: 'popularity',
+  'best-seller-supplier': 'best-seller-supplier',
+  'best-seller-promo': 'best-seller-promo',
+} as const;
+
 // GAP-1 FIX (PR #689 review): labels para valores internos de sortBy que são
 // válidos no pipeline (VALID_SORT_VALUES do useFiltersPageState) mas não
 // aparecem em SORT_OPTIONS (UI). Antes, qualquer valor fora de SORT_OPTIONS
@@ -142,18 +154,7 @@ export default function FiltersPage() {
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
-        // BUG-VOZ FIX: sortMap não continha 'best-seller-supplier' e 'best-seller-promo'.
-        const sortMap: Record<string, string> = {
-          'price-asc': 'price-asc',
-          'price-desc': 'price-desc',
-          name: 'name',
-          stock: 'stock',
-          newest: 'newest',
-          popularity: 'popularity',
-          'best-seller-supplier': 'best-seller-supplier',
-          'best-seller-promo': 'best-seller-promo',
-        };
-        const sortValue = sortMap[action.data.sortBy] || 'name';
+        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || 'name';
         state.setSortBy(sortValue);
         toast.success(action.response);
       } else if (action.action === 'clear') {
