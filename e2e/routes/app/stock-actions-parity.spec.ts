@@ -122,4 +122,91 @@ test.describe("Estoque · paridade com catálogo", () => {
       before,
     );
   });
+
+  test("bulk favorite persiste em localStorage e aparece em /favoritos", async ({ page }) => {
+    await gotoStock(page);
+
+    // Limpa estado prévio para isolar a asserção.
+    await page.evaluate(() => {
+      try {
+        localStorage.removeItem("product-favorites");
+      } catch {
+        /* noop */
+      }
+    });
+
+    await page.locator(TID("stock-selection-toggle")).click();
+    const checks = page.locator(TID("stock-row-select"));
+    await expect(checks.first()).toBeVisible({ timeout: 10_000 });
+    const n = Math.min(await checks.count(), 2);
+    test.skip(n < 1, "sem variações para favoritar em lote");
+    for (let i = 0; i < n; i++) await checks.nth(i).check();
+
+    await page.locator(TID("stock-bulk-favorite")).click();
+
+    // localStorage refletiu a ação.
+    const stored = await page.evaluate<unknown[]>(() => {
+      try {
+        const raw = localStorage.getItem("product-favorites");
+        return raw ? (JSON.parse(raw) as unknown[]) : [];
+      } catch {
+        return [];
+      }
+    });
+    expect(stored.length).toBeGreaterThanOrEqual(1);
+
+    // Navegar para /favoritos não deve renderizar empty state.
+    await gotoAndSettle(page, "/favoritos");
+    await expect(
+      page.getByTestId("favorites-empty-state"),
+    ).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test('atalho "s" alterna o modo de seleção', async ({ page }) => {
+    await gotoStock(page);
+
+    const toggle = page.locator(TID("stock-selection-toggle"));
+    await expect(toggle).toBeVisible({ timeout: 15_000 });
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    // Garante foco fora de input (clicando no body).
+    await page.locator("body").click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press("s");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(TID("stock-bulk-action-bar"))).toBeVisible();
+
+    await page.keyboard.press("s");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(TID("stock-bulk-action-bar"))).toHaveCount(0);
+  });
+
+  test('atalho "s" é ignorado quando foco está em input de busca', async ({ page }) => {
+    await gotoStock(page);
+    const toggle = page.locator(TID("stock-selection-toggle"));
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    const search = page.getByPlaceholder(/Buscar na tabela/i);
+    await search.click();
+    await search.type("s");
+    // Atalho NÃO deve disparar — segue desabilitado.
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(search).toHaveValue("s");
+  });
+
+  test("bulk Coleção abre modal e lista coleções existentes", async ({ page }) => {
+    await gotoStock(page);
+    await page.locator(TID("stock-selection-toggle")).click();
+    const checks = page.locator(TID("stock-row-select"));
+    await expect(checks.first()).toBeVisible({ timeout: 10_000 });
+    await checks.first().check();
+
+    const bulkColl = page.locator(TID("stock-bulk-collection"));
+    await expect(bulkColl).toBeEnabled();
+    await bulkColl.click();
+
+    await expect(page.locator(TID("stock-bulk-collection-modal"))).toBeVisible({
+      timeout: 5_000,
+    });
+    await expect(page.locator(TID("stock-bulk-collection-new"))).toBeVisible();
+  });
 });

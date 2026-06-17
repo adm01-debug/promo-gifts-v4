@@ -16,6 +16,8 @@ import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-color
 import { VariantStockRowActions } from './VariantStockRowActions';
 import { useStockSelection } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
+import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
+import { useSelectionShortcut } from './useSelectionShortcut';
 
 
 import { Button } from '@/components/ui/button';
@@ -555,6 +557,22 @@ export function VariantStockTable({
   const selection = useStockSelection(
     pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
   );
+  const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
+
+  // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
+  useSelectionShortcut(() => selection.setMode(!selection.enabled));
+
+  const bulkCollectionRows: BulkCollectionRow[] = selection.selectedRows.map((r) => ({
+    productId: r.product.productId,
+    productName: r.product.productName,
+    variant: {
+      color_name: r.variant.colorName,
+      color_hex: r.variant.colorHex,
+      size_code: r.variant.sizeCode,
+      variant_id: r.variant.variantId,
+      thumbnail: r.variant.imageUrl ?? r.product.productImageUrl,
+    },
+  }));
 
   return (
     <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
@@ -801,8 +819,19 @@ export function VariantStockTable({
           onBulkFavorite={selection.bulkFavorite}
           onBulkCompare={selection.bulkCompare}
           onBulkQuote={selection.bulkQuote}
+          onBulkCollection={() => {
+            if (selection.selectedCount === 0) return;
+            setBulkCollectionOpen(true);
+          }}
         />
       )}
+
+      <BulkAddToCollectionModal
+        open={bulkCollectionOpen}
+        onOpenChange={setBulkCollectionOpen}
+        rows={bulkCollectionRows}
+        onApplied={() => selection.clear()}
+      />
     </div>
   );
 }
