@@ -89,7 +89,11 @@ export function NoveltyProductGrid() {
   // set-state/ref-write após desmontar e leak do timeout).
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
+  // FIX (auditoria Novidades, P1-B): sem teto fixo. Antes `{ limit: 400 }`
+  // truncava o grid quando havia mais de 400 novidades ativas (ex.: 550 -> 150
+  // produtos, incl. fornecedores inteiros, invisiveis; e o contador divergia do
+  // card "Novidades Ativas"). O hook agora pagina o conjunto completo da janela.
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails();
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
