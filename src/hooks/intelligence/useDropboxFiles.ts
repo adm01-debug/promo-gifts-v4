@@ -45,9 +45,9 @@ export function useDropboxFiles() {
         body: { path, action: 'list' },
       });
       if (error) throw error;
-      setEntries(data?.entries || []);
+      setEntries(data?.entries ?? []);
       setCurrentPath(path);
-      return data?.entries || [];
+      return data?.entries ?? [];
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao listar arquivos';
       toast.error('Erro Dropbox', { description: msg });

@@ -284,8 +284,8 @@ export function useProductsCatalog(filters?: {
   sortBy?: string;
 }) {
   const search = filters?.search || '';
-  const categories = filters?.categories || [];
-  const suppliers = filters?.suppliers || [];
+  const categories = filters?.categories ?? [];
+  const suppliers = filters?.suppliers ?? [];
   const sortBy = filters?.sortBy || 'newest';
   return useInfiniteQuery<CatalogPage, Error>({
     queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],

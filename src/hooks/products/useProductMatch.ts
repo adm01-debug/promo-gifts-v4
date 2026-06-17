@@ -116,10 +116,10 @@ function calculateMatchScore(
   }
 
   // Shared nicho/ramo
-  const srcNiches = [...(source.tags?.nicho || []), ...(source.tags?.ramo || [])].map((n) =>
+  const srcNiches = [...(source.tags?.nicho ?? []), ...(source.tags?.ramo ?? [])].map((n) =>
     n.trim().toLowerCase(),
   );
-  const candNiches = [...(candidate.tags?.nicho || []), ...(candidate.tags?.ramo || [])].map((n) =>
+  const candNiches = [...(candidate.tags?.nicho ?? []), ...(candidate.tags?.ramo ?? [])].map((n) =>
     n.trim().toLowerCase(),
   );
   const sharedNiches = srcNiches.filter((n) => n && candNiches.includes(n));

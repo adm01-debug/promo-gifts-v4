@@ -43,12 +43,12 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
   });
 
   const linkedSegmentoIds = useMemo(
-    () => new Set((produtoRamosData?.associacoes || []).map((a) => a.ramo_atividade_filho_id)),
+    () => new Set((produtoRamosData?.associacoes ?? []).map((a) => a.ramo_atividade_filho_id)),
     [produtoRamosData?.associacoes],
   );
 
-  const ramos = useMemo(() => ramosData?.ramos || [], [ramosData?.ramos]);
-  const segmentos = useMemo(() => segmentosData?.segmentos || [], [segmentosData?.segmentos]);
+  const ramos = useMemo(() => ramosData?.ramos ?? [], [ramosData?.ramos]);
+  const segmentos = useMemo(() => segmentosData?.segmentos ?? [], [segmentosData?.segmentos]);
 
   const segmentosByRamo = useMemo(
     () =>

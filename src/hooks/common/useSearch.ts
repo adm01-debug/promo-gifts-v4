@@ -13,8 +13,15 @@ import {
 import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 
 // FIX 2026-06-14 (#5-raiz): categorias/fornecedores REAIS do DB (ids = UUID).
-interface RealCategory { id: string; name: string; icon?: string | null }
-interface RealSupplier  { id: string; name: string }
+interface RealCategory {
+  id: string;
+  name: string;
+  icon?: string | null;
+}
+interface RealSupplier {
+  id: string;
+  name: string;
+}
 
 export interface SearchResult {
   type: 'product' | 'category' | 'supplier' | 'history';
@@ -41,39 +48,57 @@ export function useSearch(products: Product[] = []) {
   // when productsContext?.products is undefined (fallback to []) causing all
   // dependent useMemos (Fuse instances, suggestions) to recompute every keystroke.
   const availableProducts = useMemo(
-    () => (products.length > 0 ? products : productsContext?.products || []),
+    () => (products.length > 0 ? products : (productsContext?.products ?? [])),
     [products, productsContext?.products],
   );
 
   // FIX 2026-06-14 (#5-raiz): categorias e fornecedores REAIS (fallback p/ mock enquanto carrega).
   const { data: realCategories } = useQuery<RealCategory[]>({
     queryKey: ['search-autocomplete-categories'],
-    queryFn: async () => (await dbInvoke<RealCategory>({
-      table: 'categories', operation: 'select', select: 'id, name, icon',
-      filters: { is_active: true }, orderBy: { column: 'name', ascending: true },
-      limit: 1000, countMode: 'none',
-    })).records,
-    staleTime: 30 * 60 * 1000, gcTime: 60 * 60 * 1000, refetchOnWindowFocus: false,
+    queryFn: async () =>
+      (
+        await dbInvoke<RealCategory>({
+          table: 'categories',
+          operation: 'select',
+          select: 'id, name, icon',
+          filters: { is_active: true },
+          orderBy: { column: 'name', ascending: true },
+          limit: 1000,
+          countMode: 'none',
+        })
+      ).records,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const { data: realSuppliers } = useQuery<RealSupplier[]>({
     queryKey: ['search-autocomplete-suppliers'],
-    queryFn: async () => (await dbInvoke<RealSupplier>({
-      table: 'suppliers', operation: 'select', select: 'id, name',   // -> v_suppliers_public
-      filters: { active: true }, orderBy: { column: 'name', ascending: true },
-      limit: 200, countMode: 'none',
-    })).records,
-    staleTime: 30 * 60 * 1000, gcTime: 60 * 60 * 1000, refetchOnWindowFocus: false,
+    queryFn: async () =>
+      (
+        await dbInvoke<RealSupplier>({
+          table: 'suppliers',
+          operation: 'select',
+          select: 'id, name', // -> v_suppliers_public
+          filters: { active: true },
+          orderBy: { column: 'name', ascending: true },
+          limit: 200,
+          countMode: 'none',
+        })
+      ).records,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const categorySource = useMemo<RealCategory[]>(
-    () => realCategories?.length
-      ? realCategories
-      : CATEGORIES.map((c) => ({ id: String(c.id), name: c.name, icon: c.icon })),
+    () =>
+      realCategories?.length
+        ? realCategories
+        : CATEGORIES.map((c) => ({ id: String(c.id), name: c.name, icon: c.icon })),
     [realCategories],
   );
   const supplierSource = useMemo<RealSupplier[]>(
-    () => realSuppliers?.length
-      ? realSuppliers
-      : SUPPLIERS.map((s) => ({ id: s.id, name: s.name })),
+    () =>
+      realSuppliers?.length ? realSuppliers : SUPPLIERS.map((s) => ({ id: s.id, name: s.name })),
     [realSuppliers],
   );
   // Produtos referenciam categorias-FOLHA: pré-filtra fontes aos ids PRESENTES no catálogo
@@ -87,15 +112,17 @@ export function useSearch(products: Product[] = []) {
     [availableProducts],
   );
   const effectiveCategorySource = useMemo<RealCategory[]>(
-    () => presentCategoryIds.size > 0
-      ? categorySource.filter((c) => presentCategoryIds.has(String(c.id)))
-      : categorySource,
+    () =>
+      presentCategoryIds.size > 0
+        ? categorySource.filter((c) => presentCategoryIds.has(String(c.id)))
+        : categorySource,
     [categorySource, presentCategoryIds],
   );
   const effectiveSupplierSource = useMemo<RealSupplier[]>(
-    () => presentSupplierIds.size > 0
-      ? supplierSource.filter((s) => presentSupplierIds.has(String(s.id)))
-      : supplierSource,
+    () =>
+      presentSupplierIds.size > 0
+        ? supplierSource.filter((s) => presentSupplierIds.has(String(s.id)))
+        : supplierSource,
     [supplierSource, presentSupplierIds],
   );
 
@@ -287,11 +314,11 @@ export function useSearch(products: Product[] = []) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
       .map(({ c, count }) => ({
-        type:     'category' as const,
-        id:       String(c.id),
-        label:    c.name,
+        type: 'category' as const,
+        id: String(c.id),
+        label: c.name,
         sublabel: `${count} produtos`,
-        icon:     (c as RealCategory).icon ?? '📁',
+        icon: (c as RealCategory).icon ?? '📁',
       }));
   }, [realCategories, availableProducts, effectiveCategorySource]);
 

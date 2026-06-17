@@ -50,7 +50,7 @@ export function MarketIntelInsightsUsagePanel() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const events = useMemo(() => data?.events || [], [data]);
+  const events = useMemo(() => data?.events ?? [], [data]);
   const cacheCount = data?.cacheCount || 0;
 
   const totalRegens = useMemo(

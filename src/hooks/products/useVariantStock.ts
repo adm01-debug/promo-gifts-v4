@@ -278,8 +278,8 @@ export function useProductVariantStock(productId: string) {
   return {
     isLoading,
     productStock,
-    variants: productStock?.variants || [],
-    colors: productStock?.availableColors || [],
+    variants: productStock?.variants ?? [],
+    colors: productStock?.availableColors ?? [],
     alerts: productAlerts,
     refresh: fetchStockData,
   };

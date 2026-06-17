@@ -480,7 +480,7 @@ export function useCollections() {
   const getCollectionProductItems = useCallback(
     (collectionId: string): CollectionProductItem[] => {
       const collection = collections.find((col) => col.id === collectionId);
-      return collection?.productItems || [];
+      return collection?.productItems ?? [];
     },
     [collections],
   );

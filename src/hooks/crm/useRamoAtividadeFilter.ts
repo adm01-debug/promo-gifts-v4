@@ -45,7 +45,7 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
     error: segmentosError,
   } = useSegmentosCompletos();
 
-  const segmentos = useMemo(() => segmentosData?.segmentos || [], [segmentosData?.segmentos]);
+  const segmentos = useMemo(() => segmentosData?.segmentos ?? [], [segmentosData?.segmentos]);
   const byRamo = useMemo(
     () => segmentosData?.byRamo || new Map<string, SegmentoComplete[]>(),
     [segmentosData?.byRamo],
