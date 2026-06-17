@@ -27,7 +27,10 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
-import { SupplierRiskPanel } from './SupplierRiskPanel';
+// #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
+const SupplierRiskPanel = lazyWithRetry(() =>
+  import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
+);
 import { StatCard } from './StockStatCard';
 import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
