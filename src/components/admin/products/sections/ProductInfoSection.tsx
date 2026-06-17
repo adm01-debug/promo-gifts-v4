@@ -38,7 +38,6 @@ export function ProductInfoSection({
   const supplierRefValue = watch('supplier_reference') || '';
   const descValue = watch('description') || '';
   const shortDescValue = watch('short_description') || '';
-  const _categoryId = watch('category_id');
 
   return (
     <SectionCard

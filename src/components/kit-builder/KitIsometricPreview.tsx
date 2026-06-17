@@ -244,7 +244,6 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
 
             {/* Itens empilhados */}
             {sorted.map((p) => {
-              const _c000 = iso(p.x, p.y, 0);
               const c100 = iso(p.x + p.w, p.y, 0);
               const c101 = iso(p.x + p.w, p.y, p.d);
               const c001 = iso(p.x, p.y, p.d);

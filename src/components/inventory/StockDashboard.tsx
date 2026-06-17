@@ -137,9 +137,6 @@ export function StockDashboard() {
     [summary.productsInStock, summary.totalProducts],
   );
 
-  const _healthColor =
-    healthScore >= 80 ? 'text-success' : healthScore >= 50 ? 'text-warning' : 'text-destructive';
-
   // Future stock total
   const futureStockTotal = useMemo(
     () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
