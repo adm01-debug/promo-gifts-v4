@@ -28,6 +28,8 @@ import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantSt
 import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+
+type SkeletonRow = { id: string; isSkeleton: true };
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
@@ -246,8 +248,7 @@ export const ProductTableView = memo(function ProductTableView({
   const sorted = useMemo(() => {
     if (isLoading && products.length === 0) {
       return Array.from({ length: 12 }).map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
+        (_, i): SkeletonRow => ({ id: `skeleton-${i}`, isSkeleton: true }),
       );
     }
     return [...hydratedProducts].sort((a, b) => {
@@ -441,7 +442,7 @@ export const ProductTableView = memo(function ProductTableView({
               );
             }
 
-            if (product.isSkeleton) {
+            if ('isSkeleton' in product && product.isSkeleton) {
               return (
                 <div
                   key={vr.key}
