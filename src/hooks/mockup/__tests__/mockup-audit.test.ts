@@ -345,8 +345,8 @@ describe('Analise estatica — useMockupDraft.ts', () => {
   });
 
   describe('BUG-H — console.warn no fallback FK', () => {
-    it('bloco catch/fallback 23503 emite console.warn', () => {
-      expect(src).toContain('console.warn');
+    it('bloco catch/fallback 23503 emite logger.warn (migrado de console.warn)', () => {
+      expect(src).toContain('logger.warn');
     });
     it('mensagem de warn menciona FK violation', () => {
       expect(src).toContain('FK violation on draft save');
