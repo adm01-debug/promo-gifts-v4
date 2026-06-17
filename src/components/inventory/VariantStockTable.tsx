@@ -13,6 +13,10 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+import { VariantStockRowActions } from './VariantStockRowActions';
+import { useStockSelection } from './useStockSelection';
+import { StockBulkActionBar } from './StockBulkActionBar';
+
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
