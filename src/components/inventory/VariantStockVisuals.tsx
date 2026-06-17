@@ -201,7 +201,6 @@ const CHIP_CONFIG: Record<
 export function StockStatusChip({
   status,
   current,
-  min,
   reserved = 0,
   inTransit = 0,
   showLabel = true,
@@ -209,7 +208,8 @@ export function StockStatusChip({
 }: {
   status: StockStatus;
   current: number;
-  min: number;
+  /** @deprecated mantido por compatibilidade — não é mais exibido na UI. */
+  min?: number;
   reserved?: number;
   inTransit?: number;
   showLabel?: boolean;
@@ -223,7 +223,6 @@ export function StockStatusChip({
   };
 }) {
   const cfg = CHIP_CONFIG[status] ?? CHIP_CONFIG.in_stock;
-  const pct = min > 0 ? Math.min(Math.round((current / min) * 100), 999) : current > 0 ? 100 : 0;
   return (
     <TooltipProvider>
       <Tooltip>
@@ -235,14 +234,12 @@ export function StockStatusChip({
           >
             {cfg.icon}
             {showLabel && <span>{cfg.label}</span>}
-            <span className="text-[10px] tabular-nums opacity-80">· {pct}%</span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-0.5 text-xs">
             <p>
-              <strong>{current.toLocaleString('pt-BR')}</strong> em estoque · mínimo{' '}
-              <strong>{min.toLocaleString('pt-BR')}</strong>
+              <strong>{current.toLocaleString('pt-BR')}</strong> un. em estoque
             </p>
             {reserved > 0 && (
               <p className="text-warning">{reserved.toLocaleString('pt-BR')} reservadas</p>
@@ -277,65 +274,3 @@ export function StockStatusChip({
   );
 }
 
-// ============================================
-// StockProgressBar — barra de progresso com tooltip de detalhe
-// ============================================
-
-export function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
-  const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
-
-  const PROGRESS_PRESENTATION: Record<string, { label: string; color: string }> = {
-    out_of_stock: { label: 'Esgotado', color: 'bg-destructive' },
-    critical: { label: 'Crítico', color: 'bg-destructive' },
-    low_stock: { label: 'Estoque baixo', color: 'bg-warning' },
-    in_stock: { label: 'OK', color: 'bg-success' },
-    incoming: { label: 'Chegando', color: 'bg-warning' },
-    overstocked: { label: 'OK', color: 'bg-success' },
-  };
-  const { label: statusLabel, color: progressColor } =
-    PROGRESS_PRESENTATION[calculateStockStatus(current, min)] ?? PROGRESS_PRESENTATION.in_stock;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="w-28 cursor-help space-y-0.5">
-            <Progress value={percentage} className="h-2" indicatorClassName={progressColor} />
-            <div className="flex justify-between">
-              <span
-                className={cn(
-                  'text-[9px] tabular-nums',
-                  percentage <= 25
-                    ? 'text-destructive'
-                    : percentage <= 100
-                      ? 'text-warning'
-                      : 'text-success',
-                )}
-              >
-                {Math.round(percentage)}%
-              </span>
-              <span className="text-[9px] text-muted-foreground">{statusLabel}</span>
-            </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="space-y-1 text-xs">
-            <p>
-              <span className="font-semibold">{Math.round(percentage)}%</span> do estoque mínimo
-            </p>
-            <p className="text-muted-foreground">
-              Atual: <strong>{current.toLocaleString('pt-BR')}</strong> / Mínimo:{' '}
-              <strong>{min.toLocaleString('pt-BR')}</strong> un.
-            </p>
-            {current <= min && current > 0 && (
-              <p className="text-warning">⚠️ Abaixo do nível mínimo — considere reabastecer</p>
-            )}
-            {current <= 0 && (
-              <p className="text-destructive">🚨 Estoque zerado — reposição urgente necessária</p>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
