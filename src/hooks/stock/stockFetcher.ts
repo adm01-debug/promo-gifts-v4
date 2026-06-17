@@ -52,13 +52,20 @@ interface ExternalSupplierSource {
   supplier_id?: string;
   supplier_sku?: string;
   quantity: number;
-  reserved_quantity?: number;
+  // NOTA: a camada Ouro (variant_supplier_sources) NÃO possui coluna
+  // reserved_quantity. Reservas não são rastreadas aqui; availableStock == current.
   next_quantity_1?: number | null;
   next_date_1?: string | null;
   next_quantity_2?: number | null;
   next_date_2?: string | null;
   next_quantity_3?: number | null;
   next_date_3?: string | null;
+  next_quantity_4?: number | null;
+  next_date_4?: string | null;
+  next_quantity_5?: number | null;
+  next_date_5?: string | null;
+  next_quantity_6?: number | null;
+  next_date_6?: string | null;
   is_active?: boolean;
   updated_at?: string;
 }
@@ -80,10 +87,19 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   filters?: Record<string, unknown>,
 ): Promise<T[]> {
   // PostgREST nativo (Caminho B). A `external-db-bridge` foi descontinuada (410 Gone).
+  //
+  // BUG-STOCK-04 FIX — Paginação por KEYSET (cursor em `id`), não offset/range.
+  // Raiz da contagem de variações inflada no dashboard (ex.: 22.620 vs ~18.4k):
+  // o PostgREST NÃO garante ordem estável entre requisições HTTP separadas.
+  // Com `.range()` e sem `.order()`, durante uma janela de escrita (sync de
+  // fornecedor XBZ/SPOT em product_variants) as páginas se sobrepõem → linhas
+  // duplicadas/saltadas → totais errados. Keyset (`order(id)` + `id > lastId`)
+  // é imune a reordenação de linhas existentes e a inserts concorrentes; o
+  // Set `seen` é cinto-e-suspensório contra qualquer duplicata residual.
   const all: T[] = [];
-  let offset = 0;
+  const seen = new Set<string>();
+  let lastId: string | null = null;
   let totalCount: number | null = null;
-  let lastFirstId: string | undefined;
 
   // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).
   const resolvedTable = (GOLD_READ_ALIASES as Record<string, string>)[table] ?? table;
@@ -91,7 +107,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   while (all.length < maxRecords) {
     let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(
       select,
-      offset === 0 ? { count: 'exact' } : undefined,
+      lastId === null ? { count: 'exact' } : undefined,
     );
 
     if (filters) {
@@ -102,7 +118,9 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
       }
     }
 
-    query = query.range(offset, offset + pageSize - 1);
+    // Cursor estável: ordena por id e busca a próxima página após o último id visto.
+    query = query.order('id', { ascending: true }).limit(pageSize);
+    if (lastId !== null) query = query.gt('id', lastId);
 
     const { data, error, count } = await query;
     if (error) {
@@ -123,23 +141,26 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     }
 
     const records = (data ?? []) as unknown as T[];
-    if (offset === 0 && typeof count === 'number') totalCount = count;
-
+    if (lastId === null && typeof count === 'number') totalCount = count;
     if (records.length === 0) break;
-    if (records[0]?.id === lastFirstId) {
-      logger.warn(`[Stock] Paginacao ignorando offset em ${table}; parando.`);
-      break;
+
+    for (const r of records) {
+      const rid = r?.id;
+      if (rid && !seen.has(rid)) {
+        seen.add(rid);
+        all.push(r);
+      }
     }
-    lastFirstId = records[0]?.id;
 
-    all.push(...records);
-    offset += records.length;
+    const nextCursor = records[records.length - 1]?.id ?? null;
+    // Segurança: se o cursor não avançou, paramos para não loopar.
+    if (nextCursor === null || nextCursor === lastId) break;
+    lastId = nextCursor;
 
-    if (totalCount !== null && offset >= totalCount) break;
-    if (totalCount === null && records.length < pageSize) break;
+    if (records.length < pageSize) break;
   }
 
-  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros`);
+  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros (keyset)`);
   return all;
 }
 
@@ -173,6 +194,26 @@ function buildFutureEntries(
       q: supplierSource.next_quantity_3,
       d: supplierSource.next_date_3,
       suffix: '3',
+      status: 'pending' as const,
+    },
+    // BUG-STOCK-03 FIX: a schema tem next_quantity_4..6 / next_date_4..6.
+    // Antes só liamos 1..3, sumindo reposições futuras dos slots 4-6.
+    {
+      q: supplierSource.next_quantity_4,
+      d: supplierSource.next_date_4,
+      suffix: '4',
+      status: 'pending' as const,
+    },
+    {
+      q: supplierSource.next_quantity_5,
+      d: supplierSource.next_date_5,
+      suffix: '5',
+      status: 'pending' as const,
+    },
+    {
+      q: supplierSource.next_quantity_6,
+      d: supplierSource.next_date_6,
+      suffix: '6',
       status: 'pending' as const,
     },
   ];
@@ -228,7 +269,7 @@ export async function fetchAndProcessStockData(): Promise<{
     ),
     fetchPaginatedFromBridge<ExternalSupplierSource>(
       'variant_supplier_sources',
-      'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,is_active,updated_at',
+      'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,next_quantity_4,next_date_4,next_quantity_5,next_date_5,next_quantity_6,next_date_6,is_active,updated_at',
       1000,
       100000,
       { is_active: true },
@@ -340,13 +381,22 @@ export async function fetchAndProcessStockData(): Promise<{
         // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
         // Use nullish coalescing to preserve intentional zero.
         const minStock = product.min_quantity ?? 10;
-        const reservedStock = supplierSource ? toNumber(supplierSource.reserved_quantity, 0) : 0;
+        // Reservas não existem na camada Ouro (sem coluna reserved_quantity).
+        const reservedStock = 0;
         let inTransitStock = 0;
 
         if (supplierSource) {
-          if (supplierSource.next_quantity_1) inTransitStock += supplierSource.next_quantity_1;
-          if (supplierSource.next_quantity_2) inTransitStock += supplierSource.next_quantity_2;
-          if (supplierSource.next_quantity_3) inTransitStock += supplierSource.next_quantity_3;
+          // Soma apenas quantidades futuras positivas (defensivo: ignora 0/negativos/NaN),
+          // cobrindo os 6 slots de previsão da schema.
+          const addInTransit = (n?: number | null) => {
+            if (typeof n === 'number' && Number.isFinite(n) && n > 0) inTransitStock += n;
+          };
+          addInTransit(supplierSource.next_quantity_1);
+          addInTransit(supplierSource.next_quantity_2);
+          addInTransit(supplierSource.next_quantity_3);
+          addInTransit(supplierSource.next_quantity_4);
+          addInTransit(supplierSource.next_quantity_5);
+          addInTransit(supplierSource.next_quantity_6);
           futureEntries.push(
             ...buildFutureEntries(
               supplierSource,
