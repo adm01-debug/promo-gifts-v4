@@ -577,8 +577,14 @@ export function StockDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertCircle className="h-5 w-5" />
-                Outros Alertas ({infoAlerts.length})
+                Outros Alertas
+                <Badge variant="secondary" className="ml-1 text-xs font-normal">
+                  {infoAlerts.length > 10
+                    ? `exibindo 10 de ${infoAlerts.length.toLocaleString('pt-BR')}`
+                    : `${infoAlerts.length}`}
+                </Badge>
               </CardTitle>
+
               <Button
                 variant="ghost"
                 size="sm"
