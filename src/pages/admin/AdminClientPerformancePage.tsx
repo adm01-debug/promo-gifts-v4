@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,22 +52,34 @@ export default function AdminClientPerformancePage() {
     setTick((t) => t + 1);
   };
 
-  const routeMetrics = metrics.filter((m) => m.name.startsWith('Route:'));
-  const themeMetrics = metrics.filter((m) => m.name.startsWith('Theme:'));
+  const routeMetrics = useMemo(() => metrics.filter((m) => m.name.startsWith('Route:')), [metrics]);
+  const themeMetrics = useMemo(() => metrics.filter((m) => m.name.startsWith('Theme:')), [metrics]);
 
-  const avgRouteTime = routeMetrics.length
-    ? routeMetrics.reduce((acc, m) => acc + m.duration, 0) / routeMetrics.length
-    : 0;
+  const avgRouteTime = useMemo(
+    () =>
+      routeMetrics.length
+        ? routeMetrics.reduce((acc, m) => acc + m.duration, 0) / routeMetrics.length
+        : 0,
+    [routeMetrics],
+  );
 
-  const avgThemeTime = themeMetrics.length
-    ? themeMetrics.reduce((acc, m) => acc + m.duration, 0) / themeMetrics.length
-    : 0;
+  const avgThemeTime = useMemo(
+    () =>
+      themeMetrics.length
+        ? themeMetrics.reduce((acc, m) => acc + m.duration, 0) / themeMetrics.length
+        : 0,
+    [themeMetrics],
+  );
 
-  const chartData = metrics.map((m) => ({
-    ...m,
-    time: format(m.timestamp, 'HH:mm:ss'),
-    shortName: m.name.replace('Route: ', '').replace('Theme: ', ''),
-  }));
+  const chartData = useMemo(
+    () =>
+      metrics.map((m) => ({
+        ...m,
+        time: format(m.timestamp, 'HH:mm:ss'),
+        shortName: m.name.replace('Route: ', '').replace('Theme: ', ''),
+      })),
+    [metrics],
+  );
 
   return (
     <>
