@@ -23,6 +23,8 @@ import {
 import { PageSEO } from '@/components/seo/PageSEO';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 type CfSyncStatus = 'pending' | 'syncing' | 'verified' | 'failed' | 'skipped';
 
@@ -317,6 +319,7 @@ export default function AdminCloudflareImagesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-14">Imagem</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Produto</TableHead>
                     <TableHead>CF Image ID</TableHead>
@@ -328,20 +331,36 @@ export default function AdminCloudflareImagesPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                         <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
                         Carregando imagens...
                       </TableCell>
                     </TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                         Nenhuma imagem encontrada
                       </TableCell>
                     </TableRow>
                   ) : (
                     filtered.slice(0, 500).map((img) => (
                       <TableRow key={img.id}>
+                        <TableCell>
+                          {img.url_cdn ? (
+                            <div className="h-10 w-10 overflow-hidden rounded-md border border-border/50 bg-muted/30">
+                              <OptimizedImage
+                                src={getCdnUrl(img.url_cdn, 'thumbnail')}
+                                alt={img.alt_text ?? ''}
+                                className="object-contain"
+                                containerClassName="h-full w-full"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/20">
+                              <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <StatusBadge status={img.cf_sync_status} />
                         </TableCell>
