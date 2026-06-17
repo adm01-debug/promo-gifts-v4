@@ -279,7 +279,7 @@ export function estimateDefaultDimensions(category?: string): {
   height: number;
   depth: number;
 } {
-  const categoryLower = (category || '').toLowerCase();
+  const categoryLower = (category ?? '').toLowerCase();
 
   // Estimativas baseadas em categorias comuns
   if (categoryLower.includes('caneta') || categoryLower.includes('pen')) {

@@ -228,16 +228,16 @@ export function ProductKitComponentsSection({
                 <ComponentForm
                   key={comp.id}
                   initial={{
-                    component_name: comp.component_name || '',
-                    component_type_code: comp.component_type_code || '',
-                    component_code: comp.component_code || '',
-                    component_sku: comp.component_sku || '',
-                    supplier_component_code: comp.supplier_component_code || '',
-                    component_description: comp.component_description || '',
+                    component_name: comp.component_name ?? '',
+                    component_type_code: comp.component_type_code ?? '',
+                    component_code: comp.component_code ?? '',
+                    component_sku: comp.component_sku ?? '',
+                    supplier_component_code: comp.supplier_component_code ?? '',
+                    component_description: comp.component_description ?? '',
                     quantity: comp.quantity ?? 1,
                     display_order: comp.display_order ?? 0,
-                    material: comp.material || '',
-                    color: comp.color || '',
+                    material: comp.material ?? '',
+                    color: comp.color ?? '',
                     height_mm: comp.height_mm,
                     width_mm: comp.width_mm,
                     length_mm: comp.length_mm,
@@ -246,9 +246,9 @@ export function ProductKitComponentsSection({
                     is_packaging: comp.is_packaging ?? false,
                     is_replaceable: comp.is_replaceable ?? false,
                     allows_personalization: comp.allows_personalization ?? true,
-                    personalization_notes: comp.personalization_notes || '',
-                    primary_image_url: comp.primary_image_url || '',
-                    notes: comp.notes || '',
+                    personalization_notes: comp.personalization_notes ?? '',
+                    primary_image_url: comp.primary_image_url ?? '',
+                    notes: comp.notes ?? '',
                   }}
                   onSave={(data) => handleUpdate(comp.id, data)}
                   onCancel={() => setEditingId(null)}
@@ -268,7 +268,7 @@ export function ProductKitComponentsSection({
                   {comp.primary_image_url ? (
                     <img
                       src={comp.primary_image_url}
-                      alt={comp.component_name || ''}
+                      alt={comp.component_name ?? ''}
                       className="h-10 w-10 shrink-0 rounded-md border bg-muted/30 object-contain"
                       loading="lazy"
                     />
@@ -343,13 +343,13 @@ export function ProductKitComponentsSection({
                 {comp.allows_personalization && (
                   <PrintAreasManager
                     componentId={comp.id}
-                    componentName={comp.component_name || ''}
+                    componentName={comp.component_name ?? ''}
                   />
                 )}
                 <ComponentMediaManager
                   componentId={comp.id}
                   productId={productId}
-                  componentName={comp.component_name || ''}
+                  componentName={comp.component_name ?? ''}
                 />
               </div>
             );

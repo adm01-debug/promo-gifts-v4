@@ -175,7 +175,7 @@ export function MockupConfigPanel({
               }
             >
               <Select
-                value={selectedTechnique?.id || ''}
+                value={selectedTechnique?.id ?? ''}
                 onValueChange={(value) => {
                   const technique = filteredTechniques.find((t) => t.id === value);
                   onTechniqueSelect(technique || null);
@@ -312,7 +312,7 @@ export function MockupConfigPanel({
               }
             >
               <ArtFileUpload
-                userId={userId || ''}
+                userId={userId ?? ''}
                 attachments={artAttachments}
                 onAttachmentsChange={onArtAttachmentsChange}
               />

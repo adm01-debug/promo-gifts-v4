@@ -110,10 +110,10 @@ export function QuoteProductCustomization({
         productId={productId}
         quantity={quantity}
         initialPersonalizations={existingPersonalizations.map((p) => ({
-          locationCode: p.location_code || '',
-          locationName: p.location_name || '',
+          locationCode: p.location_code ?? '',
+          locationName: p.location_name ?? '',
           techniqueId: p.technique_id,
-          techniqueName: p.technique_name || '',
+          techniqueName: p.technique_name ?? '',
           codigoTabela: '', // Not strictly needed for UI persistence if techniqueId matches
           grupoTecnica: '',
           width: p.width_cm,
@@ -126,7 +126,7 @@ export function QuoteProductCustomization({
             valor_gravacao: (p.unit_cost || 0) * quantity,
             setup_total: p.setup_cost || 0,
             total_cobrado: p.total_cost || 0,
-            nome_tabela: p.technique_name || '',
+            nome_tabela: p.technique_name ?? '',
             quantidade: quantity,
             num_cores: p.colors_count || 1,
             faixa: { qtd_min: 0, qtd_max: 9999 }, // Placeholder

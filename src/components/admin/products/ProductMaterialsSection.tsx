@@ -40,11 +40,11 @@ function MaterialDetailEditor({
   onSave: (data: { part: string; percentage: number | null; notes: string }) => void;
   onCancel: () => void;
 }) {
-  const [part, setPart] = useState(linked.part || '');
+  const [part, setPart] = useState(linked.part ?? '');
   const [percentage, setPercentage] = useState<string>(
     linked.percentage !== null ? String(linked.percentage) : '',
   );
-  const [notes, setNotes] = useState(linked.notes || '');
+  const [notes, setNotes] = useState(linked.notes ?? '');
 
   return (
     <div className="ml-7 mt-1 flex items-center gap-2">

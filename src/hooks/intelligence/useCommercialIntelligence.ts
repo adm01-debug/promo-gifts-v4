@@ -308,13 +308,13 @@ export function useTrendingProducts(
         if (searchTerm) {
           const q = searchTerm.toLowerCase();
           if (
-            !(item.product_name || '').toLowerCase().includes(q) &&
-            !(item.product_sku || '').toLowerCase().includes(q)
+            !(item.product_name ?? '').toLowerCase().includes(q) &&
+            !(item.product_sku ?? '').toLowerCase().includes(q)
           )
             return;
         }
         const existing = productMap.get(key) || {
-          productId: item.product_id || '',
+          productId: item.product_id ?? '',
           productSku: item.product_sku,
           productName: item.product_name || 'Produto',
           productImage: item.product_image_url,
@@ -452,14 +452,14 @@ export function useOpportunities(
         { count: number; name: string; sku: string | null; image: string | null; id: string }
       >();
       quoteItems.forEach((item) => {
-        const key = item.product_sku || item.product_id || '';
+        const key = item.product_sku || (item.product_id ?? '');
         if (!key) return;
         const e = quoteMap.get(key) || {
           count: 0,
-          name: item.product_name || '',
+          name: item.product_name ?? '',
           sku: item.product_sku,
           image: item.product_image_url,
-          id: item.product_id || '',
+          id: item.product_id ?? '',
         };
         e.count += 1;
         quoteMap.set(key, e);
@@ -467,7 +467,7 @@ export function useOpportunities(
 
       const orderCountMap = new Map<string, number>();
       orderItems?.forEach((item) => {
-        const key = item.product_sku || item.product_id || '';
+        const key = item.product_sku || (item.product_id ?? '');
         if (key) orderCountMap.set(key, (orderCountMap.get(key) || 0) + 1);
       });
 
@@ -583,14 +583,14 @@ export function useCategoryRanking(
       const products = await fetchPromobrindProducts({ limit: 5000 });
       const productCategoryMap = new Map<string, { catId: string; catName: string }>();
       products.forEach((p) => {
-        const catId = p.category_id || p.main_category_id || '';
+        const catId = p.category_id || (p.main_category_id ?? '');
         const catName = p.category_name || catId || 'Sem categoria';
         if (catId) productCategoryMap.set(p.id, { catId, catName });
       });
 
       const categoryMap = new Map<string, CategoryRankingItem>();
       (orderItems ?? []).forEach((item) => {
-        const cat = productCategoryMap.get(item.product_id || '');
+        const cat = productCategoryMap.get(item.product_id ?? '');
         if (!cat) return;
         const e = categoryMap.get(cat.catId) || {
           categoryId: cat.catId,
@@ -691,7 +691,7 @@ export function useSupplierSales(
         { orderCount: number; revenue: number; products: Set<string> }
       >();
       orderItems.forEach((item) => {
-        const supplier = productSupplierMap.get(item.product_id || '') || 'Sem fornecedor';
+        const supplier = productSupplierMap.get(item.product_id ?? '') || 'Sem fornecedor';
         const e = supplierMap.get(supplier) || {
           orderCount: 0,
           revenue: 0,

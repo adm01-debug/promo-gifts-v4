@@ -51,9 +51,9 @@ function isElementVisiblyEmpty(el: HTMLElement): boolean {
   const style = getComputedStyle(el);
   if (parseFloat(style.opacity || '1') < 0.05) return true;
   if (style.visibility === 'hidden') return true;
-  const bg = style.backgroundColor || '';
+  const bg = style.backgroundColor ?? '';
   const transparentBg = bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)' || bg === '';
-  const hasText = (el.textContent || '').trim().length > 0;
+  const hasText = (el.textContent ?? '').trim().length > 0;
   return transparentBg && !hasText;
 }
 

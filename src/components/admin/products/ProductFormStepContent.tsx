@@ -125,7 +125,7 @@ export function ProductFormStepContent({
             errors={errors}
             productId={productId}
             isEdit={isEdit}
-            primarySupplierName={formValues.brand || ''}
+            primarySupplierName={formValues.brand ?? ''}
           />
           <ProductInfoSection
             {...formProps}
@@ -147,7 +147,7 @@ export function ProductFormStepContent({
             subtitle="Classificação principal do produto no catálogo"
           >
             <CategoryCascadeSelector
-              value={formValues.category_id || ''}
+              value={formValues.category_id ?? ''}
               onChange={(id) => setValue('category_id', id)}
               error={errors.category_id?.message}
             />
@@ -216,7 +216,7 @@ export function ProductFormStepContent({
             isEdit={isEdit}
             productName={formValues.name}
             productSku={formValues.sku}
-            gender={formValues.gender || ''}
+            gender={formValues.gender ?? ''}
             onGenderChange={(v) => setValue('gender', v)}
           />
         </Suspense>
@@ -268,7 +268,7 @@ export function ProductFormStepContent({
           {formValues.is_kit && (
             <Suspense fallback={<SectionSkeleton />}>
               <ProductKitComponentsSection
-                productId={productId || ''}
+                productId={productId ?? ''}
                 boxInternalDimensions={{
                   height_cm: formValues.internal_height_cm ?? null,
                   width_cm: formValues.internal_width_cm ?? null,

@@ -74,7 +74,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     images = (p.images as (string | Record<string, string>)[])
       .map((img) => {
         if (typeof img === 'string') return img;
-        return img.url || img.src || img.image_url || '';
+        return img.url || img.src || (img.image_url ?? '');
       })
       .filter(Boolean);
   }
@@ -202,7 +202,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           productId: c.component_product_id || c.id,
           productName: c.component_name || 'Componente',
           quantity: c.quantity || 1,
-          sku: c.component_sku || c.component_code || '',
+          sku: c.component_sku || (c.component_code ?? ''),
           imageUrl: c.primary_image_url || null,
           isOptional: c.is_optional || false,
           isPackaging: c.is_packaging || false,

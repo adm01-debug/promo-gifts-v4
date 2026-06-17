@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function ProposalHeader({ data, isContinuation }: Props) {
-  const quoteNumber = (data.quoteNumber || '').replace(/\s+/g, '');
+  const quoteNumber = (data.quoteNumber ?? '').replace(/\s+/g, '');
   if (isContinuation) {
     return (
       <div style={{ width: '794px', height: '64px', flexShrink: 0, position: 'relative' }}>

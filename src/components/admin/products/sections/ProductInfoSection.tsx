@@ -33,11 +33,11 @@ export function ProductInfoSection({
   skuManuallyEdited,
   onSkuManualEdit,
 }: Props) {
-  const nameValue = watch('name') || '';
-  const skuValue = watch('sku') || '';
-  const supplierRefValue = watch('supplier_reference') || '';
-  const descValue = watch('description') || '';
-  const shortDescValue = watch('short_description') || '';
+  const nameValue = watch('name') ?? '';
+  const skuValue = watch('sku') ?? '';
+  const supplierRefValue = watch('supplier_reference') ?? '';
+  const descValue = watch('description') ?? '';
+  const shortDescValue = watch('short_description') ?? '';
 
   return (
     <SectionCard
@@ -231,7 +231,7 @@ export function ProductInfoSection({
             Modo de Fornecimento
           </FieldLabel>
           <Select
-            value={watch?.('supply_mode') || ''}
+            value={watch?.('supply_mode') ?? ''}
             onValueChange={(v) => setValue?.('supply_mode', v)}
           >
             <SelectTrigger className="h-9">

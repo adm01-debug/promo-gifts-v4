@@ -2,7 +2,7 @@ import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
 
 export function ProposalClientBar({ data }: { data: ProposalTemplateData }) {
   const company = data.client.company || data.client.name;
-  const contact = data.client.contactName || '';
+  const contact = data.client.contactName ?? '';
 
   return (
     <div

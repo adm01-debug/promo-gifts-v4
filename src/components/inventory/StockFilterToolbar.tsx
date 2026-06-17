@@ -76,7 +76,7 @@ export function StockFilterToolbar({
   filteredCount,
 }: StockFilterToolbarProps) {
   const [localSearch, setLocalSearch] = useState(filters.search);
-  const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() || '');
+  const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
@@ -275,7 +275,7 @@ export function StockFilterToolbar({
                       Mínimo por cor
                     </span>
                     <DebouncedPriceInput
-                      value={filters.minQuantityNeeded || ''}
+                      value={filters.minQuantityNeeded ?? ''}
                       onChange={(v) => onUpdateFilter('minQuantityNeeded', v > 0 ? v : undefined)}
                       fallback={0}
                       placeholder="Ex: 500"

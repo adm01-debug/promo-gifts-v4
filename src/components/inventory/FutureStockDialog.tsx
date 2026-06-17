@@ -408,7 +408,7 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
           cmp = a.expectedQuantity - b.expectedQuantity;
           break;
         case 'product':
-          cmp = (a.productName || '').localeCompare(b.productName || '');
+          cmp = (a.productName ?? '').localeCompare(b.productName ?? '');
           break;
         case 'status': {
           cmp = (STATUS_SORT_ORDER[a.status] ?? 4) - (STATUS_SORT_ORDER[b.status] ?? 4);

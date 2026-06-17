@@ -374,7 +374,7 @@ export async function fetchPromobrindProductById(
         const entry: ColorEntry = {
           name: variant.color_name,
           hex: variant.color_hex || '#CCCCCC',
-          code: variant.color_code || '',
+          code: variant.color_code ?? '',
           sku: variant.sku || undefined,
           stock: variant.stock_quantity ?? undefined,
           image: thumb || undefined,

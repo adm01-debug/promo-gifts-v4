@@ -153,7 +153,7 @@ export function SortableProductItem({
           >
             <Input
               placeholder="Nota de venda (ex: cliente gosta deste modelo)..."
-              defaultValue={notes || ''}
+              defaultValue={notes ?? ''}
               onBlur={(e) => onNotesChange(e.target.value)}
               className="ml-[76px] h-8 text-xs"
             />

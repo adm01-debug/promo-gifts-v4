@@ -50,7 +50,7 @@ export function ProductVariantSelector({
     }
     // Sort sizes within each group
     for (const [, group] of map) {
-      group.sort((a, b) => sizeSort(a.size_code || '', b.size_code || ''));
+      group.sort((a, b) => sizeSort(a.size_code ?? '', b.size_code ?? ''));
     }
     return map;
   }, [variants, hasSizes]);

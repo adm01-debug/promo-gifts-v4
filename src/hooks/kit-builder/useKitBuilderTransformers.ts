@@ -63,7 +63,7 @@ export function transformToKitBox(product: ExternalProductForKit): KitBox | null
 
   // Estimate max weight based on material
   let maxWeight: number | undefined;
-  const mat = resolveProductMaterial(product)?.toLowerCase() || '';
+  const mat = resolveProductMaterial(product)?.toLowerCase() ?? '';
   if (mat.includes('micro') || mat.includes('papelão')) maxWeight = 2000;
   else if (mat.includes('kraft') || mat.includes('cartão')) maxWeight = 3000;
   else if (mat.includes('madeira') || mat.includes('mdf')) maxWeight = 10000;

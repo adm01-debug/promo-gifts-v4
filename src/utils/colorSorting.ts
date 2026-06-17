@@ -338,8 +338,8 @@ export function sortByColorGroup<T>(
   if (!items || items.length === 0) return [];
 
   return [...items].sort((a, b) => {
-    const nameA = getColorName(a) || '';
-    const nameB = getColorName(b) || '';
+    const nameA = getColorName(a) ?? '';
+    const nameB = getColorName(b) ?? '';
 
     const groupA = getColorGroup(nameA);
     const groupB = getColorGroup(nameB);
@@ -386,7 +386,7 @@ export function sortVariationsByColor<T extends { color: { name: string; hex?: s
 
   return sortByColorGroup(
     variations,
-    (v) => v.color?.name || '',
+    (v) => v.color?.name ?? '',
     (v) => v.color?.hex,
   );
 }
@@ -401,7 +401,7 @@ export function sortColorSummary<T extends { name: string; hex?: string | null }
 
   return sortByColorGroup(
     colors,
-    (c) => c.name || '',
+    (c) => c.name ?? '',
     (c) => c.hex ?? undefined,
   );
 }

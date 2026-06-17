@@ -25,7 +25,7 @@ export function noveltyToProduct(n: NoveltyWithDetails): Product {
     price: n.base_price || 0,
     image_url: n.product_image || undefined,
     images: n.product_image ? [n.product_image] : [],
-    sku: n.product_sku || '',
+    sku: n.product_sku ?? '',
     // FIX: usar estoque real da novidade (antes era hardcoded 0, contradizendo
     // stockStatus 'in-stock'). stock_quantity e stock_status vêm de toNovelty().
     stock: n.stock_quantity,
@@ -42,8 +42,8 @@ export function noveltyToProduct(n: NoveltyWithDetails): Product {
     onSale: false,
     isKit: false,
     gender: null,
-    category: { id: n.category_id || '', name: n.category_name || '' },
-    supplier: { id: n.supplier_id || '', name: n.supplier_name || '' },
+    category: { id: n.category_id ?? '', name: n.category_name ?? '' },
+    supplier: { id: n.supplier_id ?? '', name: n.supplier_name ?? '' },
     tags: {
       publicoAlvo: [],
       datasComemorativas: [],

@@ -292,8 +292,8 @@ export default function QuotesListPage() {
                       ],
                       data: selected.map((q) => ({
                         Número: q.quote_number,
-                        Empresa: q.client_company || '',
-                        Contato: q.client_name || '',
+                        Empresa: q.client_company ?? '',
+                        Contato: q.client_name ?? '',
                         Status: q.status,
                         Valor: q.total || 0,
                         Data: q.created_at ? format(new Date(q.created_at), 'dd/MM/yyyy') : '',

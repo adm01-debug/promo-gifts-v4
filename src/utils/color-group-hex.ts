@@ -40,20 +40,20 @@ export function resolveHighlightHex(
 ): string | null {
   if (activeColorFilter) {
     if (activeColorFilter.groups.length > 0) {
-      const match = productColors.find((c) => activeColorFilter.groups.includes(c.groupSlug || ''));
+      const match = productColors.find((c) => activeColorFilter.groups.includes(c.groupSlug ?? ''));
       if (match?.hex) return match.hex;
       const groupKey = activeColorFilter.groups.find((g) => COLOR_GROUP_HEX[g]);
       if (groupKey) return COLOR_GROUP_HEX[groupKey];
     }
     if (activeColorFilter.variations.length > 0) {
       const match = productColors.find((c) =>
-        activeColorFilter.variations.includes(c.variationSlug || ''),
+        activeColorFilter.variations.includes(c.variationSlug ?? ''),
       );
       if (match?.hex) return match.hex;
     }
   }
   if (highlightColors?.length) {
-    const match = productColors.find((c) => highlightColors.includes(c.group || ''));
+    const match = productColors.find((c) => highlightColors.includes(c.group ?? ''));
     if (match?.hex) return match.hex;
   }
   return null;

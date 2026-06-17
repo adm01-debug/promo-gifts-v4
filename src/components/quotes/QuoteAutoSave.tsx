@@ -126,7 +126,7 @@ export function QuoteAutoSave({
         const key = localStorage.key(i);
         if (key?.startsWith(storageKey + '_v')) {
           try {
-            existingDrafts.push(JSON.parse(localStorage.getItem(key) || '') as QuoteDraft);
+            existingDrafts.push(JSON.parse(localStorage.getItem(key) ?? '') as QuoteDraft);
           } catch {
             localStorage.removeItem(key);
           }

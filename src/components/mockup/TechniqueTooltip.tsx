@@ -113,7 +113,7 @@ const TECHNIQUE_INFO: Record<
 };
 
 function getTechniqueInfo(technique: Technique) {
-  const code = (technique.code || technique.name || '').toLowerCase();
+  const code = (technique.code || (technique.name ?? '')).toLowerCase();
 
   for (const [key, value] of Object.entries(TECHNIQUE_INFO)) {
     if (code.includes(key)) {

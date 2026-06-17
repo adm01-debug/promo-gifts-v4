@@ -52,7 +52,7 @@ describe('Color Variation Layout Consistency', () => {
     await waitFor(
       () => {
         // Check for the text inside the tooltip
-        const tooltipText = document.body.textContent || '';
+        const tooltipText = document.body.textContent ?? '';
         expect(tooltipText).toContain('Vermelho');
       },
       { timeout: 2000 },

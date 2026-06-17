@@ -126,7 +126,7 @@ export function SecurityDashboard() {
                 <span className="text-sm font-medium">Gerenciar segurança de:</span>
               </div>
               <Select
-                value={selectedUserId || user?.id || ''}
+                value={selectedUserId || (user?.id ?? '')}
                 onValueChange={(v) => setSelectedUserId(v === user?.id ? null : v)}
               >
                 <SelectTrigger className="w-[500px] bg-background">

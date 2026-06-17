@@ -115,7 +115,7 @@ export async function exportToExcel(data: ExportData) {
 
   // Auto-adjust column widths
   const colWidths = Object.keys(rows[0] || {}).map((key) => ({
-    wch: Math.max(key.length, ...rows.map((row) => String(row[key] || '').length)) + 2,
+    wch: Math.max(key.length, ...rows.map((row) => String(row[key] ?? '').length)) + 2,
   }));
   worksheet['!cols'] = colWidths;
 

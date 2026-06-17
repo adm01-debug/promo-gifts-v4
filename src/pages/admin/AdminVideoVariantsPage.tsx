@@ -45,7 +45,7 @@ export default function AdminVideoVariantsPage() {
         (l) =>
           !productFilter ||
           l.product_id.toLowerCase().includes(productFilter.toLowerCase()) ||
-          (l.variant_name || '').toLowerCase().includes(productFilter.toLowerCase()),
+          (l.variant_name ?? '').toLowerCase().includes(productFilter.toLowerCase()),
       ),
     [links, productFilter],
   );

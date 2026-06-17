@@ -253,7 +253,7 @@ export default function ProductEngravingSection({ productId, isEdit, engravingFl
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {techs.map((tech) => {
-                    const code = tech.codigo_curto || tech.grupo_tecnica || '';
+                    const code = tech.codigo_curto || (tech.grupo_tecnica ?? '');
                     return (
                       <button
                         key={tech.id}
@@ -328,7 +328,7 @@ export default function ProductEngravingSection({ productId, isEdit, engravingFl
           </Badge>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
           <Badge className="gap-1 border-primary/30 bg-primary/15 text-[10px] text-primary">
-            {getTechniqueIcon(w.selectedTechnique?.codigo_curto || '')} {w.selectedTechnique?.nome}
+            {getTechniqueIcon(w.selectedTechnique?.codigo_curto ?? '')} {w.selectedTechnique?.nome}
           </Badge>
         </div>
         {(maxCores || custoSetup) && (

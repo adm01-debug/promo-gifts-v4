@@ -231,7 +231,7 @@ export const ProductTableView = memo(function ProductTableView({
       if (!batch || batch.length === 0) return p;
       return {
         ...p,
-        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+        colors: batch.map((c) => ({ name: c.name, hex: c.hex ?? '', group: '' })),
       };
     });
   }, [products, colorsByProduct]);
@@ -259,13 +259,13 @@ export const ProductTableView = memo(function ProductTableView({
         case 'name':
           return dir * a.name.localeCompare(b.name);
         case 'sku':
-          return dir * (a.sku || '').localeCompare(b.sku || '');
+          return dir * (a.sku ?? '').localeCompare(b.sku ?? '');
         case 'price':
           return dir * (a.price - b.price);
         case 'stock':
           return dir * ((a.stock || 0) - (b.stock || 0));
         case 'supplier':
-          return dir * (a.supplier?.name || '').localeCompare(b.supplier?.name || '');
+          return dir * (a.supplier?.name ?? '').localeCompare(b.supplier?.name ?? '');
         default:
           return 0;
       }
@@ -330,7 +330,7 @@ export const ProductTableView = memo(function ProductTableView({
         const params = new URLSearchParams({
           product_id: variantPickerProduct.id,
           product_name: variantPickerProduct.name,
-          product_sku: variantPickerProduct.sku || '',
+          product_sku: variantPickerProduct.sku ?? '',
           product_price: String(variantPickerProduct.price ?? 0),
         });
         if (variant?.color_name) params.set('color_name', variant.color_name);

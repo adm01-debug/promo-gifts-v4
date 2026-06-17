@@ -355,7 +355,7 @@ export function useMockupGenerator() {
         code: r.codigo_curto ?? r.codigo_tabela ?? r.code ?? r.codigo ?? null,
       }));
       techniquesData.sort((a: Technique, b: Technique) =>
-        (a.name || '').localeCompare(b.name || ''),
+        (a.name ?? '').localeCompare(b.name ?? ''),
       );
       setTechniques(techniquesData);
     } catch (error) {

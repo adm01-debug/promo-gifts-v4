@@ -31,9 +31,9 @@ export function useCatalogSelection(
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // BUG-CS-12: Stale ID removal must not drop products that were already loaded 
+  // BUG-CS-12: Stale ID removal must not drop products that were already loaded
   // and selected just because they are currently off-screen in the virtualized grid.
-  // We only remove IDs if they are confirmed as no longer available in the whole 
+  // We only remove IDs if they are confirmed as no longer available in the whole
   // catalog data or if selection mode was exited (handled above).
   //
   // Note: paginatedProducts here corresponds to the current viewport slice.
@@ -95,9 +95,9 @@ export function useCatalogSelection(
                 JSON.stringify({
                   product_id: s.product.id,
                   product_name: s.product.name,
-                  product_sku: s.product.sku || '',
+                  product_sku: s.product.sku ?? '',
                   product_price: s.product.price,
-                  product_image: s.variant?.selected_thumbnail || s.product.images?.[0] || '',
+                  product_image: s.variant?.selected_thumbnail || (s.product.images?.[0] ?? ''),
                   quantity: 1,
                   color_name: s.variant?.color_name || null,
                   color_hex: s.variant?.color_hex || null,

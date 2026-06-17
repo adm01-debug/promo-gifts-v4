@@ -136,7 +136,7 @@ export function GalleryColorVariations({
                       <TooltipTrigger asChild>
                         <div className="h-full w-full">
                           <OptimizedImage
-                            src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
+                            src={getCdnUrl(color.images?.[0] || (color.image ?? ''), 'thumbnail')}
                             alt={color.name}
                             className="object-cover transition-transform duration-700 ease-out group-hover/color:scale-110"
                             containerClassName="h-full w-full"

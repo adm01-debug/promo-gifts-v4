@@ -86,7 +86,7 @@ export function ActiveIpsList() {
         const q = search.trim().toLowerCase();
         if (
           !i.ip_address.toLowerCase().includes(q) &&
-          !(i.reason || '').toLowerCase().includes(q)
+          !(i.reason ?? '').toLowerCase().includes(q)
         ) {
           return false;
         }
@@ -227,7 +227,7 @@ export function ActiveIpsList() {
                       </TableCell>
                       <TableCell
                         className="max-w-[260px] truncate text-xs text-muted-foreground"
-                        title={i.reason || ''}
+                        title={i.reason ?? ''}
                       >
                         {i.reason || '—'}
                       </TableCell>

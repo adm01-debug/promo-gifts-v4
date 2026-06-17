@@ -196,7 +196,7 @@ export const PresetsBar = React.forwardRef<HTMLDivElement, PresetsBarProps>(func
   const openEditDialog = useCallback((preset: FilterPreset) => {
     setSelectedPreset(preset);
     setNewPresetName(preset.name);
-    setNewPresetDescription(preset.description || '');
+    setNewPresetDescription(preset.description ?? '');
     setNewPresetColor(preset.color || PRESET_COLORS[0]);
     setNewPresetEmoji(preset.icon || '📦');
     setIsEditOpen(true);

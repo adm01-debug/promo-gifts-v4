@@ -43,7 +43,7 @@ export default function QuotesKanbanPage() {
         });
         if (!cancelled) {
           setClients(
-            companies.map((c) => ({ id: c.id, name: c.nome_fantasia || c.razao_social || '' })),
+            companies.map((c) => ({ id: c.id, name: c.nome_fantasia || (c.razao_social ?? '') })),
           );
         }
       } catch {

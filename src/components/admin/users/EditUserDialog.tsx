@@ -41,10 +41,10 @@ export function EditUserDialog({
   // Sync form when user changes
   if (user && initialized !== user.user_id) {
     setForm({
-      full_name: user.full_name || '',
-      email: user.email || '',
+      full_name: user.full_name ?? '',
+      email: user.email ?? '',
       is_active: user.is_active !== false,
-      avatar_url: user.avatar_url || '',
+      avatar_url: user.avatar_url ?? '',
     });
     setInitialized(user.user_id);
   }

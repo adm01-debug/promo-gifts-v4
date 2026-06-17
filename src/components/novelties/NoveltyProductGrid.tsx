@@ -358,7 +358,7 @@ export function NoveltyProductGrid() {
                     ...prodBase,
                     colors: batchColors.map((c) => ({
                       name: c.name,
-                      hex: c.hex || '',
+                      hex: c.hex ?? '',
                       group: '',
                     })),
                   }
@@ -711,7 +711,7 @@ export function NoveltyProductGrid() {
         open={sel.collectionModalOpen}
         onOpenChange={sel.setCollectionModalOpen}
         productId={sel.firstSelectedId}
-        productName={sel.firstSelectedProduct?.product_name || ''}
+        productName={sel.firstSelectedProduct?.product_name ?? ''}
       />
     </div>
   );

@@ -25,11 +25,11 @@ function buildShareUrl(quote: Quote) {
 function buildWhatsappUrl(quote: Quote) {
   const link = buildShareUrl(quote);
   const name = quote.client_name || quote.client_company || 'Cliente';
-  const number = quote.quote_number || '';
+  const number = quote.quote_number ?? '';
   const text = encodeURIComponent(
     `Olá ${name}! Segue o orçamento ${number} para sua avaliação:\n${link}`,
   );
-  const phone = (quote.client_phone || '').replace(/\D/g, '');
+  const phone = (quote.client_phone ?? '').replace(/\D/g, '');
   return phone ? `https://wa.me/55${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 

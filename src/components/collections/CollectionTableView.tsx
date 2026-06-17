@@ -261,7 +261,7 @@ export function CollectionTableView({
         case 'featured':
           return dir * ((a.isFeatured ? 1 : 0) - (b.isFeatured ? 1 : 0));
         case 'updated':
-          return dir * (a.updatedAt || '').localeCompare(b.updatedAt || '');
+          return dir * (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '');
         default:
           return 0;
       }

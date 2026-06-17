@@ -6,8 +6,8 @@ import type { SecretMutationResult, SecretError } from '@/hooks/admin';
  */
 export function isRetryableSecretError(err: SecretError | undefined): boolean {
   if (!err) return false;
-  const msg = (err.message || '').toLowerCase();
-  const code = (err.code || '').toLowerCase();
+  const msg = (err.message ?? '').toLowerCase();
+  const code = (err.code ?? '').toLowerCase();
 
   // Never retry: client/auth/validation
   if (

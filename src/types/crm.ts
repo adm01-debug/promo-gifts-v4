@@ -364,7 +364,7 @@ export function toLegacyClient(
 
   return {
     id: company.id,
-    bitrix_id: company.bitrix_company_id || '',
+    bitrix_id: company.bitrix_company_id ?? '',
     name: getCompanyDisplayName(company),
     email: company._deprecated_email || null,
     phone: company._deprecated_phone || null,

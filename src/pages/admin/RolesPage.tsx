@@ -109,7 +109,7 @@ export default function RolesPage() {
 
   const handleEdit = (role: Role) => {
     setEditingRole(role);
-    setFormData({ name: role.name, description: role.description || '' });
+    setFormData({ name: role.name, description: role.description ?? '' });
     setIsDialogOpen(true);
   };
 

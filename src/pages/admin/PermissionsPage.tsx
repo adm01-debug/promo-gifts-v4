@@ -131,7 +131,7 @@ export default function PermissionsPage() {
     setFormData({
       code: permission.code,
       label: permission.label,
-      description: permission.description || '',
+      description: permission.description ?? '',
       category: permission.category,
     });
     setIsDialogOpen(true);

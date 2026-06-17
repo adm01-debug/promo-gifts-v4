@@ -184,15 +184,15 @@ export function PrintAreasManager({
                   <PrintAreaForm
                     key={area.id}
                     initial={{
-                      location_code: area.location_code || '',
-                      location_name: area.location_name || '',
-                      technique_name: area.technique_name || '',
-                      technique_id: area.technique_id || '',
+                      location_code: area.location_code ?? '',
+                      location_name: area.location_name ?? '',
+                      technique_name: area.technique_name ?? '',
+                      technique_id: area.technique_id ?? '',
                       max_width_mm: area.max_width_mm,
                       max_height_mm: area.max_height_mm,
-                      tabela_preco_id: area.tabela_preco_id || '',
+                      tabela_preco_id: area.tabela_preco_id ?? '',
                       display_order: area.display_order ?? 0,
-                      notes: area.notes || '',
+                      notes: area.notes ?? '',
                     }}
                     onSave={(data) => handleUpdate(area.id, data)}
                     onCancel={() => setEditingId(null)}

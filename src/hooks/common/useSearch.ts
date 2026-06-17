@@ -217,7 +217,7 @@ export function useSearch(products: Product[] = []) {
         type: 'product',
         id: exactSkuMatch.id,
         label: exactSkuMatch.name,
-        sublabel: `SKU: ${exactSkuMatch.sku || ''} • ${exactSkuMatch.category_name || ''}`,
+        sublabel: `SKU: ${exactSkuMatch.sku ?? ''} • ${exactSkuMatch.category_name ?? ''}`,
         icon: '📦',
         data: exactSkuMatch,
       });
@@ -233,7 +233,7 @@ export function useSearch(products: Product[] = []) {
         type: 'product',
         id: product.id,
         label: product.name,
-        sublabel: `${product.sku || ''} • ${product.category_name || ''}`,
+        sublabel: `${product.sku ?? ''} • ${product.category_name ?? ''}`,
         icon: '📦',
         data: product,
       });

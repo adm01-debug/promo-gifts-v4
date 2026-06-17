@@ -113,7 +113,7 @@ export function useSellerCartsPage() {
   }, [routeCartId, carts, setActiveCartId]);
 
   useEffect(() => {
-    setLocalCartNotes(activeCart?.notes || '');
+    setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
   }, [activeCart?.id, activeCart?.notes]);
 

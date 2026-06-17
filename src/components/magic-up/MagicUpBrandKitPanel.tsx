@@ -72,7 +72,7 @@ export function MagicUpBrandKitPanel({
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Cor primária</Label>
             <Input
-              value={kit.primaryColor || ''}
+              value={kit.primaryColor ?? ''}
               onChange={(e) => onUpdate({ primaryColor: e.target.value })}
               placeholder="#1D4ED8"
               className="h-9"
@@ -81,7 +81,7 @@ export function MagicUpBrandKitPanel({
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Cor secundária</Label>
             <Input
-              value={kit.secondaryColor || ''}
+              value={kit.secondaryColor ?? ''}
               onChange={(e) => onUpdate({ secondaryColor: e.target.value })}
               placeholder="#F59E0B"
               className="h-9"

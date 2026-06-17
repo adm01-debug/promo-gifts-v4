@@ -163,7 +163,7 @@ export function useCollectionsPageState() {
   const openEdit = useCallback((collection: (typeof localCollections)[0]) => {
     setFormData({
       name: collection.name,
-      description: collection.description || '',
+      description: collection.description ?? '',
       color: collection.color,
       icon: collection.icon,
       clientId: collection.clientId ?? null,

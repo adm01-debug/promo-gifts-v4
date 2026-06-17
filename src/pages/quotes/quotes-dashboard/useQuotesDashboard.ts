@@ -282,7 +282,7 @@ export function useQuotesDashboard() {
         startY: startY + 4,
         head: [['Orçamento', 'Status', 'Data', 'Valor']],
         body: recentResponses.map((q) => [
-          q.quote_number || q.id || '',
+          q.quote_number || (q.id ?? ''),
           statusConfig[q.status]?.label || q.status,
           q.client_response_at ? format(new Date(q.client_response_at), 'dd/MM/yyyy HH:mm') : '-',
           formatCurrency(q.total || 0),

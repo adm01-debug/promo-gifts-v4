@@ -36,7 +36,7 @@ export function QuickActionsPanel() {
 
     const monthQuotes = quotes.filter((q) => {
       try {
-        const d = parseISO(q.created_at || '');
+        const d = parseISO(q.created_at ?? '');
         return isWithinInterval(d, { start: monthStart, end: monthEnd });
       } catch {
         return false;

@@ -371,7 +371,7 @@ function GenderAxis({
           <div className="border-t border-border/30 px-3 pb-3 pt-1">
             <div className="max-w-xs">
               <Label className="mb-1.5 block text-[11px] text-muted-foreground">Público-alvo</Label>
-              <Select value={gender || ''} onValueChange={(v) => onGenderChange?.(v)}>
+              <Select value={gender ?? ''} onValueChange={(v) => onGenderChange?.(v)}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>

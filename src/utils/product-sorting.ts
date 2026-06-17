@@ -18,7 +18,7 @@ const PT_BR_COLLATOR = new Intl.Collator('pt-BR', {
 
 /** Compara dois nomes usando o collator pt-BR (null/undefined viram ''). */
 export function compareNamePtBR(a?: string | null, b?: string | null): number {
-  return PT_BR_COLLATOR.compare(a || '', b || '');
+  return PT_BR_COLLATOR.compare(a ?? '', b ?? '');
 }
 
 /**

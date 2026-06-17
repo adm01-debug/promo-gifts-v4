@@ -156,7 +156,7 @@ export function useCatalogState() {
   const lastNonTransitionedProductsRef = useRef<Product[]>([]);
   const { trackSort, trackSearch } = useProductAnalytics();
 
-  const searchQueryFromUrl = searchParams.get('search') || '';
+  const searchQueryFromUrl = searchParams.get('search') ?? '';
 
   // Refs para furar a TDZ (temporal dead zone): tanto `setSortBy` quanto o
   // effect de `searchQueryFromUrl` precisam de `filteredProducts`/`searchQuery`,

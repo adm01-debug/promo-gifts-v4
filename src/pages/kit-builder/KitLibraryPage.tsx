@@ -67,11 +67,11 @@ function applySort<
       arr.sort((a, b) => (b.usage_count ?? 0) - (a.usage_count ?? 0));
       break;
     case 'last-used':
-      arr.sort((a, b) => (b.last_used_at || '').localeCompare(a.last_used_at || ''));
+      arr.sort((a, b) => (b.last_used_at ?? '').localeCompare(a.last_used_at ?? ''));
       break;
     case 'recent':
     default:
-      arr.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+      arr.sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''));
   }
   return arr;
 }
@@ -184,7 +184,7 @@ export default function KitLibraryPage() {
   // Filters
   const q = search.trim().toLowerCase();
   const matchKit = (k: CustomKitRow) => {
-    if (q && !(k.name.toLowerCase().includes(q) || (k.tag || '').toLowerCase().includes(q)))
+    if (q && !(k.name.toLowerCase().includes(q) || (k.tag ?? '').toLowerCase().includes(q)))
       return false;
     if (selectedTag && k.tag !== selectedTag) return false;
     if (selectedColor && k.color !== selectedColor) return false;
@@ -195,7 +195,7 @@ export default function KitLibraryPage() {
       q &&
       !(
         t.name.toLowerCase().includes(q) ||
-        (t.tag || '').toLowerCase().includes(q) ||
+        (t.tag ?? '').toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q)
       )
     )

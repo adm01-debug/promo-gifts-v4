@@ -31,7 +31,7 @@ export function EngravingAreaCard({
   onDelete,
 }: EngravingAreaCardProps) {
   const areaDisplayName = `${area.location_name || area.location_code} — ${area.technique_name}`;
-  const techCode = area.technique_code || area.technique_group || '';
+  const techCode = area.technique_code || (area.technique_group ?? '');
 
   return (
     <div

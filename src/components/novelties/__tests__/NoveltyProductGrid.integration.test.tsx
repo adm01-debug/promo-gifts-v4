@@ -64,10 +64,10 @@ vi.mock('@/hooks/products', () => ({
     clearSelection: vi.fn(),
     noveltyToProduct: (n: NoveltyWithDetails) => ({
       id: n.product_id,
-      name: n.product_name || '',
-      product_name: n.product_name || '',
+      name: n.product_name ?? '',
+      product_name: n.product_name ?? '',
       price: n.base_price,
-      sku: n.product_sku || '',
+      sku: n.product_sku ?? '',
       stock: n.stock_quantity,
       supplier: { id: n.supplier_id, name: n.supplier_name },
       category: { id: n.category_id, name: n.category_name },

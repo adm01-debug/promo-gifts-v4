@@ -68,8 +68,7 @@ export function VariantSelector({
       const result = await dbInvoke<VariantOption>({
         table: 'product_variants',
         operation: 'select',
-        select:
-          'id, color_name, color_hex, color_code, sku, selected_thumbnail, size_code',
+        select: 'id, color_name, color_hex, color_code, sku, selected_thumbnail, size_code',
         filters: { id: allowedVariantIds, is_active: true },
         limit: 50,
       });
@@ -94,7 +93,7 @@ export function VariantSelector({
     }
     // Sort sizes within each group
     for (const [, group] of map) {
-      group.sort((a, b) => sizeSort(a.size_code || '', b.size_code || ''));
+      group.sort((a, b) => sizeSort(a.size_code ?? '', b.size_code ?? ''));
     }
     return map;
   }, [variants, hasSizes]);

@@ -285,7 +285,7 @@ export function MockupPromptManager() {
           edited={getEdited(mainPrompt)}
           hasChanges={hasChanges(mainPrompt)}
           saving={savingId === mainPrompt.id}
-          changeNote={changeNotes[mainPrompt.id] || ''}
+          changeNote={changeNotes[mainPrompt.id] ?? ''}
           onChangePrompt={(v) => setPromptField(mainPrompt.id, mainPrompt, 'prompt_text', v)}
           onChangeModel={(v) => setPromptField(mainPrompt.id, mainPrompt, 'ai_model', v)}
           onChangeNote={(v) => setChangeNotes((p) => ({ ...p, [mainPrompt.id]: v }))}
@@ -330,7 +330,7 @@ export function MockupPromptManager() {
                       edited={getEdited(config)}
                       hasChanges={hasChanges(config)}
                       saving={savingId === config.id}
-                      changeNote={changeNotes[config.id] || ''}
+                      changeNote={changeNotes[config.id] ?? ''}
                       onChangePrompt={(v) => setPromptField(config.id, config, 'prompt_text', v)}
                       onChangeModel={(v) => setPromptField(config.id, config, 'ai_model', v)}
                       onChangeNote={(v) => setChangeNotes((p) => ({ ...p, [config.id]: v }))}
@@ -373,7 +373,7 @@ export function MockupPromptManager() {
       />
       <HistoryDialog
         open={!!historyDialog}
-        label={historyDialog?.label || ''}
+        label={historyDialog?.label ?? ''}
         history={history}
         loading={historyLoading}
         onClose={() => setHistoryDialog(null)}
@@ -381,7 +381,7 @@ export function MockupPromptManager() {
       />
       <TestDialog
         open={!!testDialog}
-        label={testDialog?.label || ''}
+        label={testDialog?.label ?? ''}
         result={testResult}
         loading={isTesting}
         onClose={() => setTestDialog(null)}

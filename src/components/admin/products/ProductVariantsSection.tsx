@@ -246,14 +246,14 @@ export function ProductVariantsSection({
               <VariantForm
                 key={variant.id}
                 initial={{
-                  name: variant.name || '',
-                  sku: variant.sku || '',
-                  color_name: variant.color_name || '',
+                  name: variant.name ?? '',
+                  sku: variant.sku ?? '',
+                  color_name: variant.color_name ?? '',
                   color_hex: variant.color_hex || '#000000',
                   stock_quantity: variant.stock_quantity ?? 0,
-                  supplier_sku: variant.supplier_sku || '',
-                  ean: variant.ean || '',
-                  size_code: variant.size_code || '',
+                  supplier_sku: variant.supplier_sku ?? '',
+                  ean: variant.ean ?? '',
+                  size_code: variant.size_code ?? '',
                   capacity_ml: variant.capacity_ml,
                   height_mm: variant.height_mm,
                   width_mm: variant.width_mm,
@@ -285,7 +285,7 @@ export function ProductVariantsSection({
                 <div
                   className="h-10 w-10 shrink-0 rounded-md border"
                   style={{ backgroundColor: variant.color_hex }}
-                  title={variant.color_name || ''}
+                  title={variant.color_name ?? ''}
                 />
               ) : (
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">

@@ -9,13 +9,13 @@ export function exportCartToCSV(cart: SellerCart) {
   const header = 'SKU,Produto,Cor,Qtd,Preço Unit.,Subtotal,Observações';
   const rows = cart.items.map((i) =>
     [
-      i.product_sku || '',
+      i.product_sku ?? '',
       `"${i.product_name}"`,
-      i.color_name || '',
+      i.color_name ?? '',
       i.quantity,
       i.product_price.toFixed(2),
       (i.product_price * i.quantity).toFixed(2),
-      `"${(i.notes || '').replace(/"/g, '""')}"`,
+      `"${(i.notes ?? '').replace(/"/g, '""')}"`,
     ].join(','),
   );
   const total = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
@@ -44,7 +44,7 @@ export async function exportCartToPDF(cart: SellerCart) {
   doc.text(`Carrinho — ${cart.company_name}`, 14, 20);
   doc.setFontSize(10);
   doc.setTextColor(120);
-  doc.text(cart.company_location || '', 14, 28);
+  doc.text(cart.company_location ?? '', 14, 28);
   doc.text(`${cart.items.length} SKUs • ${totalQty} unidades • ${formatCurrency(total)}`, 14, 34);
   if (cart.notes) {
     doc.text(`Notas: ${cart.notes}`, 14, 40);
@@ -60,7 +60,7 @@ export async function exportCartToPDF(cart: SellerCart) {
       i.quantity.toString(),
       formatCurrency(i.product_price),
       formatCurrency(i.product_price * i.quantity),
-      i.notes || '',
+      i.notes ?? '',
     ]),
     foot: [['', '', '', totalQty.toString(), '', formatCurrency(total), '']],
     styles: { fontSize: 8 },

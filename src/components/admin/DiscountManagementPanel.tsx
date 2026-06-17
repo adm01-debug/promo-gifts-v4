@@ -142,8 +142,8 @@ export function DiscountManagementPanel() {
     const term = searchTerm.toLowerCase();
     return sellers.filter(
       (s) =>
-        (s.full_name || '').toLowerCase().includes(term) ||
-        (s.email || '').toLowerCase().includes(term),
+        (s.full_name ?? '').toLowerCase().includes(term) ||
+        (s.email ?? '').toLowerCase().includes(term),
     );
   }, [sellers, searchTerm]);
 
@@ -336,9 +336,9 @@ export function DiscountManagementPanel() {
                                   setEditDialog({
                                     open: true,
                                     userId: seller.user_id,
-                                    name: seller.full_name || seller.email || '',
+                                    name: seller.full_name || (seller.email ?? ''),
                                     currentLimit: limit?.max_discount_percent || 5,
-                                    notes: limit?.notes || '',
+                                    notes: limit?.notes ?? '',
                                   })
                                 }
                               >

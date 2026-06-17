@@ -68,9 +68,9 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
           if (!acc[key]) {
             acc[key] = {
-              productId: item.product_id || '',
-              productName: item.product_name || '',
-              productSku: item.product_sku || '',
+              productId: item.product_id ?? '',
+              productName: item.product_name ?? '',
+              productSku: item.product_sku ?? '',
               productImage: item.product_image_url,
               timesOrderedTogether: 0,
               price: item.unit_price || 0,

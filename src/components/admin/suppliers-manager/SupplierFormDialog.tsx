@@ -228,7 +228,7 @@ export function SupplierFormDialog({
               <div className="flex-1">
                 <Label className="text-xs font-semibold">Nome Fantasia</Label>
                 <Input
-                  value={editingSupplier.trading_name || ''}
+                  value={editingSupplier.trading_name ?? ''}
                   onChange={(e) => updateField('trading_name', e.target.value)}
                   className={fieldClass}
                 />
@@ -238,7 +238,7 @@ export function SupplierFormDialog({
                   Código <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  value={editingSupplier.code || ''}
+                  value={editingSupplier.code ?? ''}
                   data-testid="admin-code-input"
                   onChange={(e) => updateField('code', e.target.value)}
                   className={cn(fieldClass, 'font-mono uppercase')}
@@ -250,7 +250,7 @@ export function SupplierFormDialog({
                 Razão Social <span className="text-destructive">*</span>
               </Label>
               <Input
-                value={editingSupplier.name || ''}
+                value={editingSupplier.name ?? ''}
                 data-testid="admin-name-input"
                 onChange={(e) => updateField('name', e.target.value)}
                 className={fieldClass}
@@ -262,7 +262,7 @@ export function SupplierFormDialog({
                 <Label className="text-xs font-semibold">CNPJ</Label>
                 <div className="flex gap-1.5">
                   <Input
-                    value={editingSupplier.cnpj || ''}
+                    value={editingSupplier.cnpj ?? ''}
                     onChange={(e) => updateField('cnpj', maskCnpj(e.target.value))}
                     className={cn(fieldClass, 'flex-1 font-mono')}
                     maxLength={18}
@@ -273,7 +273,7 @@ export function SupplierFormDialog({
                     size="sm"
                     className="h-9 shrink-0 px-2.5"
                     disabled={
-                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') || '').length !== 14
+                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') ?? '').length !== 14
                     }
                     onClick={handleCnpjLookup}
                   >
@@ -476,7 +476,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">CEP</Label>
                 <Input
-                  value={editingSupplier.cep || ''}
+                  value={editingSupplier.cep ?? ''}
                   onChange={(e) => handleCepLookup(e.target.value)}
                   placeholder="00000-000"
                   className={cn(fieldClass, 'font-mono')}
@@ -486,7 +486,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Tipo Logradouro</Label>
                 <select
-                  value={editingSupplier.tipo_logradouro || ''}
+                  value={editingSupplier.tipo_logradouro ?? ''}
                   onChange={(e) => updateField('tipo_logradouro', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -513,7 +513,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Logradouro</Label>
               <Input
-                value={editingSupplier.logradouro || ''}
+                value={editingSupplier.logradouro ?? ''}
                 onChange={(e) => updateField('logradouro', e.target.value)}
                 className={fieldClass}
               />
@@ -522,7 +522,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Número</Label>
                 <Input
-                  value={editingSupplier.numero || ''}
+                  value={editingSupplier.numero ?? ''}
                   onChange={(e) => updateField('numero', e.target.value)}
                   className={fieldClass}
                 />
@@ -530,7 +530,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Complemento</Label>
                 <Input
-                  value={editingSupplier.complemento || ''}
+                  value={editingSupplier.complemento ?? ''}
                   onChange={(e) => updateField('complemento', e.target.value)}
                   className={fieldClass}
                 />
@@ -540,7 +540,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Bairro</Label>
                 <Input
-                  value={editingSupplier.bairro || ''}
+                  value={editingSupplier.bairro ?? ''}
                   onChange={(e) => updateField('bairro', e.target.value)}
                   className={fieldClass}
                 />
@@ -548,7 +548,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Cidade</Label>
                 <Input
-                  value={editingSupplier.cidade || ''}
+                  value={editingSupplier.cidade ?? ''}
                   onChange={(e) => updateField('cidade', e.target.value)}
                   className={fieldClass}
                 />
@@ -558,7 +558,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Estado</Label>
                 <select
-                  value={editingSupplier.estado || ''}
+                  value={editingSupplier.estado ?? ''}
                   onChange={(e) => updateField('estado', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -582,7 +582,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Ponto de Referência</Label>
               <Input
-                value={editingSupplier.ponto_referencia || ''}
+                value={editingSupplier.ponto_referencia ?? ''}
                 onChange={(e) => updateField('ponto_referencia', e.target.value)}
                 className={fieldClass}
               />
@@ -617,7 +617,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Google Maps URL</Label>
                 <Input
-                  value={editingSupplier.google_maps_url || ''}
+                  value={editingSupplier.google_maps_url ?? ''}
                   onChange={(e) => updateField('google_maps_url', e.target.value)}
                   className={fieldClass}
                 />
@@ -625,7 +625,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Google Place ID</Label>
                 <Input
-                  value={editingSupplier.google_place_id || ''}
+                  value={editingSupplier.google_place_id ?? ''}
                   onChange={(e) => updateField('google_place_id', e.target.value)}
                   className={fieldClass}
                 />
@@ -634,7 +634,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Horário de Funcionamento</Label>
               <Input
-                value={editingSupplier.horario_funcionamento || ''}
+                value={editingSupplier.horario_funcionamento ?? ''}
                 onChange={(e) => updateField('horario_funcionamento', e.target.value)}
                 className={fieldClass}
               />
@@ -718,7 +718,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Instruções de Entrega</Label>
               <Textarea
-                value={editingSupplier.instrucoes_entrega || ''}
+                value={editingSupplier.instrucoes_entrega ?? ''}
                 onChange={(e) => updateField('instrucoes_entrega', e.target.value)}
                 className="mt-1.5 min-h-[60px]"
               />
@@ -730,7 +730,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Website</Label>
               <Input
-                value={editingSupplier.website || ''}
+                value={editingSupplier.website ?? ''}
                 onChange={(e) => updateField('website', e.target.value)}
                 className={fieldClass}
               />
@@ -738,7 +738,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Instagram</Label>
               <Input
-                value={editingSupplier.instagram || ''}
+                value={editingSupplier.instagram ?? ''}
                 onChange={(e) => updateField('instagram', e.target.value)}
                 className={fieldClass}
               />
@@ -746,7 +746,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Facebook</Label>
               <Input
-                value={editingSupplier.facebook || ''}
+                value={editingSupplier.facebook ?? ''}
                 onChange={(e) => updateField('facebook', e.target.value)}
                 className={fieldClass}
               />
@@ -754,7 +754,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">LinkedIn</Label>
               <Input
-                value={editingSupplier.linkedin || ''}
+                value={editingSupplier.linkedin ?? ''}
                 onChange={(e) => updateField('linkedin', e.target.value)}
                 className={fieldClass}
               />
@@ -762,7 +762,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">YouTube</Label>
               <Input
-                value={editingSupplier.youtube || ''}
+                value={editingSupplier.youtube ?? ''}
                 onChange={(e) => updateField('youtube', e.target.value)}
                 className={fieldClass}
               />
@@ -770,7 +770,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">TikTok</Label>
               <Input
-                value={editingSupplier.tiktok || ''}
+                value={editingSupplier.tiktok ?? ''}
                 onChange={(e) => updateField('tiktok', e.target.value)}
                 className={fieldClass}
               />
@@ -827,7 +827,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Cond. Pagamento</Label>
                 <Input
-                  value={editingSupplier.payment_terms || ''}
+                  value={editingSupplier.payment_terms ?? ''}
                   onChange={(e) => updateField('payment_terms', e.target.value)}
                   className={fieldClass}
                 />
@@ -835,7 +835,7 @@ export function SupplierFormDialog({
               <div>
                 <Label className="text-xs font-semibold">Cond. Frete</Label>
                 <Input
-                  value={editingSupplier.shipping_terms || ''}
+                  value={editingSupplier.shipping_terms ?? ''}
                   onChange={(e) => updateField('shipping_terms', e.target.value)}
                   className={fieldClass}
                 />
@@ -857,7 +857,7 @@ export function SupplierFormDialog({
             <div>
               <Label className="text-xs font-semibold">Observações</Label>
               <Textarea
-                value={editingSupplier.notes || ''}
+                value={editingSupplier.notes ?? ''}
                 onChange={(e) => updateField('notes', e.target.value)}
                 className="mt-1.5 min-h-[80px]"
               />

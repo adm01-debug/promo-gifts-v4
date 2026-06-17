@@ -232,7 +232,7 @@ export function useSuppliersManager() {
     }
 
     // Parse financial data (still in notes for payment/pix)
-    const notesStr = supplier.notes || '';
+    const notesStr = supplier.notes ?? '';
     const finMatchNew = notesStr.match(
       /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/,
     );
@@ -282,11 +282,11 @@ export function useSuppliersManager() {
     }
 
     // ── Read dedicated columns ──
-    setFoneFixo1(supplier.phone || '');
-    setFoneFixo2(supplier.phone2 || '');
-    setInscricaoEstadual(supplier.inscricao_estadual || '');
-    setRegimeTributario(supplier.tax_regime || '');
-    setEstadoFaturamento(supplier.state_uf || '');
+    setFoneFixo1(supplier.phone ?? '');
+    setFoneFixo2(supplier.phone2 ?? '');
+    setInscricaoEstadual(supplier.inscricao_estadual ?? '');
+    setRegimeTributario(supplier.tax_regime ?? '');
+    setEstadoFaturamento(supplier.state_uf ?? '');
 
     // ── Backward compat: migrate legacy notes data if dedicated columns are empty ──
     if (!supplier.inscricao_estadual && !supplier.tax_regime && !supplier.state_uf) {
@@ -338,7 +338,7 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
+    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
@@ -570,7 +570,7 @@ export function useSuppliersManager() {
 
   // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
-    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
+    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') ?? '';
     if (!validateCnpj(digits)) {
       toast.error('CNPJ inválido');
       return;

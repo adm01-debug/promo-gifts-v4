@@ -271,7 +271,7 @@ function ItemPersonalizationCard({
                   </p>
                 ) : (
                   <Select
-                    value={personalization.techniqueId || ''}
+                    value={personalization.techniqueId ?? ''}
                     onValueChange={handleTechniqueChange}
                   >
                     <SelectTrigger>
@@ -331,7 +331,7 @@ function ItemPersonalizationCard({
                     step="0.1"
                     max={currentTech.efetiva_largura_max}
                     placeholder={`Até ${currentTech.efetiva_largura_max}cm`}
-                    value={personalization.width || ''}
+                    value={personalization.width ?? ''}
                     onChange={(e) =>
                       onChange({
                         ...personalization,
@@ -354,7 +354,7 @@ function ItemPersonalizationCard({
                     step="0.1"
                     max={currentTech.efetiva_altura_max}
                     placeholder={`Até ${currentTech.efetiva_altura_max}cm`}
-                    value={personalization.height || ''}
+                    value={personalization.height ?? ''}
                     onChange={(e) =>
                       onChange({
                         ...personalization,

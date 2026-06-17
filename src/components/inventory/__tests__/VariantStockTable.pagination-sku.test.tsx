@@ -23,21 +23,22 @@ vi.mock('react-router-dom', () => ({
   Link: (p: { children: React.ReactNode }) => p.children,
 }));
 
-const mkVariant = (i: number): VariantStock => ({
-  id: `v${i}`,
-  productId: 'p1',
-  variantId: `v${i}`,
-  variantSku: `SKU-${i}`,
-  colorName: `Cor ${i}`,
-  colorHex: '#abc',
-  currentStock: 100,
-  minStock: 10,
-  reservedStock: 0,
-  inTransitStock: 0,
-  availableStock: 100,
-  status: 'in_stock',
-  updatedAt: '2026-01-01',
-} as VariantStock);
+const mkVariant = (i: number): VariantStock =>
+  ({
+    id: `v${i}`,
+    productId: 'p1',
+    variantId: `v${i}`,
+    variantSku: `SKU-${i}`,
+    colorName: `Cor ${i}`,
+    colorHex: '#abc',
+    currentStock: 100,
+    minStock: 10,
+    reservedStock: 0,
+    inTransitStock: 0,
+    availableStock: 100,
+    status: 'in_stock',
+    updatedAt: '2026-01-01',
+  }) as VariantStock;
 
 const product: ProductStockSummary = {
   productId: 'p1',
@@ -75,7 +76,7 @@ describe('VariantStockTable — paginação SKU-first', () => {
   it('contador reconcilia em SKUs ("1–50 de 60 variações")', () => {
     render(<VariantStockTable products={[product]} />);
     const counter = screen.getByText(
-      (_t, el) => el?.tagName === 'SPAN' && /1[–-]50 de 60 variações/.test(el.textContent || ''),
+      (_t, el) => el?.tagName === 'SPAN' && /1[–-]50 de 60 variações/.test(el.textContent ?? ''),
     );
     expect(counter).toBeInTheDocument();
   });

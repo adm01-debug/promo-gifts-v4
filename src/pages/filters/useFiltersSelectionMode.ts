@@ -30,7 +30,7 @@ export function useFiltersSelectionMode({
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // BUG-SM-01 FIX: Use a ref to track filteredProducts to avoid stale closures in effects 
+  // BUG-SM-01 FIX: Use a ref to track filteredProducts to avoid stale closures in effects
   // and ensure we only remove IDs that actually became invalid.
   const prevFilteredProductsRef = useRef<Product[]>([]);
   useEffect(() => {
@@ -42,12 +42,12 @@ export function useFiltersSelectionMode({
 
     // Only clean if products changed significantly (length change or different first ID)
     // This is a heuristic to avoid over-cleaning during scroll/lazy-load
-    const currentValidIds = new Set(filteredProducts.map(p => p.id));
-    
+    const currentValidIds = new Set(filteredProducts.map((p) => p.id));
+
     setSelectedIds((prev) => {
       const next = new Set<string>();
       let changed = false;
-      
+
       for (const id of prev) {
         if (currentValidIds.has(id)) {
           next.add(id);
@@ -55,7 +55,7 @@ export function useFiltersSelectionMode({
           changed = true;
         }
       }
-      
+
       return changed ? next : prev;
     });
 
@@ -112,9 +112,9 @@ export function useFiltersSelectionMode({
                 JSON.stringify({
                   product_id: s.product.id,
                   product_name: s.product.name,
-                  product_sku: s.product.sku || '',
+                  product_sku: s.product.sku ?? '',
                   product_price: s.product.price,
-                  product_image: s.variant?.selected_thumbnail || s.product.images?.[0] || '',
+                  product_image: s.variant?.selected_thumbnail || (s.product.images?.[0] ?? ''),
                   quantity: 1,
                   color_name: s.variant?.color_name || null,
                   color_hex: s.variant?.color_hex || null,

@@ -92,8 +92,8 @@ export const ProductCategoryBadges = memo(function ProductCategoryBadges({
     // Criar objeto com dados do produto para passar via state
     const productData = {
       id: productId,
-      name: productName || '',
-      sku: productSku || '',
+      name: productName ?? '',
+      sku: productSku ?? '',
       price: productPrice || 0,
       imageUrl: productImageUrl,
       categoryName: category?.name,

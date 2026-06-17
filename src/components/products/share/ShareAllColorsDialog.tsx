@@ -33,7 +33,7 @@ function generateColorMessage(product: Product, selectedColors: ProductColor[]) 
 *${product.name}*
 SKU: ${product.sku}
 
-${product.description || ''}
+${product.description ?? ''}
 
 📋 *${selectedColors.length} cores selecionadas:*
 ${colorList}

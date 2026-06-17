@@ -9,9 +9,9 @@ import { Globe } from 'lucide-react';
 type Props = FormSectionProps;
 
 export function ProductSeoSection({ register, watch }: Props) {
-  const metaTitleValue = watch('meta_title') || '';
-  const metaDescValue = watch('meta_description') || '';
-  const metaKeywordsValue = watch('meta_keywords') || '';
+  const metaTitleValue = watch('meta_title') ?? '';
+  const metaDescValue = watch('meta_description') ?? '';
+  const metaKeywordsValue = watch('meta_keywords') ?? '';
 
   return (
     <SectionCard

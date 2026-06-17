@@ -141,7 +141,7 @@ export default function ProductClassificationSection({
           defaultOpen={true}
         >
           <ProductVariationAxesConfig
-            productId={productId || ''}
+            productId={productId ?? ''}
             gender={gender}
             onGenderChange={onGenderChange}
           />

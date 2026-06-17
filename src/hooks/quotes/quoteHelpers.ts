@@ -91,7 +91,7 @@ export function buildInsertPayload(
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
-    client_name: quote.client_name || '',
+    client_name: quote.client_name ?? '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
@@ -121,7 +121,7 @@ export function buildUpdatePayload(
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
-    client_name: quote.client_name || '',
+    client_name: quote.client_name ?? '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,

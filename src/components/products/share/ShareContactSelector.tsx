@@ -77,7 +77,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
       return results.map(
         (c: { id: string; razao_social?: string; nome_fantasia?: string; cnpj?: string }) => ({
           id: c.id,
-          name: c.nome_fantasia || c.razao_social || '',
+          name: c.nome_fantasia || (c.razao_social ?? ''),
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia,
           cnpj: c.cnpj,
@@ -248,7 +248,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                   <div className="relative flex-1">
                     <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      value={selection.contactPhone || ''}
+                      value={selection.contactPhone ?? ''}
                       onChange={(e) => handlePhoneChange(e.target.value)}
                       placeholder="(00) 00000-0000"
                       className={cn(

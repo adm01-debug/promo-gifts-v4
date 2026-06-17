@@ -153,9 +153,9 @@ export function ProductStickyHeader({
           const params = new URLSearchParams({
             product_id: productId,
             product_name: productName,
-            product_sku: productSku || '',
+            product_sku: productSku ?? '',
             product_price: String(productPrice),
-            product_image: v?.selected_thumbnail || productImage || '',
+            product_image: v?.selected_thumbnail || (productImage ?? ''),
             min_quantity: String(minQuantity),
           });
           if (v?.color_name) params.set('color_name', v.color_name);

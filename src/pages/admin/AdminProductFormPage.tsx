@@ -135,8 +135,8 @@ export default function AdminProductFormPage() {
 
   const productToFormData = useCallback((p: PromobrindProduct): Partial<ProductFormData> => {
     return {
-      sku: p.sku || '',
-      name: p.name || '',
+      sku: p.sku ?? '',
+      name: p.name ?? '',
       description: p.description ?? p.short_description ?? '',
       short_description: p.short_description ?? '',
       meta_description: p.meta_description ?? '',
@@ -524,8 +524,8 @@ export default function AdminProductFormPage() {
                       exportProductPdf({
                         formData,
                         productImages: getProductImages(product),
-                        categoryName: product.category_name || product.category || '',
-                        supplierName: product.supplier_name || product.supplier || '',
+                        categoryName: product.category_name || (product.category ?? ''),
+                        supplierName: product.supplier_name || (product.supplier ?? ''),
                       });
                       toast.success('PDF gerado com sucesso!');
                     }}

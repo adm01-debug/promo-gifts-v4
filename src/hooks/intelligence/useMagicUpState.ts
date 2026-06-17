@@ -256,7 +256,7 @@ export function useMagicUpState() {
         visualStyle: data.visual_style || DEFAULT_BRAND_KIT.visualStyle,
         requiredWords: data.required_words ?? [],
         forbiddenWords: data.forbidden_words ?? [],
-        notes: data.notes || '',
+        notes: data.notes ?? '',
         updatedAt: data.updated_at,
       };
     },
@@ -325,7 +325,7 @@ export function useMagicUpState() {
         const images: ProductImage[] = (imagesResult.records ?? [])
           .filter((img: Record<string, unknown>) => img.image_type !== 'box')
           .map((img: Record<string, unknown>) => ({
-            url: img.url_cdn || img.url_original || '',
+            url: img.url_cdn || (img.url_original ?? ''),
             supplierCode: img.supplier_code || null,
             isPrimary: img.is_primary,
             isOgImage: img.is_og_image || false,
@@ -339,7 +339,7 @@ export function useMagicUpState() {
           uniqueColors.set(colorName, {
             hex: (v.color_hex as string) || '#CCCCCC',
             name: colorName,
-            code: (v.color_code as string) || '',
+            code: (v.color_code as string) ?? '',
             stock: (v.stock_quantity as number) ?? 0,
           });
         });
@@ -464,7 +464,7 @@ export function useMagicUpState() {
 
   // ─── Effective prompt ─────────────────────────────────────────
   const effectivePrompt = useMemo(() => {
-    const base = selectedScene?.prompt || '';
+    const base = selectedScene?.prompt ?? '';
     const extra = additionalDetails.trim();
     if (base && extra) return `${base}\n\nADDITIONAL DETAILS: ${extra}`;
     return extra || base;

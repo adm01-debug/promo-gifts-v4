@@ -132,7 +132,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             {allPersonalizations.length > 0 ? (
               <div className="space-y-1.5">
                 {allPersonalizations.map((p, pIdx) => {
-                  const notesRaw = p.notes || '';
+                  const notesRaw = p.notes ?? '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
                   const locationLabel = locationPart ? locationPart.split(' — ')[0] : null;
                   let dimLabel: string | null = null;

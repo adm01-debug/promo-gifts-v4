@@ -191,7 +191,7 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       }),
     );
 
-    expect(result.current.every((p) => (p.gender || '').toLowerCase() === 'masculino')).toBe(true);
+    expect(result.current.every((p) => (p.gender ?? '').toLowerCase() === 'masculino')).toBe(true);
     expect(result.current.some((p) => p.id === '4')).toBe(true);
     expect(result.current.some((p) => p.id === '5')).toBe(false);
   });

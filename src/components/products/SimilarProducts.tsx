@@ -110,7 +110,7 @@ export function SimilarProducts({
     const catMap = new Map(categories.map((c) => [c.id, c.name]));
     const enriched = dbItems.map((item) => ({
       ...item,
-      category_name: catMap.get(item.category_id || '') || item.category_name || '',
+      category_name: catMap.get(item.category_id ?? '') || (item.category_name ?? ''),
     }));
     let minPrice = Infinity;
     let minId = '';

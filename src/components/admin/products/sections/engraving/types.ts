@@ -110,7 +110,7 @@ export const COMMON_LOCATIONS = [
 ];
 
 export function getTechniqueIcon(code: string): string {
-  const upper = code?.toUpperCase() || '';
+  const upper = code?.toUpperCase() ?? '';
   return TECHNIQUE_ICONS[upper] || '🔧';
 }
 
@@ -133,7 +133,7 @@ const TECHNIQUE_COLOR_MAP: Record<string, string> = {
 } as const;
 
 export function getTechniqueColor(code: string): string {
-  const upper = code?.toUpperCase() || '';
+  const upper = code?.toUpperCase() ?? '';
   for (const [key, val] of Object.entries(TECHNIQUE_COLOR_MAP)) {
     if (upper.includes(key)) return val;
   }

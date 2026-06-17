@@ -68,13 +68,13 @@ export function useProductPrintAreas(productId: string | null) {
             techniques.push({
               id: tech.id,
               nome: tech.nome,
-              codigo: tech.codigo_curto || tech.codigo_tabela || '',
+              codigo: tech.codigo_curto || (tech.codigo_tabela ?? ''),
             });
         }
         return {
           area_id: area.id,
-          area_code: area.area_code || '',
-          area_name: area.area_name || '',
+          area_code: area.area_code ?? '',
+          area_name: area.area_name ?? '',
           max_width: area.max_width || 0,
           max_height: area.max_height || 0,
           shape: area.shape || 'rectangle',
@@ -202,14 +202,14 @@ export function useCustomizationPriceLegacy() {
         const result: CustomizationPriceV2 = {
           success: true,
           area_id: rawResult.area?.id || areaId,
-          area_code: rawResult.area?.code || '',
-          area_name: rawResult.area?.name || '',
+          area_code: rawResult.area?.code ?? '',
+          area_name: rawResult.area?.name ?? '',
           area_order: rawResult.faixa?.ordem || 0,
-          tabela_id: rawResult.tabela?.id || '',
-          tabela_codigo: rawResult.tabela?.codigo_tabela || '',
-          tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] || '',
-          technique: rawResult.tabela?.nome || '',
-          codigo_orcamento: rawResult.codigo_orcamento || '',
+          tabela_id: rawResult.tabela?.id ?? '',
+          tabela_codigo: rawResult.tabela?.codigo_tabela ?? '',
+          tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] ?? '',
+          technique: rawResult.tabela?.nome ?? '',
+          codigo_orcamento: rawResult.codigo_orcamento ?? '',
           quantity: rawResult.parametros?.quantidade || quantidade,
           num_cores: rawResult.parametros?.num_cores || numCores,
           tier_used: rawResult.faixa?.ordem || 0,

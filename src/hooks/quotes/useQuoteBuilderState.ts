@@ -75,7 +75,7 @@ function mapQuoteSearchProduct(
     price: p.sale_price ?? p.base_price ?? 0,
     images,
     colors: (p.colors ?? []).map((c: string | RawProductColor) => {
-      const name = typeof c === 'string' ? c : c.name || '';
+      const name = typeof c === 'string' ? c : (c.name ?? '');
       const hex = (typeof c === 'string' ? undefined : c.hex) || findKnownHex(name) || undefined;
       return { name, hex, stock: typeof c === 'string' ? undefined : c.stock };
     }),
@@ -471,7 +471,7 @@ export function useQuoteBuilderState() {
     fetchQuote(quoteId).then((quote) => {
       if (!isMounted) return;
       if (quote) {
-        setClientId(quote.client_id || '');
+        setClientId(quote.client_id ?? '');
         /**
          * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
          *
@@ -480,11 +480,11 @@ export function useQuoteBuilderState() {
          * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
          * da pessoa de contato, não da empresa.
          */
-        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
+        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) ?? '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-        setNotes(quote.notes || '');
-        setInternalNotes(quote.internal_notes || '');
-        setQuoteNumber(quote.quote_number || '');
+        setNotes(quote.notes ?? '');
+        setInternalNotes(quote.internal_notes ?? '');
+        setQuoteNumber(quote.quote_number ?? '');
         setCurrentStatus(quote.status);
         if (quote.client_name) {
           setContactInfo({
@@ -496,7 +496,7 @@ export function useQuoteBuilderState() {
         }
         if (quote.client_company) {
           setCompanyInfo({
-            id: quote.client_id || '',
+            id: quote.client_id ?? '',
             name: quote.client_company,
             cnpj: quote.client_cnpj || undefined,
             ramo_atividade: undefined,
@@ -554,8 +554,8 @@ export function useQuoteBuilderState() {
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations ?? []).map((p) => ({
-      technique_id: p.technique?.id || '',
-      technique_name: p.technique?.name || '',
+      technique_id: p.technique?.id ?? '',
+      technique_name: p.technique?.name ?? '',
       colors_count: p.specs?.colors || 1,
       positions_count: 1,
       width_cm: p.specs?.width || undefined,
@@ -568,7 +568,7 @@ export function useQuoteBuilderState() {
     const newItem: QuoteItem = {
       product_id: product.id,
       product_name: product.name,
-      product_sku: product.sku || '',
+      product_sku: product.sku ?? '',
       product_image_url: product.imageUrl || undefined,
       quantity: quantity || 1,
       unit_price: product.price || 0,
@@ -607,7 +607,7 @@ export function useQuoteBuilderState() {
     const cartItems: QuoteItem[] = state.items.map((i) => ({
       product_id: i.product_id,
       product_name: i.product_name,
-      product_sku: i.product_sku || '',
+      product_sku: i.product_sku ?? '',
       product_image_url: i.product_image_url || undefined,
       quantity: i.quantity,
       unit_price: i.unit_price,
@@ -647,7 +647,7 @@ export function useQuoteBuilderState() {
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
       product_name: p.product_name,
-      product_sku: p.product_sku || '',
+      product_sku: p.product_sku ?? '',
       product_image_url: p.product_image_url || undefined,
       quantity: p.quantity || 1,
       unit_price: p.unit_price || 0,
@@ -676,9 +676,9 @@ export function useQuoteBuilderState() {
         const parsedItems: QuoteItem[] = rawItems.map((raw) => {
           const p = JSON.parse(raw);
           return {
-            product_id: p.product_id || '',
-            product_name: p.product_name || '',
-            product_sku: p.product_sku || '',
+            product_id: p.product_id ?? '',
+            product_name: p.product_name ?? '',
+            product_sku: p.product_sku ?? '',
             product_image_url: p.product_image || undefined,
             quantity: Math.max(1, p.quantity || 1),
             unit_price: parseFloat(p.product_price || '0'),
@@ -704,13 +704,13 @@ export function useQuoteBuilderState() {
     // ── Single product: product_id param ──
     const productId = searchParams.get('product_id') || searchParams.get('productId');
     if (!productId) return;
-    const productName = searchParams.get('product_name') || '';
+    const productName = searchParams.get('product_name') ?? '';
     const colorName = searchParams.get('color_name') || undefined;
     const colorHex = searchParams.get('color_hex') || undefined;
     const newItem: QuoteItem = {
       product_id: productId,
       product_name: productName,
-      product_sku: searchParams.get('product_sku') || '',
+      product_sku: searchParams.get('product_sku') ?? '',
       product_image_url: searchParams.get('product_image') || undefined,
       quantity: Math.max(1, parseInt(searchParams.get('min_quantity') || '1', 10)),
       unit_price: parseFloat(searchParams.get('product_price') || '0'),
@@ -828,7 +828,7 @@ export function useQuoteBuilderState() {
   // ── Template ──
   const applyTemplate = useCallback((template: QuoteTemplate) => {
     const newItems: QuoteItem[] = template.items.map((item) => ({
-      product_id: item.productId || '',
+      product_id: item.productId ?? '',
       product_name: item.productName,
       product_sku: item.productSku,
       product_image_url: item.productImageUrl,
@@ -874,7 +874,7 @@ export function useQuoteBuilderState() {
       colorHex: item.color_hex,
       personalizations: item.personalizations?.map((p) => ({
         techniqueId: p.technique_id,
-        techniqueName: p.technique_name || '',
+        techniqueName: p.technique_name ?? '',
         colorsCount: p.colors_count,
         positionsCount: p.positions_count,
         unitCost: p.unit_cost,

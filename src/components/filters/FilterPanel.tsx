@@ -139,7 +139,7 @@ export function FilterPanel({
         <div className="flex items-center gap-2 text-sm">
           <span className="whitespace-nowrap text-xs text-muted-foreground">Mín. vendas</span>
           <DebouncedPriceInput
-            value={filters.minSupplierSales90d || ''}
+            value={filters.minSupplierSales90d ?? ''}
             onChange={(v) => onFilterChange({ ...filters, minSupplierSales90d: v })}
             fallback={0}
             placeholder="Ex: 1500"
@@ -158,7 +158,7 @@ export function FilterPanel({
         <div className="flex items-center gap-2 text-sm">
           <span className="whitespace-nowrap text-xs text-muted-foreground">Mín. vendas</span>
           <DebouncedPriceInput
-            value={filters.minPromoSales90d || ''}
+            value={filters.minPromoSales90d ?? ''}
             onChange={(v) => onFilterChange({ ...filters, minPromoSales90d: v })}
             fallback={0}
             placeholder="Ex: 100"

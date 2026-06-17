@@ -69,7 +69,7 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
           variant="outline"
           className={cn(
             'h-5 gap-1 px-1.5 py-0 text-[10px]',
-            statusConfig[quote.status]?.className || '',
+            statusConfig[quote.status]?.className ?? '',
           )}
         >
           {quote.status === 'pending' && (

@@ -68,7 +68,7 @@ export function mapLightweightToProduct(
   return {
     id: String(p.id),
     name: p.name,
-    description: p.short_description || '',
+    description: p.short_description ?? '',
     shortDescription: p.short_description ?? null,
     category_id: resolvedCategoryId,
     category_name: resolvedCategoryName,
@@ -283,7 +283,7 @@ export function useProductsCatalog(filters?: {
   suppliers?: string[];
   sortBy?: string;
 }) {
-  const search = filters?.search || '';
+  const search = filters?.search ?? '';
   const categories = filters?.categories ?? [];
   const suppliers = filters?.suppliers ?? [];
   const sortBy = filters?.sortBy || 'newest';

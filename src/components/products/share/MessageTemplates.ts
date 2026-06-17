@@ -26,7 +26,7 @@ Segue informações sobre o produto solicitado:
 *${product.name}*
 SKU: ${product.sku}
 
-${product.description || ''}
+${product.description ?? ''}
 
 Cores disponíveis: ${colors || 'Sob consulta'}
 Valor unitário: a partir de ${formatPrice(product.price)}
@@ -51,7 +51,7 @@ Olha esse produto que separei pra você:
 
 *${product.name}*
 
-${product.description || ''}
+${product.description ?? ''}
 
 🎨 Cores: ${colors || 'Consulte'}
 💰 A partir de ${formatPrice(product.price)}/un
@@ -72,7 +72,7 @@ Promo Brindes - Brindes com Excelência!`;
 
 *${product.name}*
 
-${product.description || ''}
+${product.description ?? ''}
 
 ${colorCount > 0 ? `✨ ${colorCount} cores disponíveis: ${colors}` : '✨ Cores sob consulta'}
 💰 A partir de apenas ${formatPrice(product.price)}/un

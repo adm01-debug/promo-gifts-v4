@@ -35,7 +35,7 @@ export function generateKitCompleteMessage(product: Product) {
 *${product.name}*
 SKU: ${product.sku}
 
-${product.description || ''}
+${product.description ?? ''}
 
 📋 *Componentes do Kit:*
 ${itemsList || 'Consultar itens'}
@@ -53,7 +53,7 @@ export function generateItemMessage(product: Product, item: KitComponent) {
 *${item.productName}*
 Parte do Kit: ${product.name}
 
-${item.description || ''}
+${item.description ?? ''}
 ${item.material ? `🧵 Material: ${item.material}` : ''}
 ${item.weightG ? `⚖️ Peso: ${item.weightG}g` : ''}
 

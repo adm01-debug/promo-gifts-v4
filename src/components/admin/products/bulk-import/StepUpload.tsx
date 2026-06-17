@@ -58,7 +58,7 @@ function parseCSV(text: string): { headers: string[]; rows: Record<string, strin
     const values = parseCSVLine(line, delimiter);
     const row: Record<string, string> = {};
     headers.forEach((h, i) => {
-      row[h] = values[i] || '';
+      row[h] = values[i] ?? '';
     });
     return row;
   });
@@ -90,7 +90,7 @@ export function StepUpload({ onFileProcessed }: StepUploadProps) {
           const result = parseCSV(text);
           parsedHeaders = result.headers;
           parsedRows = result.rows;
-        } else if (['xlsx', 'xls'].includes(ext || '')) {
+        } else if (['xlsx', 'xls'].includes(ext ?? '')) {
           const XLSX = await import('@e965/xlsx');
           const buffer = await file.arrayBuffer();
           const wb = XLSX.read(buffer, { type: 'array' });

@@ -253,7 +253,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       (t) =>
         t.ativo !== false &&
         (t.nome.toLowerCase().includes(s) ||
-          (t.codigo_curto || '').toLowerCase().includes(s) ||
+          (t.codigo_curto ?? '').toLowerCase().includes(s) ||
           t.nome_grupo?.toLowerCase().includes(s) ||
           t.grupo_tecnica?.toLowerCase().includes(s)),
     );
@@ -346,7 +346,7 @@ function enrichArea(
     ...area,
     technique_name: tech?.nome || '—',
     technique_code: tech?.codigo_curto || '—',
-    technique_group: tech?.grupo_tecnica || '',
+    technique_group: tech?.grupo_tecnica ?? '',
     max_colors:
       tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined
         ? typeof tech.max_cores === 'string'

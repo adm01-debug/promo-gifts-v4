@@ -133,7 +133,7 @@ export function formatShipping(type?: string, cost?: number): string {
 export const ProposalHtmlTemplate = forwardRef<HTMLDivElement, { data: ProposalTemplateData }>(
   ({ data }, ref) => {
     const company = data.client.company || data.client.name;
-    const contact = data.client.contactName || '';
+    const contact = data.client.contactName ?? '';
 
     return (
       <div

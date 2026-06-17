@@ -112,7 +112,7 @@ export function MatchCard({
     const params = new URLSearchParams({
       product_id: p.id,
       product_name: p.name,
-      product_sku: p.sku || '',
+      product_sku: p.sku ?? '',
       product_price: String(p.price),
       min_quantity: String(p.minQuantity || 1),
       ...(p.image_url ? { product_image: p.image_url } : {}),

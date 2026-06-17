@@ -62,8 +62,8 @@ export function TechniqueCard({
   onUpdateSetting,
   viewMode,
 }: TechniqueCardProps) {
-  const style = getTechniqueStyle(technique.code || '');
-  const thumbnail = getTechniqueThumbnail(technique.code || '');
+  const style = getTechniqueStyle(technique.code ?? '');
+  const thumbnail = getTechniqueThumbnail(technique.code ?? '');
   const { recommendation } = technique;
   const sla = getSlaInfo(technique.estimated_days);
   const estimatedCost = technique.unit_cost * quantity + technique.setup_cost;

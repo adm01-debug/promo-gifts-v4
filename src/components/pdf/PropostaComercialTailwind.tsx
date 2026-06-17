@@ -20,7 +20,7 @@ import { ProposalFooter } from './proposal/ProposalFooter';
 /* Compact client bar for continuation pages */
 function ProposalClientBarCompact({ data }: { data: ProposalTemplateData }) {
   const company = data.client.company || data.client.name;
-  const contact = data.client.contactName || '';
+  const contact = data.client.contactName ?? '';
   return (
     <div
       style={{

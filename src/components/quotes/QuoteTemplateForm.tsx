@@ -40,16 +40,16 @@ export function QuoteTemplateForm({
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<CreateTemplateInput>({
-    name: template?.name || '',
-    description: template?.description || '',
+    name: template?.name ?? '',
+    description: template?.description ?? '',
     is_default: template?.is_default || false,
     items: template?.items || initialItems,
     discount_percent: template?.discount_percent ?? initialDiscountPercent,
     discount_amount: template?.discount_amount ?? initialDiscountAmount,
     notes: template?.notes ?? initialNotes,
     internal_notes: template?.internal_notes ?? initialInternalNotes,
-    payment_terms: template?.payment_terms || '',
-    delivery_time: template?.delivery_time || '',
+    payment_terms: template?.payment_terms ?? '',
+    delivery_time: template?.delivery_time ?? '',
     validity_days: template?.validity_days || 30,
   });
 
@@ -178,7 +178,7 @@ export function QuoteTemplateForm({
             <Label htmlFor="description">Descrição</Label>
             <Textarea
               id="description"
-              value={formData.description || ''}
+              value={formData.description ?? ''}
               onChange={(e) => updateField('description', e.target.value)}
               placeholder="Descreva o template para facilitar a identificação..."
               rows={2}
@@ -212,7 +212,7 @@ export function QuoteTemplateForm({
                   min={0}
                   max={100}
                   step={0.1}
-                  value={formData.discount_percent || ''}
+                  value={formData.discount_percent ?? ''}
                   onChange={(e) => {
                     updateField('discount_percent', parseFloat(e.target.value) || 0);
                     if (e.target.value) updateField('discount_amount', 0);
@@ -244,7 +244,7 @@ export function QuoteTemplateForm({
                 <Label htmlFor="payment_terms">Condições de Pagamento</Label>
                 <Input
                   id="payment_terms"
-                  value={formData.payment_terms || ''}
+                  value={formData.payment_terms ?? ''}
                   onChange={(e) => updateField('payment_terms', e.target.value)}
                   placeholder="Ex: 50% entrada + 50% na entrega"
                 />
@@ -253,7 +253,7 @@ export function QuoteTemplateForm({
                 <Label htmlFor="delivery_time">Prazo de Entrega</Label>
                 <Input
                   id="delivery_time"
-                  value={formData.delivery_time || ''}
+                  value={formData.delivery_time ?? ''}
                   onChange={(e) => updateField('delivery_time', e.target.value)}
                   placeholder="Ex: 15 dias úteis"
                 />
@@ -270,7 +270,7 @@ export function QuoteTemplateForm({
               <Label htmlFor="notes">Observações para o Cliente</Label>
               <Textarea
                 id="notes"
-                value={formData.notes || ''}
+                value={formData.notes ?? ''}
                 onChange={(e) => updateField('notes', e.target.value)}
                 placeholder="Observações que aparecerão na proposta..."
                 rows={3}
@@ -280,7 +280,7 @@ export function QuoteTemplateForm({
               <Label htmlFor="internal_notes">Notas Internas</Label>
               <Textarea
                 id="internal_notes"
-                value={formData.internal_notes || ''}
+                value={formData.internal_notes ?? ''}
                 onChange={(e) => updateField('internal_notes', e.target.value)}
                 placeholder="Notas visíveis apenas para a equipe..."
                 rows={2}

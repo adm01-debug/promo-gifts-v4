@@ -123,8 +123,8 @@ export function CompanySearchDropdown({
             const meta = (h.metadata || {}) as CompanyMeta;
             return (
               h.label.toLowerCase().includes(term) ||
-              (meta.cnpj || '').includes(term) ||
-              (meta.razao_social || '').toLowerCase().includes(term)
+              (meta.cnpj ?? '').includes(term) ||
+              (meta.razao_social ?? '').toLowerCase().includes(term)
             );
           })
         : history;

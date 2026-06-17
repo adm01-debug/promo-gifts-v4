@@ -65,7 +65,7 @@ export function useCatalogRealStats() {
       const totalVariants = variantsResult.count ?? 0;
 
       // Categories: filter hidden ones from records
-      const visible = categoriesResult.records.filter((c) => !isHiddenCategory(c.name || ''));
+      const visible = categoriesResult.records.filter((c) => !isHiddenCategory(c.name ?? ''));
       const totalCategories = visible.length;
 
       // Suppliers: use count from countMode

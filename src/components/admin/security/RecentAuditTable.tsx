@@ -104,7 +104,7 @@ export function RecentAuditTable() {
         if (
           !e.action.toLowerCase().includes(q) &&
           !e.resource_type.toLowerCase().includes(q) &&
-          !(e.resource_id || '').toLowerCase().includes(q) &&
+          !(e.resource_id ?? '').toLowerCase().includes(q) &&
           !adminName.includes(q)
         )
           return false;

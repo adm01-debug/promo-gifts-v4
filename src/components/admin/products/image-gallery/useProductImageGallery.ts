@@ -109,7 +109,7 @@ export function useProductImageGallery({
   const extImageMap = useMemo(() => {
     const map = new Map<string, ExternalImage>();
     externalImages.forEach((img) => {
-      const url = img.url_cdn || img.url_original || img.url || '';
+      const url = img.url_cdn || img.url_original || (img.url ?? '');
       if (url) map.set(url, img);
     });
     return map;
@@ -735,7 +735,7 @@ export function useProductImageGallery({
               'Imagem';
             const variantLabel =
               ext.supplier_code || ext.variant_id
-                ? variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name || ''
+                ? (variantMap.get(ext.supplier_code || (ext.variant_id ?? ''))?.color_name ?? '')
                 : '';
             const altText = template
               .replace('{tipo}', typeLabel)

@@ -124,7 +124,7 @@ export function LocationCard({
         // Deselect
         setSelectedGroupCode(null);
         setSelectedVariationId(null);
-        onSelectArea(selectedAreaId || '', null);
+        onSelectArea(selectedAreaId ?? '', null);
         return;
       }
       setSelectedGroupCode(groupCode);

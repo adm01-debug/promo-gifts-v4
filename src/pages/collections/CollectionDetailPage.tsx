@@ -262,7 +262,7 @@ export default function CollectionDetailPage() {
     }
     if (sortBy === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     else if (sortBy === 'sku')
-      filtered = [...filtered].sort((a, b) => (a.sku || '').localeCompare(b.sku || ''));
+      filtered = [...filtered].sort((a, b) => (a.sku ?? '').localeCompare(b.sku ?? ''));
     return filtered;
   }, [products, searchQuery, sortBy, onlyDrops, priceAtSaveMap]);
 

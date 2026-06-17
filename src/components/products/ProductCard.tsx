@@ -463,7 +463,7 @@ export const ProductCard = memo(
         // Prioridade 3.5: thumbnail vindo de useExternalVariantStock
         // (lightweight catalog não traz colors[].images — fallback ao banco externo)
         const liveMatch = liveVariants?.find(
-          (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+          (v) => (v.color_name ?? '').toLowerCase() === activeColorName.toLowerCase(),
         );
         if (liveMatch?.selected_thumbnail) return liveMatch.selected_thumbnail;
       }
@@ -616,7 +616,7 @@ export const ProductCard = memo(
           const liveMatch =
             selectedColorFromStore && activeColorName && liveVariants?.length
               ? liveVariants.find(
-                  (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                  (v) => (v.color_name ?? '').toLowerCase() === activeColorName.toLowerCase(),
                 )
               : undefined;
           const liveStock = liveMatch?.stock_quantity ?? null;
@@ -753,7 +753,7 @@ export const ProductCard = memo(
             const liveMatch =
               hasUserSelectedColor && activeColorName && liveVariants?.length
                 ? liveVariants.find(
-                    (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                    (v) => (v.color_name ?? '').toLowerCase() === activeColorName.toLowerCase(),
                   )
                 : undefined;
             const liveStock = liveMatch?.stock_quantity ?? null;

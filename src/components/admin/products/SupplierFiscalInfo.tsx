@@ -346,14 +346,14 @@ export function SupplierFiscalInfo({ productId, supplierId }: Props) {
         <div className="grid grid-cols-2 gap-3 rounded-md border border-border/50 bg-muted/30 p-3 sm:grid-cols-4">
           <EditField
             label="CST"
-            value={form.cst || ''}
+            value={form.cst ?? ''}
             onChange={(v) => updateField('cst', v)}
             mono
             placeholder="Ex: 060"
           />
           <EditField
             label="CFOP"
-            value={form.cfop || ''}
+            value={form.cfop ?? ''}
             onChange={(v) => updateField('cfop', v)}
             mono
             placeholder="Ex: 5102"
@@ -381,21 +381,21 @@ export function SupplierFiscalInfo({ productId, supplierId }: Props) {
           />
           <EditField
             label="CEST"
-            value={form.cest || ''}
+            value={form.cest ?? ''}
             onChange={(v) => updateField('cest', v)}
             mono
             placeholder="Ex: 2804200"
           />
           <EditField
             label="CSOSN"
-            value={form.csosn || ''}
+            value={form.csosn ?? ''}
             onChange={(v) => updateField('csosn', v)}
             mono
             placeholder="Ex: 500"
           />
           <EditField
             label="Natureza da Op."
-            value={form.operation_nature || ''}
+            value={form.operation_nature ?? ''}
             onChange={(v) => updateField('operation_nature', v)}
             placeholder="Ex: Venda de Merc."
           />

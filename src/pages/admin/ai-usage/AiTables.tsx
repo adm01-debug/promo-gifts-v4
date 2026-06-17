@@ -174,7 +174,7 @@ export function AiTables({ byUser, byModel, logs, statsLoading, logsLoading }: A
                         </Badge>
                       </td>
                       <td className="px-2 py-1.5 text-muted-foreground">
-                        {(log.model || '').replace(/^(google|openai)\//, '')}
+                        {(log.model ?? '').replace(/^(google|openai)\//, '')}
                       </td>
                       <td className="px-2 py-1.5 text-right">{formatNumber(log.total_tokens)}</td>
                       <td className="px-2 py-1.5 text-right">

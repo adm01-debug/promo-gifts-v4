@@ -73,7 +73,7 @@ export function useCatalogFiltering({
         return [];
       }
     } else if (categoryFilterSet.size > 0) {
-      result = result.filter((p) => categoryFilterSet.has(p.category_id || ''));
+      result = result.filter((p) => categoryFilterSet.has(p.category_id ?? ''));
     }
 
     if (result.length === 0) return result;
@@ -91,14 +91,14 @@ export function useCatalogFiltering({
           if (colorFilterSet.size > 0 && colorFilterSet.has(c.name)) return true;
 
           if (colorVariationSet.size > 0) {
-            const vSlug = (c.variationSlug || '').toLowerCase().trim();
+            const vSlug = (c.variationSlug ?? '').toLowerCase().trim();
             if (colorVariationSet.has(vSlug)) return true;
           }
 
           if (groupArray) {
-            const gSlug = (c.groupSlug || '').toLowerCase().trim();
-            const gName = (c.group || '').toLowerCase().trim();
-            const cName = (c.name || '').toLowerCase().trim();
+            const gSlug = (c.groupSlug ?? '').toLowerCase().trim();
+            const gName = (c.group ?? '').toLowerCase().trim();
+            const cName = (c.name ?? '').toLowerCase().trim();
 
             if (colorGroupSet.has(gSlug) || colorGroupSet.has(gName)) return true;
             // groupArray is small, so some is fine
@@ -117,9 +117,9 @@ export function useCatalogFiltering({
     if (supplierFilterSet.size > 0) {
       result = result.filter(
         (p) =>
-          supplierFilterSet.has(p.supplier?.id || '') ||
-          supplierFilterSet.has(p.brand || '') ||
-          supplierFilterSet.has(p.supplier_reference || ''),
+          supplierFilterSet.has(p.supplier?.id ?? '') ||
+          supplierFilterSet.has(p.brand ?? '') ||
+          supplierFilterSet.has(p.supplier_reference ?? ''),
       );
     }
 
@@ -142,7 +142,7 @@ export function useCatalogFiltering({
     }
 
     if (genderFilterSet.size > 0) {
-      result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
+      result = result.filter((p) => genderFilterSet.has((p.gender ?? '').toLowerCase().trim()));
     }
 
     if (hasMaterialFilter && !isLoadingMaterialFilter) {

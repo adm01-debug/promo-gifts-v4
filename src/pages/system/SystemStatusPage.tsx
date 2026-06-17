@@ -87,8 +87,8 @@ export default function SystemStatusPage() {
     const results: StatusItem[] = [];
 
     // 1. Instance & Session Info
-    const supabaseUrl = SUPABASE_URL || '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+    const supabaseUrl = SUPABASE_URL ?? '';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '';
     const {
       data: { session },
     } = await supabase.auth.getSession();

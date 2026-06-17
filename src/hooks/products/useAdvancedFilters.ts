@@ -163,7 +163,7 @@ export function useAdvancedFilters() {
       techniques?.map((tech) => ({
         id: tech.id,
         name: tech.name,
-        code: tech.code || '',
+        code: tech.code ?? '',
         estimatedDays: tech.estimated_days,
         minQuantity: tech.min_quantity,
       })) ?? []

@@ -80,7 +80,7 @@ export default function ProductDetail() {
   const [packagingModalOpen, setPackagingModalOpen] = useState(false);
   const { addToRecentlyViewed } = useRecentlyViewedStore();
 
-  const { data, isLoading, isError } = useProduct(id || '');
+  const { data, isLoading, isError } = useProduct(id ?? '');
   const product = data as Product | null | undefined;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
@@ -201,7 +201,7 @@ export default function ProductDetail() {
       return;
     }
 
-    const normalizedParam = corParam?.toLowerCase().trim() || '';
+    const normalizedParam = corParam?.toLowerCase().trim() ?? '';
 
     // 1. Tenta match exato por nome
     let match = product.variations.find(
@@ -211,7 +211,7 @@ export default function ProductDetail() {
     // 2. Tenta match parcial por nome
     if (!match && normalizedParam) {
       match = product.variations.find((v: ProductVariation) => {
-        const name = v.color?.name?.toLowerCase().trim() || '';
+        const name = v.color?.name?.toLowerCase().trim() ?? '';
         return name.includes(normalizedParam) || normalizedParam.includes(name);
       });
     }
@@ -250,10 +250,10 @@ export default function ProductDetail() {
   // Sync URL on variation change
   useEffect(() => {
     if (!product || !colorAutoSelected) return;
-    const currentCor = searchParams.get('cor') || '';
-    const currentHex = searchParams.get('hex') || '';
-    const newCor = selectedVariation?.color?.name || '';
-    const newHex = selectedVariation?.color?.hex || '';
+    const currentCor = searchParams.get('cor') ?? '';
+    const currentHex = searchParams.get('hex') ?? '';
+    const newCor = selectedVariation?.color?.name ?? '';
+    const newHex = selectedVariation?.color?.hex ?? '';
     if (currentCor === newCor && currentHex === newHex) return;
     const newParams = new URLSearchParams(searchParams);
     if (newCor) {
@@ -321,7 +321,9 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images[0] || ''
+          product.og_image_url
+            ? getCdnUrl(product.og_image_url, 'large')
+            : (product.images[0] ?? '')
         }
         ogType="product"
       />
@@ -342,7 +344,7 @@ export default function ProductDetail() {
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
         <ProductDetailHero
           product={product}
-          id={id || ''}
+          id={id ?? ''}
           selectedVariation={selectedVariation}
           setSelectedVariation={setSelectedVariation}
           isFavorite={isFavorite}

@@ -167,7 +167,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       }
 
       for (const oi of orderItems ?? []) {
-        const sellerId = ordersMap[oi.order_id || '']?.seller_id;
+        const sellerId = ordersMap[oi.order_id ?? '']?.seller_id;
         if (!sellerId) continue;
         const s = sellerMap.get(sellerId) || {
           sellerId,

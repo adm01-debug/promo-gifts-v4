@@ -453,7 +453,7 @@ export async function fetchAndProcessStockData(): Promise<{
     return {
       productId: product.id,
       productName: product.name,
-      productSku: product.sku || '',
+      productSku: product.sku ?? '',
       productImageUrl,
       categoryName,
       supplierName,

@@ -213,7 +213,7 @@ export function generateErrorReportCSV(
 
   if (failedRows?.length) {
     for (const r of failedRows) {
-      lines.push(`${r.row};${r.sku || ''};${r.name || ''};${r.errors.join(' | ')}`);
+      lines.push(`${r.row};${r.sku ?? ''};${r.name ?? ''};${r.errors.join(' | ')}`);
     }
   }
 

@@ -34,7 +34,7 @@ export function CustomizationOptions({
   // Atualizar tabela de preços quando muda cores ou tamanho
   useEffect(() => {
     if (onTableCodeChange) {
-      const table = findMatchingTable(colors, sizeOption || '');
+      const table = findMatchingTable(colors, sizeOption ?? '');
       onTableCodeChange(table?.tableCode || null);
     }
   }, [colors, sizeOption, findMatchingTable, onTableCodeChange]);
@@ -123,7 +123,7 @@ export function CustomizationOptions({
             <Ruler className="h-4 w-4 text-primary" />
             Tamanho da Gravação
           </label>
-          <Select value={sizeOption || ''} onValueChange={onSizeChange}>
+          <Select value={sizeOption ?? ''} onValueChange={onSizeChange}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tamanho" />
             </SelectTrigger>

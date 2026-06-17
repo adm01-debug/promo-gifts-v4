@@ -398,7 +398,7 @@ export default function QuoteViewPage() {
 
       {showPresentation && quote?.items && quote.items.length > 0 && (
         <PresentationMode
-          title={`Proposta ${quote.quote_number || ''}`}
+          title={`Proposta ${quote.quote_number ?? ''}`}
           subtitle={quote.client_company || quote.client_name || undefined}
           brandName="Promo Brindes"
           onClose={() => setShowPresentation(false)}

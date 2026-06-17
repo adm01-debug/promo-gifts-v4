@@ -29,7 +29,7 @@ export function exportCSV(rows: TelemetryRow[], timeFilter: TimeFilter) {
     r.query_limit ?? '-',
     r.query_offset ?? '-',
     r.count_mode ?? '-',
-    (r.error_message || '').replace(/"/g, '""'),
+    (r.error_message ?? '').replace(/"/g, '""'),
   ]);
   const csv = [headers.join(','), ...csvRows.map((row) => row.map((v) => `"${v}"`).join(','))].join(
     '\n',

@@ -52,7 +52,7 @@ export function WorkflowEditDialog({
           <div>
             <label className="mb-1 block text-sm font-medium">Nome</label>
             <Input
-              value={form.name || ''}
+              value={form.name ?? ''}
               onChange={(e) => onFormChange((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
@@ -83,7 +83,7 @@ export function WorkflowEditDialog({
           <div>
             <label className="mb-1 block text-sm font-medium">Descrição</label>
             <Input
-              value={form.description || ''}
+              value={form.description ?? ''}
               onChange={(e) => onFormChange((p) => ({ ...p, description: e.target.value }))}
               placeholder="O que esta etapa faz..."
             />
@@ -111,7 +111,7 @@ export function WorkflowEditDialog({
               <div>
                 <label className="mb-1 block text-sm font-medium">Prompt do Agente</label>
                 <Textarea
-                  value={form.prompt || ''}
+                  value={form.prompt ?? ''}
                   onChange={(e) => onFormChange((p) => ({ ...p, prompt: e.target.value }))}
                   className="min-h-[120px] font-mono text-xs"
                   placeholder="Instruções para o agente..."

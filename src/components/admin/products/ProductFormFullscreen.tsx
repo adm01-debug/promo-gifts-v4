@@ -175,16 +175,16 @@ export function ProductFormFullscreen({
   }, [globalDefault, isEdit, initialData, setValue]);
 
   const formValues = watch();
-  const supplierId = formValues.supplier_id || '';
-  const packingType = formValues.packing_type || '';
+  const supplierId = formValues.supplier_id ?? '';
+  const packingType = formValues.packing_type ?? '';
   const isBoxProduct = packingType.toLowerCase().includes('caixa');
-  const skuValue = formValues.sku || '';
-  const nameValue = formValues.name || '';
+  const skuValue = formValues.sku ?? '';
+  const nameValue = formValues.name ?? '';
   const salePriceValue = formValues.sale_price ?? 0;
   const costPriceValue = formValues.cost_price ?? 0;
   const stockQuantityValue = formValues.stock_quantity ?? 0;
-  const brandValue = formValues.brand || '';
-  const supplierRefValue = formValues.supplier_reference || '';
+  const brandValue = formValues.brand ?? '';
+  const supplierRefValue = formValues.supplier_reference ?? '';
 
   const flags: Record<string, boolean> = {
     is_active: formValues.is_active,

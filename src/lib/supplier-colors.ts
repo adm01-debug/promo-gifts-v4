@@ -78,5 +78,5 @@ export function getSupplierColors(supplierName: string): SupplierColorConfig {
  */
 export function getSupplierBadgeClasses(supplierName: string): string {
   const colors = getSupplierColors(supplierName);
-  return `${colors.bg} ${colors.text} ${colors.border || ''} border`;
+  return `${colors.bg} ${colors.text} ${colors.border ?? ''} border`;
 }

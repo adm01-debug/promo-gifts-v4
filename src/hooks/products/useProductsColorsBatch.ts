@@ -131,13 +131,13 @@ export function useProductsColorsBatch(productIds: string[]) {
 
           for (const row of allRows) {
             const pid = row.product_id;
-            const name = (row.color_name || '').trim();
+            const name = (row.color_name ?? '').trim();
             if (!name) continue;
             const hex = row.color_hex?.trim() || null;
             const image =
               row.selected_thumbnail?.trim() ||
               (Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : null);
-            const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
+            const key = `${name.toLowerCase()}|${(hex ?? '').toLowerCase()}`;
 
             let dedupMap = results.get(pid);
             if (!dedupMap) {

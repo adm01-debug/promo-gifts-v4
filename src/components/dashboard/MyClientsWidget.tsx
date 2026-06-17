@@ -76,7 +76,7 @@ function aggregate(
       updated_at: string;
     },
   ) => {
-    const id = (row.client_company || row.client_name || row.client_email || '')
+    const id = (row.client_company || row.client_name || (row.client_email ?? ''))
       .trim()
       .toLowerCase();
     if (!id) return;

@@ -248,7 +248,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 </h4>
                 <div className="space-y-4">
                   {personalizations.map((p, idx) => {
-                    const parsed = parseNotesField(p.notes || '');
+                    const parsed = parseNotesField(p.notes ?? '');
                     const unitRounded =
                       item.quantity > 0
                         ? Math.round(((p.total_cost || 0) / item.quantity) * 100) / 100

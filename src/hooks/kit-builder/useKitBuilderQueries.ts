@@ -89,13 +89,13 @@ export function useKitBuilderQueries() {
   }, [itemSearchInput]);
 
   const setBoxFilters = useCallback((filters: BoxFilters) => {
-    setBoxSearchInput(filters.search || '');
+    setBoxSearchInput(filters.search ?? '');
     const { search: _boxSearch, ...rest } = filters;
     setBoxDimFilters(rest);
   }, []);
 
   const setItemFilters = useCallback((filters: ItemFilters) => {
-    setItemSearchInput(filters.search || '');
+    setItemSearchInput(filters.search ?? '');
     const { search: _itemSearch, ...rest } = filters;
     setItemExtraFilters(rest);
   }, []);
@@ -129,7 +129,7 @@ export function useKitBuilderQueries() {
 
         const boxes = result.records
           .filter((p) => {
-            const pt = (p.packing_type || '').toLowerCase();
+            const pt = (p.packing_type ?? '').toLowerCase();
             return pt.includes('caixa') || pt.includes('embalagem') || pt.includes('box');
           })
           .map((p) => transformToKitBox(p))

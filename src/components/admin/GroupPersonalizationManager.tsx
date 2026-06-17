@@ -103,7 +103,7 @@ export function GroupPersonalizationManager() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedGroup || ''} onValueChange={setSelectedGroup}>
+          <Select value={selectedGroup ?? ''} onValueChange={setSelectedGroup}>
             <SelectTrigger className="w-full max-w-md">
               <SelectValue placeholder="Selecione um grupo..." />
             </SelectTrigger>

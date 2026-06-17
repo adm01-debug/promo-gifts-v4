@@ -39,10 +39,10 @@ function bridgeToTecnicaUnificada(row: TecnicaBridgeResponse): TecnicaUnificada 
   const curva = row.applies_to_curved ?? row.aplica_superficie_curva ?? row.is_curved ?? false;
   return {
     id: row.id,
-    codigo: codigo || '',
+    codigo: codigo ?? '',
     codigoFornecedor: row.internal_code ?? row.codigo_interno ?? null,
     codigoStricker: null,
-    nome: nome || '',
+    nome: nome ?? '',
     descricao: row.description ?? row.descricao ?? null,
     categoria: row.group_name ?? row.nome_grupo ?? row.group ?? row.grupo_tecnica ?? 'geral',
     icone: null,

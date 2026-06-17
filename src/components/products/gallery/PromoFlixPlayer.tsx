@@ -1497,7 +1497,7 @@ export function PromoFlixPlayer({
         <VideoShareWhatsAppDialog
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
-          productName={productName || ''}
+          productName={productName ?? ''}
           videoTitle={title}
           shareUrl={shareUrl}
           productPrice={productPrice}

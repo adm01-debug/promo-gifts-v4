@@ -123,7 +123,7 @@ export function useKitBuilderPageState() {
           });
           if (result.records?.length > 0) {
             addItem(transformToKitItem(result.records[0]));
-            setKitName(result.records[0].name || '');
+            setKitName(result.records[0].name ?? '');
           }
         } catch (err) {
           logger.warn('[kit-builder] Failed to load product:', err);

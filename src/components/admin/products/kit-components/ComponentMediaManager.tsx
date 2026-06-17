@@ -128,7 +128,7 @@ export function ComponentMediaManager({
                   {item.media_type === 'image' ? (
                     <img
                       src={item.url}
-                      alt={item.title || ''}
+                      alt={item.title ?? ''}
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />

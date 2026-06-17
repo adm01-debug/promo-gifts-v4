@@ -98,7 +98,7 @@ export function useProductVideoGallery(productId?: string) {
       const { data, error } = await supabase
         .from('video_variant_links')
         .select('*')
-        .eq('product_id', productId || '');
+        .eq('product_id', productId ?? '');
       if (error) return [];
       return data ?? [];
     },

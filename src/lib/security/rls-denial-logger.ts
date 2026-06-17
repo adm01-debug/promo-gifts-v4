@@ -32,7 +32,7 @@ export interface LogRlsDenialContext {
 export function isRlsDenialError(error: PostgrestError | null | undefined): boolean {
   if (!error) return false;
   if (error.code === '42501') return true;
-  const msg = (error.message || '').toLowerCase();
+  const msg = (error.message ?? '').toLowerCase();
   return /row[- ]level security|violates row-level|new row violates/.test(msg);
 }
 

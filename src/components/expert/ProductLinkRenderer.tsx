@@ -68,7 +68,7 @@ export function ProductAwareLink({
     const name =
       typeof children === 'string'
         ? children.replace(/^🔗\s*/, '')
-        : String(children || '').replace(/^🔗\s*/, '');
+        : String(children ?? '').replace(/^🔗\s*/, '');
 
     const proxiedImage = imageUrl && !imgError ? getCdnUrl(imageUrl, 'card') : null;
 

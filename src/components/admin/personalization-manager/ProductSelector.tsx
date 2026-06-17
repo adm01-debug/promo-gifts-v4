@@ -56,7 +56,7 @@ export function ProductSelector({
             className="pl-10"
           />
         </div>
-        <Select value={selectedProduct || ''} onValueChange={setSelectedProduct}>
+        <Select value={selectedProduct ?? ''} onValueChange={setSelectedProduct}>
           <SelectTrigger className="w-full max-w-md">
             <SelectValue placeholder="Selecione um produto..." />
           </SelectTrigger>

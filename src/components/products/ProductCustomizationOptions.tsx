@@ -34,8 +34,8 @@ interface ProductCustomizationOptionsProps {
 
 /** Detecta se um local é "CIRCULAR/360°" (mutuamente exclusivo com locais planos). */
 function isCircularLocation(loc: GravacaoLocation): boolean {
-  const code = (loc.location_code || '').toUpperCase();
-  const name = (loc.location_name || '').toUpperCase();
+  const code = (loc.location_code ?? '').toUpperCase();
+  const name = (loc.location_name ?? '').toUpperCase();
   return (
     code.includes('CIRCULAR') ||
     code.includes('360') ||

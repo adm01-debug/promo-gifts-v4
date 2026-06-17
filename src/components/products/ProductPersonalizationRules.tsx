@@ -287,8 +287,8 @@ export function ProductPersonalizationRules({
                 if (!id) return null;
                 return {
                   id,
-                  name: tech.name || tech.personalization_techniques?.name || '',
-                  code: tech.code || tech.personalization_techniques?.code || '',
+                  name: tech.name || (tech.personalization_techniques?.name ?? ''),
+                  code: tech.code || (tech.personalization_techniques?.code ?? ''),
                   description:
                     tech.description ?? tech.personalization_techniques?.description ?? null,
                   estimatedDays:

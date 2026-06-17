@@ -167,14 +167,14 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
   const { userId, product, technique, client, area, mockupUrl, annotations, extra } = params;
 
   try {
-    let logoUrl = area.logoPreview || '';
+    let logoUrl = area.logoPreview ?? '';
     if (area.logoPreview?.startsWith('data:')) {
       const uploadedUrl = await uploadLogoToStorage(
         userId,
         area.logoPreview,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
-      logoUrl = uploadedUrl || '';
+      logoUrl = uploadedUrl ?? '';
     }
 
     let safeProductId: string | null = null;

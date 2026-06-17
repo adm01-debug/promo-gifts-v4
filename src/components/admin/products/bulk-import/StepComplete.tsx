@@ -70,8 +70,8 @@ export function StepComplete({
       .filter((r) => !r.valid)
       .map((r) => ({
         row: r.row,
-        sku: r.data?.sku || (rawData[r.row - 1]?.sku as string) || '',
-        name: r.data?.name || (rawData[r.row - 1]?.name as string) || '',
+        sku: r.data?.sku || ((rawData[r.row - 1]?.sku as string) ?? ''),
+        name: r.data?.name || ((rawData[r.row - 1]?.name as string) ?? ''),
         errors: r.errors,
       }));
     const csv = generateErrorReportCSV(importResult.errors, failedRows);

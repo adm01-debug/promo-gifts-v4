@@ -348,7 +348,7 @@ export function ProductSupplierSection({
                       <SupplierSelect
                         value={form.supplier_id}
                         onChange={(id, name) =>
-                          setForm((f) => ({ ...f, supplier_id: id, supplier_name: name || '' }))
+                          setForm((f) => ({ ...f, supplier_id: id, supplier_name: name ?? '' }))
                         }
                       />
                     </div>
@@ -368,7 +368,7 @@ export function ProductSupplierSection({
                           type="number"
                           min="0"
                           step="0.01"
-                          value={form.cost_price || ''}
+                          value={form.cost_price ?? ''}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, cost_price: parseFloat(e.target.value) || 0 }))
                           }
@@ -381,7 +381,7 @@ export function ProductSupplierSection({
                           type="number"
                           min="0"
                           step="0.01"
-                          value={form.sale_price || ''}
+                          value={form.sale_price ?? ''}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, sale_price: parseFloat(e.target.value) || 0 }))
                           }
@@ -410,7 +410,7 @@ export function ProductSupplierSection({
                         <Input
                           type="number"
                           min="0"
-                          value={form.stock_quantity || ''}
+                          value={form.stock_quantity ?? ''}
                           onChange={(e) =>
                             setForm((f) => ({
                               ...f,
@@ -425,7 +425,7 @@ export function ProductSupplierSection({
                         <Input
                           type="number"
                           min="1"
-                          value={form.min_order_quantity || ''}
+                          value={form.min_order_quantity ?? ''}
                           onChange={(e) =>
                             setForm((f) => ({
                               ...f,

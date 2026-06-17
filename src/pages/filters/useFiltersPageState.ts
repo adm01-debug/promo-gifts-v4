@@ -144,7 +144,7 @@ export function useFiltersPageState() {
   // é o fallback para compatibilidade com links externos que chegam com ?search= na URL
   // sem nunca passar por setFilters (first render). Com filters inicializados a partir da URL
   // no useState inicial, filters.search já contém o valor — o fallback é apenas garantia.
-  const effectiveSearch = filters.search || searchParams.get('search') || '';
+  const effectiveSearch = filters.search || (searchParams.get('search') ?? '');
   const serverSearchTerm = useDebounce(effectiveSearch, 400);
 
   const {
@@ -373,7 +373,7 @@ export function useFiltersPageState() {
   // BUG-20 FIX: usar filters.search como fonte primária (imediata) em vez de
   // searchParams.get('search') que fica stale por 1 render frame após setFilters.
   // O fallback para searchParams mantém compatibilidade com links diretos via URL.
-  const fuzzySearchQuery = filters.search || searchParams.get('search') || '';
+  const fuzzySearchQuery = filters.search || (searchParams.get('search') ?? '');
   const { results: fuzzySearchResults, hasSearch: hasFuzzySearch } = useProductFuzzySearch(
     realProducts,
     fuzzySearchQuery,
@@ -412,9 +412,9 @@ export function useFiltersPageState() {
       const supplierIdSet = new Set(filters.suppliers);
       const supplierLowerArr = filters.suppliers.map((s) => s.toLowerCase());
       result = result.filter((product) => {
-        if (supplierIdSet.has(product.supplier?.id || '')) return true;
-        if (supplierIdSet.has(product.supplier_reference || '')) return true;
-        const sName = (product.supplier?.name || product.brand || '').toLowerCase();
+        if (supplierIdSet.has(product.supplier?.id ?? '')) return true;
+        if (supplierIdSet.has(product.supplier_reference ?? '')) return true;
+        const sName = (product.supplier?.name || (product.brand ?? '')).toLowerCase();
         return supplierLowerArr.some((s) => sName.includes(s));
       });
     }
@@ -516,7 +516,7 @@ export function useFiltersPageState() {
     if (filters.gender?.length) {
       const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
       result = result.filter((product) =>
-        genderSet.has((product.gender || '').toLowerCase().trim()),
+        genderSet.has((product.gender ?? '').toLowerCase().trim()),
       );
     }
     // BUG-17 FIX: sizes era contabilizado/chipeado mas sem bloco de filtro.
@@ -641,7 +641,7 @@ export function useFiltersPageState() {
   // Search toast
   const prevSearchRef = useRef<string>('');
   useEffect(() => {
-    const currentSearch = filters.search || '';
+    const currentSearch = filters.search ?? '';
     if (currentSearch && currentSearch !== prevSearchRef.current) {
       toast.info(
         `${enrichedFilteredProducts.length.toLocaleString('pt-BR')} produto${enrichedFilteredProducts.length !== 1 ? 's' : ''} encontrado${enrichedFilteredProducts.length !== 1 ? 's' : ''}`,

@@ -438,9 +438,9 @@ export function ProductDetailHero({
                     const params = new URLSearchParams({
                       product_id: id,
                       product_name: product.name,
-                      product_sku: product.sku || '',
+                      product_sku: product.sku ?? '',
                       product_price: String(product.price),
-                      product_image: v?.selected_thumbnail || product.images?.[0] || '',
+                      product_image: v?.selected_thumbnail || (product.images?.[0] ?? ''),
                       min_quantity: String(minQuantity),
                     });
                     if (v?.color_name) params.set('color_name', v.color_name);

@@ -59,11 +59,11 @@ export default function AdminPromoverUsuarioPage() {
         if (!search.trim()) return true;
         const q = search.toLowerCase();
         return (
-          (u.full_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+          (u.full_name ?? '').toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q)
         );
       })
       .sort((a, b) =>
-        (a.full_name || '').localeCompare(b.full_name || '', 'pt-BR', {
+        (a.full_name ?? '').localeCompare(b.full_name ?? '', 'pt-BR', {
           sensitivity: 'base',
         }),
       );
@@ -174,7 +174,7 @@ export default function AdminPromoverUsuarioPage() {
                     <li key={u.user_id} className="flex items-center justify-between gap-3 py-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={u.avatar_url || undefined} alt={u.full_name || ''} />
+                          <AvatarImage src={u.avatar_url || undefined} alt={u.full_name ?? ''} />
                           <AvatarFallback className="bg-muted text-xs">
                             {(u.full_name || '?').charAt(0).toUpperCase()}
                           </AvatarFallback>

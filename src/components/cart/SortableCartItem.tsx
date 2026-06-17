@@ -68,7 +68,7 @@ export const SortableCartItem = memo(function SortableCartItem({
   onNavigate,
 }: SortableCartItemProps) {
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
-  const [localNotes, setLocalNotes] = useState(item.notes || '');
+  const [localNotes, setLocalNotes] = useState(item.notes ?? '');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

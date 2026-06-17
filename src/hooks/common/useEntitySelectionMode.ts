@@ -113,9 +113,9 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
                 JSON.stringify({
                   product_id: s.product.id,
                   product_name: s.product.name,
-                  product_sku: s.product.sku || '',
+                  product_sku: s.product.sku ?? '',
                   product_price: s.product.price,
-                  product_image: s.variant?.selected_thumbnail || s.product.images?.[0] || '',
+                  product_image: s.variant?.selected_thumbnail || (s.product.images?.[0] ?? ''),
                   quantity: 1,
                   color_name: s.variant?.color_name || null,
                   color_hex: s.variant?.color_hex || null,

@@ -430,7 +430,7 @@ export default function AdminSegurancaAcessoPage() {
                             </TableCell>
                             <TableCell
                               className="max-w-[200px] truncate text-xs text-muted-foreground"
-                              title={log.user_agent || ''}
+                              title={log.user_agent ?? ''}
                             >
                               {log.user_agent || '—'}
                             </TableCell>
@@ -676,7 +676,7 @@ export default function AdminSegurancaAcessoPage() {
                             </TableCell>
                             <TableCell
                               className="max-w-[300px] truncate text-xs text-muted-foreground"
-                              title={entry.reason || ''}
+                              title={entry.reason ?? ''}
                             >
                               {entry.reason || '—'}
                             </TableCell>

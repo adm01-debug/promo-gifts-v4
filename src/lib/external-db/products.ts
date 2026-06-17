@@ -507,7 +507,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     colors.push({
       name: variant.color_name,
       hex: variant.color_hex || '#CCCCCC',
-      code: variant.color_code || '',
+      code: variant.color_code ?? '',
       sku: variant.sku || undefined,
       stock: variant.stock_quantity ?? undefined,
       image: thumbnailImage || undefined,

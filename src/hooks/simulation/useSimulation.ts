@@ -154,7 +154,7 @@ export function useSimulation() {
       });
       return companies.map((c) => ({
         id: c.id,
-        name: c.nome_fantasia || c.razao_social || '',
+        name: c.nome_fantasia || (c.razao_social ?? ''),
         ramo: c.ramo,
         nicho: c.nicho,
         logo_url: c.logo_url,
@@ -236,7 +236,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByColor) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('SILK') ||
         c.includes('SERIGRAFIA') ||
@@ -251,7 +251,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByArea) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('DTF') ||
         c.includes('SUB') ||

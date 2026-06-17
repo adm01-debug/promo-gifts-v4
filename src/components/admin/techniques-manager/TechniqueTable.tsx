@@ -97,7 +97,7 @@ export function TechniqueTable({
           <TableRow key={tecnica.id} data-testid={`admin-row-${tecnica.id}`}>
             <TableCell>
               <InlineEditField
-                value={tecnica.codigo || ''}
+                value={tecnica.codigo ?? ''}
                 onSave={(value) =>
                   onUpdate(buildTecnicaUpdatePayload({ id: tecnica.id, code: value.toUpperCase() }))
                 }
@@ -131,7 +131,7 @@ export function TechniqueTable({
             </TableCell>
             <TableCell>
               <InlineEditField
-                value={tecnica.custoSetup?.toString() || ''}
+                value={tecnica.custoSetup?.toString() ?? ''}
                 onSave={(value) =>
                   onUpdate(
                     buildTecnicaUpdatePayload({
@@ -146,7 +146,7 @@ export function TechniqueTable({
             </TableCell>
             <TableCell>
               <InlineEditField
-                value={tecnica.custoManuseio?.toString() || ''}
+                value={tecnica.custoManuseio?.toString() ?? ''}
                 onSave={(value) =>
                   onUpdate(
                     buildTecnicaUpdatePayload({
@@ -170,7 +170,7 @@ export function TechniqueTable({
             </TableCell>
             <TableCell>
               <InlineEditField
-                value={tecnica.quantidadeMinima?.toString() || ''}
+                value={tecnica.quantidadeMinima?.toString() ?? ''}
                 onSave={(value) =>
                   onUpdate(
                     buildTecnicaUpdatePayload({
@@ -185,7 +185,7 @@ export function TechniqueTable({
             </TableCell>
             <TableCell>
               <InlineEditField
-                value={tecnica.prazoEstimado?.toString() || ''}
+                value={tecnica.prazoEstimado?.toString() ?? ''}
                 onSave={(value) =>
                   onUpdate(
                     buildTecnicaUpdatePayload({

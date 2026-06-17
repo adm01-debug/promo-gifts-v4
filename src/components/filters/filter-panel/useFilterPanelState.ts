@@ -54,7 +54,7 @@ export function useFilterPanelState(
   // onFilterChange atualiza filters.search — na próxima checagem, filters.search === localSearch.
   useEffect(() => {
     if (filters.search !== localSearch) {
-      setLocalSearch(filters.search || '');
+      setLocalSearch(filters.search ?? '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search]);
@@ -257,7 +257,7 @@ export function useFilterPanelState(
     }
     if (filters.sortBy !== 'newest') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);
-      summaries.ordenacao = opt?.label || '';
+      summaries.ordenacao = opt?.label ?? '';
     }
     return summaries;
   }, [filters]);

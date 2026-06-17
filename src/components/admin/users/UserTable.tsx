@@ -54,7 +54,7 @@ export function UserTable({
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={userItem.avatar_url || undefined}
-                      alt={userItem.full_name || ''}
+                      alt={userItem.full_name ?? ''}
                     />
                     <AvatarFallback className="bg-muted text-xs">
                       {(userItem.full_name || '?').charAt(0).toUpperCase()}

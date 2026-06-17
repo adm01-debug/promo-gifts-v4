@@ -40,7 +40,7 @@ export function useClientTopProducts(clientId?: string) {
           if (!acc[key]) {
             acc[key] = {
               sku: item.product_sku,
-              name: item.product_name || '',
+              name: item.product_name ?? '',
               image: item.product_image_url,
               totalQuantity: 0,
               totalValue: 0,

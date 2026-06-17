@@ -43,7 +43,7 @@ export function TechniqueMultiSelector({
               id: opt.technique_id,
               techniqueId: opt.technique_id,
               techniqueName: opt.tecnica_nome || 'Técnica',
-              techniqueCode: opt.codigo_tabela || '',
+              techniqueCode: opt.codigo_tabela ?? '',
               componentName: loc.location_name,
               locationName: loc.location_name,
               locationCode: loc.location_code,

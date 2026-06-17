@@ -134,9 +134,9 @@ export const MobileProductActions = React.forwardRef<HTMLDivElement, MobileProdu
             const params = new URLSearchParams({
               product_id: productId,
               product_name: productName,
-              product_sku: productSku || '',
+              product_sku: productSku ?? '',
               product_price: String(productPrice),
-              product_image: v?.selected_thumbnail || productImageUrl || '',
+              product_image: v?.selected_thumbnail || (productImageUrl ?? ''),
               min_quantity: String(minQuantity),
             });
             if (v?.color_name) params.set('color_name', v.color_name);

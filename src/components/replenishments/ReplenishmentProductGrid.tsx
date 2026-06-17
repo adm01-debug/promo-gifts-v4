@@ -189,7 +189,7 @@ export function ReplenishmentProductGrid() {
       if (c && c.length > 0) {
         next.set(id, {
           ...prod,
-          colors: c.map((x) => ({ name: x.name, hex: x.hex || '', group: '' })),
+          colors: c.map((x) => ({ name: x.name, hex: x.hex ?? '', group: '' })),
         });
       }
     }

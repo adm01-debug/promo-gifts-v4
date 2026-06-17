@@ -19,8 +19,8 @@ interface Props {
 }
 
 export function VideoMetaEditor({ video, onSave, onCancel }: Props) {
-  const [title, setTitle] = useState(video.title || '');
-  const [description, setDescription] = useState(video.description || '');
+  const [title, setTitle] = useState(video.title ?? '');
+  const [description, setDescription] = useState(video.description ?? '');
   const [videoType, setVideoType] = useState(video.video_type || 'product_video');
 
   return (

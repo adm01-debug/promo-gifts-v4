@@ -87,8 +87,8 @@ export function useTechniquePricing(techniqueCode: string | null) {
 
         const matchingTables = records.filter((t) => {
           const code = techniqueCode.toLowerCase();
-          const tableCode = ((t.codigo_tabela as string) || '').toLowerCase();
-          const grupoTecnica = ((t.grupo_tecnica as string) || '').toLowerCase();
+          const tableCode = ((t.codigo_tabela as string) ?? '').toLowerCase();
+          const grupoTecnica = ((t.grupo_tecnica as string) ?? '').toLowerCase();
           return (
             tableCode.includes(code) ||
             code.includes(tableCode) ||
@@ -99,10 +99,10 @@ export function useTechniquePricing(techniqueCode: string | null) {
 
         const options: TechniquePriceOption[] = matchingTables.map((t) => ({
           id: t.id as string,
-          tableCode: (t.codigo_tabela as string) || '',
+          tableCode: (t.codigo_tabela as string) ?? '',
           tableCodeOption: (t.codigo_curto as string | null) ?? null,
           tableFullcode: (t.codigo_tabela as string) || null,
-          techniqueName: (t.grupo_tecnica as string) || '',
+          techniqueName: (t.grupo_tecnica as string) ?? '',
           maxColors: (t.max_cores as number) || 1,
           // max_area_width_cm / max_area_height_cm not in this table.
           // They live in print_area_techniques (joined by tabela_preco_id).

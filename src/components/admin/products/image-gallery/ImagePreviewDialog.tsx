@@ -39,7 +39,7 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
                 : null;
               const variant =
                 ext.supplier_code || ext.variant_id
-                  ? variantMap.get(ext.supplier_code || ext.variant_id || '')
+                  ? variantMap.get(ext.supplier_code || (ext.variant_id ?? ''))
                   : null;
               return (
                 <div className="flex flex-wrap gap-2 px-2 pb-1 text-[11px] text-muted-foreground">
@@ -77,7 +77,10 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
                     const cf = CF_BADGE[status];
                     if (!cf) return null;
                     return (
-                      <Badge variant="outline" className={cn('flex items-center gap-1 text-[10px]', cf.className)}>
+                      <Badge
+                        variant="outline"
+                        className={cn('flex items-center gap-1 text-[10px]', cf.className)}
+                      >
                         <cf.icon className="h-2.5 w-2.5" />
                         {cf.label}
                       </Badge>

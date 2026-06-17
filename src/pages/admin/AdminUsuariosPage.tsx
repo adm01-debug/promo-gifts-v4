@@ -110,14 +110,14 @@ export default function AdminUsuariosPage() {
     () =>
       users
         .sort((a, b) =>
-          (a.full_name || '').localeCompare(b.full_name || '', 'pt-BR', { sensitivity: 'base' }),
+          (a.full_name ?? '').localeCompare(b.full_name ?? '', 'pt-BR', { sensitivity: 'base' }),
         )
         .filter((u) => {
           if (!searchQuery.trim()) return true;
           const q = searchQuery.toLowerCase();
           return (
-            (u.full_name || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q)
+            (u.full_name ?? '').toLowerCase().includes(q) ||
+            (u.email ?? '').toLowerCase().includes(q)
           );
         }),
     [users, searchQuery],

@@ -111,7 +111,7 @@ function VirtualizedProductGridInner({
       if (!batch || batch.length === 0) return p;
       return {
         ...p,
-        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+        colors: batch.map((c) => ({ name: c.name, hex: c.hex ?? '', group: '' })),
       };
     });
   }, [products, colorsByProduct]);

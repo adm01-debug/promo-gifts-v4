@@ -141,8 +141,8 @@ export async function fetchPromobrindPrintAreas(productId: string): Promise<Prom
       result.push({
         id: area.id,
         product_id: productId,
-        area_code: area.area_code || '',
-        area_name: area.area_name || area.location_name || '',
+        area_code: area.area_code ?? '',
+        area_name: area.area_name || (area.location_name ?? ''),
         component_name: area.component_name,
         location_name: area.location_name,
         max_width_cm: area.max_width,
@@ -162,8 +162,8 @@ export async function fetchPromobrindPrintAreas(productId: string): Promise<Prom
         result.push({
           id: area.id,
           product_id: productId,
-          area_code: area.area_code || '',
-          area_name: area.area_name || area.location_name || '',
+          area_code: area.area_code ?? '',
+          area_name: area.area_name || (area.location_name ?? ''),
           component_name: area.component_name,
           location_name: area.location_name,
           max_width_cm: area.max_width,

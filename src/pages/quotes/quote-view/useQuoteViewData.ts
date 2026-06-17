@@ -78,7 +78,7 @@ export function useQuoteViewData(id: string | undefined) {
     const computedTotal = fullSubtotal - discountValue + shipValue;
 
     return {
-      quoteNumber: (quote.quote_number || '').replace(/\s+/g, ''),
+      quoteNumber: (quote.quote_number ?? '').replace(/\s+/g, ''),
       date: quote.created_at
         ? format(new Date(quote.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
         : '',
@@ -176,7 +176,7 @@ export function useQuoteViewData(id: string | undefined) {
 
   const handleWhatsAppShare = () => {
     const lines = [
-      `📋 *Proposta Comercial ${quote?.quote_number || ''}*`,
+      `📋 *Proposta Comercial ${quote?.quote_number ?? ''}*`,
       '',
       `💰 Valor Total: *${formatCurrencyHelper(quote?.total || 0)}*`,
     ];
@@ -187,7 +187,7 @@ export function useQuoteViewData(id: string | undefined) {
     }
     lines.push('', 'Qualquer dúvida, estou à disposição! 😊');
     const message = encodeURIComponent(lines.join('\n'));
-    const phone = quote?.client_phone?.replace(/\D/g, '') || '';
+    const phone = quote?.client_phone?.replace(/\D/g, '') ?? '';
     const url = phone
       ? `https://wa.me/55${phone}?text=${message}`
       : `https://wa.me/?text=${message}`;

@@ -100,11 +100,11 @@ function CascadeSelects({
 
   const levels = useMemo(() => {
     const result: { items: CatNode[]; selectedId: string }[] = [];
-    result.push({ items: roots, selectedId: selectedChain[0] || '' });
+    result.push({ items: roots, selectedId: selectedChain[0] ?? '' });
     for (let i = 0; i < selectedChain.length; i++) {
       const node = nodeMap.get(selectedChain[i]);
       if (node && node.children.length > 0) {
-        result.push({ items: node.children, selectedId: selectedChain[i + 1] || '' });
+        result.push({ items: node.children, selectedId: selectedChain[i + 1] ?? '' });
       }
     }
     return result;

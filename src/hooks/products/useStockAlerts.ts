@@ -51,7 +51,7 @@ export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 
           imageUrl: getProductImageUrl(p),
           currentStock: stock,
           alertLevel,
-          supplier: p.brand || '',
+          supplier: p.brand ?? '',
         };
       });
     },

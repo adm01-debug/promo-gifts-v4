@@ -120,7 +120,7 @@ export function HeaderSection({ data }: { data: ProposalTemplateData }) {
             fontFamily: "'Montserrat', sans-serif",
           }}
         >
-          Nº&nbsp;{(data.quoteNumber || '').replace(/\s+/g, '')} • {data.date}
+          Nº&nbsp;{(data.quoteNumber ?? '').replace(/\s+/g, '')} • {data.date}
         </p>
         {data.validUntil && (
           <p

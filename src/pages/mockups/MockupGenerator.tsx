@@ -128,7 +128,7 @@ export default function MockupGenerator() {
   const layoutCaptureRequest = useMemo((): LayoutCaptureRequest | null => {
     if (!mg.lastSavedRecordId || !user?.id || !mg.selectedProduct || !mg.selectedTechnique)
       return null;
-    const mockupUrl = mg.lastSavedMockupUrl || mg.generatedMockup || '';
+    const mockupUrl = mg.lastSavedMockupUrl || (mg.generatedMockup ?? '');
     if (!mockupUrl) return null;
 
     // recordId é estável por captura → derivamos data/numeroDoc dele para manter o memo determinístico
@@ -178,7 +178,7 @@ export default function MockupGenerator() {
         colorsCount: mg.techniqueColorConfig?.colorCount,
       },
       pantoneColors: (mg.logoColorAnalysis.colors ?? []).map((c) => ({
-        name: c.selectedPantone || c.pantoneMatch?.pantoneCode || c.name || '',
+        name: c.selectedPantone || c.pantoneMatch?.pantoneCode || (c.name ?? ''),
         hex: c.hex,
       })),
       mockupImageUrl: mockupUrl,
@@ -603,7 +603,7 @@ export default function MockupGenerator() {
           onOpenChange={technique.setColorConfigDialogOpen}
           currentConfig={mg.techniqueColorConfig}
           onConfirm={mg.setTechniqueColorConfig}
-          techniqueName={mg.selectedTechnique?.name || ''}
+          techniqueName={mg.selectedTechnique?.name ?? ''}
           techniqueCode={mg.selectedTechnique?.code}
           detectedColors={mg.logoColorAnalysis.colors ?? []}
         />

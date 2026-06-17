@@ -19,9 +19,9 @@ interface Props {
 }
 
 export function ImageMetaEditor({ image, onSave, onCancel }: Props) {
-  const [altText, setAltText] = useState(image.alt_text || '');
+  const [altText, setAltText] = useState(image.alt_text ?? '');
   const [imageType, setImageType] = useState(image.image_type || 'main');
-  const [caption, setCaption] = useState(image.caption || '');
+  const [caption, setCaption] = useState(image.caption ?? '');
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col gap-1.5 rounded-lg bg-black/85 p-2 backdrop-blur-sm">

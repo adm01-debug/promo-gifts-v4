@@ -528,7 +528,7 @@ export function ProductPersonalizationManager() {
                                             Larg. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_width_cm?.toString() || ''}
+                                            value={location.max_width_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -544,7 +544,7 @@ export function ProductPersonalizationManager() {
                                             Alt. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_height_cm?.toString() || ''}
+                                            value={location.max_height_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -560,7 +560,7 @@ export function ProductPersonalizationManager() {
                                             Área (cm²)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_area_cm2?.toString() || ''}
+                                            value={location.max_area_cm2?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
