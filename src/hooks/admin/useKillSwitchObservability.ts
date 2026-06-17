@@ -73,7 +73,7 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
       setError(null);
       setLastRefresh(new Date());
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = e instanceof Error ? e.message : String(e);
       logger.warn(`[useKillSwitchObservability] load failed: ${msg}`);
       setError(msg);
     } finally {

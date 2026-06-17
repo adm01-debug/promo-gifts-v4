@@ -97,7 +97,7 @@ export function useSmokeTests(): SmokeTestsData {
         setLastRun(new Date(latestRes.data[0].ran_at));
       }
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = e instanceof Error ? e.message : String(e);
       logger.warn(`[useSmokeTests] load failed: ${msg}`);
       setError(msg);
     } finally {
@@ -114,7 +114,7 @@ export function useSmokeTests(): SmokeTestsData {
       if (rpcError) throw new Error(rpcError.message);
       await load();
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = e instanceof Error ? e.message : String(e);
       logger.warn(`[useSmokeTests] runNow failed: ${msg}`);
       setError(msg);
     } finally {

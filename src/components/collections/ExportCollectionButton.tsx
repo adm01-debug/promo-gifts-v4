@@ -75,7 +75,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       downloadBlob(blob, `${safeName}-${date}.csv`);
       toast.success('CSV exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar CSV: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar CSV: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(null);
     }
@@ -103,7 +103,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       downloadBlob(blob, `${safeName}-${date}.json`);
       toast.success('JSON exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar JSON: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar JSON: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(null);
     }
@@ -191,7 +191,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       doc.save(`${safeName}-${date}.pdf`);
       toast.success('PDF exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar PDF: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar PDF: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(null);
     }

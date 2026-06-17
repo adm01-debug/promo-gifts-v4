@@ -202,10 +202,8 @@ export function useAIRecommendations() {
             if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') {
               throw fetchErr;
             }
-            if (
-              (fetchErr as Error).message?.includes('Limite') ||
-              (fetchErr as Error).message?.includes('Créditos')
-            ) {
+            const fetchErrMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            if (fetchErrMsg.includes('Limite') || fetchErrMsg.includes('Créditos')) {
               throw fetchErr;
             }
             lastError = fetchErr instanceof Error ? fetchErr : new Error(String(fetchErr));

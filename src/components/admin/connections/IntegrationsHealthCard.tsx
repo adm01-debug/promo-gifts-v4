@@ -259,7 +259,7 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
       else if (score >= 5) toast.warning(msg);
       else toast.error(msg);
     } catch (err) {
-      toast.error(`Falha na auditoria: ${(err as Error).message}`);
+      toast.error(`Falha na auditoria: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setAuditing(false);
     }

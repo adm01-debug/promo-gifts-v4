@@ -74,7 +74,9 @@ export function FailedDeliveriesPanel() {
       qc.invalidateQueries({ queryKey: ['failed-deliveries'] });
       qc.invalidateQueries({ queryKey: ['integrations-health'] });
     } catch (err) {
-      toast.error('Falha ao reenviar', { description: (err as Error).message });
+      toast.error('Falha ao reenviar', {
+        description: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setReplayingId(null);
     }

@@ -99,7 +99,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
       return result;
     } catch (e) {
       logger.error('Ownership repair failed', e);
-      toast.error(`Falha no reparo: ${(e as Error).message}`);
+      toast.error(`Falha no reparo: ${e instanceof Error ? e.message : String(e)}`);
       return null;
     } finally {
       setRunning(false);

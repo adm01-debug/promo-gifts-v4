@@ -504,7 +504,7 @@ export function useSuppliersManager() {
       setEditingSupplier(null);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao salvar fornecedor');
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar fornecedor');
     } finally {
       setSaving(false);
     }
@@ -525,7 +525,7 @@ export function useSuppliersManager() {
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao excluir fornecedor');
+      toast.error(err instanceof Error ? err.message : 'Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
     }
@@ -561,7 +561,7 @@ export function useSuppliersManager() {
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao enviar logo');
+      toast.error(err instanceof Error ? err.message : 'Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -596,7 +596,7 @@ export function useSuppliersManager() {
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao consultar CNPJ');
+      toast.error(err instanceof Error ? err.message : 'Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }

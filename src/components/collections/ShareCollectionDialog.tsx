@@ -66,7 +66,7 @@ export function ShareCollectionDialog({
       await navigator.clipboard.writeText(url);
       toast.success('Link público gerado e copiado!');
     } catch (e) {
-      toast.error(`Erro ao gerar link: ${(e as Error).message}`);
+      toast.error(`Erro ao gerar link: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(false);
     }
@@ -87,7 +87,7 @@ export function ShareCollectionDialog({
       });
       toast.success('Link público revogado');
     } catch (e) {
-      toast.error(`Erro ao revogar: ${(e as Error).message}`);
+      toast.error(`Erro ao revogar: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(false);
     }

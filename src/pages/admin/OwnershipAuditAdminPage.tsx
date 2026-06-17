@@ -104,7 +104,7 @@ export default function OwnershipAuditAdminPage() {
       await qc.invalidateQueries({ queryKey: ['ownership-audit-reports'] });
     } catch (e) {
       logger.error('Ownership audit run failed', e);
-      toast.error(`Falha ao executar auditoria: ${(e as Error).message}`);
+      toast.error(`Falha ao executar auditoria: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setRunning(false);
     }
@@ -142,7 +142,7 @@ export default function OwnershipAuditAdminPage() {
       toast.success(`Matriz RLS exportada (${format.toUpperCase()}).`);
     } catch (e) {
       logger.error('RLS matrix export failed', e);
-      toast.error(`Falha ao exportar matriz: ${(e as Error).message}`);
+      toast.error(`Falha ao exportar matriz: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

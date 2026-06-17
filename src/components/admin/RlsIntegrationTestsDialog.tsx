@@ -68,7 +68,7 @@ export function RlsIntegrationTestsDialog() {
       if (res.ok) toast.success(`RLS ✓ ${res.summary.passed}/${res.summary.total} casos`);
       else toast.warning(`RLS ${res.summary.failed} falha(s) em ${res.summary.total} casos`);
     } catch (e) {
-      toast.error(`Falha ao rodar testes: ${(e as Error).message}`);
+      toast.error(`Falha ao rodar testes: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setRunning(false);
     }

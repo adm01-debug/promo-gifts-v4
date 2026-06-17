@@ -35,7 +35,7 @@ export function RlsAuditPanel() {
       if (failed === 0) toast.success(`Todos os ${resp?.summary.total} cenários passaram ✅`);
       else toast.error(`${failed} cenário(s) falharam ❌`);
     } catch (e) {
-      toast.error('Falha ao executar auditoria: ' + (e as Error).message);
+      toast.error('Falha ao executar auditoria: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
