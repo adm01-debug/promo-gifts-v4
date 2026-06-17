@@ -13,6 +13,10 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+import { VariantStockRowActions } from './VariantStockRowActions';
+import { useStockSelection } from './useStockSelection';
+import { StockBulkActionBar } from './StockBulkActionBar';
+
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +122,9 @@ function FlatVariantRow({
   product,
   effectiveStatus,
   projection,
+  selectionEnabled,
+  isSelected,
+  onToggleSelect,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
@@ -129,11 +136,30 @@ function FlatVariantRow({
     projectedStock: number;
     daysToTarget: number | null;
   };
+  selectionEnabled?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
   return (
-    <TableRow className="group hover:bg-muted/40">
+    <TableRow
+      className={cn('group hover:bg-muted/40', isSelected && 'bg-primary/5')}
+      data-testid="stock-row"
+      data-selected={isSelected ? 'true' : 'false'}
+    >
+      {selectionEnabled && (
+        <TableCell className="w-[40px] pr-0">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer accent-primary"
+            checked={!!isSelected}
+            onChange={onToggleSelect}
+            aria-label={`Selecionar ${product.productName} ${variant.colorName ?? ''}`}
+            data-testid="stock-row-select"
+          />
+        </TableCell>
+      )}
       <TableCell>
         <div className="flex items-center gap-3">
           <VariantThumb
@@ -525,6 +551,11 @@ export function VariantStockTable({
     );
   }
 
+  // ── Seleção em lote (paridade catálogo) ─────────────────────────────────
+  const selection = useStockSelection(
+    pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+  );
+
   return (
     <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
       {/* Toolbar sticky — fica visível ao rolar a tabela */}
@@ -631,7 +662,18 @@ export function VariantStockTable({
             )}
           </span>
 
-          {/* Modelo de negócio: variação-first. Toggle de "Agrupar" removido. */}
+          {/* Toggle de seleção em lote (paridade catálogo) */}
+          <Button
+            type="button"
+            size="sm"
+            variant={selection.enabled ? 'secondary' : 'ghost'}
+            aria-pressed={selection.enabled}
+            data-testid="stock-selection-toggle"
+            onClick={() => selection.setMode(!selection.enabled)}
+            className="h-8 gap-1 text-xs"
+          >
+            {selection.enabled ? 'Sair da seleção' : 'Selecionar'}
+          </Button>
         </div>
       </div>
 
@@ -645,6 +687,7 @@ export function VariantStockTable({
             className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
           >
             <TableRow className="bg-muted/50">
+              {selection.enabled && <TableHead className="w-[40px] pr-0"></TableHead>}
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
@@ -656,15 +699,21 @@ export function VariantStockTable({
           </TableHeader>
           <TableBody>
             {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant, effectiveStatus, projection }) => (
-                <FlatVariantRow
-                  key={`${product.productId}::${variant.id}`}
-                  product={product}
-                  variant={variant}
-                  effectiveStatus={effectiveStatus}
-                  projection={projection}
-                />
-              ))
+              pagedRows.map(({ product, variant, effectiveStatus, projection }) => {
+                const k = `${product.productId}::${variant.variantId}`;
+                return (
+                  <FlatVariantRow
+                    key={`${product.productId}::${variant.id}`}
+                    product={product}
+                    variant={variant}
+                    effectiveStatus={effectiveStatus}
+                    projection={projection}
+                    selectionEnabled={selection.enabled}
+                    isSelected={selection.isSelected(k)}
+                    onToggleSelect={() => selection.toggle(k)}
+                  />
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
@@ -737,6 +786,22 @@ export function VariantStockTable({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+      )}
+
+      {selection.enabled && (
+        <StockBulkActionBar
+          selectedCount={selection.selectedCount}
+          totalCount={pagedRows.length}
+          onSelectAll={() =>
+            selection.selectAllVisible(
+              pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+            )
+          }
+          onClear={() => selection.setMode(false)}
+          onBulkFavorite={selection.bulkFavorite}
+          onBulkCompare={selection.bulkCompare}
+          onBulkQuote={selection.bulkQuote}
+        />
       )}
     </div>
   );
