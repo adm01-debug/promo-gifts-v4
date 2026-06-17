@@ -430,9 +430,10 @@ export function StockDashboard() {
         />
         <StatCard
           title="Estoque Baixo"
-          // Valor agora bate 1:1 com o chip "Estoque Baixo" da
-          // VariantStockTable (status === 'low_stock'). Críticos têm
-          // card próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          // SSOT KPI ↔ chip: o valor bate 1:1 com `filters.status ===
+          // 'low_stock'` (que é o que o clique aplica). Críticos têm
+          // KPI próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          // Testado em VariantStockTable.kpi-consistency.test.tsx.
           value={summary.productsLowStock.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
@@ -450,7 +451,6 @@ export function StockDashboard() {
                 }
               : undefined
           }
-
         />
 
         <StatCard

@@ -70,9 +70,9 @@ const STATUS_FILTER_VALUES: StatusFilter[] = [
   'critical',
   'out_of_stock',
 ];
-// Labels alinhados aos cards do StockDashboard (KPI ↔ chip da tabela).
-// Antes: 'Risco de Ruptura' / 'Esgotado' divergiam dos cards "Estoque
-// Baixo" / "Sem Estoque" do header, gerando confusão de contagem.
+// SSOT — labels alinhados aos cards do StockDashboard (KPI ↔ chip).
+// NÃO ALTERAR sem atualizar o teste de regressão
+// `VariantStockTable.kpi-consistency.test.tsx`.
 const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   all: 'Todos',
   in_stock: 'Em Estoque',
