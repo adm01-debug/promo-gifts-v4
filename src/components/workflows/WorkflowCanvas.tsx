@@ -44,6 +44,12 @@ export interface WorkflowDefinition {
   status: 'draft' | 'active' | 'paused';
 }
 
+const WORKFLOW_STATUS_CLASSES: Record<WorkflowDefinition['status'], string> = {
+  draft: 'bg-muted text-muted-foreground',
+  active: 'bg-primary/10 text-primary',
+  paused: 'bg-warning/10 text-warning',
+} as const;
+
 export function WorkflowCanvas() {
   const [workflow, setWorkflow] = useState<WorkflowDefinition>({
     id: crypto.randomUUID(),
@@ -113,12 +119,6 @@ export function WorkflowCanvas() {
     toast.success('Etapa atualizada');
   };
 
-  const statusColor = {
-    draft: 'bg-muted text-muted-foreground',
-    active: 'bg-primary/10 text-primary',
-    paused: 'bg-warning/10 text-warning',
-  };
-
   return (
     <div className="space-y-6">
       {/* Workflow Header */}
@@ -144,7 +144,7 @@ export function WorkflowCanvas() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className={cn('text-xs', statusColor[workflow.status])}>
+              <Badge className={cn('text-xs', WORKFLOW_STATUS_CLASSES[workflow.status])}>
                 {workflow.status === 'draft'
                   ? 'Rascunho'
                   : workflow.status === 'active'

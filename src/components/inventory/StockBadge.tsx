@@ -5,6 +5,14 @@ import { cn } from '@/lib/utils';
 
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'pre-order' | 'incoming';
 
+const STOCK_INDICATOR_DOT_COLORS: Record<StockStatus, string> = {
+  'in-stock': 'bg-primary',
+  'low-stock': 'bg-warning',
+  'out-of-stock': 'bg-destructive',
+  'pre-order': 'bg-primary',
+  incoming: 'bg-primary/70',
+} as const;
+
 interface StockBadgeProps {
   status: StockStatus;
   quantity?: number;
@@ -155,21 +163,13 @@ interface StockIndicatorProps {
 }
 
 export function StockIndicator({ status, className }: StockIndicatorProps) {
-  const dotColor = {
-    'in-stock': 'bg-primary',
-    'low-stock': 'bg-warning',
-    'out-of-stock': 'bg-destructive',
-    'pre-order': 'bg-primary',
-    incoming: 'bg-primary/70',
-  };
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span
           className={cn(
             'inline-block h-2.5 w-2.5 rounded-full',
-            dotColor[status],
+            STOCK_INDICATOR_DOT_COLORS[status],
             status === 'low-stock' && 'animate-pulse',
             className,
           )}

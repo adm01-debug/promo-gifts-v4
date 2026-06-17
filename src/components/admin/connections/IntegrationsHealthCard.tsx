@@ -136,6 +136,20 @@ async function fetchHealth(): Promise<HealthData> {
   };
 }
 
+const STATUS_BADGE_CLASSES = {
+  success: 'bg-success/10 text-success border-success/20',
+  warning: 'bg-warning/10 text-warning border-warning/20',
+  destructive: 'bg-destructive/10 text-destructive border-destructive/20',
+  muted: 'bg-muted text-muted-foreground border-border',
+} as const;
+
+const METRIC_ICON_CLASSES = {
+  default: 'text-muted-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
 function StatusBadge({
   tone,
   children,
@@ -143,12 +157,7 @@ function StatusBadge({
   tone: 'success' | 'warning' | 'destructive' | 'muted';
   children: React.ReactNode;
 }) {
-  const cls = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    destructive: 'bg-destructive/10 text-destructive border-destructive/20',
-    muted: 'bg-muted text-muted-foreground border-border',
-  }[tone];
+  const cls = STATUS_BADGE_CLASSES[tone];
   return (
     <Badge variant="outline" className={cn('font-medium', cls)}>
       {children}
@@ -166,12 +175,7 @@ interface MetricProps {
 
 function Metric({ icon: iconElement, label, value, badge, tone = 'default' }: MetricProps) {
   const Icon = iconElement;
-  const iconCls = {
-    default: 'text-muted-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
+  const iconCls = METRIC_ICON_CLASSES[tone];
 
   return (
     <div className="flex flex-col gap-1.5 rounded-lg border border-border/50 bg-muted/30 p-3">

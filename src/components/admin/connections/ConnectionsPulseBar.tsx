@@ -62,6 +62,20 @@ const SEVERITY_META: Record<
   },
 };
 
+const MINI_KPI_ICON_CLASSES = {
+  default: 'text-muted-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
+const MINI_KPI_VALUE_CLASSES = {
+  default: 'text-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
 function MiniKpi({
   icon: iconComponent,
   label,
@@ -79,18 +93,8 @@ function MiniKpi({
 }) {
   const { enabled: explainOn } = useExplainMode();
   const Icon = iconComponent;
-  const iconCls = {
-    default: 'text-muted-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
-  const valueCls = {
-    default: 'text-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
+  const iconCls = MINI_KPI_ICON_CLASSES[tone];
+  const valueCls = MINI_KPI_VALUE_CLASSES[tone];
 
   const content = (
     <div
