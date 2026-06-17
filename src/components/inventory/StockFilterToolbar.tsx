@@ -530,6 +530,23 @@ export function StockFilterToolbar({
           </div>
         </StockHelpTooltip>
 
+        {/* Hint: avisa que a régua está em modo estrito apesar do Estoque Futuro ON */}
+        {filters.minQuantityNeeded &&
+          filters.minQuantityNeeded > 0 &&
+          filters.includeFutureStock &&
+          !filters.minQtyIncludesFutureStock && (
+            <span
+              data-testid="min-qty-strict-hint"
+              role="status"
+              className="inline-flex items-center gap-1 rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-[11px] text-warning"
+              title="A régua de quantidade está usando apenas estoque atual. Ative o sub-toggle dentro de Filtros → Estoque para incluir reposições."
+            >
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              Régua estrita: ignora Estoque Futuro
+            </span>
+          )}
+
+
         {/* 3. Search */}
         <StockHelpTooltip
           title="Busca no Estoque"
