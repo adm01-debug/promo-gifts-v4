@@ -55,6 +55,16 @@ interface Column {
   bgColor: string;
 }
 
+const QUOTE_VALID_TRANSITIONS: Record<string, QuoteStatus[]> = {
+  draft: ['pending', 'sent'],
+  pending_approval: ['draft'],
+  pending: ['draft', 'sent', 'expired'],
+  sent: ['approved', 'rejected', 'pending', 'expired'],
+  approved: ['sent'],
+  rejected: ['sent'],
+  expired: ['pending', 'sent'],
+} as const;
+
 const columns: Column[] = [
   {
     id: 'draft',
@@ -355,18 +365,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     }
 
     if (targetStatus && targetStatus !== activeQuote.status) {
-      // Validate status transitions
-      const validTransitions: Record<string, QuoteStatus[]> = {
-        draft: ['pending', 'sent'],
-        pending_approval: ['draft'], // Admin approves/rejects → back to draft
-        pending: ['draft', 'sent', 'expired'],
-        sent: ['approved', 'rejected', 'pending', 'expired'],
-        approved: ['sent'],
-        rejected: ['sent'],
-        expired: ['pending', 'sent'],
-      };
-
-      if (!validTransitions[activeQuote.status]?.includes(targetStatus)) {
+      if (!QUOTE_VALID_TRANSITIONS[activeQuote.status]?.includes(targetStatus)) {
         toast.error('Transição inválida', {
           description: `Não é possível mover de "${columns.find((c) => c.id === activeQuote.status)?.title}" para "${columns.find((c) => c.id === targetStatus)?.title}"`,
         });

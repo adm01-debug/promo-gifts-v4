@@ -15,6 +15,13 @@ import { formatCurrency } from '@/lib/kit-builder';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const KIT_STATUS_LABELS: Record<string, string> = {
+  draft: 'Rascunho',
+  saved: 'Salvo',
+  complete: 'Completo',
+  quoted: 'Orçado',
+} as const;
+
 export function RecentKitsWidget() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -36,13 +43,6 @@ export function RecentKitsWidget() {
   });
 
   if (recentKits.length === 0) return null;
-
-  const STATUS_LABELS: Record<string, string> = {
-    draft: 'Rascunho',
-    saved: 'Salvo',
-    complete: 'Completo',
-    quoted: 'Orçado',
-  };
 
   return (
     <Card>
@@ -86,7 +86,7 @@ export function RecentKitsWidget() {
                     variant={kit.status === 'draft' ? 'secondary' : 'outline'}
                     className="px-1.5 py-0 text-[10px]"
                   >
-                    {(kit.status ? STATUS_LABELS[kit.status] : undefined) || kit.status}
+                    {(kit.status ? KIT_STATUS_LABELS[kit.status] : undefined) || kit.status}
                   </Badge>
                   <span className="flex items-center gap-0.5">
                     <Clock className="h-2.5 w-2.5" />
