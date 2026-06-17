@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -210,7 +210,7 @@ export function CustomizableDashboard() {
     toast.success('Layout restaurado para o padrão');
   };
 
-  const visibleWidgets = widgetOrder.filter((w) => w.visible);
+  const visibleWidgets = useMemo(() => widgetOrder.filter((w) => w.visible), [widgetOrder]);
 
   const renderWidgetContent = (widgetId: string) => {
     switch (widgetId) {
