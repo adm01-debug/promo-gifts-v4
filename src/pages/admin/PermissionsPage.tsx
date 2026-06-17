@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -152,13 +152,17 @@ export default function PermissionsPage() {
     }
   };
 
-  const groupedPermissions = permissions.reduce(
-    (acc, perm) => {
-      if (!acc[perm.category]) acc[perm.category] = [];
-      acc[perm.category].push(perm);
-      return acc;
-    },
-    {} as Record<string, Permission[]>,
+  const groupedPermissions = useMemo(
+    () =>
+      permissions.reduce(
+        (acc, perm) => {
+          if (!acc[perm.category]) acc[perm.category] = [];
+          acc[perm.category].push(perm);
+          return acc;
+        },
+        {} as Record<string, Permission[]>,
+      ),
+    [permissions],
   );
 
   return (
