@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
 import { useSimilarProducts, type SimilarProductItem } from '@/hooks/products/useSimilarProducts';
 import type { Product } from '@/types/product-catalog';
+import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface SimilarProductsProps {
   currentProduct: Product;
@@ -40,11 +42,11 @@ const SimilarProductCard = forwardRef<
       onClick={onClick}
     >
       <div className="relative aspect-square overflow-hidden bg-muted">
-        <img
-          src={item.image_url}
+        <OptimizedImage
+          src={getCdnUrl(item.image_url, 'card')}
           alt={item.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          containerClassName="h-full w-full"
         />
         {isLowestPrice && (
           <div className="absolute right-1.5 top-1.5">
