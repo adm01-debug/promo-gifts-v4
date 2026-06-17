@@ -178,7 +178,7 @@ export function LowStockDialog({
             </Badge>
           </DialogTitle>
           <DialogDescription>
-            Produtos com estoque abaixo do mínimo ou com previsão de esgotamento.
+            Produtos com nível de estoque baixo ou com previsão de esgotamento.
           </DialogDescription>
         </DialogHeader>
 
