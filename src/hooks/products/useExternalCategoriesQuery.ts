@@ -3,6 +3,7 @@
  * Migrated from supabase.functions.invoke('external-db-bridge') to dbInvoke
  * (2026-05-30) — uses REST native PostgREST path, zero Edge Function calls.
  */
+import { useMemo } from 'react';
 import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { CACHE_TIMES, GC_TIMES } from '@/lib/query-config';
@@ -48,12 +49,16 @@ export function useExternalCategoriesQuery() {
 
 export function useCategoryById(categoryId: string | undefined) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  if (!categoryId) return null;
-  return categories.find((cat) => cat.id === categoryId) || null;
+  return useMemo(
+    () => (categoryId ? (categories.find((cat) => cat.id === categoryId) ?? null) : null),
+    [categoryId, categories],
+  );
 }
 
 export function useCategoriesByIds(categoryIds: string[]) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  if (!categoryIds.length) return [];
-  return categories.filter((cat) => categoryIds.includes(cat.id));
+  return useMemo(
+    () => (categoryIds.length ? categories.filter((cat) => categoryIds.includes(cat.id)) : []),
+    [categoryIds, categories],
+  );
 }
