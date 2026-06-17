@@ -184,12 +184,12 @@ export function SupplierComparisonModal({
           </DialogHeader>
           <div className="space-y-6 p-4">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
             </div>
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-24 w-full rounded-xl" />
               ))}
             </div>

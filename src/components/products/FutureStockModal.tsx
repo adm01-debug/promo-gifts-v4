@@ -180,12 +180,12 @@ export function FutureStockModal({
               <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-full rounded-xl" />
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-                  {[...Array(8)].map((_, i) => (
+                  {Array.from({ length: 8 }, (_, i) => (
                     <Skeleton key={i} className="aspect-square rounded-lg" />
                   ))}
                 </div>
                 <div className="space-y-3 pt-6">
-                  {[...Array(3)].map((_, i) => (
+                  {Array.from({ length: 3 }, (_, i) => (
                     <Skeleton key={i} className="h-20 w-full rounded-xl" />
                   ))}
                 </div>

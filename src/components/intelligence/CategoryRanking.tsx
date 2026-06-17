@@ -161,7 +161,7 @@ export function CategoryRanking({
           <Skeleton className="h-5 w-56" />
         </CardHeader>
         <CardContent className="space-y-2">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-12 rounded" />
           ))}
         </CardContent>

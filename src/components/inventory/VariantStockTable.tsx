@@ -479,14 +479,14 @@ export function VariantStockTable({
             <TableHead className="w-[300px]">Produto</TableHead>
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
-            
+
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="hidden sm:table-cell">Previsão</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[...Array(10)].map((_, i) => (
+          {Array.from({ length: 10 }, (_, i) => (
             <TableRow key={i}>
               <TableCell>
                 <div className="flex items-center gap-2">
@@ -499,7 +499,7 @@ export function VariantStockTable({
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <div className="flex gap-1">
-                  {[...Array(3)].map((_, j) => (
+                  {Array.from({ length: 3 }, (_, j) => (
                     <div key={j} className="h-5 w-5 animate-pulse rounded-full bg-muted" />
                   ))}
                 </div>
