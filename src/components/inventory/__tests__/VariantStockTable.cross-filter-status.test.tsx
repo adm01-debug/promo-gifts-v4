@@ -14,8 +14,12 @@
  *     como SSOT da projeção.
  *   - Recomputa o summary a partir dos produtos projetados com a
  *     MESMA lógica do `useVariantStock` (switch sobre `v.status`).
- *   - Para cada combinação de filtro, valida 1:1 nos 3 status que
- *     aparecem no chip da tabela.
+ *
+ * Nota — semântica do filtro `status` (sem variant-filter):
+ *   `matchStatus` filtra PRODUTOS (não variações). Quando há produto
+ *   com status crítico, todas as variações dele continuam visíveis.
+ *   O contrato verdadeiro: a projeção só "estreita" variações quando
+ *   há `colorName`/`colorGroup` (hasVariantFilter=true).
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -142,35 +146,40 @@ describe('Cross-filter KPI ↔ chip — critical & low_stock', () => {
     expect(c.critical).toBe(3); // p1a, p3a, p5b
     expect(c.lowStock).toBe(3); // p1b, p2a, p4b
     expect(c.outOfStock).toBe(2); // p2b, p4a
+    expect(c.inStock).toBe(3); // p1c, p3b, p5a
   });
 
-  it('filtro categoria=Canecas — counters caem para Canecas apenas', () => {
+  it('categoryId=Canecas — produtos p1 e p2 com TODAS suas variações', () => {
     const out = applyStockFilters(
       products,
-      { ...defaultStockFilters, categoryName: 'Canecas' },
+      { ...defaultStockFilters, categoryId: 'Canecas' },
       [],
       idx,
     );
     const c = recomputeChipCounts(out);
-    expect(c.critical).toBe(1); // p1a
-    expect(c.lowStock).toBe(2); // p1b, p2a
-    expect(c.outOfStock).toBe(1); // p2b
+    // p1: crit/low/in   p2: low/out
+    expect(c.critical).toBe(1);
+    expect(c.lowStock).toBe(2);
+    expect(c.outOfStock).toBe(1);
+    expect(c.inStock).toBe(1);
   });
 
-  it('filtro fornecedor=Acme — counters cobrem Acme em 3 categorias', () => {
+  it('supplierId=Acme — produtos p1, p3, p5 com TODAS suas variações', () => {
     const out = applyStockFilters(
       products,
-      { ...defaultStockFilters, supplierName: 'Acme' },
+      { ...defaultStockFilters, supplierId: 'Acme' },
       [],
       idx,
     );
     const c = recomputeChipCounts(out);
-    expect(c.critical).toBe(3); // p1a, p3a, p5b
-    expect(c.lowStock).toBe(1); // p1b
+    // p1: crit/low/in   p3: crit/in   p5: in/crit
+    expect(c.critical).toBe(3);
+    expect(c.lowStock).toBe(1);
     expect(c.outOfStock).toBe(0);
+    expect(c.inStock).toBe(3);
   });
 
-  it('filtro cor=Azul — só variações Azul, sem vazar Verde/Vermelho', () => {
+  it('colorName=Azul — projeção real: apenas variações Azul restam', () => {
     const out = applyStockFilters(
       products,
       { ...defaultStockFilters, colorName: 'Azul' },
@@ -178,74 +187,83 @@ describe('Cross-filter KPI ↔ chip — critical & low_stock', () => {
       idx,
     );
     const c = recomputeChipCounts(out);
-    // Azul: p1a(critical), p2a(low), p3a(critical), p5a(in)
+    // Azul: p1a(crit), p2a(low), p3a(crit), p5a(in)
     expect(c.critical).toBe(2);
     expect(c.lowStock).toBe(1);
     expect(c.outOfStock).toBe(0);
     expect(c.inStock).toBe(1);
   });
 
-  it('filtro status=critical — apenas variações críticas restam', () => {
-    const out = applyStockFilters(
-      products,
-      { ...defaultStockFilters, status: 'critical' },
-      [],
-      idx,
-    );
-    const c = recomputeChipCounts(out);
-    expect(c.critical).toBeGreaterThan(0);
-    expect(c.lowStock).toBe(0);
-    expect(c.outOfStock).toBe(0);
-    expect(c.inStock).toBe(0);
-  });
-
-  it('filtro status=low_stock — apenas variações low_stock restam', () => {
-    const out = applyStockFilters(
-      products,
-      { ...defaultStockFilters, status: 'low_stock' },
-      [],
-      idx,
-    );
-    const c = recomputeChipCounts(out);
-    expect(c.lowStock).toBeGreaterThan(0);
-    expect(c.critical).toBe(0);
-    expect(c.outOfStock).toBe(0);
-    expect(c.inStock).toBe(0);
-  });
-
-  it('combo categoria=Garrafas + cor=Vermelho — interseção exata', () => {
+  it('combo categoryId=Garrafas + colorName=Vermelho — projeção exata', () => {
     const out = applyStockFilters(
       products,
       {
         ...defaultStockFilters,
-        categoryName: 'Garrafas',
+        categoryId: 'Garrafas',
         colorName: 'Vermelho',
       },
       [],
       idx,
     );
     const c = recomputeChipCounts(out);
-    // Garrafas+Vermelho: p3b(in), p4b(low)
+    // Garrafas+Vermelho: p3b(in 200), p4b(low 5)
     expect(c.inStock).toBe(1);
     expect(c.lowStock).toBe(1);
     expect(c.critical).toBe(0);
     expect(c.outOfStock).toBe(0);
   });
 
-  it('combo fornecedor=Globex + status=out_of_stock — só p2b e p4a', () => {
+  it('combo supplierId=Globex + colorName=Verde — projeção exata', () => {
     const out = applyStockFilters(
       products,
       {
         ...defaultStockFilters,
-        supplierName: 'Globex',
-        status: 'out_of_stock',
+        supplierId: 'Globex',
+        colorName: 'Verde',
       },
       [],
       idx,
     );
     const c = recomputeChipCounts(out);
+    // Globex+Verde: p2b(out 0), p4a(out 0)
     expect(c.outOfStock).toBe(2);
     expect(c.critical).toBe(0);
     expect(c.lowStock).toBe(0);
+    expect(c.inStock).toBe(0);
+  });
+
+  it('status=critical (sem variant-filter) — produtos críticos NÃO podem ser zerados', () => {
+    // Invariante: ao clicar no KPI "Crítico", a tabela deve ter ≥1
+    // variação crítica visível em cada produto retornado.
+    const out = applyStockFilters(
+      products,
+      { ...defaultStockFilters, status: 'critical' },
+      [],
+      idx,
+    );
+    expect(out.length).toBeGreaterThan(0);
+    for (const p of out) {
+      const hasCriticalChip = p.variants.some((x) => x.status === 'critical');
+      expect(hasCriticalChip).toBe(true);
+    }
+  });
+
+  it('status=low_stock + colorName=Verde — projeção: só Verde low_stock', () => {
+    const out = applyStockFilters(
+      products,
+      {
+        ...defaultStockFilters,
+        status: 'low_stock',
+        colorName: 'Verde',
+      },
+      [],
+      idx,
+    );
+    const c = recomputeChipCounts(out);
+    // Verde+low: p1b(low 8). p2b/p4a são out_of_stock; p5b é critical.
+    expect(c.lowStock).toBe(1);
+    expect(c.critical).toBe(0);
+    expect(c.outOfStock).toBe(0);
+    expect(c.inStock).toBe(0);
   });
 });
