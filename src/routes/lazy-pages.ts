@@ -130,6 +130,9 @@ export const OwnershipAuditAdminPage = lazyWithRetry(
   () => import('@/pages/admin/OwnershipAuditAdminPage'),
 );
 export const StorageTestPage = lazyWithRetry(() => import('@/pages/admin/StorageTestPage'));
+export const AdminCloudflareImagesPage = lazyWithRetry(
+  () => import('@/pages/admin/AdminCloudflareImagesPage'),
+);
 
 // ─────────────────────────────────────────────────────────────────
 // Tools
