@@ -1,12 +1,12 @@
 /**
  * Image gallery section for ProductQuickView — extracted for modularity
  */
-import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles, Layers, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getCdnUrl, getSrcSet, type ProductImageMeta } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface QuickViewGalleryProps {
   productName: string;
@@ -21,7 +21,6 @@ interface QuickViewGalleryProps {
 
 export function QuickViewGallery({
   productName,
-  images,
   displayImages,
   currentImageIndex,
   onIndexChange,
@@ -29,8 +28,6 @@ export function QuickViewGallery({
   newArrival,
   isKit,
 }: QuickViewGalleryProps) {
-  const [imageError, setImageError] = useState(false);
-
   const currentImage = displayImages[currentImageIndex] || displayImages[0];
   const currentImageUrl = currentImage
     ? getCdnUrl(currentImage.url_cdn, 'large')
@@ -38,15 +35,11 @@ export function QuickViewGallery({
   const currentImageSrcSet = currentImage ? getSrcSet(currentImage.url_cdn) : undefined;
   const currentAlt = currentImage?.alt_text || `${productName} - Imagem ${currentImageIndex + 1}`;
 
-  const handlePrev = () => {
-    setImageError(false);
+  const handlePrev = () =>
     onIndexChange(currentImageIndex === 0 ? displayImages.length - 1 : currentImageIndex - 1);
-  };
 
-  const handleNext = () => {
-    setImageError(false);
+  const handleNext = () =>
     onIndexChange(currentImageIndex === displayImages.length - 1 ? 0 : currentImageIndex + 1);
-  };
 
   return (
     <div className="relative aspect-square bg-white md:aspect-auto md:min-h-[500px]">
@@ -73,38 +66,24 @@ export function QuickViewGallery({
 
       {/* Main Image */}
       <div className="relative flex h-full w-full items-center justify-center">
-        {(imageError || currentImageUrl === '/placeholder.svg') && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-muted-foreground">
-            <ImageOff className="mb-2 h-16 w-16 opacity-50" />
-            <p className="text-sm">Imagem não disponível</p>
-          </div>
-        )}
-        {currentImageUrl !== '/placeholder.svg' && (
-          <img
-            key={`${currentImageIndex}`}
+        {currentImageUrl !== '/placeholder.svg' ? (
+          <OptimizedImage
+            key={`qv-img-${currentImageIndex}`}
             src={currentImageUrl}
             srcSet={currentImageSrcSet}
             sizes="(max-width: 768px) 100vw, 50vw"
             alt={currentAlt}
-            className="h-full w-full animate-fade-in object-contain p-8"
-            loading="eager"
-            fetchPriority="high"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!img.dataset.fallback && currentImage?.url_original) {
-                img.dataset.fallback = '1';
-                img.srcset = '';
-                img.src = currentImage.url_original;
-              } else if (!img.dataset.fallback2) {
-                img.dataset.fallback2 = '1';
-                const legacyImg = images[currentImageIndex] || images[0];
-                if (legacyImg) {
-                  img.srcset = '';
-                  img.src = legacyImg;
-                } else setImageError(true);
-              } else setImageError(true);
-            }}
+            blurhash={currentImage?.blurhash}
+            urlOriginal={currentImage?.url_original}
+            priority={true}
+            className="object-contain p-8"
+            containerClassName="h-full w-full"
           />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-muted-foreground">
+            <ImageOff className="mb-2 h-16 w-16 opacity-50" />
+            <p className="text-sm">Imagem não disponível</p>
+          </div>
         )}
       </div>
 
@@ -153,7 +132,6 @@ export function QuickViewGallery({
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                setImageError(false);
                 onIndexChange(idx);
               }}
             />
