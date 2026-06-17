@@ -152,7 +152,7 @@ const QK = {
   providers: ['ai-router', 'providers'] as const,
   models: ['ai-router', 'models'] as const,
   routing: ['ai-router', 'routing'] as const,
-};
+} as const;
 
 // ============================================================
 // Providers
