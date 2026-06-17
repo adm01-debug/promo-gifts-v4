@@ -383,14 +383,22 @@ export function StockDashboard() {
           }}
           clickHint="Filtrar produtos sem estoque"
           trend={
-            summary.criticalAlerts > 0
-              ? { value: -1, label: `${summary.criticalAlerts} alertas ativos` }
+            summary.productsOutOfStock > 0
+              ? {
+                  value: -1,
+                  label: `${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos sem estoque`,
+                }
               : undefined
           }
         />
         <StatCard
           title="Estoque Futuro"
-          value={futureStockTotal}
+          // SSOT: o valor primário é a contagem de reposições previstas (entidades
+          // contáveis). O total de unidades vinha da soma de next_quantity_{1..3}
+          // por variant_supplier_source — número correto pela schema, mas
+          // visualmente alarmante (dezenas de milhões) e incompatível com a
+          // narrativa "reposições". Unidades viram trend secundário.
+          value={futureStock.length}
           icon={<Truck className="h-6 w-6 text-primary" />}
           isActive={filters.status === 'incoming'}
           onClick={() => {
@@ -399,12 +407,16 @@ export function StockDashboard() {
           }}
           clickHint="Ver previsões de reposição"
           trend={
-            futureStock.length > 0
-              ? { value: 1, label: `${futureStock.length} reposições previstas` }
+            futureStockTotal > 0
+              ? {
+                  value: 1,
+                  label: `${futureStockTotal.toLocaleString('pt-BR')} un. previstas`,
+                }
               : undefined
           }
         />
       </div>
+
 
       {/* Active Filter Badge */}
       {isFiltered && (
