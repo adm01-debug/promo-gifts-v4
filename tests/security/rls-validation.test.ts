@@ -1,11 +1,17 @@
 import { test, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 
+const hasCredentials =
+  !!process.env.VITE_SUPABASE_URL &&
+  !!process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  !!process.env.VITE_SUPABASE_ANON_KEY;
+
 /**
  * Validação Programática de Políticas RLS e Segurança
  * Garante que o fluxo de login e dados sensíveis estão protegidos.
+ * Skipped in CI when Supabase credentials are not available.
  */
-test('Auditoria de Segurança: Tabelas Críticas e RLS', async () => {
+test.skipIf(!hasCredentials)('Auditoria de Segurança: Tabelas Críticas e RLS', async () => {
   const supabase = createClient(
     process.env.VITE_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -29,7 +35,7 @@ test('Auditoria de Segurança: Tabelas Críticas e RLS', async () => {
   }
 });
 
-test('Validação de Permissões de Login (Anon vs Auth)', async () => {
+test.skipIf(!hasCredentials)('Validação de Permissões de Login (Anon vs Auth)', async () => {
   const anonClient = createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_ANON_KEY!);
   
   // Usuário anônimo não deve ver perfis
