@@ -196,6 +196,7 @@ export function StockStatusChip({
   reserved = 0,
   inTransit = 0,
   showLabel = true,
+  projection,
 }: {
   status: StockStatus;
   current: number;
@@ -203,6 +204,14 @@ export function StockStatusChip({
   reserved?: number;
   inTransit?: number;
   showLabel?: boolean;
+  /** Dados da projeção preditiva (apenas quando status foi reavaliado por Risco de Ruptura). */
+  projection?: {
+    targetQty: number;
+    avgDailyDepletion: number;
+    horizonDays: number;
+    projectedStock: number;
+    daysToTarget: number | null;
+  };
 }) {
   const cfg = CHIP_CONFIG[status] ?? CHIP_CONFIG.in_stock;
   const pct = min > 0 ? Math.min(Math.round((current / min) * 100), 999) : current > 0 ? 100 : 0;
@@ -231,6 +240,26 @@ export function StockStatusChip({
             )}
             {inTransit > 0 && (
               <p className="text-primary">+{inTransit.toLocaleString('pt-BR')} em trânsito</p>
+            )}
+            {projection && (
+              <div className="mt-1 space-y-0.5 border-t border-border/40 pt-1">
+                <p className="font-semibold text-warning">
+                  Projeção em {projection.horizonDays}d:{' '}
+                  <strong>{projection.projectedStock.toLocaleString('pt-BR')} un.</strong>
+                </p>
+                <p className="text-muted-foreground">
+                  Alvo {projection.targetQty.toLocaleString('pt-BR')} · média{' '}
+                  {projection.avgDailyDepletion.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 1,
+                  })}
+                  /dia
+                </p>
+                {projection.daysToTarget !== null && (
+                  <p className="text-muted-foreground">
+                    Atinge o alvo em ~{projection.daysToTarget}d
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </TooltipContent>

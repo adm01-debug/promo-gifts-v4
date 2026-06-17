@@ -27,6 +27,19 @@ import {
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
+import {
+  computeRuptureRisk,
+  DEFAULT_RUPTURE_HORIZON,
+  RUPTURE_HORIZON_OPTIONS,
+  type RuptureHorizonDays,
+} from '@/lib/inventory/rupture-risk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
@@ -35,6 +48,7 @@ import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVi
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+const RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
 
 /**
  * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
@@ -100,9 +114,19 @@ function EmptyCell() {
 function FlatVariantRow({
   variant,
   product,
+  effectiveStatus,
+  projection,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
+  effectiveStatus: StockStatus;
+  projection?: {
+    targetQty: number;
+    avgDailyDepletion: number;
+    horizonDays: number;
+    projectedStock: number;
+    daysToTarget: number | null;
+  };
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
@@ -193,11 +217,12 @@ function FlatVariantRow({
       </TableCell>
       <TableCell>
         <StockStatusChip
-          status={variant.status}
+          status={effectiveStatus}
           current={variant.currentStock}
           min={variant.minStock}
           reserved={variant.reservedStock}
           inTransit={variant.inTransitStock}
+          projection={projection}
         />
       </TableCell>
       <TableCell className="hidden sm:table-cell">
@@ -247,9 +272,20 @@ interface VariantStockTableProps {
   products: ProductStockSummary[];
   className?: string;
   isLoading?: boolean;
+  /**
+   * Quantidade-alvo (em unidades) que o vendedor precisa atender — alimenta a
+   * fórmula preditiva de "Risco de Ruptura". Quando ausente/0, o status volta
+   * ao comportamento estático (≤ mínimo do produto).
+   */
+  targetQuantity?: number;
 }
 
-export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
+export function VariantStockTable({
+  products,
+  className,
+  isLoading,
+  targetQuantity,
+}: VariantStockTableProps) {
   // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
   // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
@@ -291,6 +327,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   useEffect(() => {
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
+
+  // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
+  const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
+    const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
+    const n = Number.parseInt(raw, 10) as RuptureHorizonDays;
+    return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
+  });
+  useEffect(() => {
+    writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
+  }, [ruptureHorizon]);
 
   // Reset page when product list changes (filter applied)
   useEffect(() => {
@@ -338,21 +384,55 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [searchedProducts]);
 
   /**
-   * Modo variação-first: 1 linha = 1 SKU. A LISTA COMPLETA de linhas (todas as
-   * variações de todos os produtos buscados, já filtradas por status) é a unidade
-   * de paginação — assim chips, contador e linhas falam a MESMA unidade (SKU).
-   * Estoque exibido é SEMPRE da variação, nunca do produto pai.
+   * Modo variação-first: 1 linha = 1 SKU. Cada linha carrega seu `effectiveStatus`
+   * — que pode ter sido reavaliado pela fórmula preditiva de Risco de Ruptura
+   * (override apenas quando o status base era `in_stock` e a projeção indica
+   * ruptura no horizonte selecionado). Estoque exibido é SEMPRE da variação.
    */
   const allFlatRows = useMemo(() => {
-    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    type Row = {
+      product: ProductStockSummary;
+      variant: VariantStock;
+      effectiveStatus: StockStatus;
+      projection?: {
+        targetQty: number;
+        avgDailyDepletion: number;
+        horizonDays: number;
+        projectedStock: number;
+        daysToTarget: number | null;
+      };
+    };
+    const rows: Row[] = [];
     for (const product of searchedProducts) {
       for (const variant of product.variants) {
-        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
-        rows.push({ product, variant });
+        let effectiveStatus: StockStatus = variant.status;
+        let projection: Row['projection'];
+        // Aplica fórmula preditiva apenas quando o status base é "saudável".
+        // Crítico/Esgotado/Chegando têm precedência maior e permanecem.
+        if (effectiveStatus === 'in_stock' || effectiveStatus === 'overstocked') {
+          const risk = computeRuptureRisk({
+            current: variant.currentStock,
+            avgDailyDepletion: variant.avgDailySales,
+            targetQty: targetQuantity,
+            horizonDays: ruptureHorizon,
+          });
+          if (risk.atRisk && risk.projectedStock !== null) {
+            effectiveStatus = 'low_stock';
+            projection = {
+              targetQty: targetQuantity!,
+              avgDailyDepletion: variant.avgDailySales!,
+              horizonDays: ruptureHorizon,
+              projectedStock: risk.projectedStock,
+              daysToTarget: risk.daysToTarget,
+            };
+          }
+        }
+        if (statusFilter !== 'all' && effectiveStatus !== statusFilter) continue;
+        rows.push({ product, variant, effectiveStatus, projection });
       }
     }
     return rows;
-  }, [searchedProducts, statusFilter]);
+  }, [searchedProducts, statusFilter, targetQuantity, ruptureHorizon]);
 
   const totalRows = allFlatRows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -467,6 +547,34 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           )}
         </div>
 
+        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias. */}
+        <div
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          data-testid="rupture-horizon-control"
+        >
+          <span className="hidden whitespace-nowrap md:inline">Projetar risco em:</span>
+          <Select
+            value={String(ruptureHorizon)}
+            onValueChange={(v) => setRuptureHorizon(Number(v) as RuptureHorizonDays)}
+          >
+            <SelectTrigger
+              className="h-8 w-[88px] text-xs"
+              aria-label="Horizonte de projeção do risco de ruptura"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RUPTURE_HORIZON_OPTIONS.map((d) => (
+                <SelectItem key={d} value={String(d)} className="text-xs">
+                  {d} dias
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+
+
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
           className="flex flex-wrap items-center gap-1"
@@ -548,11 +656,13 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           </TableHeader>
           <TableBody>
             {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant }) => (
+              pagedRows.map(({ product, variant, effectiveStatus, projection }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
                   variant={variant}
+                  effectiveStatus={effectiveStatus}
+                  projection={projection}
                 />
               ))
             ) : (
