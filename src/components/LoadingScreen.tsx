@@ -7,6 +7,7 @@ const MESSAGES = [
   'Quase lá...',
   'Finalizando detalhes...',
 ];
+const MESSAGE_ROTATION_MS = 2500;
 
 export default function LoadingScreen() {
   const [messageIndex, setMessageIndex] = useState(0);
@@ -14,7 +15,7 @@ export default function LoadingScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
-    }, 2500);
+    }, MESSAGE_ROTATION_MS);
     return () => clearInterval(interval);
   }, []);
 
