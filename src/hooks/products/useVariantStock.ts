@@ -65,6 +65,11 @@ export function useVariantStock() {
     for (const p of productStocks) {
       switch (p.overallStatus) {
         case 'in_stock':
+        // SSOT: produtos com reposição em trânsito ainda estão saudáveis no
+        // dashboard (estoque atual cobre a demanda); contar como "in stock"
+        // garante que os 4 buckets fechem com `totalProducts` (bug #2 —
+        // 305 produtos ficavam fora dos 4 cartões).
+        case 'incoming':
           productsInStock++;
           break;
         case 'low_stock':
@@ -77,6 +82,7 @@ export function useVariantStock() {
           productsOutOfStock++;
           break;
       }
+
       for (const v of p.variants) {
         totalVariants++;
         if (v.colorName) colorSet.add(v.colorName);
