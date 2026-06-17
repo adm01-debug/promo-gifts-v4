@@ -65,7 +65,8 @@ describe('useSelectionShortcut', () => {
     const onToggle = vi.fn();
     renderHook(() => useSelectionShortcut(onToggle));
     const div = document.createElement('div');
-    div.setAttribute('contenteditable', 'true');
+    // jsdom não computa isContentEditable a partir do atributo — definimos manualmente.
+    Object.defineProperty(div, 'isContentEditable', { value: true, configurable: true });
     document.body.appendChild(div);
     fireEvent.keyDown(div, { key: 's' });
     expect(onToggle).not.toHaveBeenCalled();
