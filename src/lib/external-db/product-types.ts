@@ -15,6 +15,7 @@ export interface PromobrindProduct {
   images: string[] | null;
   primary_image_url: string | null;
   primary_image_blurhash?: string | null;
+  primary_image_fallback_url?: string | null;
   set_image_url?: string | null;
   og_image_url?: string | null;
   category_id: string | null;
@@ -91,6 +92,7 @@ export interface PromobrindProduct {
     allows_personalization: boolean | null;
     material: string | null;
     primary_image_url: string | null;
+    primary_image_fallback_url?: string | null;
     height_mm: number | null;
     width_mm: number | null;
     length_mm: number | null;
@@ -205,7 +207,7 @@ export function getProductStock(product: PromobrindProduct): number {
 // Não selecionamos a coluna por padrão para evitar 400/tela branca quando o
 // schema do BD externo ainda não foi aplicado; consumidores usam default 60d.
 export const PRODUCT_SELECT_FIELDS_WITH_SALE =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
@@ -216,7 +218,7 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE =
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
@@ -226,7 +228,7 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY =
-  'id, name, sku, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
@@ -237,7 +239,7 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
-  'id, name, sku, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
@@ -247,7 +249,7 @@ export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
@@ -258,7 +260,7 @@ export const PRODUCT_SELECT_FIELDS_DETAIL =
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, set_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +

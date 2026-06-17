@@ -37,9 +37,9 @@ interface VariantThumbProps {
 }
 
 const SIZE_MAP = {
-  sm: 'h-10 w-10 rounded-md',
-  md: 'h-14 w-14 rounded-lg',
-  lg: 'h-20 w-20 rounded-xl',
+  sm: 'h-[2.875rem] w-[2.875rem] rounded-md',
+  md: 'h-16 w-16 rounded-lg',
+  lg: 'h-[5.75rem] w-[5.75rem] rounded-xl',
 } as const;
 
 export function VariantThumb({
@@ -162,39 +162,41 @@ export function RichColorSwatch({
 // StockStatusChip — chip único consolidado
 // ============================================
 
-const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: React.ReactNode }> =
-  {
-    in_stock: {
-      label: 'Saudável',
-      classes: 'border-success/30 bg-success/10 text-success',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    low_stock: {
-      label: 'Baixo',
-      classes: 'border-warning/30 bg-warning/10 text-warning',
-      icon: <TrendingDown className="h-3 w-3" />,
-    },
-    critical: {
-      label: 'Crítico',
-      classes: 'border-destructive/30 bg-destructive/10 text-destructive',
-      icon: <AlertTriangle className="h-3 w-3" />,
-    },
-    out_of_stock: {
-      label: 'Esgotado',
-      classes: 'border-destructive/40 bg-destructive/15 text-destructive',
-      icon: <XCircle className="h-3 w-3" />,
-    },
-    overstocked: {
-      label: 'Excesso',
-      classes: 'border-primary/30 bg-primary/10 text-primary',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    incoming: {
-      label: 'Chegando',
-      classes: 'border-primary/30 bg-primary/10 text-primary',
-      icon: <Truck className="h-3 w-3" />,
-    },
-  };
+const CHIP_CONFIG: Record<
+  StockStatus,
+  { label: string; classes: string; icon: React.ReactNode }
+> = {
+  in_stock: {
+    label: 'Em Estoque',
+    classes: 'border-success/30 bg-success/10 text-success',
+    icon: <CheckCircle2 className="h-3 w-3" />,
+  },
+  incoming: {
+    label: 'Chegando',
+    classes: 'border-primary/30 bg-primary/10 text-primary',
+    icon: <Truck className="h-3 w-3" />,
+  },
+  low_stock: {
+    label: 'Risco de Ruptura',
+    classes: 'border-warning/30 bg-warning/10 text-warning',
+    icon: <TrendingDown className="h-3 w-3" />,
+  },
+  critical: {
+    label: 'Crítico',
+    classes: 'border-destructive/30 bg-destructive/10 text-destructive',
+    icon: <AlertTriangle className="h-3 w-3" />,
+  },
+  out_of_stock: {
+    label: 'Esgotado',
+    classes: 'border-destructive/40 bg-destructive/15 text-destructive',
+    icon: <XCircle className="h-3 w-3" />,
+  },
+  overstocked: {
+    label: 'Em Estoque',
+    classes: 'border-success/30 bg-success/10 text-success',
+    icon: <CheckCircle2 className="h-3 w-3" />,
+  },
+};
 
 export function StockStatusChip({
   status,
@@ -203,6 +205,7 @@ export function StockStatusChip({
   reserved = 0,
   inTransit = 0,
   showLabel = true,
+  projection,
 }: {
   status: StockStatus;
   current: number;
@@ -210,6 +213,14 @@ export function StockStatusChip({
   reserved?: number;
   inTransit?: number;
   showLabel?: boolean;
+  /** Dados da projeção preditiva (apenas quando status foi reavaliado por Risco de Ruptura). */
+  projection?: {
+    targetQty: number;
+    avgDailyDepletion: number;
+    horizonDays: number;
+    projectedStock: number;
+    daysToTarget: number | null;
+  };
 }) {
   const cfg = CHIP_CONFIG[status] ?? CHIP_CONFIG.in_stock;
   const pct = min > 0 ? Math.min(Math.round((current / min) * 100), 999) : current > 0 ? 100 : 0;
@@ -238,6 +249,26 @@ export function StockStatusChip({
             )}
             {inTransit > 0 && (
               <p className="text-primary">+{inTransit.toLocaleString('pt-BR')} em trânsito</p>
+            )}
+            {projection && (
+              <div className="mt-1 space-y-0.5 border-t border-border/40 pt-1">
+                <p className="font-semibold text-warning">
+                  Projeção em {projection.horizonDays}d:{' '}
+                  <strong>{projection.projectedStock.toLocaleString('pt-BR')} un.</strong>
+                </p>
+                <p className="text-muted-foreground">
+                  Alvo {projection.targetQty.toLocaleString('pt-BR')} · média{' '}
+                  {projection.avgDailyDepletion.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 1,
+                  })}
+                  /dia
+                </p>
+                {projection.daysToTarget !== null && (
+                  <p className="text-muted-foreground">
+                    Atinge o alvo em ~{projection.daysToTarget}d
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </TooltipContent>

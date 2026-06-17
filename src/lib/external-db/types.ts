@@ -133,6 +133,7 @@ export interface ExternalProductKitComponent {
   secondary_material_type_id?: string;
   color?: string;
   primary_image_url?: string;
+  primary_image_fallback_url?: string | null;
   images?: unknown[];
   allowed_variant_ids?: string[];
   supplier_component_code?: string;

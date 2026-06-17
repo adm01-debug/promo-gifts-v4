@@ -9,8 +9,11 @@ import {
   Search,
   X,
   Copy,
+  Building2,
+  Tag,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,12 +26,20 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 import {
-  VariantThumb,
-  RichColorSwatch,
-  StockStatusChip,
-  StockProgressBar,
-} from './VariantStockVisuals';
+  computeRuptureRisk,
+  DEFAULT_RUPTURE_HORIZON,
+  RUPTURE_HORIZON_OPTIONS,
+  type RuptureHorizonDays,
+} from '@/lib/inventory/rupture-risk';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
@@ -37,6 +48,7 @@ import {
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
+const RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
 
 /**
  * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
@@ -49,19 +61,18 @@ type StatusFilter = StockStatus | 'all';
 const STATUS_FILTER_VALUES: StatusFilter[] = [
   'all',
   'in_stock',
+  'incoming',
   'low_stock',
   'critical',
   'out_of_stock',
-  'overstocked',
-  'incoming',
 ];
 const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   all: 'Todos',
-  in_stock: 'Em estoque',
-  low_stock: 'Baixo',
+  in_stock: 'Em Estoque',
+  low_stock: 'Risco de Ruptura',
   critical: 'Crítico',
   out_of_stock: 'Esgotado',
-  overstocked: 'Excesso',
+  overstocked: 'Em Estoque',
   incoming: 'Chegando',
 };
 
@@ -105,9 +116,19 @@ function EmptyCell() {
 function FlatVariantRow({
   variant,
   product,
+  effectiveStatus,
+  projection,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
+  effectiveStatus: StockStatus;
+  projection?: {
+    targetQty: number;
+    avgDailyDepletion: number;
+    horizonDays: number;
+    projectedStock: number;
+    daysToTarget: number | null;
+  };
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
@@ -143,10 +164,33 @@ function FlatVariantRow({
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {product.categoryName ? (
-          <Badge variant="outline" className="text-[10px] font-normal">
-            {product.categoryName}
-          </Badge>
+        {product.supplierName || product.categoryName ? (
+          <div className="flex flex-col items-start gap-1">
+            {product.supplierName ? (
+              <span
+                title={`Fornecedor: ${product.supplierName}`}
+                className={cn(
+                  'inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold',
+                  getSupplierBadgeClasses(product.supplierName),
+                )}
+              >
+                <Building2
+                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplierName).text)}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{product.supplierName}</span>
+              </span>
+            ) : null}
+            {product.categoryName ? (
+              <span
+                title={`Categoria: ${product.categoryName}`}
+                className="inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
+              >
+                <Tag className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{product.categoryName}</span>
+              </span>
+            ) : null}
+          </div>
         ) : (
           <EmptyCell />
         )}
@@ -164,19 +208,6 @@ function FlatVariantRow({
           <span className="text-[10px] text-muted-foreground">un</span>
         </div>
       </TableCell>
-      <TableCell className="hidden sm:table-cell">
-        <StockProgressBar current={variant.currentStock} min={variant.minStock} />
-      </TableCell>
-      <TableCell>
-        <span
-          className={cn(
-            'font-medium tabular-nums',
-            variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
-          )}
-        >
-          {variant.availableStock.toLocaleString('pt-BR')}
-        </span>
-      </TableCell>
       <TableCell className="hidden md:table-cell">
         {variant.inTransitStock > 0 ? (
           <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
@@ -188,11 +219,12 @@ function FlatVariantRow({
       </TableCell>
       <TableCell>
         <StockStatusChip
-          status={variant.status}
+          status={effectiveStatus}
           current={variant.currentStock}
           min={variant.minStock}
           reserved={variant.reservedStock}
           inTransit={variant.inTransitStock}
+          projection={projection}
         />
       </TableCell>
       <TableCell className="hidden sm:table-cell">
@@ -241,9 +273,20 @@ interface VariantStockTableProps {
   products: ProductStockSummary[];
   className?: string;
   isLoading?: boolean;
+  /**
+   * Quantidade-alvo (em unidades) que o vendedor precisa atender — alimenta a
+   * fórmula preditiva de "Risco de Ruptura". Quando ausente/0, o status volta
+   * ao comportamento estático (≤ mínimo do produto).
+   */
+  targetQuantity?: number;
 }
 
-export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
+export function VariantStockTable({
+  products,
+  className,
+  isLoading,
+  targetQuantity,
+}: VariantStockTableProps) {
   // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
   // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
@@ -286,6 +329,16 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   useEffect(() => {
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
+
+  // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
+  const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
+    const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
+    const n = Number.parseInt(raw, 10) as RuptureHorizonDays;
+    return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
+  });
+  useEffect(() => {
+    writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
+  }, [ruptureHorizon]);
 
   // Reset page when product list changes (filter applied)
   useEffect(() => {
@@ -333,21 +386,60 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   }, [searchedProducts]);
 
   /**
-   * Modo variação-first: 1 linha = 1 SKU. A LISTA COMPLETA de linhas (todas as
-   * variações de todos os produtos buscados, já filtradas por status) é a unidade
-   * de paginação — assim chips, contador e linhas falam a MESMA unidade (SKU).
-   * Estoque exibido é SEMPRE da variação, nunca do produto pai.
+   * Modo variação-first: 1 linha = 1 SKU. Cada linha carrega seu `effectiveStatus`
+   * — que pode ter sido reavaliado pela fórmula preditiva de Risco de Ruptura
+   * (override apenas quando o status base era `in_stock` e a projeção indica
+   * ruptura no horizonte selecionado). Estoque exibido é SEMPRE da variação.
    */
   const allFlatRows = useMemo(() => {
-    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    type Row = {
+      product: ProductStockSummary;
+      variant: VariantStock;
+      effectiveStatus: StockStatus;
+      projection?: {
+        targetQty: number;
+        avgDailyDepletion: number;
+        horizonDays: number;
+        projectedStock: number;
+        daysToTarget: number | null;
+      };
+    };
+    const rows: Row[] = [];
     for (const product of searchedProducts) {
       for (const variant of product.variants) {
-        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
-        rows.push({ product, variant });
+        let effectiveStatus: StockStatus = variant.status;
+        let projection: Row['projection'];
+        // Aplica fórmula preditiva apenas quando o status base é "saudável".
+        // Crítico/Esgotado/Chegando têm precedência maior e permanecem.
+        if (effectiveStatus === 'in_stock' || effectiveStatus === 'overstocked') {
+          const risk = computeRuptureRisk({
+            current: variant.currentStock,
+            avgDailyDepletion: variant.avgDailySales,
+            targetQty: targetQuantity,
+            horizonDays: ruptureHorizon,
+          });
+          if (
+            risk.atRisk &&
+            risk.projectedStock !== null &&
+            typeof targetQuantity === 'number' &&
+            typeof variant.avgDailySales === 'number'
+          ) {
+            effectiveStatus = 'low_stock';
+            projection = {
+              targetQty: targetQuantity ?? 0,
+              avgDailyDepletion: variant.avgDailySales ?? 0,
+              horizonDays: ruptureHorizon,
+              projectedStock: risk.projectedStock,
+              daysToTarget: risk.daysToTarget,
+            };
+          }
+        }
+        if (statusFilter !== 'all' && effectiveStatus !== statusFilter) continue;
+        rows.push({ product, variant, effectiveStatus, projection });
       }
     }
     return rows;
-  }, [searchedProducts, statusFilter]);
+  }, [searchedProducts, statusFilter, targetQuantity, ruptureHorizon]);
 
   const totalRows = allFlatRows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -387,8 +479,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
             <TableHead className="w-[300px]">Produto</TableHead>
             <TableHead className="hidden md:table-cell">Cores</TableHead>
             <TableHead>Estoque Total</TableHead>
-            <TableHead className="hidden w-[120px] sm:table-cell">Progresso</TableHead>
-            <TableHead>Disponível</TableHead>
+            
             <TableHead className="hidden md:table-cell">Trânsito</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="hidden sm:table-cell">Previsão</TableHead>
@@ -412,12 +503,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                     <div key={j} className="h-5 w-5 animate-pulse rounded-full bg-muted" />
                   ))}
                 </div>
-              </TableCell>
-              <TableCell>
-                <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <div className="h-2 w-full animate-pulse rounded bg-muted" />
               </TableCell>
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
@@ -466,6 +551,32 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <X className="h-3 w-3" />
             </button>
           )}
+        </div>
+
+        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias. */}
+        <div
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          data-testid="rupture-horizon-control"
+        >
+          <span className="hidden whitespace-nowrap md:inline">Projetar risco em:</span>
+          <Select
+            value={String(ruptureHorizon)}
+            onValueChange={(v) => setRuptureHorizon(Number(v) as RuptureHorizonDays)}
+          >
+            <SelectTrigger
+              className="h-8 w-[88px] text-xs"
+              aria-label="Horizonte de projeção do risco de ruptura"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RUPTURE_HORIZON_OPTIONS.map((d) => (
+                <SelectItem key={d} value={String(d)} className="text-xs">
+                  {d} dias
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
@@ -535,9 +646,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
-              <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
 
-              <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
@@ -545,16 +654,18 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           </TableHeader>
           <TableBody>
             {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant }) => (
+              pagedRows.map(({ product, variant, effectiveStatus, projection }) => (
                 <FlatVariantRow
                   key={`${product.productId}::${variant.id}`}
                   product={product}
                   variant={variant}
+                  effectiveStatus={effectiveStatus}
+                  projection={projection}
                 />
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="py-16 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />

@@ -259,6 +259,7 @@ export async function fetchPromobrindProductById(
     allows_personalization: boolean | null;
     material: string | null;
     primary_image_url: string | null;
+    primary_image_fallback_url?: string | null;
     height_mm: number | null;
     width_mm: number | null;
     length_mm: number | null;

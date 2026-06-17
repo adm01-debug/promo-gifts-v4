@@ -449,7 +449,11 @@ export function StockDashboard() {
         <CardContent className="pt-0">
           {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
               do toolbar (busca + paginação) e do <thead>. */}
-          <VariantStockTable products={productStocks} isLoading={isFetching} />
+          <VariantStockTable
+            products={productStocks}
+            isLoading={isFetching}
+            targetQuantity={filters.minQuantityNeeded}
+          />
         </CardContent>
       </Card>
 
