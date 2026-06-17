@@ -547,6 +547,11 @@ export function VariantStockTable({
     );
   }
 
+  // ── Seleção em lote (paridade catálogo) ─────────────────────────────────
+  const selection = useStockSelection(
+    pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+  );
+
   return (
     <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
       {/* Toolbar sticky — fica visível ao rolar a tabela */}
