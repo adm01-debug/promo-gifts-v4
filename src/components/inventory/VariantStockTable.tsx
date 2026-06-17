@@ -571,6 +571,9 @@ export function VariantStockTable({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+
 
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
