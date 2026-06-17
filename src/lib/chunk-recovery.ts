@@ -124,7 +124,7 @@ function appendCacheBust(url: string): string {
     u.searchParams.set('_cb', String(Date.now()));
     return u.toString();
   } catch {
-    return url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+    return `${url}${url.includes('?') ? '&' : '?'}_cb=${Date.now()}`;
   }
 }
 
