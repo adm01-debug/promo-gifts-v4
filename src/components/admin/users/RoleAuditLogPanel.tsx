@@ -88,7 +88,7 @@ export function RoleAuditLogPanel() {
       let query = supabase
         .from('admin_audit_log')
         .select('id, created_at, user_id, action, resource_id, source, details')
-        .in('action', ROLE_ACTIONS as unknown as string[])
+        .in('action', [...ROLE_ACTIONS])
         .order('created_at', { ascending: false })
         .limit(200);
 

@@ -53,7 +53,7 @@ export function FailedDeliveriesPanel() {
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
       const { data, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as unknown as FailedDelivery[], count: count ?? 0 };
+      return { rows: (data ?? []) as FailedDelivery[], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });

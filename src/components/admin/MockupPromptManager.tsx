@@ -82,7 +82,7 @@ export function MockupPromptManager() {
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
       setConfigs((cr.data || []) as PromptConfig[]);
-      setTechniques((tr.data || []) as unknown as Technique[]);
+      setTechniques(tr.data || []);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
         description: sanitizeError(err),
@@ -154,7 +154,7 @@ export function MockupPromptManager() {
         .eq('config_id', configId)
         .order('version', { ascending: false });
       if (error) throw error;
-      setHistory((data || []) as unknown as PromptHistory[]);
+      setHistory(data || []);
     } catch {
       toast.error('Erro ao carregar histórico');
     } finally {

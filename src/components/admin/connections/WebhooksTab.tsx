@@ -40,7 +40,7 @@ interface InboundEp {
   slug: string;
   name: string;
   source_system: string;
-  active: boolean;
+  is_active: boolean;
   total_received: number;
   total_invalid: number;
   hmac_secret_ref: string;
@@ -65,7 +65,7 @@ export function WebhooksTab() {
         .order('created_at', { ascending: false }),
     ]);
     setOutbound((o ?? []) as OutboundHook[]);
-    setInbound((i ?? []) as unknown as InboundEp[]);
+    setInbound(i ?? []);
   };
   useEffect(() => {
     load();
@@ -217,7 +217,7 @@ export function WebhooksTab() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 font-medium">
                           {h.name}
-                          {!h.active && (
+                          {!h.is_active && (
                             <Badge
                               variant="outline"
                               className="border-destructive/20 bg-destructive/10 text-[10px] text-destructive"
@@ -264,7 +264,7 @@ export function WebhooksTab() {
                         )}
                       </div>
                       <div className="flex flex-col gap-1">
-                        {!h.active && (
+                        {!h.is_active && (
                           <Button
                             size="sm"
                             variant="outline"
