@@ -30,7 +30,7 @@ export function useKeyboardShortcuts({
 
       // Number keys 1-6: Navigate steps
       if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const step = parseInt(e.key);
+        const step = parseInt(e.key, 10);
         if (onStepChange) {
           onStepChange(step);
           return;
@@ -75,8 +75,7 @@ export function useKeyboardShortcuts({
         return;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset],
+    [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset, onStepChange],
   );
 
   useEffect(() => {

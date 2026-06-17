@@ -296,8 +296,16 @@ export function MockupLayoutButtons({
     } finally {
       setIsGeneratingStatic(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, activeArea, technique, productHeightCm, productWidthCm, buildApprovalData]);
+  }, [
+    product,
+    activeArea,
+    technique,
+    productHeightCm,
+    productWidthCm,
+    buildApprovalData,
+    onStaticGenerated,
+    colorsCount,
+  ]);
 
   // Don't show if no product/technique selected
   if (!product || !technique || !activeArea) return null;
