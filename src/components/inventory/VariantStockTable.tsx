@@ -683,6 +683,7 @@ export function VariantStockTable({
             className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
           >
             <TableRow className="bg-muted/50">
+              {selection.enabled && <TableHead className="w-[40px] pr-0"></TableHead>}
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
@@ -694,15 +695,21 @@ export function VariantStockTable({
           </TableHeader>
           <TableBody>
             {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant, effectiveStatus, projection }) => (
-                <FlatVariantRow
-                  key={`${product.productId}::${variant.id}`}
-                  product={product}
-                  variant={variant}
-                  effectiveStatus={effectiveStatus}
-                  projection={projection}
-                />
-              ))
+              pagedRows.map(({ product, variant, effectiveStatus, projection }) => {
+                const k = `${product.productId}::${variant.variantId}`;
+                return (
+                  <FlatVariantRow
+                    key={`${product.productId}::${variant.id}`}
+                    product={product}
+                    variant={variant}
+                    effectiveStatus={effectiveStatus}
+                    projection={projection}
+                    selectionEnabled={selection.enabled}
+                    isSelected={selection.isSelected(k)}
+                    onToggleSelect={() => selection.toggle(k)}
+                  />
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
