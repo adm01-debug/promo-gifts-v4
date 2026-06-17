@@ -117,6 +117,14 @@ function MetricCard({
   );
 }
 
+const FULL_WIDTH_WIDGET_IDS = new Set([
+  'quick-actions',
+  'upcoming-dates',
+  'recent-kits',
+  'my-quotes',
+  'my-discounts',
+]);
+
 export function CustomizableDashboard() {
   const { user } = useAuth();
   const [widgetOrder, setWidgetOrder] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
@@ -251,15 +259,6 @@ export function CustomizableDashboard() {
     }
   };
 
-  // Widgets that render as full-width vs metric cards
-  const fullWidthIds = new Set([
-    'quick-actions',
-    'upcoming-dates',
-    'recent-kits',
-    'my-quotes',
-    'my-discounts',
-  ]);
-
   return (
     <>
       <PageSEO
@@ -330,7 +329,7 @@ export function CustomizableDashboard() {
           <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3 sm:space-y-4">
               {visibleWidgets.map((widget) => {
-                const isFullWidth = fullWidthIds.has(widget.id);
+                const isFullWidth = FULL_WIDTH_WIDGET_IDS.has(widget.id);
 
                 if (isFullWidth) {
                   return (
@@ -346,7 +345,7 @@ export function CustomizableDashboard() {
               {/* Metric cards in grid */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {visibleWidgets
-                  .filter((w) => !fullWidthIds.has(w.id))
+                  .filter((w) => !FULL_WIDTH_WIDGET_IDS.has(w.id))
                   .map((widget) => (
                     <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
                       {renderWidgetContent(widget.id)}
