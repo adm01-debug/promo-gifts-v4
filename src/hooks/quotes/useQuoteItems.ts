@@ -90,8 +90,11 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
   }, []);
 
   const updateItemPrice = useCallback((index: number, price: number) => {
+    // Clamp defensivo: preço nunca negativo nem NaN (espelha CHECK unit_price >= 0 no banco
+    // e evita que um valor inválido só estoure no momento do save).
+    const safePrice = Math.max(0, Number.isFinite(price) ? price : 0);
     setItems((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, unit_price: price } : item)),
+      prev.map((item, idx) => (idx === index ? { ...item, unit_price: safePrice } : item)),
     );
   }, []);
 
