@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PRESET_COLORS, PRESET_EMOJIS } from './preset-utils';

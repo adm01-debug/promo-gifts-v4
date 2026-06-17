@@ -1,4 +1,3 @@
-import React from 'react';
 import { SlidersHorizontal, RefreshCw, ChevronsUpDown, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
