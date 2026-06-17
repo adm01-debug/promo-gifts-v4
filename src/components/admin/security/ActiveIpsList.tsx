@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -50,7 +50,7 @@ export function ActiveIpsList() {
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('ip_access_control')
@@ -66,12 +66,11 @@ export function ActiveIpsList() {
       setItems(data || []);
     }
     setLoading(false);
-  };
+  }, [toast]);
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   const now = Date.now();
 

@@ -55,8 +55,7 @@ export function useSellerCartsPage() {
   const { templates, saveTemplate, deleteTemplate } = useCartTemplates();
 
   const productsCtx = useContext(ProductsContext);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const allProducts = productsCtx?.products || [];
+  const allProducts = useMemo(() => productsCtx?.products ?? [], [productsCtx?.products]);
   const isLoadingProducts = productsCtx?.isLoading || false;
 
   const [showNewCart, setShowNewCart] = useState(false);
@@ -253,8 +252,7 @@ export function useSellerCartsPage() {
         restoreItems(activeCart.id, addItems);
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clearCart, activeCart, addToActiveCart]);
+  }, [clearCart, activeCart, restoreItems]);
 
   const handleSaveTemplate = useCallback(
     (name: string, description: string) => {
