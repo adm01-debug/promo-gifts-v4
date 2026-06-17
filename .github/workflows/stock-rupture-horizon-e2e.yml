@@ -8,8 +8,13 @@ on:
       - 'src/components/inventory/VariantStockVisuals.tsx'
       - 'src/components/inventory/StockDashboard.tsx'
       - 'e2e/routes/app/stock-rupture-horizon*.spec.ts'
+      - 'e2e/fixtures/stock-rupture-fixture.ts'
       - '.github/workflows/stock-rupture-horizon-e2e.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   e2e:
@@ -25,6 +30,8 @@ jobs:
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       E2E_BASE_URL: http://localhost:8080
+    outputs:
+      report_url: ${{ steps.report.outputs.url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,16 +39,92 @@ jobs:
           node-version: lts/*
           cache: 'npm'
       - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
       - name: Run stock-rupture-horizon specs
-        run: npx playwright test stock-rupture-horizon --project=chromium-authed --reporter=list,html
+        id: run
+        run: |
+          set +e
+          npx playwright test stock-rupture-horizon \
+            --project=chromium-authed \
+            --reporter=list,html,json 2>&1 | tee playwright-output.log
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
       - name: Upload Playwright report
         if: always()
+        id: report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-stock-rupture-horizon-${{ github.run_id }}
           path: |
             playwright-report/
             test-results/
+            playwright-output.log
           retention-days: 14
+
+      - name: Comentar PR com resumo + link do report
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactName = `playwright-report-stock-rupture-horizon-${context.runId}`;
+            const exitCode = '${{ steps.run.outputs.exit }}';
+
+            // Tenta extrair sumário do JSON do Playwright
+            let summary = '';
+            try {
+              const jsonPath = path.join('test-results', 'results.json');
+              if (fs.existsSync(jsonPath)) {
+                const r = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                const stats = r.stats || {};
+                summary = `\n- ✅ passed: **${stats.expected ?? 0}**\n- ❌ failed: **${stats.unexpected ?? 0}**\n- ⚠️ flaky: **${stats.flaky ?? 0}**\n- ⏭️ skipped: **${stats.skipped ?? 0}**\n- ⏱️ duration: **${Math.round((stats.duration ?? 0)/1000)}s**`;
+                const failures = (r.suites || []).flatMap(s => (s.specs || []).flatMap(sp => sp.tests.filter(t => t.status === 'unexpected').map(t => `  - ❌ \`${sp.title}\``)));
+                if (failures.length) summary += `\n\n**Falhas:**\n${failures.slice(0,10).join('\n')}`;
+              }
+            } catch (e) {
+              summary = `\n_(não foi possível parsear results.json: ${e.message})_`;
+            }
+
+            const status = exitCode === '0' ? '✅ Sucesso' : '❌ Falha';
+            const body = [
+              `### 🧪 E2E — Risco de Ruptura (3/7/15/30d) — ${status}`,
+              summary,
+              ``,
+              `📂 **Relatório HTML:** baixe o artefato [\`${artifactName}\`](${runUrl}#artifacts) e abra \`playwright-report/index.html\`.`,
+              `🔗 **Run completa:** ${runUrl}`,
+            ].join('\n');
+
+            // Atualiza comentário existente se houver (idempotente)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '### 🧪 E2E — Risco de Ruptura';
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, body,
+              });
+            }
+
+      - name: Falhar job se testes quebraram
+        if: steps.run.outputs.exit != '0'
+        run: exit 1
