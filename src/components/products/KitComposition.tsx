@@ -23,6 +23,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { KitComponent } from '@/types/product-catalog';
 import { KitComponentCard } from './kit-composition/KitComponentCard';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface KitCompositionProps {
   items: KitComponent[];
@@ -82,7 +83,7 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
                 >
                   {item.imageUrl ? (
                     <OptimizedImage
-                      src={item.imageUrl}
+                      src={getCdnUrl(item.imageUrl, 'thumbnail')}
                       alt=""
                       className="object-contain p-0.5"
                       containerClassName="h-full w-full"

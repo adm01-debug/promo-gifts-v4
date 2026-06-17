@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 type SortKey = 'name' | 'products' | 'featured' | 'updated';
 type SortDir = 'asc' | 'desc';
@@ -131,7 +132,7 @@ function CollectionTableRow({
         <div className="flex items-center gap-2.5">
           {previewImage ? (
             <OptimizedImage
-              src={previewImage}
+              src={getCdnUrl(previewImage, 'thumbnail')}
               alt=""
               className="rounded object-cover"
               containerClassName="h-8 w-8 shrink-0"

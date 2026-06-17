@@ -8,6 +8,7 @@ import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface RecentlyViewedBarProps {
   className?: string;
@@ -67,7 +68,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                       )}
                     >
                       <OptimizedImage
-                        src={product.images[0]}
+                        src={getCdnUrl(product.images[0], 'thumbnail')}
                         alt={product.name}
                         className="object-cover"
                         containerClassName="h-full w-full"

@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Package } from 'lucide-react';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 export interface KitItem {
   id: string;
@@ -33,7 +34,7 @@ export function KitVisualComposition({ items, className }: KitVisualCompositionP
           <div className="flex aspect-square items-center justify-center bg-muted">
             {item.imageUrl ? (
               <OptimizedImage
-                src={item.imageUrl}
+                src={getCdnUrl(item.imageUrl, 'card')}
                 alt={item.name}
                 className="object-cover"
                 containerClassName="h-full w-full"
