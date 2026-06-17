@@ -35,6 +35,8 @@ const DEFAULT_IMAGE_CONFIG = {
   duration: 600,
 };
 
+const VALID_STOCK_STATUSES = new Set(['in-stock', 'low-stock', 'out-of-stock']);
+
 interface ProductCardImageProps {
   /** Full product object — used for name (alt), sku, and badge flags */
   product: Product;
@@ -134,10 +136,9 @@ export const ProductCardImage = memo(function ProductCardImage({
   // "low-stock" porém quantidade = 0), derivamos do número via SSOT
   // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
   // quando o backend devolve um payload parcial.
-  const validStatuses = new Set(['in-stock', 'low-stock', 'out-of-stock']);
   const stockQty =
     typeof product.stock === 'number' && Number.isFinite(product.stock) ? product.stock : null;
-  const rawStatus = validStatuses.has(product.stockStatus as string)
+  const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus as string)
     ? product.stockStatus
     : stockQty !== null
       ? getCatalogStockStatus(stockQty)
