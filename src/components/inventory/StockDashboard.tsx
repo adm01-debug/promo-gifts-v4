@@ -34,6 +34,7 @@ import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
 import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
 import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
+import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
 export function StockDashboard() {
