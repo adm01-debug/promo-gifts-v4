@@ -395,9 +395,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableCell>
                 <div className="h-4 w-12 animate-pulse rounded bg-muted" />
               </TableCell>
-              <TableCell>
-                <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-              </TableCell>
               <TableCell className="hidden md:table-cell">
                 <div className="h-4 w-8 animate-pulse rounded bg-muted" />
               </TableCell>
@@ -518,7 +515,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               
 
               
-              <TableHead>Disponível</TableHead>
+              
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
@@ -535,7 +532,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
