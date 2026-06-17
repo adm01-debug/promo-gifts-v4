@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useTabelasPreco, useNomesTecnicasPreco, calcularPreco } from '@/hooks/simulation';
 import type { TabelaPrecoTecnica, TabelaPrecoFiltros } from '@/types/tecnica-unificada';
+import { cn } from '@/lib/utils';
 
 export function PricingPanel() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +152,7 @@ export function PricingPanel() {
             </CardDescription>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            <RotateCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RotateCcw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Atualizar
           </Button>
         </div>

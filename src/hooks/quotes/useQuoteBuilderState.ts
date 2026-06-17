@@ -429,7 +429,7 @@ export function useQuoteBuilderState() {
           if (saved.deliveryTime.startsWith('date:')) {
             setDeliveryMode('data');
             try {
-              setDeliveryDate(new Date(saved.deliveryTime.slice(5) + 'T12:00:00'));
+              setDeliveryDate(new Date(`${saved.deliveryTime.slice(5)}T12:00:00`));
             } catch (e) {
               logger.warn('Failed to restore delivery date', e);
             }
@@ -518,7 +518,7 @@ export function useQuoteBuilderState() {
         if (quote.delivery_time) {
           if (quote.delivery_time.startsWith('date:')) {
             setDeliveryMode('data');
-            setDeliveryDate(new Date(quote.delivery_time.slice(5) + 'T12:00:00'));
+            setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
           } else {
             setDeliveryMode('prazo');
           }

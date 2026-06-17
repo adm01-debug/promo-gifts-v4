@@ -171,7 +171,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
@@ -332,7 +332,7 @@ export function SearchesTabContent({ topSearches, isLoading }: SearchesTabProps)
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>

@@ -274,7 +274,7 @@ function ProductCard({ m }: { m: MagicUpStateReturn }) {
                         className="h-2.5 w-2.5 rounded-full border border-border/30"
                         style={{ backgroundColor: c.hex }}
                       />
-                      {c.name.length > 12 ? c.name.slice(0, 12) + '…' : c.name}
+                      {c.name.length > 12 ? `${c.name.slice(0, 12)}…` : c.name}
                     </button>
                   ))}
                 </div>

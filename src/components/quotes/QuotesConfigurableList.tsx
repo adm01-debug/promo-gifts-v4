@@ -58,6 +58,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { cn } from '@/lib/utils';
 
 // ── Column definitions ──
 export interface ColumnDef {
@@ -379,10 +380,7 @@ export function QuotesConfigurableList({
                 />
               </div>
               {visibleColumns.map((col) => (
-                <div
-                  key={col.id}
-                  className={`min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}
-                >
+                <div key={col.id} className={cn('min-w-0', col.align === 'right' && 'text-right')}>
                   {col.id === 'client' ? (
                     <div className="flex min-w-0 items-center gap-2">
                       <div className="min-w-0 flex-1">{renderCell(quote, col.id)}</div>

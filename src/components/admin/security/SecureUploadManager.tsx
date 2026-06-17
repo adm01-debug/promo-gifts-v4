@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 interface FileScanLog {
   id: string;
   created_at: string;
@@ -204,7 +205,7 @@ export function SecureUploadManager() {
             </CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Atualizar
           </Button>
         </CardHeader>

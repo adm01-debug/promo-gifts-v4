@@ -51,7 +51,7 @@ export function AiQuotaManager() {
       <CardContent>
         {isLoading ? (
           <div className="space-y-2">
-            {[...Array(3)].map((_, i) => (
+            {Array.from({ length: 3 }, (_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>

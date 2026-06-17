@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { SelectedProduct } from '@/types/domain/simulator-wizard';
+import { cn } from '@/lib/utils';
 
 interface PreSelectedProductState {
   id: string;
@@ -231,7 +232,7 @@ export default function SimuladorWizard() {
         </motion.div>
 
         {/* Layout com Sidebar */}
-        <div className={`flex gap-6 ${showSidebar ? 'lg:pr-80' : ''}`}>
+        <div className={cn('flex gap-6', showSidebar && 'lg:pr-80')}>
           {/* Main Content */}
           <div className="min-w-0 flex-1">
             {/* Context Bar */}

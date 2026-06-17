@@ -23,6 +23,7 @@ import { CredentialCacheMetricsPanel } from './CredentialCacheMetricsPanel';
 import { BridgeProductsPreviewPanel } from './BridgeProductsPreviewPanel';
 import { FieldSourceDrillDownDialog, type FieldDrillDownData } from './FieldSourceDrillDownDialog';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type ExternalConnRow = {
   id: string;
@@ -328,7 +329,7 @@ export function DataSourceDebugTab() {
           disabled={secretsLoading || extLoading}
         >
           <RefreshCw
-            className={`mr-2 h-4 w-4 ${secretsLoading || extLoading ? 'animate-spin' : ''}`}
+            className={cn('mr-2 h-4 w-4', secretsLoading || (extLoading && 'animate-spin'))}
           />
           Recarregar
         </Button>
@@ -551,7 +552,7 @@ export function DataSourceDebugTab() {
                       )}
                       <Badge
                         variant={s.has_value ? 'default' : 'secondary'}
-                        className={`text-[10px] ${s.has_value ? 'bg-green-600' : ''}`}
+                        className={cn('text-[10px]', s.has_value && 'bg-green-600')}
                       >
                         {s.has_value ? (s.source ?? 'db') : 'vazio'}
                       </Badge>
@@ -621,7 +622,7 @@ export function DataSourceDebugTab() {
                       </Badge>
                       <Badge
                         variant={c.status === 'active' ? 'default' : 'secondary'}
-                        className={`text-[10px] ${c.status === 'active' ? 'bg-green-600' : ''}`}
+                        className={cn('text-[10px]', c.status === 'active' && 'bg-green-600')}
                       >
                         {c.status ?? '—'}
                       </Badge>

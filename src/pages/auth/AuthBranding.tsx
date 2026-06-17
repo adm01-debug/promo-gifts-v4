@@ -98,7 +98,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, []);
 
   if (starsRef.current.length === 0) {
-    starsRef.current = [...Array(150)].map((_, i) => ({
+    starsRef.current = Array.from({ length: 150 }, (_, i) => ({
       id: i,
       size: 0.8 + (i % 3) * 0.4,
       top: (i * 137.7) % 100,
@@ -135,7 +135,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     // Meteor shower removido para eliminar linhas rápidas atravessando a tela
 
     setPlanets(
-      [...Array(5)].map((_, i) => ({
+      Array.from({ length: 5 }, (_, i) => ({
         id: i,
         left: 10 + i * 18,
         top: 15 + i * 15,
@@ -204,7 +204,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
       {/* Space Dust Layer - Profundidade Extra */}
       <div className="fixed inset-0 opacity-30">
-        {[...Array(20)].map((_, i) => (
+        {Array.from({ length: 20 }, (_, i) => (
           <div
             key={`dust-${i}`}
             className="absolute rounded-full bg-white/40"

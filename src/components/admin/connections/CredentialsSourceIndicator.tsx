@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import { resolveSource } from './CredentialsSourceFilterContext';
 import type { SecretStatus } from '@/hooks/admin';
+import { cn } from '@/lib/utils';
 
 interface Props {
   secrets: SecretStatus[];
@@ -336,7 +337,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 className="shrink-0 self-start"
               >
                 <RefreshCw
-                  className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
+                  className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')}
                   aria-hidden="true"
                 />
                 <span className="ml-1.5 text-xs">{refreshing ? 'Atualizando…' : 'Atualizar'}</span>

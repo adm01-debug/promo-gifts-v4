@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { rpcAdminSyncExternalConnections } from '@/integrations/supabase/gold';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type SyncLogRow = {
   id: string;
@@ -111,11 +112,11 @@ export function LastSyncRunPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
               Atualizar
             </Button>
             <Button size="sm" onClick={runManual} disabled={running}>
-              <Zap className={`mr-2 h-4 w-4 ${running ? 'animate-pulse' : ''}`} />
+              <Zap className={cn('mr-2 h-4 w-4', running && 'animate-pulse')} />
               {running ? 'Executando…' : 'Rodar agora'}
             </Button>
           </div>

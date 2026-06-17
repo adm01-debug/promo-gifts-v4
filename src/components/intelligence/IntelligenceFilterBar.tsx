@@ -267,7 +267,7 @@ export function IntelligenceFilterBar({ filters, onFiltersChange }: Intelligence
               <Package className="h-3 w-3" />
               {filters.productName
                 ? filters.productName.length > 20
-                  ? filters.productName.slice(0, 20) + '…'
+                  ? `${filters.productName.slice(0, 20)}…`
                   : filters.productName
                 : 'Produto'}
               <ChevronDown className="h-3 w-3 opacity-50" />

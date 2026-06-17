@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Package, Scale, Box, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
+import { cn } from '@/lib/utils';
 
 interface KitBoxData {
   weight?: number;
@@ -197,7 +198,10 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
                   {kits.map((kit) => (
                     <td
                       key={kit.id}
-                      className={`px-2 py-2.5 text-center ${row.bold ? 'font-bold text-primary' : ''}`}
+                      className={cn(
+                        'px-2 py-2.5 text-center',
+                        row.bold && 'font-bold text-primary',
+                      )}
                     >
                       {row.getValue(kit)}
                     </td>

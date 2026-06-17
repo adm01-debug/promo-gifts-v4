@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ShieldAlert, ArrowLeft, AlertTriangle, RefreshCw, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const ALERT_THRESHOLD_24H = 10;
 
@@ -129,7 +130,7 @@ export default function RlsDenialsAdminPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`mr-1 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} /> Atualizar
+              <RefreshCw className={cn('mr-1 h-4 w-4', isFetching && 'animate-spin')} /> Atualizar
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/admin/seguranca">
@@ -162,7 +163,7 @@ export default function RlsDenialsAdminPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">Últimas 24h</p>
-              <p className={`text-2xl font-bold ${alertActive ? 'text-destructive' : ''}`}>
+              <p className={cn('text-2xl font-bold', alertActive && 'text-destructive')}>
                 {stats.last24h}
               </p>
             </CardContent>
@@ -259,7 +260,7 @@ export default function RlsDenialsAdminPage() {
                   {stats.topUsers.map(([uid, v]) => (
                     <li key={uid} className="flex items-center justify-between">
                       <span className="truncate" title={uid}>
-                        {v.email ?? uid.slice(0, 8) + '…'}
+                        {v.email ?? `${uid.slice(0, 8)}…`}
                       </span>
                       <Badge variant="destructive">{v.count}</Badge>
                     </li>

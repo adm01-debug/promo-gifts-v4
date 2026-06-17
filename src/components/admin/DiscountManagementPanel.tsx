@@ -273,7 +273,7 @@ export function DiscountManagementPanel() {
             <CardContent>
               {limitsLoading ? (
                 <div className="space-y-3">
-                  {[...Array(4)].map((_, i) => (
+                  {Array.from({ length: 4 }, (_, i) => (
                     <Skeleton key={i} className="h-14 w-full rounded-xl" />
                   ))}
                 </div>
@@ -425,7 +425,7 @@ export function DiscountManagementPanel() {
 
           {requestsLoading ? (
             <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
+              {Array.from({ length: 3 }, (_, i) => (
                 <Skeleton key={i} className="h-36 w-full rounded-xl" />
               ))}
             </div>

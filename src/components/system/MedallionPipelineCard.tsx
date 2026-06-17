@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMedallionHealth } from '@/hooks/admin/useMedallionHealth';
+import { cn } from '@/lib/utils';
 
 const CAMADA_BADGE: Record<string, string> = {
   bronze: 'border-amber-700/40 bg-amber-900/20 text-amber-600',
@@ -39,7 +40,7 @@ export function MedallionPipelineCard() {
             Pipeline Medalhão (Bronze → Prata → Ouro)
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('mr-2 h-4 w-4', isRefetching && 'animate-spin')} />
             Atualizar
           </Button>
         </div>

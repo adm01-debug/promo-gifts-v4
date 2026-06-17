@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { History, RefreshCw, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface AuditEntry {
   id: string;
@@ -124,7 +125,7 @@ export function RecentAuditTable() {
           </CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('mr-1.5 h-4 w-4', loading && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>

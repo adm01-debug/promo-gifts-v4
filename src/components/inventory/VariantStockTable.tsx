@@ -317,7 +317,7 @@ export function VariantStockTable({
   // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const raw = readStored(PAGE_STORAGE_KEY, '0');
-    const n = Number.parseInt(raw, 10);
+    const n = parseInt(raw, 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
   const [inlineSearch, setInlineSearch] = useState<string>(() =>
@@ -359,7 +359,7 @@ export function VariantStockTable({
   // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
   const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
     const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
-    const n = Number.parseInt(raw, 10) as RuptureHorizonDays;
+    const n = parseInt(raw, 10) as RuptureHorizonDays;
     return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
   });
   useEffect(() => {
@@ -523,7 +523,7 @@ export function VariantStockTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[...Array(10)].map((_, i) => (
+          {Array.from({ length: 10 }, (_, i) => (
             <TableRow key={i}>
               <TableCell>
                 <div className="flex items-center gap-2">
@@ -536,7 +536,7 @@ export function VariantStockTable({
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <div className="flex gap-1">
-                  {[...Array(3)].map((_, j) => (
+                  {Array.from({ length: 3 }, (_, j) => (
                     <div key={j} className="h-5 w-5 animate-pulse rounded-full bg-muted" />
                   ))}
                 </div>

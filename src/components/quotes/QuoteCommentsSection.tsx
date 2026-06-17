@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useQuoteComments, type QuoteComment } from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface QuoteCommentsSectionProps {
   quoteId: string;
@@ -203,7 +204,10 @@ function CommentItem({
 
   return (
     <div
-      className={`group rounded-lg p-3 transition-colors hover:bg-muted/30 ${isReply ? 'bg-muted/10' : ''}`}
+      className={cn(
+        'group rounded-lg p-3 transition-colors hover:bg-muted/30',
+        isReply && 'bg-muted/10',
+      )}
     >
       <div className="flex gap-3">
         <Avatar className="h-8 w-8 shrink-0">
