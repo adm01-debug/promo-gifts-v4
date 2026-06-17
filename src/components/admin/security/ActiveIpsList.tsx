@@ -64,7 +64,7 @@ export function ActiveIpsList() {
         variant: 'destructive',
       });
     } else {
-      setItems(data || []);
+      setItems(data ?? []);
     }
     setLoading(false);
   }, [toast]);

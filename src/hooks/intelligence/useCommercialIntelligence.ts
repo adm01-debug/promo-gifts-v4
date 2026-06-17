@@ -169,13 +169,13 @@ export function useCommercialKPIs(
             .in('product_id', pids.slice(0, 200)),
         ]);
 
-        const uqQuotes = new Set((quoteItems || []).map((qi) => qi.quote_id));
-        const uqOrders = new Set((orderItems || []).map((oi) => oi.order_id));
-        const totalRevenue = (orderItems || []).reduce(
+        const uqQuotes = new Set((quoteItems ?? []).map((qi) => qi.quote_id));
+        const uqOrders = new Set((orderItems ?? []).map((oi) => oi.order_id));
+        const totalRevenue = (orderItems ?? []).reduce(
           (s, i) => s + (i.quantity ?? 0) * (i.unit_price ?? 0),
           0,
         );
-        const revenueMonth = (orderItemsMonth || []).reduce(
+        const revenueMonth = (orderItemsMonth ?? []).reduce(
           (s, i) => s + (i.quantity ?? 0) * (i.unit_price ?? 0),
           0,
         );
@@ -186,8 +186,8 @@ export function useCommercialKPIs(
           conversionRate: uqQuotes.size > 0 ? Math.round((uqOrders.size / uqQuotes.size) * 100) : 0,
           totalRevenue,
           averageTicket: uqOrders.size > 0 ? totalRevenue / uqOrders.size : 0,
-          quotesThisMonth: new Set((quoteItemsMonth || []).map((qi) => qi.quote_id)).size,
-          ordersThisMonth: new Set((orderItemsMonth || []).map((oi) => oi.order_id)).size,
+          quotesThisMonth: new Set((quoteItemsMonth ?? []).map((qi) => qi.quote_id)).size,
+          ordersThisMonth: new Set((orderItemsMonth ?? []).map((oi) => oi.order_id)).size,
           revenueThisMonth: revenueMonth,
         };
       }
@@ -220,8 +220,8 @@ export function useCommercialKPIs(
       // deliberadamente consome a visão macro.
 
       const [qr, or, qmr, omr] = await Promise.all([q1, o1, q2, o2]);
-      const quotes = qr.data || [];
-      const orders = or.data || [];
+      const quotes = qr.data ?? [];
+      const orders = or.data ?? [];
       const totalRevenue = orders.reduce((s, o) => s + (o.total ?? 0), 0);
 
       return {
@@ -230,9 +230,9 @@ export function useCommercialKPIs(
         conversionRate: quotes.length > 0 ? Math.round((orders.length / quotes.length) * 100) : 0,
         totalRevenue,
         averageTicket: orders.length > 0 ? totalRevenue / orders.length : 0,
-        quotesThisMonth: (qmr.data || []).length,
-        ordersThisMonth: (omr.data || []).length,
-        revenueThisMonth: (omr.data || []).reduce((s, o) => s + (o.total ?? 0), 0),
+        quotesThisMonth: (qmr.data ?? []).length,
+        ordersThisMonth: (omr.data ?? []).length,
+        revenueThisMonth: (omr.data ?? []).reduce((s, o) => s + (o.total ?? 0), 0),
       };
     },
     staleTime: 1000 * 60 * 5,
@@ -379,7 +379,7 @@ export function useSegmentAnalysis(
           .gte('created_at', since)
           .in('product_id', pids);
         const orderIds = [
-          ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
+          ...new Set((oi ?? []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
         const { data: orders } = await supabase
@@ -387,14 +387,14 @@ export function useSegmentAnalysis(
           .from('orders')
           .select('id, client_company, total')
           .in('id', orderIds.slice(0, 200));
-        return aggregateSegments(orders || []);
+        return aggregateSegments(orders ?? []);
       }
       const { data: orders } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_company, total')
         .gte('created_at', since);
-      return aggregateSegments(orders || []);
+      return aggregateSegments(orders ?? []);
     },
     staleTime: 1000 * 60 * 5,
     enabled: !!user && (!hasFilter || productIds !== undefined),
@@ -528,7 +528,7 @@ export function useTopClients(
           .gte('created_at', since)
           .in('product_id', pids);
         const orderIds = [
-          ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
+          ...new Set((oi ?? []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
         const { data: orders } = await supabase
@@ -536,14 +536,14 @@ export function useTopClients(
           .from('orders')
           .select('id, client_name, client_company, total')
           .in('id', orderIds.slice(0, 200));
-        return aggregateClients(orders || []);
+        return aggregateClients(orders ?? []);
       }
       const { data: orders } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_name, client_company, total')
         .gte('created_at', since);
-      return aggregateClients(orders || []);
+      return aggregateClients(orders ?? []);
     },
     staleTime: 1000 * 60 * 5,
     enabled: !!user && (!hasFilter || productIds !== undefined),
@@ -589,7 +589,7 @@ export function useCategoryRanking(
       });
 
       const categoryMap = new Map<string, CategoryRankingItem>();
-      (orderItems || []).forEach((item) => {
+      (orderItems ?? []).forEach((item) => {
         const cat = productCategoryMap.get(item.product_id || '');
         if (!cat) return;
         const e = categoryMap.get(cat.catId) || {

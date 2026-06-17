@@ -73,7 +73,7 @@ export function useGeoBlocking() {
       if (!mountedRef.current) return; // BUG-21 FIX: guard pós-await (componente pode ter desmontado)
 
       if (countriesRes.error) throw countriesRes.error;
-      setCountries(countriesRes.data || []);
+      setCountries(countriesRes.data ?? []);
 
       const settingsResult = settingsRes as unknown as {
         data: { setting_value: GeoBlockingSettings } | null;

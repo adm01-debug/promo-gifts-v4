@@ -133,7 +133,16 @@ export function useProductImageGallery({
       else if (!img.cf_sync_status || img.cf_sync_status === 'pending') cfPending++;
       if (img.blurhash) withBlurhash++;
     });
-    return { byType, byVariant, withAlt, withoutVariant, total: externalImages.length, cfVerified, cfPending, withBlurhash };
+    return {
+      byType,
+      byVariant,
+      withAlt,
+      withoutVariant,
+      total: externalImages.length,
+      cfVerified,
+      cfPending,
+      withBlurhash,
+    };
   }, [externalImages]);
 
   const variantMap = useMemo(() => {
@@ -381,7 +390,7 @@ export function useProductImageGallery({
   );
 
   const handleFilesChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    await processUploadBatch(Array.from(e.target.files || []));
+    await processUploadBatch(Array.from(e.target.files ?? []));
   };
 
   // P0 FIX: handleRemove now soft-deletes in external DB + cleans storage

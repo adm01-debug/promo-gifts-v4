@@ -61,7 +61,7 @@ export function useScheduledReports() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReports((data || []) as unknown as ScheduledReport[]);
+      setReports((data ?? []) as unknown as ScheduledReport[]);
     } catch (err) {
       logger.error('Error fetching scheduled reports:', err);
     } finally {

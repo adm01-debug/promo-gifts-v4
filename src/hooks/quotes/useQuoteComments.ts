@@ -40,7 +40,7 @@ export function useQuoteComments(quoteId: string | undefined) {
       if (error) throw error;
 
       // Fetch author profiles
-      const userIds = [...new Set((data || []).map((c) => c.user_id))];
+      const userIds = [...new Set((data ?? []).map((c) => c.user_id))];
       let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {};
 
       if (userIds.length > 0) {
@@ -56,7 +56,7 @@ export function useQuoteComments(quoteId: string | undefined) {
         }
       }
 
-      const enriched: QuoteComment[] = (data || []).map((c) => ({
+      const enriched: QuoteComment[] = (data ?? []).map((c) => ({
         id: c.id,
         quote_id: c.quote_id,
         user_id: c.user_id,
@@ -77,13 +77,13 @@ export function useQuoteComments(quoteId: string | undefined) {
         .filter((c) => c.parent_id)
         .forEach((c) => {
           if (!c.parent_id) return;
-          const arr = childMap.get(c.parent_id) || [];
+          const arr = childMap.get(c.parent_id) ?? [];
           arr.push(c);
           childMap.set(c.parent_id, arr);
         });
 
       topLevel.forEach((c) => {
-        c.replies = childMap.get(c.id) || [];
+        c.replies = childMap.get(c.id) ?? [];
       });
 
       setComments(topLevel);
@@ -165,7 +165,7 @@ async function createCommentNotification(
       .select('user_id')
       .eq('quote_id', quoteId);
 
-    const uniqueUsers = [...new Set((participants || []).map((p) => p.user_id))].filter(
+    const uniqueUsers = [...new Set((participants ?? []).map((p) => p.user_id))].filter(
       (uid) => uid !== authorId,
     );
 

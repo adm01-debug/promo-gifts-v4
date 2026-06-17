@@ -486,7 +486,7 @@ function SceneCard({ m }: { m: MagicUpStateReturn }) {
             clientName={m.selectedClient?.name}
             clientSegment={m.selectedClient?.ramo_atividade}
             brandColorName={m.selectedClient?.cor_primaria_nome}
-            printAreas={m.printAreas || []}
+            printAreas={m.printAreas ?? []}
             onSelectPrompt={(p) => m.setSelectedScene(p)}
             selectedPrompt={m.selectedScene}
             initialLocationId={m.selectedLocationId}

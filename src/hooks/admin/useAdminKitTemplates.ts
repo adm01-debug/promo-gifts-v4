@@ -25,7 +25,7 @@ export function useAdminKitTemplates() {
         .select('*')
         .order('updated_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as KitTemplateRow[];
+      return (data ?? []) as unknown as KitTemplateRow[];
     },
     staleTime: 30_000,
   });

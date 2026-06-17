@@ -36,7 +36,7 @@ export function RecentKitsWidget() {
         .order('updated_at', { ascending: false })
         .limit(5);
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
     enabled: !!user?.id,
     staleTime: 30_000,

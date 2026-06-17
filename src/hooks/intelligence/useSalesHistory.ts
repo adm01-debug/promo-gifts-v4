@@ -68,8 +68,8 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       ]);
 
       // Fetch related quotes for seller info
-      const quoteIds = [...new Set((quoteItems || []).map((q) => q.quote_id))];
-      const orderIds = [...new Set((orderItems || []).map((o) => o.order_id))];
+      const quoteIds = [...new Set((quoteItems ?? []).map((q) => q.quote_id))];
+      const orderIds = [...new Set((orderItems ?? []).map((o) => o.order_id))];
 
       const quotesMap: Record<string, { seller_id: string; status: string }> = {};
       const ordersMap: Record<string, { seller_id: string; status: string }> = {};
@@ -95,10 +95,10 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
               .then((r) => r.data)
           : Promise.resolve(null),
       ]);
-      for (const q of quotesData || []) {
+      for (const q of quotesData ?? []) {
         quotesMap[q.id] = { seller_id: q.seller_id ?? '', status: q.status ?? '' };
       }
-      for (const o of ordersData || []) {
+      for (const o of ordersData ?? []) {
         ordersMap[o.id] = { seller_id: o.seller_id ?? '', status: o.status ?? '' };
       }
 
@@ -115,7 +115,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', allSellerIds);
-        for (const p of profiles || []) {
+        for (const p of profiles ?? []) {
           if (p.user_id) sellerNames[p.user_id] = p.full_name || 'Vendedor';
         }
       }
@@ -124,7 +124,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       const dailyMap = new Map<string, DailySalesPoint>();
 
       // #7 fix: guard against null created_at before substring
-      for (const qi of quoteItems || []) {
+      for (const qi of quoteItems ?? []) {
         if (!qi.created_at) continue;
         const date = qi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
@@ -134,7 +134,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         dailyMap.set(date, entry);
       }
 
-      for (const oi of orderItems || []) {
+      for (const oi of orderItems ?? []) {
         if (!oi.created_at) continue;
         const date = oi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
@@ -149,7 +149,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       // Aggregate sellers
       const sellerMap = new Map<string, SellerRanking>();
 
-      for (const qi of quoteItems || []) {
+      for (const qi of quoteItems ?? []) {
         const sellerId = quotesMap[qi.quote_id]?.seller_id;
         if (!sellerId) continue;
         const s = sellerMap.get(sellerId) || {
@@ -166,7 +166,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         sellerMap.set(sellerId, s);
       }
 
-      for (const oi of orderItems || []) {
+      for (const oi of orderItems ?? []) {
         const sellerId = ordersMap[oi.order_id || '']?.seller_id;
         if (!sellerId) continue;
         const s = sellerMap.get(sellerId) || {
@@ -193,9 +193,9 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       const totalOrderedValue = daily.reduce((s, d) => s + d.orderedValue, 0);
 
       // B13 fix: conversion rate uses unique DOCUMENT counts, not item counts
-      const uniqueQuoteIds = new Set((quoteItems || []).map((qi) => qi.quote_id));
+      const uniqueQuoteIds = new Set((quoteItems ?? []).map((qi) => qi.quote_id));
       const uniqueOrderIds = new Set(
-        (orderItems || []).filter((oi) => oi.order_id).map((oi) => oi.order_id),
+        (orderItems ?? []).filter((oi) => oi.order_id).map((oi) => oi.order_id),
       );
       const totalUniqueQuotes = uniqueQuoteIds.size;
       const totalUniqueOrders = uniqueOrderIds.size;

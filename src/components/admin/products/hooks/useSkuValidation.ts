@@ -23,7 +23,9 @@ export function useSkuValidation(currentSku: string, isEdit: boolean, originalSk
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
         const existing = await fetchPromobrindProducts({ search: currentSku, limit: 5 });
         const products = (
-          Array.isArray(existing) ? existing : (existing as Record<string, unknown>).products || []
+          Array.isArray(existing)
+            ? existing
+            : ((existing as Record<string, unknown>).products ?? [])
         ) as Array<Record<string, unknown>>;
         const dup = products.find(
           (p: Record<string, unknown>) =>

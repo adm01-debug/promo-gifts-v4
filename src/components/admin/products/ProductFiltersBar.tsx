@@ -66,7 +66,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
         orderBy: { column: 'name', ascending: true },
         limit: 500,
       });
-      setCategories(result.records || []);
+      setCategories(result.records ?? []);
     } catch (e) {
       logger.error('Erro ao carregar categorias:', e);
     } finally {
@@ -84,7 +84,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
         orderBy: { column: 'name', ascending: true },
         limit: 200,
       });
-      setSuppliers(result.records || []);
+      setSuppliers(result.records ?? []);
     } catch (e) {
       logger.error('Erro ao carregar fornecedores:', e);
     } finally {

@@ -93,7 +93,7 @@ export function DiscountManagementPanel() {
       .from('profiles')
       .select('user_id, full_name, email, role')
       .order('full_name');
-    setSellers((data || []) as SellerProfile[]);
+    setSellers((data ?? []) as SellerProfile[]);
   }, []);
 
   useEffect(() => {

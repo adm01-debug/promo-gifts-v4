@@ -58,7 +58,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
 
   const getTotalWeight = (kit: KitForComparison): number => {
     const boxWeight = kit.box_data?.weight || 0;
-    const itemsWeight = (kit.items_data || []).reduce(
+    const itemsWeight = (kit.items_data ?? []).reduce(
       (sum: number, i: KitItemData) => sum + (i.weight || 0) * (i.quantity || 1),
       0,
     );
@@ -66,7 +66,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
   };
 
   const getItemCount = (kit: KitForComparison): number => {
-    return (kit.items_data || []).reduce(
+    return (kit.items_data ?? []).reduce(
       (sum: number, i: KitItemData) => sum + (i.quantity || 1),
       0,
     );
@@ -98,7 +98,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
       label: 'Qtd Itens',
       icon: null,
       getValue: (k: KitForComparison) =>
-        `${getItemCount(k)} itens (${(k.items_data || []).length} diferentes)`,
+        `${getItemCount(k)} itens (${(k.items_data ?? []).length} diferentes)`,
     },
     {
       label: 'Peso Total',
@@ -220,7 +220,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
             {kits.map((kit) => (
               <div key={kit.id} className="space-y-1.5">
                 <p className="mb-2 text-sm font-semibold">{kit.name}</p>
-                {(kit.items_data || []).map((item: KitItemData, idx: number) => (
+                {(kit.items_data ?? []).map((item: KitItemData, idx: number) => (
                   <div
                     key={`${item.sku}-${idx}`}
                     className="flex items-center gap-2 rounded bg-muted/50 p-1.5 text-xs"

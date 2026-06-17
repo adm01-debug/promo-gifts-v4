@@ -75,7 +75,7 @@ export default function PermissionsPage() {
 
         if (isCancelled()) return;
         if (error) throw error;
-        setPermissions(data || []);
+        setPermissions(data ?? []);
       } catch (error: unknown) {
         if (isCancelled()) return;
         toast({

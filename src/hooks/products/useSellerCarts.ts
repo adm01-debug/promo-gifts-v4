@@ -106,7 +106,7 @@ export function useSellerCarts() {
         ...cart,
         notes: cart.notes ?? null,
         status: cart.status ?? 'novo',
-        items: (items || []).filter((i) => i.cart_id === cart.id),
+        items: (items ?? []).filter((i) => i.cart_id === cart.id),
       }));
     },
     enabled: !!userId,
@@ -356,7 +356,7 @@ export function useSellerCarts() {
   const duplicateCart = useMutation({
     mutationFn: async (sourceCartId: string) => {
       if (!userId) throw new Error('Não autenticado');
-      const sourceCart = (cartsQuery.data || []).find((c) => c.id === sourceCartId);
+      const sourceCart = (cartsQuery.data ?? []).find((c) => c.id === sourceCartId);
       if (!sourceCart) throw new Error('Carrinho não encontrado');
 
       // Create new cart
@@ -425,7 +425,7 @@ export function useSellerCarts() {
   const duplicateItemToCart = useMutation({
     mutationFn: async ({ itemId, targetCartId }: { itemId: string; targetCartId: string }) => {
       // Find the item in current carts
-      const allItems = (cartsQuery.data || []).flatMap((c) => c.items);
+      const allItems = (cartsQuery.data ?? []).flatMap((c) => c.items);
       const item = allItems.find((i) => i.id === itemId);
       if (!item) throw new Error('Item não encontrado');
 
@@ -455,7 +455,7 @@ export function useSellerCarts() {
 
   // Computed
   const { carts, totalItems, canCreateCart } = useMemo(() => {
-    const c = cartsQuery.data || [];
+    const c = cartsQuery.data ?? [];
     return {
       carts: c,
       totalItems: c.reduce((sum, cart) => sum + cart.items.length, 0),

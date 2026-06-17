@@ -41,7 +41,7 @@ export function useKitCollaborators(kitId: string | undefined) {
         .select('*')
         .eq('kit_id', kitId);
       if (error) throw error;
-      return (data || []) as unknown as KitCollaboratorRow[];
+      return (data ?? []) as unknown as KitCollaboratorRow[];
     },
     enabled: !!kitId,
   });
@@ -100,7 +100,7 @@ export function useKitComments(kitId: string | undefined) {
         .eq('kit_id', kitId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as unknown as KitCommentRow[];
+      return (data ?? []) as unknown as KitCommentRow[];
     },
     enabled: !!kitId,
   });

@@ -236,7 +236,7 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
       <ScrollArea className="h-56">
         <div className="space-y-1.5 pr-3">
           {visibleRamos.map((ramo) => {
-            const children = (filteredSegByRamo[ramo.id] || segmentosByRamo[ramo.id] || []).sort(
+            const children = (filteredSegByRamo[ramo.id] || (segmentosByRamo[ramo.id] ?? [])).sort(
               (a, b) => a.nome.localeCompare(b.nome, 'pt-BR'),
             );
             const linkedInRamo = children.filter((s) => linkedSegmentoIds.has(s.id)).length;

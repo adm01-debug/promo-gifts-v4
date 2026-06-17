@@ -54,7 +54,7 @@ export function AnomalyCards() {
       if (cancelled) return;
 
       const distinctIps = new Set(
-        ((tokenIpsRes.data as Array<{ ip_address: string }> | null) || []).map((r) => r.ip_address),
+        ((tokenIpsRes.data as Array<{ ip_address: string }> | null) ?? []).map((r) => r.ip_address),
       ).size;
 
       setStats({

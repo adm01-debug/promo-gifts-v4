@@ -60,18 +60,18 @@ export function useQuoteVersions(quoteId?: string) {
         if (error) throw error;
 
         // Count items for each version
-        const versionIds = (data || []).map((v) => v.id);
+        const versionIds = (data ?? []).map((v) => v.id);
         const { data: itemCounts } = await supabase
           .from('quote_items')
           .select('quote_id')
           .in('quote_id', versionIds);
 
         const countMap = new Map<string, number>();
-        (itemCounts || []).forEach((item) => {
+        (itemCounts ?? []).forEach((item) => {
           countMap.set(item.quote_id, (countMap.get(item.quote_id) || 0) + 1);
         });
 
-        const versionsWithCounts: QuoteVersion[] = (data || []).map((v) => ({
+        const versionsWithCounts: QuoteVersion[] = (data ?? []).map((v) => ({
           ...v,
           status: v.status ?? 'draft',
           total: v.total ?? 0,
@@ -161,7 +161,7 @@ export function useQuoteVersions(quoteId?: string) {
               total_cost: p.total_cost,
               notes: p.notes,
             })),
-          })) || [];
+          })) ?? [];
 
         const newQuote = await createQuote(
           {

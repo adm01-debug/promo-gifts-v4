@@ -81,7 +81,7 @@ export function useMaterialsComplete(): UseMaterialsCompleteReturn {
   // Organizar por grupo
   const byGroup = new Map<string, MaterialComplete[]>();
   materials.forEach((m) => {
-    const existing = byGroup.get(m.group_slug) || [];
+    const existing = byGroup.get(m.group_slug) ?? [];
     existing.push(m);
     byGroup.set(m.group_slug, existing);
   });

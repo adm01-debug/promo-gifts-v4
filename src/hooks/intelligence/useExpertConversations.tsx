@@ -44,7 +44,7 @@ export function useExpertConversations(clientId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setConversations(data || []);
+      setConversations(data ?? []);
     } catch (error) {
       logger.error('Error fetching conversations:', error);
     } finally {
@@ -126,7 +126,7 @@ export function useExpertConversations(clientId?: string) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as ExpertMessage[];
+      return (data ?? []) as ExpertMessage[];
     } catch (error) {
       logger.error('Error fetching messages:', error);
       return [];

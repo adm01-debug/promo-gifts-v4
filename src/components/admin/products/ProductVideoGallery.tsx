@@ -237,7 +237,7 @@ export function ProductVideoGallery({ productId }: ProductVideoGalleryProps) {
                       g.previewVideo.video_type}
                   </Badge>
                 )}
-                {(g.videoLinksMap.get(g.previewVideo.id) || []).map((link) => (
+                {(g.videoLinksMap.get(g.previewVideo.id) ?? []).map((link) => (
                   <Badge
                     key={link.id}
                     variant="outline"

@@ -79,7 +79,7 @@ async function fetchTecnicasExterno(): Promise<TecnicaBridgeResponse[]> {
     orderBy: { column: 'ordem_exibicao', ascending: true },
     limit: 200,
   });
-  return adaptTecnicaRows(result.records || []);
+  return adaptTecnicaRows(result.records ?? []);
 }
 
 export function useTecnicasList(filtros?: TecnicaFiltros) {

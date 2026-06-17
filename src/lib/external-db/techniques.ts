@@ -131,12 +131,12 @@ export async function fetchPromobrindPrintAreas(productId: string): Promise<Prom
     throw err;
   }
   const techById = new Map<string, TechniqueRawRow>(
-    (techResult.records || []).map((t) => [t.id, t]),
+    (techResult.records ?? []).map((t) => [t.id, t]),
   );
   const result: PromobrindPrintArea[] = [];
 
   for (const area of areas) {
-    const allowedIds = area.allowed_technique_ids || [];
+    const allowedIds = area.allowed_technique_ids ?? [];
     if (allowedIds.length === 0) {
       result.push({
         id: area.id,
@@ -209,7 +209,7 @@ export async function fetchPromobrindTechniques(options?: {
     }
     throw err;
   }
-  return (result.records || []).map(mapTechniqueFields);
+  return (result.records ?? []).map(mapTechniqueFields);
 }
 
 export async function fetchPromobrindTechniqueById(

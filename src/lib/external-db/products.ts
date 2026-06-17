@@ -448,7 +448,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     colorsByProduct.set(variant.product_id, colors);
     if (colors.some((c) => c.name === variant.color_name)) return;
 
-    const productImgs = imagesByProduct.get(variant.product_id) || [];
+    const productImgs = imagesByProduct.get(variant.product_id) ?? [];
     const byVariantId = productImgs
       .filter(
         (img) =>

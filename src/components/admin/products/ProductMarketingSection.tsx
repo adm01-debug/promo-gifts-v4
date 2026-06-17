@@ -144,7 +144,7 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
       if (togglingKeys.has(toggleKey)) return;
       setTogglingKeys((prev) => new Set(prev).add(toggleKey));
 
-      const current = tags[category] || [];
+      const current = tags[category] ?? [];
       const isSelected = current.includes(item);
       const updated = isSelected ? current.filter((i) => i !== item) : [...current, item];
 
@@ -227,7 +227,7 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
           </div>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.flatMap((cat) =>
-              (tags[cat.key] || [])
+              (tags[cat.key] ?? [])
                 .sort((a, b) => a.localeCompare(b, 'pt-BR'))
                 .map((item) => (
                   <span
@@ -286,7 +286,7 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
       <ScrollArea className="h-56">
         <div className="space-y-1.5 pr-3">
           {CATEGORIES.map(({ key, label, icon: Icon, options }) => {
-            const selected = tags[key] || [];
+            const selected = tags[key] ?? [];
             const color = CATEGORY_COLORS[key];
             const filteredOptions = search
               ? options.filter((o) => o.toLowerCase().includes(searchLower))

@@ -47,7 +47,7 @@ export function NewCategoryDialog({ onCreated }: NewCategoryDialogProps) {
         filters: { is_active: true },
         orderBy: { column: 'name', ascending: true },
       });
-      setCategories(result.records || []);
+      setCategories(result.records ?? []);
     } catch {
       // silent
     } finally {

@@ -100,7 +100,7 @@ export function useProductVideoGallery(productId?: string) {
         .select('*')
         .eq('product_id', productId || '');
       if (error) return [];
-      return data || [];
+      return data ?? [];
     },
     enabled: !!productId,
     staleTime: 2 * 60 * 1000,
@@ -110,7 +110,7 @@ export function useProductVideoGallery(productId?: string) {
   const videoLinksMap = useMemo(() => {
     const map = new Map<string, VariantLink[]>();
     variantLinks.forEach((link) => {
-      const existing = map.get(link.video_id) || [];
+      const existing = map.get(link.video_id) ?? [];
       existing.push(link);
       map.set(link.video_id, existing);
     });
@@ -134,7 +134,7 @@ export function useProductVideoGallery(productId?: string) {
       if (filterVariant === 'all') return true;
       if (filterVariant === 'general')
         return !videoLinksMap.has(video.id) || (videoLinksMap.get(video.id)?.length ?? 0) === 0;
-      const links = videoLinksMap.get(video.id) || [];
+      const links = videoLinksMap.get(video.id) ?? [];
       return links.some((l) => l.variant_id === filterVariant || l.supplier_code === filterVariant);
     });
   }, [videos, filterType, filterVariant, videoLinksMap]);
@@ -559,7 +559,7 @@ export function useProductVideoGallery(productId?: string) {
 
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
+      const files = Array.from(e.target.files ?? []);
       if (files.length > 0) await processUploadBatch(files);
       if (fileInputRef.current) fileInputRef.current.value = '';
     },

@@ -22,7 +22,7 @@ export function useProdutoRamoAtividade(productId: string | null | undefined) {
         table: 'produto_ramo_atividade',
         filters: { product_id: productId ?? '' },
       });
-      return result.records || [];
+      return result.records ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -121,7 +121,7 @@ export const ProductListItem = memo(function ProductListItem({
 
   // Reset variant index when color filter changes
   const listFilterKey = activeColorFilter
-    ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
+    ? `${(activeColorFilter.groups ?? []).join(',')}|${(activeColorFilter.variations ?? []).join(',')}`
     : '';
   const prevListFilterRef = useRef(listFilterKey);
   useEffect(() => {

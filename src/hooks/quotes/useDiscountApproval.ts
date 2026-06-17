@@ -267,7 +267,7 @@ export function useDiscountApproval() {
         });
         throw error;
       }
-      const requests = (data || []) as DiscountApprovalRequest[];
+      const requests = (data ?? []) as DiscountApprovalRequest[];
 
       if (requests.length === 0) {
         setPendingRequests([]);
@@ -287,12 +287,12 @@ export function useDiscountApproval() {
       ]);
 
       const quotesMap = new Map(
-        (quotesRes.data || []).map((q) => [
+        (quotesRes.data ?? []).map((q) => [
           q.id,
           { ...q, total: q.total ?? 0, subtotal: q.subtotal ?? 0 },
         ]),
       );
-      const sellersMap = new Map((sellersRes.data || []).map((s) => [s.user_id, s]));
+      const sellersMap = new Map((sellersRes.data ?? []).map((s) => [s.user_id, s]));
 
       const enriched: DiscountApprovalWithQuote[] = requests.map((req) => ({
         ...req,

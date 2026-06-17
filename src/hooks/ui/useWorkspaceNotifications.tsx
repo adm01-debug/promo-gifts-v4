@@ -210,7 +210,7 @@ export function useWorkspaceNotifications() {
         const { data, error, count } = await query;
 
         if (error) throw error;
-        const items = (data || []) as WorkspaceNotification[];
+        const items = (data ?? []) as WorkspaceNotification[];
         setNotifications(items);
         setTotalCount(count ?? 0);
 

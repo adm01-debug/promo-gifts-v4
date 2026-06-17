@@ -69,7 +69,7 @@ export async function fetchPrintAreasFromProduct(
       limit: 50,
     });
 
-    const rawAreas = areasResult.records || [];
+    const rawAreas = areasResult.records ?? [];
     if (!rawAreas.length) return [];
     const areas = adaptPrintAreaTechniqueRows(rawAreas);
 
@@ -91,7 +91,7 @@ export async function fetchPrintAreasFromProduct(
           filters: { ativo: true },
           limit: 100,
         });
-        for (const t of adaptTabelaPrecoRows(techResult.records || [])) {
+        for (const t of adaptTabelaPrecoRows(techResult.records ?? [])) {
           if (priceTableIds.has(t.id)) techById.set(t.id, t);
         }
       } catch (techErr) {

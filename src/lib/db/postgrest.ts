@@ -238,13 +238,16 @@ const SEARCH_COLUMNS: Record<string, string | string[]> = {
 // O termo é normalizado (NFD + strip) antes do FTS para garantir match mesmo com acento.
 const FTS_TABLES: Record<string, { column: string; config: string }> = {
   v_products_public: { column: 'search_vector', config: 'portuguese' },
-  products:          { column: 'search_vector', config: 'portuguese' },
+  products: { column: 'search_vector', config: 'portuguese' },
 };
 
 /** Strip accents via NFD decomposition (mirrors normalizeProductSearch no cliente). */
 function stripAccents(s: string): string {
   // Strip combining diacritical marks (U+0300-U+036F) — mirrors normalizeProductSearch.
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 }
 
 /**
@@ -302,13 +305,18 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
       const normalized = stripAccents(searchTerm);
       if (normalized.length > 0) {
         try {
-          query = (query as unknown as {
-          textSearch: (col: string, q: string, opts?: { type?: string; config?: string }) => typeof query;
-        }).textSearch(
-            ftsCfg.column,
-            normalized,
-            { type: 'websearch', config: ftsCfg.config },
-          ) as typeof query;
+          query = (
+            query as unknown as {
+              textSearch: (
+                col: string,
+                q: string,
+                opts?: { type?: string; config?: string },
+              ) => typeof query;
+            }
+          ).textSearch(ftsCfg.column, normalized, {
+            type: 'websearch',
+            config: ftsCfg.config,
+          }) as typeof query;
         } catch {
           // Coluna ainda não existe / Supabase SDK incompatível -> degrada p/ ILIKE multi-coluna.
           const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
@@ -402,7 +410,7 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     throw error;
   }
 
-  const rawRecords = (data as T[]) || [];
+  const rawRecords = (data as T[]) ?? [];
   const records = mapRows<T>(table, rawRecords);
 
   return { records, count: typeof dbCount === 'number' ? dbCount : records.length };

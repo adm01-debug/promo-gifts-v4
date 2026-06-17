@@ -43,7 +43,7 @@ export default function RateLimitDashboardPage() {
 
       if (error) throw error;
 
-      const transformedLogs: RateLimitLog[] = (loginAttempts || []).map((attempt) => ({
+      const transformedLogs: RateLimitLog[] = (loginAttempts ?? []).map((attempt) => ({
         id: attempt.id,
         ip_address: attempt.ip_address,
         endpoint: '/auth/login',

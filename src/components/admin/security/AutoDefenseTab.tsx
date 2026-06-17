@@ -47,7 +47,7 @@ export function AutoDefenseTab() {
           .gte('created_at', sevenDaysAgo),
       ]);
 
-      setRows((recent.data || []) as AuditRow[]);
+      setRows((recent.data ?? []) as AuditRow[]);
       setCount7d(week.count ?? 0);
       setLoading(false);
     };

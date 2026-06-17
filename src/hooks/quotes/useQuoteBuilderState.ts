@@ -74,7 +74,7 @@ function mapQuoteSearchProduct(
     sku: p.sku,
     price: p.sale_price ?? p.base_price ?? 0,
     images,
-    colors: (p.colors || []).map((c: string | RawProductColor) => {
+    colors: (p.colors ?? []).map((c: string | RawProductColor) => {
       const name = typeof c === 'string' ? c : c.name || '';
       const hex = (typeof c === 'string' ? undefined : c.hex) || findKnownHex(name) || undefined;
       return { name, hex, stock: typeof c === 'string' ? undefined : c.stock };
@@ -82,7 +82,7 @@ function mapQuoteSearchProduct(
     minQuantity: p.min_quantity ?? 1,
     totalStock:
       p.stock_quantity ??
-      (p.colors || []).reduce(
+      (p.colors ?? []).reduce(
         (sum: number, c: string | RawProductColor) =>
           sum + (typeof c === 'object' ? (c.stock ?? 0) : 0),
         0,
@@ -553,7 +553,7 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
-    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => ({
+    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations ?? []).map((p) => ({
       technique_id: p.technique?.id || '',
       technique_name: p.technique?.name || '',
       colors_count: p.specs?.colors || 1,
@@ -745,7 +745,7 @@ export function useQuoteBuilderState() {
    * no corpo do useMemo — causava re-computações desnecessárias a cada keystroke.
    */
   const filteredProducts = useMemo(() => {
-    return products || [];
+    return products ?? [];
   }, [products]);
 
   // ── Calculations ──

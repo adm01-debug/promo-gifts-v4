@@ -99,7 +99,7 @@ export function useCrmInfiniteCompanySelector() {
           offset: pageParam,
         });
 
-        const records = result.data || [];
+        const records = result.data ?? [];
         const duration = Math.round(performance.now() - startedAt);
         logger.debug(
           `[CRM-DB] useCrmInfiniteCompanySelector: OK. Recebidos ${records.length} registros em ${duration}ms.`,

@@ -66,8 +66,8 @@ export default function RolePermissionsPage() {
         if (permRes.error) throw permRes.error;
         if (rolePermRes.error) throw rolePermRes.error;
 
-        setPermissions(permRes.data || []);
-        setRolePermissions(rolePermRes.data || []);
+        setPermissions(permRes.data ?? []);
+        setRolePermissions(rolePermRes.data ?? []);
       } catch (error: unknown) {
         if (isCancelled()) return;
         toast({
@@ -213,7 +213,7 @@ export default function RolePermissionsPage() {
   );
 
   const getCategoryStats = (category: string, role: AppRole) => {
-    const categoryPerms = groupedPermissions[category] || [];
+    const categoryPerms = groupedPermissions[category] ?? [];
     const assigned = categoryPerms.filter((p) => hasPermission(p.code, role)).length;
     return { assigned, total: categoryPerms.length };
   };

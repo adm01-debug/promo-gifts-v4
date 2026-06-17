@@ -64,7 +64,7 @@ export interface CreateTemplateInput {
 }
 
 function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
-  return (data || []).map((item) => ({
+  return (data ?? []).map((item) => ({
     ...item,
     is_default: item.is_default ?? false,
     items: Array.isArray(item.items) ? (item.items as unknown as QuoteTemplateItem[]) : [],
@@ -111,7 +111,7 @@ export function useQuoteTemplates() {
         .limit(200);
 
       if (qErr) throw new Error(qErr.message);
-      setTemplates(transformTemplates(data || []));
+      setTemplates(transformTemplates(data ?? []));
     } catch (err) {
       logger.error('Error fetching quote templates:', err);
       setError('Erro ao carregar templates');
@@ -134,7 +134,7 @@ export function useQuoteTemplates() {
         .limit(500);
 
       if (qErr) throw new Error(qErr.message);
-      setAllTemplates(transformTemplates(data || []));
+      setAllTemplates(transformTemplates(data ?? []));
     } catch (err) {
       logger.error('Error fetching all templates:', err);
     }
@@ -154,7 +154,7 @@ export function useQuoteTemplates() {
 
       if (fetchError) throw fetchError;
 
-      const sellersWithInfo = (data || [])
+      const sellersWithInfo = (data ?? [])
         .filter(
           (profile): profile is typeof profile & { user_id: string } => profile.user_id !== null,
         )

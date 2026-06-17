@@ -41,7 +41,7 @@ async function fetchExternalColors() {
     filters: { is_active: true },
     orderBy: { column: 'sort_order', ascending: true },
   });
-  const groups = groupsResult.records || [];
+  const groups = groupsResult.records ?? [];
 
   const variationsResult = await dbInvoke<Record<string, string>>({
     table: 'color_variations',
@@ -49,7 +49,7 @@ async function fetchExternalColors() {
     filters: { is_active: true },
     orderBy: { column: 'sort_order', ascending: true },
   });
-  const variations = variationsResult.records || [];
+  const variations = variationsResult.records ?? [];
 
   const groupsWithVariations: ColorGroup[] = groups.map((group) => ({
     id: group.id,
@@ -89,7 +89,7 @@ export function useColorSystem() {
 
       return {
         groups,
-        nuances: (nuances || []) as ColorNuance[],
+        nuances: (nuances ?? []) as ColorNuance[],
       } satisfies ColorFilters;
     },
     staleTime: 60 * 60 * 1000,

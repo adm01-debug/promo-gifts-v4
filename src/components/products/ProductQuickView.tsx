@@ -157,7 +157,7 @@ export const ProductQuickView = React.memo(
 
     // Mapear cores do produto para o formato do seletor com ordenação padronizada
     const sortedColors = sortByColorGroup(
-      product.colors || [],
+      product.colors ?? [],
       (color) => color.name || '',
       (color) => color.hex,
     );

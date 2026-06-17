@@ -63,7 +63,7 @@ export function useCustomKitPersistence() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as CustomKitRow[];
+      return (data ?? []) as unknown as CustomKitRow[];
     },
     enabled: !!user?.id,
     staleTime: 30_000,

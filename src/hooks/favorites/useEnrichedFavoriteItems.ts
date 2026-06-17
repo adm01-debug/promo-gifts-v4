@@ -28,7 +28,7 @@ export function useEnrichedFavoriteItems(listId: string | null) {
       const variantInfo = item.variant_info;
       const productWithVariant =
         product && variantInfo?.thumbnail
-          ? { ...product, images: [variantInfo.thumbnail, ...(product.images || [])] }
+          ? { ...product, images: [variantInfo.thumbnail, ...(product.images ?? [])] }
           : product;
 
       let priceDiffPct: number | null = null;

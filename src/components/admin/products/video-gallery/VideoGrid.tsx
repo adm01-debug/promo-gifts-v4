@@ -79,7 +79,7 @@ export function VideoGrid({
       {filteredVideos.map((video, index) => {
         const thumbnail = getThumbnail(video);
         const typeInfo = VIDEO_TYPES.find((t) => t.value === video.video_type);
-        const links = videoLinksMap.get(video.id) || [];
+        const links = videoLinksMap.get(video.id) ?? [];
 
         return (
           <div

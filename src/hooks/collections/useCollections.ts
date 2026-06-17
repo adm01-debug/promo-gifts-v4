@@ -155,13 +155,13 @@ export function useCollections() {
       .order('sort_order', { ascending: true });
 
     const itemsByCollection = new Map<string, DbCollectionItemRow[]>();
-    (itemRows || []).forEach((item) => {
-      const list = itemsByCollection.get(item.collection_id) || [];
+    (itemRows ?? []).forEach((item) => {
+      const list = itemsByCollection.get(item.collection_id) ?? [];
       list.push(item);
       itemsByCollection.set(item.collection_id, list);
     });
 
-    const mapped = colRows.map((row) => dbToCollection(row, itemsByCollection.get(row.id) || []));
+    const mapped = colRows.map((row) => dbToCollection(row, itemsByCollection.get(row.id) ?? []));
 
     setCollections(mapped);
     setIsLoaded(true);

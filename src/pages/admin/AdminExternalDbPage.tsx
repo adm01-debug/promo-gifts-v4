@@ -106,7 +106,7 @@ export default function AdminExternalDbPage() {
           });
           continue;
         }
-        const actual: string[] = data.columns || [];
+        const actual: string[] = data.columns ?? [];
         const { missingInDb, newInDb } = diffColumns(t.expectedColumns, actual);
         results.push({
           table: t.table,

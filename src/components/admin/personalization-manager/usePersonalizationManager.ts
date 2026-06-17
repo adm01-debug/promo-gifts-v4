@@ -98,7 +98,7 @@ export function usePersonalizationManager() {
         group?.group_name.toLowerCase().includes(query) ||
         group?.group_code.toLowerCase().includes(query);
       return matchesName || matchesSku || matchesGroup;
-    }) || [];
+    }) ?? [];
 
   const { data: productMembership } = useQuery({
     queryKey: ['product-membership', selectedProduct],
@@ -411,9 +411,9 @@ export function usePersonalizationManager() {
   };
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.component_id === componentId) || [];
+    locations?.filter((l) => l.component_id === componentId) ?? [];
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.component_location_id === locationId) ?? [];
 
   const handleComponentDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;

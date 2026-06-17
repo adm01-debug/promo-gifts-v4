@@ -79,7 +79,7 @@ export function useProductsByCategory({
         throw new Error(data.error || 'Erro ao buscar produtos por categoria');
       }
 
-      setProductIds(new Set(data.productIds || []));
+      setProductIds(new Set(data.productIds ?? []));
       setCategoriesCount(data.categoriesUsed || categoryIds.length);
       setSource(data.source || null);
       lastFetchedKey.current = categoryIdsKey;
@@ -137,7 +137,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
         });
 
         if (!error && data.success) {
-          setDescendantIds(data.data || []);
+          setDescendantIds(data.data ?? []);
         }
       } catch (err) {
         logger.error('Erro ao buscar descendentes:', err);

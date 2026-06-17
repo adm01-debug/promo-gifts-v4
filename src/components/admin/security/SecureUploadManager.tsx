@@ -48,7 +48,7 @@ export function SecureUploadManager() {
         .limit(20);
 
       if (error) throw error;
-      setLogs((data || []) as unknown as FileScanLog[]);
+      setLogs((data ?? []) as unknown as FileScanLog[]);
     } catch (error) {
       logger.error('Error fetching logs:', error);
       toast.error('Erro ao carregar logs de auditoria');

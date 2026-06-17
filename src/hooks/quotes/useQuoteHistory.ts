@@ -41,7 +41,7 @@ export function useQuoteHistory() {
         .limit(200);
 
       if (error) throw error;
-      const entries = ((data as unknown[]) || []) as QuoteHistoryEntry[];
+      const entries = ((data as unknown[]) ?? []) as QuoteHistoryEntry[];
       setHistory(entries);
       return entries;
     } catch (err) {

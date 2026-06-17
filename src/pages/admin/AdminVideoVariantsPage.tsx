@@ -41,7 +41,7 @@ export default function AdminVideoVariantsPage() {
 
   const filteredLinks = useMemo(
     () =>
-      (links || []).filter(
+      (links ?? []).filter(
         (l) =>
           !productFilter ||
           l.product_id.toLowerCase().includes(productFilter.toLowerCase()) ||

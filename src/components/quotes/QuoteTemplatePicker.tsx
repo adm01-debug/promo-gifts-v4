@@ -27,7 +27,7 @@ export function QuoteTemplatePicker({ onSelect }: QuoteTemplatePickerProps) {
         .order('is_default', { ascending: false })
         .order('name');
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
   });
 

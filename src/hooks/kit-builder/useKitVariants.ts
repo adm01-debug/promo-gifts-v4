@@ -36,7 +36,7 @@ export function useKitVariants(kitMasterId: string | undefined) {
         .eq('kit_master_id', kitMasterId)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return (data || []) as unknown as KitVariantRow[];
+      return (data ?? []) as unknown as KitVariantRow[];
     },
     enabled: !!kitMasterId,
     staleTime: 30_000,

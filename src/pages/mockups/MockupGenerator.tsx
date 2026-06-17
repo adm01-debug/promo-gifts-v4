@@ -177,7 +177,7 @@ export default function MockupGenerator() {
         heightCm: mg.activeArea?.logoHeight || 0,
         colorsCount: mg.techniqueColorConfig?.colorCount,
       },
-      pantoneColors: (mg.logoColorAnalysis.colors || []).map((c) => ({
+      pantoneColors: (mg.logoColorAnalysis.colors ?? []).map((c) => ({
         name: c.selectedPantone || c.pantoneMatch?.pantoneCode || c.name || '',
         hex: c.hex,
       })),
@@ -605,7 +605,7 @@ export default function MockupGenerator() {
           onConfirm={mg.setTechniqueColorConfig}
           techniqueName={mg.selectedTechnique?.name || ''}
           techniqueCode={mg.selectedTechnique?.code}
-          detectedColors={mg.logoColorAnalysis.colors || []}
+          detectedColors={mg.logoColorAnalysis.colors ?? []}
         />
       </div>
     </DiagnosticProfiler>

@@ -69,7 +69,7 @@ async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> 
     limit: ids.length,
   });
 
-  return (records || []).filter((p) => p.sale_price > 0).map(mapLightweightToSimilarItem);
+  return (records ?? []).filter((p) => p.sale_price > 0).map(mapLightweightToSimilarItem);
 }
 
 export function useSimilarProducts(product: Product | null | undefined) {
@@ -137,7 +137,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
 
           const siblingIds = [
             ...new Set(
-              (allMembers || []).map((m) => m.product_id).filter((id) => id !== productId),
+              (allMembers ?? []).map((m) => m.product_id).filter((id) => id !== productId),
             ),
           ];
 
@@ -171,7 +171,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           orderBy: { column: 'name', ascending: true },
         });
 
-        return (fallbackProducts || [])
+        return (fallbackProducts ?? [])
           .filter((p) => p.id !== productId && p.sale_price > 0)
           .map(mapLightweightToSimilarItem);
       } catch (err) {

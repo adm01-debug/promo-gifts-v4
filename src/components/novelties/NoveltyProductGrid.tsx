@@ -90,7 +90,7 @@ export function NoveltyProductGrid() {
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
-  const products = useMemo(() => novelties || [], [novelties]);
+  const products = useMemo(() => novelties ?? [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);

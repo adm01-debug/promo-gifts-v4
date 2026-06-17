@@ -223,7 +223,7 @@ export function TechniquesFilter({
               <div key={tech.id} className="flex items-center gap-2">
                 <Checkbox
                   id={`tech-${tech.id}`}
-                  checked={(filters.techniques || []).includes(tech.id)}
+                  checked={(filters.techniques ?? []).includes(tech.id)}
                   onCheckedChange={() => toggleArrayFilter('techniques', tech.id)}
                 />
                 <Label
@@ -316,7 +316,7 @@ export function TagsFilter({
                   aria-label={`Tag ${tag.name}`}
                   className={cn(
                     'rounded-full border px-2.5 py-1 text-xs transition-all',
-                    (filters.tags || []).includes(tag.id)
+                    (filters.tags ?? []).includes(tag.id)
                       ? 'border-brand-primary bg-brand-primary text-brand-primary-foreground'
                       : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted',
                   )}

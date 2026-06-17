@@ -53,15 +53,15 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
       <BulkAddToCartModal
         open={sel.cartModalOpen}
         onOpenChange={sel.setCartModalOpen}
-        products={sel.bulkCartProducts || []}
-        variantSelections={sel.wizardSelections || []}
+        products={sel.bulkCartProducts ?? []}
+        variantSelections={sel.wizardSelections ?? []}
         onDone={sel.clearSelection}
       />
 
       <BulkVariantWizard
         open={sel.variantWizardOpen}
         onOpenChange={sel.setVariantWizardOpen}
-        products={sel.bulkCartProducts || []}
+        products={sel.bulkCartProducts ?? []}
         mode={sel.wizardMode || 'cart'}
         onComplete={sel.handleWizardComplete}
       />

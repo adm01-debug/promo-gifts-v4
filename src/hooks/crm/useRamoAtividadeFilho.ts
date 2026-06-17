@@ -47,7 +47,7 @@ export function useSegmentosCompletos() {
       // Agrupar por ramo
       const byRamo = new Map<string, SegmentoComplete[]>();
       segmentos.forEach((seg) => {
-        const list = byRamo.get(seg.ramo_slug) || [];
+        const list = byRamo.get(seg.ramo_slug) ?? [];
         list.push(seg);
         byRamo.set(seg.ramo_slug, list);
       });

@@ -308,9 +308,9 @@ export default function QuoteViewPage() {
               clientCnpj={clientCnpj}
             />
             <Separator />
-            <QuoteItemsTable items={(quote.items || []) as never} />
+            <QuoteItemsTable items={(quote.items ?? []) as never} />
             <QuoteTotalsSummary
-              items={quote.items || []}
+              items={quote.items ?? []}
               discountPercent={quote.discount_percent}
               discountAmount={quote.discount_amount}
               shippingType={quote.shipping_type}

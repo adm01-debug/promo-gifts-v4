@@ -140,7 +140,7 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
         // BUG-D FIX: skip techniques without code to prevent null/undefined Map keys.
         if (!tech.code) continue;
 
-        const faixas = faixasByTech.get(tech.id) || [];
+        const faixas = faixasByTech.get(tech.id) ?? [];
         if (!faixas.length) continue;
 
         const larguras: number[] = [];

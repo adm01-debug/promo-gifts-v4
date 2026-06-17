@@ -32,7 +32,7 @@ export function SellerDiscountLimitsPanel() {
         .eq('role', 'vendedor');
       if (pErr) throw pErr;
 
-      const sellers = (profiles || []).filter(
+      const sellers = (profiles ?? []).filter(
         (p): p is typeof p & { user_id: string } => p.user_id !== null,
       );
       const ids = sellers.map((p) => p.user_id);

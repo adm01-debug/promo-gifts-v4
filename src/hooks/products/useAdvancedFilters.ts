@@ -134,7 +134,7 @@ export function useAdvancedFilters() {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId);
         if (parent) {
-          parent.children = parent.children || [];
+          parent.children = parent.children ?? [];
           parent.children.push(cat);
         }
       } else {
@@ -150,7 +150,7 @@ export function useAdvancedFilters() {
     const flattenCategories = (cats: CategoryOption[], level = 0): CategoryOption[] => {
       return cats.flatMap((cat) => [
         { ...cat, level },
-        ...flattenCategories(cat.children || [], level + 1),
+        ...flattenCategories(cat.children ?? [], level + 1),
       ]);
     };
     return flattenCategories(categoryTree);
@@ -166,7 +166,7 @@ export function useAdvancedFilters() {
         code: tech.code || '',
         estimatedDays: tech.estimated_days,
         minQuantity: tech.min_quantity,
-      })) || []
+      })) ?? []
     );
   }, [techniquesDB.data]);
 
@@ -179,7 +179,7 @@ export function useAdvancedFilters() {
         name: sup.name,
         code: sup.code,
         leadTimeDays: sup.lead_time_days,
-      })) || []
+      })) ?? []
     );
   }, [suppliersDB.data]);
 
@@ -191,7 +191,7 @@ export function useAdvancedFilters() {
         id: color.id,
         name: color.name,
         hex: color.hex_code || '#cccccc',
-      })) || []
+      })) ?? []
     );
   }, [colorGroupsDB.data]);
 
@@ -204,7 +204,7 @@ export function useAdvancedFilters() {
         name: tag.name,
         slug: tag.slug,
         color: tag.color,
-      })) || []
+      })) ?? []
     );
   }, [tagsDB.data]);
 

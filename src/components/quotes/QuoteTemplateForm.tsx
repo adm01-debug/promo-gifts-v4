@@ -120,7 +120,7 @@ export function QuoteTemplateForm({
   };
 
   const calculateTotal = () => {
-    const itemsTotal = (formData.items || []).reduce((sum, item) => {
+    const itemsTotal = (formData.items ?? []).reduce((sum, item) => {
       const itemBase = item.quantity * item.unitPrice;
       const personalizationCost =
         item.personalizations?.reduce((pSum, p) => {

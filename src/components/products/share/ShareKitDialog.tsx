@@ -70,7 +70,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
   const [previewMode, setPreviewMode] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
-  const kitItems = useMemo(() => product.kitItems || [], [product.kitItems]);
+  const kitItems = useMemo(() => product.kitItems ?? [], [product.kitItems]);
 
   const activeItem = useMemo(() => {
     if (mode === 'separate' && selectedItemIndex !== null) {

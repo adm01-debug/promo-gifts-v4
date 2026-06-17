@@ -27,7 +27,7 @@ export function HardeningTrendChart() {
         .select('id, snapshot_at, score, max_score, failures')
         .gte('snapshot_at', since)
         .order('snapshot_at', { ascending: true });
-      setData((rows || []) as Snapshot[]);
+      setData((rows ?? []) as Snapshot[]);
       setLoading(false);
     };
     void load();

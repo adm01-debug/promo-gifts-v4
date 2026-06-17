@@ -73,7 +73,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const colCount = hasPersonalizations ? 6 : 5;
 
   const renderItemRow = (item: QuoteItem, index: number) => {
-    const allPersonalizations = item.personalizations || [];
+    const allPersonalizations = item.personalizations ?? [];
     const personalizationCost = allPersonalizations.reduce(
       (acc: number, p: QuotePersonalization) =>
         acc + calcPersTotal(p.total_cost ?? 0, item.quantity),

@@ -40,7 +40,7 @@ export function KitSmartSuggestions({ selectedItems, onAddItem }: KitSmartSugges
       const coOccurrence = new Map<string, { name: string; count: number; imageUrl?: string }>();
 
       for (const kit of kits) {
-        const items = (kit.items_data as unknown[]) || [];
+        const items = (kit.items_data as unknown[]) ?? [];
         const kitItemIds = items.map((i) => (i as { id: string }).id);
         const hasSelectedItem = kitItemIds.some((id: string) => selectedIds.has(id));
 

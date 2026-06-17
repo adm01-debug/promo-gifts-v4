@@ -272,7 +272,7 @@ export function FilterPanel({
       return (
         <div className="flex flex-wrap gap-1.5 px-1">
           {GENDER_OPTIONS.map((g) => {
-            const isSelected = (filters.gender || []).includes(g);
+            const isSelected = (filters.gender ?? []).includes(g);
             return (
               <button
                 key={g}
@@ -293,7 +293,7 @@ export function FilterPanel({
     },
     tamanhos: () => (
       <SizeFilter
-        selectedSizes={filters.sizes || []}
+        selectedSizes={filters.sizes ?? []}
         onToggleSize={(size) => state.toggleArrayFilter('sizes', size)}
         products={products as Array<{ variations?: Array<{ size_code?: string | null }> }>}
       />

@@ -15,7 +15,7 @@ export function usePromoSalesRanking() {
       if (error) throw error;
 
       const map = new Map<string, number>();
-      for (const row of data || []) {
+      for (const row of data ?? []) {
         if (!row.product_id) continue;
         map.set(row.product_id, (map.get(row.product_id) || 0) + (row.quantity || 1));
       }

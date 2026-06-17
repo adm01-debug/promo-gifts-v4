@@ -186,7 +186,7 @@ export function useMagicUpState() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
-      return (data || []) as GenerationHistoryItem[];
+      return (data ?? []) as GenerationHistoryItem[];
     },
     enabled: !!user?.id,
   });
@@ -204,7 +204,7 @@ export function useMagicUpState() {
         .order('updated_at', { ascending: false })
         .limit(30);
       if (error) throw error;
-      return ((data || []) as Tables<'magic_up_campaigns'>[]).map((row) => ({
+      return ((data ?? []) as Tables<'magic_up_campaigns'>[]).map((row) => ({
         id: row.id,
         title: row.title,
         status: row.status as MagicUpCampaignStatus,
@@ -254,8 +254,8 @@ export function useMagicUpState() {
         secondaryColor: data.secondary_color,
         toneOfVoice: data.tone_of_voice || DEFAULT_BRAND_KIT.toneOfVoice,
         visualStyle: data.visual_style || DEFAULT_BRAND_KIT.visualStyle,
-        requiredWords: data.required_words || [],
-        forbiddenWords: data.forbidden_words || [],
+        requiredWords: data.required_words ?? [],
+        forbiddenWords: data.forbidden_words ?? [],
         notes: data.notes || '',
         updatedAt: data.updated_at,
       };
@@ -275,7 +275,7 @@ export function useMagicUpState() {
             id: p.id,
             name: p.name,
             sku: p.sku,
-            images: p.images || [],
+            images: p.images ?? [],
             primary_image_url: p.primary_image_url || p.image_url || null,
             og_image_url: p.og_image_url || null,
           })) as unknown as MagicUpProduct[],
@@ -322,7 +322,7 @@ export function useMagicUpState() {
           }),
         ]);
         if (cancelled) return;
-        const images: ProductImage[] = (imagesResult.records || [])
+        const images: ProductImage[] = (imagesResult.records ?? [])
           .filter((img: Record<string, unknown>) => img.image_type !== 'box')
           .map((img: Record<string, unknown>) => ({
             url: img.url_cdn || img.url_original || '',
@@ -333,7 +333,7 @@ export function useMagicUpState() {
           .filter((img) => !!(img as ProductImage).url) as ProductImage[];
         setProductImages(images);
         const uniqueColors = new Map<string, ProductColor>();
-        (variantsResult.records || []).forEach((v: Record<string, unknown>) => {
+        (variantsResult.records ?? []).forEach((v: Record<string, unknown>) => {
           const colorName = v.color_name as string | undefined;
           if (!colorName || uniqueColors.has(colorName)) return;
           uniqueColors.set(colorName, {
@@ -425,7 +425,7 @@ export function useMagicUpState() {
       ? printAreas.filter((a) => a.area_id === selectedLocationId)
       : printAreas;
     for (const area of source) {
-      for (const t of area.techniques || []) {
+      for (const t of area.techniques ?? []) {
         if (!techMap.has(t.id)) techMap.set(t.id, { id: t.id, name: t.nome, code: t.codigo });
       }
     }

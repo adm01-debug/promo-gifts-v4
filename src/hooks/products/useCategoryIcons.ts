@@ -22,7 +22,7 @@ export function useCategoryIcons() {
 
       if (error) throw new Error(`Failed to fetch category icons: ${error.message}`);
 
-      return data || [];
+      return data ?? [];
     },
     staleTime: 30 * 60 * 1000, // 30 min (dados estáveis)
   });

@@ -229,7 +229,7 @@ export function useSalesGoals() {
   };
 
   return {
-    goals: goals || [],
+    goals: goals ?? [],
     activeGoal,
     isLoading: isLoading || isLoadingActive,
     createGoal: createGoalMutation.mutateAsync,

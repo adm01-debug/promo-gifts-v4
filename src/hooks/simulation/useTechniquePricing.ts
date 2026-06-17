@@ -83,7 +83,7 @@ export function useTechniquePricing(techniqueCode: string | null) {
         if (fetchError) throw new Error(fetchError.message);
         if (cancelled) return;
 
-        const records = data || [];
+        const records = data ?? [];
 
         const matchingTables = records.filter((t) => {
           const code = techniqueCode.toLowerCase();

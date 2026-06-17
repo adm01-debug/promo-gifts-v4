@@ -42,7 +42,7 @@ async function fetchProductPrintAreas(productId: string): Promise<PrintAreaTechn
       logger.warn('[usePrintAreas] Erro ao buscar print_area_techniques:', error.message);
       return [];
     }
-    return adaptPrintAreaTechniqueRows(data || []);
+    return adaptPrintAreaTechniqueRows(data ?? []);
   } catch (err) {
     logger.warn('[usePrintAreas] Excecao ao buscar areas:', err);
     return [];
@@ -75,7 +75,7 @@ export function usePrintAreas(productId: string | null) {
 
       if (techError) throw new Error(techError.message);
 
-      const allTechs: TabelaPrecoCanonical[] = adaptTabelaPrecoRows(techRaw || []);
+      const allTechs: TabelaPrecoCanonical[] = adaptTabelaPrecoRows(techRaw ?? []);
       const techById = new Map(allTechs.map((t) => [t.id, t]));
 
       return areas.map((area, idx) => {
@@ -135,7 +135,7 @@ export function useTechniques() {
         .order('ordem_exibicao', { ascending: true });
 
       if (error) throw new Error(error.message);
-      return adaptTecnicaRows(data || []) as unknown as TecnicaGravacao[];
+      return adaptTecnicaRows(data ?? []) as unknown as TecnicaGravacao[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -158,7 +158,7 @@ export function useHasPrintAreas(productId: string | null) {
           .limit(1);
 
         if (error) return false;
-        return (data || []).length > 0;
+        return (data ?? []).length > 0;
       } catch {
         return false;
       }

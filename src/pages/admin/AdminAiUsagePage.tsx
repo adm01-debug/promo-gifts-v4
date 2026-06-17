@@ -98,7 +98,7 @@ export default function AdminAiUsagePage() {
         <AiTables
           byUser={stats?.byUser ?? []}
           byModel={stats?.byModel ?? []}
-          logs={logs || []}
+          logs={logs ?? []}
           statsLoading={statsLoading}
           logsLoading={logsLoading}
         />

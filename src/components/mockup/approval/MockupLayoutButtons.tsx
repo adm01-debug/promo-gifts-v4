@@ -144,7 +144,7 @@ export function MockupLayoutButtons({
           heightCm: activeArea?.logoHeight || technique?.maxHeight || 0,
           colorsCount,
         },
-        pantoneColors: (pantoneColors || []).map((c) => ({
+        pantoneColors: (pantoneColors ?? []).map((c) => ({
           name: c.selectedPantone || c.pantoneMatch?.pantoneCode || c.name,
           hex: c.hex,
         })),

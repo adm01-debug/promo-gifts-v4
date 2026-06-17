@@ -35,7 +35,7 @@ vi.mock('@/hooks/products', () => ({
 
 // useCatalogState importa useCatalogFiltering por path direto, não pelo barrel.
 vi.mock('@/hooks/products/useCatalogFiltering', () => ({
-  useCatalogFiltering: vi.fn((args: { realProducts?: unknown[] }) => args.realProducts || []),
+  useCatalogFiltering: vi.fn((args: { realProducts?: unknown[] }) => args.realProducts ?? []),
 }));
 
 vi.mock('@/hooks/common', () => ({

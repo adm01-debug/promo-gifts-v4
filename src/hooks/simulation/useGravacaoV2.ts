@@ -58,11 +58,11 @@ export function useProductPrintAreas(productId: string | null) {
         throw techError;
       }
 
-      const techById = new Map((techData || []).map((t) => [t.id, t]));
+      const techById = new Map((techData ?? []).map((t) => [t.id, t]));
 
       return areas.map((area) => {
         const techniques: { id: string; nome: string; codigo: string }[] = [];
-        for (const tid of area.allowed_technique_ids || []) {
+        for (const tid of area.allowed_technique_ids ?? []) {
           const tech = techById.get(tid);
           if (tech)
             techniques.push({
@@ -103,7 +103,7 @@ export function useTabelasPrecoOficial() {
         if (error.message?.includes('410')) return [];
         throw error;
       }
-      return data || [];
+      return data ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -123,7 +123,7 @@ export function useFaixasPrecoOficial(tabelaPrecoId: string | null) {
         if (error.message?.includes('410')) return [];
         throw error;
       }
-      return data || [];
+      return data ?? [];
     },
     enabled: !!tabelaPrecoId,
     staleTime: 5 * 60 * 1000,

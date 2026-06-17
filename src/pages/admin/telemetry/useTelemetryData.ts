@@ -80,7 +80,7 @@ export function useTelemetryData() {
       if (severityFilter !== 'all') query = query.eq('severity', severityFilter);
       const { data, error } = await query;
       if (error) throw error;
-      return (data as unknown as TelemetryRow[]) || [];
+      return (data as unknown as TelemetryRow[]) ?? [];
     },
     refetchInterval: 30000,
     staleTime: 10000,

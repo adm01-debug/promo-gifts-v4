@@ -195,7 +195,7 @@ export const ProductCard = memo(
     }, [activeVariantIdx]);
 
     const filterKey = activeColorFilter
-      ? `${(activeColorFilter.groups || []).join(',')}|${(activeColorFilter.variations || []).join(',')}`
+      ? `${(activeColorFilter.groups ?? []).join(',')}|${(activeColorFilter.variations ?? []).join(',')}`
       : '';
     const prevFilterKeyRef = useRef(filterKey);
     useEffect(() => {

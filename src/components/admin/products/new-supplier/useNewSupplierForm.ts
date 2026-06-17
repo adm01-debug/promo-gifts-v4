@@ -123,7 +123,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         select: 'id,nome_fantasia,razao_social',
         limit: 15,
       }).catch(() => []);
-      const list = (companies || []).filter((c) => c.nome_fantasia || c.razao_social);
+      const list = (companies ?? []).filter((c) => c.nome_fantasia || c.razao_social);
       setCarrierResults(list);
       setShowCarrierDropdown(list.length > 0);
     } catch {

@@ -193,7 +193,7 @@ export function CompanySearchDropdown({
 
   const handleSelect = (id: string) => {
     if (id) {
-      const c = (companies || []).concat(serverResults || []).find((x) => x.id === id);
+      const c = (companies ?? []).concat(serverResults ?? []).find((x) => x.id === id);
       if (c) {
         addToHistory({
           id: c.id,

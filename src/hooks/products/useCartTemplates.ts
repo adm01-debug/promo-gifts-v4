@@ -47,9 +47,9 @@ export function useCartTemplates() {
         .eq('user_id', userId)
         .order('updated_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map((t) => ({
+      return (data ?? []).map((t) => ({
         ...t,
-        items: (t.items as unknown as CartTemplateItem[]) || [],
+        items: (t.items as unknown as CartTemplateItem[]) ?? [],
       }));
     },
     enabled: !!userId,
@@ -93,7 +93,7 @@ export function useCartTemplates() {
   });
 
   return {
-    templates: templatesQuery.data || [],
+    templates: templatesQuery.data ?? [],
     isLoading: templatesQuery.isLoading,
     saveTemplate,
     deleteTemplate,

@@ -24,8 +24,8 @@ export default function Index() {
     () =>
       catalog.filters.colorGroups?.length > 0 || catalog.filters.colorVariations?.length > 0
         ? {
-            groups: catalog.filters.colorGroups || [],
-            variations: catalog.filters.colorVariations || [],
+            groups: catalog.filters.colorGroups ?? [],
+            variations: catalog.filters.colorVariations ?? [],
           }
         : null,
     [catalog.filters.colorGroups, catalog.filters.colorVariations],

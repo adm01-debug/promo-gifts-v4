@@ -50,7 +50,7 @@ export function useCategoriesTree() {
         .eq('is_active', true);
       if (error) throw error;
       const iconMap = new Map<string, string>();
-      ((data as CategoryIcon[]) || []).forEach((item) => {
+      ((data as CategoryIcon[]) ?? []).forEach((item) => {
         iconMap.set(item.category_name.toUpperCase(), item.icon);
       });
       setCategoryIcons(iconMap);
@@ -73,7 +73,7 @@ export function useCategoriesTree() {
         orderBy: { column: 'sort_path', ascending: true },
         limit: 500,
       });
-      const formattedCategories = (result.records || [])
+      const formattedCategories = (result.records ?? [])
         .filter((cat: CategoryTreeItem) => !HIDDEN_CATEGORIES.includes(cat.name.toUpperCase()))
         .map((cat: CategoryTreeItem) => ({ ...cat, name: toTitleCase(cat.name) }));
       setCategories(formattedCategories);

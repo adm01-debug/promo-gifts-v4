@@ -41,7 +41,7 @@ export function useFilterPresets(context: string = 'catalog') {
       if (error) throw error;
 
       setPresets(
-        (data || []).map((row) => ({
+        (data ?? []).map((row) => ({
           id: row.id,
           name: row.name,
           description: row.description ?? undefined,

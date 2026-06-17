@@ -118,8 +118,8 @@ export function useColorEnrichment({
           }),
         ]);
 
-        cachedColorGroups = refResults[0].records || [];
-        cachedColorVariations = refResults[1].records || [];
+        cachedColorGroups = refResults[0].records ?? [];
+        cachedColorVariations = refResults[1].records ?? [];
       }
 
       const colorGroupsCache = cachedColorGroups ?? [];

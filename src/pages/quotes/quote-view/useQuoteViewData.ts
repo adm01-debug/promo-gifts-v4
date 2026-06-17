@@ -58,11 +58,11 @@ export function useQuoteViewData(id: string | undefined) {
 
   const proposalData: ProposalTemplateData | null = useMemo(() => {
     if (!quote) return null;
-    const prodSub = (quote.items || []).reduce((s, i) => s + i.quantity * i.unit_price, 0);
-    const persSub = (quote.items || []).reduce(
+    const prodSub = (quote.items ?? []).reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    const persSub = (quote.items ?? []).reduce(
       (s, i) =>
         s +
-        (i.personalizations || []).reduce(
+        (i.personalizations ?? []).reduce(
           (ps: number, p: { total_cost?: number }) =>
             ps + calcPersTotal(p.total_cost || 0, i.quantity),
           0,
@@ -128,8 +128,8 @@ export function useQuoteViewData(id: string | undefined) {
               setup_cost: p.setup_cost || 0,
               total_cost: p.total_cost || 0,
               notes: p.notes || undefined,
-            })) || [],
-        })) || [],
+            })) ?? [],
+        })) ?? [],
       subtotal: fullSubtotal,
       discount: discountValue || undefined,
       shippingCost: quote.shipping_cost || undefined,

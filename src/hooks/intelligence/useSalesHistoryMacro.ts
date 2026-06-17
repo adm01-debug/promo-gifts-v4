@@ -70,9 +70,9 @@ export function useSalesHistoryMacro(days = 30) {
       const [{ data: quoteItems }, { data: orderItems }] = await Promise.all([qiQuery, oiQuery]);
 
       // Fetch quotes/orders for seller info + status
-      const quoteIds = [...new Set((quoteItems || []).map((q) => q.quote_id))];
+      const quoteIds = [...new Set((quoteItems ?? []).map((q) => q.quote_id))];
       const orderIds = [
-        ...new Set((orderItems || []).map((o) => o.order_id).filter(Boolean)),
+        ...new Set((orderItems ?? []).map((o) => o.order_id).filter(Boolean)),
       ] as string[];
 
       const [quotesRes, ordersRes] = await Promise.all([
@@ -90,10 +90,10 @@ export function useSalesHistoryMacro(days = 30) {
       ]);
 
       const quotesMap: Record<string, { seller_id: string }> = {};
-      for (const q of quotesRes.data || []) quotesMap[q.id] = { seller_id: q.seller_id ?? '' };
+      for (const q of quotesRes.data ?? []) quotesMap[q.id] = { seller_id: q.seller_id ?? '' };
 
       const ordersMap: Record<string, { seller_id: string }> = {};
-      for (const o of ordersRes.data || []) ordersMap[o.id] = { seller_id: o.seller_id ?? '' };
+      for (const o of ordersRes.data ?? []) ordersMap[o.id] = { seller_id: o.seller_id ?? '' };
 
       // Seller names
       const allSellerIds = [
@@ -108,14 +108,14 @@ export function useSalesHistoryMacro(days = 30) {
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', allSellerIds);
-        for (const p of profiles || []) {
+        for (const p of profiles ?? []) {
           if (p.user_id) sellerNames[p.user_id] = p.full_name || 'Vendedor';
         }
       }
 
       // Aggregate daily
       const dailyMap = new Map<string, DailySalesPoint>();
-      for (const qi of quoteItems || []) {
+      for (const qi of quoteItems ?? []) {
         if (!qi.created_at) continue;
         const date = qi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || {
@@ -132,7 +132,7 @@ export function useSalesHistoryMacro(days = 30) {
         entry.quoteCount += 1;
         dailyMap.set(date, entry);
       }
-      for (const oi of orderItems || []) {
+      for (const oi of orderItems ?? []) {
         if (!oi.created_at) continue;
         const date = oi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || {
@@ -154,7 +154,7 @@ export function useSalesHistoryMacro(days = 30) {
 
       // Seller rankings
       const sellerMap = new Map<string, SellerRanking>();
-      for (const qi of quoteItems || []) {
+      for (const qi of quoteItems ?? []) {
         const sellerId = quotesMap[qi.quote_id]?.seller_id;
         if (!sellerId) continue;
         const s = sellerMap.get(sellerId) || {
@@ -170,7 +170,7 @@ export function useSalesHistoryMacro(days = 30) {
         s.quoteCount += 1;
         sellerMap.set(sellerId, s);
       }
-      for (const oi of orderItems || []) {
+      for (const oi of orderItems ?? []) {
         const sellerId = ordersMap[oi.order_id || '']?.seller_id;
         if (!sellerId) continue;
         const s = sellerMap.get(sellerId) || {
@@ -195,9 +195,9 @@ export function useSalesHistoryMacro(days = 30) {
       const totalQuotedValue = daily.reduce((s, d) => s + d.quotedValue, 0);
       const totalOrderedValue = daily.reduce((s, d) => s + d.orderedValue, 0);
 
-      const uniqueQuoteIds = new Set((quoteItems || []).map((qi) => qi.quote_id));
+      const uniqueQuoteIds = new Set((quoteItems ?? []).map((qi) => qi.quote_id));
       const uniqueOrderIds = new Set(
-        (orderItems || []).filter((oi) => oi.order_id).map((oi) => oi.order_id),
+        (orderItems ?? []).filter((oi) => oi.order_id).map((oi) => oi.order_id),
       );
 
       return {

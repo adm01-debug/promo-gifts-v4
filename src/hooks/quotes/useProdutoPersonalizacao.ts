@@ -53,7 +53,7 @@ export function useProdutoPersonalizacao(productId: string | null | undefined) {
 
       return components.map((c) => ({
         ...c,
-        locations: ((locations || []) as (ComponentLocation & { component_id: string })[])
+        locations: ((locations ?? []) as (ComponentLocation & { component_id: string })[])
           .filter((l) => l.component_id === c.id)
           .map(({ component_id: _omit, ...rest }) => rest),
       }));

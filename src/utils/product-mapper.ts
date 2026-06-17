@@ -111,7 +111,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           color: { name: co.name, hex: co.hex || '#CCCCCC' },
           stock: co.stock ?? 0,
           image: co.image || null,
-          images: co.images || [],
+          images: co.images ?? [],
           videos: [],
           size_code: co.size_code || null,
         });
@@ -143,7 +143,8 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: Boolean(p.is_featured || p.is_bestseller),
-    newArrival: Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
+    newArrival:
+      Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
     onSale: Boolean(p.is_on_sale),
     isKit: Boolean(p.is_kit),
     gender: p.gender || null,

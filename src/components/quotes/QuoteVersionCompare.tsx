@@ -148,7 +148,7 @@ export function QuoteVersionCompare({
       .eq('quote_id', id)
       .order('sort_order', { ascending: true });
 
-    return { ...quote, items: items || [] } as QuoteDetail;
+    return { ...quote, items: items ?? [] } as QuoteDetail;
   }
 
   return (

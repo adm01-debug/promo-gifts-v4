@@ -53,7 +53,7 @@ export default function RolesPage() {
 
         if (isCancelled()) return;
         if (error) throw error;
-        setRoles(data || []);
+        setRoles(data ?? []);
       } catch (error: unknown) {
         if (isCancelled()) return;
         toast({

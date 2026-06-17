@@ -224,7 +224,7 @@ export function useVariantStock() {
   const getColorStock = useCallback(
     (productId: string, colorName: string): VariantStock[] => {
       const product = productStocks.find((p) => p.productId === productId);
-      return product?.variants.filter((v) => v.colorName === colorName) || [];
+      return product?.variants.filter((v) => v.colorName === colorName) ?? [];
     },
     [productStocks],
   );

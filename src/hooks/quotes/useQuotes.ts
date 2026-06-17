@@ -214,7 +214,7 @@ export function useQuotes() {
             total_cost: p.total_cost,
             notes: p.notes,
           })),
-        })) || [];
+        })) ?? [];
 
       const newQuote = await createQuote(
         {

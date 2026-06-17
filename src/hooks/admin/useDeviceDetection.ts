@@ -133,7 +133,7 @@ export function useDeviceDetection(targetUserId?: string) {
       return [];
     }
 
-    return data || [];
+    return data ?? [];
   }, [effectiveUserId]);
 
   const removeDevice = useCallback(

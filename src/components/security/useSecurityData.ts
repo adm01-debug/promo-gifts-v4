@@ -86,7 +86,7 @@ export function useSecurityData(
         .limit(20);
 
       if (!mountedRef.current) return;
-      setLoginAttempts((attempts as LoginAttempt[]) || []);
+      setLoginAttempts((attempts as LoginAttempt[]) ?? []);
 
       const { count: devicesCount } = await supabase
         .from('user_known_devices')
@@ -103,7 +103,7 @@ export function useSecurityData(
 
       if (!mountedRef.current) return;
       const typedNotifs = notifs as SecurityNotification[] | null;
-      setNotifications(typedNotifs || []);
+      setNotifications(typedNotifs ?? []);
 
       const failedAttempts = attempts?.filter((a) => !a.success).length || 0;
       const unreadAlerts = typedNotifs?.filter((n) => !n.is_read).length || 0;

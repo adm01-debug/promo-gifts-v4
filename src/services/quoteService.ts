@@ -56,7 +56,7 @@ export const quoteService = {
     if (iErr) throw iErr;
     if (!quoteData) return null;
 
-    const itemIds = (itemsData || []).map((i) => i.id);
+    const itemIds = (itemsData ?? []).map((i) => i.id);
     let allPersonalizations: Array<Record<string, unknown>> = [];
     if (itemIds.length > 0) {
       const { data: persData, error: pErr } = await supabase
@@ -64,12 +64,12 @@ export const quoteService = {
         .select('*')
         .in('quote_item_id', itemIds);
       if (pErr) throw pErr;
-      allPersonalizations = persData || [];
+      allPersonalizations = persData ?? [];
     }
 
     // DB rows are a superset of QuoteItem and carry a runtime-only `personalizations`
     // array; assert to the curated QuoteItem shape.
-    const items = (itemsData || []).map((item) => ({
+    const items = (itemsData ?? []).map((item) => ({
       ...item,
       personalizations: allPersonalizations.filter((p) => p.quote_item_id === item.id),
     })) as unknown as QuoteItem[];
@@ -199,7 +199,7 @@ export const quoteService = {
       orderBy: { column: 'name', ascending: true },
       limit: 100,
     });
-    return result.records || [];
+    return result.records ?? [];
   },
 
   async logHistory(

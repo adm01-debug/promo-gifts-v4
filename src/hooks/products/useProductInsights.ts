@@ -52,8 +52,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
       ]);
 
       const allQuantities = [
-        ...(quoteItems || []).map((q) => q.quantity),
-        ...(orderItems || []).map((o) => o.quantity),
+        ...(quoteItems ?? []).map((q) => q.quantity),
+        ...(orderItems ?? []).map((o) => o.quantity),
       ];
       const averageQuantity =
         allQuantities.length > 0
@@ -63,7 +63,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
       const conversionRate =
         quotesCount && quotesCount > 0 ? ((ordersCount || 0) / quotesCount) * 100 : 0;
 
-      const orderIds = (orderItems || [])
+      const orderIds = (orderItems ?? [])
         .map((o) => o.order_id)
         .filter((id): id is string => id !== null);
       let topSegments: ProductInsight['topSegments'] = [];
@@ -75,7 +75,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .select('client_id')
           .in('id', orderIds);
 
-        const clientIds = [...new Set((orders || []).map((o) => o.client_id).filter(Boolean))];
+        const clientIds = [...new Set((orders ?? []).map((o) => o.client_id).filter(Boolean))];
 
         if (clientIds.length > 0) {
           const { selectCrm } = await import('@/lib/crm-db');
@@ -85,12 +85,12 @@ export function useProductInsights(productId?: string, productSku?: string) {
           });
 
           const clientSegmentMap: Record<string, string> = {};
-          (clients || []).forEach((c: { id?: string; ramo_atividade?: string }) => {
+          (clients ?? []).forEach((c: { id?: string; ramo_atividade?: string }) => {
             if (c.ramo_atividade) clientSegmentMap[c.id as string] = c.ramo_atividade;
           });
 
           const segmentCounts: Record<string, number> = {};
-          (orders || []).forEach((order) => {
+          (orders ?? []).forEach((order) => {
             const segment = order.client_id ? clientSegmentMap[order.client_id] : null;
             if (segment) {
               segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
@@ -119,7 +119,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .limit(3),
       ]);
 
-      (recentViews || []).forEach((v) => {
+      (recentViews ?? []).forEach((v) => {
         recentActivity.push({
           type: 'view',
           date: v.created_at,
@@ -127,7 +127,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
         });
       });
 
-      (recentQuotes || []).forEach((q) => {
+      (recentQuotes ?? []).forEach((q) => {
         recentActivity.push({
           type: 'quote',
           date: q.created_at ?? '',

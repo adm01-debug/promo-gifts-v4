@@ -94,9 +94,7 @@ function toLocalDateStr(d: Date): string {
   ].join('-');
 }
 
-async function fetchSupplierSparklineBatch(
-  productIds: string[],
-): Promise<SparklineCtxValue> {
+async function fetchSupplierSparklineBatch(productIds: string[]): Promise<SparklineCtxValue> {
   if (!productIds.length) return { byProduct: {}, byVariant: {} };
 
   const cutoff = new Date();
@@ -125,7 +123,7 @@ async function fetchSupplierSparklineBatch(
           offset,
           orderBy: { column: 'summary_date', ascending: true },
         });
-        const page = result.records || [];
+        const page = result.records ?? [];
         allRecords.push(...page);
         if (page.length < PAGE_SIZE) break;
         offset += PAGE_SIZE;
@@ -189,10 +187,7 @@ async function fetchSupplierSparklineBatch(
 
   const today = new Date();
 
-  function build(
-    key: string,
-    scope: 'product' | 'variant',
-  ): SparklineSalesData {
+  function build(key: string, scope: 'product' | 'variant'): SparklineSalesData {
     const dailyQty: number[] = [];
     let totalQty = 0;
     const dateMap = depletedByDate[scope][key] || {};

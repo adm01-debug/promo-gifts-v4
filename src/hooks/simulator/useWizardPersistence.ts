@@ -35,7 +35,7 @@ export function loadSession(): Partial<SimulatorWizardState> | null {
     return {
       selectedProduct: saved.selectedProduct,
       quantity: saved.quantity,
-      personalizations: saved.personalizations || [],
+      personalizations: saved.personalizations ?? [],
       currentStep: saved.selectedProduct ? saved.currentStep || 'location' : 'product',
     };
   } catch {

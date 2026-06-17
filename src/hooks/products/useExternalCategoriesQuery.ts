@@ -33,7 +33,7 @@ async function fetchExternalCategories(): Promise<ExternalCategory[]> {
     limit: 1000,
     orderBy: { column: 'name', ascending: true },
   });
-  return result.records || [];
+  return result.records ?? [];
 }
 
 export function useExternalCategoriesQuery() {

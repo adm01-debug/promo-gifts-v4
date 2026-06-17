@@ -149,7 +149,7 @@ export function useCollectionsPageState() {
         collection.color,
         collection.icon,
       );
-      const items = collection.productItems || [];
+      const items = collection.productItems ?? [];
       if (items.length > 0) {
         setTimeout(() => {
           items.forEach((item) => addProductToCollection(cloned.id, item.productId, item.variant));
@@ -235,7 +235,10 @@ export function useCollectionsPageState() {
     if (!searchQuery.trim()) return externalCollections;
     // FIX 2026-06-15 (collections-search-accent): NFD strip.
     const norm = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
     const q = norm(searchQuery.trim());
     return externalCollections.filter(
       (c) => norm(c.name).includes(q) || (c.description && norm(c.description).includes(q)),
@@ -245,7 +248,10 @@ export function useCollectionsPageState() {
   const filteredLocal = useMemo(() => {
     if (!searchQuery.trim()) return localCollections;
     const norm = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
     const q = norm(searchQuery.trim());
     return localCollections.filter(
       (c) => norm(c.name).includes(q) || (c.description && norm(c.description).includes(q)),

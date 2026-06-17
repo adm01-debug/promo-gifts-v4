@@ -184,7 +184,7 @@ export function useSimulation() {
   });
 
   const techniqueCodes = useMemo(
-    () => techniques?.map((t) => t.code).filter(Boolean) || [],
+    () => techniques?.map((t) => t.code).filter(Boolean) ?? [],
     [techniques],
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
@@ -197,7 +197,7 @@ export function useSimulation() {
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data || []).map((item) => ({
+      return (data ?? []).map((item) => ({
         ...item,
         simulation_data: item.simulation_data as unknown as SimulationOption[],
       }));

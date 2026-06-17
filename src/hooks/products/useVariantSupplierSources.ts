@@ -90,7 +90,7 @@ export function useProductVariantsWithStock(productId: string | undefined) {
           next_quantity_3?: number | null;
         }>;
       };
-      const records = (data as unknown as VariantRow[]) || [];
+      const records = (data as unknown as VariantRow[]) ?? [];
 
       return records.map((v): VariantWithStock => {
         const source = v.variant_supplier_sources?.[0];

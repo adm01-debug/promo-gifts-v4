@@ -148,8 +148,8 @@ export function useFilterPanelState(
   });
 
   useEffect(() => {
-    const currentMaterialGroups = filters.materialGroups || [];
-    const currentMaterialTypes = filters.materialTypes || [];
+    const currentMaterialGroups = filters.materialGroups ?? [];
+    const currentMaterialTypes = filters.materialTypes ?? [];
     const groupsChanged =
       JSON.stringify(stableSorted(currentMaterialGroups)) !==
       JSON.stringify(stableSorted(materialFilterState.selectedGroups));
@@ -233,7 +233,7 @@ export function useFilterPanelState(
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
-      
+
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
       fornecedores: filters.suppliers?.length || 0,
       publico: filters.publicoAlvo?.length || 0,
@@ -241,10 +241,10 @@ export function useFilterPanelState(
       endomarketing: filters.endomarketing?.length || 0,
       materiais: materialCount,
       'ramos-atividade': ramoCount,
-      tecnicas: (filters.techniques || []).length,
-      tags: (filters.tags || []).length,
-      genero: (filters.gender || []).length,
-      tamanhos: (filters.sizes || []).length,
+      tecnicas: (filters.techniques ?? []).length,
+      tags: (filters.tags ?? []).length,
+      genero: (filters.gender ?? []).length,
+      tamanhos: (filters.sizes ?? []).length,
       'opcoes-rapidas': quickCount,
       ordenacao: filters.sortBy !== 'newest' ? 1 : 0,
     } as Record<string, number>;

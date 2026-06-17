@@ -156,7 +156,7 @@ export function ProductPersonalizationManager() {
                           selectedProduct={m.selectedProduct ?? ''}
                           locations={m.getLocationsForComponent(component.id)}
                           techniques={m.techniques}
-                          locationTechniques={m.locationTechniques || []}
+                          locationTechniques={m.locationTechniques ?? []}
                           isAddLocationOpen={m.isAddLocationOpen}
                           setIsAddLocationOpen={m.setIsAddLocationOpen}
                           selectedComponentId={m.selectedComponentId}

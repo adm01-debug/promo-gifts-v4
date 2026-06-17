@@ -57,7 +57,7 @@ function fmt(v: number) {
 
 function parseNotesField(notes: string) {
   const [locationPart, dimPart] = notes.split(' | ');
-  const locationSegments = locationPart?.split(' — ') || [];
+  const locationSegments = locationPart?.split(' — ') ?? [];
   const location = locationSegments[0] || null;
   const code = locationSegments[1] || null;
   let dimensions: string | null = null;
@@ -112,7 +112,7 @@ function NextTierHint({ currentQty }: { currentQty: number }) {
   );
 }
 export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
-  const personalizations = item.personalizations || [];
+  const personalizations = item.personalizations ?? [];
   const allInUnit =
     item.unit_price +
     personalizations.reduce((sum, p) => {
@@ -146,7 +146,9 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded-lg border border-border object-cover"
                 loading="lazy"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
             )}
             <div className="min-w-0 flex-1">

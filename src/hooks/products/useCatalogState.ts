@@ -368,8 +368,8 @@ export function useCatalogState() {
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
   } = useProductsByMaterial({
-    materialGroupSlugs: filters.materialGroups || [],
-    materialTypeSlugs: filters.materialTypes || [],
+    materialGroupSlugs: filters.materialGroups ?? [],
+    materialTypeSlugs: filters.materialTypes ?? [],
   });
 
   const {
@@ -377,7 +377,7 @@ export function useCatalogState() {
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
   } = useProductsByCategory({
-    categoryIds: filters.categories?.map(String) || [],
+    categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
   });
 
@@ -532,8 +532,8 @@ export function useCatalogState() {
   );
   const { data: catalogColorEnrichmentMap } = useColorEnrichment({
     productIds: paginatedProductIds,
-    colorGroups: filters.colorGroups || [],
-    colorVariations: filters.colorVariations || [],
+    colorGroups: filters.colorGroups ?? [],
+    colorVariations: filters.colorVariations ?? [],
   });
 
   const paginatedProducts = useMemo(() => {

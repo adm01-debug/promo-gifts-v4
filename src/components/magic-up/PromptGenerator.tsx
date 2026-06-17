@@ -119,7 +119,7 @@ export function PromptGenerator({
 
   const availableTechniques = useMemo(() => {
     if (!selectedArea) return [];
-    return selectedArea.techniques || [];
+    return selectedArea.techniques ?? [];
   }, [selectedArea]);
 
   const selectedTech = useMemo(() => {

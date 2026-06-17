@@ -80,7 +80,7 @@ export function useExternalCollections() {
         throw error;
       }
 
-      return data || [];
+      return data ?? [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -105,7 +105,7 @@ export function useExternalCollectionProducts(collectionId: string | null) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) return [];
         throw error;
       }
-      return data || [];
+      return data ?? [];
     },
     enabled: !!collectionId,
     staleTime: 5 * 60 * 1000,
@@ -132,7 +132,7 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
       }
 
       const counts = new Map<string, number>();
-      for (const r of (data || []) as unknown as { collection_id: string; product_id: string }[]) {
+      for (const r of (data ?? []) as unknown as { collection_id: string; product_id: string }[]) {
         counts.set(r.collection_id, (counts.get(r.collection_id) || 0) + 1);
       }
       return counts;

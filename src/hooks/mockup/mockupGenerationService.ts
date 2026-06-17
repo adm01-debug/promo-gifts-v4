@@ -119,7 +119,7 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data as unknown as Record<string, unknown>[] | null) || []).map((row) => {
+  return ((data as unknown as Record<string, unknown>[] | null) ?? []).map((row) => {
     const cfg = (row.area_config ?? {}) as Record<string, unknown>;
     return {
       id: row.id as string,

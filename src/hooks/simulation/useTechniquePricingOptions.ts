@@ -69,7 +69,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
           filters: { table_code: techniqueCode },
           limit: 100,
         });
-        setTables((result.records || []) as PriceTableEntry[]);
+        setTables((result.records ?? []) as PriceTableEntry[]);
       } catch (err) {
         logger.error('Error fetching technique pricing tables:', err);
         setTables([]);
@@ -179,7 +179,7 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
   }, [techniqueCodesKey]);
 
   const getPricingInfo = (code: string): Omit<TechniquePricingInfo, 'isLoading'> => {
-    const tables = allTables[code] || [];
+    const tables = allTables[code] ?? [];
     const hasPriceByColor = tables.some((t) => t.price_by_color === true);
     const hasPriceByArea = tables.some((t) => t.price_by_area === true);
     const colorOptions: ColorOption[] = hasPriceByColor

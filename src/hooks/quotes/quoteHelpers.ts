@@ -39,7 +39,7 @@ export function validateDiscount(
 export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) {
   const realSubtotal = items.reduce((sum, item) => {
     const baseTotal = item.quantity * item.unit_price;
-    const persTotal = (item.personalizations || []).reduce(
+    const persTotal = (item.personalizations ?? []).reduce(
       (pSum, p) => pSum + (p.total_cost || 0),
       0,
     );

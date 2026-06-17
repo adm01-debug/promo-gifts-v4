@@ -76,7 +76,7 @@ export function useMaterialFilter(): UseMaterialFilterReturn {
     (groupSlug: string) => {
       setFilterState((prev) => {
         const isSelected = prev.selectedGroups.includes(groupSlug);
-        const typesInGroup = byGroup.get(groupSlug)?.map((m) => m.type_slug) || [];
+        const typesInGroup = byGroup.get(groupSlug)?.map((m) => m.type_slug) ?? [];
         if (isSelected) {
           // Remove grupo e todos os tipos desse grupo
           return {
@@ -151,14 +151,14 @@ export function useMaterialFilter(): UseMaterialFilterReturn {
 
   const getTypesForGroup = useCallback(
     (groupSlug: string) => {
-      return byGroup.get(groupSlug) || [];
+      return byGroup.get(groupSlug) ?? [];
     },
     [byGroup],
   );
 
   const getSelectedTypesForGroup = useCallback(
     (groupSlug: string) => {
-      const typesInGroup = byGroup.get(groupSlug) || [];
+      const typesInGroup = byGroup.get(groupSlug) ?? [];
       return typesInGroup.filter((t) => filterState.selectedTypes.includes(t.type_slug));
     },
     [byGroup, filterState.selectedTypes],

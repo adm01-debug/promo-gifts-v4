@@ -84,7 +84,7 @@ function SortableItem({
   };
 
   const hasPersonalizations = item.personalizations && item.personalizations.length > 0;
-  const personalizationTotal = (item.personalizations || []).reduce(
+  const personalizationTotal = (item.personalizations ?? []).reduce(
     (sum, p) => sum + (p.total_cost || 0),
     0,
   );

@@ -23,7 +23,7 @@ export const round2 = (n: number | null | undefined): number => {
 export const calculateItemPersonalizationTotal = (
   item: Pick<QuoteItemCalculationParams, 'personalizations'>,
 ): number => {
-  return (item.personalizations || []).reduce((sum, p) => sum + (p.total_cost || 0), 0);
+  return (item.personalizations ?? []).reduce((sum, p) => sum + (p.total_cost || 0), 0);
 };
 
 /**

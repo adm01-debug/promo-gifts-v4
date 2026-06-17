@@ -104,14 +104,14 @@ export interface CartAction {
 const actionHistoryMap = new Map<string, CartAction[]>();
 
 export function recordAction(cartId: string, action: CartAction) {
-  const list = actionHistoryMap.get(cartId) || [];
+  const list = actionHistoryMap.get(cartId) ?? [];
   list.unshift(action);
   if (list.length > 20) list.pop();
   actionHistoryMap.set(cartId, list);
 }
 
 export function getActionHistory(cartId: string): CartAction[] {
-  return actionHistoryMap.get(cartId) || [];
+  return actionHistoryMap.get(cartId) ?? [];
 }
 
 // ============================================

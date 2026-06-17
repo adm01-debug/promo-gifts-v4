@@ -53,7 +53,7 @@ export default function StorageTestPage() {
             throw error;
           }
         }
-        setFiles(data || []);
+        setFiles(data ?? []);
       } catch (error: unknown) {
         if (isCancelled()) return;
         logger.error('Error fetching files:', error);

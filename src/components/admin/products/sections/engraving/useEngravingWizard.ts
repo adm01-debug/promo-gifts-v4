@@ -60,7 +60,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
         orderBy: { column: 'nome', ascending: true },
         limit: 200,
       });
-      return result.records || [];
+      return result.records ?? [];
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -82,7 +82,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
         orderBy: { column: 'technique_order', ascending: true },
         limit: 100,
       });
-      const records: PrintAreaTechnique[] = result.records || [];
+      const records: PrintAreaTechnique[] = result.records ?? [];
       return records.map((area) => enrichArea(area, techById));
     },
     enabled: !!productId && isEdit && techniques.length > 0,

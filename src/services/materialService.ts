@@ -96,7 +96,7 @@ class MaterialService {
   async getGroups(): Promise<{ groups: MaterialGroup[]; count: number }> {
     const res = await this.callApi<{ groups: Record<string, unknown>[]; count?: number }>('groups');
 
-    const groups: MaterialGroup[] = (res.groups || []).map((g) => ({
+    const groups: MaterialGroup[] = (res.groups ?? []).map((g) => ({
       group_id: g.group_id ?? g.id ?? '',
       group_name: g.group_name ?? g.name ?? '',
       group_slug: g.group_slug ?? g.slug ?? '',
@@ -115,7 +115,7 @@ class MaterialService {
   async getTypes(): Promise<{ types: MaterialType[]; count: number }> {
     const res = await this.callApi<{ types: Record<string, unknown>[]; count?: number }>('types');
 
-    const types: MaterialType[] = (res.types || []).map((t) => ({
+    const types: MaterialType[] = (res.types ?? []).map((t) => ({
       id: t.id ?? t.material_id ?? '',
       name: t.name ?? t.material_name ?? '',
       slug: t.slug ?? t.material_slug ?? '',
@@ -140,7 +140,7 @@ class MaterialService {
       { groupId: groupSlug },
     );
 
-    const types: MaterialType[] = (res.types || []).map((t) => ({
+    const types: MaterialType[] = (res.types ?? []).map((t) => ({
       id: t.id ?? t.material_id ?? '',
       name: t.name ?? t.material_name ?? '',
       slug: t.slug ?? t.material_slug ?? '',
@@ -162,7 +162,7 @@ class MaterialService {
       'complete',
     );
 
-    const materials: MaterialComplete[] = (res.materials || []).map((m) => ({
+    const materials: MaterialComplete[] = (res.materials ?? []).map((m) => ({
       type_id: m.type_id ?? m.material_id ?? m.id ?? '',
       type_name: m.type_name ?? m.material_name ?? m.name ?? '',
       type_slug: m.type_slug ?? m.material_slug ?? m.slug ?? '',

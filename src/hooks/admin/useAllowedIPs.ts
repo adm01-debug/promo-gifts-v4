@@ -65,7 +65,7 @@ export function useAllowedIPs(targetUserId?: string) {
 
       if (!mountedRef.current) return; // BUG-22 FIX: guard pós-await
       if (error) throw error;
-      setAllowedIPs((data || []) as AllowedIP[]);
+      setAllowedIPs((data ?? []) as AllowedIP[]);
     } catch (error) {
       logger.error('Error fetching allowed IPs:', error);
     } finally {

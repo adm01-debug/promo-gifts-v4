@@ -143,7 +143,7 @@ export function useMockupGenerator() {
   const productLocations = useMemo(() => {
     if (!customizationOptions?.locations?.length) return null;
     return customizationOptions.locations.map((loc) => {
-      const opts = loc.options || [];
+      const opts = loc.options ?? [];
       const widths = opts
         .map((o: CustomizationOption) => o.efetiva_largura_max || o.max_width || 0)
         .filter(Boolean);

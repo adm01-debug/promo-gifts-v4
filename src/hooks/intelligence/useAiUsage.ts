@@ -90,7 +90,7 @@ export function useAiUsageLogs(options?: {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as AiUsageLog[];
+      return (data ?? []) as AiUsageLog[];
     },
     enabled: !!user?.id,
     staleTime: 15_000,
@@ -104,7 +104,7 @@ export function useAiQuotas() {
     queryFn: async () => {
       const { data, error } = await supabase.from('ai_usage_quotas').select('*').order('role');
       if (error) throw error;
-      return (data || []) as AiUsageQuota[];
+      return (data ?? []) as AiUsageQuota[];
     },
     staleTime: 60_000,
   });
@@ -153,7 +153,7 @@ export function useAiUsageStats(period: 'day' | 'week' | 'month' = 'month') {
         .order('created_at', { ascending: true });
       if (error) throw error;
 
-      const logs = (data || []) as AiUsageLog[];
+      const logs = (data ?? []) as AiUsageLog[];
       const totalRequests = logs.length;
       const successCount = logs.filter((l) => l.status === 'success').length;
       const totalTokens = logs.reduce((s, l) => s + l.total_tokens, 0);

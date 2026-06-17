@@ -43,7 +43,7 @@ export function useWizardDrafts() {
         .limit(20);
 
       if (error) throw error;
-      return (data || []).map((d) => ({
+      return (data ?? []).map((d) => ({
         ...d,
         product_data: d.product_data as unknown as SelectedProduct,
         personalizations: d.personalizations as unknown as Personalization[],
@@ -99,7 +99,7 @@ export function useWizardDrafts() {
   );
 
   return {
-    drafts: drafts || [],
+    drafts: drafts ?? [],
     isLoading,
     saveDraft,
     saveDraftPending: saveDraftMutation.isPending,

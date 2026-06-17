@@ -194,7 +194,7 @@ export function ProductPersonalizationRules({
                   name: opt.tecnica_nome,
                   code: opt.codigo_tabela,
                   max_colors: opt.max_cores,
-                })) || [],
+                })) ?? [],
             },
           ],
         }));
@@ -237,7 +237,7 @@ export function ProductPersonalizationRules({
                   name: opt.tecnica_nome,
                   code: opt.codigo_tabela,
                   max_colors: opt.max_cores,
-                })) || [],
+                })) ?? [],
             },
           ],
         }));
@@ -267,7 +267,7 @@ export function ProductPersonalizationRules({
         code: comp.component_code,
         name: comp.component_name,
         isPersonalizable: comp.is_personalizable,
-        locations: ((locations || []) as DbLocation[]).map((loc: DbLocation) => {
+        locations: ((locations ?? []) as DbLocation[]).map((loc: DbLocation) => {
           const techniques =
             productData?.source === 'product'
               ? loc.techniques // v6 format
@@ -281,7 +281,7 @@ export function ProductPersonalizationRules({
             maxHeight: loc.max_height_cm ?? null,
             maxArea: loc.max_area_cm2 ?? null,
             areaImageUrl: loc.area_image_url ?? null,
-            techniques: ((techniques || []) as DbTechnique[])
+            techniques: ((techniques ?? []) as DbTechnique[])
               .map((tech: DbTechnique): TechniqueInfo | null => {
                 const id = tech.id || tech.personalization_techniques?.id;
                 if (!id) return null;

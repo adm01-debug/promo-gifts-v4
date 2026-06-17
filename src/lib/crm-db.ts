@@ -202,18 +202,13 @@ export interface CanonicalDbHealthResult {
  *     await reportToGlitchTip({ error: health.error, latency: health.latencyMs });
  *   }
  */
-export async function detectCanonicalDbHealth(
-  timeoutMs = 5000,
-): Promise<CanonicalDbHealthResult> {
+export async function detectCanonicalDbHealth(timeoutMs = 5000): Promise<CanonicalDbHealthResult> {
   const checkedAt = Date.now();
   const t0 = performance.now();
   try {
     // Race entre a query e um timeout hard-coded
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Health check timeout após ${timeoutMs}ms`)),
-        timeoutMs,
-      ),
+      setTimeout(() => reject(new Error(`Health check timeout após ${timeoutMs}ms`)), timeoutMs),
     );
     // Usamos system_kill_switches: tabela sempre presente, sem dados sensíveis,
     // query leve (LIMIT 1). Alternativa: pg_stat_activity, mas requer permissão.
@@ -222,7 +217,9 @@ export async function detectCanonicalDbHealth(
       .select('switch_name')
       .limit(1);
 
-    const result = await Promise.race([queryPromise, timeoutPromise]) as Awaited<typeof queryPromise>;
+    const result = (await Promise.race([queryPromise, timeoutPromise])) as Awaited<
+      typeof queryPromise
+    >;
     const latencyMs = Math.round(performance.now() - t0);
 
     if (result.error) {
@@ -562,7 +559,7 @@ export async function selectCrm<T>(
     operation: 'select',
     ...options,
   });
-  return result.data || [];
+  return result.data ?? [];
 }
 
 /**
@@ -606,7 +603,7 @@ export async function searchCrm<T>(
     search: { column, term },
     ...options,
   });
-  return result.data || [];
+  return result.data ?? [];
 }
 
 /**
@@ -623,7 +620,7 @@ export async function insertCrm<T>(
     data,
     returning,
   });
-  return result.data || [];
+  return result.data ?? [];
 }
 
 /**
@@ -642,7 +639,7 @@ export async function updateCrm<T>(
     data,
     returning,
   });
-  return result.data || [];
+  return result.data ?? [];
 }
 
 /**
@@ -661,7 +658,7 @@ export async function updateCrmByFilter<T>(
     data,
     returning,
   });
-  return result.data || [];
+  return result.data ?? [];
 }
 
 /**

@@ -11,7 +11,6 @@ const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 const REPLENISHMENT_SELECT =
   'id, name, sku, primary_image_url, set_image_url, images, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity' as const;
 
-
 // ─── Date Utilities ──────────────────────────────────────────────
 
 function getCutoffDate(days: number = REPLENISHMENT_WINDOW_DAYS): string {
@@ -110,7 +109,6 @@ interface RawProduct {
   readonly min_quantity?: number | null;
 }
 
-
 // ─── Data Logic ──────────────────────────────────────────────────
 
 function getStockStatus(stock: number, minQty: number): StockStatus {
@@ -196,9 +194,9 @@ async function enrichReplenishments(
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const catMap = new Map((catResult.data || []).map((c) => [c.id, c.name]));
+  const catMap = new Map((catResult.data ?? []).map((c) => [c.id, c.name]));
   const supMap = new Map(
-    (supResult.data || []).map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
+    (supResult.data ?? []).map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
   );
 
   return items.map((n) => ({
@@ -247,7 +245,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
         throw error;
       }
 
-      let items = ((data as unknown as RawProduct[]) || [])
+      let items = ((data as unknown as RawProduct[]) ?? [])
         .filter(isReplenishment)
         .map(toReplenishment)
         .filter((n) => n.is_active);
@@ -287,18 +285,18 @@ export function useReplenishmentStats() {
       if (error) {
         if (error.message?.includes('410') || error.message?.includes('Gone')) {
           return {
-            totalReplenishments:    0,
-            activeReplenishments:   0,
-            expiringSoon:           0,
-            totalProducts:          0,
-            replenishmentRate:      0,
-            restockedToday:         0,
-            restockedThisWeek:      0,
-            restockedLast15Days:    0,
-            topSupplierName:        null,
-            topSupplierCount:       0,
-            reorderedThisWeek:      0,
-            reorderedThisMonth:     0,
+            totalReplenishments: 0,
+            activeReplenishments: 0,
+            expiringSoon: 0,
+            totalProducts: 0,
+            replenishmentRate: 0,
+            restockedToday: 0,
+            restockedThisWeek: 0,
+            restockedLast15Days: 0,
+            topSupplierName: null,
+            topSupplierCount: 0,
+            reorderedThisWeek: 0,
+            reorderedThisMonth: 0,
             upcomingRestockVariants: 0,
           };
         }
@@ -309,19 +307,19 @@ export function useReplenishmentStats() {
 
       return {
         // ─ Primários (KPI cards) ─
-        totalReplenishments:     Number(d.restockedThisWeek    ?? 0),
-        activeReplenishments:    Number(d.activeReplenishments ?? 0),
-        expiringSoon:            0,
-        totalProducts:           Number(d.totalVariants        ?? 0),
-        replenishmentRate:       Number(d.replenishmentRate    ?? 0),
-        restockedToday:          Number(d.restockedToday       ?? 0),
-        restockedThisWeek:       Number(d.restockedThisWeek    ?? 0),
-        restockedLast15Days:     Number(d.restockedLast15Days  ?? 0),
-        topSupplierName:         (d.topSupplierName as string) ?? null,
-        topSupplierCount:        Number(d.topSupplierCount     ?? 0),
+        totalReplenishments: Number(d.restockedThisWeek ?? 0),
+        activeReplenishments: Number(d.activeReplenishments ?? 0),
+        expiringSoon: 0,
+        totalProducts: Number(d.totalVariants ?? 0),
+        replenishmentRate: Number(d.replenishmentRate ?? 0),
+        restockedToday: Number(d.restockedToday ?? 0),
+        restockedThisWeek: Number(d.restockedThisWeek ?? 0),
+        restockedLast15Days: Number(d.restockedLast15Days ?? 0),
+        topSupplierName: (d.topSupplierName as string) ?? null,
+        topSupplierCount: Number(d.topSupplierCount ?? 0),
         // ─ Secundários (Cenário B — expansão futura da UI) ─
-        reorderedThisWeek:       Number(d.reorderedThisWeek      ?? 0),
-        reorderedThisMonth:      Number(d.reorderedThisMonth     ?? 0),
+        reorderedThisWeek: Number(d.reorderedThisWeek ?? 0),
+        reorderedThisMonth: Number(d.reorderedThisMonth ?? 0),
         upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
@@ -348,7 +346,7 @@ export function useReplenishmentCount() {
         throw error;
       }
 
-      return ((data as unknown as RawProduct[]) || []).filter(isReplenishment).length;
+      return ((data as unknown as RawProduct[]) ?? []).filter(isReplenishment).length;
     },
     staleTime: 2 * 60 * 1000,
     retry: 2,

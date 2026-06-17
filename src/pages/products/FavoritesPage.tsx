@@ -239,7 +239,7 @@ export default function FavoritesPage() {
       : legacyFavoriteProducts.map((product) => {
           const variant = variantMap.get(product.id);
           if (variant?.thumbnail) {
-            return { ...product, images: [variant.thumbnail, ...(product.images || [])] };
+            return { ...product, images: [variant.thumbnail, ...(product.images ?? [])] };
           }
           return product;
         });

@@ -57,7 +57,7 @@ export function AiQuotaManager() {
           </div>
         ) : (
           <div className="space-y-3">
-            {(quotas || []).map((q) => {
+            {(quotas ?? []).map((q) => {
               const e = editing[q.id];
               const isEditing = !!e;
               const limit = isEditing ? e.limit : q.monthly_limit;

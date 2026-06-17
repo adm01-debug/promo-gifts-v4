@@ -203,7 +203,7 @@ export default function SystemStatusPage() {
       instance: instanceInfo,
       statuses: statuses.map((s) => ({ name: s.name, status: s.status, message: s.message })),
       rls: rlsChecks,
-      recentLoginErrors: recentErrors || [],
+      recentLoginErrors: recentErrors ?? [],
       crm: crmTables,
     };
 

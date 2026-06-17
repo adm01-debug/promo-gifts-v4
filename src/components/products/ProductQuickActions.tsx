@@ -107,7 +107,7 @@ export function ProductQuickActions({
   const displayTagSections = Object.entries(tags && !Array.isArray(tags) ? tags : {})
     .map(
       ([category, items]) =>
-        [category, (items || []).filter((item) => item?.trim().length > 0)] as const,
+        [category, (items ?? []).filter((item) => item?.trim().length > 0)] as const,
     )
     .filter(([, items]) => items.length > 0);
 

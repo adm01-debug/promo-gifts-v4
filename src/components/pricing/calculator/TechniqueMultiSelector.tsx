@@ -38,7 +38,7 @@ export function TechniqueMultiSelector({
         if (!result?.locations?.length) return [];
         const techList: ProductTechnique[] = [];
         for (const loc of result.locations) {
-          for (const opt of loc.options || []) {
+          for (const opt of loc.options ?? []) {
             techList.push({
               id: opt.technique_id,
               techniqueId: opt.technique_id,

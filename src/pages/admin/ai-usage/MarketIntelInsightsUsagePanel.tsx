@@ -45,7 +45,7 @@ export function MarketIntelInsightsUsagePanel() {
         .eq('function_name', 'market-intelligence-insights')
         .gte('created_at', since);
 
-      return { events: (events || []) as UsageRow[], cacheCount: cacheRows?.length || 0 };
+      return { events: (events ?? []) as UsageRow[], cacheCount: cacheRows?.length || 0 };
     },
     staleTime: 1000 * 60 * 2,
   });

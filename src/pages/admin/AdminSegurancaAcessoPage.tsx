@@ -146,7 +146,7 @@ export default function AdminSegurancaAcessoPage() {
       // bot_detection_log em prod usa `detection_type` e guarda endpoint/request_count
       // em `metadata` (jsonb). Mapeamos para o shape esperado pela UI, com fallback,
       // para a analise de seguranca nao exibir valores em branco.
-      const rawBotLogs = (botRes.data || []) as unknown as Array<Record<string, unknown>>;
+      const rawBotLogs = (botRes.data ?? []) as unknown as Array<Record<string, unknown>>;
       setBotLogs(
         rawBotLogs.map((r) => {
           const meta = (r.metadata ?? {}) as Record<string, unknown>;
@@ -163,8 +163,8 @@ export default function AdminSegurancaAcessoPage() {
           } as BotLog;
         }),
       );
-      setRateLimits(rateRes.data || []);
-      setIpList(ipRes.data || []);
+      setRateLimits(rateRes.data ?? []);
+      setIpList(ipRes.data ?? []);
     } catch (err) {
       if (!mountedRef.current) return;
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';

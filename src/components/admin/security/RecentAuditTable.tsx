@@ -62,7 +62,7 @@ export function RecentAuditTable() {
       setLoading(false);
       return;
     }
-    const list = (data || []) as AuditEntry[];
+    const list = (data ?? []) as AuditEntry[];
     setEntries(list);
 
     const ids = Array.from(new Set(list.map((e) => e.user_id)));
@@ -72,7 +72,7 @@ export function RecentAuditTable() {
         .select('user_id, full_name, email')
         .in('user_id', ids);
       const map: Record<string, ProfileLite> = {};
-      (profs || []).forEach((p) => {
+      (profs ?? []).forEach((p) => {
         if (p.user_id) map[p.user_id] = p as ProfileLite;
       });
       setProfiles(map);

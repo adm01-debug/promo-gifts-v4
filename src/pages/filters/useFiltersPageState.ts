@@ -210,15 +210,15 @@ export function useFiltersPageState() {
     setArr('publicoAlvo', filters.publicoAlvo);
     setArr('datasComemorativas', filters.datasComemorativas);
     setArr('endomarketing', filters.endomarketing);
-    setArr('ramosAtividade', filters.ramosAtividade || []);
-    setArr('segmentosAtividade', filters.segmentosAtividade || []);
-    setArr('materialGroups', filters.materialGroups || []);
-    setArr('materialTypes', filters.materialTypes || []);
+    setArr('ramosAtividade', filters.ramosAtividade ?? []);
+    setArr('segmentosAtividade', filters.segmentosAtividade ?? []);
+    setArr('materialGroups', filters.materialGroups ?? []);
+    setArr('materialTypes', filters.materialTypes ?? []);
     setArr('materiais', filters.materiais);
-    setArr('techniques', filters.techniques || []);
-    setArr('tags', filters.tags || []);
-    setArr('gender', filters.gender || []);
-    setArr('sizes', filters.sizes || []);
+    setArr('techniques', filters.techniques ?? []);
+    setArr('tags', filters.tags ?? []);
+    setArr('gender', filters.gender ?? []);
+    setArr('sizes', filters.sizes ?? []);
     if (filters.priceRange[0] > 0) params.set('priceMin', String(filters.priceRange[0]));
     if (filters.priceRange[1] < 9999) params.set('priceMax', String(filters.priceRange[1]));
     if (filters.minStock > 0) params.set('minStock', String(filters.minStock));
@@ -242,8 +242,8 @@ export function useFiltersPageState() {
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
   } = useProductsByMaterial({
-    materialGroupSlugs: filters.materialGroups || [],
-    materialTypeSlugs: filters.materialTypes || [],
+    materialGroupSlugs: filters.materialGroups ?? [],
+    materialTypeSlugs: filters.materialTypes ?? [],
   });
   const {
     productIds: categoryFilteredProductIds,
@@ -256,9 +256,9 @@ export function useFiltersPageState() {
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
   } = useProductsByColor({
-    colorGroups: filters.colorGroups || [],
-    colorVariations: filters.colorVariations || [],
-    colorNuances: filters.colorNuances || [],
+    colorGroups: filters.colorGroups ?? [],
+    colorVariations: filters.colorVariations ?? [],
+    colorNuances: filters.colorNuances ?? [],
     colors: filters.colors,
   });
 
@@ -557,7 +557,7 @@ export function useFiltersPageState() {
     if (techniquesDataAvailable && filters.techniques?.length) {
       const techSet = new Set(filters.techniques.map((t) => t.toLowerCase()));
       result = result.filter((product) => {
-        const metaTechs: string[] = (product.metadata?.techniques as string[]) || [];
+        const metaTechs: string[] = (product.metadata?.techniques as string[]) ?? [];
         if (metaTechs.length > 0) {
           return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
         }
@@ -595,8 +595,8 @@ export function useFiltersPageState() {
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
-    colorGroups: filters.colorGroups || [],
-    colorVariations: filters.colorVariations || [],
+    colorGroups: filters.colorGroups ?? [],
+    colorVariations: filters.colorVariations ?? [],
   });
 
   // Merge color enrichment data into products
@@ -718,10 +718,10 @@ export function useFiltersPageState() {
         value: `${totalRamos} selecionado${totalRamos > 1 ? 's' : ''}`,
         key: 'ramosAtividade',
       });
-    const genderArr = filters.gender || [];
+    const genderArr = filters.gender ?? [];
     if (genderArr.length > 0)
       summary.push({ label: 'Gênero', value: genderArr.join(', '), key: 'gender' });
-    const sizesArr = filters.sizes || [];
+    const sizesArr = filters.sizes ?? [];
     if (sizesArr.length > 0)
       summary.push({
         label: 'Tamanhos',
@@ -729,14 +729,14 @@ export function useFiltersPageState() {
         key: 'sizes',
       });
     // Tipos ausentes no original — FIX-05:
-    const techArr = filters.techniques || [];
+    const techArr = filters.techniques ?? [];
     if (techArr.length > 0 && techniquesDataAvailable)
       summary.push({
         label: 'Técnicas',
         value: `${techArr.length} selecionada${techArr.length > 1 ? 's' : ''}`,
         key: 'techniques',
       });
-    const tagsArr = filters.tags || [];
+    const tagsArr = filters.tags ?? [];
     if (tagsArr.length > 0)
       summary.push({
         label: 'Tags',

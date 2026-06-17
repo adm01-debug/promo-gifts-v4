@@ -30,7 +30,7 @@ export function CatalogQualityDashboard() {
           .order('created_at', { ascending: false })
           .limit(50);
 
-        const rows = data || [];
+        const rows = data ?? [];
         setMetrics({
           totalSyncRuns: rows.length,
           failedRuns: rows.filter((r) => r.status === 'failed').length,

@@ -106,8 +106,8 @@ function calculateMatchScore(
     'endomarketing',
   ];
   for (const tagCat of tagCategories) {
-    const srcTags = (source.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
-    const candTags = (candidate.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
+    const srcTags = (source.tags?.[tagCat] ?? []).map((t) => t.trim().toLowerCase());
+    const candTags = (candidate.tags?.[tagCat] ?? []).map((t) => t.trim().toLowerCase());
     const shared = srcTags.filter((t) => t && candTags.includes(t));
     if (shared.length > 0) {
       score += 10 * shared.length;
@@ -187,7 +187,7 @@ export function useProductMatch(
   filters: Partial<MatchFilters> = {},
 ): { matches: MatchResult[]; isProcessing: boolean } {
   const mergedFilters: MatchFilters = { ...DEFAULT_FILTERS, ...filters };
-  const matchTypesKey = (mergedFilters.matchTypes || []).join(',');
+  const matchTypesKey = (mergedFilters.matchTypes ?? []).join(',');
 
   const matches = useMemo(() => {
     if (!sourceProduct || allProducts.length === 0) return [];

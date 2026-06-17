@@ -401,7 +401,7 @@ export function useGlobalSearch() {
             orderBy: { column: 'created_at', ascending: false },
             limit: 5,
           });
-          let filteredQuotes = quotes || [];
+          let filteredQuotes = quotes ?? [];
           if (intent.filters.clientName) {
             const cLower = intent.filters.clientName.toLowerCase();
             filteredQuotes = filteredQuotes.filter((q) =>
@@ -504,7 +504,7 @@ export function useGlobalSearch() {
             .select('id, name, status, total_price, kit_quantity')
             .ilike('name', `%${term}%`)
             .limit(5);
-          (data || []).forEach((k) =>
+          (data ?? []).forEach((k) =>
             allResults.push({
               id: k.id,
               title: k.name ?? '',
@@ -525,7 +525,7 @@ export function useGlobalSearch() {
             .or(`product_name.ilike.%${term}%,technique_name.ilike.%${term}%`)
             .order('created_at', { ascending: false })
             .limit(5);
-          (data || []).forEach((m) =>
+          (data ?? []).forEach((m) =>
             allResults.push({
               id: m.id,
               title: m.product_name || 'Mockup',
@@ -546,7 +546,7 @@ export function useGlobalSearch() {
             .or(`original_name.ilike.%${term}%,notes.ilike.%${term}%`)
             .order('created_at', { ascending: false })
             .limit(5);
-          (data || []).forEach((a) =>
+          (data ?? []).forEach((a) =>
             allResults.push({
               id: a.id,
               title: a.original_name,
@@ -567,7 +567,7 @@ export function useGlobalSearch() {
             .select('id, name, description, items')
             .or(`name.ilike.%${term}%,description.ilike.%${term}%`)
             .limit(5);
-          (data || []).forEach((t) => {
+          (data ?? []).forEach((t) => {
             const itemCount = Array.isArray(t.items) ? t.items.length : 0;
             allResults.push({
               id: t.id,
@@ -593,7 +593,7 @@ export function useGlobalSearch() {
             )
             .order('created_at', { ascending: false })
             .limit(5);
-          (data || []).forEach((m) =>
+          (data ?? []).forEach((m) =>
             allResults.push({
               id: m.id,
               title: m.scene_title || m.product_name || 'Magic Up',
@@ -615,7 +615,7 @@ export function useGlobalSearch() {
             .eq('is_active', true)
             .or(`component_name.ilike.%${term}%,component_code.ilike.%${term}%`)
             .limit(5);
-          (data || []).forEach((c) =>
+          (data ?? []).forEach((c) =>
             allResults.push({
               id: c.id,
               title: c.component_name,
@@ -636,7 +636,7 @@ export function useGlobalSearch() {
             .ilike('title', `%${term}%`)
             .order('created_at', { ascending: false })
             .limit(5);
-          (data || []).forEach((m) =>
+          (data ?? []).forEach((m) =>
             allResults.push({
               id: m.id,
               title: m.title || 'Mídia sem título',

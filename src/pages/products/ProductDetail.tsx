@@ -123,7 +123,7 @@ export default function ProductDetail() {
     nextYear.setFullYear(nextYear.getFullYear() + 1);
 
     // Ensure images are absolute URLs
-    const absoluteImages = (product.images || [])
+    const absoluteImages = (product.images ?? [])
       .filter(Boolean)
       .map((img) =>
         img.startsWith('http') ? img : `${origin}${img.startsWith('/') ? '' : '/'}${img}`,

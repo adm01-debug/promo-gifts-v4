@@ -26,7 +26,7 @@ export function usePromoSales90dByProduct() {
       }
 
       const map = new Map<string, number>();
-      for (const row of data || []) {
+      for (const row of data ?? []) {
         if (!row.product_id) continue;
         const q = row.quantity || 0;
         if (q <= 0) continue;
