@@ -206,17 +206,18 @@ interface SpacerProps {
   className?: string;
 }
 
+const SPACER_SIZE_CLASSES: Record<NonNullable<SpacerProps['size']>, string> = {
+  xs: 'h-1 sm:h-2',
+  sm: 'h-2 sm:h-4',
+  md: 'h-4 sm:h-6',
+  lg: 'h-6 sm:h-8',
+  xl: 'h-8 sm:h-12',
+  '2xl': 'h-10 sm:h-16',
+};
+
 /** Spacer responsivo: menor em mobile, maior em desktop. */
 export function Spacer({ size = 'md', className }: SpacerProps) {
-  const s = {
-    xs: 'h-1 sm:h-2',
-    sm: 'h-2 sm:h-4',
-    md: 'h-4 sm:h-6',
-    lg: 'h-6 sm:h-8',
-    xl: 'h-8 sm:h-12',
-    '2xl': 'h-10 sm:h-16',
-  };
-  return <div className={cn(s[size], className)} aria-hidden="true" />;
+  return <div className={cn(SPACER_SIZE_CLASSES[size], className)} aria-hidden="true" />;
 }
 
 interface AnimatedContainerProps {
