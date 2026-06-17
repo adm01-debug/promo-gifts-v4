@@ -128,17 +128,12 @@ export function useDiscountApproval() {
           });
         }
 
-        // Notify all admins
-        const { data: adminRoles } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'admin');
+        // Notify all admins — both queries are independent, run in parallel
+        const [{ data: adminRoles }, { data: profile }] = await Promise.all([
+          supabase.from('user_roles').select('user_id').eq('role', 'admin'),
+          supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
+        ]);
         if (adminRoles && adminRoles.length > 0) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', user.id)
-            .maybeSingle();
           const sellerName = profile?.full_name || 'Vendedor';
           const msg =
             markup > 0
