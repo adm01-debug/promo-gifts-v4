@@ -165,6 +165,10 @@ export function buildItemsInsertPayload(
     kit_group_id: item.kit_group_id || null,
     kit_name: item.kit_name || null,
     price_confirmed_at: item.price_confirmed_at ?? null,
+    price_updated_at: item.price_updated_at ?? null,
+    price_freshness_threshold_days: item.price_freshness_threshold_days ?? null,
+    bitrix_product_id:
+      item.bitrix_product_id != null ? String(item.bitrix_product_id) : null,
   }));
 }
 
