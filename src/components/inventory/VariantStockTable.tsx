@@ -9,8 +9,11 @@ import {
   Search,
   X,
   Copy,
+  Building2,
+  Tag,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -136,10 +139,33 @@ function FlatVariantRow({
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {product.categoryName ? (
-          <Badge variant="outline" className="text-[10px] font-normal">
-            {product.categoryName}
-          </Badge>
+        {product.supplierName || product.categoryName ? (
+          <div className="flex flex-col items-start gap-1">
+            {product.supplierName ? (
+              <span
+                title={`Fornecedor: ${product.supplierName}`}
+                className={cn(
+                  'inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold',
+                  getSupplierBadgeClasses(product.supplierName),
+                )}
+              >
+                <Building2
+                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplierName).text)}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{product.supplierName}</span>
+              </span>
+            ) : null}
+            {product.categoryName ? (
+              <span
+                title={`Categoria: ${product.categoryName}`}
+                className="inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
+              >
+                <Tag className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{product.categoryName}</span>
+              </span>
+            ) : null}
+          </div>
         ) : (
           <EmptyCell />
         )}
