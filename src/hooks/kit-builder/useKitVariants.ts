@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface KitVariantRow {
   id: string;
@@ -56,9 +57,9 @@ export function useKitVariants(kitMasterId: string | undefined) {
         kit_master_id: kitMasterId,
         label,
         sort_order: variants.length,
-        box_data: kitState.box ? structuredClone(kitState.box) : null,
-        items_data: structuredClone(kitState.items),
-        personalization_data: structuredClone(kitState.personalization),
+        box_data: kitState.box ? (structuredClone(kitState.box) as unknown as Json) : null,
+        items_data: structuredClone(kitState.items) as unknown as Json,
+        personalization_data: structuredClone(kitState.personalization) as unknown as Json,
         kit_quantity: kitQuantity,
         total_price: kitState.totalPrice,
       };
