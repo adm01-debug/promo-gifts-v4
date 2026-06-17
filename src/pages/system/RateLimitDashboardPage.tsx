@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,12 +33,7 @@ export default function RateLimitDashboardPage() {
   const [stats, setStats] = useState({ totalRequests: 0, blockedRequests: 0, uniqueIPs: 0 });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const { data: loginAttempts, error } = await supabase
         .from('login_attempts')
@@ -71,7 +66,11 @@ export default function RateLimitDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   return (
     <>
