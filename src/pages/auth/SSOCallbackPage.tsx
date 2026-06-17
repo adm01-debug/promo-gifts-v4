@@ -178,7 +178,7 @@ export default function SSOCallbackPage() {
         // (2) Fluxo PKCE — troca o code por sessão
         if (code) {
           tracer.setFlow('pkce');
-          tracer.step('pkce-exchange-start', { codePrefix: code.slice(0, 6) + '…' });
+          tracer.step('pkce-exchange-start', { codePrefix: `${code.slice(0, 6)}…` });
           const { data: exData, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
