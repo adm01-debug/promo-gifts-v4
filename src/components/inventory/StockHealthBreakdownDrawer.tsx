@@ -36,8 +36,7 @@ function matches(p: ProductStockSummary, q: string): boolean {
   if (!q) return true;
   const needle = q.toLowerCase();
   return (
-    p.productName.toLowerCase().includes(needle) ||
-    p.productSku.toLowerCase().includes(needle)
+    p.productName.toLowerCase().includes(needle) || p.productSku.toLowerCase().includes(needle)
   );
 }
 
@@ -86,7 +85,10 @@ export function StockHealthBreakdownDrawer({ open, onOpenChange, products }: Pro
     }),
     [buckets],
   );
-  const filtered = useMemo(() => buckets[tab].filter((p) => matches(p, query)), [buckets, tab, query]);
+  const filtered = useMemo(
+    () => buckets[tab].filter((p) => matches(p, query)),
+    [buckets, tab, query],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -119,16 +121,22 @@ export function StockHealthBreakdownDrawer({ open, onOpenChange, products }: Pro
           />
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as BucketKey)} className="flex min-h-0 flex-1 flex-col">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as BucketKey)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <TabsList className="grid w-full grid-cols-4">
-            {(Object.keys(TAB_META) as BucketKey[]).map((k) => (
-              <TabsTrigger key={k} value={k} data-testid={TAB_META[k].testid}>
-                <span className={cn('truncate', TAB_META[k].tone)}>{TAB_META[k].label}</span>
-                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
-                  {counts[k]}
-                </Badge>
-              </TabsTrigger>
-            ))}
+            {(Object.entries(TAB_META) as [BucketKey, (typeof TAB_META)[BucketKey]][]).map(
+              ([k, meta]) => (
+                <TabsTrigger key={k} value={k} data-testid={meta.testid}>
+                  <span className={cn('truncate', meta.tone)}>{meta.label}</span>
+                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                    {counts[k]}
+                  </Badge>
+                </TabsTrigger>
+              ),
+            )}
           </TabsList>
 
           {(Object.keys(TAB_META) as BucketKey[]).map((k) => (

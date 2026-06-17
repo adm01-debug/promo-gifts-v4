@@ -80,21 +80,23 @@ export function ComparisonScoreCard({ products, className }: ComparisonScoreCard
                   Ajuste para refletir suas prioridades.
                 </p>
               </div>
-              {(Object.keys(weights) as Array<keyof ComparisonScoreWeights>).map((key) => (
-                <div key={key} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">{WEIGHT_LABELS[key]}</Label>
-                    <span className="font-mono text-xs text-muted-foreground">{weights[key]}</span>
+              {(Object.entries(weights) as [keyof ComparisonScoreWeights, number][]).map(
+                ([key, weight]) => (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">{WEIGHT_LABELS[key]}</Label>
+                      <span className="font-mono text-xs text-muted-foreground">{weight}</span>
+                    </div>
+                    <Slider
+                      value={[weight]}
+                      onValueChange={(v) => setWeights({ ...weights, [key]: v[0] })}
+                      min={0}
+                      max={50}
+                      step={5}
+                    />
                   </div>
-                  <Slider
-                    value={[weights[key]]}
-                    onValueChange={(v) => setWeights({ ...weights, [key]: v[0] })}
-                    min={0}
-                    max={50}
-                    step={5}
-                  />
-                </div>
-              ))}
+                ),
+              )}
               <Button
                 variant="ghost"
                 size="sm"
