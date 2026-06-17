@@ -28,9 +28,9 @@ interface VariantThumbProps {
 }
 
 const SIZE_MAP = {
-  sm: 'h-10 w-10 rounded-md',
-  md: 'h-14 w-14 rounded-lg',
-  lg: 'h-20 w-20 rounded-xl',
+  sm: 'h-[2.875rem] w-[2.875rem] rounded-md',
+  md: 'h-16 w-16 rounded-lg',
+  lg: 'h-[5.75rem] w-[5.75rem] rounded-xl',
 } as const;
 
 export function VariantThumb({
