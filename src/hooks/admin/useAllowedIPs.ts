@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
@@ -169,7 +169,10 @@ export function useAllowedIPs(targetUserId?: string) {
     [allowedIPs],
   );
 
-  const hasIPRestriction = allowedIPs.filter((ip) => ip.is_active).length > 0;
+  const hasIPRestriction = useMemo(
+    () => allowedIPs.filter((ip) => ip.is_active).length > 0,
+    [allowedIPs],
+  );
 
   return {
     allowedIPs,
