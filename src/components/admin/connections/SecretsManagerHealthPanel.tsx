@@ -356,7 +356,10 @@ function SampleRow({ sample }: { sample: SecretsManagerCallSample }) {
     : 'border-destructive/40 bg-destructive/5';
   return (
     <li
-      className={`flex items-center gap-2 rounded-md border ${tone} flex-wrap px-2 py-1.5 text-xs`}
+      className={cn(
+        'flex flex-wrap items-center gap-2 rounded-md border px-2 py-1.5 text-xs',
+        tone,
+      )}
     >
       <Badge
         variant="outline"

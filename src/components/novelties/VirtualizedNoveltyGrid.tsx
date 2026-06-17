@@ -8,6 +8,7 @@ import {
   getGridGapClass,
 } from '@/components/replenishments/grid-layout';
 import { NoveltyGridCard } from './NoveltyCards';
+import { cn } from '@/lib/utils';
 import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 
 interface VirtualizedNoveltyGridProps {
@@ -111,7 +112,11 @@ export function VirtualizedNoveltyGrid({
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)} pb-8`}
+              className={cn(
+                'grid pb-8',
+                getGridColsClass(gridColumns),
+                getGridGapClass(gridColumns),
+              )}
             >
               {rowProducts.map((product) => (
                 <div key={product.novelty_id} role="listitem">

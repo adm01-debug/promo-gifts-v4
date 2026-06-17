@@ -1,4 +1,13 @@
-import { Scale, Box, ArrowUpDown, ArrowLeftRight, MoveHorizontal, Droplets, Circle } from 'lucide-react';
+import {
+  Scale,
+  Box,
+  ArrowUpDown,
+  ArrowLeftRight,
+  MoveHorizontal,
+  Droplets,
+  Circle,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProductDimensionsProps {
   dimensions?: {
@@ -36,7 +45,10 @@ function SpecItem({
     return (
       <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border/40 bg-secondary/40 px-2.5 py-2.5">
         <div
-          className={`h-7 w-7 rounded-lg ${iconBgClass} flex shrink-0 items-center justify-center [&_svg]:h-3.5 [&_svg]:w-3.5`}
+          className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg [&_svg]:h-3.5 [&_svg]:w-3.5',
+            iconBgClass,
+          )}
         >
           <span className={iconColorClass}>{icon}</span>
         </div>
@@ -55,7 +67,10 @@ function SpecItem({
   return (
     <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary/50 p-4 text-center">
       <div
-        className={`h-10 w-10 rounded-lg ${iconBgClass} flex shrink-0 items-center justify-center`}
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+          iconBgClass,
+        )}
       >
         <span className={iconColorClass}>{icon}</span>
       </div>
@@ -69,9 +84,17 @@ function SpecItem({
 export function ProductDimensions({ dimensions, compact }: ProductDimensionsProps) {
   if (!dimensions) return null;
 
-  const { height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml } = dimensions;
+  const { height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml } =
+    dimensions;
 
-  const hasAnySpec = height_cm || width_cm || length_cm || diameter_cm || circumference_cm || weight_g || capacity_ml;
+  const hasAnySpec =
+    height_cm ||
+    width_cm ||
+    length_cm ||
+    diameter_cm ||
+    circumference_cm ||
+    weight_g ||
+    capacity_ml;
 
   if (!hasAnySpec) return null;
 

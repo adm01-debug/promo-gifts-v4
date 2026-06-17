@@ -21,7 +21,10 @@ interface TokenSwatchProps {
 const TokenSwatch = ({ name, cssVar, twClass, description, textOn }: TokenSwatchProps) => (
   <div className="flex items-stretch gap-3 rounded-lg border bg-card p-3">
     <div
-      className={`h-16 w-16 shrink-0 rounded-md border ${twClass} flex items-center justify-center`}
+      className={cn(
+        'flex h-16 w-16 shrink-0 items-center justify-center rounded-md border',
+        twClass,
+      )}
     >
       {textOn && <span className={cn('text-xs font-bold', textOn)}>Aa</span>}
     </div>
@@ -254,7 +257,10 @@ export default function AdminDesignTokensPage() {
             {SHADOW_TOKENS.map((s) => (
               <div key={s.twClass} className="space-y-2">
                 <div
-                  className={`h-20 rounded-lg border bg-card ${s.twClass} transition-all duration-300`}
+                  className={cn(
+                    'h-20 rounded-lg border bg-card transition-all duration-300',
+                    s.twClass,
+                  )}
                 />
                 <div className="text-xs">
                   <div className="font-bold text-foreground">{s.name}</div>
@@ -287,7 +293,10 @@ export default function AdminDesignTokensPage() {
             {BORDER_WIDTHS.map((b) => (
               <div
                 key={b.twClass}
-                className={`h-20 rounded-lg border-primary bg-card ${b.twClass} flex items-center justify-center`}
+                className={cn(
+                  'flex h-20 items-center justify-center rounded-lg border-primary bg-card',
+                  b.twClass,
+                )}
               >
                 <span className="text-sm font-bold text-foreground">{b.name}</span>
               </div>
@@ -300,7 +309,7 @@ export default function AdminDesignTokensPage() {
             {GRADIENT_TOKENS.map((g) => (
               <div
                 key={g.twClass}
-                className={`h-24 rounded-lg ${g.twClass} flex items-end border p-3`}
+                className={cn('flex h-24 items-end rounded-lg border p-3', g.twClass)}
               >
                 <div className="text-xs">
                   <div className="rounded bg-background/80 px-2 py-0.5 font-bold text-foreground backdrop-blur">

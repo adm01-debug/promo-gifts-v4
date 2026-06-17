@@ -435,7 +435,10 @@ export default function SystemStatusPage() {
                   {actualTheme}
                 </Badge>
                 <div
-                  className={`h-3 w-3 rounded-full ${actualTheme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} border border-white/10`}
+                  className={cn(
+                    'h-3 w-3 rounded-full border border-white/10',
+                    actualTheme === 'dark' ? 'bg-slate-800' : 'bg-slate-200',
+                  )}
                 />
               </div>
             </div>

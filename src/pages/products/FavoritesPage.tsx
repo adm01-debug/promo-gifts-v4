@@ -251,7 +251,10 @@ export default function FavoritesPage() {
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (favorites-search-accent): NFD strip espelhando PR #755/#750.
       const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
@@ -733,7 +736,11 @@ export default function FavoritesPage() {
                   ) : (
                     <div
                       data-testid="favorites-list"
-                      className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`}
+                      className={cn(
+                        'grid',
+                        getGridColsClass(gridColumns),
+                        getGridGapClass(gridColumns),
+                      )}
                     >
                       {filteredProducts.map((product, index) => {
                         const variant = variantMap.get(product.id);

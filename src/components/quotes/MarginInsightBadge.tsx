@@ -117,11 +117,13 @@ export function MarginInsightBadge({
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className={`gap-1.5 ${
+            className={cn(
+              'gap-1.5',
               isAbove
                 ? 'border-success/30 bg-success/10 text-success'
-                : 'border-warning/30 bg-warning/10 text-warning'
-            } ${className ?? ''}`}
+                : 'border-warning/30 bg-warning/10 text-warning',
+              className,
+            )}
           >
             <Icon className="h-3 w-3" />
             <span className="text-[11px] font-medium">

@@ -963,7 +963,10 @@ export function SupplierFormDialog({
                             updatePixKey(pix.id, 'chave', applyPixMask(e.target.value, pix.tipo))
                           }
                           placeholder={pixPlaceholder(pix.tipo)}
-                          className={`${fieldClass} ${validatePixKey(pix.chave, pix.tipo) ? 'border-destructive' : ''}`}
+                          className={cn(
+                            fieldClass,
+                            validatePixKey(pix.chave, pix.tipo) && 'border-destructive',
+                          )}
                         />
                         {validatePixKey(pix.chave, pix.tipo) && (
                           <p className="mt-1 text-xs text-destructive">

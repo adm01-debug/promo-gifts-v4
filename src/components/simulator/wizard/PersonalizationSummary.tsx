@@ -33,6 +33,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Personalization } from '@/types/domain/simulator-wizard';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 interface PersonalizationSummaryProps {
   wizard: UseSimulatorWizardReturn;
@@ -321,11 +322,12 @@ function PersonalizationRow({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className={`rounded-xl border p-2.5 transition-all ${
+      className={cn(
+        'rounded-xl border p-2.5 transition-all',
         isActive
           ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10'
-          : 'border-border/60 bg-card hover:bg-muted/30'
-      } `}
+          : 'border-border/60 bg-card hover:bg-muted/30',
+      )}
     >
       {/* Row 1: Number + Technique + Price (never truncated) */}
       <div className="mb-1 flex items-start gap-1.5">

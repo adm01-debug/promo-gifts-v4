@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ReplenishmentWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
@@ -74,7 +75,11 @@ export function VirtualizedReplenishmentGrid({
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)} pb-8`}
+              className={cn(
+                'grid pb-8',
+                getGridColsClass(effectiveCols),
+                getGridGapClass(effectiveCols),
+              )}
             >
               {rowProducts.map((product) => (
                 <div key={product.replenishment_id} role="listitem">

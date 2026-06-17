@@ -329,7 +329,7 @@ export function DataSourceDebugTab() {
           disabled={secretsLoading || extLoading}
         >
           <RefreshCw
-            className={cn('mr-2 h-4 w-4', secretsLoading || (extLoading && 'animate-spin'))}
+            className={cn('mr-2 h-4 w-4', (secretsLoading || extLoading) && 'animate-spin')}
           />
           Recarregar
         </Button>

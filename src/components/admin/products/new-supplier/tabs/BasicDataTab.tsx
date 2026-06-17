@@ -117,7 +117,7 @@ export function BasicDataTab({ form }: BasicDataTabProps) {
                 form.setCnpjError('');
               }}
               placeholder="00.000.000/0000-00"
-              className={`${fieldClass} flex-1 font-mono ${form.cnpjError ? 'border-destructive' : ''}`}
+              className={cn(fieldClass, 'flex-1 font-mono', form.cnpjError && 'border-destructive')}
               maxLength={18}
             />
             <Button

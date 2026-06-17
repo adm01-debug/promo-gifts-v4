@@ -292,7 +292,15 @@ export const ProductGrid = memo(function ProductGrid({
   return (
     <div
       ref={gridRef}
-      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
+      className={cn(
+        'grid',
+        columnClasses[columns] || columnClasses[5],
+        columns >= 8
+          ? 'gap-x-4 gap-y-8'
+          : columns >= 6
+            ? 'gap-x-6 gap-y-8'
+            : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8',
+      )}
     >
       {displayProducts.map((product, index) =>
         'isSkeleton' in product && product.isSkeleton ? (

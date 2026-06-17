@@ -111,7 +111,10 @@ export function SuccessCelebration({
             >
               {/* Glow ring */}
               <motion.div
-                className={`absolute -inset-8 rounded-full bg-gradient-to-r ${config.gradient} opacity-20 blur-2xl`}
+                className={cn(
+                  'absolute -inset-8 rounded-full bg-gradient-to-r opacity-20 blur-2xl',
+                  config.gradient,
+                )}
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.2, 0.4, 0.2],
@@ -125,7 +128,10 @@ export function SuccessCelebration({
 
               {/* Icon container */}
               <motion.div
-                className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${config.gradient} shadow-xl`}
+                className={cn(
+                  'relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br shadow-xl',
+                  config.gradient,
+                )}
                 animate={{
                   boxShadow: [
                     '0 0 20px hsl(var(--primary) / 0.3)',
@@ -156,7 +162,10 @@ export function SuccessCelebration({
                 {Array.from({ length: 3 }, (_, i) => (
                   <motion.div
                     key={i}
-                    className={`absolute inset-0 rounded-full border-2 border-current ${config.iconColor} opacity-30`}
+                    className={cn(
+                      'absolute inset-0 rounded-full border-2 border-current opacity-30',
+                      config.iconColor,
+                    )}
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{
                       scale: [1, 2],

@@ -3,6 +3,7 @@
  */
 
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { X, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -62,7 +63,7 @@ export function MockupCompareDialog({
           </div>
 
           {/* Grid */}
-          <div className={`grid ${gridCols} gap-4 overflow-auto p-4`}>
+          <div className={cn('grid gap-4 overflow-auto p-4', gridCols)}>
             {mockups.map((mockup) => (
               <div
                 key={mockup.id}

@@ -39,7 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/to-error-message';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { cn } from '@/lib/utils';
 interface RepairAction {
   table: string;
@@ -101,7 +101,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
       return result;
     } catch (e) {
       logger.error('Ownership repair failed', e);
-      toast.error(`Falha no reparo: ${toErrorMessage(e)}`);
+      toast.error(`Falha no reparo: ${sanitizeError(e)}`);
       return null;
     } finally {
       setRunning(false);

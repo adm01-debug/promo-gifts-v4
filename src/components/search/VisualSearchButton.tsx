@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, X, Loader2, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -222,11 +223,12 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
               >
                 <label
                   htmlFor="visual-search-input"
-                  className={`flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ${
+                  className={cn(
+                    'flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200',
                     dragActive
                       ? 'border-brand-primary bg-brand-primary/10'
-                      : 'border-border hover:border-brand-primary/50 hover:bg-muted/50'
-                  } `}
+                      : 'border-border hover:border-brand-primary/50 hover:bg-muted/50',
+                  )}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
