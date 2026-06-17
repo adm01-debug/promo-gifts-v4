@@ -5,14 +5,13 @@ import {
   Package,
   Truck,
   ChevronLeft,
-  ShoppingCart,
   Search,
   X,
-  Copy,
   Building2,
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
+import { VariantStockRowActions } from './VariantStockRowActions';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,32 +227,7 @@ function FlatVariantRow({
         />
       </TableCell>
       <TableCell className="hidden sm:table-cell">
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => {
-              void navigator.clipboard?.writeText(variant.variantSku).catch(() => {});
-            }}
-            aria-label={`Copiar SKU ${variant.variantSku}`}
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() =>
-              navigate(
-                `/orcamentos/novo?productId=${product.productId}&variantId=${variant.variantId}&productName=${encodeURIComponent(product.productName)}`,
-              )
-            }
-            aria-label={`Criar orçamento para ${product.productName} ${variant.colorName ?? ''}`}
-          >
-            <ShoppingCart className="h-3 w-3" />
-          </Button>
-        </div>
+        <VariantStockRowActions product={product} variant={variant} />
       </TableCell>
     </TableRow>
   );
