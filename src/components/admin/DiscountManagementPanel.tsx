@@ -3,7 +3,7 @@
  * (limites por vendedor + fila de aprovações). Extraído da antiga
  * AdminDiscountApprovalsPage para reutilização dentro de Usuários.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,20 +88,19 @@ export function DiscountManagementPanel() {
     notes: string;
   }>({ open: false, request: null, action: null, notes: '' });
 
-  useEffect(() => {
-    fetchAllLimits();
-    fetchPendingRequests();
-    fetchSellers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchSellers = async () => {
+  const fetchSellers = useCallback(async () => {
     const { data } = await supabase
       .from('profiles')
       .select('user_id, full_name, email, role')
       .order('full_name');
     setSellers((data || []) as SellerProfile[]);
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchAllLimits();
+    void fetchPendingRequests();
+    void fetchSellers();
+  }, [fetchAllLimits, fetchPendingRequests, fetchSellers]);
 
   const handleSetLimit = async () => {
     const ok = await setLimit(editDialog.userId, editDialog.currentLimit, editDialog.notes);
