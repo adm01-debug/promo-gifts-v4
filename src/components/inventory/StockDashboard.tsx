@@ -577,7 +577,11 @@ export function StockDashboard() {
           <BarChart3 className="h-4 w-4" />
           Painel de Risco do Fornecedor
         </button>
-        {riskPanelOpen && <SupplierRiskPanel products={allProductStocks} />}
+        {riskPanelOpen && (
+          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <SupplierRiskPanel products={allProductStocks} />
+          </Suspense>
+        )}
       </div>
 
       {/* Info Alerts */}
