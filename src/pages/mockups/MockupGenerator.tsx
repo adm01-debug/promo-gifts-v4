@@ -101,14 +101,6 @@ export default function MockupGenerator() {
   const { profile } = useAuth();
   const user = mg.user;
 
-  const _summary = useMemo(() => {
-    const parts = [];
-    if (mg.selectedClient) parts.push(mg.selectedClient.name);
-    if (mg.selectedProduct) parts.push(mg.selectedProduct.name);
-    if (mg.selectedTechnique) parts.push(mg.selectedTechnique.name);
-    return parts.join(' · ');
-  }, [mg.selectedClient, mg.selectedProduct, mg.selectedTechnique]);
-
   const technique = useTechniqueHandlers({
     hasLogo: mg.hasLogo,
     // Cast: useMockupGenerator narrows to Technique|TechniqueWithLimits; useTechniqueHandlers

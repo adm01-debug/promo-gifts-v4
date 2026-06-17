@@ -233,15 +233,6 @@ export async function findFornecedorPriceTable(_params: { technique_id: string }
 
 // ── Dispatch table ────────────────────────────────────────────────────────────────────────
 type DispatchFn = (params: Record<string, unknown>) => Promise<unknown>;
-// FASE 2: NOT_IN_DB agora retorna valores seguros em vez de throw.
-// A função NOT_IN_DB foi substituída por retornos inline para cada RPC.
-const _NOT_IN_DB =
-  (name: string): DispatchFn =>
-  async () => {
-    throw new Error(
-      `rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`,
-    );
-  };
 
 const RPC_DISPATCH: Record<string, DispatchFn> = {
   // ✓ Exists in DB — correct param names

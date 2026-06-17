@@ -63,9 +63,6 @@ export default function AdminTemasPage() {
     saveThemeConfig(next);
   };
 
-  // Mode changes are no longer supported
-  const _handleModeChange = (_mode: unknown) => {};
-
   const handleSave = () => {
     saveThemeConfig(config);
     setSavedConfig(config);
