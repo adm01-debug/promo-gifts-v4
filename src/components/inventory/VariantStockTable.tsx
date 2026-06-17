@@ -272,9 +272,20 @@ interface VariantStockTableProps {
   products: ProductStockSummary[];
   className?: string;
   isLoading?: boolean;
+  /**
+   * Quantidade-alvo (em unidades) que o vendedor precisa atender — alimenta a
+   * fórmula preditiva de "Risco de Ruptura". Quando ausente/0, o status volta
+   * ao comportamento estático (≤ mínimo do produto).
+   */
+  targetQuantity?: number;
 }
 
-export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
+export function VariantStockTable({
+  products,
+  className,
+  isLoading,
+  targetQuantity,
+}: VariantStockTableProps) {
   // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
   // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
   const [currentPage, setCurrentPage] = useState<number>(() => {
