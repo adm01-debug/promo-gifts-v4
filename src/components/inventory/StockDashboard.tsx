@@ -37,7 +37,9 @@ import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
 import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
-import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
+const StockHealthBreakdownDrawer = lazyWithRetry(() =>
+  import('./StockHealthBreakdownDrawer').then((m) => ({ default: m.StockHealthBreakdownDrawer })),
+);
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
