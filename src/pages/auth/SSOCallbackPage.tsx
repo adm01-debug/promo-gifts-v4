@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { useAuth } from '@/contexts/AuthContext';
 import { authDebugUrl } from '@/lib/auth/auth-debug';
 import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
@@ -141,7 +142,7 @@ export default function SSOCallbackPage() {
         tracer.stepError('redirect-home', e);
         logger.warn('[sso-callback] refreshSession failed', {
           flowId: tracer.flowId,
-          message: e instanceof Error ? e.message : String(e),
+          message: toErrorMessage(e),
         });
       }
       if (cancelled) return;

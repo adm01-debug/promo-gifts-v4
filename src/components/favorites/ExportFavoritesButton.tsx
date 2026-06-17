@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { Product } from '@/types/product-catalog';
 import type { FavoriteListItem } from '@/hooks/favorites';
 import { formatCurrency } from '@/lib/format';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 interface Props {
   products: Product[];
@@ -87,7 +88,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       downloadBlob(blob, `${safeName}-${date}.csv`);
       toast.success('CSV exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar CSV: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Erro ao exportar CSV: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }
@@ -120,7 +121,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       downloadBlob(blob, `${safeName}-${date}.json`);
       toast.success('JSON exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar JSON: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Erro ao exportar JSON: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }
@@ -214,7 +215,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       doc.save(`${safeName}-${date}.pdf`);
       toast.success('PDF exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar PDF: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Erro ao exportar PDF: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }

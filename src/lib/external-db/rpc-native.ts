@@ -20,6 +20,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 // ── Correct interfaces (verified against DB information_schema.parameters) ────────────────
 
@@ -128,9 +129,7 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
       },
     };
   } catch (e) {
-    logger.warn(
-      `[rpc-native] enrichCustomizationPrice failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`,
-    );
+    logger.warn(`[rpc-native] enrichCustomizationPrice failed (non-fatal): ${toErrorMessage(e)}`);
     return result;
   }
 }
@@ -170,9 +169,7 @@ export async function getProductCustomizationOptions(
     );
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(
-      `[rpc-native] getProductCustomizationOptions(${productId}): ${e instanceof Error ? e.message : String(e)}`,
-    );
+    logger.warn(`[rpc-native] getProductCustomizationOptions(${productId}): ${toErrorMessage(e)}`);
     return [];
   }
 }
@@ -188,9 +185,7 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
     });
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(
-      `[rpc-native] getCategoryDescendants(${categoryId}): ${e instanceof Error ? e.message : String(e)}`,
-    );
+    logger.warn(`[rpc-native] getCategoryDescendants(${categoryId}): ${toErrorMessage(e)}`);
     return [];
   }
 }

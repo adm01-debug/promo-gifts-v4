@@ -12,6 +12,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface KillSwitchHit {
   switch_name: string;
@@ -73,9 +74,7 @@ async function flush(): Promise<void> {
       buffer = [...toSend.slice(0, MAX_RETAINED_ON_FAILURE - buffer.length), ...buffer];
     }
   } catch (e) {
-    logger.warn(
-      `[kill-switch-telemetry] flush erro inesperado: ${e instanceof Error ? e.message : String(e)}`,
-    );
+    logger.warn(`[kill-switch-telemetry] flush erro inesperado: ${toErrorMessage(e)}`);
     // Mesmo tratamento: devolve ao buffer com cap
     buffer = [...toSend.slice(0, MAX_RETAINED_ON_FAILURE - buffer.length), ...buffer];
   } finally {

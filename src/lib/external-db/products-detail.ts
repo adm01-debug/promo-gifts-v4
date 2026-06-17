@@ -3,6 +3,7 @@
  */
 import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
 import {
   type PromobrindProduct,
@@ -53,7 +54,7 @@ async function fetchProductWithRetry(
 }
 
 function isTransientError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = toErrorMessage(err);
   return /(timeout|statement timeout|canceling statement|schema cache|retrying|ECONNRESET|fetch failed)/i.test(
     msg,
   );
@@ -309,9 +310,7 @@ export async function fetchPromobrindProductById(
   if (imagesAll.length > 0) {
     // Tipos técnicos que NÃO devem aparecer na galeria do produto.
     // Alinhado com products.ts (TECHNICAL_IMAGE_TYPES) e ADR-001.
-    const TECHNICAL_IMAGE_TYPES_PDP = new Set([
-      'box', 'pouch', 'location', 'area', 'component',
-    ]);
+    const TECHNICAL_IMAGE_TYPES_PDP = new Set(['box', 'pouch', 'location', 'area', 'component']);
     const colorImages = imagesAll
       .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);

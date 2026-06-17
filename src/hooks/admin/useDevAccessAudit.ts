@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface DevAccessProbeResult {
   table: string;
@@ -83,7 +84,7 @@ export function useDevAccessAudit() {
           return {
             table,
             ok: false,
-            error: e instanceof Error ? e.message : String(e),
+            error: toErrorMessage(e),
           };
         }
       }),

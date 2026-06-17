@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, PlayCircle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 type Op = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
 interface CaseResult {
@@ -68,7 +69,7 @@ export function RlsIntegrationTestsDialog() {
       if (res.ok) toast.success(`RLS ✓ ${res.summary.passed}/${res.summary.total} casos`);
       else toast.warning(`RLS ${res.summary.failed} falha(s) em ${res.summary.total} casos`);
     } catch (e) {
-      toast.error(`Falha ao rodar testes: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Falha ao rodar testes: ${toErrorMessage(e)}`);
     } finally {
       setRunning(false);
     }

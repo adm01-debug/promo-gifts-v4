@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { RefreshCw, RotateCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
@@ -75,7 +76,7 @@ export function FailedDeliveriesPanel() {
       qc.invalidateQueries({ queryKey: ['integrations-health'] });
     } catch (err) {
       toast.error('Falha ao reenviar', {
-        description: err instanceof Error ? err.message : String(err),
+        description: toErrorMessage(err),
       });
     } finally {
       setReplayingId(null);

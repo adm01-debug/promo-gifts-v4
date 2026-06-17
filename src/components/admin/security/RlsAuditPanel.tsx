@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, ShieldAlert, Loader2, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 interface ScenarioResult {
   table: string;
@@ -35,7 +36,7 @@ export function RlsAuditPanel() {
       if (failed === 0) toast.success(`Todos os ${resp?.summary.total} cenários passaram ✅`);
       else toast.error(`${failed} cenário(s) falharam ❌`);
     } catch (e) {
-      toast.error('Falha ao executar auditoria: ' + (e instanceof Error ? e.message : String(e)));
+      toast.error('Falha ao executar auditoria: ' + toErrorMessage(e));
     } finally {
       setLoading(false);
     }

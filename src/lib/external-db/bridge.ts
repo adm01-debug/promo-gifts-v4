@@ -26,6 +26,7 @@ import {
 } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId } from '@/lib/telemetry/requestId';
 import { recordKillSwitchHit } from './kill-switch-telemetry';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -135,7 +136,7 @@ async function decomposeBatchToIndividual(queries: BatchQuery[]): Promise<BatchR
       });
       return { success: true, data: { records: result.records, count: result.count } };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = toErrorMessage(e);
       logger.warn(`[external-db] Batch decompose: ${q.table} failed: ${msg}`);
       return { success: false, error: msg };
     }
@@ -289,7 +290,7 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
       );
       return { records: [], count: 0 };
     }
-    recordCall(false, null, err instanceof Error ? err.message : String(err));
+    recordCall(false, null, toErrorMessage(err));
     throw err;
   }
 }

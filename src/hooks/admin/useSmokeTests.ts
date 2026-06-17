@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface SmokeTestRow {
   ran_at: string;
@@ -97,7 +98,7 @@ export function useSmokeTests(): SmokeTestsData {
         setLastRun(new Date(latestRes.data[0].ran_at));
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = toErrorMessage(e);
       logger.warn(`[useSmokeTests] load failed: ${msg}`);
       setError(msg);
     } finally {
@@ -114,7 +115,7 @@ export function useSmokeTests(): SmokeTestsData {
       if (rpcError) throw new Error(rpcError.message);
       await load();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = toErrorMessage(e);
       logger.warn(`[useSmokeTests] runNow failed: ${msg}`);
       setError(msg);
     } finally {

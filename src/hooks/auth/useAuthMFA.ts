@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { authService } from '@/services/authService';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export function useAuthMFA() {
   const [currentAAL, setCurrentAAL] = useState<'aal1' | 'aal2' | null>(null);
@@ -14,8 +15,7 @@ export function useAuthMFA() {
       setNextAAL(data.nextAAL);
       setHasMFA(data.hasMFA);
     } catch (e) {
-      if (import.meta.env.DEV)
-        logger.warn('AAL fetch failed', e instanceof Error ? e.message : String(e));
+      if (import.meta.env.DEV) logger.warn('AAL fetch failed', toErrorMessage(e));
     }
   }, []);
 

@@ -17,6 +17,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 const MEM_TTL_MS = 60_000;
 const STORAGE_TTL_MS = 300_000;
@@ -271,9 +272,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
             shouldApply = Boolean(rpcResult);
           }
         } catch (e) {
-          logger.warn(
-            `[kill-switch-client] RPC rollout erro — assume 100%: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          logger.warn(`[kill-switch-client] RPC rollout erro — assume 100%: ${toErrorMessage(e)}`);
           shouldApply = true;
         }
       }
@@ -291,7 +290,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     return resolveEffectiveState(check, 'network');
   } catch (e) {
     logger.warn(
-      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${e instanceof Error ? e.message : String(e)}`,
+      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${toErrorMessage(e)}`,
     );
     return { enabled: true, source: 'fail-open' };
   }

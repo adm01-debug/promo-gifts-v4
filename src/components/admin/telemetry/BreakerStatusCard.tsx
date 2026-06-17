@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, ShieldAlert, ShieldQuestion, RefreshCw } from 'lucide-react';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 type BreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN' | 'UNKNOWN';
 
@@ -107,7 +108,7 @@ export function BreakerStatusCard() {
       const json = (await res.json()) as BreakerStatusResponse;
       setSnap(json);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toErrorMessage(e));
     } finally {
       setLoading(false);
     }
