@@ -58,6 +58,7 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   "backfill-image-dimensions",
   "asia-ingestion",
   "hash-product-images",
+  "generate-blurhashes",
 ]);
 
 function listFunctionDirs() {

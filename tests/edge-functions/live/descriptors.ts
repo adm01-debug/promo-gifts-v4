@@ -141,6 +141,12 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
     // No happy-path: downloads and hashes images — expensive and writes to DB.
     invalidInputs: [],
   },
+  "generate-blurhashes": {
+    skipCors: true,
+    // Auth is x-cron-secret header; called by pg_cron (verify_jwt=false).
+    // No happy-path: downloads images and writes blurhash strings — expensive.
+    invalidInputs: [],
+  },
 
   // ---------------- Geração de IA cara (gate COSTLY) ----------------
   "word-magic": {
