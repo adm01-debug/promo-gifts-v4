@@ -838,8 +838,19 @@ export function VariantStockTable({
           onBulkFavorite={selection.bulkFavorite}
           onBulkCompare={selection.bulkCompare}
           onBulkQuote={selection.bulkQuote}
+          onBulkCollection={() => {
+            if (selection.selectedCount === 0) return;
+            setBulkCollectionOpen(true);
+          }}
         />
       )}
+
+      <BulkAddToCollectionModal
+        open={bulkCollectionOpen}
+        onOpenChange={setBulkCollectionOpen}
+        rows={bulkCollectionRows}
+        onApplied={() => selection.clear()}
+      />
     </div>
   );
 }
