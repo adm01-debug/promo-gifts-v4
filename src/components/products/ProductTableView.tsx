@@ -30,6 +30,9 @@ import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 
 type SkeletonRow = { id: string; isSkeleton: true };
+function isSkeletonRow(row: Product | SkeletonRow): row is SkeletonRow {
+  return 'isSkeleton' in row;
+}
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
@@ -442,7 +445,7 @@ export const ProductTableView = memo(function ProductTableView({
               );
             }
 
-            if ('isSkeleton' in product && product.isSkeleton) {
+            if (isSkeletonRow(product)) {
               return (
                 <div
                   key={vr.key}

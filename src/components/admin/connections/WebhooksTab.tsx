@@ -217,7 +217,7 @@ export function WebhooksTab() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 font-medium">
                           {h.name}
-                          {!h.is_active && (
+                          {!h.active && (
                             <Badge
                               variant="outline"
                               className="border-destructive/20 bg-destructive/10 text-[10px] text-destructive"
@@ -264,7 +264,7 @@ export function WebhooksTab() {
                         )}
                       </div>
                       <div className="flex flex-col gap-1">
-                        {!h.is_active && (
+                        {!h.active && (
                           <Button
                             size="sm"
                             variant="outline"
