@@ -72,6 +72,8 @@ interface ProductCardImageProps {
   onVariantChange: (idx: number) => void;
   /** Whether to eagerly load the image (first visible cards) */
   priority?: boolean;
+  /** Blurhash da imagem primária para usar como placeholder de cor */
+  cardImageBlurhash?: string | null;
   /** Called when the user clicks a status/badge pill */
   onStatusClick?: (type: string) => void;
   /** Whether a color update is in progress (shows loading state) */
@@ -99,6 +101,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   safeVariantIdx,
   onImageLoad,
   priority = false,
+  cardImageBlurhash,
   onStatusClick,
   isUpdatingColor = false,
   categoryName,
@@ -132,25 +135,21 @@ export const ProductCardImage = memo(function ProductCardImage({
   // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
   // quando o backend devolve um payload parcial.
   const validStatuses = new Set(['in-stock', 'low-stock', 'out-of-stock']);
-  const stockQty = typeof product.stock === 'number' && Number.isFinite(product.stock)
-    ? product.stock
-    : null;
+  const stockQty =
+    typeof product.stock === 'number' && Number.isFinite(product.stock) ? product.stock : null;
   const rawStatus = validStatuses.has(product.stockStatus as string)
     ? product.stockStatus
     : stockQty !== null
       ? getCatalogStockStatus(stockQty)
       : undefined;
   const reconciledStatus =
-    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0
-      ? 'out-of-stock'
-      : rawStatus;
+    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0 ? 'out-of-stock' : rawStatus;
   const stockStatus: 'ok' | 'low' | 'unavailable' =
     reconciledStatus === 'out-of-stock'
       ? 'unavailable'
       : reconciledStatus === 'low-stock'
         ? 'low'
         : 'ok';
-
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
@@ -200,6 +199,7 @@ export const ProductCardImage = memo(function ProductCardImage({
                 }}
                 containerClassName="h-full w-full"
                 urlOriginal={deriveOriginalUrl(activeSrc)}
+                blurhash={cardImageBlurhash}
                 priority={priority}
                 onLoad={onImageLoad}
                 {...DEFAULT_IMAGE_CONFIG}
@@ -315,7 +315,6 @@ export const ProductCardImage = memo(function ProductCardImage({
               onClick={() => onStatusClick?.('urgency')}
             />
           )}
-
         </div>
       </div>
 

@@ -2,7 +2,17 @@
  * ProductCard — Main catalog card component.
  * Refactored: image section in ProductCardImage, FAB actions in ProductCardActions.
  */
-import { useState, useRef, useEffect, useMemo, memo, forwardRef, useCallback, lazy, Suspense } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  memo,
+  forwardRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from 'react';
 import { GenderBadge } from './GenderBadge';
 import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +28,9 @@ import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 // ── Lazy dialog imports — carregados apenas na primeira abertura ──────────────
 const AddToCollectionModal = lazy(() =>
-  import('@/components/collections/AddToCollectionModal').then((m) => ({ default: m.AddToCollectionModal })),
+  import('@/components/collections/AddToCollectionModal').then((m) => ({
+    default: m.AddToCollectionModal,
+  })),
 );
 const ProductQuickView = lazy(() =>
   import('./ProductQuickView').then((m) => ({ default: m.ProductQuickView })),
@@ -44,7 +56,9 @@ const CartSelectorDialog = lazy(() =>
   import('@/components/cart/CartSelectorDialog').then((m) => ({ default: m.CartSelectorDialog })),
 );
 const CartCompanyPickerDialog = lazy(() =>
-  import('@/components/cart/CartCompanyPickerDialog').then((m) => ({ default: m.CartCompanyPickerDialog })),
+  import('@/components/cart/CartCompanyPickerDialog').then((m) => ({
+    default: m.CartCompanyPickerDialog,
+  })),
 );
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
@@ -148,7 +162,7 @@ export const ProductCard = memo(
       [intelligenceBadges],
     );
     const [isHovered, setIsHovered] = useState(false);
-// ── Dialog states agrupados — 1 re-render por abertura de dialog ─────────
+    // ── Dialog states agrupados — 1 re-render por abertura de dialog ─────────
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
       | {
@@ -463,7 +477,14 @@ export const ProductCard = memo(
 
       // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
       return product.primary_image_url || product.og_image_url || product.images[0] || null;
-    }, [product, activeColorFilter, currentVariant, activeColorName, colorEnrichmentImage, liveVariants]);
+    }, [
+      product,
+      activeColorFilter,
+      currentVariant,
+      activeColorName,
+      colorEnrichmentImage,
+      liveVariants,
+    ]);
 
     // Caso de fallback para quando a imagem da cor não existe
     const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
@@ -589,12 +610,12 @@ export const ProductCard = memo(
             setImageLoaded(false);
           }}
           priority={priority}
+          cardImageBlurhash={product.primary_image_blurhash}
           onStatusClick={handleStatusClick}
           isUpdatingColor={isUpdatingColor}
           categoryName={leafCategory?.name}
           categoryPath={leafCategory?.path}
         />
-
 
         {/* Word Magic Badge — visível quando AI está ativa */}
         <WordMagicBadge visible={isAIActive} />
@@ -679,10 +700,6 @@ export const ProductCard = memo(
             </div>
           )}
 
-
-
-
-
           <div className="flex min-w-0 items-center justify-start gap-1.5">
             <div className="shrink-1 flex min-w-0 items-center gap-1">
               <span
@@ -702,7 +719,12 @@ export const ProductCard = memo(
           <h3
             data-testid="product-card-name"
             data-product-name={product.name}
-            className={cn("line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]", isAIActive ? "text-violet-700 dark:text-violet-300 group-hover:text-violet-600" : "text-foreground group-hover:text-primary")}
+            className={cn(
+              'line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]',
+              isAIActive
+                ? 'text-violet-700 group-hover:text-violet-600 dark:text-violet-300'
+                : 'text-foreground group-hover:text-primary',
+            )}
           >
             {displayName}
           </h3>
@@ -740,8 +762,7 @@ export const ProductCard = memo(
             const liveMatch =
               hasUserSelectedColor && activeColorName && liveVariants?.length
                 ? liveVariants.find(
-                    (v) =>
-                      (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
+                    (v) => (v.color_name || '').toLowerCase() === activeColorName.toLowerCase(),
                   )
                 : undefined;
             const liveStock = liveMatch?.stock_quantity ?? null;
@@ -788,7 +809,6 @@ export const ProductCard = memo(
                         ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
                         : displayStatus === 'low-stock'
                           ? 'bg-warning text-warning-foreground'
-
                           : getStockStatusColor(displayStatus),
                     )}
                   >

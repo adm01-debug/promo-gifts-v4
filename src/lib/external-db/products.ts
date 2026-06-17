@@ -38,6 +38,7 @@ type ImageRow = {
   supplier_code: string | null;
   alt_text: string | null;
   title_text: string | null;
+  blurhash: string | null;
 };
 type SupplierRow = { id: string; name: string; code: string };
 type ColorVariationRow = { id: string; name: string; slug: string; group_id: string };
@@ -307,7 +308,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
         table: 'product_images',
         operation: 'select',
         select:
-          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id',
+          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id, blurhash',
         filters: { is_active: true, product_id: chunk },
         limit: 1000,
         offset: 0,
@@ -412,6 +413,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: string | null;
       titleText: string | null;
       variantId: string | null;
+      blurhash: string | null;
     }>
   >();
 
@@ -432,6 +434,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: img.alt_text || null,
       titleText: img.title_text || null,
       variantId: img.variant_id || null,
+      blurhash: img.blurhash || null,
     });
   });
 
@@ -544,6 +547,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       if (primaryImage) {
         product.primary_image_url = primaryImage.url;
         product.image_url = primaryImage.url;
+        product.primary_image_blurhash = primaryImage.blurhash || null;
       }
       const ogImage =
         mainImages.find((img) => img.isOgImage) ||
