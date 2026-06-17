@@ -37,15 +37,45 @@ import { StockHealthBreakdownDrawer } from './StockHealthBreakdownDrawer';
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 import { calcHealthScore } from '@/lib/inventory/health-score';
 
+const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
+
+function readRiskPanelPref(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = window.localStorage.getItem(RISK_PANEL_STORAGE_KEY);
+    if (raw === null) return true;
+    return raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+/** Formata tempo relativo em PT-BR: "agora", "há 2 min", "há 1 h", "há 2 dias". */
+function formatRelativeTime(date: Date, now: number): string {
+  const diffSec = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+  if (diffSec < 30) return 'agora';
+  if (diffSec < 60) return `há ${diffSec} s`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `há ${diffH} h`;
+  const diffD = Math.floor(diffH / 24);
+  return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
+}
+
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
   const [futureStockDialogOpen, setFutureStockDialogOpen] = useState(false);
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
-  const [riskPanelOpen, setRiskPanelOpen] = useState(true);
+  // #14 — persiste preferência do painel de risco entre sessões.
+  const [riskPanelOpen, setRiskPanelOpen] = useState<boolean>(readRiskPanelPref);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
-  const lastRefreshRef = useRef<Date>(new Date());
+  // #11/#19 — lastRefresh como estado força re-render quando o tempo relativo
+  // muda; tick periódico atualiza "há X min" sem precisar de novo fetch.
+  const [lastRefresh, setLastRefresh] = useState<Date>(() => new Date());
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const {
     isLoading,
     isFetching,
@@ -69,27 +99,47 @@ export function StockDashboard() {
     dismissAlertsBySeverity,
   } = useVariantStock();
 
-  // Track last refresh time
+  // #19 — quando o fetch termina (transição isFetching true→false), marcamos
+  // o instante da última atualização. Mantido em useEffect porque o
+  // invalidateQueries é assíncrono e o estado real só estabiliza aqui.
   useEffect(() => {
-    if (!isFetching) lastRefreshRef.current = new Date();
+    if (!isFetching) setLastRefresh(new Date());
   }, [isFetching]);
 
-  // Keyboard shortcut: Ctrl+Shift+R to refresh stock data
+  // #11 — re-render a cada 30s para o label "há X min" ficar fresco.
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // #14 — persiste preferência sem bloquear render.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RISK_PANEL_STORAGE_KEY, riskPanelOpen ? '1' : '0');
+    } catch {
+      /* quota/private mode — silencioso */
+    }
+  }, [riskPanelOpen]);
+
   const handleRefresh = useCallback(() => {
     if (!isFetching && !isLoading) fetchStockData();
   }, [isFetching, isLoading, fetchStockData]);
 
+  // #12 — atalho Ctrl/⌘+Shift+S (Sync). Ctrl+Shift+R colidia com o
+  // hard-reload reservado do Chrome/Firefox.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
         e.preventDefault();
         handleRefresh();
-        toast({ title: '🔄 Atualizando Estoque...', description: 'Atalho: Ctrl+Shift+R' });
+        toast({ title: '🔄 Atualizando Estoque...', description: 'Atalho: Ctrl+Shift+S' });
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleRefresh, toast]);
+
+
 
   // Toast when new critical alerts appear after refresh
   useEffect(() => {
