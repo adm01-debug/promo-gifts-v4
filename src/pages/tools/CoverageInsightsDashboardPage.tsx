@@ -63,7 +63,10 @@ export default function CoverageInsightsDashboardPage() {
       .sort((a, b) => a.latest - b.latest);
   }, [snapshots]);
 
-  const critical = grouped.filter((item) => item.latest < threshold);
+  const critical = useMemo(
+    () => grouped.filter((item) => item.latest < threshold),
+    [grouped, threshold],
+  );
 
   return (
     <main className="space-y-6 p-6">
