@@ -34,11 +34,7 @@ const defaultProps = {
 };
 
 
-// TODO(test-debt): 4 testes falham — placeholder do componente mudou.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip("StockFilterToolbar", () => {
+describe("StockFilterToolbar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
