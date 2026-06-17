@@ -285,7 +285,7 @@ export function MockupLayoutButtons({
       // Save to history automatically
       onStaticGenerated?.(dataUrl, {
         locationName: technique?.locationName || activeArea?.name || undefined,
-        colorsCount: colorsCount,
+        colorsCount,
       });
       const data = buildApprovalData(dataUrl, 'static');
       setApprovalData(data);
