@@ -170,6 +170,7 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
         />
         {search && (
           <button
+            type="button"
             onClick={() => setSearch('')}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >

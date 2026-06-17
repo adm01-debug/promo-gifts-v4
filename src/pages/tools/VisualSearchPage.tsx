@@ -573,7 +573,7 @@ export default function VisualSearchPage() {
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-bold uppercase text-muted-foreground">Categoria</Label>
                     {selectedCategoryIds.length > 0 && (
-                      <button onClick={() => setSelectedCategoryIds([])} className="text-[10px] text-primary hover:underline">Limpar</button>
+                      <button type="button" onClick={() => setSelectedCategoryIds([])} className="text-[10px] text-primary hover:underline">Limpar</button>
                     )}
                   </div>
                   <div className="rounded-md border border-border/40 bg-background/80 focus-within:border-primary/50 transition-colors">
@@ -589,7 +589,7 @@ export default function VisualSearchPage() {
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cor Predominante</Label>
                     {selectedColorNames.length > 0 && (
-                      <button onClick={() => setColorSelection({ groups: [], variations: [], nuances: [] })} className="text-[10px] text-primary hover:underline">Limpar</button>
+                      <button type="button" onClick={() => setColorSelection({ groups: [], variations: [], nuances: [] })} className="text-[10px] text-primary hover:underline">Limpar</button>
                     )}
                   </div>
                   <ColorSwatchBar selection={colorSelection} onChange={setColorSelection} />
@@ -1107,7 +1107,8 @@ export default function VisualSearchPage() {
                                     <span className="font-bold uppercase tracking-tighter">Por que este match?</span>
                                   </div>
                                   <div className="flex gap-1">
-                                    <button 
+                                    <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleFeedback(true, product.id, product.relevance);
@@ -1117,7 +1118,8 @@ export default function VisualSearchPage() {
                                     >
                                       <CheckCircle2 className="h-3 w-3" />
                                     </button>
-                                    <button 
+                                    <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleFeedback(false, product.id, product.relevance);
