@@ -101,6 +101,13 @@ export function GalleryFullscreen({
                 transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
               }}
               draggable={false}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = '1';
+                  img.src = '/placeholder.svg';
+                }
+              }}
             />
           )}
 

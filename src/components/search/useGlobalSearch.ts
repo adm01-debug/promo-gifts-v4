@@ -423,7 +423,12 @@ export function useGlobalSearch() {
       }
 
       const rawTerm = (intent.keywords.join(' ') || searchQuery).toLowerCase();
-      const term = rawTerm.replace(/[%_\\(),.*]/g, '');
+      const term = rawTerm.replace(/[%_\\(),.*]/g, '').trim();
+      if (!term) {
+        setResults([]);
+        setSearchIntent(intent);
+        return;
+      }
       const wants = (t: SearchResultType) =>
         intent.type === t || intent.type === 'mixed' || intent.entities?.includes(t);
 
