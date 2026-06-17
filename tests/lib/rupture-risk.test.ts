@@ -35,10 +35,22 @@ describe('computeRuptureRisk — exemplo canônico do PO', () => {
 describe('computeRuptureRisk — pré-condições e degenerados', () => {
   const base = { current: 800, avgDailyDepletion: 120, targetQty: 500, horizonDays: 3 } as const;
 
-  it.each([0, -1, NaN, Infinity, -Infinity])('current inválido (%s) → não aplica', (current) => {
+  it.each([-1, NaN, Infinity, -Infinity])('current inválido (%s) → não aplica', (current) => {
     const r = computeRuptureRisk({ ...base, current });
     expect(r.atRisk).toBe(false);
     expect(r.projectedStock).toBeNull();
+  });
+
+  it('current === 0 (SKU esgotada) → risco máximo independente de alvo/média', () => {
+    const r = computeRuptureRisk({
+      current: 0,
+      avgDailyDepletion: null,
+      targetQty: null,
+      horizonDays: 3,
+    });
+    expect(r.atRisk).toBe(true);
+    expect(r.projectedStock).toBe(0);
+    expect(r.daysToTarget).toBe(0);
   });
 
   it.each([0, -5, NaN, Infinity, null, undefined])('avgDailyDepletion inválido → não aplica', (v) => {
