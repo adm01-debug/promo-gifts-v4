@@ -7,11 +7,20 @@
  *  - Status consolidado em 1 chip (substitui sequência redundante
  *    "0 / 1 mín · 0% · Esgotado · 1 esgotado").
  */
-import { AlertTriangle, CheckCircle2, ImageOff, Package, TrendingDown, Truck, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ImageOff,
+  Package,
+  TrendingDown,
+  Truck,
+  XCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { StockStatus } from '@/types/stock';
+import { calculateStockStatus, type StockStatus } from '@/types/stock';
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
@@ -153,41 +162,39 @@ export function RichColorSwatch({
 // StockStatusChip — chip único consolidado
 // ============================================
 
-const CHIP_CONFIG: Record<
-  StockStatus,
-  { label: string; classes: string; icon: React.ReactNode }
-> = {
-  in_stock: {
-    label: 'Saudável',
-    classes: 'border-success/30 bg-success/10 text-success',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-  low_stock: {
-    label: 'Baixo',
-    classes: 'border-warning/30 bg-warning/10 text-warning',
-    icon: <TrendingDown className="h-3 w-3" />,
-  },
-  critical: {
-    label: 'Crítico',
-    classes: 'border-destructive/30 bg-destructive/10 text-destructive',
-    icon: <AlertTriangle className="h-3 w-3" />,
-  },
-  out_of_stock: {
-    label: 'Esgotado',
-    classes: 'border-destructive/40 bg-destructive/15 text-destructive',
-    icon: <XCircle className="h-3 w-3" />,
-  },
-  overstocked: {
-    label: 'Excesso',
-    classes: 'border-primary/30 bg-primary/10 text-primary',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-  incoming: {
-    label: 'Chegando',
-    classes: 'border-primary/30 bg-primary/10 text-primary',
-    icon: <Truck className="h-3 w-3" />,
-  },
-};
+const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: React.ReactNode }> =
+  {
+    in_stock: {
+      label: 'Saudável',
+      classes: 'border-success/30 bg-success/10 text-success',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    low_stock: {
+      label: 'Baixo',
+      classes: 'border-warning/30 bg-warning/10 text-warning',
+      icon: <TrendingDown className="h-3 w-3" />,
+    },
+    critical: {
+      label: 'Crítico',
+      classes: 'border-destructive/30 bg-destructive/10 text-destructive',
+      icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    out_of_stock: {
+      label: 'Esgotado',
+      classes: 'border-destructive/40 bg-destructive/15 text-destructive',
+      icon: <XCircle className="h-3 w-3" />,
+    },
+    overstocked: {
+      label: 'Excesso',
+      classes: 'border-primary/30 bg-primary/10 text-primary',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    incoming: {
+      label: 'Chegando',
+      classes: 'border-primary/30 bg-primary/10 text-primary',
+      icon: <Truck className="h-3 w-3" />,
+    },
+  };
 
 export function StockStatusChip({
   status,
@@ -231,6 +238,69 @@ export function StockStatusChip({
             )}
             {inTransit > 0 && (
               <p className="text-primary">+{inTransit.toLocaleString('pt-BR')} em trânsito</p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+// ============================================
+// StockProgressBar — barra de progresso com tooltip de detalhe
+// ============================================
+
+export function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
+  const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
+
+  const PROGRESS_PRESENTATION: Record<string, { label: string; color: string }> = {
+    out_of_stock: { label: 'Esgotado', color: 'bg-destructive' },
+    critical: { label: 'Crítico', color: 'bg-destructive' },
+    low_stock: { label: 'Estoque baixo', color: 'bg-warning' },
+    in_stock: { label: 'OK', color: 'bg-success' },
+    incoming: { label: 'Chegando', color: 'bg-warning' },
+    overstocked: { label: 'OK', color: 'bg-success' },
+  };
+  const { label: statusLabel, color: progressColor } =
+    PROGRESS_PRESENTATION[calculateStockStatus(current, min)] ?? PROGRESS_PRESENTATION.in_stock;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="w-28 cursor-help space-y-0.5">
+            <Progress value={percentage} className={cn('h-2', progressColor)} />
+            <div className="flex justify-between">
+              <span
+                className={cn(
+                  'text-[9px] tabular-nums',
+                  percentage <= 25
+                    ? 'text-destructive'
+                    : percentage <= 100
+                      ? 'text-warning'
+                      : 'text-success',
+                )}
+              >
+                {Math.round(percentage)}%
+              </span>
+              <span className="text-[9px] text-muted-foreground">{statusLabel}</span>
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="space-y-1 text-xs">
+            <p>
+              <span className="font-semibold">{Math.round(percentage)}%</span> do estoque mínimo
+            </p>
+            <p className="text-muted-foreground">
+              Atual: <strong>{current.toLocaleString('pt-BR')}</strong> / Mínimo:{' '}
+              <strong>{min.toLocaleString('pt-BR')}</strong> un.
+            </p>
+            {current <= min && current > 0 && (
+              <p className="text-warning">⚠️ Abaixo do nível mínimo — considere reabastecer</p>
+            )}
+            {current <= 0 && (
+              <p className="text-destructive">🚨 Estoque zerado — reposição urgente necessária</p>
             )}
           </div>
         </TooltipContent>

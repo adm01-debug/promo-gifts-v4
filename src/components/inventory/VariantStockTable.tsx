@@ -13,7 +13,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import {
   Table,
   TableBody,
@@ -22,10 +21,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type ProductStockSummary, type VariantStock, type StockStatus, calculateStockStatus } from '@/types/stock';
-import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
+import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import {
+  VariantThumb,
+  RichColorSwatch,
+  StockStatusChip,
+  StockProgressBar,
+} from './VariantStockVisuals';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
@@ -62,7 +65,6 @@ const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   incoming: 'Chegando',
 };
 
-
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -80,67 +82,6 @@ function writeStored(key: string, value: string): void {
   }
 }
 
-function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
-  const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
-
-  // Derivação via fonte única (calculateStockStatus em '@/types/stock'); rótulo+cor
-  // co-localizados a esta tabela de inventário (admin).
-  const PROGRESS_PRESENTATION: Record<string, { label: string; color: string }> = {
-    out_of_stock: { label: 'Esgotado', color: 'bg-destructive' },
-    critical: { label: 'Crítico', color: 'bg-destructive' },
-    low_stock: { label: 'Estoque baixo', color: 'bg-warning' },
-    in_stock: { label: 'OK', color: 'bg-success' },
-    incoming: { label: 'Chegando', color: 'bg-warning' },
-    overstocked: { label: 'OK', color: 'bg-success' },
-  };
-  const { label: statusLabel, color: progressColor } =
-    PROGRESS_PRESENTATION[calculateStockStatus(current, min)] ?? PROGRESS_PRESENTATION.in_stock;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="w-28 cursor-help space-y-0.5">
-            <Progress value={percentage} className={cn('h-2', progressColor)} />
-            <div className="flex justify-between">
-              <span
-                className={cn(
-                  'text-[9px] tabular-nums',
-                  percentage <= 25
-                    ? 'text-destructive'
-                    : percentage <= 100
-                      ? 'text-warning'
-                      : 'text-success',
-                )}
-              >
-                {Math.round(percentage)}%
-              </span>
-              <span className="text-[9px] text-muted-foreground">{statusLabel}</span>
-            </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="space-y-1 text-xs">
-            <p>
-              <span className="font-semibold">{Math.round(percentage)}%</span> do estoque mínimo
-            </p>
-            <p className="text-muted-foreground">
-              Atual: <strong>{current.toLocaleString('pt-BR')}</strong> / Mínimo:{' '}
-              <strong>{min.toLocaleString('pt-BR')}</strong> un.
-            </p>
-            {current <= min && current > 0 && (
-              <p className="text-warning">⚠️ Abaixo do nível mínimo — considere reabastecer</p>
-            )}
-            {current <= 0 && (
-              <p className="text-destructive">🚨 Estoque zerado — reposição urgente necessária</p>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
 // ============================================
 // LINHA DE VARIANTE (COR/TAMANHO) — modo agrupado
 // ============================================
@@ -150,7 +91,11 @@ function StockProgressBar({ current, min }: { current: number; min: number; max?
  * `aria-hidden` no span vazio mantém o tabular layout sem ruído de leitor de tela.
  */
 function EmptyCell() {
-  return <span className="text-muted-foreground/30" aria-hidden="true">·</span>;
+  return (
+    <span className="text-muted-foreground/30" aria-hidden="true">
+      ·
+    </span>
+  );
 }
 
 // ============================================
@@ -282,7 +227,6 @@ function FlatVariantRow({
   );
 }
 
-
 // ============================================
 // PAGINAÇÃO
 // ============================================
@@ -307,7 +251,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
     const n = Number.parseInt(raw, 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
-  const [inlineSearch, setInlineSearch] = useState<string>(() => readStored(SEARCH_STORAGE_KEY, ''));
+  const [inlineSearch, setInlineSearch] = useState<string>(() =>
+    readStored(SEARCH_STORAGE_KEY, ''),
+  );
   const [searchParams] = useSearchParams();
   const prevProductsLenRef = useRef(products.length);
   const deepLinkConsumedRef = useRef<string | null>(null);
@@ -321,7 +267,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
   useEffect(() => {
     writeStored(PAGE_STORAGE_KEY, String(currentPage));
   }, [currentPage]);
-
 
   // Cleanup one-shot: purga chaves legadas do modo "Agrupar" (modelo antigo).
   useEffect(() => {
@@ -500,7 +445,6 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
         data-testid="variant-stock-toolbar"
         className="sticky top-0 z-20 flex flex-col items-start justify-between gap-2 bg-background pb-2 sm:flex-row sm:items-center"
       >
-
         {/* Inline Search */}
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -559,31 +503,28 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
           })}
         </div>
 
-
         <div className="flex items-center gap-2">
           {/* Pagination info */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
             {totalRows > PAGE_SIZE ? (
               <>
-                {safePage * PAGE_SIZE + 1}–
-                {Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de {totalRows} variações
+                {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de{' '}
+                {totalRows} variações
               </>
             ) : (
               <>
                 {totalRows} {totalRows === 1 ? 'variação' : 'variações'}
               </>
             )}
-
           </span>
 
           {/* Modelo de negócio: variação-first. Toggle de "Agrupar" removido. */}
         </div>
       </div>
 
-
       <div
         data-testid="variant-stock-scroll"
-        className="overflow-x-auto rounded-lg border [contain:content] [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
+        className="overflow-x-auto rounded-lg border [-webkit-overflow-scrolling:touch] [contain:content] [overscroll-behavior-x:contain]"
       >
         <Table className="min-w-[700px]">
           <TableHeader
@@ -595,7 +536,7 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Nível</TableHead>
-              
+
               <TableHead>Disponível</TableHead>
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
@@ -618,7 +559,9 @@ export function VariantStockTable({ products, className, isLoading }: VariantSto
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
                     </div>
-                    <p className="mb-1 font-semibold text-foreground">Nenhuma variação encontrada</p>
+                    <p className="mb-1 font-semibold text-foreground">
+                      Nenhuma variação encontrada
+                    </p>
                     <p className="max-w-xs text-sm">
                       {inlineSearch
                         ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
