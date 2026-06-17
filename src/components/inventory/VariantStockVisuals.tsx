@@ -269,7 +269,7 @@ export function StockProgressBar({ current, min }: { current: number; min: numbe
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="w-28 cursor-help space-y-0.5">
-            <Progress value={percentage} className={cn('h-2', progressColor)} />
+            <Progress value={percentage} className="h-2" indicatorClassName={progressColor} />
             <div className="flex justify-between">
               <span
                 className={cn(
