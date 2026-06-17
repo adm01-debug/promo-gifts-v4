@@ -191,6 +191,12 @@ function Metric({ icon: iconElement, label, value, badge, tone = 'default' }: Me
   );
 }
 
+const SOURCE_COUNT_CHIP_CLS: Record<'success' | 'warning' | 'muted', string> = {
+  success: 'border-success/30 bg-success/10 text-success hover:bg-success/15',
+  warning: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',
+  muted: 'border-border bg-muted text-muted-foreground hover:bg-muted/70',
+} as const;
+
 function SourceCountChip({
   icon: iconElement,
   tone,
@@ -207,11 +213,7 @@ function SourceCountChip({
   emphasize?: boolean;
 }) {
   const Icon = iconElement;
-  const cls = {
-    success: 'border-success/30 bg-success/10 text-success hover:bg-success/15',
-    warning: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',
-    muted: 'border-border bg-muted text-muted-foreground hover:bg-muted/70',
-  }[tone];
+  const cls = SOURCE_COUNT_CHIP_CLS[tone];
   return (
     <button
       type="button"
