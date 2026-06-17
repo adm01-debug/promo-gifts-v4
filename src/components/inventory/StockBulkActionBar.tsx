@@ -25,6 +25,7 @@ export function StockBulkActionBar({
   onBulkFavorite,
   onBulkCompare,
   onBulkQuote,
+  onBulkCollection,
 }: StockBulkActionBarProps) {
   const disabled = selectedCount === 0;
 
