@@ -69,7 +69,7 @@ export function mapLightweightToProduct(
     id: String(p.id),
     name: p.name,
     description: p.short_description || '',
-    shortDescription: p.short_description ?? null,
+    shortDescription: p.short_description ?? '',
     category_id: resolvedCategoryId,
     category_name: resolvedCategoryName,
     price: typeof price === 'number' ? price : 0,
