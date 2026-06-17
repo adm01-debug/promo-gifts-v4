@@ -15,7 +15,7 @@ export function useAuthMFA() {
       setNextAAL(data.nextAAL);
       setHasMFA(data.hasMFA);
     } catch (e) {
-      if (import.meta.env.DEV) logger.warn('AAL fetch failed', toErrorMessage(e));
+      logger.warn('AAL fetch failed', toErrorMessage(e));
     }
   }, []);
 
