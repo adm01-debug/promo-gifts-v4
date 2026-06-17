@@ -154,15 +154,19 @@ async function fetchCatalogPage(
   if (categories && categories.length > 0) filters.category_id = categories;
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
-  let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
+  let orderBy: { column: string; ascending?: boolean; nullsFirst?: boolean } = {
+    column: 'name',
+    ascending: true,
+  };
 
   if (sortBy) {
     switch (sortBy) {
       case 'price-asc':
-        orderBy = { column: 'sale_price', ascending: true };
+        // NULLS LAST: produtos sem preço não devem liderar a ordenação por preço.
+        orderBy = { column: 'sale_price', ascending: true, nullsFirst: false };
         break;
       case 'price-desc':
-        orderBy = { column: 'sale_price', ascending: false };
+        orderBy = { column: 'sale_price', ascending: false, nullsFirst: false };
         break;
       case 'newest':
         orderBy = { column: 'created_at', ascending: false };
@@ -175,6 +179,13 @@ async function fetchCatalogPage(
         break;
     }
   }
+
+  // BUG-PAGE-01 FIX: desempate determinístico por id em TODAS as ordenações.
+  // Sem ele, colunas não-únicas (created_at com até 591 empates, sale_price, stock
+  // com 1353 zerados, name com 891 nomes repetidos) + paginação OFFSET produzem
+  // ordem instável entre páginas → o mesmo produto pode DUPLICAR ou SUMIR no scroll.
+  const secondaryOrderBy = { column: 'id', ascending: true } as const;
+
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
 
@@ -184,6 +195,7 @@ async function fetchCatalogPage(
     select: PRODUCT_SELECT_LIGHTWEIGHT,
     filters,
     orderBy,
+    secondaryOrderBy,
     limit: CATALOG_PAGE_SIZE,
     offset: offset + i * CATALOG_PAGE_SIZE,
     ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
@@ -202,6 +214,7 @@ async function fetchCatalogPage(
         select: PRODUCT_SELECT_LIGHTWEIGHT,
         filters,
         orderBy,
+        secondaryOrderBy,
         limit: CATALOG_PAGE_SIZE,
         offset: offset + i * CATALOG_PAGE_SIZE,
         ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
