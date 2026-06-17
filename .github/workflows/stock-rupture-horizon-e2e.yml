@@ -18,9 +18,17 @@ permissions:
 
 jobs:
   e2e:
-    name: E2E — Risco de Ruptura (horizonte 3/7/15/30d)
+    name: ${{ matrix.spec }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        spec:
+          - stock-rupture-horizon.spec.ts
+          - stock-rupture-horizon-missing-data.spec.ts
+          - stock-rupture-horizon-missing-fields.spec.ts
+          - stock-rupture-horizon-matrix.spec.ts
     env:
       CI: 'true'
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
@@ -30,8 +38,7 @@ jobs:
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       E2E_BASE_URL: http://localhost:8080
-    outputs:
-      report_url: ${{ steps.report.outputs.url }}
+      PW_WORKERS: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,89 +49,114 @@ jobs:
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
-        id: pw-cache
         with:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run stock-rupture-horizon specs
+      - name: Run spec
         id: run
         run: |
           set +e
-          npx playwright test stock-rupture-horizon \
+          npx playwright test "e2e/routes/app/${{ matrix.spec }}" \
             --project=chromium-authed \
+            --workers=${PW_WORKERS} \
             --reporter=list,html,json 2>&1 | tee playwright-output.log
           echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
-        id: report
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-stock-rupture-horizon-${{ github.run_id }}
+          name: playwright-report-${{ matrix.spec }}-${{ github.run_id }}
           path: |
             playwright-report/
             test-results/
             playwright-output.log
           retention-days: 14
 
-      - name: Comentar PR com resumo + link do report
+      - name: Comentar PR (idempotente, agregado por marker)
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        env:
+          SPEC_NAME: ${{ matrix.spec }}
+          RUN_EXIT: ${{ steps.run.outputs.exit }}
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
+            const spec = process.env.SPEC_NAME;
+            const exitCode = process.env.RUN_EXIT;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const artifactName = `playwright-report-stock-rupture-horizon-${context.runId}`;
-            const exitCode = '${{ steps.run.outputs.exit }}';
+            const artifact = `playwright-report-${spec}-${context.runId}`;
 
-            // Tenta extrair sumário do JSON do Playwright
-            let summary = '';
+            // Parse results.json (Playwright json reporter)
+            let stats = { expected: 0, unexpected: 0, flaky: 0, skipped: 0, duration: 0 };
+            let failures = [];
+            let screenshots = [];
             try {
               const jsonPath = path.join('test-results', 'results.json');
               if (fs.existsSync(jsonPath)) {
                 const r = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-                const stats = r.stats || {};
-                summary = `\n- ✅ passed: **${stats.expected ?? 0}**\n- ❌ failed: **${stats.unexpected ?? 0}**\n- ⚠️ flaky: **${stats.flaky ?? 0}**\n- ⏭️ skipped: **${stats.skipped ?? 0}**\n- ⏱️ duration: **${Math.round((stats.duration ?? 0)/1000)}s**`;
-                const failures = (r.suites || []).flatMap(s => (s.specs || []).flatMap(sp => sp.tests.filter(t => t.status === 'unexpected').map(t => `  - ❌ \`${sp.title}\``)));
-                if (failures.length) summary += `\n\n**Falhas:**\n${failures.slice(0,10).join('\n')}`;
+                stats = r.stats || stats;
+                const walk = (suites) => (suites || []).forEach(s => {
+                  (s.specs || []).forEach(sp => sp.tests.forEach(t => {
+                    if (t.status === 'unexpected') {
+                      failures.push(`  - ❌ \`${sp.title}\``);
+                      (t.results || []).forEach(res => (res.attachments || []).forEach(a => {
+                        if (a.contentType?.startsWith('image/')) screenshots.push(a.name || a.path);
+                      }));
+                    }
+                  }));
+                  walk(s.suites);
+                });
+                walk(r.suites);
               }
             } catch (e) {
-              summary = `\n_(não foi possível parsear results.json: ${e.message})_`;
+              failures.push(`  - ⚠️ erro ao parsear results.json: ${e.message}`);
             }
 
-            const status = exitCode === '0' ? '✅ Sucesso' : '❌ Falha';
-            const body = [
-              `### 🧪 E2E — Risco de Ruptura (3/7/15/30d) — ${status}`,
-              summary,
-              ``,
-              `📂 **Relatório HTML:** baixe o artefato [\`${artifactName}\`](${runUrl}#artifacts) e abra \`playwright-report/index.html\`.`,
-              `🔗 **Run completa:** ${runUrl}`,
-            ].join('\n');
+            const status = exitCode === '0' ? '✅' : '❌';
+            const section = [
+              `<!-- spec:${spec} -->`,
+              `#### ${status} \`${spec}\``,
+              `- passed: **${stats.expected}** · failed: **${stats.unexpected}** · flaky: **${stats.flaky}** · skipped: **${stats.skipped}** · ${Math.round((stats.duration||0)/1000)}s`,
+              failures.length ? `\n**Falhas:**\n${failures.slice(0,10).join('\n')}` : '',
+              screenshots.length ? `\n🖼️ **${screenshots.length} screenshot(s) anexado(s)** — baixe o artefato para visualizar.` : '',
+              `\n📂 Artefato: \`${artifact}\` · 🔗 [Run #${context.runId}](${runUrl}#artifacts)`,
+            ].filter(Boolean).join('\n');
 
-            // Atualiza comentário existente se houver (idempotente)
+            const MARKER = '### 🧪 E2E — Risco de Ruptura';
+            const SPEC_MARKER = `<!-- spec:${spec} -->`;
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner, repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const marker = '### 🧪 E2E — Risco de Ruptura';
-            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            const existing = comments.find(c => c.body && c.body.startsWith(MARKER));
+
+            let body;
             if (existing) {
+              // Substitui ou adiciona a seção desta spec preservando as demais.
+              const re = new RegExp(`${SPEC_MARKER}[\\s\\S]*?(?=<!-- spec:|$)`, 'm');
+              body = re.test(existing.body)
+                ? existing.body.replace(re, section + '\n\n')
+                : existing.body.trimEnd() + '\n\n' + section + '\n';
               await github.rest.issues.updateComment({
                 owner: context.repo.owner, repo: context.repo.repo,
                 comment_id: existing.id, body,
               });
             } else {
+              body = `${MARKER} — relatório agregado\n\n${section}\n`;
               await github.rest.issues.createComment({
                 owner: context.repo.owner, repo: context.repo.repo,
                 issue_number: context.issue.number, body,
               });
             }
 
-      - name: Falhar job se testes quebraram
+      - name: Falhar se a spec quebrou
         if: steps.run.outputs.exit != '0'
         run: exit 1
