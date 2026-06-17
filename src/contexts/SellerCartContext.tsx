@@ -3,14 +3,7 @@
  * Expõe dados e operações do carrinho em toda a aplicação
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import {
   useSellerCarts,
   type SellerCart,

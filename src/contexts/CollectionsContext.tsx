@@ -1,4 +1,4 @@
-import React, { createContext, useContext, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, type ReactNode, useCallback } from 'react';
 import {
   useCollections,
   type Collection,
