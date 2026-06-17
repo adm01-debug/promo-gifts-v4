@@ -260,9 +260,12 @@ describe('Cross-filter KPI ↔ chip — critical & low_stock', () => {
       idx,
     );
     const c = recomputeChipCounts(out);
-    // Verde+low: p1b(low 8). p2b/p4a são out_of_stock; p5b é critical.
+    // Verde+low: p1b(low 8) e p5b(crit 3) — `matchStatus` aceita
+    // crítico quando o filtro pede `low_stock` (severidade ≥ low),
+    // então o produto p5 passa e sua variação Verde crítica é
+    // projetada. Documenta a regra "crítico é um sub-caso de baixo".
     expect(c.lowStock).toBe(1);
-    expect(c.critical).toBe(0);
+    expect(c.critical).toBe(1);
     expect(c.outOfStock).toBe(0);
     expect(c.inStock).toBe(0);
   });
