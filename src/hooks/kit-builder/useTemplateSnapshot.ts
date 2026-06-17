@@ -44,7 +44,7 @@ export function useTemplateSnapshot() {
           .eq('id', templateId)
           .select()
           .single();
-        if (error) throw error;
+        if (error || !data) throw error ?? new Error('Template not found');
         return data;
       }
       const { data, error } = await supabase
@@ -52,7 +52,7 @@ export function useTemplateSnapshot() {
         .insert(payload as never)
         .select()
         .single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to create template');
       return data;
     },
     onSuccess: () => {

@@ -255,7 +255,8 @@ export function ProductGallery({
                       const img = e.currentTarget;
                       if (!img.dataset.fallback) {
                         img.dataset.fallback = '1';
-                        img.src = allMedia[selectedIndex];
+                        img.src = '/placeholder.svg';
+                        setIsImageLoading(false);
                       }
                     }}
                   />

@@ -377,6 +377,7 @@ export default function Auth() {
             </div>
           ),
         });
+        return;
       }
 
       if (profileData && profileData.is_active === false) {

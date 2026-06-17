@@ -64,7 +64,7 @@ export function useKitVariants(kitMasterId: string | undefined) {
         total_price: kitState.totalPrice,
       };
       const { data, error } = await supabase.from('kit_variants').insert(payload).select().single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to create variant');
       return data;
     },
     onSuccess: () => {

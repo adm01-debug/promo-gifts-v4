@@ -123,7 +123,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     id: p.id,
     name: p.name,
     description: p.description || p.short_description || p.meta_description || null,
-    shortDescription: p.short_description ?? null,
+    shortDescription: p.short_description ?? '',
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),
@@ -143,7 +143,8 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: Boolean(p.is_featured || p.is_bestseller),
-    newArrival: Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
+    newArrival:
+      Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
     onSale: Boolean(p.is_on_sale),
     isKit: Boolean(p.is_kit),
     gender: p.gender || null,

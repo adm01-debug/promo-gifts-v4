@@ -138,8 +138,8 @@ export function useAccessSecurity() {
       .insert({ ip_address: ipAddress, list_type: 'allowlist', reason: reason || null })
       .select('id, ip_address, list_type, reason, expires_at, created_at')
       .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('IP já cadastrado');
+    if (error || !data) {
+      if ((error as { code?: string })?.code === '23505') toast.error('IP já cadastrado');
       else toast.error('Erro ao adicionar IP');
       return false;
     }
@@ -187,8 +187,8 @@ export function useAccessSecurity() {
       .insert({ country_code: countryCode, country_name: countryName })
       .select()
       .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('País já cadastrado');
+    if (error || !data) {
+      if ((error as { code?: string })?.code === '23505') toast.error('País já cadastrado');
       else toast.error('Erro ao adicionar país');
       return false;
     }

@@ -113,11 +113,11 @@ export function useCustomKitPersistence() {
           .eq('user_id', user.id)
           .select()
           .single();
-        if (error) throw error;
+        if (error || !data) throw error ?? new Error('Kit not found');
         return data;
       }
       const { data, error } = await supabase.from('custom_kits').insert(payload).select().single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to create kit');
       return data;
     },
     onSuccess: () => {

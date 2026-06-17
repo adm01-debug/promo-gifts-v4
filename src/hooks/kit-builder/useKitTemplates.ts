@@ -78,7 +78,7 @@ export function useKitTemplates() {
         })
         .select()
         .single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to clone template');
 
       // Increment usage_count (best-effort)
       try {

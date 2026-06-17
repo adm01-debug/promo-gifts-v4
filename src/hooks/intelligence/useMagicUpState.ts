@@ -605,7 +605,7 @@ CENÁRIO: ${effectivePrompt}`;
           .insert({ ...basePayload, user_id: user.id } satisfies TablesInsert<'magic_up_campaigns'>)
           .select('id, created_at, updated_at')
           .single();
-    if (result.error) {
+    if (result.error || !result.data) {
       toast.error('Erro ao salvar campanha');
       announceAlert('Erro ao salvar campanha');
       return;
@@ -717,7 +717,7 @@ CENÁRIO: ${effectivePrompt}`;
           .insert({ ...payload, user_id: user.id } satisfies TablesInsert<'magic_up_brand_kits'>)
           .select('id, updated_at')
           .single();
-    if (result.error) {
+    if (result.error || !result.data) {
       toast.error('Erro ao salvar Brand Kit');
       announceAlert('Erro ao salvar Brand Kit');
       return;
