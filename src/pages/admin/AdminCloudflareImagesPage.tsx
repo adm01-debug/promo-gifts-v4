@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Cloud,
@@ -182,20 +182,24 @@ export default function AdminCloudflareImagesPage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const stats = computeStats(images);
+  const stats = useMemo(() => computeStats(images), [images]);
 
-  const filtered = images.filter((img) => {
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'none' ? !img.cf_sync_status : img.cf_sync_status === statusFilter);
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      img.product_id.toLowerCase().includes(q) ||
-      (img.cf_image_id ?? '').toLowerCase().includes(q) ||
-      (img.url_cdn ?? '').toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
+  const filtered = useMemo(
+    () =>
+      images.filter((img) => {
+        const matchesStatus =
+          statusFilter === 'all' ||
+          (statusFilter === 'none' ? !img.cf_sync_status : img.cf_sync_status === statusFilter);
+        const q = search.toLowerCase();
+        const matchesSearch =
+          !q ||
+          img.product_id.toLowerCase().includes(q) ||
+          (img.cf_image_id ?? '').toLowerCase().includes(q) ||
+          (img.url_cdn ?? '').toLowerCase().includes(q);
+        return matchesStatus && matchesSearch;
+      }),
+    [images, statusFilter, search],
+  );
 
   const statCards = [
     { label: 'Total', value: stats.total, icon: ImageIcon, className: 'text-foreground' },
