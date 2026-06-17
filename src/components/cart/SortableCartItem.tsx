@@ -2,7 +2,7 @@
  * SortableCartItem - Draggable product card for seller carts
  */
 
-import { useState, useRef, memo } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -70,6 +70,25 @@ export const SortableCartItem = memo(function SortableCartItem({
   const [notesOpen, setNotesOpen] = useState(!!item.notes);
   const [localNotes, setLocalNotes] = useState(item.notes || '');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // C2: rascunho local da quantidade — permite digitar livremente (incl. multi-digito
+  // e estado vazio transitorio) e so persiste no commit (blur/Enter), evitando uma
+  // escrita no banco + invalidacao por tecla (ex.: '500' gerava 3 writes: 5, 50, 500).
+  const [qtyDraft, setQtyDraft] = useState(String(item.quantity));
+  useEffect(() => {
+    setQtyDraft(String(item.quantity));
+  }, [item.quantity]);
+
+  const commitQty = () => {
+    const val = parseInt(qtyDraft, 10);
+    if (isNaN(val) || val < 1) {
+      setQtyDraft(String(item.quantity)); // reverte entrada vazia/invalida
+      return;
+    }
+    const clamped = Math.min(val, 100000);
+    if (clamped !== item.quantity) onUpdateQuantity(item.id, clamped);
+    setQtyDraft(String(clamped));
+  };
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -363,13 +382,12 @@ export const SortableCartItem = memo(function SortableCartItem({
               <input
                 type="number"
                 data-testid="cart-qty-input"
-                value={item.quantity}
+                value={qtyDraft}
                 onFocus={(e) => e.target.select()}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val) && val > 0) {
-                    onUpdateQuantity(item.id, Math.min(val, 100000));
-                  }
+                onChange={(e) => setQtyDraft(e.target.value)}
+                onBlur={commitQty}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
                 }}
                 className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
