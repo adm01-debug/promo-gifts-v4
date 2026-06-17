@@ -15,6 +15,12 @@ interface ExtendedNotificationOptions extends NotificationOptions {
   vibrate?: number[];
 }
 
+const SECURITY_ALERT_ICONS: Record<string, string> = {
+  info: '🔵',
+  warning: '🟡',
+  critical: '🔴',
+} as const;
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [state, setState] = useState<NotificationPermissionState>({
@@ -87,13 +93,7 @@ export function usePushNotifications() {
 
   const showSecurityAlert = useCallback(
     (title: string, message: string, type: 'info' | 'warning' | 'critical' = 'warning') => {
-      const icons: Record<string, string> = {
-        info: '🔵',
-        warning: '🟡',
-        critical: '🔴',
-      };
-
-      return showNotification(`${icons[type]} ${title}`, {
+      return showNotification(`${SECURITY_ALERT_ICONS[type]} ${title}`, {
         body: message,
         tag: 'security-alert',
         requireInteraction: type === 'critical',

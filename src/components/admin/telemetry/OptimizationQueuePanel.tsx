@@ -40,38 +40,39 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const OPTIMIZATION_STATUS_CONFIG: Record<
+  OptimizationItem['status'],
+  { label: string; cls: string; Icon: typeof Clock }
+> = {
+  pending: { label: 'Pendente', cls: 'bg-muted text-muted-foreground', Icon: Clock },
+  running: {
+    label: 'Executando',
+    cls: 'bg-primary/15 text-primary border-primary/30',
+    Icon: Loader2,
+  },
+  done: {
+    label: 'Concluído',
+    cls: 'bg-success/15 text-success border-success/30',
+    Icon: CheckCircle2,
+  },
+  failed: {
+    label: 'Falhou',
+    cls: 'bg-destructive/15 text-destructive border-destructive/30',
+    Icon: AlertTriangle,
+  },
+  blocked: {
+    label: 'Bloqueado',
+    cls: 'bg-warning/15 text-warning border-warning/30',
+    Icon: AlertTriangle,
+  },
+  skipped: { label: 'Ignorado', cls: 'bg-muted text-muted-foreground', Icon: Clock },
+};
+
 function StatusBadge({ status }: { status: OptimizationItem['status'] }) {
-  const map: Record<
-    OptimizationItem['status'],
-    { label: string; cls: string; Icon: typeof Clock }
-  > = {
-    pending: { label: 'Pendente', cls: 'bg-muted text-muted-foreground', Icon: Clock },
-    running: {
-      label: 'Executando',
-      cls: 'bg-primary/15 text-primary border-primary/30',
-      Icon: Loader2,
-    },
-    done: {
-      label: 'Concluído',
-      cls: 'bg-success/15 text-success border-success/30',
-      Icon: CheckCircle2,
-    },
-    failed: {
-      label: 'Falhou',
-      cls: 'bg-destructive/15 text-destructive border-destructive/30',
-      Icon: AlertTriangle,
-    },
-    blocked: {
-      label: 'Bloqueado',
-      cls: 'bg-warning/15 text-warning border-warning/30',
-      Icon: AlertTriangle,
-    },
-    skipped: { label: 'Ignorado', cls: 'bg-muted text-muted-foreground', Icon: Clock },
-  };
   // Fallback defensivo para status fora do union (pode acontecer com dados
   // legados, hooks mockados parcialmente em testes, ou novos status no DB
   // antes do client ser atualizado).
-  const entry = map[status] ?? {
+  const entry = OPTIMIZATION_STATUS_CONFIG[status] ?? {
     label: String(status ?? '—'),
     cls: 'bg-muted text-muted-foreground',
     Icon: Clock,

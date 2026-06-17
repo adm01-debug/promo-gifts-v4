@@ -1,5 +1,10 @@
 import type { SecretStatus } from '@/hooks/admin';
 
+const BITRIX24_DOMAIN_RE = /^[a-z0-9-]+\.bitrix24\.[a-z.]+$/i;
+const POSITIVE_INT_RE = /^[1-9][0-9]*$/;
+const ALPHANUMERIC_TOKEN_RE = /^[a-z0-9]{10,60}$/i;
+const WHITESPACE_RE = /\s/;
+
 export interface ValidatorRule {
   /** Returns true if the value is a valid format. */
   test: (v: string) => boolean;
@@ -103,17 +108,17 @@ export const SECRET_VALIDATORS: Record<string, ValidatorRule> = {
     minLength: 60,
   },
   BITRIX24_DOMAIN: {
-    test: (v) => /^[a-z0-9-]+\.bitrix24\.[a-z.]+$/i.test(v) && !v.includes('://'),
+    test: (v) => BITRIX24_DOMAIN_RE.test(v) && !v.includes('://'),
     message: 'Domínio sem https://, ex: minhaempresa.bitrix24.com.br',
     hint: 'Apenas o host (sem https://, sem barra)',
   },
   BITRIX24_USER_ID: {
-    test: (v) => /^[1-9][0-9]*$/.test(v),
+    test: (v) => POSITIVE_INT_RE.test(v),
     message: 'User ID deve ser um inteiro positivo.',
     hint: 'Ex: 1',
   },
   BITRIX24_TOKEN: {
-    test: (v) => /^[a-z0-9]{10,60}$/i.test(v),
+    test: (v) => ALPHANUMERIC_TOKEN_RE.test(v),
     message: 'Token deve ser alfanumérico (10–60 caracteres).',
   },
   N8N_BASE_URL: {
@@ -129,7 +134,7 @@ export const SECRET_VALIDATORS: Record<string, ValidatorRule> = {
     minLength: 15,
   },
   N8N_API_KEY: {
-    test: (v) => v.length >= 20 && !/\s/.test(v),
+    test: (v) => v.length >= 20 && !WHITESPACE_RE.test(v),
     message: 'API Key deve ter ≥20 chars e nenhum espaço.',
     minLength: 20,
   },

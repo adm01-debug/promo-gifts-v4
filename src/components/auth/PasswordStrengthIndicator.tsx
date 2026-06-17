@@ -10,6 +10,11 @@ interface PasswordStrengthIndicatorProps {
   onStrengthChange?: (isStrong: boolean) => void;
 }
 
+const HAS_UPPERCASE_RE = /[A-Z]/;
+const HAS_LOWERCASE_RE = /[a-z]/;
+const HAS_DIGIT_RE = /[0-9]/;
+const HAS_SPECIAL_RE = /[!@#$%^&*(),.?":{}|<>]/;
+
 interface StrengthCriteria {
   label: string;
   met: boolean;
@@ -39,10 +44,10 @@ export function PasswordStrengthIndicator({
   const analysis = useMemo(() => {
     const criteria: StrengthCriteria[] = [
       { label: 'Mínimo 8 caracteres', met: password.length >= 8 },
-      { label: 'Letra maiúscula', met: /[A-Z]/.test(password) },
-      { label: 'Letra minúscula', met: /[a-z]/.test(password) },
-      { label: 'Número', met: /[0-9]/.test(password) },
-      { label: 'Caractere especial (!@#$%^&*)', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+      { label: 'Letra maiúscula', met: HAS_UPPERCASE_RE.test(password) },
+      { label: 'Letra minúscula', met: HAS_LOWERCASE_RE.test(password) },
+      { label: 'Número', met: HAS_DIGIT_RE.test(password) },
+      { label: 'Caractere especial (!@#$%^&*)', met: HAS_SPECIAL_RE.test(password) },
     ];
 
     const score = criteria.filter((c) => c.met).length;

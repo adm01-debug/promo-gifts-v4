@@ -35,17 +35,21 @@ export function useProductInsights(productId?: string, productSku?: string) {
         };
       }
 
-      const { count: viewsCount } = await untypedFrom('product_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_sku', productSku);
-
-      const { data: quoteItems, count: quotesCount } = await untypedFrom('quote_items')
-        .select('quantity, quote_id', { count: 'exact' })
-        .eq('product_sku', productSku);
-
-      const { data: orderItems, count: ordersCount } = await untypedFrom('order_items')
-        .select('quantity, order_id', { count: 'exact' })
-        .eq('product_sku', productSku);
+      const [
+        { count: viewsCount },
+        { data: quoteItems, count: quotesCount },
+        { data: orderItems, count: ordersCount },
+      ] = await Promise.all([
+        untypedFrom('product_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('product_sku', productSku),
+        untypedFrom('quote_items')
+          .select('quantity, quote_id', { count: 'exact' })
+          .eq('product_sku', productSku),
+        untypedFrom('order_items')
+          .select('quantity, order_id', { count: 'exact' })
+          .eq('product_sku', productSku),
+      ]);
 
       const allQuantities = [
         ...(quoteItems || []).map((q) => q.quantity),
@@ -102,11 +106,18 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
       const recentActivity: ProductInsight['recentActivity'] = [];
 
-      const { data: recentViews } = await untypedFrom('product_views')
-        .select('created_at, seller_id')
-        .eq('product_sku', productSku)
-        .order('created_at', { ascending: false })
-        .limit(3);
+      const [{ data: recentViews }, { data: recentQuotes }] = await Promise.all([
+        untypedFrom('product_views')
+          .select('created_at, seller_id')
+          .eq('product_sku', productSku)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        untypedFrom('quote_items')
+          .select('created_at, quantity')
+          .eq('product_sku', productSku)
+          .order('created_at', { ascending: false })
+          .limit(3),
+      ]);
 
       (recentViews || []).forEach((v) => {
         recentActivity.push({
@@ -115,12 +126,6 @@ export function useProductInsights(productId?: string, productSku?: string) {
           details: 'Visualizado por um vendedor',
         });
       });
-
-      const { data: recentQuotes } = await untypedFrom('quote_items')
-        .select('created_at, quantity')
-        .eq('product_sku', productSku)
-        .order('created_at', { ascending: false })
-        .limit(3);
 
       (recentQuotes || []).forEach((q) => {
         recentActivity.push({

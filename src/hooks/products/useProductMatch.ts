@@ -80,6 +80,12 @@ function findComplementaryKeywords(name: string): string[] {
   return complements;
 }
 
+const MATCH_TAG_LABELS: Record<string, string> = {
+  publicoAlvo: 'Público-alvo',
+  datasComemorativas: 'Data comemorativa',
+  endomarketing: 'Endomarketing',
+} as const;
+
 function calculateMatchScore(
   source: Product,
   candidate: Product,
@@ -99,19 +105,13 @@ function calculateMatchScore(
     'datasComemorativas',
     'endomarketing',
   ];
-  const tagLabels: Record<string, string> = {
-    publicoAlvo: 'Público-alvo',
-    datasComemorativas: 'Data comemorativa',
-    endomarketing: 'Endomarketing',
-  };
-
   for (const tagCat of tagCategories) {
     const srcTags = (source.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
     const candTags = (candidate.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
     const shared = srcTags.filter((t) => t && candTags.includes(t));
     if (shared.length > 0) {
       score += 10 * shared.length;
-      reasons.push(`${tagLabels[tagCat]}: ${shared.join(', ')}`);
+      reasons.push(`${MATCH_TAG_LABELS[tagCat]}: ${shared.join(', ')}`);
     }
   }
 

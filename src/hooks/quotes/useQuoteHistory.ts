@@ -16,6 +16,15 @@ export interface QuoteHistoryEntry {
   created_at: string;
 }
 
+const QUOTE_STATUS_LABELS: Record<string, string> = {
+  draft: 'Rascunho',
+  pending: 'Pendente',
+  sent: 'Enviado',
+  approved: 'Aprovado',
+  rejected: 'Rejeitado',
+  expired: 'Expirado',
+} as const;
+
 export function useQuoteHistory() {
   const { user } = useAuth();
   const [history, setHistory] = useState<QuoteHistoryEntry[]>([]);
@@ -84,18 +93,10 @@ export function useQuoteHistory() {
   };
 
   const logStatusChanged = async (quoteId: string, oldStatus: string, newStatus: string) => {
-    const statusLabels: Record<string, string> = {
-      draft: 'Rascunho',
-      pending: 'Pendente',
-      sent: 'Enviado',
-      approved: 'Aprovado',
-      rejected: 'Rejeitado',
-      expired: 'Expirado',
-    };
     return addHistoryEntry(
       quoteId,
       'status_changed',
-      `Status alterado de "${statusLabels[oldStatus] || oldStatus}" para "${statusLabels[newStatus] || newStatus}"`,
+      `Status alterado de "${QUOTE_STATUS_LABELS[oldStatus] || oldStatus}" para "${QUOTE_STATUS_LABELS[newStatus] || newStatus}"`,
       { fieldChanged: 'status', oldValue: oldStatus, newValue: newStatus },
     );
   };

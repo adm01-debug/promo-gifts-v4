@@ -15,6 +15,9 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NUMERIC_ID_RE = /^\d+$/;
+
 interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -91,8 +94,8 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
       let currentPath = '';
       pathParts.forEach((part, index) => {
         currentPath += `/${part}`;
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part);
-        const isNumericId = /^\d+$/.test(part);
+        const isUuid = UUID_RE.test(part);
+        const isNumericId = NUMERIC_ID_RE.test(part);
 
         if (isUuid || isNumericId) {
           const prevPart = pathParts[index - 1];

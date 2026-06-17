@@ -186,6 +186,13 @@ export function ActionResultAnnouncer({ result }: ActionResultAnnouncerProps) {
   return null;
 }
 
+const ACTION_MESSAGES: Record<'loaded' | 'filtered' | 'sorted' | 'updated', string> = {
+  loaded: 'carregados',
+  filtered: 'filtrados',
+  sorted: 'ordenados',
+  updated: 'atualizados',
+} as const;
+
 /**
  * Component for announcing list/table updates
  */
@@ -203,15 +210,8 @@ export function ListUpdateAnnouncer({
   const { announceStatus } = useAriaLive();
 
   useEffect(() => {
-    const actionMessages = {
-      loaded: 'carregados',
-      filtered: 'filtrados',
-      sorted: 'ordenados',
-      updated: 'atualizados',
-    };
-
     const itemLabel = count === 1 ? itemName : `${itemName}s`;
-    announceStatus(`${count} ${itemLabel} ${actionMessages[action]}`);
+    announceStatus(`${count} ${itemLabel} ${ACTION_MESSAGES[action]}`);
   }, [count, itemName, action, announceStatus]);
 
   return null;

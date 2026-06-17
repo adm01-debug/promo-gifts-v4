@@ -7,6 +7,14 @@
  *  - Return a list of human-readable change descriptions for UI feedback
  */
 
+const WHITESPACE_RE = /\s/;
+const WHITESPACE_GLOBAL_RE = /\s+/g;
+const BEARER_PREFIX_RE = /^Bearer\s+(.+)$/i;
+const PROTOCOL_RE = /^https?:\/\//i;
+const TRAILING_SLASHES_RE = /\/+$/;
+const NON_DIGITS_RE = /\D+/g;
+const HMAC_SECRET_NAME_RE = /_HMAC_|_SECRET_|_HMAC$|_SECRET$/;
+
 export interface NormalizationResult {
   value: string;
   changes: string[];
@@ -31,15 +39,15 @@ function trimEdges(s: string, changes: string[]): string {
 }
 
 function stripAllWhitespace(s: string, changes: string[]): string {
-  if (/\s/.test(s)) {
+  if (WHITESPACE_RE.test(s)) {
     changes.push('quebras de linha removidas');
-    return s.replace(/\s+/g, '');
+    return s.replace(WHITESPACE_GLOBAL_RE, '');
   }
   return s;
 }
 
 function stripBearer(s: string, changes: string[]): string {
-  const m = s.match(/^Bearer\s+(.+)$/i);
+  const m = s.match(BEARER_PREFIX_RE);
   if (m) {
     changes.push('prefixo Bearer removido');
     return m[1];
@@ -107,10 +115,10 @@ function normalizeBitrixDomain(raw: string): NormalizationResult {
   let v = trimEdges(raw, changes);
   v = stripQuotes(v, changes);
   const before = v;
-  v = v.replace(/^https?:\/\//i, '');
+  v = v.replace(PROTOCOL_RE, '');
   if (v !== before) changes.push('protocolo removido');
   if (v.endsWith('/')) {
-    v = v.replace(/\/+$/, '');
+    v = v.replace(TRAILING_SLASHES_RE, '');
     changes.push('barra final removida');
   }
   const lower = v.toLowerCase();
@@ -121,7 +129,7 @@ function normalizeBitrixDomain(raw: string): NormalizationResult {
 function normalizeDigitsOnly(raw: string): NormalizationResult {
   const changes: string[] = [];
   const v = trimEdges(raw, changes);
-  const stripped = v.replace(/\D+/g, '');
+  const stripped = v.replace(NON_DIGITS_RE, '');
   if (stripped !== v) changes.push('caracteres não-numéricos removidos');
   return { value: stripped, changes };
 }
@@ -183,6 +191,6 @@ export function normalizeSecret(name: string, raw: string): NormalizationResult 
   if (name === 'N8N_API_KEY') return normalizeJwt(raw);
   if (name === 'MCP_SERVER_URL') return normalizeMcpUrl(raw);
   if (name === 'MCP_SHARED_SECRET') return normalizeSecretToken(raw);
-  if (/_HMAC_|_SECRET_|_HMAC$|_SECRET$/.test(name)) return normalizeSecretToken(raw);
+  if (HMAC_SECRET_NAME_RE.test(name)) return normalizeSecretToken(raw);
   return normalizeDefault(raw);
 }

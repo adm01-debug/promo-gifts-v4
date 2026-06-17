@@ -280,18 +280,18 @@ export function SmartSuggestions({
 // ACTION HISTORY PANEL
 // ============================================
 
+const ACTION_HISTORY_ICONS: Record<string, typeof Plus> = {
+  add: Plus,
+  remove: Trash2,
+  qty: Package,
+  move: MoveRight,
+  duplicate: Copy,
+  clear: Eraser,
+} as const;
+
 export function ActionHistoryPanel({ cartId }: { cartId: string }) {
   const history = getActionHistory(cartId);
   if (history.length === 0) return null;
-
-  const icons: Record<string, typeof Plus> = {
-    add: Plus,
-    remove: Trash2,
-    qty: Package,
-    move: MoveRight,
-    duplicate: Copy,
-    clear: Eraser,
-  };
 
   return (
     <Collapsible>
@@ -308,7 +308,7 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
       <CollapsibleContent className="pt-2">
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {history.slice(0, 10).map((action, i) => {
-            const Icon = icons[action.type] || Package;
+            const Icon = ACTION_HISTORY_ICONS[action.type] || Package;
             return (
               <div
                 key={i}

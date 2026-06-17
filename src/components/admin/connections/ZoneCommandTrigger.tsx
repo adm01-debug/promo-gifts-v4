@@ -6,13 +6,16 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+const MAC_PLATFORM_RE = /Mac|iPhone|iPad/i;
+const IS_MAC = typeof navigator !== 'undefined' && MAC_PLATFORM_RE.test(navigator.platform);
+
 interface ZoneCommandTriggerProps {
   onOpen: () => void;
   className?: string;
 }
 
 export function ZoneCommandTrigger({ onOpen, className }: ZoneCommandTriggerProps) {
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform);
+  const isMac = IS_MAC;
   const shortcut = isMac ? '⌘K' : 'Ctrl+K';
 
   return (

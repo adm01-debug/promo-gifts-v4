@@ -43,6 +43,13 @@ interface FutureStockDialogProps {
   entries: FutureStockEntry[];
 }
 
+const STATUS_SORT_ORDER: Record<string, number> = {
+  confirmed: 0,
+  in_transit: 1,
+  pending: 2,
+  partial: 3,
+} as const;
+
 type SortField = 'date' | 'quantity' | 'product' | 'status';
 type SortDir = 'asc' | 'desc';
 type StatusFilter = 'all' | 'confirmed' | 'pending' | 'in_transit';
@@ -137,6 +144,20 @@ function getWeekLabel(dateStr: string): string {
   return '🔮 Longo Prazo';
 }
 
+const KPI_CARD_STYLES = {
+  default: 'bg-muted/50 border-border',
+  primary: 'bg-primary/5 border-primary/15',
+  success: 'bg-success/5 border-success/15',
+  warning: 'bg-warning/5 border-warning/15',
+} as const;
+
+const KPI_ICON_STYLES = {
+  default: 'text-muted-foreground bg-muted/50',
+  primary: 'text-primary bg-primary/10',
+  success: 'text-success bg-success/10',
+  warning: 'text-warning bg-warning/10',
+} as const;
+
 // ============================================
 // KPI CARD
 // ============================================
@@ -153,25 +174,21 @@ function KpiCard({
   icon: typeof Package;
   variant?: 'default' | 'primary' | 'success' | 'warning';
 }) {
-  const styles = {
-    default: 'bg-muted/50 border-border',
-    primary: 'bg-primary/5 border-primary/15',
-    success: 'bg-success/5 border-success/15',
-    warning: 'bg-warning/5 border-warning/15',
-  };
-  const iconStyles = {
-    default: 'text-muted-foreground bg-muted/50',
-    primary: 'text-primary bg-primary/10',
-    success: 'text-success bg-success/10',
-    warning: 'text-warning bg-warning/10',
-  };
   const Icon = iconComponent;
 
   return (
-    <div className={cn('rounded-xl border p-3 transition-all hover:shadow-sm', styles[variant])}>
+    <div
+      className={cn(
+        'rounded-xl border p-3 transition-all hover:shadow-sm',
+        KPI_CARD_STYLES[variant],
+      )}
+    >
       <div className="mb-2 flex items-center gap-2">
         <div
-          className={cn('flex h-7 w-7 items-center justify-center rounded-lg', iconStyles[variant])}
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-lg',
+            KPI_ICON_STYLES[variant],
+          )}
         >
           <Icon className="h-3.5 w-3.5" />
         </div>
@@ -394,10 +411,7 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
           cmp = (a.productName || '').localeCompare(b.productName || '');
           break;
         case 'status': {
-          const order = { confirmed: 0, in_transit: 1, pending: 2, partial: 3 };
-          cmp =
-            (order[a.status as keyof typeof order] ?? 4) -
-            (order[b.status as keyof typeof order] ?? 4);
+          cmp = (STATUS_SORT_ORDER[a.status] ?? 4) - (STATUS_SORT_ORDER[b.status] ?? 4);
           break;
         }
       }

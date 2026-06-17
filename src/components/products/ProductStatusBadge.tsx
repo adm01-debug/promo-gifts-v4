@@ -26,6 +26,12 @@ interface PackagingMetadata {
   packagingContext?: 'always' | 'with_customization' | 'without_customization' | null;
 }
 
+const PACKAGING_CONTEXT_LABELS: Record<string, string> = {
+  always: 'Sempre disponível',
+  with_customization: 'Com personalização',
+  without_customization: 'Sem personalização',
+} as const;
+
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
   urgencyType?: UrgencyType;
@@ -264,11 +270,6 @@ export function ProductStatusBadge({
         const { packingType, boxWidthMm, boxHeightMm, boxLengthMm, packagingContext } =
           packagingMetadata || {};
         const dimensions = [boxWidthMm, boxHeightMm, boxLengthMm].filter(Boolean).join(' × ');
-        const contextLabels: Record<string, string> = {
-          always: 'Sempre disponível',
-          with_customization: 'Com personalização',
-          without_customization: 'Sem personalização',
-        };
         return (
           <div className="space-y-1.5 p-1 text-sm">
             <div className="flex items-center gap-2">
@@ -286,10 +287,10 @@ export function ProductStatusBadge({
                   <span className="font-medium text-foreground">Dimensões:</span> {dimensions} mm
                 </p>
               )}
-              {packagingContext && contextLabels[packagingContext] && (
+              {packagingContext && PACKAGING_CONTEXT_LABELS[packagingContext] && (
                 <p>
                   <span className="font-medium text-foreground">Regra:</span>{' '}
-                  {contextLabels[packagingContext]}
+                  {PACKAGING_CONTEXT_LABELS[packagingContext]}
                 </p>
               )}
             </div>
