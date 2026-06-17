@@ -230,7 +230,7 @@ export function AnimatedContainer({ children, className, delay = 0 }: AnimatedCo
   return (
     <div
       className={cn('animate-fade-in-up', className)}
-      style={delay > 0 ? { animationDelay: delay + 's' } : undefined}
+      style={delay > 0 ? { animationDelay: `${delay}s` } : undefined}
     >
       {children}
     </div>

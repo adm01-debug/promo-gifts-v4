@@ -81,7 +81,7 @@ export function resolveAllMatchingColors(
       addMatch(matches[0], groupSlug);
     } else if (COLOR_GROUP_HEX[groupSlug]) {
       // No color data match but we know this group
-      const key = groupSlug + '|fallback';
+      const key = `${groupSlug}|fallback`;
       if (!seen.has(key)) {
         seen.add(key);
         results.push({
