@@ -27,8 +27,10 @@ export const authService = {
 
   async fetchAAL() {
     const supabase = await getSupabaseClient();
-    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    const { data: factorsData } = await supabase.auth.mfa.listFactors();
+    const [{ data: aalData }, { data: factorsData }] = await Promise.all([
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      supabase.auth.mfa.listFactors(),
+    ]);
     return {
       currentAAL: (aalData?.currentLevel ?? null) as 'aal1' | 'aal2' | null,
       nextAAL: (aalData?.nextLevel ?? null) as 'aal1' | 'aal2' | null,

@@ -40,6 +40,12 @@ interface ColorSwatchProps {
   showCheckmark?: boolean;
 }
 
+const COLOR_SWATCH_SIZE_CLASSES = {
+  sm: 'w-6 h-6',
+  md: 'w-8 h-8',
+  lg: 'w-10 h-10',
+} as const;
+
 function ColorSwatch({
   hexCode,
   isSelected,
@@ -48,12 +54,6 @@ function ColorSwatch({
   size = 'md',
   showCheckmark = true,
 }: ColorSwatchProps) {
-  const sizeClasses = {
-    sm: 'w-6 h-6',
-    md: 'w-8 h-8',
-    lg: 'w-10 h-10',
-  };
-
   const isTransparent = !hexCode || hexCode.toLowerCase() === '#ffffff';
   const isLight = isLightColor(hexCode);
 
@@ -63,7 +63,7 @@ function ColorSwatch({
       onClick={onClick}
       title={label}
       className={cn(
-        sizeClasses[size],
+        COLOR_SWATCH_SIZE_CLASSES[size],
         'flex items-center justify-center rounded-full border-2 transition-all duration-200',
         'hover:scale-110 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
         isSelected

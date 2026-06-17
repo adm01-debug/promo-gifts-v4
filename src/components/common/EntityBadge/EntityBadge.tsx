@@ -16,6 +16,25 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
  * - Optional remove button (`onRemove`).
  * - Optional tooltip (auto-rendered when `groupLabel` or `productCount` set).
  */
+const BADGE_SIZE_CLASSES = {
+  sm: 'text-[11px] px-2 py-0.5 gap-1',
+  md: 'text-xs px-2.5 py-1 gap-1.5',
+  lg: 'text-sm px-3 py-1.5 gap-2',
+} as const;
+
+const BADGE_DOT_SIZE_CLASSES = {
+  sm: 'w-1.5 h-1.5',
+  md: 'w-2 h-2',
+  lg: 'w-2.5 h-2.5',
+} as const;
+
+const BADGE_VARIANT_CLASSES = {
+  default: 'bg-muted text-muted-foreground hover:bg-muted/80',
+  outline: 'border border-border bg-transparent hover:bg-muted/50',
+  solid: 'bg-foreground text-background hover:bg-foreground/90',
+  ghost: 'bg-transparent text-muted-foreground hover:bg-muted/50',
+} as const;
+
 export interface EntityBadgeProps {
   /** Name shown as badge label (always rendered) */
   name: string;
@@ -72,33 +91,14 @@ export function EntityBadge({
   truncateMaxWidth = DEFAULT_MAX_WIDTH,
   tooltipContent,
 }: EntityBadgeProps) {
-  const sizeClasses = {
-    sm: 'text-[11px] px-2 py-0.5 gap-1',
-    md: 'text-xs px-2.5 py-1 gap-1.5',
-    lg: 'text-sm px-3 py-1.5 gap-2',
-  };
-
-  const dotSizeClasses = {
-    sm: 'w-1.5 h-1.5',
-    md: 'w-2 h-2',
-    lg: 'w-2.5 h-2.5',
-  };
-
-  const variantClasses = {
-    default: 'bg-muted text-muted-foreground hover:bg-muted/80',
-    outline: 'border border-border bg-transparent hover:bg-muted/50',
-    solid: 'bg-foreground text-background hover:bg-foreground/90',
-    ghost: 'bg-transparent text-muted-foreground hover:bg-muted/50',
-  };
-
   const displayText = showGroup && groupLabel ? `${groupLabel}${groupSeparator}${name}` : name;
 
   const badgeContent = (
     <span
       className={cn(
         'inline-flex items-center rounded-full font-medium transition-colors',
-        sizeClasses[size],
-        variantClasses[variant],
+        BADGE_SIZE_CLASSES[size],
+        BADGE_VARIANT_CLASSES[variant],
         onClick && 'cursor-pointer',
         className,
       )}
@@ -107,7 +107,7 @@ export function EntityBadge({
       {icon && <span className="leading-none">{icon}</span>}
       {hexCode && (
         <span
-          className={cn('shrink-0 rounded-full', dotSizeClasses[size])}
+          className={cn('shrink-0 rounded-full', BADGE_DOT_SIZE_CLASSES[size])}
           style={{ backgroundColor: hexCode }}
           aria-hidden="true"
         />

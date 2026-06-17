@@ -110,6 +110,20 @@ export function ProductIntelligence({
   );
 }
 
+const METRIC_CARD_ICON_COLORS = {
+  blue: 'text-primary',
+  amber: 'text-warning',
+  green: 'text-success',
+  purple: 'text-primary/70',
+} as const;
+
+const METRIC_CARD_BG_COLORS = {
+  blue: 'bg-primary/10',
+  amber: 'bg-warning/10',
+  green: 'bg-success/10',
+  purple: 'bg-primary/10',
+} as const;
+
 interface MetricCardProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -118,29 +132,16 @@ interface MetricCardProps {
 }
 
 function MetricCard({ icon: Icon, label, value, color }: MetricCardProps) {
-  const iconColor = {
-    blue: 'text-primary',
-    amber: 'text-warning',
-    green: 'text-success',
-    purple: 'text-primary/70',
-  };
-  const bgColor = {
-    blue: 'bg-primary/10',
-    amber: 'bg-warning/10',
-    green: 'bg-success/10',
-    purple: 'bg-primary/10',
-  };
-
   return (
     <Card>
       <CardContent className="p-2.5">
         <div
           className={cn(
             'mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg',
-            bgColor[color],
+            METRIC_CARD_BG_COLORS[color],
           )}
         >
-          <Icon className={cn('h-3.5 w-3.5', iconColor[color])} />
+          <Icon className={cn('h-3.5 w-3.5', METRIC_CARD_ICON_COLORS[color])} />
         </div>
         <p className="text-lg font-bold leading-none">{value}</p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">{label}</p>

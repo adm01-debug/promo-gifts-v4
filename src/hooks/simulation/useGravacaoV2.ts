@@ -47,15 +47,11 @@ export function useProductPrintAreas(productId: string | null) {
     queryFn: async (): Promise<PrintAreaWithTechniques[]> => {
       if (!productId) return [];
       const { fetchPrintAreasFromProduct } = await import('@/lib/fetch-print-areas');
-      const areas = await fetchPrintAreasFromProduct(productId);
+      const [areas, { data: techData, error: techError }] = await Promise.all([
+        fetchPrintAreasFromProduct(productId),
+        untypedFrom('tabela_preco_gravacao_oficial').select('*').eq('ativo', true).limit(100),
+      ]);
       if (!areas.length) return [];
-
-      const { data: techData, error: techError } = await untypedFrom(
-        'tabela_preco_gravacao_oficial',
-      )
-        .select('*')
-        .eq('ativo', true)
-        .limit(100);
 
       if (techError) {
         if (techError.message?.includes('410')) return [];

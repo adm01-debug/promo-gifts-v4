@@ -929,7 +929,7 @@ export function useCatalogState() {
     clearHistory,
     // Navigation & pagination
     navigate,
-    isTransitioning: isTransitioning,
+    isTransitioning,
     hasMoreProducts,
     ITEMS_PER_PAGE,
     loadMore,

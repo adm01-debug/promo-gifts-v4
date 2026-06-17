@@ -15,6 +15,18 @@ interface VolumeIndicatorProps {
   variant?: 'default' | 'compact';
 }
 
+const VOLUME_STATUS_TEXT_COLORS = {
+  success: 'text-primary',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
+const VOLUME_PROGRESS_BG_COLORS = {
+  success: 'bg-primary',
+  warning: 'bg-warning',
+  destructive: 'bg-destructive',
+} as const;
+
 export function VolumeIndicator({
   usedVolume,
   totalVolume,
@@ -25,29 +37,17 @@ export function VolumeIndicator({
   const status = getVolumeStatusColor(usagePercent);
   const label = getVolumeStatusLabel(usagePercent);
 
-  const statusTextColors = {
-    success: 'text-primary',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  };
-
-  const progressBgColors = {
-    success: 'bg-primary',
-    warning: 'bg-warning',
-    destructive: 'bg-destructive',
-  };
-
   if (variant === 'compact') {
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <Box className={cn('h-4 w-4', statusTextColors[status])} />
+        <Box className={cn('h-4 w-4', VOLUME_STATUS_TEXT_COLORS[status])} />
         <div className="relative h-2 w-20 overflow-hidden rounded-full bg-secondary">
           <div
-            className={cn('h-full transition-all', progressBgColors[status])}
+            className={cn('h-full transition-all', VOLUME_PROGRESS_BG_COLORS[status])}
             style={{ width: `${Math.min(usagePercent, 100)}%` }}
           />
         </div>
-        <span className={cn('text-xs font-medium', statusTextColors[status])}>
+        <span className={cn('text-xs font-medium', VOLUME_STATUS_TEXT_COLORS[status])}>
           {Math.round(usagePercent)}%
         </span>
       </div>
@@ -58,7 +58,7 @@ export function VolumeIndicator({
     <div className={cn('card-elevated space-y-3 p-4', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Box className={cn('h-5 w-5', statusTextColors[status])} />
+          <Box className={cn('h-5 w-5', VOLUME_STATUS_TEXT_COLORS[status])} />
           <span className="font-medium">Volume do Kit</span>
         </div>
         <div className="flex items-center gap-2">
@@ -67,14 +67,16 @@ export function VolumeIndicator({
           ) : status === 'success' ? (
             <CheckCircle className="h-4 w-4 text-primary" />
           ) : null}
-          <span className={cn('text-sm font-medium', statusTextColors[status])}>{label}</span>
+          <span className={cn('text-sm font-medium', VOLUME_STATUS_TEXT_COLORS[status])}>
+            {label}
+          </span>
         </div>
       </div>
 
       {/* Custom progress bar with dynamic color */}
       <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
         <div
-          className={cn('h-full transition-all', progressBgColors[status])}
+          className={cn('h-full transition-all', VOLUME_PROGRESS_BG_COLORS[status])}
           style={{ width: `${Math.min(usagePercent, 100)}%` }}
         />
       </div>
@@ -88,7 +90,7 @@ export function VolumeIndicator({
           <strong className="text-foreground">{formatVolume(totalVolume - usedVolume)}</strong>
         </span>
         <span>
-          <strong className={statusTextColors[status]}>{Math.round(usagePercent)}%</strong>
+          <strong className={VOLUME_STATUS_TEXT_COLORS[status]}>{Math.round(usagePercent)}%</strong>
         </span>
       </div>
 

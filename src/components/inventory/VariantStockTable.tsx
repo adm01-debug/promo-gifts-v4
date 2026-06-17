@@ -504,6 +504,8 @@ export function VariantStockTable({
     pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
   );
   const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
+
+  // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
   useSelectionShortcut(() => selection.setMode(!selection.enabled));
 
   if (isLoading) {

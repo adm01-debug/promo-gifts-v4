@@ -34,6 +34,23 @@ interface ProductColorSelectorProps {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
+const COLOR_SELECTOR_SWATCH_CLASSES = {
+  sm: 'w-6 h-6',
+  md: 'w-8 h-8',
+  lg: 'w-10 h-10',
+} as const;
+
+const COLOR_SELECTOR_CHECK_CLASSES = {
+  sm: 'h-3 w-3',
+  md: 'h-4 w-4',
+  lg: 'h-5 w-5',
+} as const;
+
+const COMPACT_DOT_SIZE_CLASSES = {
+  xs: 'w-3 h-3',
+  sm: 'w-4 h-4',
+} as const;
+
 export function ProductColorSelector({
   colors,
   selectedColorId,
@@ -51,7 +68,6 @@ export function ProductColorSelector({
   const selectedColor = colors.find((c) => c.id === selectedColorId);
   const displayColor = hoveredColor || selectedColor;
 
-  // Formata o nome completo da cor
   const formatColorName = (color: ProductColor) => {
     if (color.variationName && color.nuanceName) {
       return `${color.variationName} ${color.nuanceName}`;
@@ -60,19 +76,6 @@ export function ProductColorSelector({
       return color.variationName;
     }
     return color.name;
-  };
-
-  // Tamanhos dos swatches
-  const sizeClasses = {
-    sm: 'w-6 h-6',
-    md: 'w-8 h-8',
-    lg: 'w-10 h-10',
-  };
-
-  const checkSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
   };
 
   return (
@@ -121,7 +124,7 @@ export function ProductColorSelector({
                     'relative cursor-pointer rounded-full',
                     'transition-all duration-200',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-                    sizeClasses[size],
+                    COLOR_SELECTOR_SWATCH_CLASSES[size],
                     isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
                   )}
                   style={{
@@ -163,7 +166,7 @@ export function ProductColorSelector({
                       >
                         <Check
                           className={cn(
-                            checkSizes[size],
+                            COLOR_SELECTOR_CHECK_CLASSES[size],
                             isLight ? 'text-foreground' : 'text-primary-foreground',
                           )}
                           strokeWidth={3}
@@ -195,7 +198,7 @@ export function ProductColorSelector({
                 className={cn(
                   'flex items-center justify-center rounded-full bg-muted',
                   'cursor-default text-xs font-semibold text-muted-foreground',
-                  sizeClasses[size],
+                  COLOR_SELECTOR_SWATCH_CLASSES[size],
                 )}
                 whileHover={{ scale: 1.05 }}
               >
@@ -254,11 +257,6 @@ export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: Compac
   const visibleColors = colors.slice(0, maxVisible);
   const hiddenCount = colors.length - maxVisible;
 
-  const sizeClasses = {
-    xs: 'w-3 h-3',
-    sm: 'w-4 h-4',
-  };
-
   return (
     <div className="flex items-center gap-1">
       {visibleColors.map((color, idx) => (
@@ -267,7 +265,7 @@ export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: Compac
             <span
               className={cn(
                 'rounded-full border',
-                sizeClasses[size],
+                COMPACT_DOT_SIZE_CLASSES[size],
                 color.hex?.toUpperCase() === '#FFFFFF' ? 'border-border' : 'border-transparent',
               )}
               style={{ backgroundColor: color.hex || '#CCCCCC' }}

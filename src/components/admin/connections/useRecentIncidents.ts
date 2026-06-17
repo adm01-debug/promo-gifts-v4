@@ -72,6 +72,8 @@ function severityFromTestKind(errorKind: string | null): IncidentSeverity {
   return 'P1';
 }
 
+const INCIDENT_SEV_WEIGHT: Record<IncidentSeverity, number> = { P0: 3, P1: 2, P2: 1 } as const;
+
 async function fetchIncidents(): Promise<IncidentItem[]> {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
@@ -131,9 +133,8 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
   }
 
   // Ordena por severidade desc (P0>P1>P2) e depois por timestamp desc.
-  const sevWeight: Record<IncidentSeverity, number> = { P0: 3, P1: 2, P2: 1 };
   items.sort((a, b) => {
-    const s = sevWeight[b.severity] - sevWeight[a.severity];
+    const s = INCIDENT_SEV_WEIGHT[b.severity] - INCIDENT_SEV_WEIGHT[a.severity];
     if (s !== 0) return s;
     return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
   });

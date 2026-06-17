@@ -517,6 +517,12 @@ function ToggleFilter({
   );
 }
 
+const KPI_COLOR_CLASSES = {
+  success: 'border-success/20 bg-success/5 text-success ring-1 ring-success/10',
+  primary: 'border-primary/20 bg-primary/5 text-primary ring-1 ring-primary/10',
+  neutral: 'border-border bg-muted/40 text-foreground',
+} as const;
+
 function KPICard({
   label,
   value,
@@ -526,16 +532,11 @@ function KPICard({
   value: string | number;
   color: 'success' | 'primary' | 'neutral';
 }) {
-  const colorMap = {
-    success: 'border-success/20 bg-success/5 text-success ring-1 ring-success/10',
-    primary: 'border-primary/20 bg-primary/5 text-primary ring-1 ring-primary/10',
-    neutral: 'border-border bg-muted/40 text-foreground',
-  };
   return (
     <div
       className={cn(
         'rounded-2xl border p-4 transition-all hover:translate-y-[-2px] hover:shadow-md',
-        colorMap[color],
+        KPI_COLOR_CLASSES[color],
       )}
     >
       <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>

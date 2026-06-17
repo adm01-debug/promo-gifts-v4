@@ -49,23 +49,23 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       cutoff.setDate(cutoff.getDate() - days);
       const cutoffStr = cutoff.toISOString();
 
-      // Fetch quote items for this product (handle 1000-row limit)
-      const { data: quoteItems } = await supabase
-        .from('quote_items')
-        .select('quantity, unit_price, subtotal, created_at, quote_id')
-        .eq('product_id', productId)
-        .gte('created_at', cutoffStr)
-        .order('created_at', { ascending: true })
-        .limit(5000);
-
-      // Fetch order items for this product (handle 1000-row limit)
-      const { data: orderItems } = await supabase
-        .from('order_items')
-        .select('quantity, unit_price, created_at, order_id')
-        .eq('product_id', productId)
-        .gte('created_at', cutoffStr)
-        .order('created_at', { ascending: true })
-        .limit(5000);
+      // Both fetches are independent — run in parallel
+      const [{ data: quoteItems }, { data: orderItems }] = await Promise.all([
+        supabase
+          .from('quote_items')
+          .select('quantity, unit_price, subtotal, created_at, quote_id')
+          .eq('product_id', productId)
+          .gte('created_at', cutoffStr)
+          .order('created_at', { ascending: true })
+          .limit(5000),
+        supabase
+          .from('order_items')
+          .select('quantity, unit_price, created_at, order_id')
+          .eq('product_id', productId)
+          .gte('created_at', cutoffStr)
+          .order('created_at', { ascending: true })
+          .limit(5000),
+      ]);
 
       // Fetch related quotes for seller info
       const quoteIds = [...new Set((quoteItems || []).map((q) => q.quote_id))];
@@ -74,28 +74,32 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       const quotesMap: Record<string, { seller_id: string; status: string }> = {};
       const ordersMap: Record<string, { seller_id: string; status: string }> = {};
 
-      if (quoteIds.length > 0) {
-        // G15 fix: only count quotes with relevant statuses (not drafts)
-        const { data: quotes } = await supabase
-          // rls-allow: applySellerScope aplicado conforme escopo do usuário
-          .from('quotes')
-          .select('id, seller_id, status')
-          .in('id', quoteIds)
-          .in('status', ['sent', 'approved', 'rejected', 'expired', 'converted']);
-        for (const q of quotes || []) {
-          quotesMap[q.id] = { seller_id: q.seller_id ?? '', status: q.status ?? '' };
-        }
+      // G15 fix: only count quotes with relevant statuses (not drafts)
+      // Both queries are independent — run in parallel
+      const [quotesData, ordersData] = await Promise.all([
+        quoteIds.length > 0
+          ? supabase
+              // rls-allow: applySellerScope aplicado conforme escopo do usuário
+              .from('quotes')
+              .select('id, seller_id, status')
+              .in('id', quoteIds)
+              .in('status', ['sent', 'approved', 'rejected', 'expired', 'converted'])
+              .then((r) => r.data)
+          : Promise.resolve(null),
+        orderIds.length > 0
+          ? supabase
+              // rls-allow: applySellerScope aplicado conforme escopo do usuário
+              .from('orders')
+              .select('id, seller_id, status')
+              .in('id', orderIds.filter(Boolean) as string[])
+              .then((r) => r.data)
+          : Promise.resolve(null),
+      ]);
+      for (const q of quotesData || []) {
+        quotesMap[q.id] = { seller_id: q.seller_id ?? '', status: q.status ?? '' };
       }
-
-      if (orderIds.length > 0) {
-        const { data: orders } = await supabase
-          // rls-allow: applySellerScope aplicado conforme escopo do usuário
-          .from('orders')
-          .select('id, seller_id, status')
-          .in('id', orderIds.filter(Boolean) as string[]);
-        for (const o of orders || []) {
-          ordersMap[o.id] = { seller_id: o.seller_id ?? '', status: o.status ?? '' };
-        }
+      for (const o of ordersData || []) {
+        ordersMap[o.id] = { seller_id: o.seller_id ?? '', status: o.status ?? '' };
       }
 
       // Fetch seller names

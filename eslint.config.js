@@ -5,6 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +85,8 @@ export default [
       'react-hooks': reactHooks,
       '@typescript-eslint': typescript,
       'jsx-a11y': jsxA11y,
+      // ── Autoheal: imports não utilizados com auto-fix ──────────────────────
+      'unused-imports': unusedImports,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -125,6 +128,10 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-duplicate-imports': 'error',
+      // AUTO-FIXÁVEL: remove import declarations não utilizados (--fix remove a linha inteira).
+      // Complementa @typescript-eslint/no-unused-vars (que detecta mas não auto-fixa imports).
+      // Usado pelo workflow lovable-autoheal.yml para correção automática de commits do Lovable.
+      'unused-imports/no-unused-imports': 'error',
       'no-else-return': 'warn',
       'prefer-const': 'error',
       eqeqeq: ['error', 'always'],

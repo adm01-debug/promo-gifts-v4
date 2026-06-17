@@ -8,24 +8,25 @@ interface ContainerProps {
   centered?: boolean;
 }
 
+const CONTAINER_SIZE_CLASSES: Record<NonNullable<ContainerProps['size']>, string> = {
+  xs: 'max-w-lg',
+  sm: 'max-w-2xl',
+  md: 'max-w-4xl',
+  lg: 'max-w-6xl',
+  xl: 'max-w-7xl',
+  '2xl': 'max-w-screen-2xl',
+  '3xl': 'max-w-[1600px]',
+  ultrawide: 'max-w-[1920px]',
+  full: 'max-w-full',
+};
+
 /** Container responsivo. xs=512px sm=672px md=896px lg=1152px xl=1280px 2xl=1400px 3xl=1600px ultrawide=1920px */
 export function Container({ children, className, size = 'lg', centered = true }: ContainerProps) {
-  const sizeClasses: Record<NonNullable<ContainerProps['size']>, string> = {
-    xs: 'max-w-lg',
-    sm: 'max-w-2xl',
-    md: 'max-w-4xl',
-    lg: 'max-w-6xl',
-    xl: 'max-w-7xl',
-    '2xl': 'max-w-screen-2xl',
-    '3xl': 'max-w-[1600px]',
-    ultrawide: 'max-w-[1920px]',
-    full: 'max-w-full',
-  };
   return (
     <div
       className={cn(
         'w-full px-4 sm:px-6 lg:px-8 xl:px-10',
-        sizeClasses[size],
+        CONTAINER_SIZE_CLASSES[size],
         centered && 'mx-auto',
         className,
       )}
@@ -74,33 +75,38 @@ interface GridProps {
   responsive?: boolean;
 }
 
+const GRID_GAP_CLASSES = {
+  none: 'gap-0',
+  xs: 'gap-1.5 sm:gap-2',
+  sm: 'gap-2 sm:gap-3',
+  md: 'gap-3 sm:gap-4',
+  lg: 'gap-4 sm:gap-5 lg:gap-6',
+} as const;
+
+const GRID_COL_CLASSES_RESPONSIVE = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 xs:grid-cols-2',
+  3: 'grid-cols-1 xs:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
+  5: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 ultra-wide:grid-cols-5',
+  6: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ultra-wide:grid-cols-6',
+} as const;
+
+const GRID_COL_CLASSES_FIXED = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+  6: 'grid-cols-6',
+} as const;
+
 /** Grid mobile-first com suporte a ultra-wide (1920px+) */
 export function Grid({ children, className, cols = 3, gap = 'md', responsive = true }: GridProps) {
-  const gapClasses = {
-    none: 'gap-0',
-    xs: 'gap-1.5 sm:gap-2',
-    sm: 'gap-2 sm:gap-3',
-    md: 'gap-3 sm:gap-4',
-    lg: 'gap-4 sm:gap-5 lg:gap-6',
-  };
-  const colClasses = responsive
-    ? {
-        1: 'grid-cols-1',
-        2: 'grid-cols-1 xs:grid-cols-2',
-        3: 'grid-cols-1 xs:grid-cols-2 lg:grid-cols-3',
-        4: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
-        5: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 ultra-wide:grid-cols-5',
-        6: 'grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ultra-wide:grid-cols-6',
-      }
-    : {
-        1: 'grid-cols-1',
-        2: 'grid-cols-2',
-        3: 'grid-cols-3',
-        4: 'grid-cols-4',
-        5: 'grid-cols-5',
-        6: 'grid-cols-6',
-      };
-  return <div className={cn('grid', colClasses[cols], gapClasses[gap], className)}>{children}</div>;
+  const colClasses = responsive ? GRID_COL_CLASSES_RESPONSIVE : GRID_COL_CLASSES_FIXED;
+  return (
+    <div className={cn('grid', colClasses[cols], GRID_GAP_CLASSES[gap], className)}>{children}</div>
+  );
 }
 
 interface StackProps {
@@ -113,6 +119,30 @@ interface StackProps {
   wrap?: boolean;
 }
 
+const STACK_GAP_CLASSES = {
+  none: 'gap-0',
+  xs: 'gap-1',
+  sm: 'gap-2',
+  md: 'gap-4',
+  lg: 'gap-6',
+  xl: 'gap-8',
+} as const;
+
+const STACK_ALIGN_CLASSES = {
+  start: 'items-start',
+  center: 'items-center',
+  end: 'items-end',
+  stretch: 'items-stretch',
+} as const;
+
+const STACK_JUSTIFY_CLASSES = {
+  start: 'justify-start',
+  center: 'justify-center',
+  end: 'justify-end',
+  between: 'justify-between',
+  around: 'justify-around',
+} as const;
+
 export function Stack({
   children,
   className,
@@ -122,28 +152,14 @@ export function Stack({
   justify = 'start',
   wrap = false,
 }: StackProps) {
-  const g = { none: 'gap-0', xs: 'gap-1', sm: 'gap-2', md: 'gap-4', lg: 'gap-6', xl: 'gap-8' };
-  const a = {
-    start: 'items-start',
-    center: 'items-center',
-    end: 'items-end',
-    stretch: 'items-stretch',
-  };
-  const j = {
-    start: 'justify-start',
-    center: 'justify-center',
-    end: 'justify-end',
-    between: 'justify-between',
-    around: 'justify-around',
-  };
   return (
     <div
       className={cn(
         'flex',
         direction === 'vertical' ? 'flex-col' : 'flex-row',
-        g[gap],
-        a[align],
-        j[justify],
+        STACK_GAP_CLASSES[gap],
+        STACK_ALIGN_CLASSES[align],
+        STACK_JUSTIFY_CLASSES[justify],
         wrap && 'flex-wrap',
         className,
       )}
@@ -190,17 +206,18 @@ interface SpacerProps {
   className?: string;
 }
 
+const SPACER_SIZE_CLASSES: Record<NonNullable<SpacerProps['size']>, string> = {
+  xs: 'h-1 sm:h-2',
+  sm: 'h-2 sm:h-4',
+  md: 'h-4 sm:h-6',
+  lg: 'h-6 sm:h-8',
+  xl: 'h-8 sm:h-12',
+  '2xl': 'h-10 sm:h-16',
+};
+
 /** Spacer responsivo: menor em mobile, maior em desktop. */
 export function Spacer({ size = 'md', className }: SpacerProps) {
-  const s = {
-    xs: 'h-1 sm:h-2',
-    sm: 'h-2 sm:h-4',
-    md: 'h-4 sm:h-6',
-    lg: 'h-6 sm:h-8',
-    xl: 'h-8 sm:h-12',
-    '2xl': 'h-10 sm:h-16',
-  };
-  return <div className={cn(s[size], className)} aria-hidden="true" />;
+  return <div className={cn(SPACER_SIZE_CLASSES[size], className)} aria-hidden="true" />;
 }
 
 interface AnimatedContainerProps {

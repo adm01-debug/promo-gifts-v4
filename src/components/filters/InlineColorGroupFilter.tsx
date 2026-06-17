@@ -22,6 +22,8 @@ interface InlineColorSwatchProps {
   onExpandToggle?: () => void;
 }
 
+const SWATCH_SIZE_CLASSES = { sm: 'w-6 h-6', md: 'w-8 h-8', lg: 'w-10 h-10' } as const;
+
 function InlineColorSwatch({
   hexCode,
   isSelected,
@@ -32,7 +34,6 @@ function InlineColorSwatch({
   isExpanded,
   onExpandToggle,
 }: InlineColorSwatchProps) {
-  const sizeClasses = { sm: 'w-6 h-6', md: 'w-8 h-8', lg: 'w-10 h-10' };
   const isTransparent = !hexCode;
   const isLight = isLightColor(hexCode);
 
@@ -45,7 +46,7 @@ function InlineColorSwatch({
             onClick={onClick}
             aria-label={`Filtrar por cor ${label}`}
             className={cn(
-              sizeClasses[size],
+              SWATCH_SIZE_CLASSES[size],
               'flex items-center justify-center rounded-full border-2 transition-all duration-200',
               'hover:scale-110 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2',
               isSelected
@@ -75,9 +76,7 @@ function InlineColorSwatch({
             )}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top">
-          {label}
-        </TooltipContent>
+        <TooltipContent side="top">{label}</TooltipContent>
       </Tooltip>
       {/* Indicador de variações */}
       {hasVariations && (

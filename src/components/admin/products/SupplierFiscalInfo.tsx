@@ -118,15 +118,16 @@ function formatRate(rate: number | null | undefined): string | null {
   return `${rate}%`;
 }
 
+const TAX_REGIME_LABELS: Record<string, string> = {
+  simples_nacional: 'Simples Nacional',
+  lucro_presumido: 'Lucro Presumido',
+  lucro_real: 'Lucro Real',
+  mei: 'MEI',
+} as const;
+
 function formatTaxRegime(regime: string | null): string | null {
   if (!regime) return null;
-  const map: Record<string, string> = {
-    simples_nacional: 'Simples Nacional',
-    lucro_presumido: 'Lucro Presumido',
-    lucro_real: 'Lucro Real',
-    mei: 'MEI',
-  };
-  return map[regime] || regime;
+  return TAX_REGIME_LABELS[regime] || regime;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────

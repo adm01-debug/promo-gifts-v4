@@ -184,6 +184,13 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
+const EXAMPLE_CARD_STATUS_COLORS = {
+  ok: 'text-success',
+  cancelled: 'text-muted-foreground',
+  step_up_error: 'text-warning',
+  error: 'text-destructive',
+} as const;
+
 interface ResultState {
   status: InvokeFullScopeResult<unknown>['status'];
   detail?: string;
@@ -230,12 +237,7 @@ function ExampleCard({ config }: { config: ExampleConfig }) {
     }
   };
 
-  const statusColor: Record<ResultState['status'], string> = {
-    ok: 'text-success',
-    cancelled: 'text-muted-foreground',
-    step_up_error: 'text-warning',
-    error: 'text-destructive',
-  };
+  const statusColor = EXAMPLE_CARD_STATUS_COLORS;
 
   return (
     <Card className="flex flex-col">
