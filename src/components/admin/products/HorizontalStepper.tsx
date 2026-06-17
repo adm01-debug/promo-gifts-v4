@@ -14,7 +14,8 @@ export type StepId =
   | 'engraving'
   | 'classification'
   | 'media'
-  | 'content';
+  | 'content'
+  | 'kits';
 
 export interface StepDef {
   id: StepId;
