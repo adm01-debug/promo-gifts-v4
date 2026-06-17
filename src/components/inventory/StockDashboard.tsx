@@ -430,29 +430,29 @@ export function StockDashboard() {
         />
         <StatCard
           title="Estoque Baixo"
-          value={(summary.productsLowStock + summary.productsCritical).toLocaleString('pt-BR')}
+          // SSOT KPI ↔ chip: o valor bate 1:1 com `filters.status ===
+          // 'low_stock'` (que é o que o clique aplica). Críticos têm
+          // KPI próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          // Testado em VariantStockTable.kpi-consistency.test.tsx.
+          value={summary.productsLowStock.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
-          isActive={filters.status === 'low_stock' || filters.status === 'critical'}
+          isActive={filters.status === 'low_stock'}
           onClick={() => {
             updateFilter('status', filters.status === 'low_stock' ? 'all' : 'low_stock');
             if (warningAlerts.length > 0) setLowStockDialogOpen(true);
           }}
-          clickHint="Filtrar produtos com estoque baixo"
+          clickHint="Filtrar produtos com estoque baixo (não inclui críticos)"
           trend={
-            summary.productsLowStock + summary.productsCritical > 0
+            summary.productsCritical > 0
               ? {
                   value: -1,
-                  // Desambigua o card: o valor primário soma baixo+crítico
-                  // (regra de produto), o trend discrimina os dois. Alinha
-                  // com o chip "Crítico" da tabela (que filtra status
-                  // === 'critical' no nível variação).
-                  label: `${summary.productsLowStock.toLocaleString('pt-BR')} baixo · ${summary.productsCritical.toLocaleString('pt-BR')} crítico`,
+                  label: `+ ${summary.productsCritical.toLocaleString('pt-BR')} em estado crítico`,
                 }
               : undefined
           }
-
         />
+
         <StatCard
           title="Sem Estoque"
           value={summary.productsOutOfStock.toLocaleString('pt-BR')}
