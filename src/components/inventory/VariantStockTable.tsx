@@ -384,21 +384,55 @@ export function VariantStockTable({
   }, [searchedProducts]);
 
   /**
-   * Modo variação-first: 1 linha = 1 SKU. A LISTA COMPLETA de linhas (todas as
-   * variações de todos os produtos buscados, já filtradas por status) é a unidade
-   * de paginação — assim chips, contador e linhas falam a MESMA unidade (SKU).
-   * Estoque exibido é SEMPRE da variação, nunca do produto pai.
+   * Modo variação-first: 1 linha = 1 SKU. Cada linha carrega seu `effectiveStatus`
+   * — que pode ter sido reavaliado pela fórmula preditiva de Risco de Ruptura
+   * (override apenas quando o status base era `in_stock` e a projeção indica
+   * ruptura no horizonte selecionado). Estoque exibido é SEMPRE da variação.
    */
   const allFlatRows = useMemo(() => {
-    const rows: Array<{ product: ProductStockSummary; variant: VariantStock }> = [];
+    type Row = {
+      product: ProductStockSummary;
+      variant: VariantStock;
+      effectiveStatus: StockStatus;
+      projection?: {
+        targetQty: number;
+        avgDailyDepletion: number;
+        horizonDays: number;
+        projectedStock: number;
+        daysToTarget: number | null;
+      };
+    };
+    const rows: Row[] = [];
     for (const product of searchedProducts) {
       for (const variant of product.variants) {
-        if (statusFilter !== 'all' && variant.status !== statusFilter) continue;
-        rows.push({ product, variant });
+        let effectiveStatus: StockStatus = variant.status;
+        let projection: Row['projection'];
+        // Aplica fórmula preditiva apenas quando o status base é "saudável".
+        // Crítico/Esgotado/Chegando têm precedência maior e permanecem.
+        if (effectiveStatus === 'in_stock' || effectiveStatus === 'overstocked') {
+          const risk = computeRuptureRisk({
+            current: variant.currentStock,
+            avgDailyDepletion: variant.avgDailySales,
+            targetQty: targetQuantity,
+            horizonDays: ruptureHorizon,
+          });
+          if (risk.atRisk && risk.projectedStock !== null) {
+            effectiveStatus = 'low_stock';
+            projection = {
+              targetQty: targetQuantity!,
+              avgDailyDepletion: variant.avgDailySales!,
+              horizonDays: ruptureHorizon,
+              projectedStock: risk.projectedStock,
+              daysToTarget: risk.daysToTarget,
+            };
+          }
+        }
+        if (statusFilter !== 'all' && effectiveStatus !== statusFilter) continue;
+        rows.push({ product, variant, effectiveStatus, projection });
       }
     }
     return rows;
-  }, [searchedProducts, statusFilter]);
+  }, [searchedProducts, statusFilter, targetQuantity, ruptureHorizon]);
 
   const totalRows = allFlatRows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
