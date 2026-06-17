@@ -34,6 +34,16 @@ const THERMAL_KEYWORDS = [
   'cafe',
 ];
 const FRAGILE_KEYWORDS = ['vidro', 'porcelana', 'cerâmica', 'ceramica', 'cristal', 'garrafa'];
+const THERMAL_BOX_KEYWORDS = ['térmic', 'termic', 'isolad', 'thermal', 'isotérmic'];
+const PROTECTIVE_BOX_KEYWORDS = [
+  'rígid',
+  'rigid',
+  'lata',
+  'metal',
+  'madeira',
+  'mdf',
+  'kraft duplo',
+];
 const ECONOMY_FREIGHT_LIMIT_G = 5000; // 5kg per kit, simplified
 
 function detectConflicts(kitState: KitState): Conflict[] {
@@ -47,9 +57,7 @@ function detectConflicts(kitState: KitState): Conflict[] {
   });
   if (thermalItems.length > 0 && box) {
     const boxText = `${box.name} ${box.material ?? ''} ${box.boxType ?? ''}`.toLowerCase();
-    const isThermal = ['térmic', 'termic', 'isolad', 'thermal', 'isotérmic'].some((k) =>
-      boxText.includes(k),
-    );
+    const isThermal = THERMAL_BOX_KEYWORDS.some((k) => boxText.includes(k));
     if (!isThermal) {
       out.push({
         id: 'thermal-mismatch',
@@ -69,9 +77,7 @@ function detectConflicts(kitState: KitState): Conflict[] {
   });
   if (fragileItems.length > 0 && box) {
     const boxText = `${box.name} ${box.boxType ?? ''}`.toLowerCase();
-    const isProtective = ['rígid', 'rigid', 'lata', 'metal', 'madeira', 'mdf', 'kraft duplo'].some(
-      (k) => boxText.includes(k),
-    );
+    const isProtective = PROTECTIVE_BOX_KEYWORDS.some((k) => boxText.includes(k));
     if (!isProtective) {
       out.push({
         id: 'fragile-mismatch',

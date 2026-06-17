@@ -58,6 +58,7 @@ const VARIANT_AXES: AxisDefinition[] = [
 ];
 
 const PRESET_SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG', '2XG', '3XG'];
+const SIZE_ORDER = [...PRESET_SIZES, 'EG', 'EGG'];
 
 const GENDER_OPTIONS = [
   { value: 'unissex', label: 'Unissex' },
@@ -123,9 +124,8 @@ export function ProductVariationAxesConfig({
         active: values.size > 0,
         values: Array.from(values).sort((a, b) => {
           if (axis.key === 'size') {
-            const order = ['PP', 'P', 'M', 'G', 'GG', 'XG', '2XG', '3XG', 'EG', 'EGG'];
-            const ia = order.indexOf(a.toUpperCase());
-            const ib = order.indexOf(b.toUpperCase());
+            const ia = SIZE_ORDER.indexOf(a.toUpperCase());
+            const ib = SIZE_ORDER.indexOf(b.toUpperCase());
             if (ia !== -1 && ib !== -1) return ia - ib;
             if (ia !== -1) return -1;
             if (ib !== -1) return 1;
