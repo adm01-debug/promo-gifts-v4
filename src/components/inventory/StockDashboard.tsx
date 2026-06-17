@@ -289,11 +289,15 @@ export function StockDashboard() {
         onOpenChange={setFutureStockDialogOpen}
         entries={futureStock}
       />
-      <StockHealthBreakdownDrawer
-        open={healthDrawerOpen}
-        onOpenChange={setHealthDrawerOpen}
-        products={allProductStocks ?? productStocks}
-      />
+      {healthDrawerOpen && (
+        <Suspense fallback={null}>
+          <StockHealthBreakdownDrawer
+            open={healthDrawerOpen}
+            onOpenChange={setHealthDrawerOpen}
+            products={allProductStocks ?? productStocks}
+          />
+        </Suspense>
+      )}
 
       {/* Advanced Filters (topo, logo após o título "Estoque") */}
       <Card>
