@@ -70,12 +70,15 @@ const STATUS_FILTER_VALUES: StatusFilter[] = [
   'critical',
   'out_of_stock',
 ];
+// Labels alinhados aos cards do StockDashboard (KPI ↔ chip da tabela).
+// Antes: 'Risco de Ruptura' / 'Esgotado' divergiam dos cards "Estoque
+// Baixo" / "Sem Estoque" do header, gerando confusão de contagem.
 const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   all: 'Todos',
   in_stock: 'Em Estoque',
-  low_stock: 'Risco de Ruptura',
+  low_stock: 'Estoque Baixo',
   critical: 'Crítico',
-  out_of_stock: 'Esgotado',
+  out_of_stock: 'Sem Estoque',
   overstocked: 'Em Estoque',
   incoming: 'Chegando',
 };
