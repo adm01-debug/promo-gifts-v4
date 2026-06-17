@@ -157,16 +157,6 @@ function FlatVariantRow({
           <span className="text-[10px] text-muted-foreground">un</span>
         </div>
       </TableCell>
-      <TableCell>
-        <span
-          className={cn(
-            'font-medium tabular-nums',
-            variant.availableStock <= 0 ? 'text-destructive' : 'text-foreground',
-          )}
-        >
-          {variant.availableStock.toLocaleString('pt-BR')}
-        </span>
-      </TableCell>
       <TableCell className="hidden md:table-cell">
         {variant.inTransitStock > 0 ? (
           <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
