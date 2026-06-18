@@ -14,7 +14,8 @@
  *  3. Estados de borda (sem imagem, loading, erro 5xx) não derrubam a página
  *     nem disparam navegação inesperada.
  */
-import { test, expect, requireAuth, type Page } from "../fixtures/test-base";
+import { test, expect, requireAuth } from "../fixtures/test-base";
+import type { Page } from "@playwright/test";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 
