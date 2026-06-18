@@ -29,7 +29,7 @@ function isWithinNoveltyWindow(createdAt: string | null | undefined): boolean {
 
 function mapLightweight(p: LightweightProduct): ProductLightweight {
   const price = p.sale_price ?? p.cost_price ?? 0;
-  const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
+  const imageUrl = p.primary_image_url || p.primary_image_fallback_url || '/placeholder.svg';
   return {
     id: String(p.id),
     name: p.name,
@@ -54,7 +54,7 @@ export function mapLightweightToProduct(
   p: LightweightProduct,
   categoriesById?: ReadonlyMap<string, string>,
 ): Product {
-  const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
+  const imageUrl = p.primary_image_url || p.primary_image_fallback_url || '/placeholder.svg';
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
   const resolvedCategoryId = p.category_id || p.main_category_id;
@@ -124,7 +124,14 @@ export const CATALOG_BATCH_PAGES = 4;
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, short_description, ' +
-  'sale_price, cost_price, primary_image_url, set_image_url, ' +
+  // FIX 2026-06-18 (catalog-audit-batch-k): adicionado primary_image_fallback_url.
+  // Antes ausente → fallback chain usava p.image_url que sempre era undefined
+  // (campo não existe no SELECT de nenhuma das duas fontes). Agora:
+  //   primary_image_url (CF CDN) → primary_image_fallback_url (supplier CDN) → placeholder.
+  // Cobertura: 7028 produtos têm fallback_url; com os workers populando primary_image_url
+  // para ~7153/7154, o fix é defensivo mas elimina o risco para produtos recém-ativados
+  // antes do primeiro ciclo do backfill (cada 5 min).
+  'sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
   'stock_quantity, min_quantity, is_kit, is_new, ' +
   'is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, ' +
