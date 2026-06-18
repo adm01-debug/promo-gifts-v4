@@ -108,7 +108,7 @@ describe('Product Sort Standardization', () => {
     }
   });
 
-  it('NoveltyProductGrid should use the same SORT_OPTIONS as StickyFilterBar', () => {
+  it('NoveltyProductGrid reaproveita SORT_OPTIONS, exceto as ordenações best-seller', () => {
     render(
       <Wrapper>
         <NoveltyProductGrid />
@@ -119,13 +119,27 @@ describe('Product Sort Standardization', () => {
     const selects = screen.getAllByRole('combobox');
     const sortSelect = selects[2];
 
+    expect(sortSelect).toBeTruthy();
     if (sortSelect) {
       fireEvent.click(sortSelect);
-      // We might need to wait for the Portal content
-      expect(SORT_OPTIONS).not.toHaveLength(0);
-      for (const option of SORT_OPTIONS) {
+
+      // O grid de Novidades compartilha SORT_OPTIONS com a StickyFilterBar, mas
+      // exclui DE PROPÓSITO as ordenações "best-seller" — ranking de mais vendidos
+      // não se aplica a produtos recém-chegados. Ver NoveltyProductGrid.tsx:
+      //   SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'))
+      const expected = SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'));
+      const excluded = SORT_OPTIONS.filter((o) => o.value.startsWith('best-seller'));
+
+      expect(expected).not.toHaveLength(0);
+      for (const option of expected) {
         const elements = screen.queryAllByText(option.label);
         expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
+      }
+      // Invariante da divergência intencional: best-seller NÃO aparece em Novidades.
+      expect(excluded).not.toHaveLength(0);
+      for (const option of excluded) {
+        const elements = screen.queryAllByText(option.label);
+        expect.soft(elements.length, `excluída "${option.label}"`).toBe(0);
       }
     }
   });

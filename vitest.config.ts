@@ -48,7 +48,22 @@ export default defineConfig({
     typecheck: {
       enabled: false,
     },
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests/__deprecated__'],
+    exclude: [
+      'node_modules',
+      'dist',
+      '.idea',
+      '.git',
+      '.cache',
+      'tests/__deprecated__',
+      // Specs Playwright (importam `@playwright/test` / fixture `test-base` e usam
+      // `test.describe`) ficam sob `tests/` mas NÃO podem ser coletados pelo Vitest
+      // — quebram a coleta com "Playwright Test did not expect test.describe() to be
+      // called here". Rodam apenas via Playwright. Mantemos os specs Vitest legítimos
+      // de `tests/security/` (RLS, seller-scope etc.), excluindo só os Playwright.
+      'tests/e2e/**',
+      'tests/navigation-tooltips.spec.ts',
+      'tests/security/notification-rls.spec.ts',
+    ],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
     // maxThreads: 2 para evitar contenção.

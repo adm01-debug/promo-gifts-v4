@@ -47,9 +47,9 @@ function makeQuote(updatedAt: string, id = 'q-001'): Quote {
 }
 
 /** Data ISO como string no mesmo formato do Supabase (UTC Z) */
-const T0 = '2026-06-01T10:00:00.000Z';  // baseline
-const T1 = '2026-06-01T10:05:00.000Z';  // remote mais novo (conflito)
-const T_OLD = '2026-05-31T09:00:00.000Z';  // remote mais antigo (sem conflito)
+const T0 = '2026-06-01T10:00:00.000Z'; // baseline
+const T1 = '2026-06-01T10:05:00.000Z'; // remote mais novo (conflito)
+const T_OLD = '2026-05-31T09:00:00.000Z'; // remote mais antigo (sem conflito)
 
 beforeEach(() => {
   mockFrom.mockClear();
@@ -67,8 +67,7 @@ describe('estado inicial', () => {
   });
 
   it('retorna funções estáveis (useCallback)', () => {
-    const { result, rerender } = renderHook(() =>
-      useQuoteConcurrencyGuard(makeQuote(T0)));
+    const { result, rerender } = renderHook(() => useQuoteConcurrencyGuard(makeQuote(T0)));
     const { checkForConflict: c1, resetBaseline: r1 } = result.current;
     rerender();
     expect(result.current.checkForConflict).toBe(c1);
@@ -161,7 +160,9 @@ describe('resetBaseline', () => {
     expect(conflict1).not.toBeNull();
 
     // Resetar baseline para T1 (após save bem-sucedido)
-    act(() => { result.current.resetBaseline(T1); });
+    act(() => {
+      result.current.resetBaseline(T1);
+    });
 
     // Segundo check com mesmo T1: não deve mais ter conflito
     mockSingle.mockResolvedValueOnce({ data: { updated_at: T1 }, error: null });
@@ -172,8 +173,12 @@ describe('resetBaseline', () => {
   it('resetBaseline sem argumento usa Date.now() aproximado', async () => {
     const { result } = renderHook(() => useQuoteConcurrencyGuard(makeQuote(T0)));
     const before = Date.now();
-    act(() => { result.current.resetBaseline(); });
+    act(() => {
+      result.current.resetBaseline();
+    });
     const after = Date.now();
+    // Sanidade temporal: o intervalo que cerca o reset é monotônico.
+    expect(after).toBeGreaterThanOrEqual(before);
 
     // Próximo check com timestamp antigo não deve gerar conflito
     // (baseline foi atualizado para agora, T0 < agora)
@@ -198,7 +203,7 @@ describe('invariantes de integridade temporal', () => {
 
   it('múltiplos checkForConflict sequenciais funcionam corretamente', async () => {
     mockSingle
-      .mockResolvedValueOnce({ data: { updated_at: T0 }, error: null })  // sem conflito
+      .mockResolvedValueOnce({ data: { updated_at: T0 }, error: null }) // sem conflito
       .mockResolvedValueOnce({ data: { updated_at: T1 }, error: null }); // com conflito
 
     const { result } = renderHook(() => useQuoteConcurrencyGuard(makeQuote(T0)));
