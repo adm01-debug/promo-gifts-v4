@@ -111,35 +111,35 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
     {
       label: 'Ocupação',
       icon: null,
-      getValue: (k: KitForComparison) => `${Math.round(Number(k.volume_usage_percent))}%`,
+      getValue: (k: KitForComparison) => `${Math.round(k.volume_usage_percent)}%`,
     },
     { label: 'Qtd Kits', icon: null, getValue: (k: KitForComparison) => `${k.kit_quantity}` },
     {
       label: 'Preço Caixa',
       icon: <DollarSign className="h-3.5 w-3.5" />,
-      getValue: (k: KitForComparison) => formatCurrency(Number(k.box_price)),
+      getValue: (k: KitForComparison) => formatCurrency(k.box_price),
     },
     {
       label: 'Preço Itens',
       icon: null,
-      getValue: (k: KitForComparison) => formatCurrency(Number(k.items_price)),
+      getValue: (k: KitForComparison) => formatCurrency(k.items_price),
     },
     {
       label: 'Personalização',
       icon: null,
-      getValue: (k: KitForComparison) => formatCurrency(Number(k.personalization_price)),
+      getValue: (k: KitForComparison) => formatCurrency(k.personalization_price),
     },
     {
       label: 'Total',
       icon: null,
-      getValue: (k: KitForComparison) => formatCurrency(Number(k.total_price)),
+      getValue: (k: KitForComparison) => formatCurrency(k.total_price),
       bold: true,
     },
     {
       label: 'Preço/Kit',
       icon: null,
       getValue: (k: KitForComparison) =>
-        formatCurrency(Number(k.total_price) / Math.max(k.kit_quantity, 1)),
+        formatCurrency(k.total_price / Math.max(k.kit_quantity, 1)),
       bold: true,
     },
   ];
@@ -147,8 +147,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
   // Find the cheapest kit for highlighting
   const cheapestId = kits.reduce(
     (min, k) =>
-      Number(k.total_price) / Math.max(k.kit_quantity, 1) <
-      Number(min.total_price) / Math.max(min.kit_quantity, 1)
+      k.total_price / Math.max(k.kit_quantity, 1) < min.total_price / Math.max(min.kit_quantity, 1)
         ? k
         : min,
     kits[0],

@@ -45,9 +45,9 @@ export function ComparisonRadarChart({ products, className }: ComparisonRadarCha
   const data = useMemo(() => {
     if (!products || products.length === 0) return [];
 
-    const prices = products.map((p) => Number(p.price ?? 0));
-    const stocks = products.map((p) => Number(p.stock ?? 0));
-    const mins = products.map((p) => Number(p.minQuantity ?? 1));
+    const prices = products.map((p) => p.price);
+    const stocks = products.map((p) => p.stock);
+    const mins = products.map((p) => p.minQuantity);
     const colorCounts = products.map((p) => p.colors?.length ?? 0);
 
     const maxPrice = Math.max(...prices, 1);

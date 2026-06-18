@@ -61,7 +61,7 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
     totalPrice > 0 ? ((totalPrice - totalPrice * estimatedCostRatio) / totalPrice) * 100 : 0;
 
   const sortedHist = (history ?? [])
-    .map((r) => Number(r.total_price))
+    .map((r) => r.total_price)
     .filter((n) => n > 0)
     .sort((a, b) => a - b);
   const avg = sortedHist.length ? sortedHist.reduce((s, n) => s + n, 0) / sortedHist.length : 0;

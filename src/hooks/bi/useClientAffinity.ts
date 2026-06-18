@@ -158,8 +158,8 @@ export function useClientAffinity(clientId?: string) {
             revenue: agg.revenue,
             suggestions: agg.products.slice(0, 3).map((p) => ({
               name: p.product_name,
-              priceFrom: Math.round(Number(p.avg_unit_price) * 0.85) || 0,
-              priceTo: Math.round(Number(p.avg_unit_price) * 1.25) || 0,
+              priceFrom: Math.round(p.avg_unit_price * 0.85) || 0,
+              priceTo: Math.round(p.avg_unit_price * 1.25) || 0,
               reason: `Cliente já comprou ${p.occurrences}x · ${p.total_quantity} unidades`,
               imageUrl: p.product_image_url,
               productId: p.product_id,

@@ -16,9 +16,7 @@ export function useCollectionsGlobalShortcuts() {
     function isTyping(e: KeyboardEvent): boolean {
       const t = e.target as HTMLElement | null;
       if (!t) return false;
-      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return true;
-      if (t.isContentEditable) return true;
-      return false;
+      return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
     }
 
     function onKey(e: KeyboardEvent) {

@@ -279,7 +279,7 @@ export function CompareTableView({
               <HighlightedNumberRow
                 label="Custo total (qtd. mín.)"
                 products={products}
-                valueFn={(p) => Number(p.price ?? 0) * Number(p.minQuantity ?? 1)}
+                valueFn={(p) => p.price * p.minQuantity}
                 renderFn={(v) => formatCurrency(v)}
                 mode="lower-is-better"
                 subtitle="TCO"

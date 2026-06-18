@@ -29,7 +29,7 @@ export function SimilarProductsRail({ products, formatCurrency }: Props) {
   const suggestions = useMemo(() => {
     if (!pool.length || !products.length) return [];
     const compareIds = new Set(products.map((p) => p.id));
-    const avgPrice = products.reduce((sum, p) => sum + Number(p.price ?? 0), 0) / products.length;
+    const avgPrice = products.reduce((sum, p) => sum + p.price, 0) / products.length;
     const minP = avgPrice * 0.8;
     const maxP = avgPrice * 1.2;
     return pool
