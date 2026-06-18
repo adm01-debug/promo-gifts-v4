@@ -185,4 +185,39 @@ describe('applyVoiceFilters — mapeamento de filtros de voz', () => {
     expect(() => applyVoiceFilters(frozen as FilterState, { featured: true })).not.toThrow();
     expect((frozen as FilterState).featured).toBe(false);
   });
+
+  // FIX-11 — clamping de preços negativos (reconhecimento de voz pode gerar valores inválidos)
+  it('FIX-11: minPrice negativo é clamped para 0', () => {
+    const next = applyVoiceFilters(base, { minPrice: -50 });
+    expect(next.priceRange[0]).toBe(0);
+    expect(next.priceRange[1]).toBe(9999); // max preservado
+  });
+
+  it('FIX-11: maxPrice negativo é clamped para 0', () => {
+    const next = applyVoiceFilters(base, { maxPrice: -10 });
+    expect(next.priceRange[0]).toBe(0); // min preservado
+    expect(next.priceRange[1]).toBe(0); // clamped
+  });
+
+  it('FIX-11: minPrice e maxPrice ambos negativos → ambos clamped para 0', () => {
+    const next = applyVoiceFilters(base, { minPrice: -100, maxPrice: -5 });
+    expect(next.priceRange).toEqual([0, 0]);
+  });
+
+  it('FIX-11: minPrice negativo + maxPrice válido → [0, maxPrice]', () => {
+    const next = applyVoiceFilters(base, { minPrice: -20, maxPrice: 150 });
+    expect(next.priceRange).toEqual([0, 150]);
+  });
+
+  it('FIX-11: preços positivos não são alterados pelo clamping', () => {
+    const next = applyVoiceFilters(base, { minPrice: 10, maxPrice: 500 });
+    expect(next.priceRange).toEqual([10, 500]);
+  });
+
+  it('FIX-11: minPrice = 0 é aceito (não é negativo)', () => {
+    const prev = { ...base, priceRange: [50, 200] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: 0 });
+    expect(next.priceRange[0]).toBe(0);
+    expect(next.priceRange[1]).toBe(200); // max preservado
+  });
 });

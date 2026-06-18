@@ -280,8 +280,9 @@ export function useFiltersPageState() {
     publico: filters.publicoAlvo,
     endomarketing: filters.endomarketing || [],
   });
-  // BUG-METADATA-SILENT-FAIL: notifica o usuário quando a RPC fn_super_filtro_product_ids
-  // falha (antes: grade zerava silenciosamente sem nenhum feedback).
+  // FIX-8: notifica erros de todas as RPCs de filtro server-side.
+  // Padrão consistente: cada RPC tem seu ref para evitar toast duplicado se o erro
+  // persistir entre renders.
   const prevMetadataErrorRef = useRef<unknown>(null);
   useEffect(() => {
     if (metadataFilterError && metadataFilterError !== prevMetadataErrorRef.current) {
@@ -292,6 +293,26 @@ export function useFiltersPageState() {
     }
     prevMetadataErrorRef.current = metadataFilterError;
   }, [metadataFilterError]);
+
+  const prevSizeErrorRef = useRef<unknown>(null);
+  useEffect(() => {
+    if (sizeFilterError && sizeFilterError !== prevSizeErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de tamanhos', {
+        description: 'O filtro de Tamanhos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevSizeErrorRef.current = sizeFilterError;
+  }, [sizeFilterError]);
+
+  const prevCategoryErrorRef = useRef<unknown>(null);
+  useEffect(() => {
+    if (categoryFilterError && categoryFilterError !== prevCategoryErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de categorias', {
+        description: 'O filtro de Categorias falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevCategoryErrorRef.current = categoryFilterError;
+  }, [categoryFilterError]);
 
   const {
     productIds: colorFilteredProductIds,
@@ -305,7 +326,12 @@ export function useFiltersPageState() {
   });
 
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    const vm = searchParams.get('viewMode');
+    if (vm === 'list' || vm === 'table' || vm === 'grid') return vm;
+    return 'grid';
+  });
   const [selectionMode, setSelectionMode] = useState(false);
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
 
@@ -320,6 +346,20 @@ export function useFiltersPageState() {
     window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []); // empty deps — handler uses ref to avoid stale closure
+
+  // FIX-9: sincroniza viewMode com URL para preservar modo ao atualizar ou compartilhar link.
+  // Efeito separado do bloco principal (filters) porque viewMode é declarado depois.
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (viewMode !== 'grid') next.set('viewMode', viewMode);
+        else next.delete('viewMode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [viewMode, setSearchParams]);
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
   const [commandAction, setCommandAction] = useState<string | null>(null);
   // FIX-12: removido estado 'appliedFilters' — declarado mas nunca consumido (dead code).

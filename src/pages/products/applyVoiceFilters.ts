@@ -18,13 +18,13 @@ export function applyVoiceFilters(prev: FilterState, f: VoiceFilters): FilterSta
   if (f.material) next.materiais = [...new Set([...prev.materiais, f.material])];
 
   // BUG-VOZ-PRICE FIX: apply min AND max atomically so both survive in a single command.
+  // FIX-11: clamp to ≥0 — voice agent may produce negative values from misrecognition.
   const hasMin = typeof f.minPrice === 'number';
   const hasMax = typeof f.maxPrice === 'number';
   if (hasMin || hasMax) {
-    next.priceRange = [
-      hasMin ? (f.minPrice as number) : next.priceRange[0],
-      hasMax ? (f.maxPrice as number) : next.priceRange[1],
-    ];
+    const rawMin = hasMin ? (f.minPrice as number) : next.priceRange[0];
+    const rawMax = hasMax ? (f.maxPrice as number) : next.priceRange[1];
+    next.priceRange = [Math.max(0, rawMin), Math.max(0, rawMax)];
   }
 
   if (f.inStock) next.inStock = true;
