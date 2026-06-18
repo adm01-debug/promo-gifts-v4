@@ -46,6 +46,7 @@ import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
+import { applyVoiceFilters } from './applyVoiceFilters';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
@@ -137,37 +138,7 @@ export default function FiltersPage() {
 
       if (action.action === 'filter' && action.data.filters) {
         const f = action.data.filters;
-        state.setFilters((prev: FilterState) => {
-          const next = { ...prev };
-          // Dedup ao acumular — voz pode repetir o mesmo termo entre comandos.
-          if (f.color) next.colors = [...new Set([...prev.colors, f.color])];
-          if (f.category) next.categories = [...new Set([...prev.categories, f.category])];
-          if (f.material) next.materiais = [...new Set([...prev.materiais, f.material])];
-          // BUG-VOZ-PRICE FIX: aplicar min E max de forma acumulativa. Antes, quando
-          // ambos vinham no mesmo comando, a segunda atribuição lia prev.priceRange e
-          // descartava o valor recém-definido pela primeira (ex.: "entre 10 e 50" perdia o 50).
-          const hasMin = typeof f.minPrice === 'number';
-          const hasMax = typeof f.maxPrice === 'number';
-          if (hasMin || hasMax) {
-            next.priceRange = [
-              hasMin ? (f.minPrice as number) : next.priceRange[0],
-              hasMax ? (f.maxPrice as number) : next.priceRange[1],
-            ];
-          }
-          if (f.inStock) next.inStock = true;
-          if (f.isKit) next.isKit = true;
-          // FIX-5: mapeamento estendido dos filtros de voz para FilterState
-          if (f.gender) next.gender = [...new Set([...prev.gender, f.gender])];
-          if (f.featured) next.featured = true;
-          if (f.isNew) next.isNew = true;
-          if (f.hasPersonalization) next.hasPersonalization = true;
-          if (f.onSale) next.onSale = true;
-          if (typeof f.minStock === 'number' && f.minStock > 0) next.minStock = f.minStock;
-          if (f.publicoAlvo) next.publicoAlvo = [...new Set([...prev.publicoAlvo, f.publicoAlvo])];
-          if (f.endomarketing)
-            next.endomarketing = [...new Set([...prev.endomarketing, 'endomarketing'])];
-          return next;
-        });
+        state.setFilters((prev: FilterState) => applyVoiceFilters(prev, f));
         toast.success(action.response);
       } else if (action.action === 'search' && action.data.query) {
         const query = action.data.query;
