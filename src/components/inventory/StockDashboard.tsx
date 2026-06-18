@@ -338,6 +338,7 @@ export function StockDashboard() {
               second: '2-digit',
             })}
             aria-live="polite"
+            data-testid="stock-last-refresh"
           >
             <Clock className="h-3.5 w-3.5" />
             <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
