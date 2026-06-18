@@ -11,39 +11,46 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-const updateQuoteSpy = vi.fn(async () => ({ id: 'quote-1' }));
-const createQuoteSpy = vi.fn(async () => ({ id: 'quote-1' }));
-const requestApprovalSpy = vi.fn(async () => undefined);
-// Referência estável: o efeito de load do hook depende de `fetchQuote`; um spy
-// recriado a cada render reentraria no efeito em loop.
-const fetchQuoteSpy = vi.fn(async () => LOADED_QUOTE);
-
-// Orçamento completo e válido, salvo no passado (baseline antigo).
-const LOADED_QUOTE = {
-  id: 'quote-1',
-  client_id: 'company-1',
-  contact_id: 'contact-1',
-  client_name: 'Contato Teste',
-  client_company: 'Empresa Teste',
-  status: 'pending',
-  payment_method: 'boleto',
-  payment_terms: '14_dias',
-  delivery_time: '14_dias',
-  shipping_type: 'cif',
-  shipping_cost: 0,
-  valid_until: '2026-12-31',
-  updated_at: '2026-01-01T00:00:00.000Z',
-  items: [],
-};
-
-const VALID_ITEM = {
-  product_id: 'p-1',
-  product_name: 'Produto',
-  product_sku: 'SKU-1',
-  quantity: 10,
-  unit_price: 100,
-  personalizations: [],
-};
+// Spies e fixtures em vi.hoisted: a factory de vi.mock('@/hooks/quotes') é içada
+// ao topo do arquivo e avaliada ao resolver useQuoteBuilderState; declarar estes
+// valores via vi.hoisted garante que estejam inicializados antes disso, evitando
+// um ReferenceError de TDZ (createQuoteSpy/updateQuoteSpy/fetchQuoteSpy/VALID_ITEM).
+const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID_ITEM } =
+  vi.hoisted(() => {
+    // Orçamento completo e válido, salvo no passado (baseline antigo).
+    const loadedQuote = {
+      id: 'quote-1',
+      client_id: 'company-1',
+      contact_id: 'contact-1',
+      client_name: 'Contato Teste',
+      client_company: 'Empresa Teste',
+      status: 'pending',
+      payment_method: 'boleto',
+      payment_terms: '14_dias',
+      delivery_time: '14_dias',
+      shipping_type: 'cif',
+      shipping_cost: 0,
+      valid_until: '2026-12-31',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      items: [],
+    };
+    return {
+      VALID_ITEM: {
+        product_id: 'p-1',
+        product_name: 'Produto',
+        product_sku: 'SKU-1',
+        quantity: 10,
+        unit_price: 100,
+        personalizations: [],
+      },
+      updateQuoteSpy: vi.fn(async () => ({ id: 'quote-1' })),
+      createQuoteSpy: vi.fn(async () => ({ id: 'quote-1' })),
+      requestApprovalSpy: vi.fn(async () => undefined),
+      // Referência estável: o efeito de load do hook depende de `fetchQuote`; um
+      // spy recriado a cada render reentraria no efeito em loop.
+      fetchQuoteSpy: vi.fn(async () => loadedQuote),
+    };
+  });
 
 vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },

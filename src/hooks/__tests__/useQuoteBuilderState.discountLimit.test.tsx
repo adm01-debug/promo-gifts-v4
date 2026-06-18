@@ -28,16 +28,21 @@ vi.mock('react-router-dom', () => ({
 }));
 
 // Item fixo: qty 10 × R$100 = R$1000 de subtotal real (sem personalizações).
-const FIXED_ITEMS = [
-  {
-    product_id: 'p-1',
-    product_name: 'Produto Teste',
-    product_sku: 'SKU-1',
-    quantity: 10,
-    unit_price: 100,
-    personalizations: [],
-  },
-];
+// Em vi.hoisted porque a factory de vi.mock('@/hooks/quotes') é içada ao topo do
+// arquivo e avaliada ao resolver useQuoteBuilderState; sem hoisting, a fixture
+// estaria na temporal dead zone (TDZ) quando o mock a referencia.
+const { FIXED_ITEMS } = vi.hoisted(() => ({
+  FIXED_ITEMS: [
+    {
+      product_id: 'p-1',
+      product_name: 'Produto Teste',
+      product_sku: 'SKU-1',
+      quantity: 10,
+      unit_price: 100,
+      personalizations: [],
+    },
+  ],
+}));
 
 vi.mock('@/hooks/quotes', () => ({
   useQuotes: () => ({
