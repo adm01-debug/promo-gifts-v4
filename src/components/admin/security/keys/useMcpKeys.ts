@@ -206,7 +206,7 @@ export function useMcpKeys() {
         });
       }
     }
-    return Array.from(map.values()).sort((a, b) => {
+    return [...map.values()].sort((a, b) => {
       const an = (a.name ?? a.email ?? a.user_id).toLowerCase();
       const bn = (b.name ?? b.email ?? b.user_id).toLowerCase();
       return an.localeCompare(bn);

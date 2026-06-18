@@ -168,7 +168,7 @@ export function useMagicUpState() {
       ]);
       const map = new Map<string, CrmCompany>();
       [...byRazao, ...byNomeFantasia].forEach((c) => map.set(c.id, c));
-      return Array.from(map.values()).slice(0, 20);
+      return [...map.values()].slice(0, 20);
     },
     enabled: debouncedClientSearch.length >= 3,
   });
@@ -343,7 +343,7 @@ export function useMagicUpState() {
             stock: (v.stock_quantity as number) ?? 0,
           });
         });
-        setColors(Array.from(uniqueColors.values()));
+        setColors([...uniqueColors.values()]);
       } catch {
         if (cancelled) return;
         setColors([]);

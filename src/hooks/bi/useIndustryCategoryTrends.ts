@@ -74,8 +74,8 @@ function buildMockResult(ramo?: string | null): IndustryCategoryTrendsResult {
     });
     byCat.set(key, cur);
   }
-  const totalRev = Array.from(byCat.values()).reduce((s, c) => s + c.totalRevenue, 0) || 1;
-  const categories = Array.from(byCat.values())
+  const totalRev = [...byCat.values()].reduce((s, c) => s + c.totalRevenue, 0) || 1;
+  const categories = [...byCat.values()]
     .map((c) => ({
       ...c,
       revenueSharePct: (c.totalRevenue / totalRev) * 100,
@@ -144,8 +144,8 @@ export function useIndustryCategoryTrends(ramoAtividade?: string | null) {
         });
         byCat.set(key, cur);
       }
-      const totalRev = Array.from(byCat.values()).reduce((s, c) => s + c.totalRevenue, 0) || 1;
-      const categories = Array.from(byCat.values())
+      const totalRev = [...byCat.values()].reduce((s, c) => s + c.totalRevenue, 0) || 1;
+      const categories = [...byCat.values()]
         .map((c) => ({
           ...c,
           revenueSharePct: (c.totalRevenue / totalRev) * 100,

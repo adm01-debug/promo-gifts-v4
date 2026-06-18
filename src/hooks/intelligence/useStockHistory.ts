@@ -244,7 +244,7 @@ export function aggregateDailySummaryByDate(summaries: StockDailySummary[], supp
   }
 
   // Strip internal fields before returning
-  return Array.from(map.values())
+  return [...map.values()]
     .sort((a, b) => a.date.localeCompare(b.date))
     .map(({ _costWeightedSum, _costWeightedCount, ...rest }) => rest);
 }

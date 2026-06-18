@@ -170,7 +170,7 @@ export function RoleMigrationPanel() {
   };
 
   const buildItems = (): MigrationItemInput[] =>
-    Array.from(selected).map((userId) => ({ user_id: userId, to_role: toRole, operation }));
+    [...selected].map((userId) => ({ user_id: userId, to_role: toRole, operation }));
 
   const submit = async (dryRun: boolean) => {
     if (selected.size === 0) {

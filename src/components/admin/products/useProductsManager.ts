@@ -419,7 +419,7 @@ export function useProductsManager() {
       setIsBulkUpdating(true);
       try {
         const results = await Promise.allSettled(
-          Array.from(selectedIds).map((id) =>
+          [...selectedIds].map((id) =>
             dbInvokeSingle({
               table: 'products',
               operation: 'update',

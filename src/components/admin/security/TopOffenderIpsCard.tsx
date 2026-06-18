@@ -55,9 +55,7 @@ export function TopOffenderIpsCard() {
     (tokenRes.data ?? []).forEach((r) => bump(r.ip_address, 'tokenFailures'));
     (botRes.data ?? []).forEach((r) => bump(r.ip_address, 'botHits'));
 
-    const top = Array.from(map.values())
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
+    const top = [...map.values()].sort((a, b) => b.total - a.total).slice(0, 10);
 
     setRows(top);
     setLoading(false);

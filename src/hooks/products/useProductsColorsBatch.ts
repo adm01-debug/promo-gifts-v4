@@ -157,7 +157,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           // Salva no cache global; IDs sem variantes ficam marcados como array vazio
           chunk.forEach((id) => {
             const productColors = results.get(id);
-            const arr = productColors ? Array.from(productColors.values()) : [];
+            const arr = productColors ? [...productColors.values()] : [];
             arr.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
             GLOBAL_COLORS_CACHE.set(id, arr);
           });

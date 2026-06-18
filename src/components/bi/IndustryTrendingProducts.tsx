@@ -76,7 +76,7 @@ export function IndustryTrendingProducts({ ramoAtividade, clientId }: Props) {
       const cat = resolveBICategoryLabel(t.productName, t.category);
       counts.set(cat, (counts.get(cat) ?? 0) + 1);
     });
-    return Array.from(counts.entries())
+    return [...counts.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([label, count]) => ({ label, count }));
   }, [data]);

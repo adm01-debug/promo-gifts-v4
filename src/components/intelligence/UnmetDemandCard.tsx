@@ -63,7 +63,7 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
         map.set(key, existing);
       });
 
-      return Array.from(map.entries())
+      return [...map.entries()]
         .map(([term, v]) => ({ term, searchCount: v.count, lastSearchedAt: v.last }))
         .sort((a, b) => b.searchCount - a.searchCount)
         .slice(0, 10);

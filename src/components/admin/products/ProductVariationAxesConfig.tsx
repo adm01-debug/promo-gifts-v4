@@ -122,7 +122,7 @@ export function ProductVariationAxesConfig({
       }
       state[axis.key] = {
         active: values.size > 0,
-        values: Array.from(values).sort((a, b) => {
+        values: [...values].sort((a, b) => {
           if (axis.key === 'size') {
             const ia = SIZE_ORDER.indexOf(a.toUpperCase());
             const ib = SIZE_ORDER.indexOf(b.toUpperCase());

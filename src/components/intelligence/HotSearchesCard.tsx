@@ -68,7 +68,7 @@ export function HotSearchesCard({ days }: HotSearchesCardProps) {
         }
       });
 
-      return Array.from(recent.entries())
+      return [...recent.entries()]
         .map(([term, count]) => {
           const prev = previous.get(term) ?? 0;
           const delta = prev === 0 ? (count > 0 ? 100 : 0) : ((count - prev) / prev) * 100;

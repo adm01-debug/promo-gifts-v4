@@ -87,7 +87,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
     if (!hasPriceByColor) return [];
     const uniqueColors = new Set<number>();
     tables.filter(hasMaxColors).forEach((t) => uniqueColors.add(t.max_colors));
-    return Array.from(uniqueColors)
+    return [...uniqueColors]
       .sort((a, b) => a - b)
       .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }));
   }, [tables, hasPriceByColor]);
@@ -108,7 +108,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
           areaCm2: w * h,
         });
     });
-    return Array.from(uniqueSizes.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
+    return [...uniqueSizes.values()].sort((a, b) => a.areaCm2 - b.areaCm2);
   }, [tables, hasPriceByArea]);
 
   const getTableForSelection = (
@@ -188,8 +188,8 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
           .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }))
       : [];
     const sizeOptions: SizeOption[] = hasPriceByArea
-      ? Array.from(
-          tables
+      ? [
+          ...tables
             .filter(hasAreaSize)
             .reduce((map, t) => {
               const key = `${t.max_area_width_cm}x${t.max_area_height_cm}`;
@@ -204,7 +204,7 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
               return map;
             }, new Map<string, SizeOption>())
             .values(),
-        ).sort((a, b) => a.areaCm2 - b.areaCm2)
+        ].sort((a, b) => a.areaCm2 - b.areaCm2)
       : [];
     const getTableForSelection = (
       colors: number,

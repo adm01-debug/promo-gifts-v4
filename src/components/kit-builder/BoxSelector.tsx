@@ -63,7 +63,7 @@ export function BoxSelector({
     boxes.forEach((b) => {
       if (b.material) set.add(b.material);
     });
-    return Array.from(set).sort();
+    return [...set].sort();
   }, [boxes]);
 
   // Dimension ranges for sliders

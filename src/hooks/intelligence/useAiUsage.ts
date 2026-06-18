@@ -207,16 +207,16 @@ export function useAiUsageStats(period: 'day' | 'week' | 'month' = 'month') {
         errorCount: totalRequests - successCount,
         totalTokens,
         totalCost,
-        byUser: Array.from(byUser.entries())
+        byUser: [...byUser.entries()]
           .map(([userId, stats]) => ({ userId, ...stats }))
           .sort((a, b) => b.cost - a.cost),
-        byFunction: Array.from(byFunction.entries())
+        byFunction: [...byFunction.entries()]
           .map(([name, stats]) => ({ name, ...stats }))
           .sort((a, b) => b.count - a.count),
-        byModel: Array.from(byModel.entries())
+        byModel: [...byModel.entries()]
           .map(([name, stats]) => ({ name, ...stats }))
           .sort((a, b) => b.count - a.count),
-        byDay: Array.from(byDay.entries())
+        byDay: [...byDay.entries()]
           .map(([date, stats]) => ({ date, ...stats }))
           .sort((a, b) => a.date.localeCompare(b.date)),
       };

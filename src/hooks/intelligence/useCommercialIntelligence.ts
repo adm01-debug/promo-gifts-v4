@@ -121,14 +121,14 @@ export function useCommercialKPIs(
       categoryId,
       supplierId,
       productId,
-      productIds ? Array.from(productIds).length : null,
+      productIds ? [...productIds].length : null,
     ],
     queryFn: async (): Promise<IntelligenceKPI> => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       if (hasFilter && productIds) {
-        const pids = Array.from(productIds);
+        const pids = [...productIds];
         if (!pids.length)
           return {
             totalQuotes: 0,
@@ -268,7 +268,7 @@ export function useTrendingProducts(
       searchTerm,
     ],
     queryFn: async (): Promise<TrendingProduct[]> => {
-      const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
+      const pids = productIds ? [...productIds].slice(0, 200) : undefined;
       const [{ data: orderItems }, { data: quoteItems }] = await Promise.all([
         pids
           ? supabase
@@ -336,7 +336,7 @@ export function useTrendingProducts(
         if (product) product.quoteCount += 1;
       });
 
-      return Array.from(productMap.values())
+      return [...productMap.values()]
         .map((p) => ({
           ...p,
           conversionRate: p.quoteCount > 0 ? Math.round((p.orderCount / p.quoteCount) * 100) : 100,
@@ -371,7 +371,7 @@ export function useSegmentAnalysis(
     queryKey: ['commercial-segments', user?.id, days, categoryId, supplierId],
     queryFn: async (): Promise<SegmentData[]> => {
       if (hasFilter && productIds) {
-        const pids = Array.from(productIds).slice(0, 200);
+        const pids = [...productIds].slice(0, 200);
         if (!pids.length) return [];
         const { data: oi } = await supabase
           .from('order_items')
@@ -418,7 +418,7 @@ export function useOpportunities(
   return useQuery({
     queryKey: ['commercial-opportunities', user?.id, days, categoryId, supplierId],
     queryFn: async (): Promise<OpportunityProduct[]> => {
-      const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
+      const pids = productIds ? [...productIds].slice(0, 200) : undefined;
       const [{ data: quoteItems }, { data: orderItems }] = await Promise.all([
         pids
           ? supabase
@@ -520,7 +520,7 @@ export function useTopClients(
     queryKey: ['commercial-top-clients', user?.id, days, categoryId, supplierId],
     queryFn: async () => {
       if (hasFilter && productIds) {
-        const pids = Array.from(productIds).slice(0, 200);
+        const pids = [...productIds].slice(0, 200);
         if (!pids.length) return [];
         const { data: oi } = await supabase
           .from('order_items')
@@ -567,7 +567,7 @@ export function useCategoryRanking(
   return useQuery({
     queryKey: ['commercial-category-ranking', user?.id, days, categoryId, supplierId, productId],
     queryFn: async (): Promise<CategoryRankingItem[]> => {
-      const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
+      const pids = productIds ? [...productIds].slice(0, 200) : undefined;
       const { data: orderItems } = pids
         ? await supabase
             .from('order_items')
@@ -636,7 +636,7 @@ export function useCategoryRanking(
         logger.warn('Market data unavailable for category ranking:', e);
       }
 
-      const items = Array.from(categoryMap.values());
+      const items = [...categoryMap.values()];
       const maxR = Math.max(1, ...items.map((i) => i.internalRevenue));
       const maxD = Math.max(1, ...items.map((i) => i.marketDepleted));
       items.forEach((i) => {
@@ -666,7 +666,7 @@ export function useSupplierSales(
   return useQuery({
     queryKey: ['commercial-supplier-sales', user?.id, days, categoryId, supplierId],
     queryFn: async () => {
-      const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
+      const pids = productIds ? [...productIds].slice(0, 200) : undefined;
       const { data: orderItems } = pids
         ? await supabase
             .from('order_items')
@@ -703,7 +703,7 @@ export function useSupplierSales(
         supplierMap.set(supplier, e);
       });
 
-      return Array.from(supplierMap.entries())
+      return [...supplierMap.entries()]
         .map(([supplier, data]) => ({
           supplierName: supplier,
           orderCount: data.orderCount,

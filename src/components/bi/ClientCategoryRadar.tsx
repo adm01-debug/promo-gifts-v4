@@ -145,7 +145,7 @@ export function ClientCategoryRadar({ clientId, ramoAtividade, clientName }: Pro
       }
     }
 
-    return Array.from(map.values())
+    return [...map.values()]
       .map((r) => ({
         ...r,
         ratio: r.industryShare > 0 ? r.clientShare / r.industryShare : 0,

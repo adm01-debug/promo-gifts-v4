@@ -90,7 +90,7 @@ async function fetchStatus(): Promise<PulseBarStatus> {
   for (const r of rotations ?? []) {
     if (!lastBySecret.has(r.secret_name)) lastBySecret.set(r.secret_name, r.rotated_at);
   }
-  const staleSecrets = Array.from(lastBySecret.values()).filter((t) => t < ninetyDaysAgo).length;
+  const staleSecrets = [...lastBySecret.values()].filter((t) => t < ninetyDaysAgo).length;
 
   const failing = failingConnections ?? 0;
   const autoDisabled = autoDisabledWebhooks ?? 0;

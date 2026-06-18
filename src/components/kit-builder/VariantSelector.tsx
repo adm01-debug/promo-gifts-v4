@@ -164,7 +164,7 @@ export function VariantSelector({
         ) : hasSizes && grouped ? (
           /* ── Grouped view: Color → Sizes ── */
           <div className="max-h-56 space-y-2 overflow-y-auto">
-            {Array.from(grouped.entries()).map(([colorName, group]) => {
+            {[...grouped.entries()].map(([colorName, group]) => {
               const hex = group[0]?.color_hex;
               return (
                 <div key={colorName} className="space-y-1">

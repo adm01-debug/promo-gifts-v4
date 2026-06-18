@@ -40,7 +40,7 @@ export function useBulkSelection<T extends { id: string }>(items: T[]) {
   const isSomeSelected = selectedIds.size > 0 && selectedIds.size < items.length;
 
   return {
-    selectedIds: Array.from(selectedIds),
+    selectedIds: [...selectedIds],
     selectedCount: selectedIds.size,
     toggleItem,
     toggleAll,

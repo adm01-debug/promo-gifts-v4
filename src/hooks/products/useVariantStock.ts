@@ -132,7 +132,7 @@ export function useVariantStock() {
       const cat = p.categoryName || 'Sem categoria';
       map.set(cat, (map.get(cat) || 0) + 1);
     });
-    return Array.from(map.entries())
+    return [...map.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [productStocks]);
@@ -143,7 +143,7 @@ export function useVariantStock() {
       const sup = p.supplierName || 'Sem fornecedor';
       map.set(sup, (map.get(sup) || 0) + 1);
     });
-    return Array.from(map.entries())
+    return [...map.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [productStocks]);
@@ -157,7 +157,7 @@ export function useVariantStock() {
         }
       });
     });
-    return Array.from(map.entries())
+    return [...map.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
   }, [productStocks]);
@@ -181,7 +181,7 @@ export function useVariantStock() {
         if (v.colorName) s.add(v.colorName);
       }),
     );
-    return Array.from(s).sort();
+    return [...s].sort();
   }, [productStocks]);
 
   const criticalAlerts = useMemo(() => alerts.filter((a) => a.severity === 'error'), [alerts]);

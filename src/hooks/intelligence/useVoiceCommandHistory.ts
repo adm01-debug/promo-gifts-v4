@@ -145,7 +145,7 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
       }
     });
 
-    return Array.from(patternMap.values()).sort((a, b) => {
+    return [...patternMap.values()].sort((a, b) => {
       // Score based on frequency and recency
       const now = Date.now();
       const aRecency = 1 / (1 + (now - a.lastUsed.getTime()) / (1000 * 60 * 60 * 24));

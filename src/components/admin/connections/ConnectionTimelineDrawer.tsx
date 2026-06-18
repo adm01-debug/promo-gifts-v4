@@ -155,9 +155,7 @@ export function ConnectionTimelineDrawer({
         map.set(key, (map.get(key) ?? 0) + 1);
       }
     }
-    return Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   }, [rows]);
 
   const stats = useMemo(() => {

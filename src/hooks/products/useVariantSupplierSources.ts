@@ -186,5 +186,5 @@ export function calculateColorSummary(
     }
   }
 
-  return Array.from(colorMap.values());
+  return [...colorMap.values()];
 }

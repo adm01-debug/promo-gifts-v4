@@ -75,7 +75,7 @@ export function ItemSelector({
     items.forEach((i) => {
       if (i.category) cats.add(i.category);
     });
-    return Array.from(cats).sort();
+    return [...cats].sort();
   }, [items]);
 
   const selectedItemIds = new Set(selectedItems.map((i) => i.id));

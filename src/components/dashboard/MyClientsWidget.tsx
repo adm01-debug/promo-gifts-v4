@@ -107,7 +107,7 @@ function aggregate(
   };
   for (const q of quotes) upsert('quote', q);
   for (const o of orders) upsert('order', o);
-  return Array.from(map.values()).sort((a, b) => (a.lastInteraction < b.lastInteraction ? 1 : -1));
+  return [...map.values()].sort((a, b) => (a.lastInteraction < b.lastInteraction ? 1 : -1));
 }
 
 export function MyClientsWidget() {

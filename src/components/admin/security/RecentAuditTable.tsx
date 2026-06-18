@@ -88,7 +88,7 @@ export function RecentAuditTable() {
 
   const actions = useMemo(() => {
     const s = new Set(entries.map((e) => e.action));
-    return Array.from(s).sort();
+    return [...s].sort();
   }, [entries]);
 
   const filtered = useMemo(() => {

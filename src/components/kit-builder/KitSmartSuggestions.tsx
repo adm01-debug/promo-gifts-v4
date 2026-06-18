@@ -24,7 +24,7 @@ export function KitSmartSuggestions({ selectedItems, onAddItem }: KitSmartSugges
   const selectedIds = new Set(selectedItems.map((i) => i.id));
 
   const { data: suggestions = [] } = useQuery({
-    queryKey: ['kit-suggestions', ...Array.from(selectedIds)],
+    queryKey: ['kit-suggestions', ...selectedIds],
     queryFn: async () => {
       if (!user?.id || selectedIds.size === 0) return [];
 
@@ -64,7 +64,7 @@ export function KitSmartSuggestions({ selectedItems, onAddItem }: KitSmartSugges
       }
 
       // Sort by frequency and return top 5
-      return Array.from(coOccurrence.entries())
+      return [...coOccurrence.entries()]
         .map(([id, data]) => ({ id, ...data }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);

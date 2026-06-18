@@ -239,7 +239,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             </tr>
           </thead>
           <tbody>
-            {Array.from(kitGroups.entries()).map(([groupId, group]) => (
+            {[...kitGroups.entries()].map(([groupId, group]) => (
               <React.Fragment key={groupId}>
                 <tr className="border-b border-border bg-accent/60">
                   <td colSpan={colCount} className="p-3">

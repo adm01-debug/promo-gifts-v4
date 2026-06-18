@@ -137,7 +137,7 @@ export function useMockupGenerator() {
       if (clientKey && m.client_name && !map.has(clientKey))
         map.set(clientKey, { id: m.client_id || m.client_name, name: m.client_name });
     }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [mockupHistory]);
 
   const productLocations = useMemo(() => {

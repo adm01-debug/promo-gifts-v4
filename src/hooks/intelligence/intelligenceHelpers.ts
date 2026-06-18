@@ -34,7 +34,7 @@ export function aggregateSegments(
     existing.revenue += order.total ?? 0;
     segmentMap.set(segment, existing);
   });
-  return Array.from(segmentMap.entries())
+  return [...segmentMap.entries()]
     .map(([segment, data]) => ({
       segment,
       orderCount: data.count,
@@ -67,7 +67,7 @@ export function aggregateClients(
     existing.revenue += o.total ?? 0;
     clientMap.set(name, existing);
   });
-  return Array.from(clientMap.entries())
+  return [...clientMap.entries()]
     .map(([name, data]) => ({
       clientName: name,
       company: data.company,

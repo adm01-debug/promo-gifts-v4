@@ -72,7 +72,7 @@ export function TopCategoriesCard({ days }: TopCategoriesCardProps) {
         map.set(cat, existing);
       });
 
-      const rows: CategoryRow[] = Array.from(map.entries()).map(([cat, agg]) => {
+      const rows: CategoryRow[] = [...map.entries()].map(([cat, agg]) => {
         const baseline = agg.views - agg.recent;
         const score = calculateTrendingScore({
           recentCount: agg.recent,

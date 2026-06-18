@@ -132,7 +132,7 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
         }
       }
 
-      const daily = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const daily = [...dateMap.values()].sort((a, b) => a.date.localeCompare(b.date));
 
       // Global KPIs
       let totalDepleted7d = 0;
@@ -188,7 +188,7 @@ export function useMarketIntelligenceMacro(days = 30, supplierId?: string | null
           topDepletionDay,
         },
         suppliers,
-        supplierIds: Array.from(uniqueSuppliers),
+        supplierIds: [...uniqueSuppliers],
       };
     },
     staleTime: 10 * 60 * 1000,

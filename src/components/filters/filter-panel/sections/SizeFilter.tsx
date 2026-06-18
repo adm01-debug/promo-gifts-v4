@@ -74,7 +74,7 @@ export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeF
         if (v.size_code) sizeSet.add(v.size_code);
       });
     });
-    return Array.from(sizeSet).sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
+    return [...sizeSet].sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
   }, [products]);
 
   const filteredSizes = useMemo(() => {

@@ -78,7 +78,7 @@ export function validateSecretName(name: string): SecretNameValidation {
     ok: false,
     code: 'not_whitelisted',
     message: `O nome "${trimmed}" não está na lista permitida de credenciais.`,
-    hint: `Aceitos: ${Array.from(ALLOWED_SECRET_NAMES).slice(0, 4).join(', ')}… ou prefixos ${ALLOWED_SECRET_PREFIXES.join(', ')}`,
+    hint: `Aceitos: ${[...ALLOWED_SECRET_NAMES].slice(0, 4).join(', ')}… ou prefixos ${ALLOWED_SECRET_PREFIXES.join(', ')}`,
   };
 }
 

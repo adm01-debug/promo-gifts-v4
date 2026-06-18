@@ -81,7 +81,7 @@ export function useCatalogFiltering({
     // Optimized Color Filtering: Process once per product
     if (hasColorFilters) {
       const groupArray =
-        colorGroupSet.size > 0 ? Array.from(colorGroupSet).map((s) => s.toLowerCase()) : null;
+        colorGroupSet.size > 0 ? [...colorGroupSet].map((s) => s.toLowerCase()) : null;
 
       result = result.filter((p) => {
         if (!p.colors?.length) return false;

@@ -330,7 +330,7 @@ function TimelineView({ entries }: { entries: FutureStockEntry[] }) {
       if (!groups.has(label)) groups.set(label, []);
       groups.get(label)?.push(e);
     }
-    return Array.from(groups.entries());
+    return [...groups.entries()];
   }, [entries]);
 
   return (

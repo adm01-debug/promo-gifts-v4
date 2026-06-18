@@ -73,13 +73,9 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
       reasonMap.set(log.detection_reason, (reasonMap.get(log.detection_reason) || 0) + 1);
     }
 
-    const topIps = Array.from(ipMap.values())
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
-    const topEndpoints = Array.from(epMap.values())
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
-    const topReasons = Array.from(reasonMap.entries())
+    const topIps = [...ipMap.values()].sort((a, b) => b.total - a.total).slice(0, 10);
+    const topEndpoints = [...epMap.values()].sort((a, b) => b.total - a.total).slice(0, 10);
+    const topReasons = [...reasonMap.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([reason, count]) => ({ reason, count }));
@@ -223,9 +219,9 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
                       </TableCell>
                       <TableCell
                         className="max-w-[160px] truncate text-xs text-muted-foreground"
-                        title={Array.from(row.reasons).join(', ')}
+                        title={[...row.reasons].join(', ')}
                       >
-                        {Array.from(row.reasons).slice(0, 2).join(', ')}
+                        {[...row.reasons].slice(0, 2).join(', ')}
                       </TableCell>
                       <TableCell>
                         <Button

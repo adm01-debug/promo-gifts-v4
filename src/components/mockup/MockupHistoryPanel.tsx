@@ -117,7 +117,7 @@ export function MockupHistoryPanel({
         map.set(m.technique_name, tech?.id || m.technique_name);
       }
     }
-    return Array.from(map.entries())
+    return [...map.entries()]
       .map(([name, id]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [mockupHistory, techniques]);

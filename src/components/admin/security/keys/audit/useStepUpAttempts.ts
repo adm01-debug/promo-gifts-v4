@@ -80,12 +80,8 @@ export function useStepUpAttempts() {
       return reason && REASONS.includes(reason as StepUpReason);
     });
 
-    const userIds = Array.from(
-      new Set(onlyStepUp.map((r) => r.user_id).filter(Boolean)),
-    ) as string[];
-    const keyIds = Array.from(
-      new Set(onlyStepUp.map((r) => r.resource_id).filter(Boolean)),
-    ) as string[];
+    const userIds = [...new Set(onlyStepUp.map((r) => r.user_id).filter(Boolean))] as string[];
+    const keyIds = [...new Set(onlyStepUp.map((r) => r.resource_id).filter(Boolean))] as string[];
 
     const [profilesRes, keysRes] = await Promise.all([
       userIds.length

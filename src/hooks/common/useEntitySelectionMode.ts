@@ -190,14 +190,14 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
   // on every render with active selection. Now selectedProducts is the single
   // source of truth and bulkCartProducts is a plain alias with zero overhead.
   const selectedProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
+    const ids = [...selectedIds];
     return filteredProducts.filter((p) => ids.includes(p.product_id)).map(entityToProduct);
   }, [selectedIds, filteredProducts, entityToProduct]);
 
   // Alias for backward compatibility with consumers expecting bulkCartProducts
   const bulkCartProducts = selectedProducts;
 
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? [...selectedIds][0] : '';
   const firstSelectedProduct = filteredProducts.find((p) => p.product_id === firstSelectedId);
 
   return {

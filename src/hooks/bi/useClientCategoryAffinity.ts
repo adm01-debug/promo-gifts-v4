@@ -161,8 +161,8 @@ export function useClientCategoryAffinity(clientId?: string) {
       byCat.set(key, cur);
     }
 
-    const totalRev = Array.from(byCat.values()).reduce((s, c) => s + c.totalRevenue, 0) || 1;
-    const categories = Array.from(byCat.values())
+    const totalRev = [...byCat.values()].reduce((s, c) => s + c.totalRevenue, 0) || 1;
+    const categories = [...byCat.values()]
       .map((c) => {
         const deltaPct =
           c.revenuePrevious > 0
