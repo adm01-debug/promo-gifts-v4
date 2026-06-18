@@ -33,8 +33,15 @@ for (const vp of VIEWPORTS) {
       await setup(page);
       const btn = page.getByTestId('stock-search-button');
       await expect(btn).toBeVisible();
+
+      // Garante baseline limpo: se houver filtros pré-aplicados (ex.: status
+      // padrão != 'all' em algum deploy), aciona o "Limpar" para zerar.
+      const clearAll = page.getByRole('button', { name: /^Limpar filtros|Reset/i }).first();
+      if (await clearAll.isVisible().catch(() => false)) {
+        await clearAll.click();
+      }
+
       await expect(btn).toBeDisabled();
-      // aria adequados
       await expect(btn).toHaveAttribute('aria-label', /Aplicar busca/i);
       await expect(btn).toHaveAttribute('aria-busy', 'false');
 
