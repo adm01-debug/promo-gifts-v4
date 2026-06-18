@@ -90,14 +90,11 @@ test.describe('QuickView • ordem e estados dos botões de ação', () => {
       const maxY = Math.max(...ys);
       expect(maxY - minY).toBeLessThanOrEqual(6);
 
-      // 4. Ordem do DOM == ordem visual (não há inversão por flex-direction)
-      const domLabels: string[] = [];
-      const domButtons = page.locator(`${ACTIONS_SELECTOR} button`);
-      const n = await domButtons.count();
-      for (let i = 0; i < n; i++) {
-        domLabels.push((await domButtons.nth(i).getAttribute('aria-label')) ?? '');
-      }
+      // 4. Ordem do DOM == ordem visual (não há inversão por flex-direction).
+      //    Considera apenas os 6 botões de ação (ignora "Ver produto completo").
+      const domLabels = buttons.map((b) => b.label);
       expect(domLabels).toEqual([...EXPECTED_ORDER]);
+
     });
   }
 
