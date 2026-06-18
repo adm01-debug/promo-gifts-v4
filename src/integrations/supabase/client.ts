@@ -31,6 +31,10 @@ const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
 // Localhost, placeholders, and URLs explicitly pointing to the canonical project are OK.
 // Self-hosted (atomicabr), other Lovable Cloud projects, etc. are REJECTED.
 // Returns true when the URL is usable, false when it must be rejected.
+// Dedup: emite no máximo 1 warn por sessão por par (envUrl, expected). Evita
+// poluir telemetria quando o módulo é reavaliado (HMR, testes, lazy loaders).
+const inconsistencyEmitted = new Set<string>();
+
 const validateEnv = (): boolean => {
   if (!envUrl) {
     log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
@@ -44,18 +48,22 @@ const validateEnv = (): boolean => {
     // reescrevia o .env, poluindo dashboards de telemetria. Mantemos o nome do evento
     // ("config_inconsistency") para preservar contratos (ssot-fallback.test.ts e
     // alertas externos que filtram por substring).
-    log.warn('config_inconsistency', {
-      envUrl,
-      expected: CURRENT_PROJECT_ID,
-      fallback_applied: CANONICAL_URL,
-      severity_note: 'auto_resolved_by_ssot_guard',
-    });
-    if (import.meta.env.DEV) {
-      console.warn(
-        "%c[Supabase SSOT]",
-        "color: orange; font-weight: bold;",
-        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Fallback canônico aplicado: ${CANONICAL_URL}.`,
-      );
+    const dedupKey = `${envUrl}->${CURRENT_PROJECT_ID}`;
+    if (!inconsistencyEmitted.has(dedupKey)) {
+      inconsistencyEmitted.add(dedupKey);
+      log.warn('config_inconsistency', {
+        envUrl,
+        expected: CURRENT_PROJECT_ID,
+        fallback_applied: CANONICAL_URL,
+        severity_note: 'auto_resolved_by_ssot_guard',
+      });
+      if (import.meta.env.DEV) {
+        console.warn(
+          "%c[Supabase SSOT]",
+          "color: orange; font-weight: bold;",
+          `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Fallback canônico aplicado: ${CANONICAL_URL}.`,
+        );
+      }
     }
     return false;
   }
