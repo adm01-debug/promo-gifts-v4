@@ -65,7 +65,7 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
-function HeaderSlotPortal({ children }: { children: React.ReactNode }) {
+function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     setSlot(document.getElementById('stock-header-slot'));
