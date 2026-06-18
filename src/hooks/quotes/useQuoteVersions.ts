@@ -161,7 +161,7 @@ export function useQuoteVersions(quoteId?: string) {
               total_cost: p.total_cost,
               notes: p.notes,
             })),
-          })) || [];
+          })) ?? [];
 
         const newQuote = await createQuote(
           {

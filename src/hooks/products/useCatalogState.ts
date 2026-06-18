@@ -378,7 +378,7 @@ export function useCatalogState() {
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
   } = useProductsByCategory({
-    categoryIds: filters.categories?.map(String) || [],
+    categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
   });
 

@@ -78,7 +78,7 @@ export function useAdvancedPriceSearch() {
         if (cat !== filters.category) return false;
       }
       if (filters.colors.length > 0) {
-        const hexes = product.colors?.map((c: ProductColor) => c.hex) || [];
+        const hexes = product.colors?.map((c: ProductColor) => c.hex) ?? [];
         if (!filters.colors.some((c) => hexes.includes(c))) return false;
       }
       return true;

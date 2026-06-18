@@ -131,13 +131,13 @@ export function applyProductFilters(
   if (!hasMetadataFilter && filters.publicoAlvo.length > 0) {
     const pSet = new Set(filters.publicoAlvo.map((p) => p.toLowerCase()));
     result = result.filter((product) =>
-      (product.tags?.publicoAlvo || []).some((t: string) => pSet.has(t.toLowerCase())),
+      (product.tags?.publicoAlvo ?? []).some((t: string) => pSet.has(t.toLowerCase())),
     );
   }
   if (!hasMetadataFilter && filters.datasComemorativas.length > 0) {
     const dcLower = filters.datasComemorativas.map((d) => d.toLowerCase());
     result = result.filter((product) =>
-      (product.tags?.datasComemorativas || []).some((t: string) => {
+      (product.tags?.datasComemorativas ?? []).some((t: string) => {
         const tl = t.toLowerCase();
         return dcLower.some((d) => tl.includes(d));
       }),
@@ -146,15 +146,15 @@ export function applyProductFilters(
   if (filters.endomarketing.length > 0) {
     const eSet = new Set(filters.endomarketing.map((e) => e.toLowerCase()));
     result = result.filter((product) =>
-      (product.tags?.endomarketing || []).some((t: string) => eSet.has(t.toLowerCase())),
+      (product.tags?.endomarketing ?? []).some((t: string) => eSet.has(t.toLowerCase())),
     );
   }
   if (!hasMetadataFilter && (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0)) {
     const ramosLower = filters.ramosAtividade?.map((r) => r.toLowerCase()) ?? [];
     const segLower = filters.segmentosAtividade?.map((s) => s.toLowerCase()) ?? [];
     result = result.filter((product) => {
-      const ramos = product.tags?.ramo || [];
-      const nichos = product.tags?.nicho || [];
+      const ramos = product.tags?.ramo ?? [];
+      const nichos = product.tags?.nicho ?? [];
       // BUG-SF-06 FIX: AND logic — product must match ramo AND segmento when both active.
       const matchesRamo = ramosLower.length
         ? ramosLower.some((r) => ramos.some((t: string) => t.toLowerCase().includes(r)))
@@ -245,11 +245,11 @@ export function applyProductFilters(
     const tagIdsLower = filters.tags.map((t) => t.toLowerCase());
     result = result.filter((product) => {
       const allTagValues = [
-        ...(product.tags?.publicoAlvo || []),
-        ...(product.tags?.datasComemorativas || []),
-        ...(product.tags?.endomarketing || []),
-        ...(product.tags?.ramo || []),
-        ...(product.tags?.nicho || []),
+        ...(product.tags?.publicoAlvo ?? []),
+        ...(product.tags?.datasComemorativas ?? []),
+        ...(product.tags?.endomarketing ?? []),
+        ...(product.tags?.ramo ?? []),
+        ...(product.tags?.nicho ?? []),
       ].map((v: string) => v.toLowerCase());
       return tagIdsLower.some((tagId) =>
         allTagValues.some((v) => v === tagId || v.includes(tagId)),

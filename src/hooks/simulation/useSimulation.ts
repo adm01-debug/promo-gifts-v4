@@ -184,7 +184,7 @@ export function useSimulation() {
   });
 
   const techniqueCodes = useMemo(
-    () => techniques?.map((t) => t.code).filter(Boolean) || [],
+    () => techniques?.map((t) => t.code).filter(Boolean) ?? [],
     [techniques],
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);

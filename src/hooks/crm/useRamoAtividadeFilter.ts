@@ -45,7 +45,7 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
     error: segmentosError,
   } = useSegmentosCompletos();
 
-  const segmentos = useMemo(() => segmentosData?.segmentos || [], [segmentosData?.segmentos]);
+  const segmentos = useMemo(() => segmentosData?.segmentos ?? [], [segmentosData?.segmentos]);
   const byRamo = useMemo(
     () => segmentosData?.byRamo || new Map<string, SegmentoComplete[]>(),
     [segmentosData?.byRamo],
@@ -68,7 +68,7 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
         if (isSelected) {
           // Remove ramo e todos os segmentos desse ramo
           const segmentosNoRamo =
-            byRamo.get(ramoSlug)?.map((s: SegmentoComplete) => s.segmento_slug) || [];
+            byRamo.get(ramoSlug)?.map((s: SegmentoComplete) => s.segmento_slug) ?? [];
           return {
             ...prev,
             selectedRamos: prev.selectedRamos.filter((r) => r !== ramoSlug),
@@ -79,7 +79,7 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
         }
         // Add ramo + all its segmentos
         const segmentosDoRamo =
-          byRamo.get(ramoSlug)?.map((s: SegmentoComplete) => s.segmento_slug) || [];
+          byRamo.get(ramoSlug)?.map((s: SegmentoComplete) => s.segmento_slug) ?? [];
         return {
           ...prev,
           selectedRamos: [...prev.selectedRamos, ramoSlug],

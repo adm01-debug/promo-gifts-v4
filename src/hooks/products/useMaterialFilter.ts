@@ -76,7 +76,7 @@ export function useMaterialFilter(): UseMaterialFilterReturn {
     (groupSlug: string) => {
       setFilterState((prev) => {
         const isSelected = prev.selectedGroups.includes(groupSlug);
-        const typesInGroup = byGroup.get(groupSlug)?.map((m) => m.type_slug) || [];
+        const typesInGroup = byGroup.get(groupSlug)?.map((m) => m.type_slug) ?? [];
         if (isSelected) {
           // Remove grupo e todos os tipos desse grupo
           return {

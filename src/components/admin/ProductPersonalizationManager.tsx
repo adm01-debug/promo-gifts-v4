@@ -145,7 +145,7 @@ export function ProductPersonalizationManager() {
   const handleAddTechnique = () => {
     if (!selectedLocationId || !newTechniqueId) return;
     // lookup below
-    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) || [];
+    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) ?? [];
     const loc = allLocs.find((l) => l.id === selectedLocationId);
     const comp = components?.find((c) => c.id === loc?.component_id);
     const tech = techniques?.find((t) => t.id === newTechniqueId);
