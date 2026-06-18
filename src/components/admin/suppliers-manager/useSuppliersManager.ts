@@ -526,7 +526,7 @@ export function useSuppliersManager() {
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao excluir fornecedor');
+      toast.error('Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
     }
