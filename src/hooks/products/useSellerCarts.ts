@@ -463,14 +463,20 @@ export function useSellerCarts() {
           // for o valor que escrevemos. Se outra aba/usuário alterou o destino
           // entre o UPDATE e este rollback, o .eq('quantity', projected) evita
           // sobrescrever a mudança deles com o valor obsoleto.
-          const { error: rollbackErr } = await supabase
+          const { data: rollbackData, error: rollbackErr } = await supabase
             .from('seller_cart_items')
             .update({ quantity: previousQty })
             .eq('id', existing.id)
-            .eq('quantity', projected);
+            .eq('quantity', projected)
+            .select('id');
           if (rollbackErr) {
             throw new Error(
               `Falha ao mover item (delete: ${delErr.message}; compensação: ${rollbackErr.message}) — recarregue para verificar o estado`,
+            );
+          }
+          if (!rollbackData?.length) {
+            throw new Error(
+              `Falha ao mover item (delete: ${delErr.message}; compensação: destino já modificado por outra operação) — recarregue para verificar o estado`,
             );
           }
           throw delErr;

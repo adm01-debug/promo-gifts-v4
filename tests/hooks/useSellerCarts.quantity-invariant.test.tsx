@@ -180,7 +180,7 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
 
     await expect(
       result.current.moveItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' }),
-    ).rejects.toBeTruthy();
+    ).rejects.toThrow(/excede o limite/);
 
     // Nenhuma escrita — quantidades intactas
     expect(ops).toHaveLength(0);
@@ -213,7 +213,7 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
 
     await expect(
       result.current.duplicateItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' }),
-    ).rejects.toBeTruthy();
+    ).rejects.toThrow(/excede o limite/);
 
     expect(ops).toHaveLength(0);
     expect(itemsTable.find((r) => r.id === 'dst')?.quantity).toBe(700000);

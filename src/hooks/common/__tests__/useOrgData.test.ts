@@ -92,12 +92,11 @@ beforeEach(() => {
 // ── useOrgData ────────────────────────────────────────────────────────────────
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
-        vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null });
+    vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null } as ReturnType<
+      typeof useOrganization
+    >);
 
-    const { result } = renderHook(
-      () => useOrgData('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgData('products'), { wrapper: makeWrapper() });
 
     // Query disabled: status = 'pending', fetchStatus = 'idle'
     expect(result.current.fetchStatus).toBe('idle');
@@ -171,12 +170,11 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-        vi.mocked(useOrganization).mockReturnValue({ currentOrg: null });
+    vi.mocked(useOrganization).mockReturnValue({ currentOrg: null } as ReturnType<
+      typeof useOrganization
+    >);
 
-    const { result } = renderHook(
-      () => useOrgCreate('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgCreate('products'), { wrapper: makeWrapper() });
 
     result.current.mutate({ name: 'X' } as never);
 
