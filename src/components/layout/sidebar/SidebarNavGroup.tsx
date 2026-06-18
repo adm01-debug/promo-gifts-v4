@@ -23,7 +23,10 @@ export interface NavItem {
   exact?: boolean;
   children?: NavItem[];
   shortcut?: string;
+  /** Texto curto e comercial exibido em tooltip ao passar o mouse. */
+  tooltip?: string;
 }
+
 
 export interface NavGroup {
   id: string;
