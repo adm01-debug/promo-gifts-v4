@@ -188,3 +188,88 @@ test.describe("Estoque • QuickView — estados de borda", () => {
     await expect(page.locator(Sel.product.quickViewName)).toHaveCount(0);
   });
 });
+
+/**
+ * Garante que o clique no RESTANTE do card (fora da thumb) continua navegando
+ * para o PDP — `e.stopPropagation()` do QuickViewThumb não pode "vazar" e
+ * suprimir o handler do card pai.
+ */
+test.describe("Clique fora da thumb navega para PDP (não abre QuickView)", () => {
+  test.beforeEach(() => requireAuth());
+
+  const NAV_CASES: { label: string; route: `/${string}`; cardName: string; thumbs: string[] }[] = [
+    {
+      label: "Catálogo • Lista",
+      route: "/produtos",
+      cardName: Sel.product.listName,
+      thumbs: [Sel.product.listItemThumb],
+    },
+  ];
+
+  for (const c of NAV_CASES) {
+    test(`${c.label}: clicar no nome do card navega para /produto/:id`, async ({ page }) => {
+      await gotoAndSettle(page, c.route);
+      const name = page.locator(c.cardName).first();
+      if ((await name.count()) === 0) test.skip(true, `View ${c.label} indisponível`);
+
+      const urlBefore = page.url();
+      await name.click();
+      await page.waitForURL(/\/produto\//, { timeout: 10_000 });
+      expect(page.url()).not.toBe(urlBefore);
+      // QuickView NÃO foi aberto.
+      await expect(page.locator(Sel.product.quickViewName)).toHaveCount(0);
+    });
+  }
+});
+
+/**
+ * QuickView (shadcn Dialog) — encerramento por ESC e clique no overlay,
+ * preservando a11y (foco volta ao trigger; aria-modal correto).
+ */
+test.describe("QuickView • fechamento e a11y", () => {
+  test.beforeEach(() => requireAuth());
+
+  async function openFromStock(page: Page) {
+    await gotoAndSettle(page, "/estoque");
+    const thumb = page.locator(Sel.product.stockTableThumb).first();
+    if ((await thumb.count()) === 0) test.skip(true, "Tabela de estoque vazia");
+    await thumb.click();
+    await expect(page.locator(Sel.product.quickViewName).first()).toBeVisible({
+      timeout: 10_000,
+    });
+    return thumb;
+  }
+
+  test("ESC fecha o modal e devolve o foco ao trigger", async ({ page }) => {
+    const trigger = await openFromStock(page);
+
+    const dialog = page.getByRole("dialog").first();
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("aria-modal", "true");
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator(Sel.product.quickViewName)).toHaveCount(0, { timeout: 5_000 });
+    // Foco retorna a um elemento focável dentro do trigger (boa prática Radix).
+    const triggerFocused = await trigger.evaluate(
+      (el) => el.contains(document.activeElement) || el === document.activeElement,
+    );
+    expect(triggerFocused).toBe(true);
+  });
+
+  test("clicar no overlay fecha o modal", async ({ page }) => {
+    await openFromStock(page);
+
+    // Radix Dialog overlay é um irmão do content com data-state=open. Clique
+    // no canto superior esquerdo evita acertar o content.
+    const overlay = page.locator('[data-radix-dialog-overlay], [data-state="open"][data-slot="overlay"]').first();
+    if ((await overlay.count()) === 0) {
+      // Fallback: clica fora do dialog via coordenadas (10,10).
+      await page.mouse.click(10, 10);
+    } else {
+      await overlay.click({ position: { x: 5, y: 5 }, force: true });
+    }
+
+    await expect(page.locator(Sel.product.quickViewName)).toHaveCount(0, { timeout: 5_000 });
+  });
+});
+
