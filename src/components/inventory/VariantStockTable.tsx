@@ -146,7 +146,44 @@ function FlatVariantRow({
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
+
+  // Ações single-row do QuickView no /estoque (paridade com o catálogo).
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const collectionRows: BulkCollectionRow[] = [
+    {
+      productId: product.productId,
+      productName: product.productName,
+      variant: {
+        color_name: variant.colorName,
+        color_hex: variant.colorHex,
+        size_code: variant.sizeCode,
+        variant_id: variant.variantId,
+        thumbnail: variant.imageUrl ?? product.productImageUrl,
+      },
+    },
+  ];
+  const handleAddToQuote = () => {
+    try {
+      const param = `items[]=${encodeURIComponent(
+        JSON.stringify({
+          product_id: product.productId,
+          product_name: product.productName,
+          product_sku: variant.variantSku,
+          variant_id: variant.variantId,
+          quantity: variant.minStock || 1,
+          color_name: variant.colorName ?? null,
+          color_hex: variant.colorHex ?? null,
+          size_code: variant.sizeCode ?? null,
+          product_image: variant.imageUrl ?? product.productImageUrl ?? '',
+        }),
+      )}`;
+      navigate(`/orcamentos/novo?${param}`);
+    } catch {
+      /* noop — toast já é tratado no fluxo de cotação */
+    }
+  };
   return (
+    <>
     <TableRow
       className={cn('group hover:bg-muted/40', isSelected && 'bg-primary/5')}
       data-testid="stock-row"
@@ -170,6 +207,8 @@ function FlatVariantRow({
             productId={product.productId}
             productName={product.productName}
             testId="stock-table-row-thumb"
+            onAddToQuote={handleAddToQuote}
+            onAddToCollection={() => setCollectionOpen(true)}
           >
             <VariantThumb
               imageUrl={variant.imageUrl || product.productImageUrl}
@@ -292,8 +331,17 @@ function FlatVariantRow({
         </div>
       </TableCell>
     </TableRow>
+    {collectionOpen && (
+      <BulkAddToCollectionModal
+        open={collectionOpen}
+        onOpenChange={setCollectionOpen}
+        rows={collectionRows}
+      />
+    )}
+    </>
   );
 }
+
 
 // ============================================
 // PAGINAÇÃO
