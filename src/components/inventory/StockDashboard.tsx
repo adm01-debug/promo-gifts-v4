@@ -317,35 +317,31 @@ export function StockDashboard() {
           )}
         </div>
 
-        {(() => {
-          const slot = typeof document !== 'undefined' ? document.getElementById('stock-header-slot') : null;
-          const node = (
-            <div
-              className="flex items-center gap-2 text-xs text-muted-foreground"
-              title={lastRefresh.toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
+        <HeaderSlotPortal>
+          <div
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            title={lastRefresh.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
+            aria-live="polite"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
+            <span className="text-muted-foreground/60">
+              ·{' '}
+              {lastRefresh.toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit',
               })}
-              aria-live="polite"
-            >
-              <Clock className="h-3.5 w-3.5" />
-              <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
-              <span className="text-muted-foreground/60">
-                ·{' '}
-                {lastRefresh.toLocaleTimeString('pt-BR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-              {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-            </div>
-          );
-          return slot ? createPortal(node, slot) : node;
-        })()}
+            </span>
+            {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+          </div>
+        </HeaderSlotPortal>
       </div>
 
       {/* Summary Cards — clickable filters */}
