@@ -27,6 +27,7 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
+import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
