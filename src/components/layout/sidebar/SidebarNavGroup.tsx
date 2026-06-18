@@ -243,7 +243,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         return (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
-              <div>{linkContent}</div>
+              <div data-tooltip-label={item.tooltip}>{linkContent}</div>
             </TooltipTrigger>
             <TooltipContent side="right" className="z-[100] max-w-[240px]">
               <p className="text-tooltip">{item.tooltip}</p>
@@ -251,6 +251,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           </Tooltip>
         );
       }
+
 
       return <div key={item.href}>{linkContent}</div>;
     };
