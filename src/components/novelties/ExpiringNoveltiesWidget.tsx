@@ -2,11 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Flame, Sparkles, ChevronRight, Package, Building2 } from 'lucide-react';
-import { useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
+import { Flame, Sparkles, ChevronRight, Package, Building2, Hourglass } from 'lucide-react';
+import { useExpiringNovelties, useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+
+/** Rótulo curto de quanto tempo resta como novidade. */
+function formatDaysLeft(daysRemaining: number): string {
+  if (daysRemaining <= 0) return 'Expira hoje';
+  if (daysRemaining === 1) return 'Resta 1 dia';
+  return `Restam ${daysRemaining} dias`;
+}
 
 function formatDaysAgo(createdAt: string): string {
   const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
@@ -39,6 +46,12 @@ export function ExpiringNoveltiesWidget() {
   const navigate = useNavigate();
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 200 });
 
+  // Novidades que estão prestes a sair da janela (≤ 7 dias restantes). Fonte:
+  // expiração REAL da pipeline (novelty_expires_at). Renderizado só quando há
+  // itens — sem ruído quando nada está expirando.
+  const { data: expiring = [] } = useExpiringNovelties(7);
+  const expiringItems = useMemo(() => expiring.slice(0, 8), [expiring]);
+
   const recentItems = useMemo(() => {
     if (!allNovelties) return [];
     return [...allNovelties]
@@ -63,6 +76,66 @@ export function ExpiringNoveltiesWidget() {
 
   return (
     <div className="space-y-3">
+      {/* Expirando em breve — só aparece quando há novidades saindo da janela */}
+      {expiringItems.length > 0 && (
+        <Card className="border-warning/40 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent ring-1 ring-warning/20">
+          <CardHeader className="px-3 pb-1.5 pt-3">
+            <CardTitle className="flex items-center gap-1.5 text-sm">
+              <Hourglass className="h-4 w-4 text-warning" />
+              <span className="font-bold text-warning">Expirando em breve</span>
+              <Badge
+                variant="secondary"
+                className="border border-warning/30 bg-warning/20 px-1.5 py-0 text-[9px] font-bold tabular-nums text-warning"
+              >
+                {expiringItems.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 pt-0">
+            <ScrollArea className="h-auto max-h-[220px]">
+              <div className="space-y-1">
+                {expiringItems.map((item) => (
+                  <button
+                    type="button"
+                    key={item.novelty_id}
+                    aria-label={`Abrir produto ${item.product_name}`}
+                    className="group flex w-full items-center gap-2 rounded-md border border-warning/20 bg-warning/5 p-1.5 text-left transition-all duration-150 hover:border-warning/40 hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning"
+                    onClick={() => handleClick(item.product_id)}
+                  >
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-muted">
+                      {item.product_image ? (
+                        <img
+                          src={item.product_image}
+                          alt={item.product_name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                          <Package className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-[11px] font-medium transition-colors group-hover:text-primary">
+                        {item.product_name}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Hourglass className="h-2.5 w-2.5 text-warning" />
+                        <span className="text-[10px] font-medium text-warning">
+                          {formatDaysLeft(item.days_remaining)}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-warning" />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
       {/* + Recentes widget */}
       <Card className="border-success/40 bg-gradient-to-br from-success/10 via-success/5 to-transparent shadow-[0_0_20px_hsl(var(--success)/0.15)] ring-1 ring-success/20">
         <CardHeader className="px-3 pb-1.5 pt-3">

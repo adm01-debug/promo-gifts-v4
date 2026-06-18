@@ -69,6 +69,18 @@ export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
+// INVARIANTE DE QUANTIDADE (espelha o CHECK do banco: 1 <= quantity <= 999999)
+// ============================================
+// Single source of truth para todos os caminhos de escrita (edição direta E
+// mesclagem por add/move/duplicate). Antes, só updateItemQuantity clampava o
+// teto; os caminhos de merge somavam `existing + qty` sem teto, podendo derivar
+// acima do limite da UI e (sem o CHECK de teto) até estourar o int4 no banco.
+export const MIN_ITEM_QUANTITY = 1;
+export const MAX_ITEM_QUANTITY = 999999;
+export const clampQuantity = (q: number): number =>
+  Math.min(Math.max(Math.trunc(Number(q) || 0), MIN_ITEM_QUANTITY), MAX_ITEM_QUANTITY);
+
+// ============================================
 // HOOK
 // ============================================
 
@@ -190,7 +202,7 @@ export function useSellerCarts() {
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
       const colorName = item.color_name ?? null;
       // Quantidade sempre >= 1: protege o invariante mesmo se o chamador passar 0/negativo.
-      const quantityToAdd = Math.max(1, Math.trunc(Number(item.quantity) || 1));
+      const quantityToAdd = Math.max(MIN_ITEM_QUANTITY, Math.trunc(Number(item.quantity) || 1));
 
       const existing = await findVariantInCart(cartId, item.product_id, colorName);
 
@@ -198,7 +210,8 @@ export function useSellerCarts() {
         const { error } = await supabase
           .from('seller_cart_items')
           .update({
-            quantity: existing.quantity + quantityToAdd,
+            // clamp do TETO: somatório de adds repetidos não pode ultrapassar 999999.
+            quantity: clampQuantity(existing.quantity + quantityToAdd),
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
@@ -211,7 +224,7 @@ export function useSellerCarts() {
           product_sku: item.product_sku || null,
           product_image_url: item.product_image_url || null,
           product_price: item.product_price,
-          quantity: quantityToAdd,
+          quantity: clampQuantity(quantityToAdd),
           color_name: colorName,
           color_hex: item.color_hex || null,
           notes: item.notes ?? null,
@@ -224,7 +237,7 @@ export function useSellerCarts() {
           if (retryExisting) {
             await supabase
               .from('seller_cart_items')
-              .update({ quantity: retryExisting.quantity + quantityToAdd })
+              .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
           }
         } else if (error) {
@@ -232,11 +245,9 @@ export function useSellerCarts() {
         }
       }
 
-      // Atualiza timestamp do carrinho principal
-      await supabase
-        .from('seller_carts')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', cartId);
+      // updated_at do carrinho-pai é propagado pelo trigger
+      // trg_touch_seller_cart_on_item_change (migration 20260617130000) em
+      // INSERT/UPDATE/DELETE — não precisamos do round-trip manual aqui.
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -266,7 +277,7 @@ export function useSellerCarts() {
       // Defesa em profundidade: a UI já impede valores < 1, mas garantimos aqui
       // o invariante 1 <= quantity <= 999999 (espelha o CHECK no banco) para
       // qualquer chamador programático (templates, restore, futuros callers).
-      const safeQty = Math.min(Math.max(Math.trunc(Number(quantity) || 0), 1), 999999);
+      const safeQty = clampQuantity(quantity);
       const { error } = await supabase
         .from('seller_cart_items')
         .update({ quantity: safeQty })
@@ -389,7 +400,13 @@ export function useSellerCarts() {
           sort_order: i.sort_order,
         }));
         const { error: itemsErr } = await supabase.from('seller_cart_items').insert(newItems);
-        if (itemsErr) throw itemsErr;
+        if (itemsErr) {
+          // Compensação: a cópia dos itens falhou. Sem isso, sobraria um
+          // carrinho vazio órfão consumindo o limite de 3 (canCreateCart) e
+          // poluindo a lista. Remove o carrinho recém-criado e propaga o erro.
+          await supabase.from('seller_carts').delete().eq('id', newCart.id);
+          throw itemsErr;
+        }
       }
 
       return newCart.id;
@@ -414,16 +431,28 @@ export function useSellerCarts() {
       // no item existente do destino e remove o item de origem.
       const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
       if (existing && existing.id !== itemId) {
+        const previousQty = existing.quantity;
         const { error: updErr } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: existing.quantity + item.quantity })
+          .update({ quantity: clampQuantity(previousQty + item.quantity) })
           .eq('id', existing.id);
         if (updErr) throw updErr;
         const { error: delErr } = await supabase
           .from('seller_cart_items')
           .delete()
           .eq('id', itemId);
-        if (delErr) throw delErr;
+        if (delErr) {
+          // Compensação: o destino já recebeu a soma, mas a origem não foi
+          // removida. Sem reverter, a quantidade ficaria DOBRADA (dst somado +
+          // src ainda presente — pior que o estado inicial). Como não há
+          // transação no client, restauramos o destino ao valor anterior e
+          // propagamos o erro; onError revalida do servidor por garantia.
+          await supabase
+            .from('seller_cart_items')
+            .update({ quantity: previousQty })
+            .eq('id', existing.id);
+          throw delErr;
+        }
         return;
       }
 
@@ -438,6 +467,8 @@ export function useSellerCarts() {
       toast.success('Item movido para outro carrinho');
     },
     onError: (err: Error) => {
+      // Revalida do servidor: desfaz qualquer estado otimista/parcial da UI.
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.error('Não foi possível mover o item', { description: sanitizeError(err) });
     },
   });
@@ -455,7 +486,7 @@ export function useSellerCarts() {
       if (existing) {
         const { error } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: existing.quantity + item.quantity })
+          .update({ quantity: clampQuantity(existing.quantity + item.quantity) })
           .eq('id', existing.id);
         if (error) throw error;
         return;
@@ -517,10 +548,8 @@ export function useSellerCarts() {
       const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);
       if (error) throw error;
 
-      await supabase
-        .from('seller_carts')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', cartId);
+      // updated_at do carrinho-pai é propagado pelo trigger
+      // trg_touch_seller_cart_on_item_change (migration 20260617130000).
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });

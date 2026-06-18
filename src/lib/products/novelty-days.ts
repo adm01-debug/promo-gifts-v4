@@ -35,13 +35,21 @@ export function resolveNoveltyDaysRemaining(
 
 /** Dias decorridos na janela (0 quando indefinido). */
 export function noveltyDaysElapsed(daysRemaining: number | undefined): number {
-  return daysRemaining !== undefined ? NOVELTY_WINDOW_DAYS - daysRemaining : 0;
+  // FIX (auditoria Novidades 2026-06-18): clamp em 0. Sem ele, daysRemaining
+  // maior que a janela (ex.: 55 na janela real ~60d da pipeline) produzia
+  // "Novidade -25 dias" e caía em faixa de cor errada.
+  return Math.max(0, daysRemaining !== undefined ? NOVELTY_WINDOW_DAYS - daysRemaining : 0);
+}
+
+/** Rótulo do badge "Novidade ..." a partir dos DIAS DECORRIDOS (a idade). */
+export function noveltyBadgeLabelFromElapsed(daysElapsed: number): string {
+  const e = Math.max(0, daysElapsed);
+  if (e === 0) return 'Novidade hoje!';
+  if (e === 1) return 'Novidade 1 dia';
+  return `Novidade ${e} dias`;
 }
 
 /** Rotulo do badge "Novidade ..." a partir dos dias restantes. */
 export function noveltyBadgeLabel(daysRemaining: number | undefined): string {
-  const daysElapsed = noveltyDaysElapsed(daysRemaining);
-  if (daysElapsed === 0) return 'Novidade hoje!';
-  if (daysElapsed === 1) return 'Novidade 1 dia';
-  return `Novidade ${daysElapsed} dias`;
+  return noveltyBadgeLabelFromElapsed(noveltyDaysElapsed(daysRemaining));
 }

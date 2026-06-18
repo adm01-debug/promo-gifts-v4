@@ -200,7 +200,9 @@ export const ProductCardImage = memo(function ProductCardImage({
                   transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
                 }}
                 containerClassName="h-full w-full"
-                urlOriginal={deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null}
+                urlOriginal={
+                  deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null
+                }
                 blurhash={cardImageBlurhash}
                 priority={priority}
                 onLoad={onImageLoad}

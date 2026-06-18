@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
-import { noveltyDaysElapsed, noveltyBadgeLabel } from '@/lib/products/novelty-days';
+import { noveltyDaysElapsed, noveltyBadgeLabelFromElapsed } from '@/lib/products/novelty-days';
 
 export type ProductStatusBadgeType =
   | 'novelty'
@@ -38,6 +38,14 @@ interface ProductStatusBadgeProps {
   urgencyType?: UrgencyType;
   value?: string | number;
   daysRemaining?: number;
+  /**
+   * Idade da novidade em dias (desde a detecção). Quando fornecido, é usado
+   * diretamente no badge "Novidade X dias" e nas faixas de cor. Caso contrário,
+   * cai no comportamento legado (`30 - daysRemaining`, janela fixa de 30 dias).
+   * Necessário desde que o módulo Novidades passou a usar a janela real da
+   * pipeline (~60 dias), onde `30 - daysRemaining` produziria valores negativos.
+   */
+  daysElapsed?: number;
   size?: 'sm' | 'md' | 'lg';
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
@@ -50,6 +58,7 @@ export function ProductStatusBadge({
   urgencyType,
   value,
   daysRemaining,
+  daysElapsed,
   size = 'md',
   onClick,
   className,
@@ -58,6 +67,11 @@ export function ProductStatusBadge({
 }: ProductStatusBadgeProps) {
   const location = useLocation();
   const { actualTheme } = useTheme();
+
+  // Idade da novidade (dias desde a detecção). Preferir o valor explícito
+  // (passado pelo módulo Novidades, que usa a janela real ~60d da pipeline);
+  // senão, fallback legado via lib (30 - daysRemaining, já clampado em 0).
+  const resolvedNoveltyElapsed = daysElapsed ?? noveltyDaysElapsed(daysRemaining);
 
   const badgesEnabled = useBadgeVisibilityStore((s) => {
     const settings = s.routeSettings[location.pathname];
@@ -118,7 +132,7 @@ export function ProductStatusBadge({
           return 'bg-[#FF1493] text-white font-bold shadow-[0_2px_8px_rgba(255,20,147,0.4)] ring-1 ring-white/20';
         }
         // Badge "Novidade X dias" (canto esquerdo) — cor por faixa, sempre legível
-        const daysElapsed = noveltyDaysElapsed(daysRemaining);
+        const daysElapsed = resolvedNoveltyElapsed;
         if (daysElapsed <= 5) {
           // Recém-chegado — azul vívido
           return 'bg-[#2563EB] text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]';
@@ -192,8 +206,8 @@ export function ProductStatusBadge({
           </>
         );
       case 'novelty': {
-        const daysElapsed = noveltyDaysElapsed(daysRemaining);
-        const label = noveltyBadgeLabel(daysRemaining);
+        const daysElapsed = resolvedNoveltyElapsed;
+        const label = noveltyBadgeLabelFromElapsed(daysElapsed);
         return (
           <>
             {daysElapsed <= 5 && <Sparkles className={iconSize} />}
@@ -233,7 +247,7 @@ export function ProductStatusBadge({
   const getTooltipContent = () => {
     switch (type) {
       case 'novelty': {
-        const daysElapsed = noveltyDaysElapsed(daysRemaining);
+        const daysElapsed = resolvedNoveltyElapsed;
         return (
           <div className="text-sm">
             <p className="font-semibold">🆕 Produto Novidade</p>

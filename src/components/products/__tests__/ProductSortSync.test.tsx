@@ -22,6 +22,7 @@ vi.mock('@/hooks/products', () => ({
     clearSelection: vi.fn(),
     noveltyToProduct: vi.fn(),
   })),
+  sortNovelties: (arr: unknown[]) => arr,
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({
@@ -121,14 +122,12 @@ describe('Product Sort Standardization', () => {
 
     if (sortSelect) {
       fireEvent.click(sortSelect);
-      // We might need to wait for the Portal content.
-      // NoveltyProductGrid OMITE intencionalmente os sorts "best-seller-*"
-      // (produtos novos não têm histórico de vendas) — ver o filtro
-      // `.filter((o) => !o.value.startsWith('best-seller'))` no componente.
-      // O teste de paridade deve espelhar exatamente esse subconjunto.
-      const noveltyOptions = SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'));
-      expect(noveltyOptions).not.toHaveLength(0);
-      for (const option of noveltyOptions) {
+      // O grid de Novidades omite intencionalmente as opções "best-seller"
+      // (dependem de dados de venda não aplicáveis a novidades — ver filtro em
+      // NoveltyProductGrid). O contrato é: todas as DEMAIS opções aparecem.
+      const gridOptions = SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'));
+      expect(gridOptions).not.toHaveLength(0);
+      for (const option of gridOptions) {
         const elements = screen.queryAllByText(option.label);
         expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
       }
