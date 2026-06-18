@@ -169,11 +169,11 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-admin-routes.json
         continue-on-error: true
 
-      - name: Run Sidebar Tooltips E2E (runtime hover/mouseout)
+      - name: Run Sidebar Tooltips E2E — desktop (chromium-authed)
         run: |
           if [ ! -f e2e/.auth/storageState.json ]; then
-            echo "⚠️  storageState.json não encontrado — pulando sidebar-tooltips (requer login E2E)."
-            exit 0
+            echo "❌ storageState.json não encontrado — login E2E é obrigatório para este gate."
+            exit 1
           fi
           npx playwright test \
             e2e/flows/sidebar-tooltips.spec.ts \
@@ -182,8 +182,18 @@ jobs:
             --pass-with-no-tests
         env:
           E2E_BASE_URL: http://localhost:8080
-          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-sidebar-tooltips.json
-        continue-on-error: true
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-sidebar-tooltips-desktop.json
+
+      - name: Run Sidebar Tooltips E2E — mobile (mobile-chrome)
+        run: |
+          npx playwright test \
+            e2e/flows/sidebar-tooltips.spec.ts \
+            --project=mobile-chrome \
+            --reporter=github,list,html,json \
+            --pass-with-no-tests
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-sidebar-tooltips-mobile.json
 
       - name: Upload full flows report
         if: always()
