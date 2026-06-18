@@ -341,9 +341,9 @@ export default function ComparePage() {
                             <div className="flex gap-0.5">
                               {entry.product.colors
                                 .slice(0, 4)
-                                .map((c: ProductColor, i: number) => (
+                                .map((c: ProductColor) => (
                                   <div
-                                    key={i}
+                                    key={c.hex}
                                     className="h-4 w-4 rounded-full border border-border"
                                     style={{ backgroundColor: c.hex }}
                                   />

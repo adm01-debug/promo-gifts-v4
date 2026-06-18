@@ -39,8 +39,12 @@ export function useProductsByMaterial(
   const hasFilter = materialTypeSlugs.length > 0 || materialGroupSlugs.length > 0;
   const shouldFetch = enabled && hasFilter;
 
+  // Sort arrays for stable query keys — same filters in different order → same cache entry.
+  const stableTypesSlugs = useMemo(() => [...materialTypeSlugs].sort(), [materialTypeSlugs]);
+  const stableGroupSlugs = useMemo(() => [...materialGroupSlugs].sort(), [materialGroupSlugs]);
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['products-by-materials', materialTypeSlugs, materialGroupSlugs],
+    queryKey: ['products-by-materials', stableTypesSlugs, stableGroupSlugs],
     queryFn: async () => {
       const result = await materialService.getProductsByMaterials({
         materialTypeSlugs: materialTypeSlugs.length > 0 ? materialTypeSlugs : undefined,
