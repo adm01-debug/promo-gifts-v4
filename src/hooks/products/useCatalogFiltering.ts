@@ -32,6 +32,7 @@ interface CatalogFilteringOptions {
   sizeFilteredProductIds?: Set<string>;
   isLoadingSizeFilter?: boolean;
   promoSalesMap?: Map<string, number>;
+  promoSales90dMap?: Map<string, number>;
   supplierSalesMap?: Map<string, SupplierSalesEntry>;
 }
 
@@ -59,6 +60,7 @@ export function useCatalogFiltering({
   sizeFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingSizeFilter = false,
   promoSalesMap,
+  promoSales90dMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
@@ -171,6 +173,21 @@ export function useCatalogFiltering({
       }
     }
 
+    // BUG-VENDAS-FILTER-CATALOG FIX: minSupplierSales90d e minPromoSales90d eram
+    // mostrados no painel e aplicados no Super Filtro (/filtros) mas ignorados aqui.
+    // Usa supplierSalesMap.depleted90d (SupplierSalesEntry) e promoSales90dMap
+    // — mesmas fontes que applyProductFilters.ts usa. Guarda: só filtra se o mapa
+    // estiver disponível e não vazio (mapa ausente = dados ainda carregando → não filtra).
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales90d;
+      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted90d ?? 0) >= threshold);
+    }
+
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+      const threshold = filters.minPromoSales90d;
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
+    }
+
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -233,7 +250,10 @@ export function useCatalogFiltering({
     sizeFilteredProductIds,
     isLoadingSizeFilter,
     promoSalesMap,
+    promoSales90dMap,
     supplierSalesMap,
+    filters.minSupplierSales90d,
+    filters.minPromoSales90d,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,
