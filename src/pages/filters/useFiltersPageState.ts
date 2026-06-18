@@ -278,6 +278,7 @@ export function useFiltersPageState() {
     ramos: filters.ramosAtividade || [],
     segmentos: filters.segmentosAtividade || [],
     publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing || [],
   });
   // BUG-METADATA-SILENT-FAIL: notifica o usuário quando a RPC fn_super_filtro_product_ids
   // falha (antes: grade zerava silenciosamente sem nenhum feedback).
