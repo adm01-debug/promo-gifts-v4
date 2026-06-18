@@ -597,7 +597,7 @@ export function useSuppliersManager() {
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao consultar CNPJ');
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }
