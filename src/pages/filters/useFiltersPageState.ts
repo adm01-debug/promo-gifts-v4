@@ -466,12 +466,18 @@ export function useFiltersPageState() {
         return materiaisLower.some((m) => materialsStr.includes(m));
       });
     }
-    const priceFilterActive = filters.priceRange[0] > 0 || filters.priceRange[1] < 9999;
+    const priceMin = filters.priceRange[0];
+    const priceMax = filters.priceRange[1];
+    const priceFilterActive = priceMin > 0 || priceMax < 9999;
     if (priceFilterActive)
-      result = result.filter(
-        (product) =>
-          product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1],
-      );
+      result = result.filter((product) => {
+        if (product.price < priceMin) return false;
+        // FIX-SF-F: 9999 é o sentinela "sem limite superior". Aplicar `price <= 9999`
+        // excluía produtos acima de R$9.999 quando o usuário definia só o mínimo
+        // (ex.: min=50, max="sem limite"). Tratamos >= 9999 como ilimitado.
+        if (priceMax < 9999 && product.price > priceMax) return false;
+        return true;
+      });
     if (filters.minStock > 0)
       result = result.filter((product) => {
         if (product.variations && product.variations.length > 0)

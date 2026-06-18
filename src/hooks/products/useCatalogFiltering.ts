@@ -126,7 +126,9 @@ export function useCatalogFiltering({
     // BUG-21 FIX: era < 500, deve ser < 9999 para ativar filtro no range completo [0, 9999].
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
       const [min, max] = filters.priceRange;
-      result = result.filter((p) => p.price >= min && p.price <= max);
+      // FIX-SF-F: 9999 é sentinela "sem limite" — não excluir produtos caros quando
+      // só o mínimo é definido. max >= 9999 vira ilimitado.
+      result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
     }
 
     if (filters.inStock) {
