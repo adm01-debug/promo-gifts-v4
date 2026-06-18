@@ -4,7 +4,7 @@
  * stock_daily_summary via external-db-bridge, avoiding N+1 queries.
  */
 import { dbInvoke } from '@/lib/db/postgrest';
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 
@@ -50,6 +50,11 @@ interface Props {
 /**
  * Wrap a product list/grid with this provider.
  * It fetches stock_daily_summary for the given product IDs in bulk.
+ *
+ * FIX BUG-B (2026-06-18): adicionado defer de 1 500 ms antes de habilitar a query.
+ * Sem o defer, 500 produtos → 10 batches de stock_daily_summary disparavam na montagem
+ * simultânea do catálogo, contribuindo ~5-7 s para o LCP de 18 s.
+ * O defer deixa a rota crítica (produtos + imagens) completar antes das sparklines.
  */
 export function SparklineSalesProvider({ productIds, children }: Props) {
   const stableIds = useMemo(() => {
@@ -58,10 +63,18 @@ export function SparklineSalesProvider({ productIds, children }: Props) {
     return unique;
   }, [productIds]);
 
+  // FIX BUG-B: aguardar 1 500 ms para que o render crítico do catálogo complete
+  // antes de disparar as 10+ queries de sparkline que consomem conexões PostgREST.
+  const [deferred, setDeferred] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setDeferred(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
   const { data: sparkData } = useQuery({
     queryKey: ['sparkline-supplier-batch', stableIds],
     queryFn: () => fetchSupplierSparklineBatch(stableIds),
-    enabled: stableIds.length > 0,
+    enabled: stableIds.length > 0 && deferred,
     staleTime: 60 * 60 * 1000,
     gcTime: 120 * 60 * 1000,
     refetchOnWindowFocus: false,

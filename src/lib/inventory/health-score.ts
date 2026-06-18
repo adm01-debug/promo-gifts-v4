@@ -103,6 +103,8 @@ export const STOCK_THRESHOLD_RULES: ReadonlyArray<{
   label: string;
   rule: string;
 }> = [
-  { key: 'healthy', label: 'Em estoque', rule: 'há saldo disponível na variação' },
-  { key: 'out', label: 'Sem estoque', rule: 'saldo zerado (sem reposição em trânsito)' },
+  { key: 'healthy',  label: 'Em estoque',    rule: 'saldo acima do limiar do fornecedor' },
+  { key: 'low',      label: 'Estoque baixo', rule: 'saldo positivo, abaixo do limiar configurado no fornecedor' },
+  { key: 'critical', label: 'Crítico',        rule: 'saldo ≤ 25% do mínimo — risco iminente de ruptura' },
+  { key: 'out',      label: 'Sem estoque',   rule: 'saldo zerado (sem reposição em trânsito)' },
 ];
