@@ -6,6 +6,7 @@ import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
+import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
@@ -268,6 +269,17 @@ export function useFiltersPageState() {
     colorNuances: filters.colorNuances || [],
     colors: filters.colors,
   });
+  const {
+    productIds: metadataFilteredProductIds,
+    hasFilter: hasMetadataFilter,
+    isLoading: isLoadingMetadataFilter,
+  } = useProductsByMetadata({
+    datas: filters.datasComemorativas || [],
+    tags: filters.tags || [],
+    ramos: filters.ramosAtividade || [],
+    segmentos: filters.segmentosAtividade || [],
+    publico: filters.publicoAlvo || [],
+  });
 
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
@@ -425,43 +437,26 @@ export function useFiltersPageState() {
         return supplierLowerArr.some((s) => sName.includes(s));
       });
     }
-    if (filters.publicoAlvo.length > 0) {
-      const pSet = new Set(filters.publicoAlvo.map((p) => p.toLowerCase()));
-      result = result.filter((product) =>
-        (product.tags?.publicoAlvo || []).some((t: string) => pSet.has(t.toLowerCase())),
-      );
-    }
-    if (filters.datasComemorativas.length > 0) {
-      const dcLower = filters.datasComemorativas.map((d) => d.toLowerCase());
-      result = result.filter((product) =>
-        (product.tags?.datasComemorativas || []).some((t: string) => {
-          const tl = t.toLowerCase();
-          return dcLower.some((d) => tl.includes(d));
-        }),
-      );
-    }
+    // BUG-DB-02 FIX (2026-06-18): metadados (datas/tags/ramos/segmentos/publico) sao
+    // resolvidos server-side via RPC fn_super_filtro_product_ids -> useProductsByMetadata,
+    // pois o catalogo lightweight NAO hidrata product.tags.* (datas/tags/ramo/nicho ficavam
+    // sempre vazios -> selecionar qualquer um zerava a lista). AND entre grupos, OR dentro.
+    if (hasMetadataFilter && metadataFilteredProductIds.size > 0)
+      result = result.filter((p) => metadataFilteredProductIds.has(p.id));
+    else if (
+      hasMetadataFilter &&
+      metadataFilteredProductIds.size === 0 &&
+      !isLoadingMetadataFilter
+    )
+      result = [];
+    // (Datas Comemorativas: resolvidas via useProductsByMetadata -- ver BUG-DB-02 acima.)
     if (filters.endomarketing.length > 0) {
       const eSet = new Set(filters.endomarketing.map((e) => e.toLowerCase()));
       result = result.filter((product) =>
         (product.tags?.endomarketing || []).some((t: string) => eSet.has(t.toLowerCase())),
       );
     }
-    if (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0) {
-      const ramosLower = filters.ramosAtividade?.map((r) => r.toLowerCase()) ?? [];
-      const segLower = filters.segmentosAtividade?.map((s) => s.toLowerCase()) ?? [];
-      result = result.filter((product) => {
-        const ramos = product.tags?.ramo || [];
-        const nichos = product.tags?.nicho || [];
-        // BUG-SF-06 FIX: AND logic — product must match ramo AND segmento when both active.
-        const matchesRamo = ramosLower.length
-          ? ramosLower.some((r) => ramos.some((t: string) => t.toLowerCase().includes(r)))
-          : true;
-        const matchesSegmento = segLower.length
-          ? segLower.some((s) => nichos.some((t: string) => t.toLowerCase().includes(s)))
-          : true;
-        return matchesRamo && matchesSegmento;
-      });
-    }
+    // (Ramos/Segmentos: resolvidos via useProductsByMetadata -- ver BUG-DB-02 acima.)
     if (hasMaterialFilter && materialFilteredProductIds.size > 0)
       result = result.filter((p) => materialFilteredProductIds.has(p.id));
     else if (hasMaterialFilter && materialFilteredProductIds.size === 0 && !isLoadingMaterialFilter)
@@ -535,24 +530,7 @@ export function useFiltersPageState() {
         ),
       );
     }
-    // BUG-SF-02 FIX: tags era contabilizado/chipeado mas sem bloco de filtro.
-    // Produto.tags é um objeto estruturado (publicoAlvo, ramo, etc.) — não tem campo de tags genérico.
-    // Aqui fazemos match pelo slug do tag versus qualquer campo de string do produto.
-    if (filters.tags?.length) {
-      const tagIdsLower = filters.tags.map((t) => t.toLowerCase());
-      result = result.filter((product) => {
-        const allTagValues = [
-          ...(product.tags?.publicoAlvo || []),
-          ...(product.tags?.datasComemorativas || []),
-          ...(product.tags?.endomarketing || []),
-          ...(product.tags?.ramo || []),
-          ...(product.tags?.nicho || []),
-        ].map((v: string) => v.toLowerCase());
-        return tagIdsLower.some((tagId) =>
-          allTagValues.some((v) => v === tagId || v.includes(tagId)),
-        );
-      });
-    }
+    // (Tags: resolvidas via useProductsByMetadata -- ver BUG-DB-02 acima.)
     // BUG-SF-01 FIX: techniques era contabilizado/chipeado mas sem bloco de filtro.
     // O campo techniques não existe diretamente no Product lightweight — filtro
     // client-side faz match pelo ID/nome da técnica no metadata do produto.
@@ -593,6 +571,9 @@ export function useFiltersPageState() {
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    hasMetadataFilter,
+    metadataFilteredProductIds,
+    isLoadingMetadataFilter,
     promoSalesMap,
     supplierSalesMap,
     promoSales90dMap,
@@ -823,6 +804,7 @@ export function useFiltersPageState() {
     isLoadingMaterialFilter,
     isLoadingCategoryFilter,
     isLoadingColorFilter,
+    isLoadingMetadataFilter,
     activePresetId,
     viewMode,
     setViewMode,
