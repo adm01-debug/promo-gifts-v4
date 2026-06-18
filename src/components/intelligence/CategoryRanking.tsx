@@ -131,8 +131,7 @@ export function CategoryRanking({
     const restValue = rest.reduce((s, c) => s + getBarValue(c), 0);
 
     const items = top.map((cat, i) => ({
-      name:
-        cat.categoryName.length > 18 ? `${cat.categoryName.substring(0, 18)}…` : cat.categoryName,
+      name: cat.categoryName.length > 18 ? `${cat.categoryName.slice(0, 18)}…` : cat.categoryName,
       fullName: cat.categoryName,
       value: getBarValue(cat),
       internalRevenue: cat.internalRevenue,

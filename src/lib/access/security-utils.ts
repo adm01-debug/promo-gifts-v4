@@ -15,7 +15,7 @@ export function generateSecurityHash(input: string): string {
     hash = hash & hash; // Converte para inteiro de 32 bits
   }
   // Retorna hash curta em base36 (alfanumérico) e maiúsculas
-  return Math.abs(hash).toString(36).substring(0, 6).toUpperCase();
+  return Math.abs(hash).toString(36).slice(0, 6).toUpperCase();
 }
 
 /**

@@ -257,9 +257,9 @@ function getLuminanceFromHex(hex: string | undefined | null): number {
   }
 
   // Converte para RGB
-  const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
-  const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
-  const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+  const r = parseInt(cleanHex.slice(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.slice(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.slice(4, 6), 16) / 255;
 
   // Valida se parse foi bem-sucedido
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {

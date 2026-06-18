@@ -40,7 +40,9 @@ export function CompanyAvatar({
           dim,
           'flex-shrink-0 rounded-full border border-border bg-background object-cover',
         )}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
         loading="lazy"
       />
     );
@@ -52,7 +54,7 @@ export function CompanyAvatar({
         'flex flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground',
       )}
     >
-      {name.substring(0, 2).toUpperCase()}
+      {name.slice(0, 2).toUpperCase()}
     </div>
   );
 }

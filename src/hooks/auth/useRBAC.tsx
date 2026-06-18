@@ -30,8 +30,8 @@ function parsePermissionCode(code: string): Permission {
   const idx = code.indexOf('_');
   if (idx === -1) return { action: code, resource: '*' };
   return {
-    action: code.substring(0, idx),
-    resource: code.substring(idx + 1),
+    action: code.slice(0, idx),
+    resource: code.slice(idx + 1),
   };
 }
 

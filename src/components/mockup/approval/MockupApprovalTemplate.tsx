@@ -123,9 +123,9 @@ export const MockupApprovalTemplate = forwardRef<HTMLDivElement, { data: MockupA
                         const hex = data.product.colorHex || '#2e7d32';
                         const c = hex.replace('#', '');
                         const lum =
-                          (0.299 * parseInt(c.substring(0, 2), 16) +
-                            0.587 * parseInt(c.substring(2, 4), 16) +
-                            0.114 * parseInt(c.substring(4, 6), 16)) /
+                          (0.299 * parseInt(c.slice(0, 2), 16) +
+                            0.587 * parseInt(c.slice(2, 4), 16) +
+                            0.114 * parseInt(c.slice(4, 6), 16)) /
                           255;
                         return lum > 0.85 ? '#333333' : hex;
                       })(),
@@ -133,9 +133,9 @@ export const MockupApprovalTemplate = forwardRef<HTMLDivElement, { data: MockupA
                         const hex = data.product.colorHex || '#2e7d32';
                         const c = hex.replace('#', '');
                         const lum =
-                          (0.299 * parseInt(c.substring(0, 2), 16) +
-                            0.587 * parseInt(c.substring(2, 4), 16) +
-                            0.114 * parseInt(c.substring(4, 6), 16)) /
+                          (0.299 * parseInt(c.slice(0, 2), 16) +
+                            0.587 * parseInt(c.slice(2, 4), 16) +
+                            0.114 * parseInt(c.slice(4, 6), 16)) /
                           255;
                         return lum > 0.85 ? '#ffffff' : getContrastColor(hex);
                       })(),
@@ -706,9 +706,9 @@ function ProductSpecsStrip({ product }: { product: MockupApprovalData['product']
 /* ─── Util ─── */
 function getContrastColor(hex: string): string {
   const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.5 ? '#1a1a1a' : '#ffffff';
 }

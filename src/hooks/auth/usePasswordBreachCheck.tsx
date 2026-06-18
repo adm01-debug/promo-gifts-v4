@@ -37,8 +37,8 @@ export function usePasswordBreachCheck() {
 
     try {
       const hash = await sha1Hash(password);
-      const prefix = hash.substring(0, 5);
-      const suffix = hash.substring(5);
+      const prefix = hash.slice(0, 5);
+      const suffix = hash.slice(5);
 
       const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
         headers: {

@@ -251,7 +251,7 @@ export function useSupplierFiscalData(
             const createResult = await untypedFrom('product_variants')
               .insert({
                 product_id: productId,
-                sku: `DEFAULT-${productId.substring(0, 8)}`,
+                sku: `DEFAULT-${productId.slice(0, 8)}`,
                 is_active: true,
                 attributes: {},
               })

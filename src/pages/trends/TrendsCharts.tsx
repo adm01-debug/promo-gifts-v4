@@ -146,7 +146,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                   dataKey="name"
                   className="text-xs"
                   width={120}
-                  tickFormatter={(v) => (v.length > 15 ? `${v.substring(0, 15)}...` : v)}
+                  tickFormatter={(v) => (v.length > 15 ? `${v.slice(0, 15)}...` : v)}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="views" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
@@ -302,7 +302,7 @@ export function SearchesTabContent({ topSearches, isLoading }: SearchesTabProps)
                   dataKey="term"
                   className="text-xs"
                   width={100}
-                  tickFormatter={(v) => (v.length > 12 ? `${v.substring(0, 12)}...` : v)}
+                  tickFormatter={(v) => (v.length > 12 ? `${v.slice(0, 12)}...` : v)}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar

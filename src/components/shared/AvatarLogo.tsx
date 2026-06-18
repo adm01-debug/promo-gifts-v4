@@ -52,7 +52,7 @@ export function AvatarLogo({
         fallbackClassName || className,
       )}
     >
-      {name ? name.substring(0, 2).toUpperCase() : <Building2 className="h-1/2 w-1/2" />}
+      {name ? name.slice(0, 2).toUpperCase() : <Building2 className="h-1/2 w-1/2" />}
     </div>
   );
 }

@@ -206,7 +206,7 @@ export function useProductVideoGallery(productId?: string) {
         return null;
       }
       const fileExt = file.name.split('.').pop() || 'mp4';
-      const baseName = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const baseName = `${Date.now()}-${Math.random().toString(36).slice(7)}`;
       const videoPath = `videos/${productId || 'new'}/${baseName}.${fileExt}`;
       const { data, error } = await supabase.storage
         .from('product-videos')
@@ -472,7 +472,7 @@ export function useProductVideoGallery(productId?: string) {
           toast.error('Não foi possível extrair frame');
           return;
         }
-        const baseName = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const baseName = `${Date.now()}-${Math.random().toString(36).slice(7)}`;
         const thumbPath = `thumbnails/${productId}/${baseName}.jpg`;
         const { data: td, error: te } = await supabase.storage
           .from('product-videos')

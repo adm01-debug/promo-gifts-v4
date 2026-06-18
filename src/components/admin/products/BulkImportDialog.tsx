@@ -177,7 +177,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
       if ((sku?.length ?? 0) > 50) errors.push('SKU excede 50 caracteres');
       if (mapped.name && String(mapped.name).length > 300) {
         warnings.push('Nome truncado em 300 caracteres');
-        mapped.name = String(mapped.name).substring(0, 300);
+        mapped.name = String(mapped.name).slice(0, 300);
       }
       if (sku) allSkus.push(sku);
       const skuCount = allSkus.filter((s) => s === sku).length;

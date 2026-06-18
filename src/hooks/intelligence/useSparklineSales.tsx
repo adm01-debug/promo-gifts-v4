@@ -151,7 +151,7 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
 
   for (const row of allRecords) {
     if (!row.product_id) continue;
-    const date = row.summary_date?.substring(0, 10);
+    const date = row.summary_date?.slice(0, 10);
     if (!date) continue;
     const depleted = row.units_depleted || 0;
     const restocked = row.units_restocked || 0;

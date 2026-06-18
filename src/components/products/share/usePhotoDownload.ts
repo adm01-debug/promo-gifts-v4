@@ -30,7 +30,7 @@ export function usePhotoDownload() {
             const safeName = productName
               .replace(/[^a-zA-Z0-9-_ ]/g, '')
               .replace(/\s+/g, '_')
-              .substring(0, 30);
+              .slice(0, 30);
 
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);

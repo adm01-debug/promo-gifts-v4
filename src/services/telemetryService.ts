@@ -50,7 +50,7 @@ class TelemetryService {
   private flushing = false;
 
   constructor() {
-    this.sessionId = Math.random().toString(36).substring(2, 15);
+    this.sessionId = Math.random().toString(36).slice(2, 15);
     if (typeof window !== 'undefined') {
       // Flush no fechamento da página/aba — eventos pendentes não somem
       window.addEventListener('pagehide', () => {

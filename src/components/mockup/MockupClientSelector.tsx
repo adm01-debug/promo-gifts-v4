@@ -51,7 +51,7 @@ function CompanyAvatar({
         'flex flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground',
       )}
     >
-      {name.substring(0, 2).toUpperCase()}
+      {name.slice(0, 2).toUpperCase()}
     </div>
   );
 }

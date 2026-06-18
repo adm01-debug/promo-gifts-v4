@@ -245,7 +245,7 @@ export function useProductImageGallery({
       }
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(7)}.${fileExt}`;
       const { data, error } = await supabase.storage
         .from('personalization-images')
         .upload(fileName, file, { cacheControl: '3600', upsert: false });

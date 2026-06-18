@@ -117,7 +117,7 @@ export function useSalesHistoryMacro(days = 30) {
       const dailyMap = new Map<string, DailySalesPoint>();
       for (const qi of quoteItems ?? []) {
         if (!qi.created_at) continue;
-        const date = qi.created_at.substring(0, 10);
+        const date = qi.created_at.slice(0, 10);
         const entry = dailyMap.get(date) || {
           date,
           quotedQty: 0,
@@ -134,7 +134,7 @@ export function useSalesHistoryMacro(days = 30) {
       }
       for (const oi of orderItems ?? []) {
         if (!oi.created_at) continue;
-        const date = oi.created_at.substring(0, 10);
+        const date = oi.created_at.slice(0, 10);
         const entry = dailyMap.get(date) || {
           date,
           quotedQty: 0,

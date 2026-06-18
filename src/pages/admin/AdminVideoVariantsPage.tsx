@@ -259,7 +259,7 @@ export default function AdminVideoVariantsPage() {
                       <TableCell>
                         <Badge variant="outline" className="gap-1">
                           <Play className="h-3 w-3" />
-                          {link.video_id.substring(0, 20)}...
+                          {link.video_id.slice(0, 20)}...
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">{link.supplier_code || '—'}</TableCell>

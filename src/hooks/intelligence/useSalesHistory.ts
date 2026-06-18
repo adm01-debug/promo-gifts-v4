@@ -126,7 +126,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       // #7 fix: guard against null created_at before substring
       for (const qi of quoteItems ?? []) {
         if (!qi.created_at) continue;
-        const date = qi.created_at.substring(0, 10);
+        const date = qi.created_at.slice(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
         entry.quotedQty += qi.quantity ?? 0;
         entry.quotedValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
@@ -136,7 +136,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
 
       for (const oi of orderItems ?? []) {
         if (!oi.created_at) continue;
-        const date = oi.created_at.substring(0, 10);
+        const date = oi.created_at.slice(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
         entry.orderedQty += oi.quantity ?? 0;
         entry.orderedValue += (oi.quantity ?? 0) * (oi.unit_price ?? 0);

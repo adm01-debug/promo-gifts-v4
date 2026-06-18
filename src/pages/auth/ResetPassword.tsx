@@ -68,7 +68,7 @@ export default function ResetPassword() {
           setIsValidToken(true);
         } else {
           // Check URL hash for access token (Supabase redirect format)
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
           const accessToken = hashParams.get('access_token');
           const type = hashParams.get('type');
 

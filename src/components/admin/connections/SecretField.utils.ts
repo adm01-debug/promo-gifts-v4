@@ -67,7 +67,7 @@ export function buildUpdatedTooltip(
   if (updatedByEmail) {
     author = updatedByEmail;
   } else if (updatedBy) {
-    author = `equipe (#${updatedBy.substring(0, 8)})`;
+    author = `equipe (#${updatedBy.slice(0, 8)})`;
   }
 
   return `Atualizado ${relative}\n${dateStr}\npor ${author}`;

@@ -221,7 +221,7 @@ function loadImageCors(url: string): Promise<HTMLImageElement> {
     img.onerror = async () => {
       // If we already skipped CORS, there's no further fallback for loading
       if (skipCors) {
-        reject(new Error(`Failed to load image (no-cors): ${url.substring(0, 60)}...`));
+        reject(new Error(`Failed to load image (no-cors): ${url.slice(0, 60)}...`));
         return;
       }
 

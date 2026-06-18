@@ -204,7 +204,7 @@ export function PromoFlixPlayer({
         logTelemetry('STUCK_LOADING_TIMEOUT', {
           readyState: v.readyState,
           networkState: v.networkState,
-          src: `${src.substring(0, 50)}...`,
+          src: `${src.slice(0, 50)}...`,
           currentTime: v.currentTime,
         });
         loadingTimeoutRef.current = window.setTimeout(() => {
@@ -236,7 +236,7 @@ export function PromoFlixPlayer({
     setIsReconnecting(false);
     setShowLoadingAction(false);
     reconnectAttemptsRef.current = 0;
-    logTelemetry('INIT_PLAYER', { src: `${src.substring(0, 50)}...`, isHls });
+    logTelemetry('INIT_PLAYER', { src: `${src.slice(0, 50)}...`, isHls });
     armLoadingTimeout();
     if (hlsRef.current) {
       try {
@@ -616,7 +616,7 @@ export function PromoFlixPlayer({
         code: error?.code,
         message: error?.message,
         usingHls: Boolean(hlsRef.current),
-        src: video.currentSrc?.substring(0, 80),
+        src: video.currentSrc?.slice(0, 80),
       });
       if (hlsRef.current) return;
       if (hlsDestroyedRef.current) return;
