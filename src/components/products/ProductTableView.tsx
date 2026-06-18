@@ -568,6 +568,7 @@ export const ProductTableView = memo(function ProductTableView({
                     role="button"
                     tabIndex={0}
                     aria-label={`Visualização rápida de ${product.name}`}
+                    data-testid="product-table-row-thumb"
                     className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30"
                     onClick={(e) => {
                       e.stopPropagation();

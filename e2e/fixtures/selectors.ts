@@ -116,6 +116,10 @@ export const Sel = {
     rowName: TID("product-row-name"),
     /** Nome no item da view de lista (ProductListItem). */
     listName: TID("product-list-name"),
+    /** Thumb clicável na view de lista (abre QuickView). */
+    listItemThumb: TID("product-list-item-thumb"),
+    /** Thumb clicável na view de tabela (abre QuickView). */
+    tableRowThumb: TID("product-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
     /** Nome no detalhe do produto (ProductDetailHero h1). */

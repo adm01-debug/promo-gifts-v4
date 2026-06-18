@@ -385,6 +385,7 @@ export const ProductListItem = memo(function ProductListItem({
           role="button"
           tabIndex={0}
           aria-label={`Visualização rápida de ${product.name}`}
+          data-testid="product-list-item-thumb"
           onClick={(e) => {
             e.stopPropagation();
             setQuickViewOpen(true);
