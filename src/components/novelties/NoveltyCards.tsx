@@ -384,22 +384,29 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {activeImage ? (
-          <img
-            key={activeImage}
-            src={activeImage}
-            alt={product.product_name}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-            }}
-            className="h-full w-full object-contain transition-opacity duration-200"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Package className="h-5 w-5 text-muted-foreground/30" />
-          </div>
-        )}
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-list-card-thumb"
+          className="h-full w-full"
+        >
+          {activeImage ? (
+            <img
+              key={activeImage}
+              src={activeImage}
+              alt={product.product_name}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+              }}
+              className="h-full w-full object-contain transition-opacity duration-200"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Package className="h-5 w-5 text-muted-foreground/30" />
+            </div>
+          )}
+        </QuickViewThumb>
       </div>
 
       {/* Info */}
