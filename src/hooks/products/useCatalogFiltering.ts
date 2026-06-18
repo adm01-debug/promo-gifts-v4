@@ -100,7 +100,7 @@ export function useCatalogFiltering({
     if (supplierFilterSet.size > 0) {
       result = result.filter(
         (p) =>
-          supplierFilterSet.has(p.supplier?.id || '') ||
+          supplierFilterSet.has(p.supplier?.id ?? '') ||
           supplierFilterSet.has(p.brand || '') ||
           supplierFilterSet.has(p.supplier_reference || ''),
       );

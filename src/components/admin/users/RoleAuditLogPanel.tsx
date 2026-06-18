@@ -133,10 +133,10 @@ export function RoleAuditLogPanel() {
       const actor = profilesMap.get(e.user_id);
       const target = e.resource_id ? profilesMap.get(e.resource_id) : null;
       return (
-        (actor?.full_name || '').toLowerCase().includes(q) ||
-        (actor?.email || '').toLowerCase().includes(q) ||
-        (target?.full_name || '').toLowerCase().includes(q) ||
-        (target?.email || '').toLowerCase().includes(q)
+        (actor?.full_name ?? '').toLowerCase().includes(q) ||
+        (actor?.email ?? '').toLowerCase().includes(q) ||
+        (target?.full_name ?? '').toLowerCase().includes(q) ||
+        (target?.email ?? '').toLowerCase().includes(q)
       );
     });
   }, [entries, profilesMap, search]);

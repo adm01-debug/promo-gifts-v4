@@ -272,7 +272,7 @@ export function SupplierFormDialog({
                     size="sm"
                     className="h-9 shrink-0 px-2.5"
                     disabled={
-                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') || '').length !== 14
+                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') ?? '').length !== 14
                     }
                     onClick={handleCnpjLookup}
                   >

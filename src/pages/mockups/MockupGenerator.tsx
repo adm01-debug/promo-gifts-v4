@@ -603,7 +603,7 @@ export default function MockupGenerator() {
           onOpenChange={technique.setColorConfigDialogOpen}
           currentConfig={mg.techniqueColorConfig}
           onConfirm={mg.setTechniqueColorConfig}
-          techniqueName={mg.selectedTechnique?.name || ''}
+          techniqueName={mg.selectedTechnique?.name ?? ''}
           techniqueCode={mg.selectedTechnique?.code}
           detectedColors={mg.logoColorAnalysis.colors || []}
         />

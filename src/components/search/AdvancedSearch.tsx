@@ -74,7 +74,7 @@ export function AdvancedSearch({
       switch (action.action) {
         case 'search':
         case 'filter': {
-          const searchTerm = action.data?.query || '';
+          const searchTerm = action.data?.query ?? '';
           const filterParts: string[] = [];
           if (action.data?.filters?.category) filterParts.push(action.data.filters.category);
           if (action.data?.filters?.color) filterParts.push(action.data.filters.color);

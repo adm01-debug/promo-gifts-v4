@@ -231,7 +231,7 @@ export function ProductInfoSection({
             Modo de Fornecimento
           </FieldLabel>
           <Select
-            value={watch?.('supply_mode') || ''}
+            value={watch?.('supply_mode') ?? ''}
             onValueChange={(v) => setValue?.('supply_mode', v)}
           >
             <SelectTrigger className="h-9">

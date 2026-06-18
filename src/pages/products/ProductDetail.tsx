@@ -201,7 +201,7 @@ export default function ProductDetail() {
       return;
     }
 
-    const normalizedParam = corParam?.toLowerCase().trim() || '';
+    const normalizedParam = corParam?.toLowerCase().trim() ?? '';
 
     // 1. Tenta match exato por nome
     let match = product.variations.find(
@@ -211,7 +211,7 @@ export default function ProductDetail() {
     // 2. Tenta match parcial por nome
     if (!match && normalizedParam) {
       match = product.variations.find((v: ProductVariation) => {
-        const name = v.color?.name?.toLowerCase().trim() || '';
+        const name = v.color?.name?.toLowerCase().trim() ?? '';
         return name.includes(normalizedParam) || normalizedParam.includes(name);
       });
     }
@@ -252,8 +252,8 @@ export default function ProductDetail() {
     if (!product || !colorAutoSelected) return;
     const currentCor = searchParams.get('cor') || '';
     const currentHex = searchParams.get('hex') || '';
-    const newCor = selectedVariation?.color?.name || '';
-    const newHex = selectedVariation?.color?.hex || '';
+    const newCor = selectedVariation?.color?.name ?? '';
+    const newHex = selectedVariation?.color?.hex ?? '';
     if (currentCor === newCor && currentHex === newHex) return;
     const newParams = new URLSearchParams(searchParams);
     if (newCor) {

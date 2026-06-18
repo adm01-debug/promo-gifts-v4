@@ -40,16 +40,16 @@ export function QuoteTemplateForm({
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<CreateTemplateInput>({
-    name: template?.name || '',
-    description: template?.description || '',
+    name: template?.name ?? '',
+    description: template?.description ?? '',
     is_default: template?.is_default || false,
     items: template?.items || initialItems,
     discount_percent: template?.discount_percent ?? initialDiscountPercent,
     discount_amount: template?.discount_amount ?? initialDiscountAmount,
     notes: template?.notes ?? initialNotes,
     internal_notes: template?.internal_notes ?? initialInternalNotes,
-    payment_terms: template?.payment_terms || '',
-    delivery_time: template?.delivery_time || '',
+    payment_terms: template?.payment_terms ?? '',
+    delivery_time: template?.delivery_time ?? '',
     validity_days: template?.validity_days || 30,
   });
 

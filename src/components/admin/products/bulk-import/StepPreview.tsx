@@ -134,14 +134,14 @@ export function StepPreview({
                 <TableCell className="font-mono text-xs">
                   {r.data?.sku ||
                     (rawData[r.row - 1]?.[
-                      Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] || ''
+                      Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] ?? ''
                     ] as string) ||
                     '—'}
                 </TableCell>
                 <TableCell className="max-w-[180px] truncate text-sm">
                   {r.data?.name ||
                     (rawData[r.row - 1]?.[
-                      Object.entries(mapping).find(([, v]) => v === 'name')?.[0] || ''
+                      Object.entries(mapping).find(([, v]) => v === 'name')?.[0] ?? ''
                     ] as string) ||
                     '—'}
                 </TableCell>

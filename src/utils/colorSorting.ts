@@ -386,7 +386,7 @@ export function sortVariationsByColor<T extends { color: { name: string; hex?: s
 
   return sortByColorGroup(
     variations,
-    (v) => v.color?.name || '',
+    (v) => v.color?.name ?? '',
     (v) => v.color?.hex,
   );
 }

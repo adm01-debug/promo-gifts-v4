@@ -98,7 +98,7 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Larg. (cm)</Label>
           <InlineEditField
-            value={location.max_width_cm?.toString() || ''}
+            value={location.max_width_cm?.toString() ?? ''}
             onSave={(value) =>
               onUpdateLocation({ id: location.id, max_width_cm: value ? parseFloat(value) : null })
             }
@@ -109,7 +109,7 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Alt. (cm)</Label>
           <InlineEditField
-            value={location.max_height_cm?.toString() || ''}
+            value={location.max_height_cm?.toString() ?? ''}
             onSave={(value) =>
               onUpdateLocation({ id: location.id, max_height_cm: value ? parseFloat(value) : null })
             }
@@ -120,7 +120,7 @@ export function GroupLocationCard({
         <div>
           <Label className="text-xs text-muted-foreground">Área (cm²)</Label>
           <InlineEditField
-            value={location.max_area_cm2?.toString() || ''}
+            value={location.max_area_cm2?.toString() ?? ''}
             onSave={(value) =>
               onUpdateLocation({ id: location.id, max_area_cm2: value ? parseFloat(value) : null })
             }
