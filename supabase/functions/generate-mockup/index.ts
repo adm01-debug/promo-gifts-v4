@@ -36,33 +36,86 @@ function validationError(
   );
 }
 
-function isValidHttpUrl(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  try {
-    const u = new URL(value);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch { return false; }
+// ─ SSRF hardening ────────────────────────────────────────────────────────────
+// AUDIT 2026-06-17: this function fetches arbitrary productImageUrl / logoUrl
+// values supplied by the caller. Without egress controls that is a Server-Side
+// Request Forgery vector — a caller could aim the URL at cloud metadata
+// (169.254.169.254), loopback, or RFC1918 hosts and read internal responses.
+// We now reject private/reserved/internal targets UNCONDITIONALLY (independent of
+// the allowlist), covering IPv4, IPv6, IPv4-mapped IPv6, and decimal/hex IP
+// obfuscation. The optional MOCKUP_FETCH_ALLOWED_HOSTS allowlist narrows egress
+// further to known CDNs when set.
+// NOTE: this blocks IP *literals* and obvious internal hostnames; it does not on
+// its own stop DNS-rebinding (a public name that resolves to a private IP).
+// Setting MOCKUP_FETCH_ALLOWED_HOSTS to the real product/logo CDNs closes that gap.
+function isBlockedV4(ip: string): boolean {
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some((o) => !Number.isInteger(o) || o < 0 || o > 255)) return true;
+  const [a, b, c] = p;
+  if (a === 0 || a === 10 || a === 127) return true;        // this-host / RFC1918-10 / loopback
+  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT 100.64/10
+  if (a === 169 && b === 254) return true;                  // link-local + cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;         // RFC1918 172.16/12
+  if (a === 192 && b === 168) return true;                  // RFC1918 192.168/16
+  if (a === 192 && b === 0 && c === 0) return true;         // 192.0.0.0/24
+  if (a === 198 && (b === 18 || b === 19)) return true;     // benchmarking 198.18/15
+  if (a >= 224) return true;                                // multicast / reserved
+  return false;
+}
+// Reduce an IPv4-mapped IPv6 address to its dotted IPv4, handling BOTH the decimal
+// form (::ffff:127.0.0.1) and the hex form the URL parser normalises to (::ffff:7f00:1).
+function v4FromMapped(ip: string): string | null {
+  let m = ip.match(/:ffff:(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) return `${+m[1]}.${+m[2]}.${+m[3]}.${+m[4]}`;
+  m = ip.match(/:ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (m) {
+    const hi = parseInt(m[1], 16), lo = parseInt(m[2], 16);
+    return `${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`;
+  }
+  return null;
+}
+function isBlockedHost(hostname: string): boolean {
+  const h = (hostname || "").toLowerCase().trim().replace(/\.$/, "");
+  if (h === "") return true;
+  if (h === "localhost" || h.endsWith(".localhost") || h === "localhost.localdomain") return true;
+  if (h === "metadata" || h === "metadata.google.internal" || h.endsWith(".internal")) return true;
+  if (h.includes(":")) { // IPv6 literal
+    const ip = h.replace(/^\[/, "").replace(/\]$/, "");
+    if (ip === "::1" || ip === "::") return true;
+    if (ip.startsWith("fe80")) return true;                 // link-local
+    if (ip.startsWith("fc") || ip.startsWith("fd")) return true; // ULA fc00::/7
+    const mapped = v4FromMapped(ip);
+    if (mapped) return isBlockedV4(mapped);
+    return false;                                            // global-unicast v6 allowed
+  }
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) return isBlockedV4(h);
+  if (/^(0x[0-9a-f]+|\d+)$/i.test(h)) return true;           // decimal/hex IP obfuscation
+  return false;                                              // DNS hostname — allowlist handles the rest
 }
 
-// SSRF mitigation: optionally restrict which hosts the function will fetch from.
-// Configured via MOCKUP_FETCH_ALLOWED_HOSTS (comma-separated hostnames). When unset
-// the function allows all hosts (logged) so existing product CDNs keep working — set
-// the env var to lock it down once the legitimate domains are confirmed.
-function hostAllowed(rawUrl: string): boolean {
-  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  if (allow.length === 0) {
-    console.warn("[generate-mockup] MOCKUP_FETCH_ALLOWED_HOSTS not set — allowing all hosts");
-    return true;
-  }
-  try {
-    const host = new URL(rawUrl).hostname.toLowerCase();
-    return allow.some((a) => host === a || host.endsWith("." + a));
-  } catch {
+// Single egress gate: valid http(s) scheme + not an internal/blocked target +
+// (optionally) within the MOCKUP_FETCH_ALLOWED_HOSTS allowlist. Replaces the old
+// isValidHttpUrl + hostAllowed pair (which allowed ALL hosts when the env was unset).
+function isFetchableUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  let u: URL;
+  try { u = new URL(value); } catch { return false; }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+  if (isBlockedHost(u.hostname)) {
+    console.warn(`[generate-mockup] blocked SSRF-unsafe host: ${u.hostname}`);
     return false;
   }
+  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
+    .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (allow.length > 0) {
+    const host = u.hostname.toLowerCase();
+    if (!allow.some((a) => host === a || host.endsWith("." + a))) {
+      console.warn(`[generate-mockup] host not in MOCKUP_FETCH_ALLOWED_HOSTS: ${host}`);
+      return false;
+    }
+  }
+  return true;
 }
 
 // SVG cannot be rasterised by createImageBitmap in the Deno edge runtime, so it must
@@ -202,18 +255,21 @@ Deno.serve(async (req) => {
       : ({} as GenerateMockupBody);
   } catch { return validationError("Request body must be valid JSON", corsHeaders); }
 
-  if (!isValidHttpUrl(body.productImageUrl))
-    return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);
+  // isFetchableUrl unifies scheme validation + SSRF blocking + optional allowlist.
+  if (!isFetchableUrl(body.productImageUrl))
+    return validationError(
+      "productImageUrl é obrigatória, deve ser http(s) e não pode apontar para um host interno/bloqueado.",
+      corsHeaders,
+      "PRODUCT_URL_UNFETCHABLE",
+    );
 
-  if (!hostAllowed(body.productImageUrl!))
-    return validationError("productImageUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
-
-  const hasLogo = body.logoBase64 || isValidHttpUrl(body.logoUrl);
+  // A logo arrives either as inline base64 OR as a fetchable URL (same egress gate).
+  const hasLogo = !!body.logoBase64 || isFetchableUrl(body.logoUrl);
   if (!hasLogo)
-    return validationError("Either logoBase64 or a valid logoUrl is required", corsHeaders);
-
-  if (body.logoUrl && !body.logoBase64 && !hostAllowed(body.logoUrl))
-    return validationError("logoUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
+    return validationError(
+      "Forneça logoBase64 ou um logoUrl http(s) válido e acessível (não interno/bloqueado).",
+      corsHeaders,
+    );
 
   // G1: reject SVG data URLs before any fetch/decode work.
   if (body.logoBase64 && /^data:image\/svg/i.test(body.logoBase64.trim()))
