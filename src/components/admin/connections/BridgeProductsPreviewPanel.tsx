@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Boxes, ChevronLeft, ChevronRight, Loader2, RefreshCw, Search, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,18 +72,13 @@ export function BridgeProductsPreviewPanel() {
   }, [appliedSearch, appliedActive, appliedMinPrice, appliedMaxPrice, appliedMinStock]);
 
   // Carrega a página atual sempre que filtros, paginação ou tamanho mudam
-  const lastReqRef = useRef(0);
   useEffect(() => {
-    const reqId = ++lastReqRef.current;
     void fetchAll({
       filters: buildFilters(),
       select: 'id,name,sku,sale_price,stock_quantity,is_active,brand,supplier_id,updated_at',
       orderBy: { column: 'updated_at', ascending: false },
       limit: pageSize,
       offset: (page - 1) * pageSize,
-    }).then(() => {
-      // ignora resposta de requisições obsoletas (race protection)
-      if (reqId !== lastReqRef.current) return;
     });
   }, [buildFilters, fetchAll, page, pageSize]);
 
