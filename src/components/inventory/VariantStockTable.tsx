@@ -166,13 +166,19 @@ function FlatVariantRow({
       )}
       <TableCell>
         <div className="flex items-center gap-3">
-          <VariantThumb
-            imageUrl={variant.imageUrl || product.productImageUrl}
+          <QuickViewThumb
+            productId={product.productId}
             productName={product.productName}
-            colorName={variant.colorName}
-            colorHex={variant.colorHex}
-            size="md"
-          />
+            testId="stock-table-row-thumb"
+          >
+            <VariantThumb
+              imageUrl={variant.imageUrl || product.productImageUrl}
+              productName={product.productName}
+              colorName={variant.colorName}
+              colorHex={variant.colorHex}
+              size="md"
+            />
+          </QuickViewThumb>
           <div className="min-w-0">
             <button
               type="button"
