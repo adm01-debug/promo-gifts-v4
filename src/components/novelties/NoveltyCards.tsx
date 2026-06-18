@@ -540,21 +540,28 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-muted/20">
-                      {product.product_image ? (
-                        <img
-                          src={product.product_image}
-                          alt={product.product_name}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-                          }}
-                          className="h-full w-full object-contain"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <Package className="h-4 w-4 text-muted-foreground/30" />
-                        </div>
-                      )}
+                      <QuickViewThumb
+                        productId={product.product_id}
+                        productName={product.product_name ?? 'Produto'}
+                        testId="novelty-table-row-thumb"
+                        className="h-full w-full"
+                      >
+                        {product.product_image ? (
+                          <img
+                            src={product.product_image}
+                            alt={product.product_name}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                            className="h-full w-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </QuickViewThumb>
                     </div>
                     <span className="line-clamp-1 text-sm font-medium">
                       {product.product_name ?? '—'}
