@@ -282,6 +282,6 @@ export function applyProductFilters(
   }
   // BUG-SF-08 FIX: com fuzzy ativo e sort 'name', preserva a ordem de relevância.
   const skipSort = hasFuzzySearch && sortBy === 'name';
-  sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
+  result = sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
   return result;
 }
