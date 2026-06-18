@@ -797,3 +797,133 @@ describe('SIM — regressões e casos extremos adicionais', () => {
     expect(ids(out)).toEqual(['8']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// FIX-10 — Gaps identificados na análise de simulação de cenários
+// ---------------------------------------------------------------------------
+describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva', () => {
+  // 1. isNew isolado — retorna exatamente os produtos com newArrival=true
+  it('isNew isolado: retorna exatamente produtos 4 e 7 (newArrival=true)', () => {
+    const out = run(f({ isNew: true }));
+    expect(ids(out)).toEqual(['4', '7']);
+  });
+
+  // 2. Fuzzy search + price filter: o filtro de preço aplica sobre resultados fuzzy
+  it('fuzzy ativo + priceRange: preço ainda filtra sobre resultados do fuzzy', () => {
+    // fuzzy retorna produtos 1 (R$9.9), 2 (R$49.9), 3 (R$79.9)
+    // priceRange [20, 9999]: exclui produto 1 (9.9 < 20), mantém 2 e 3
+    const ctx = baseCtx({
+      hasFuzzySearch: true,
+      fuzzySearchResults: [CATALOG[0], CATALOG[1], CATALOG[2]], // ids 1, 2, 3
+    });
+    const out = run(f({ priceRange: [20, 9999] }), ctx);
+    expect(ids(out)).toEqual(['2', '3']);
+    expect(ids(out)).not.toContain('1');
+  });
+
+  it('fuzzy ativo: sem filtros locais adicionais → retorna o set fuzzy intato', () => {
+    const ctx = baseCtx({
+      hasFuzzySearch: true,
+      fuzzySearchResults: [CATALOG[1], CATALOG[3]], // ids 2, 4
+    });
+    const out = run(f(), ctx);
+    expect(ids(out)).toEqual(['2', '4']);
+  });
+
+  // 3. endomarketing client-side (sem hasMetadataFilter)
+  it('endomarketing client-side: produto 5 (tags.endomarketing=onboarding) retornado', () => {
+    // produto 5 tem tags.endomarketing: ['onboarding']
+    // sem hasMetadataFilter, o filtro client-side deve operar sobre product.tags
+    const out = run(f({ endomarketing: ['onboarding'] }));
+    expect(ids(out)).toEqual(['5']);
+  });
+
+  it('endomarketing com hasMetadataFilter=true: bloco client-side ignorado (BUG-DB-07)', () => {
+    // Quando a RPC de metadata está ativa, endomarketing NÃO roda client-side
+    // (tags são vazias no catálogo leve — rodar zeraria a grade).
+    // O gate !hasMetadataFilter deve impedir o bloco client-side.
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(['5', '1', '2']),
+      isLoadingMetadataFilter: false,
+    });
+    const out = run(f({ endomarketing: ['onboarding'] }), ctx);
+    // filtro passa pelo Set da RPC; client-side não exclui os 3 produtos
+    expect(ids(out)).toEqual(['1', '2', '5']);
+  });
+
+  // 4. tags client-side (sem hasMetadataFilter)
+  it('tags client-side: tag "onboarding" retorna produto 5 via tags.endomarketing', () => {
+    // filtro tags[] varre publicoAlvo, datasComemorativas, endomarketing, ramo, nicho
+    const out = run(f({ tags: ['onboarding'] }));
+    expect(ids(out)).toEqual(['5']);
+  });
+
+  it('tags client-side: tag "tecnologia" retorna produto 5 via tags.ramo', () => {
+    const out = run(f({ tags: ['tecnologia'] }));
+    expect(ids(out)).toEqual(['5']);
+  });
+
+  it('tags client-side: tag "executivo" retorna produto 5 via tags.publicoAlvo', () => {
+    const out = run(f({ tags: ['executivo'] }));
+    expect(ids(out)).toEqual(['5']);
+  });
+
+  it('tags client-side: tag inexistente retorna vazio', () => {
+    const out = run(f({ tags: ['xyz-tag-inexistente'] }));
+    expect(out).toHaveLength(0);
+  });
+
+  // 5. supplier_reference — filtragem via referência interna (não pelo nome)
+  it('supplier_reference: filtrar pela referência interna retorna o produto correto', () => {
+    const productWithRef = makeProduct({
+      id: 'ref-p',
+      name: 'Produto Referência',
+      supplier_reference: 'REF-42',
+      price: 30,
+    });
+    const catalogWithRef = [...CATALOG, productWithRef];
+    const runR = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters(catalogWithRef, filters, filters.sortBy, ctx);
+    const out = runR(f({ suppliers: ['REF-42'] }));
+    expect(out.map((p) => p.id)).toContain('ref-p');
+    // produto 8 (AcmeCo) não tem supplier_reference='REF-42' → não deve aparecer
+    expect(out.map((p) => p.id)).not.toContain('8');
+  });
+
+  it('supplier_reference: referência diferente da do filtro → não retorna', () => {
+    const productWithRef = makeProduct({
+      id: 'ref-p',
+      name: 'Produto Referência',
+      supplier_reference: 'REF-99',
+    });
+    const catalogWithRef = [...CATALOG, productWithRef];
+    const runR = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters(catalogWithRef, filters, filters.sortBy, ctx);
+    const out = runR(f({ suppliers: ['REF-42'] }));
+    expect(out.map((p) => p.id)).not.toContain('ref-p');
+  });
+
+  // 6. Limites de preço fracionários — inclusão exata nos extremos
+  it('priceRange [9.9, 49.9]: inclui produtos exatamente nos limites (R$9.9 e R$49.9)', () => {
+    // produto 1 = R$9.9 (no limite inferior), produto 2 = R$49.9 (no limite superior)
+    const out = run(f({ priceRange: [9.9, 49.9] }));
+    expect(ids(out)).toContain('1'); // 9.9 >= 9.9 → incluído
+    expect(ids(out)).toContain('2'); // 49.9 <= 49.9 → incluído
+    expect(ids(out)).not.toContain('3'); // 79.9 > 49.9 → excluído
+  });
+
+  it('priceRange [9.91, 49.89]: produto 1 (R$9.9) e produto 2 (R$49.9) excluídos', () => {
+    // Prova que a comparação é >= e <= (não > e <)
+    const out = run(f({ priceRange: [9.91, 49.89] }));
+    expect(ids(out)).not.toContain('1'); // 9.9 < 9.91 → excluído
+    expect(ids(out)).not.toContain('2'); // 49.9 > 49.89 → excluído
+    // produto 7 (R$19.9) ainda deve estar entre 9.91 e 49.89
+    expect(ids(out)).toContain('7');
+  });
+
+  it('priceRange [9.9, 9.9]: intervalo fechado no valor exato → só produto 1', () => {
+    const out = run(f({ priceRange: [9.9, 9.9] }));
+    expect(ids(out)).toEqual(['1']);
+  });
+});
