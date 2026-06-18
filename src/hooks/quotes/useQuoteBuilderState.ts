@@ -912,16 +912,17 @@ export function useQuoteBuilderState() {
   const isDraftValid = !!clientId;
 
   // ── Discount limit check ──
+  // Compara contra o DESCONTO REAL (sobre o subtotal real, sem markup) — exatamente
+  // a métrica que o trigger server-side `fn_quotes_validate_discount` enforce via
+  // `real_discount_percent`. Usar o desconto APARENTE aqui (discountValue ou
+  // discountValue/subtotal) divergia da regra do banco quando havia margem de
+  // negociação: o markup dilui o desconto real, então um desconto aparente acima
+  // do limite podia estar, na verdade, dentro da alçada. O gate antigo empurrava
+  // esses casos para aprovação desnecessariamente — anulando o propósito do markup.
   const isDiscountExceeded = useMemo(() => {
     if (maxDiscountPercent === null) return false;
-    if (discountType === 'percent') return discountValue > maxDiscountPercent;
-    // For amount type, calculate effective percent
-    if (subtotal > 0) {
-      const effectivePercent = (discountValue / subtotal) * 100;
-      return effectivePercent > maxDiscountPercent;
-    }
-    return false;
-  }, [maxDiscountPercent, discountType, discountValue, subtotal]);
+    return realDiscountPercent > maxDiscountPercent;
+  }, [maxDiscountPercent, realDiscountPercent]);
 
   // ── Save ──
   const handleSaveQuote = useCallback(

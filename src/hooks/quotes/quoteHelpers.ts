@@ -168,7 +168,9 @@ export function buildItemsInsertPayload(
     price_updated_at: item.price_updated_at ?? null,
     price_freshness_threshold_days: item.price_freshness_threshold_days ?? null,
     bitrix_product_id:
-      item.bitrix_product_id != null ? String(item.bitrix_product_id) : null,
+      item.bitrix_product_id === null || item.bitrix_product_id === undefined
+        ? null
+        : String(item.bitrix_product_id),
   }));
 }
 
