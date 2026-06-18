@@ -140,8 +140,8 @@ export function MockupLayoutButtons({
           techniqueName: technique?.name || '—',
           techniqueCode: technique?.code || undefined,
           locationName: technique?.locationName || activeArea?.name || 'Frente',
-          widthCm: activeArea?.logoWidth || technique?.maxWidth || 0,
-          heightCm: activeArea?.logoHeight || technique?.maxHeight || 0,
+          widthCm: activeArea?.logoWidth || (technique?.maxWidth ?? 0),
+          heightCm: activeArea?.logoHeight || (technique?.maxHeight ?? 0),
           colorsCount,
         },
         pantoneColors: (pantoneColors ?? []).map((c) => ({

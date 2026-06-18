@@ -560,10 +560,10 @@ export function useQuoteBuilderState() {
       positions_count: 1,
       width_cm: p.specs?.width || undefined,
       height_cm: p.specs?.height || undefined,
-      area_cm2: (p.specs?.width || 0) * (p.specs?.height || 0),
-      setup_cost: p.pricing?.setupPrice || 0,
-      unit_cost: p.pricing?.unitPrice || 0,
-      total_cost: p.pricing?.totalPrice || 0,
+      area_cm2: (p.specs?.width ?? 0) * (p.specs?.height ?? 0),
+      setup_cost: p.pricing?.setupPrice ?? 0,
+      unit_cost: p.pricing?.unitPrice ?? 0,
+      total_cost: p.pricing?.totalPrice ?? 0,
     }));
     const newItem: QuoteItem = {
       product_id: product.id,

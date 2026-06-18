@@ -34,7 +34,7 @@ export function usePasswordResetRequests() {
       if (error) throw error;
 
       setRequests((data as PasswordResetRequest[]) ?? []);
-      setPendingCount(data?.filter((r) => r.status === 'pending').length || 0);
+      setPendingCount(data?.filter((r) => r.status === 'pending').length ?? 0);
     } catch (error) {
       logger.error('Error fetching password reset requests:', error);
     } finally {

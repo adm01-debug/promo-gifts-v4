@@ -70,12 +70,12 @@ export function useKitBuilder() {
 
   const kitState = useMemo((): KitState => {
     const totalItemsVolume = calculateTotalItemsVolume(selectedItems);
-    const boxVolume = selectedBox?.internalVolume || 0;
+    const boxVolume = selectedBox?.internalVolume ?? 0;
     const usableVolume = selectedBox ? calculateUsableVolume(selectedBox) : 0;
     const availableVolume = Math.max(0, usableVolume - totalItemsVolume);
     const volumeUsagePercent = calculateVolumeUsagePercent(totalItemsVolume, boxVolume);
 
-    const boxWeight = selectedBox?.weight || 0;
+    const boxWeight = selectedBox?.weight ?? 0;
     const itemsWeight = selectedItems.reduce(
       (sum, item) => sum + (item.weight || 0) * item.quantity,
       0,

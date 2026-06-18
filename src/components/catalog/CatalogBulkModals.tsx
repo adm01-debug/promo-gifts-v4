@@ -24,7 +24,7 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
     <>
       {selectionMode && (
         <BulkActionBar
-          selectedCount={sel.selectedIds?.size || 0}
+          selectedCount={sel.selectedIds?.size ?? 0}
           totalCount={totalCount}
           onSelectAll={sel.selectAll}
           onClearSelection={sel.clearSelection}
@@ -46,7 +46,7 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
             if (!open) sel.clearSelection();
           }}
           productId={sel.firstSelectedId}
-          productName={`${sel.selectedIds?.size || 0} produtos selecionados`}
+          productName={`${sel.selectedIds?.size ?? 0} produtos selecionados`}
         />
       )}
 

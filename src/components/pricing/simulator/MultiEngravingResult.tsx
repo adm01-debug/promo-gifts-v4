@@ -104,7 +104,7 @@ export function MultiEngravingResult({
   // Totais
   const productTotal = product.price * quantity;
   const customizationTotal = calculations.reduce(
-    (sum, calc) => sum + (calc.priceData?.total_price || 0),
+    (sum, calc) => sum + (calc.priceData?.total_price ?? 0),
     0,
   );
   const grandTotal = productTotal + customizationTotal;
@@ -112,7 +112,7 @@ export function MultiEngravingResult({
 
   // Prazo máximo
   const maxSlaDays = Math.max(
-    ...calculations.map((c) => c.priceData?.production_days || 0).filter(Boolean),
+    ...calculations.map((c) => c.priceData?.production_days ?? 0).filter(Boolean),
     0,
   );
 

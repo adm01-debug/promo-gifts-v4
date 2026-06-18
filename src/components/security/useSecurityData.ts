@@ -105,8 +105,8 @@ export function useSecurityData(
       const typedNotifs = notifs as SecurityNotification[] | null;
       setNotifications(typedNotifs ?? []);
 
-      const failedAttempts = attempts?.filter((a) => !a.success).length || 0;
-      const unreadAlerts = typedNotifs?.filter((n) => !n.is_read).length || 0;
+      const failedAttempts = attempts?.filter((a) => !a.success).length ?? 0;
+      const unreadAlerts = typedNotifs?.filter((n) => !n.is_read).length ?? 0;
 
       let score = 40;
       if (is2FAEnabled) score += 30;
@@ -119,7 +119,7 @@ export function useSecurityData(
         mfaEnabled: is2FAEnabled,
         ipRestrictionsActive: allowedIPs.length > 0,
         knownDevicesCount: devicesCount || 0,
-        recentLoginAttempts: attempts?.length || 0,
+        recentLoginAttempts: attempts?.length ?? 0,
         failedLoginAttempts: failedAttempts,
         securityAlerts: unreadAlerts,
       });

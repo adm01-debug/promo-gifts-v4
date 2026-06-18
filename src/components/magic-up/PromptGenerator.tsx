@@ -146,8 +146,8 @@ export function PromptGenerator({
         : null,
       techniqueId: null,
       techniqueName: null,
-      maxWidth: area?.max_width || 0,
-      maxHeight: area?.max_height || 0,
+      maxWidth: area?.max_width ?? 0,
+      maxHeight: area?.max_height ?? 0,
       unit: area?.unit || 'cm',
     });
   };
@@ -161,8 +161,8 @@ export function PromptGenerator({
       locationName: locationLabel,
       techniqueId: isNone ? null : techId,
       techniqueName: tech?.nome || null,
-      maxWidth: selectedArea?.max_width || 0,
-      maxHeight: selectedArea?.max_height || 0,
+      maxWidth: selectedArea?.max_width ?? 0,
+      maxHeight: selectedArea?.max_height ?? 0,
       unit: selectedArea?.unit || 'cm',
     });
   };

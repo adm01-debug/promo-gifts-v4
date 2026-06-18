@@ -148,7 +148,7 @@ export default function SimulationPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{report?.totalScenarios || 0}</div>
+                <div className="text-2xl font-bold">{report?.totalScenarios ?? 0}</div>
               </CardContent>
             </Card>
             <Card>

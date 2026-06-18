@@ -50,10 +50,10 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.search) count++;
   // Cores (contadas como 1 grupo mesmo com múltiplos arrays)
   const totalCores =
-    (filters.colorGroups?.length || 0) +
-    (filters.colorVariations?.length || 0) +
-    (filters.colorNuances?.length || 0) +
-    (filters.colors?.length || 0);
+    (filters.colorGroups?.length ?? 0) +
+    (filters.colorVariations?.length ?? 0) +
+    (filters.colorNuances?.length ?? 0) +
+    (filters.colors?.length ?? 0);
   if (totalCores > 0) count++;
   if (filters.categories?.length) count++;
   if (filters.suppliers?.length) count++;
@@ -63,9 +63,9 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.ramosAtividade?.length || filters.segmentosAtividade?.length) count++;
   // Materiais (contados como 1 grupo)
   const totalMateriais =
-    (filters.materialGroups?.length || 0) +
-    (filters.materialTypes?.length || 0) +
-    (filters.materiais?.length || 0);
+    (filters.materialGroups?.length ?? 0) +
+    (filters.materialTypes?.length ?? 0) +
+    (filters.materiais?.length ?? 0);
   if (totalMateriais > 0) count++;
   if (filters.techniques?.length) count++;
   if (filters.tags?.length) count++;
@@ -96,10 +96,10 @@ export function summarizeFilters(filters: FilterState): string {
   const parts: string[] = [];
   if (filters.search) parts.push(`busca: "${filters.search}"`);
   const totalCores =
-    (filters.colorGroups?.length || 0) +
-    (filters.colorVariations?.length || 0) +
-    (filters.colorNuances?.length || 0) +
-    (filters.colors?.length || 0);
+    (filters.colorGroups?.length ?? 0) +
+    (filters.colorVariations?.length ?? 0) +
+    (filters.colorNuances?.length ?? 0) +
+    (filters.colors?.length ?? 0);
   if (totalCores > 0) parts.push(`${totalCores} cor${totalCores > 1 ? 'es' : ''}`);
   if (filters.categories?.length)
     parts.push(`${filters.categories.length} categoria${filters.categories.length > 1 ? 's' : ''}`);
@@ -111,9 +111,9 @@ export function summarizeFilters(filters: FilterState): string {
   if (filters.ramosAtividade?.length || filters.segmentosAtividade?.length)
     parts.push(`nichos/segmentos`);
   const totalMateriais =
-    (filters.materialGroups?.length || 0) +
-    (filters.materialTypes?.length || 0) +
-    (filters.materiais?.length || 0);
+    (filters.materialGroups?.length ?? 0) +
+    (filters.materialTypes?.length ?? 0) +
+    (filters.materiais?.length ?? 0);
   if (totalMateriais > 0) parts.push(`${totalMateriais} material${totalMateriais > 1 ? 'is' : ''}`);
   if (filters.techniques?.length)
     parts.push(`${filters.techniques.length} técnica${filters.techniques.length > 1 ? 's' : ''}`);

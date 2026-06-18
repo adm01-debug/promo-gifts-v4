@@ -525,7 +525,7 @@ export function useCatalogState() {
   );
 
   const hasColorFilterActive =
-    (filters.colorGroups?.length || 0) > 0 || (filters.colorVariations?.length || 0) > 0;
+    (filters.colorGroups?.length ?? 0) > 0 || (filters.colorVariations?.length ?? 0) > 0;
   const paginatedProductIds = useMemo(
     () => rawPaginatedProducts.map((p) => p.id),
     [rawPaginatedProducts],
@@ -670,7 +670,7 @@ export function useCatalogState() {
 
     const productCount = hasActiveFilters ? deduped.length : totalEstimate || deduped.length;
     const localVariants = deduped.reduce((sum, p) => {
-      const colorCount = p.colors?.filter((c) => (c as { name?: string }).name?.trim()).length || 0;
+      const colorCount = p.colors?.filter((c) => (c as { name?: string }).name?.trim()).length ?? 0;
       const variationCount = !colorCount && p.variations?.length ? p.variations.length : 0;
       return sum + colorCount + variationCount;
     }, 0);

@@ -108,7 +108,7 @@ export function ProductSelector({
         </Select>
         {searchQuery && (
           <p className="text-xs text-muted-foreground">
-            {filteredProducts.length} de {products?.length || 0} produtos
+            {filteredProducts.length} de {products?.length ?? 0} produtos
           </p>
         )}
       </CardContent>

@@ -178,7 +178,7 @@ export function useQuoteViewData(id: string | undefined) {
     const lines = [
       `📋 *Proposta Comercial ${quote?.quote_number ?? ''}*`,
       '',
-      `💰 Valor Total: *${formatCurrencyHelper(quote?.total || 0)}*`,
+      `💰 Valor Total: *${formatCurrencyHelper(quote?.total ?? 0)}*`,
     ];
     if (quote?.valid_until) {
       lines.push(

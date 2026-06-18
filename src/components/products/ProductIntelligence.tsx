@@ -63,7 +63,7 @@ export function ProductIntelligence({
             <MetricCard
               icon={Target}
               label="Conversão"
-              value={`${insights?.conversionRate || 0}%`}
+              value={`${insights?.conversionRate ?? 0}%`}
               color="purple"
             />
           </div>

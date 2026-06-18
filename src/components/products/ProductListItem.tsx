@@ -555,7 +555,7 @@ export const ProductListItem = memo(function ProductListItem({
         <div className="hidden min-w-0 flex-1 items-center justify-start pl-4 pr-2 md:flex">
           <ProductColorSwatches
             colors={product.colors}
-            max={product.colors?.length || 0}
+            max={product.colors?.length ?? 0}
             size="sm"
             hideWhenEmpty
             className="flex-wrap justify-start"

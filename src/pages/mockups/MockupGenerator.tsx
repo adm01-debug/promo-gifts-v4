@@ -173,8 +173,8 @@ export default function MockupGenerator() {
         techniqueName: tech.name ?? '',
         techniqueCode: tech.code ?? '',
         locationName: tech.locationName ?? mg.activeArea?.name ?? 'Frente',
-        widthCm: mg.activeArea?.logoWidth || 0,
-        heightCm: mg.activeArea?.logoHeight || 0,
+        widthCm: mg.activeArea?.logoWidth ?? 0,
+        heightCm: mg.activeArea?.logoHeight ?? 0,
         colorsCount: mg.techniqueColorConfig?.colorCount,
       },
       pantoneColors: (mg.logoColorAnalysis.colors ?? []).map((c) => ({

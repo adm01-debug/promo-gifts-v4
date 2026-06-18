@@ -26,7 +26,7 @@ export function useMaterialTypes(): UseMaterialTypesReturn {
     isLoading,
     error: error as Error | null,
     refetch,
-    count: data?.count || 0,
+    count: data?.count ?? 0,
   };
 }
 
@@ -53,7 +53,7 @@ export function useMaterialTypesByGroup(groupSlug: string): UseMaterialTypesByGr
     isLoading,
     error: error as Error | null,
     refetch,
-    count: data?.count || 0,
+    count: data?.count ?? 0,
     groupSlug,
   };
 }
@@ -91,7 +91,7 @@ export function useMaterialsComplete(): UseMaterialsCompleteReturn {
     isLoading,
     error: error as Error | null,
     refetch,
-    count: data?.count || 0,
+    count: data?.count ?? 0,
     byGroup,
   };
 }
@@ -115,6 +115,6 @@ export function useMaterialSearch() {
     results: data?.types ?? [],
     isLoading,
     error: error as Error | null,
-    count: data?.count || 0,
+    count: data?.count ?? 0,
   };
 }

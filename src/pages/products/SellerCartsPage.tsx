@@ -902,7 +902,7 @@ function SellerCartsContent() {
         }}
         variant="warning"
         title={`Gerar orçamento para ${s.confirmQuoteCart?.company_name}?`}
-        description={`Os ${s.confirmQuoteCart?.items.length || 0} itens serão transferidos para um novo orçamento e o carrinho será removido.`}
+        description={`Os ${s.confirmQuoteCart?.items.length ?? 0} itens serão transferidos para um novo orçamento e o carrinho será removido.`}
         confirmLabel="Gerar Orçamento"
         cancelLabel="Cancelar"
         onConfirm={s.confirmGenerateQuote}
@@ -924,7 +924,7 @@ function SellerCartsContent() {
         onOpenChange={s.setConfirmClearCart}
         variant="warning"
         title="Limpar todos os itens?"
-        description={`${s.activeCart?.items.length || 0} itens serão removidos do carrinho de ${s.activeCart?.company_name}.`}
+        description={`${s.activeCart?.items.length ?? 0} itens serão removidos do carrinho de ${s.activeCart?.company_name}.`}
         confirmLabel="Limpar"
         cancelLabel="Cancelar"
         onConfirm={s.handleClearCart}

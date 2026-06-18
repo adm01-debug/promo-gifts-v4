@@ -45,13 +45,13 @@ export function MarketIntelInsightsUsagePanel() {
         .eq('function_name', 'market-intelligence-insights')
         .gte('created_at', since);
 
-      return { events: (events ?? []) as UsageRow[], cacheCount: cacheRows?.length || 0 };
+      return { events: (events ?? []) as UsageRow[], cacheCount: cacheRows?.length ?? 0 };
     },
     staleTime: 1000 * 60 * 2,
   });
 
   const events = useMemo(() => data?.events ?? [], [data]);
-  const cacheCount = data?.cacheCount || 0;
+  const cacheCount = data?.cacheCount ?? 0;
 
   const totalRegens = useMemo(
     () => events.filter((e) => e.event_type === 'manual_regenerate').length,

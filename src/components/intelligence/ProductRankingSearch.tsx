@@ -64,7 +64,7 @@ export function ProductRankingSearch() {
     return { totalRev, totalQty, totalOrders, avgTicket };
   }, [products]);
 
-  const topRevenue = products?.[0]?.totalRevenue || 0;
+  const topRevenue = products?.[0]?.totalRevenue ?? 0;
 
   const clearAllFilters = () => {
     setSupplierId(null);

@@ -203,7 +203,7 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
     );
   }
 
-  const totalSelected = CATEGORIES.reduce((sum, cat) => sum + (tags[cat.key]?.length || 0), 0);
+  const totalSelected = CATEGORIES.reduce((sum, cat) => sum + (tags[cat.key]?.length ?? 0), 0);
   const totalOptions = CATEGORIES.reduce((sum, cat) => sum + cat.options.length, 0);
   const searchLower = search.toLowerCase();
 

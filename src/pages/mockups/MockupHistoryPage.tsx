@@ -103,7 +103,7 @@ export default function MockupHistoryPage() {
     }
   };
 
-  const totalPages = Math.ceil((data?.totalCount || 0) / pageSize);
+  const totalPages = Math.ceil((data?.totalCount ?? 0) / pageSize);
 
   return (
     <DiagnosticProfiler id="MockupHistory">
@@ -144,7 +144,7 @@ export default function MockupHistoryPage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-primary">{data?.totalCount || 0}</p>
+              <p className="text-3xl font-bold text-primary">{data?.totalCount ?? 0}</p>
               <p className="text-sm text-muted-foreground">Total de Mockups</p>
             </CardContent>
           </Card>

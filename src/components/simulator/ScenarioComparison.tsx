@@ -59,16 +59,16 @@ export function ScenarioComparison({
     scenarioA && scenarioB
       ? {
           priceDiff:
-            (scenarioB.bestOption?.grandTotal || 0) - (scenarioA.bestOption?.grandTotal || 0),
+            (scenarioB.bestOption?.grandTotal ?? 0) - (scenarioA.bestOption?.grandTotal ?? 0),
           priceDiffPercent: scenarioA.bestOption?.grandTotal
-            ? (((scenarioB.bestOption?.grandTotal || 0) - scenarioA.bestOption.grandTotal) /
+            ? (((scenarioB.bestOption?.grandTotal ?? 0) - scenarioA.bestOption.grandTotal) /
                 scenarioA.bestOption.grandTotal) *
               100
             : 0,
           daysDiff:
-            (scenarioB.bestOption?.estimatedDays || 0) - (scenarioA.bestOption?.estimatedDays || 0),
+            (scenarioB.bestOption?.estimatedDays ?? 0) - (scenarioA.bestOption?.estimatedDays ?? 0),
           winner:
-            (scenarioA.bestOption?.grandTotal || 0) <= (scenarioB.bestOption?.grandTotal || 0)
+            (scenarioA.bestOption?.grandTotal ?? 0) <= (scenarioB.bestOption?.grandTotal ?? 0)
               ? 'A'
               : 'B',
         }
@@ -124,7 +124,7 @@ export function ScenarioComparison({
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Melhor:</span>
                   <span className="font-bold text-primary">
-                    {formatCurrency(scenarioA.bestOption?.grandTotal || 0)}
+                    {formatCurrency(scenarioA.bestOption?.grandTotal ?? 0)}
                   </span>
                 </div>
               </motion.div>
@@ -167,7 +167,7 @@ export function ScenarioComparison({
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Melhor:</span>
                   <span className="font-bold text-primary/80">
-                    {formatCurrency(scenarioB.bestOption?.grandTotal || 0)}
+                    {formatCurrency(scenarioB.bestOption?.grandTotal ?? 0)}
                   </span>
                 </div>
               </motion.div>
@@ -210,7 +210,7 @@ export function ScenarioComparison({
                   >
                     <p className="mb-1 text-xs text-muted-foreground">Cenário A</p>
                     <p className="text-lg font-bold">
-                      {formatCurrency(scenarioA?.bestOption?.grandTotal || 0)}
+                      {formatCurrency(scenarioA?.bestOption?.grandTotal ?? 0)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {scenarioA?.bestOption?.estimatedDays}d
@@ -267,7 +267,7 @@ export function ScenarioComparison({
                   >
                     <p className="mb-1 text-xs text-muted-foreground">Cenário B</p>
                     <p className="text-lg font-bold">
-                      {formatCurrency(scenarioB?.bestOption?.grandTotal || 0)}
+                      {formatCurrency(scenarioB?.bestOption?.grandTotal ?? 0)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {scenarioB?.bestOption?.estimatedDays}d

@@ -60,7 +60,7 @@ export function MaterialGroupTree({
       (g) =>
         !search ||
         g.group_name.toLowerCase().includes(searchLower) ||
-        (filteredTypesByGroup[g.group_id]?.length || 0) > 0,
+        (filteredTypesByGroup[g.group_id]?.length ?? 0) > 0,
     )
     .sort((a, b) => a.group_name.localeCompare(b.group_name, 'pt-BR'));
 

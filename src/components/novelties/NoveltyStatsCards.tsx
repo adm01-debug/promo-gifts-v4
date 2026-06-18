@@ -146,28 +146,28 @@ export function NoveltyStatsCards() {
     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
       <StatCard
         label="Chegaram Hoje"
-        value={stats?.arrivedToday || 0}
+        value={stats?.arrivedToday ?? 0}
         icon={<CalendarPlus className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="orange"
         delay={0}
       />
       <StatCard
         label="Últimos 7 Dias"
-        value={stats?.arrivedThisWeek || 0}
+        value={stats?.arrivedThisWeek ?? 0}
         icon={<CalendarRange className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="success"
         delay={100}
       />
       <StatCard
         label="Últimos 15 Dias"
-        value={stats?.arrivedLast15Days || 0}
+        value={stats?.arrivedLast15Days ?? 0}
         icon={<CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="warning"
         delay={150}
       />
       <StatCard
         label="Top Fornecedor"
-        value={stats?.topSupplierCount || 0}
+        value={stats?.topSupplierCount ?? 0}
         subtitle={stats?.topSupplierName || '—'}
         icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="info"
@@ -175,7 +175,7 @@ export function NoveltyStatsCards() {
       />
       <StatCard
         label="Novidades Ativas"
-        value={stats?.activeNovelties || 0}
+        value={stats?.activeNovelties ?? 0}
         suffix={stats?.noveltyRate ? ` (${stats.noveltyRate}%)` : ''}
         icon={<Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="default"

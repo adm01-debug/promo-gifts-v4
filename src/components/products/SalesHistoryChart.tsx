@@ -215,7 +215,7 @@ export function SalesHistoryChart({ productId, productSku }: SalesHistoryChartPr
           <KpiCard
             icon={Package}
             label="Qtd. Média / Pedido"
-            value={String(insights?.averageQuantity || 0)}
+            value={String(insights?.averageQuantity ?? 0)}
             sub="un."
           />
           <KpiCard

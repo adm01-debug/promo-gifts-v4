@@ -173,7 +173,7 @@ export function useSimulatorWizard() {
   }, [dispatch]);
 
   // Computed
-  const effectivePrice = useMemo(() => state.selectedProduct?.price || 0, [state.selectedProduct]);
+  const effectivePrice = useMemo(() => state.selectedProduct?.price ?? 0, [state.selectedProduct]);
   const stepProgress = useMemo(
     () => ((getStepIndex(state.currentStep) + 1) / WIZARD_STEPS.length) * 100,
     [state.currentStep],

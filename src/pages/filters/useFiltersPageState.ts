@@ -177,7 +177,7 @@ export function useFiltersPageState() {
   // a UI honesta.
   const techniquesDataAvailable = useMemo(
     () =>
-      realProducts.some((p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0),
+      realProducts.some((p) => ((p.metadata?.techniques as string[] | undefined)?.length ?? 0) > 0),
     [realProducts],
   );
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
@@ -322,9 +322,9 @@ export function useFiltersPageState() {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (
-      (filters.colorGroups?.length || 0) +
-        (filters.colorVariations?.length || 0) +
-        (filters.colorNuances?.length || 0) +
+      (filters.colorGroups?.length ?? 0) +
+        (filters.colorVariations?.length ?? 0) +
+        (filters.colorNuances?.length ?? 0) +
         filters.colors.length >
       0
     )
@@ -337,8 +337,8 @@ export function useFiltersPageState() {
     if (filters.ramosAtividade?.length > 0) count++;
     if (filters.segmentosAtividade?.length > 0) count++;
     if (
-      (filters.materialGroups?.length || 0) +
-        (filters.materialTypes?.length || 0) +
+      (filters.materialGroups?.length ?? 0) +
+        (filters.materialTypes?.length ?? 0) +
         filters.materiais.length >
       0
     )
@@ -354,10 +354,10 @@ export function useFiltersPageState() {
     if (filters.hasPersonalization) count++;
     if (filters.onSale) count++;
     if (filters.hasCommercialPackaging) count++;
-    if (techniquesDataAvailable && (filters.techniques?.length || 0) > 0) count++;
-    if ((filters.tags?.length || 0) > 0) count++;
-    if ((filters.gender?.length || 0) > 0) count++;
-    if ((filters.sizes?.length || 0) > 0) count++;
+    if (techniquesDataAvailable && (filters.techniques?.length ?? 0) > 0) count++;
+    if ((filters.tags?.length ?? 0) > 0) count++;
+    if ((filters.gender?.length ?? 0) > 0) count++;
+    if ((filters.sizes?.length ?? 0) > 0) count++;
     if (filters.search) count++;
     return count;
   }, [filters, techniquesDataAvailable]);
@@ -658,9 +658,9 @@ export function useFiltersPageState() {
   const activeFiltersSummary = useMemo(() => {
     const summary: { label: string; value: string; key: keyof FilterState }[] = [];
     const totalCores =
-      (filters.colorGroups?.length || 0) +
-      (filters.colorVariations?.length || 0) +
-      (filters.colorNuances?.length || 0) +
+      (filters.colorGroups?.length ?? 0) +
+      (filters.colorVariations?.length ?? 0) +
+      (filters.colorNuances?.length ?? 0) +
       filters.colors.length;
     if (totalCores > 0)
       summary.push({
@@ -701,8 +701,8 @@ export function useFiltersPageState() {
         key: 'endomarketing',
       });
     const totalMateriais =
-      (filters.materialGroups?.length || 0) +
-      (filters.materialTypes?.length || 0) +
+      (filters.materialGroups?.length ?? 0) +
+      (filters.materialTypes?.length ?? 0) +
       filters.materiais.length;
     if (totalMateriais > 0)
       summary.push({
@@ -711,7 +711,7 @@ export function useFiltersPageState() {
         key: 'materiais',
       });
     const totalRamos =
-      (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
+      (filters.ramosAtividade?.length ?? 0) + (filters.segmentosAtividade?.length ?? 0);
     if (totalRamos > 0)
       summary.push({
         label: 'Nichos',

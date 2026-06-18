@@ -86,7 +86,7 @@ export function useSellerCartsPage() {
         | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
         | undefined;
       if (!product) return;
-      const weight = product.dimensions?.weight_g || 0;
+      const weight = product.dimensions?.weight_g ?? 0;
       const volume = product.boxVolumeCm3 || 0;
       if (weight > 0) {
         totalWeightG += weight * item.quantity;

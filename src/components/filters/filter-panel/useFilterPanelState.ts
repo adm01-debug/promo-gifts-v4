@@ -215,13 +215,13 @@ export function useFilterPanelState(
 
   const sectionCounts = useMemo(() => {
     const colorCount =
-      (filters.colorGroups?.length || 0) +
-      (filters.colorVariations?.length || 0) +
-      (filters.colorNuances?.length || 0);
+      (filters.colorGroups?.length ?? 0) +
+      (filters.colorVariations?.length ?? 0) +
+      (filters.colorNuances?.length ?? 0);
     const materialCount =
       materialFilterState.selectedGroups.length + materialFilterState.selectedTypes.length;
     const ramoCount =
-      (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
+      (filters.ramosAtividade?.length ?? 0) + (filters.segmentosAtividade?.length ?? 0);
     const quickCount = [
       filters.isKit,
       filters.featured,
@@ -232,13 +232,13 @@ export function useFilterPanelState(
     ].filter(Boolean).length;
     return {
       cores: colorCount,
-      categorias: filters.categories?.length || 0,
+      categorias: filters.categories?.length ?? 0,
 
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
-      fornecedores: filters.suppliers?.length || 0,
-      publico: filters.publicoAlvo?.length || 0,
-      'datas-comemorativas': filters.datasComemorativas?.length || 0,
-      endomarketing: filters.endomarketing?.length || 0,
+      fornecedores: filters.suppliers?.length ?? 0,
+      publico: filters.publicoAlvo?.length ?? 0,
+      'datas-comemorativas': filters.datasComemorativas?.length ?? 0,
+      endomarketing: filters.endomarketing?.length ?? 0,
       materiais: materialCount,
       'ramos-atividade': ramoCount,
       tecnicas: (filters.techniques ?? []).length,

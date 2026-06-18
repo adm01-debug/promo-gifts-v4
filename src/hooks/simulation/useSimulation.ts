@@ -213,7 +213,7 @@ export function useSimulation() {
   const effectiveProductPrice = useMemo(() => {
     if (customProductPrice && parseFloat(customProductPrice) > 0)
       return parseFloat(customProductPrice);
-    return selectedProduct?.price || 0;
+    return selectedProduct?.price ?? 0;
   }, [customProductPrice, selectedProduct]);
 
   const bestOption = useMemo(

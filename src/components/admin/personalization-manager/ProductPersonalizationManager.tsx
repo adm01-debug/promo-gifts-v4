@@ -38,7 +38,7 @@ export function ProductPersonalizationManager() {
         setSelectedProduct={m.setSelectedProduct}
         productsLoading={m.productsLoading}
         filteredProducts={m.filteredProducts}
-        totalProducts={m.products?.length || 0}
+        totalProducts={m.products?.length ?? 0}
         allMemberships={m.allMemberships}
         productGroups={m.productGroups}
       />

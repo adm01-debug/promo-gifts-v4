@@ -143,7 +143,7 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
       (r) =>
         !search ||
         r.nome.toLowerCase().includes(searchLower) ||
-        (filteredSegByRamo[r.id]?.length || 0) > 0,
+        (filteredSegByRamo[r.id]?.length ?? 0) > 0,
     )
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 

@@ -31,7 +31,7 @@ export function QuoteCommentsSection({ quoteId }: QuoteCommentsSectionProps) {
     setIsSubmitting(false);
   };
 
-  const totalCount = comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
+  const totalCount = comments.reduce((acc, c) => acc + 1 + (c.replies?.length ?? 0), 0);
 
   return (
     <Card>
