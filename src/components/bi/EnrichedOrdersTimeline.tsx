@@ -125,8 +125,7 @@ export function EnrichedOrdersTimeline({ clientId }: Props) {
           <div className="absolute bottom-2 left-2 top-2 w-px bg-gradient-to-b from-primary/40 via-border to-transparent" />
           {bi.recentOrders.map((o, i) => {
             const prev = bi.recentOrders[i + 1];
-            const deltaPct =
-              prev && prev.total > 0 ? ((o.total - prev.total) / prev.total) * 100 : null;
+            const deltaPct = prev?.total ? ((o.total - prev.total) / prev.total) * 100 : null;
             const deltaTone =
               deltaPct === null
                 ? 'text-muted-foreground'

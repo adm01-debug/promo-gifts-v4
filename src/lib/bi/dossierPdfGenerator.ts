@@ -501,8 +501,8 @@ export function generateBIDossierPDF(data: DossierData): Blob {
           c.monthLabel,
           c.quotesCount > 0 ? String(c.quotesCount) : '—',
           c.sharePercent > 0 ? `${c.sharePercent.toFixed(1)}%` : '—',
-          ind && ind.avgQuotesPerCompany > 0 ? ind.avgQuotesPerCompany.toFixed(1) : '—',
-          ind && ind.sharePercent > 0 ? `${ind.sharePercent.toFixed(1)}%` : '—',
+          ind?.avgQuotesPerCompany ? ind.avgQuotesPerCompany.toFixed(1) : '—',
+          ind?.sharePercent ? `${ind.sharePercent.toFixed(1)}%` : '—',
         ];
       }),
       theme: 'grid',

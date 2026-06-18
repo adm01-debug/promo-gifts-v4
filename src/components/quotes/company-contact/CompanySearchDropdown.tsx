@@ -98,7 +98,7 @@ export function CompanySearchDropdown({
       }
       return merged;
     },
-    enabled: !!debouncedSearch && debouncedSearch.length >= 2,
+    enabled: (debouncedSearch?.length ?? 0) >= 2,
     staleTime: 2 * 60 * 1000,
   });
 

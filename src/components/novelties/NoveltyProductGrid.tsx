@@ -352,17 +352,16 @@ export function NoveltyProductGrid() {
             const prodBase = productMap.get(novelty.product_id);
             if (!prodBase) return null;
             const batchColors = colorsByProduct?.get(novelty.product_id);
-            const prod =
-              batchColors && batchColors.length > 0
-                ? {
-                    ...prodBase,
-                    colors: batchColors.map((c) => ({
-                      name: c.name,
-                      hex: c.hex ?? '',
-                      group: '',
-                    })),
-                  }
-                : prodBase;
+            const prod = batchColors?.length
+              ? {
+                  ...prodBase,
+                  colors: batchColors.map((c) => ({
+                    name: c.name,
+                    hex: c.hex ?? '',
+                    group: '',
+                  })),
+                }
+              : prodBase;
             const isSelected = sel.selectedIds.has(novelty.product_id);
             return (
               <div

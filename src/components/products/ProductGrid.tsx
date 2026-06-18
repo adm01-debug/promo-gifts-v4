@@ -324,7 +324,7 @@ export const ProductGrid = memo(function ProductGrid({
               // colors vazio/ausente defensivamente; populam ao re-renderizar).
               colors: isHydrating
                 ? []
-                : batchColors && batchColors.length > 0
+                : batchColors?.length
                   ? batchColors.map((c) => ({ name: c.name, hex: c.hex ?? '', group: '' }))
                   : p.colors,
             };

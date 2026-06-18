@@ -208,7 +208,7 @@ export function DeleteConfirmDialog({
       loading={loading}
       testId={testId ?? 'delete-confirm-dialog'}
       impactPreview={
-        affectedItems && affectedItems.length > 0
+        affectedItems?.length
           ? {
               title: 'Isso irá afetar:',
               items: affectedItems,

@@ -75,7 +75,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         }));
 
         const firstLogo = data.personalizationAreas.find((a) => a.logoPreview)?.logoPreview || null;
-        const safeLogoData = firstLogo && firstLogo.startsWith('http') ? firstLogo : null;
+        const safeLogoData = firstLogo?.startsWith('http') ? firstLogo : null;
 
         // BUG-A FIX: IDs used directly — no pre-validation queries.
         // FK violations are caught below and handled via fallback.

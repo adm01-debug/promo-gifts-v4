@@ -41,10 +41,9 @@ export function BulkAddToCartModal({
   const handleAdd = useCallback(async () => {
     if (!activeCart) return;
 
-    const items =
-      variantSelections && variantSelections.length > 0
-        ? variantSelections
-        : products.map((p) => ({ product: p, variant: null }));
+    const items = variantSelections?.length
+      ? variantSelections
+      : products.map((p) => ({ product: p, variant: null }));
 
     if (items.length === 0) return;
     setAdding(true);

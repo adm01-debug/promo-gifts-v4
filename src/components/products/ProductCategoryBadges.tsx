@@ -112,8 +112,7 @@ export const ProductCategoryBadges = memo(function ProductCategoryBadges({
       {allCategories.map((cat) => {
         const isMainCategory = String(cat.id) === String(category?.id);
         // Caminho completo só para a categoria principal e quando houver ≥2 níveis.
-        const path =
-          isMainCategory && categoryPath && categoryPath.length > 1 ? categoryPath : null;
+        const path = isMainCategory && (categoryPath?.length ?? 0) > 1 ? categoryPath : null;
         const ancestors = path ? path.slice(0, -1) : [];
         const leaf = path ? path[path.length - 1] : '';
         return (
