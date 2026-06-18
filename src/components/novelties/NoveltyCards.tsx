@@ -155,16 +155,23 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
-        <HoverSetImage
-          key={activeImage ?? product.product_image ?? 'placeholder'}
-          primary={activeImage}
-          // Desativa o crossfade "todas as cores" quando o usuário está navegando
-          // pelas variantes — a foto da cor selecionada tem prioridade.
-          set={activeColorName ? null : product.product_set_image}
-          alt={product.product_name}
-          fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
-          priority={priority}
-        />
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-grid-card-thumb"
+          className="h-full w-full"
+        >
+          <HoverSetImage
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            // Desativa o crossfade "todas as cores" quando o usuário está navegando
+            // pelas variantes — a foto da cor selecionada tem prioridade.
+            set={activeColorName ? null : product.product_set_image}
+            alt={product.product_name}
+            fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
+            priority={priority}
+          />
+        </QuickViewThumb>
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
