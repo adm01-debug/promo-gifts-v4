@@ -315,7 +315,13 @@ export function FilterPanel({
             const config = SECTION_CONFIG[sId];
             if (!config) return false;
             if (!state.sectionMatchesSearch(sId, config.title)) return false;
-            if (sId === 'tecnicas' && state.techniqueOptions.length === 0) return false;
+            // SF-D: o filtro de Técnicas é não-funcional — não há vínculo
+            // produto↔técnica no catálogo (junção product_group_location_techniques
+            // vazia; produto leve sem metadata.techniques). Exibir checkboxes
+            // selecionáveis que não filtram nada é enganoso. Ocultamos a seção até
+            // existir dado/suporte server-side (reverter esta linha re-habilita;
+            // SECTION_CONFIG e o renderer permanecem intactos).
+            if (sId === 'tecnicas') return false;
             if (sId === 'tags' && state.tagOptions.length === 0) return false;
             return true;
           });
