@@ -237,6 +237,11 @@ export interface GenerateMockupParams {
   productName: string;
   technique: Technique;
   areas: PersonalizationArea[];
+  // AUDIT 2026-06-17 — real-world product dimensions (cm) so the edge can size the
+  // logo with the same px-per-cm the on-screen preview uses (WYSIWYG). Optional:
+  // when null/absent the edge falls back to the legacy /20 reference (no regression).
+  productWidthCm?: number | null;
+  productHeightCm?: number | null;
 }
 
 export interface GenerateMockupResult {
@@ -314,6 +319,10 @@ async function invokeMockupForArea(
       logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
+      // Forwarded so the edge mirrors the preview's px-per-cm (WYSIWYG). When the
+      // product has no known cm dimensions these are null and the edge uses /20.
+      productWidthCm: params.productWidthCm ?? undefined,
+      productHeightCm: params.productHeightCm ?? undefined,
     },
   });
 

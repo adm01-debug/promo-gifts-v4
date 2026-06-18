@@ -523,6 +523,19 @@ export function useMockupGenerator() {
         productName: selectedProduct?.name ?? '',
         technique: selectedTechnique,
         areas: personalizationAreas,
+        // Same derivation the preview uses (LogoPositionEditor) so the generated
+        // mockup matches the on-screen logo size (WYSIWYG); null ⇒ edge /20 fallback.
+        productWidthCm:
+          selectedProduct?.dimensions?.width_cm ??
+          selectedProduct?.dimensions?.diameter_cm ??
+          (selectedProduct?.metadata?.width_mm
+            ? selectedProduct.metadata.width_mm / 10
+            : null),
+        productHeightCm:
+          selectedProduct?.dimensions?.height_cm ??
+          (selectedProduct?.metadata?.height_mm
+            ? selectedProduct.metadata.height_mm / 10
+            : null),
       });
       if (result.singleUrl && result.batchResults.length === 0) {
         setGeneratedMockup(result.singleUrl);
