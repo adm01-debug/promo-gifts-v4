@@ -57,7 +57,10 @@ const mockProducts: Product[] = [
 ];
 
 describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
-  it('should optimize color variation lookups', () => {
+  // Filtro de cor é server-side (useProductsByColor → product_variants.color_id).
+  // Os produtos lightweight chegam com colors:[], então a grade filtra pela
+  // interseção com colorFilteredProductIds, não inspecionando p.colors.
+  it('should filter by the server-resolved color product-id set', () => {
     const filters = { ...defaultFilters, colorVariations: ['azul-caneta'] };
     const { result } = renderHook(() =>
       useCatalogFiltering({
@@ -72,11 +75,38 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
         hasCategoryFilter: false,
         categoryFilteredProductIds: new Set(),
         isLoadingCategoryFilter: false,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(['1']),
+        isLoadingColorFilter: false,
       }),
     );
 
     expect(result.current.length).toBe(1);
     expect(result.current[0].id).toBe('1');
+  });
+
+  it('returns empty while color filter active but server set is empty (no leak)', () => {
+    const filters = { ...defaultFilters, colorVariations: ['inexistente'] };
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        realProducts: mockProducts,
+        filters,
+        sortBy: 'name',
+        hasFuzzySearch: false,
+        fuzzySearchResults: [],
+        hasMaterialFilter: false,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        hasCategoryFilter: false,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(),
+        isLoadingColorFilter: false,
+      }),
+    );
+
+    expect(result.current.length).toBe(0);
   });
 
   it('should handle complex material filtering (fallback to simple match)', () => {

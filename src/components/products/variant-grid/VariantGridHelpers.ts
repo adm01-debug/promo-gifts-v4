@@ -43,9 +43,15 @@ export const SIZE_ORDER = [
   '1L',
 ];
 
+// Lookup case-insensitive: SIZE_ORDER mistura entradas maiúsculas (PP, GG) e
+// minúsculas (100ml, 750ml, 1L). Sem normalizar ambos os lados, code.toUpperCase()
+// ("100ML") nunca casava com '100ml' → caía no parseFloat e '1L' (→1001) vinha
+// ANTES de '100ml' (→1100). Normalizamos a tabela uma vez para ordenar volumes certo.
+const SIZE_ORDER_UPPER = SIZE_ORDER.map((s) => s.toUpperCase());
+
 export function getSizeOrder(code: string): number {
   const upper = code.toUpperCase().trim();
-  const idx = SIZE_ORDER.indexOf(upper);
+  const idx = SIZE_ORDER_UPPER.indexOf(upper);
   if (idx >= 0) return idx;
   const num = parseFloat(upper);
   if (!isNaN(num)) return 1000 + num;
