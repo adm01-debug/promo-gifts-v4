@@ -152,23 +152,7 @@ export function useStockSelection(rows: StockSelectionRow[]) {
   const bulkQuote = useCallback(() => {
     if (selectedRows.length === 0) return;
     try {
-      const params = selectedRows
-        .map((r) =>
-          `items[]=${encodeURIComponent(
-            JSON.stringify({
-              product_id: r.product.productId,
-              product_name: r.product.productName,
-              product_sku: r.variant.variantSku,
-              variant_id: r.variant.variantId,
-              quantity: r.variant.minStock || 1,
-              color_name: r.variant.colorName ?? null,
-              color_hex: r.variant.colorHex ?? null,
-              size_code: r.variant.sizeCode ?? null,
-              product_image: r.variant.imageUrl ?? r.product.productImageUrl ?? '',
-            }),
-          )}`,
-        )
-        .join('&');
+      const params = selectedRows.map((r) => buildQuoteParam(r)).join('&');
       navigate(`/orcamentos/novo?${params}`);
       toast.success(
         `${selectedRows.length} ${selectedRows.length === 1 ? 'item enviado' : 'itens enviados'} para orçamento`,
