@@ -601,7 +601,7 @@ export default function FiltersPage() {
                         />
                       </div>
                     </div>
-                  </div>
+
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
                       {state.activeFiltersSummary.slice(0, 3).map((filter) => (
