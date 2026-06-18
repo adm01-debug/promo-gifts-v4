@@ -80,7 +80,11 @@ export function useFutureStockPreference(
   useEffect(() => {
     if (!hydratedRef.current) return;
     writeFutureStockPreference(current);
-  }, [current]);
+    // BUG-I FIX: depend on primitive values, not the object reference.
+    // The caller creates a new object each render, so `[current]` would
+    // trigger a localStorage write every render even when values are identical.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current.includeFutureStock, current.futureStockWindowDays]);
 }
 
 /**
@@ -107,12 +111,7 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
           ceAttr === '' ||
           ceAttr === 'true' ||
           ceAttr === 'plaintext-only';
-        if (
-          tag === 'INPUT' ||
-          tag === 'TEXTAREA' ||
-          tag === 'SELECT' ||
-          isCE
-        ) {
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || isCE) {
           return;
         }
       }

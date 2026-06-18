@@ -365,6 +365,11 @@ export async function fetchAndProcessStockData(): Promise<{
 
   // Index images. Priorizamos: is_og_image > is_primary > qualquer outra.
   const productImageByProductId = new Map<string, string>();
+  // BUG-G FIX: rastreia quais produtos têm og como imagem principal.
+  // Sem esse controle, is_primary pode sobrescrever is_og_image quando a imagem
+  // og chegou primeiro na paginação (keyset não garante ordem og-antes-primary
+  // para o mesmo produto).
+  const productImageIsOg = new Set<string>();
   const imageByVariantId = new Map<string, string>();
   const imageBySupplierCode = new Map<string, string>();
   for (const img of allImages) {
@@ -381,9 +386,14 @@ export async function fetchAndProcessStockData(): Promise<{
       }
     }
     if (img.product_id) {
-      const existing = productImageByProductId.get(img.product_id);
-      if (!existing || img.is_og_image || img.is_primary) {
+      const existingIsOg = productImageIsOg.has(img.product_id);
+      if (
+        !productImageByProductId.has(img.product_id) ||
+        (img.is_og_image && !existingIsOg) ||
+        (!existingIsOg && img.is_primary)
+      ) {
         productImageByProductId.set(img.product_id, img.url_cdn);
+        if (img.is_og_image) productImageIsOg.add(img.product_id);
       }
     }
   }
@@ -403,7 +413,11 @@ export async function fetchAndProcessStockData(): Promise<{
   // BUG-3 FIX: a variant can have sources from multiple suppliers. Accumulate
   // the total quantity across all active sources; keep the most-recently-updated
   // source record for metadata (future stock dates, supplier_sku, etc.).
-  const sourcesByVariant = new Map<string, ExternalSupplierSource>();
+  // BUG-H FIX: store ALL sources per variant so future-stock slots from ALL
+  // suppliers are aggregated into inTransitStock/futureSegments. Previously only
+  // the most-recently-updated supplier's slots were counted, silently dropping
+  // incoming stock from older-updated suppliers.
+  const allSourcesByVariant = new Map<string, ExternalSupplierSource[]>();
   const sourceQtyByVariant = new Map<string, number>();
   allSupplierSources.forEach((s) => {
     if (!s.variant_id) return;
@@ -411,10 +425,9 @@ export async function fetchAndProcessStockData(): Promise<{
       s.variant_id,
       (sourceQtyByVariant.get(s.variant_id) ?? 0) + (s.quantity || 0),
     );
-    const existing = sourcesByVariant.get(s.variant_id);
-    if (!existing || (s.updated_at && existing.updated_at && s.updated_at > existing.updated_at)) {
-      sourcesByVariant.set(s.variant_id, s);
-    }
+    const list = allSourcesByVariant.get(s.variant_id) ?? [];
+    list.push(s);
+    allSourcesByVariant.set(s.variant_id, list);
   });
 
   const futureEntries: FutureStockEntry[] = [];
@@ -429,10 +442,18 @@ export async function fetchAndProcessStockData(): Promise<{
 
     if (productVariants.length > 0) {
       productVariants.forEach((pv) => {
-        const supplierSource = sourcesByVariant.get(pv.id);
-        const currentStock = supplierSource
-          ? toNumber(sourceQtyByVariant.get(pv.id), toNumber(pv.stock_quantity, 0))
-          : toNumber(pv.stock_quantity, 0);
+        const variantSources = allSourcesByVariant.get(pv.id) ?? [];
+        // Most-recently-updated source provides metadata (futureStockDate, supplier_sku).
+        const supplierSource =
+          variantSources.length > 0
+            ? variantSources.reduce<ExternalSupplierSource>((best, s) =>
+                (s.updated_at ?? '') > (best.updated_at ?? '') ? s : best,
+              )
+            : undefined;
+        const currentStock =
+          variantSources.length > 0
+            ? toNumber(sourceQtyByVariant.get(pv.id), toNumber(pv.stock_quantity, 0))
+            : toNumber(pv.stock_quantity, 0);
         // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
         // Use nullish coalescing to preserve intentional zero.
         const minStock = product.min_quantity ?? 10;
@@ -441,12 +462,14 @@ export async function fetchAndProcessStockData(): Promise<{
         let inTransitStock = 0;
         const futureSegments: Array<{ quantity: number; date: string }> = [];
 
-        if (supplierSource) {
+        // BUG-H FIX: iterate ALL supplier sources so future-stock slots from
+        // every supplier are included in inTransitStock and futureSegments.
+        for (const src of variantSources) {
           // Constrói segmentos granulares (qtd × data) preservando a data de
           // CADA chegada (slots 1–6). `inTransitStock` mantém o total agregado
           // (display), mas a janela de Estoque Futuro passa a somar por data
           // via segmentos.
-          for (const { q, d } of nextStockPairs(supplierSource)) {
+          for (const { q, d } of nextStockPairs(src)) {
             if (q !== null && q !== undefined && q > 0) {
               inTransitStock += q;
               if (d) futureSegments.push({ quantity: q, date: d });
@@ -454,7 +477,7 @@ export async function fetchAndProcessStockData(): Promise<{
           }
           futureEntries.push(
             ...buildFutureEntries(
-              supplierSource,
+              src,
               product.id,
               pv.id,
               pv.color_name || undefined,
