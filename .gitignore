@@ -68,3 +68,9 @@ theme-validation-output/
 /replenishment-perf-report.json
 /vitest-report.json
 /load-test-report.json
+
+# Claude Code: worktrees de agentes sao repos git embutidos — se commitados viram
+# gitlink orfao (sem .gitmodules) e poluem branches/PRs (ja ocorreu recorrentemente).
+# settings locais tambem nunca devem ser versionados. Ver hardening 2026-06-18.
+.claude/worktrees/
+.claude/settings.local.json
