@@ -228,7 +228,7 @@ describe('saveToBackend — fallback FK (23503)', () => {
 
     expect(mockUpdate).toHaveBeenCalledTimes(1);
 
-    const updateCall = mockUpdate.mock.calls[0][0] as Record<string, unknown>;
+    const updateCall = (mockUpdate.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
     expect(updateCall.product_id).toBeNull();
     expect(updateCall.technique_id).toBeNull();
     expect(updateCall.client_id).toBeNull();
@@ -287,8 +287,8 @@ describe('loadDraft — prioridade de dados', () => {
       draft = await result.current.loadDraft();
     });
 
-    expect(draft?.productId).toBe('prod-backend');
-    expect(draft?.productName).toBe('Copo Backend');
+    expect((draft as MockupDraftData | null)?.productId).toBe('prod-backend');
+    expect((draft as MockupDraftData | null)?.productName).toBe('Copo Backend');
   });
 
   it('retorna dados do localStorage quando mais recente', async () => {
@@ -320,7 +320,7 @@ describe('loadDraft — prioridade de dados', () => {
       draft = await result.current.loadDraft();
     });
 
-    expect(draft?.productId).toBe('prod-1');
+    expect((draft as MockupDraftData | null)?.productId).toBe('prod-1');
   });
 
   it('retorna dados do localStorage se backend retornar erro', async () => {
@@ -336,7 +336,7 @@ describe('loadDraft — prioridade de dados', () => {
       draft = await result.current.loadDraft();
     });
 
-    expect(draft?.productName).toBe('Caneca');
+    expect((draft as MockupDraftData | null)?.productName).toBe('Caneca');
   });
 
   it('retorna null quando não há dados em nenhum lugar', async () => {
