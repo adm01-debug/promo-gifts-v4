@@ -65,6 +65,15 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
+function HeaderSlotPortal({ children }: { children: React.ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setSlot(document.getElementById('stock-header-slot'));
+  }, []);
+  if (!slot) return null;
+  return createPortal(children, slot);
+}
+
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
