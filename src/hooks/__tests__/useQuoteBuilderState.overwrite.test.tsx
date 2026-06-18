@@ -166,6 +166,7 @@ describe('useQuoteBuilderState — overwrite preserva status', () => {
       await result.current.overwriteAndSave();
     });
 
+    expect(updateQuoteSpy).toHaveBeenCalledTimes(1);
     const [, quoteArg] = updateQuoteSpy.mock.calls[0] as unknown as [string, { status: string }];
     expect(quoteArg.status).toBe('pending_approval');
     expect(requestApprovalSpy).toHaveBeenCalledTimes(1);
