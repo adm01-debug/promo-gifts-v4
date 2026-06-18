@@ -492,7 +492,7 @@ export const ProductQuickView = React.memo(
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
                 <TooltipProvider delayDuration={200}>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
                   <QuickViewTooltip label="Adicionar ao carrinho">
                     <Button
                       variant="outline"
