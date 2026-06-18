@@ -63,6 +63,10 @@ export default defineConfig({
       'tests/e2e/**',
       'tests/navigation-tooltips.spec.ts',
       'tests/security/notification-rls.spec.ts',
+      // Live RLS test conecta ao Supabase real (createClient com credenciais reais).
+      // Com placeholder credentials em CI, retorna error.code vazio ao invés de '42501'.
+      // Deve rodar apenas em ambientes com VITE_SUPABASE_URL/KEY reais configurados.
+      'tests/rls/live-rls.test.ts',
     ],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
