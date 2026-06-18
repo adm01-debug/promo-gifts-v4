@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
