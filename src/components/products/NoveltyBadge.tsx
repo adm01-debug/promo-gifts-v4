@@ -2,6 +2,11 @@ import { ProductStatusBadge } from './ProductStatusBadge';
 
 interface NoveltyBadgeProps {
   daysRemaining: number;
+  /**
+   * Idade da novidade (dias desde a detecção). Quando informado, o badge mostra
+   * "Novidade X dias" com X = daysElapsed. Sem ele, cai no legado 30-daysRemaining.
+   */
+  daysElapsed?: number;
   showDays?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -13,6 +18,7 @@ interface NoveltyBadgeProps {
  */
 export function NoveltyBadge({
   daysRemaining,
+  daysElapsed,
   showDays = true,
   size = 'md',
   className,
@@ -22,6 +28,7 @@ export function NoveltyBadge({
     <ProductStatusBadge
       type="novelty"
       daysRemaining={daysRemaining}
+      daysElapsed={daysElapsed}
       size={size}
       className={className}
       onClick={onClick}

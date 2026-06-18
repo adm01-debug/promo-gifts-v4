@@ -32,20 +32,19 @@ afterEach(() => {
 // ── Estado inicial ────────────────────────────────────────────────────────────
 describe('estado inicial', () => {
   it('showDialog=false, nenhuma ação pendente', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: false }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: false }));
     expect(result.current.showDialog).toBe(false);
   });
 
   it('message padrão em PT-BR', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: false }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: false }));
     expect(result.current.message).toContain('alterações não salvas');
   });
 
   it('message customizada respeitada', () => {
     const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: false, message: 'Perderá dados!' }));
+      useUnsavedChangesGuard({ hasUnsavedChanges: false, message: 'Perderá dados!' }),
+    );
     expect(result.current.message).toBe('Perderá dados!');
   });
 });
@@ -53,18 +52,20 @@ describe('estado inicial', () => {
 // ── guardNavigation sem alterações ────────────────────────────────────────────
 describe('guardNavigation sem alterações pendentes', () => {
   it('executa ação imediatamente (sem abrir dialog)', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: false }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: false }));
     const action = vi.fn();
-    act(() => { result.current.guardNavigation(action); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
     expect(action).toHaveBeenCalledTimes(1);
     expect(result.current.showDialog).toBe(false);
   });
 
   it('não enfileira ação (dialog permanece fechado)', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: false }));
-    act(() => { result.current.guardNavigation(() => {}); });
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: false }));
+    act(() => {
+      result.current.guardNavigation(() => {});
+    });
     expect(result.current.showDialog).toBe(false);
   });
 });
@@ -72,22 +73,28 @@ describe('guardNavigation sem alterações pendentes', () => {
 // ── guardNavigation com alterações ───────────────────────────────────────────
 describe('guardNavigation com alterações não salvas', () => {
   it('abre dialog sem executar a ação', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     const action = vi.fn();
-    act(() => { result.current.guardNavigation(action); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
     expect(result.current.showDialog).toBe(true);
     expect(action).not.toHaveBeenCalled();
   });
 
   it('segunda chamada substitui a ação pendente (last wins)', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     const action1 = vi.fn();
     const action2 = vi.fn();
-    act(() => { result.current.guardNavigation(action1); });
-    act(() => { result.current.guardNavigation(action2); });
-    act(() => { result.current.confirmLeave(); });
+    act(() => {
+      result.current.guardNavigation(action1);
+    });
+    act(() => {
+      result.current.guardNavigation(action2);
+    });
+    act(() => {
+      result.current.confirmLeave();
+    });
     expect(action1).not.toHaveBeenCalled();
     expect(action2).toHaveBeenCalledTimes(1);
   });
@@ -96,22 +103,28 @@ describe('guardNavigation com alterações não salvas', () => {
 // ── confirmLeave ──────────────────────────────────────────────────────────────
 describe('confirmLeave', () => {
   it('executa pendingAction e fecha dialog', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     const action = vi.fn();
-    act(() => { result.current.guardNavigation(action); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
     expect(result.current.showDialog).toBe(true);
-    act(() => { result.current.confirmLeave(); });
+    act(() => {
+      result.current.confirmLeave();
+    });
     expect(action).toHaveBeenCalledTimes(1);
     expect(result.current.showDialog).toBe(false);
   });
 
   it('sem pendingAction: fecha dialog sem crash', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     // Abre dialog manualmente sem action
-    act(() => { result.current.guardNavigation(() => {}); });
-    act(() => { result.current.confirmLeave(); });
+    act(() => {
+      result.current.guardNavigation(() => {});
+    });
+    act(() => {
+      result.current.confirmLeave();
+    });
     expect(result.current.showDialog).toBe(false);
   });
 });
@@ -119,23 +132,31 @@ describe('confirmLeave', () => {
 // ── cancelLeave ───────────────────────────────────────────────────────────────
 describe('cancelLeave', () => {
   it('fecha dialog sem executar ação', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     const action = vi.fn();
-    act(() => { result.current.guardNavigation(action); });
-    act(() => { result.current.cancelLeave(); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
+    act(() => {
+      result.current.cancelLeave();
+    });
     expect(result.current.showDialog).toBe(false);
     expect(action).not.toHaveBeenCalled();
   });
 
   it('após cancelLeave, nova guardNavigation funciona corretamente', () => {
-    const { result } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { result } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     const action = vi.fn();
-    act(() => { result.current.guardNavigation(action); });
-    act(() => { result.current.cancelLeave(); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
+    act(() => {
+      result.current.cancelLeave();
+    });
     // Nova chamada — deve abrir dialog novamente
-    act(() => { result.current.guardNavigation(action); });
+    act(() => {
+      result.current.guardNavigation(action);
+    });
     expect(result.current.showDialog).toBe(true);
   });
 });
@@ -155,8 +176,7 @@ describe('beforeunload event listener', () => {
   });
 
   it('remove listener ao desmontar com hasUnsavedChanges=true', () => {
-    const { unmount } = renderHook(() =>
-      useUnsavedChangesGuard({ hasUnsavedChanges: true }));
+    const { unmount } = renderHook(() => useUnsavedChangesGuard({ hasUnsavedChanges: true }));
     unmount();
     const removeCalls = removeEventSpy.mock.calls.filter(([ev]) => ev === 'beforeunload');
     expect(removeCalls.length).toBeGreaterThanOrEqual(1);
@@ -165,7 +185,7 @@ describe('beforeunload event listener', () => {
   it('remove listener quando hasUnsavedChanges muda de true → false', () => {
     const { rerender } = renderHook(
       ({ has }: { has: boolean }) => useUnsavedChangesGuard({ hasUnsavedChanges: has }),
-      { initialProps: { has: true } }
+      { initialProps: { has: true } },
     );
     rerender({ has: false });
     const removeCalls = removeEventSpy.mock.calls.filter(([ev]) => ev === 'beforeunload');
