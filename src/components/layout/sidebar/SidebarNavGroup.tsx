@@ -110,44 +110,63 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         const hasActiveChild = item.children.some((child) => isItemActive(child.href, child.exact));
         const isSubOpen = openSubMenus[item.label] ?? hasActiveChild;
         const Icon = item.icon;
+        const triggerButton = (
+          <button
+            aria-expanded={isSubOpen}
+            aria-controls={`submenu-${item.label}`}
+            aria-label={`Expandir ${item.label}`}
+            onClick={() => toggleSubMenu(item.label)}
+            className={cn(
+              'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all duration-150',
+              'hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary/20 active:scale-[0.995]',
+              hasActiveChild
+                ? 'bg-primary/[0.03] font-semibold text-primary before:absolute before:bottom-[20%] before:left-0 before:top-[20%] before:w-[1.5px] before:rounded-r-full before:bg-primary'
+                : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
+            )}
+          >
+            <Icon
+              className={cn(
+                'h-4 w-4 shrink-0 transition-colors',
+                hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70',
+              )}
+            />
+            {!isCollapsed && (
+              <>
+                <span className="flex-1 truncate text-left text-sm">{item.label}</span>
+                <ChevronDown
+                  className={cn(
+                    'h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200',
+                    isSubOpen && 'rotate-180',
+                  )}
+                />
+              </>
+            )}
+          </button>
+        );
+        const wrappedTrigger = item.tooltip ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex w-full" data-tooltip-label={item.tooltip}>
+                {triggerButton}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <p className="text-tooltip">{item.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          triggerButton
+        );
+
         return (
           <div key={item.label}>
-            <button
-              aria-expanded={isSubOpen}
-              aria-controls={`submenu-${item.label}`}
-              aria-label={`Expandir ${item.label}`}
-              onClick={() => toggleSubMenu(item.label)}
-              className={cn(
-                'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all duration-150',
-                'hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary/20 active:scale-[0.995]',
-                hasActiveChild
-                  ? 'bg-primary/[0.03] font-semibold text-primary before:absolute before:bottom-[20%] before:left-0 before:top-[20%] before:w-[1.5px] before:rounded-r-full before:bg-primary'
-                  : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
-              )}
-            >
-              <Icon
-                className={cn(
-                  'h-4 w-4 shrink-0 transition-colors',
-                  hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70',
-                )}
-              />
-              {!isCollapsed && (
-                <>
-                  <span className="flex-1 truncate text-left text-sm">{item.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200',
-                      isSubOpen && 'rotate-180',
-                    )}
-                  />
-                </>
-              )}
-            </button>
+            {wrappedTrigger}
             {isSubOpen && !isCollapsed && (
               <div className="mt-0.5 space-y-0.5 pl-4" id={`submenu-${item.label}`} role="group">
                 {item.children.map((child) => renderNavLink(child, depth + 1))}
               </div>
             )}
+
           </div>
         );
       }
@@ -224,7 +243,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         return (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
-              <div>{linkContent}</div>
+              <div data-tooltip-label={item.tooltip}>{linkContent}</div>
             </TooltipTrigger>
             <TooltipContent side="right" className="z-[100] max-w-[240px]">
               <p className="text-tooltip">{item.tooltip}</p>
@@ -232,6 +251,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           </Tooltip>
         );
       }
+
 
       return <div key={item.href}>{linkContent}</div>;
     };
