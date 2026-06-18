@@ -346,7 +346,7 @@ export function ProductGallery({
       </div>
 
       {/* Color Variations */}
-      {colors && colors.length > 0 && (
+      {!!colors?.length && (
         <GalleryColorVariations
           colors={colors}
           selectedColorIndex={selectedColorIndex}

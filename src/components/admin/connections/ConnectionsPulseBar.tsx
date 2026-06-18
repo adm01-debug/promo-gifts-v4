@@ -190,7 +190,7 @@ export function ConnectionsPulseBar() {
                   <p className="truncate text-sm font-medium leading-tight">
                     {data?.headline ?? 'Carregando status…'}
                   </p>
-                  {data && data.reasons.length > 0 && (
+                  {!!data?.reasons.length && (
                     <p className="truncate text-[11px] leading-tight text-muted-foreground">
                       {data.reasons[0]}
                       {data.reasons.length > 1 && ` · +${data.reasons.length - 1}`}
@@ -201,7 +201,7 @@ export function ConnectionsPulseBar() {
             </TooltipTrigger>
             <TooltipContent side="bottom">
               <p className="mb-1 text-xs font-semibold">{meta.description}</p>
-              {data && data.reasons.length > 0 ? (
+              {data?.reasons.length ? (
                 <ul className="list-disc space-y-1 pl-4 text-xs">
                   {data.reasons.map((r, i) => (
                     <li key={i}>{r}</li>

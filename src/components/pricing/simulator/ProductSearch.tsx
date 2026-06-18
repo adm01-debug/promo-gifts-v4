@@ -52,7 +52,9 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                   alt={selectedProduct.name}
                   className="h-full w-full object-cover"
                   loading="lazy"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
               ) : (
                 <Package className="h-6 w-6 text-muted-foreground" />
@@ -106,7 +108,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
         </div>
       )}
 
-      {products && products.length > 0 && (
+      {!!products?.length && (
         <ScrollArea className="h-64">
           <div className="space-y-1">
             {products.map((product) => (
@@ -126,7 +128,9 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                       alt={product.name}
                       className="h-full w-full object-cover"
                       loading="lazy"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                   ) : (
                     <Package className="h-5 w-5 text-muted-foreground" />

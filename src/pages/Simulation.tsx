@@ -207,11 +207,11 @@ export default function SimulationPage() {
                     </Badge>
                   </div>
                 </div>
-                {report && report.failures > 0 && (
+                {(report?.failures ?? 0) > 0 && (
                   <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
                     <ShieldAlert className="h-5 w-5 shrink-0" />
                     <div>
-                      <p className="font-bold">Atenção: Detectadas {report.failures} falhas.</p>
+                      <p className="font-bold">Atenção: Detectadas {report?.failures} falhas.</p>
                       <p className="opacity-80">
                         Verifique os logs detalhados para identificar payloads que causaram
                         instabilidade.
@@ -343,7 +343,7 @@ export default function SimulationPage() {
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 text-slate-50">
-                {report && report.details.length > 0 ? (
+                {report?.details.length ? (
                   <div className="space-y-6">
                     {report.details.map((detail, idx) => (
                       <div

@@ -207,7 +207,7 @@ export default function ExternalDatabaseTest() {
                     <div className="flex h-32 items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  ) : companies && companies.length > 0 ? (
+                  ) : companies?.length ? (
                     <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
                       {JSON.stringify(companies, null, 2)}
                     </pre>
@@ -232,7 +232,7 @@ export default function ExternalDatabaseTest() {
                     <div className="flex h-32 items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  ) : products && products.length > 0 ? (
+                  ) : products?.length ? (
                     <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
                       {JSON.stringify(products, null, 2)}
                     </pre>

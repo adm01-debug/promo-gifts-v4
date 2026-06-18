@@ -68,7 +68,7 @@ export function ActivityChart({ dailyTrends, isLoading }: ActivityChartProps) {
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-[300px] w-full" />
-        ) : dailyTrends && dailyTrends.length > 0 ? (
+        ) : dailyTrends?.length ? (
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={dailyTrends}>
               <defs>
@@ -136,7 +136,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
-          ) : topProducts && topProducts.length > 0 ? (
+          ) : topProducts?.length ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topProducts.slice(0, 5)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -175,7 +175,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          ) : topProducts && topProducts.length > 0 ? (
+          ) : topProducts?.length ? (
             <div className="max-h-[300px] space-y-3 overflow-y-auto">
               {topProducts.map((product, index) => (
                 <div
@@ -292,7 +292,7 @@ export function SearchesTabContent({ topSearches, isLoading }: SearchesTabProps)
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
-          ) : topSearches && topSearches.length > 0 ? (
+          ) : topSearches?.length ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topSearches.slice(0, 5)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -336,7 +336,7 @@ export function SearchesTabContent({ topSearches, isLoading }: SearchesTabProps)
                 <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>
-          ) : topSearches && topSearches.length > 0 ? (
+          ) : topSearches?.length ? (
             <div className="max-h-[300px] space-y-3 overflow-y-auto">
               {topSearches.map((search, index) => (
                 <div

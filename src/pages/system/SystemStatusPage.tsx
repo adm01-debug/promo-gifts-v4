@@ -453,7 +453,7 @@ export default function SystemStatusPage() {
             <div className="flex items-center justify-between py-2">
               <span className="font-medium text-muted-foreground">Roles/Permissions</span>
               <div className="flex flex-wrap justify-end gap-1">
-                {roles && roles.length > 0 ? (
+                {roles?.length ? (
                   roles.map((r) => (
                     <Badge key={r} variant="outline" className="text-[9px] uppercase">
                       {r}
