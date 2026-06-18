@@ -91,10 +91,14 @@ describe('SidebarNavGroup — tooltips on hover', () => {
         expect(screen.getByRole('tooltip', { name: message })).toBeInTheDocument();
       });
 
-      await user.unhover(link);
+      // Radix fecha em pointerleave do trigger (wrapper <div>).
+      const trigger = link.parentElement as HTMLElement;
+      fireEvent.pointerLeave(trigger);
+      fireEvent.mouseLeave(trigger);
       await waitFor(() => {
         expect(screen.queryByRole('tooltip', { name: message })).not.toBeInTheDocument();
       });
+
     },
   );
 });
