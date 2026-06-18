@@ -118,9 +118,25 @@ export function StockFilterToolbar({
     setLocalSearch(filters.search ?? '');
   }, [filters.search]);
 
+  // Loading transitório enquanto a busca é aplicada (UX feedback).
+  const [isSearching, setIsSearching] = useState(false);
   const commitSearch = useCallback(() => {
+    setIsSearching(true);
     onUpdateFilter('search', localSearch);
   }, [localSearch, onUpdateFilter]);
+
+  // Encerra o loading assim que o filtro externo reflete o valor digitado
+  // (ou após 600ms como fallback de segurança).
+  useEffect(() => {
+    if (!isSearching) return;
+    if ((filters.search ?? '') === localSearch) {
+      setIsSearching(false);
+      return;
+    }
+    const t = setTimeout(() => setIsSearching(false), 600);
+    return () => clearTimeout(t);
+  }, [isSearching, filters.search, localSearch]);
+
 
 
   // Debounce quantity
