@@ -505,7 +505,7 @@ export function useSuppliersManager() {
       setEditingSupplier(null);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar fornecedor');
+      toast.error('Erro ao salvar fornecedor');
     } finally {
       setSaving(false);
     }
