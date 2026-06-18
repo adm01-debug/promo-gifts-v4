@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree } from 'lucide-react';
+import { Package, Building2, FolderTree, Clock } from 'lucide-react';
 import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
@@ -186,6 +186,19 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                 onStatusClick?.('novelty');
               }}
             />
+          </div>
+        )}
+        {/* Urgência: novidade saindo da janela (≤7 dias). Mutuamente exclusiva
+            com "NEW" (fresh = detectado há ≤5d). */}
+        {product.status === 'expiring_soon' && !fresh && !selectionMode && (
+          <div className="absolute right-2 top-2">
+            <span
+              data-testid="novelty-expiring-badge"
+              className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {product.days_remaining <= 1 ? 'Último dia' : `Últimos ${product.days_remaining}d`}
+            </span>
           </div>
         )}
       </div>

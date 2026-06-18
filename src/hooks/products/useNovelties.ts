@@ -326,7 +326,8 @@ export interface UseNoveltiesOptions {
 }
 
 /**
- * Hook para buscar novidades — produtos adicionados nos últimos 30 dias.
+ * Hook para buscar novidades — produtos sinalizados como novidade pela pipeline
+ * DB (is_new + novelty_expires_at futuro).
  * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
