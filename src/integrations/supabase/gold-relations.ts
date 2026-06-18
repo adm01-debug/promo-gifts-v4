@@ -212,7 +212,6 @@ export interface GoldProductRow {
   leaf_category_id_safe: string | null;
   circumference_cm: number | null;
   search_vector: string | null;
-  price_verified_at: string | null;
 }
 
 /** Linha da tabela Ouro `product_variants`. */
