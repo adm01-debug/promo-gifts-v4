@@ -72,6 +72,8 @@ test.describe('@regression /estoque — filtros sem texto', () => {
     const afterReset = await page.locator('tbody tr').count();
     expect(afterReset).toBe(initialRows);
     await expect(qty).toHaveValue('');
+  });
+
   test('Chip de Quantidade no hint remove o filtro e restaura a lista', async ({ page }) => {
     await loginAs(page, 'admin');
     await gotoAndSettle(page, '/estoque');

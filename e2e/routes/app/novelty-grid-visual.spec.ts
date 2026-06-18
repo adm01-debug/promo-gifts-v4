@@ -56,7 +56,9 @@ test.describe('Novelty Grid Advanced Visual & A11y @mobile', () => {
 
         await expect(title).toBeVisible();
         await expect(title).toHaveText('Novidades');
-        await expect(desc).toHaveText('Produtos recém-chegados ao catálogo nos últimos 30 dias');
+        await expect(desc).toHaveText(
+          'Produtos recém-chegados, destacados como novidade pelos fornecedores',
+        );
 
         await expect(header).toHaveScreenshot(`novelty-header-only-${viewport.name}.png`);
       });

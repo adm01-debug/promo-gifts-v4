@@ -237,11 +237,6 @@ export interface GenerateMockupParams {
   productName: string;
   technique: Technique;
   areas: PersonalizationArea[];
-  // AUDIT 2026-06-17 — real-world product dimensions (cm) so the edge can size the
-  // logo with the same px-per-cm the on-screen preview uses (WYSIWYG). Optional:
-  // when null/absent the edge falls back to the legacy /20 reference (no regression).
-  productWidthCm?: number | null;
-  productHeightCm?: number | null;
 }
 
 export interface GenerateMockupResult {
@@ -264,31 +259,6 @@ function assertNotSvg(areas: PersonalizationArea[]): void {
         'Logos SVG não são suportados. Converta o logo para PNG ou JPG e tente novamente.',
       );
     }
-  }
-}
-
-// AUDIT 2026-06-17 — products without a real photo resolve to /placeholder.svg in
-// the UI (the gallery renders it fine), but sending that placeholder to the edge
-// produced an opaque HTTP 400 ("host not allowed" / SVG rejected). Validate the
-// product image up-front and fail with a clear, actionable PT-BR message instead.
-function assertProductImageReady(productImage: string): void {
-  if (/\/placeholder\.svg(\?|#|$)/i.test(productImage)) {
-    throw new Error(
-      'O produto selecionado ainda não tem foto cadastrada (imagem placeholder). Adicione a imagem do produto antes de gerar o mockup.',
-    );
-  }
-  let url: URL;
-  try {
-    url = new URL(productImage);
-  } catch {
-    throw new Error(
-      'O produto selecionado não possui uma imagem válida. Adicione uma foto ao produto e tente novamente.',
-    );
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error(
-      'O produto selecionado não possui uma imagem válida (URL não-HTTP). Adicione uma foto ao produto e tente novamente.',
-    );
   }
 }
 
@@ -316,19 +286,19 @@ async function invokeMockupForArea(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
-  // AUDIT 2026-06-17 — align the payload with the contract the generate-mockup
-  // edge function actually reads (see supabase/functions/generate-mockup/index.ts
-  // and tests/edge-functions/integration/generate-mockup.test.ts):
-  //   1. A freshly-uploaded logo is a data: URL (FileReader.readAsDataURL in
-  //      useMockupGenerator.handleAreaLogoUpload). The edge accepts an HTTPS
-  //      `logoUrl` OR base64 in `logoBase64`; a data: URL placed in `logoUrl`
-  //      fails isValidHttpUrl() and the edge returned HTTP 400 on EVERY upload.
-  //      → route data: URLs to `logoBase64`; pass real HTTPS previews via `logoUrl`.
-  //   2. The edge reads `logoWidthCm` / `logoHeightCm` / `techniqueName`. The old
-  //      `logoWidth` / `logoHeight` / `technique` keys were silently dropped, so
-  //      the logo always rendered at the 5×3 cm default regardless of the sliders.
-  const preview = area.logoPreview ?? '';
-  const isDataUrl = preview.startsWith('data:');
+  // BUG-400c FIX (2026-06-18): the edge function contract (see
+  // supabase/functions/generate-mockup/index.ts) expects:
+  //   - `logoBase64` for inline data: URLs OR `logoUrl` for an https URL
+  //     (it validates logoUrl with isValidHttpUrl, which REJECTS data: URLs);
+  //   - `logoWidthCm` / `logoHeightCm` (NOT logoWidth/logoHeight);
+  //   - `techniqueName` as a string (NOT a Technique object).
+  // The previous payload sent `logoUrl: area.logoPreview` (a base64 data: URL
+  // right after upload) → 400 "Either logoBase64 or a valid logoUrl is required",
+  // and sent logoWidth/logoHeight so the logo always fell back to the 5×3 cm
+  // defaults. This broke the primary "upload a logo → generate" flow outright.
+  const logo = area.logoPreview ?? '';
+  const isDataUrl = logo.startsWith('data:');
+  const logoPayload = isDataUrl ? { logoBase64: logo } : { logoUrl: logo };
 
   const generateCall = supabase.functions.invoke('generate-mockup', {
     body: {
@@ -336,7 +306,7 @@ async function invokeMockupForArea(
       productName: params.productName,
       techniqueName: params.technique.name,
       techniquePrompt: getTechniquePrompt(params.technique),
-      ...(isDataUrl ? { logoBase64: preview } : { logoUrl: preview }),
+      ...logoPayload,
       areaName: area.name,
       positionX: area.positionX,
       positionY: area.positionY,
@@ -344,10 +314,6 @@ async function invokeMockupForArea(
       logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
-      // Forwarded so the edge mirrors the preview's px-per-cm (WYSIWYG). When the
-      // product has no known cm dimensions these are null and the edge uses /20.
-      productWidthCm: params.productWidthCm ?? undefined,
-      productHeightCm: params.productHeightCm ?? undefined,
     },
   });
 
@@ -372,12 +338,19 @@ async function invokeMockupForArea(
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
-  const areasWithLogos = params.areas;
+  // BUG-400d FIX (2026-06-18): only areas that actually have a logo can be
+  // composited — a logo-less area would be sent with an empty logo and rejected
+  // by the edge function (422/400), surfacing as a spurious "X área(s) não
+  // puderam ser geradas" warning. Callers may pass the full area list, so filter
+  // defensively here (single source of truth for the contract).
+  const areasWithLogos = params.areas.filter((a) => !!a.logoPreview);
+
+  if (areasWithLogos.length === 0) {
+    throw new Error('Faça upload de pelo menos um logo antes de gerar o mockup.');
+  }
 
   // BUG-E: pre-validate BEFORE the (expensive) edge invocation.
   assertNotSvg(areasWithLogos);
-  // AUDIT 2026-06-17 — block /placeholder.svg and invalid product images up-front.
-  assertProductImageReady(params.productImage);
 
   // BUG-I: single-area path sends ONLY the relevant area — never the dead areas[] payload.
   if (areasWithLogos.length === 1) {

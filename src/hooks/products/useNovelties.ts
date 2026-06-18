@@ -2,44 +2,79 @@ import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { compareNamePtBR } from '@/utils/product-sorting';
 
 const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
-const NOVELTY_WINDOW_DAYS = 30;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+// FIX (auditoria Novidades 2026-06-18, P0): a fonte da verdade de "novidade" é a
+// PIPELINE do banco (colunas `is_new` / `novelty_detected_at` /
+// `novelty_expires_at`, mantidas pela edge function `cleanup-novelties`), e NÃO
+// uma janela de 30 dias derivada de `created_at`. A implementação anterior usava
+// `created_at + 30d`, o que: (1) ocultava ~16% das novidades reais — produtos
+// detectados como novidade DEPOIS de criados no catálogo (lag médio de ~21 dias,
+// até 132); (2) usava janela errada (a pipeline usa ~60 dias); (3) media a idade
+// do badge a partir da criação no catálogo, não da detecção como novidade.
+//
+// Apesar de a janela real ser ~60 dias, a UX (badge "Novidade X dias", faixas de
+// cor, destaque "recém-chegado") permanece ancorada em DETECÇÃO recente, o que é
+// fiel ao dado: toda novidade ativa hoje foi detectada há ≤ ~12 dias.
+const NOVELTY_DISPLAY_WINDOW_DAYS = 30; // só p/ fallback quando expiry vier nulo
+const NOVELTY_FRESH_DAYS = 5; // "recém-chegado" = detectado há ≤ 5 dias
+const NOVELTY_EXPIRING_SOON_DAYS = 7; // "expirando" = expira em ≤ 7 dias
+
 const NOVELTY_SELECT =
-  'id, name, sku, primary_image_url, set_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
+  'id, name, sku, primary_image_url, set_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity, is_new, novelty_detected_at, novelty_expires_at';
 
 /**
  * Filtros de qualidade aplicados a TODOS os hooks de novidades.
- * Garante consistência com a pipeline DB (product_novelties):
  * - is_stockout=false  → produto em stockout não é novidade
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applyNoveltyQualityFilters = (query: any): any =>
-  query
-    .eq('is_stockout', false)
-    .not('primary_image_url', 'is', null)
-    .gt('sale_price', 0);
+  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0);
 
 /**
- * Calcula a data de corte para novidades (últimos N dias)
+ * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).
+ * Um produto ativo é novidade enquanto a flag `is_new` estiver ligada E a data
+ * de expiração for futura. Combinar ambos torna o resultado:
+ *  - respeitoso a remoções manuais (admin desliga `is_new`);
+ *  - auto-corretivo entre execuções do cron (`novelty_expires_at > now`
+ *    descarta flags vencidas mesmo antes do `cleanup-novelties` rodar).
+ * Os filtros de qualidade continuam aplicados.
  */
-function getCutoffDate(days: number = NOVELTY_WINDOW_DAYS): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applyNoveltyPredicate = (query: any, nowIso: string): any =>
+  applyNoveltyQualityFilters(query.eq('is_active', true))
+    .eq('is_new', true)
+    .gt('novelty_expires_at', nowIso);
+
+/**
+ * Dias restantes como novidade — derivado da expiração REAL da pipeline.
+ * Clampa em 0 (nunca negativo).
+ */
+function calcDaysRemaining(expiresAt: string | null | undefined): number {
+  if (!expiresAt) return 0;
+  const exp = new Date(expiresAt).getTime();
+  if (Number.isNaN(exp)) return 0;
+  const ms = exp - Date.now();
+  if (ms <= 0) return 0;
+  return Math.ceil(ms / MS_PER_DAY);
 }
 
 /**
- * Calcula dias restantes como novidade
+ * Dias decorridos desde a DETECÇÃO como novidade (idade do badge "Novidade X
+ * dias"). Guard contra datas no futuro (elapsed < 0 → 0).
  */
-function calcDaysRemaining(createdAt: string): number {
-  const created = new Date(createdAt).getTime();
-  const now = Date.now();
-  const elapsed = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-  return Math.max(0, NOVELTY_WINDOW_DAYS - elapsed);
+function calcDaysAsNovelty(detectedAt: string | null | undefined): number {
+  if (!detectedAt) return 0;
+  const det = new Date(detectedAt).getTime();
+  if (Number.isNaN(det)) return 0;
+  const elapsed = Math.floor((Date.now() - det) / MS_PER_DAY);
+  return elapsed < 0 ? 0 : elapsed;
 }
 
 /**
@@ -63,6 +98,8 @@ export interface NoveltyWithDetails {
   detected_at: string;
   expires_at: string;
   days_remaining: number;
+  /** Dias decorridos desde a detecção como novidade (idade do badge). */
+  days_as_novelty: number;
   status: 'active' | 'expiring_soon' | 'expired';
   is_highlighted: boolean;
   is_active: boolean;
@@ -86,9 +123,19 @@ export interface NoveltyStatsDisplay {
   arrivedLast15Days: number;
   topSupplierName: string | null;
   topSupplierCount: number;
+  /** Ranking de fornecedores das novidades (server-side, conjunto completo). */
+  supplierBreakdown: NoveltySupplierBreakdown[];
 }
 
-interface RawProduct {
+/** Item do ranking "Por Fornecedor" exibido na sidebar de Novidades. */
+export interface NoveltySupplierBreakdown {
+  id: string;
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+export interface RawProduct {
   id: string;
   name: string;
   sku: string | null;
@@ -100,6 +147,9 @@ interface RawProduct {
   created_at: string;
   stock_quantity: number | null;
   min_quantity: number | null;
+  is_new?: boolean | null;
+  novelty_detected_at?: string | null;
+  novelty_expires_at?: string | null;
 }
 
 interface CategoryRecord {
@@ -154,13 +204,22 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
 }
 
 /**
- * Converte produto cru do banco externo em NoveltyWithDetails
+ * Converte produto cru em NoveltyWithDetails usando os sinais da pipeline DB.
+ * - `detected_at`  = novelty_detected_at (fallback created_at)
+ * - `expires_at`   = novelty_expires_at  (fallback detected + janela display)
+ * - `days_remaining` (REAL) = dias até a expiração da pipeline
+ * - `days_as_novelty`       = dias desde a detecção (idade do badge)
  */
-function toNovelty(p: RawProduct): NoveltyWithDetails {
-  const daysRemaining = calcDaysRemaining(p.created_at);
-  const expiresAt = new Date(
-    new Date(p.created_at).getTime() + NOVELTY_WINDOW_DAYS * 86400000,
-  ).toISOString();
+export function toNovelty(p: RawProduct): NoveltyWithDetails {
+  const detectedAt = p.novelty_detected_at ?? p.created_at;
+  const expiresAt =
+    p.novelty_expires_at ??
+    new Date(
+      new Date(detectedAt).getTime() + NOVELTY_DISPLAY_WINDOW_DAYS * MS_PER_DAY,
+    ).toISOString();
+
+  const daysRemaining = calcDaysRemaining(expiresAt);
+  const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
   const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
@@ -180,16 +239,84 @@ function toNovelty(p: RawProduct): NoveltyWithDetails {
     supplier_id: p.supplier_id,
     supplier_name: null,
     supplier_product_code: null,
-    detected_at: p.created_at,
+    detected_at: detectedAt,
     expires_at: expiresAt,
     days_remaining: daysRemaining,
-    status: daysRemaining <= 0 ? 'expired' : daysRemaining <= 7 ? 'expiring_soon' : 'active',
-    is_highlighted: daysRemaining >= 25,
+    days_as_novelty: daysAsNovelty,
+    status:
+      daysRemaining <= 0
+        ? 'expired'
+        : daysRemaining <= NOVELTY_EXPIRING_SOON_DAYS
+          ? 'expiring_soon'
+          : 'active',
+    // "Recém-chegado": detectado há poucos dias (não derivado da expiração, que
+    // agora reflete a janela real de ~60 dias da pipeline).
+    is_highlighted: daysAsNovelty <= NOVELTY_FRESH_DAYS,
     is_active: daysRemaining > 0,
     stock_quantity: stock,
     min_quantity: minQty,
     stock_status: stockStatus,
   };
+}
+
+/**
+ * Ordena novidades pelos campos REAIS de NoveltyWithDetails (mutação in-place,
+ * espelhando a semântica de `sortProducts`).
+ *
+ * FIX (auditoria Novidades 2026-06-18, P1): o grid antes fazia
+ * `sortProducts(novelties as unknown as Product[])`, mas as formas divergem
+ * (`product_name`≠`name`, `base_price`≠`price`, `detected_at`≠`created_at`),
+ * então TODAS as ordenações eram no-op silencioso — "Mais recentes" caía em A-Z.
+ */
+export function sortNovelties(
+  novelties: NoveltyWithDetails[],
+  sortBy: string,
+): NoveltyWithDetails[] {
+  const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails): number => {
+    const byName = compareNamePtBR(a.product_name, b.product_name);
+    if (byName !== 0) return byName;
+    return a.product_id < b.product_id ? -1 : a.product_id > b.product_id ? 1 : 0;
+  };
+
+  switch (sortBy) {
+    case 'newest':
+      novelties.sort((a, b) => {
+        const bt = new Date(b.detected_at).getTime();
+        const at = new Date(a.detected_at).getTime();
+        if (bt !== at) return bt - at;
+        return byNameThenId(a, b);
+      });
+      break;
+    case 'name':
+    case 'name-asc':
+      novelties.sort(byNameThenId);
+      break;
+    case 'name-desc':
+      novelties.sort((a, b) => byNameThenId(b, a));
+      break;
+    case 'price-asc':
+      novelties.sort((a, b) => {
+        const d = (a.base_price ?? 0) - (b.base_price ?? 0);
+        return d !== 0 ? d : byNameThenId(a, b);
+      });
+      break;
+    case 'price-desc':
+      novelties.sort((a, b) => {
+        const d = (b.base_price ?? 0) - (a.base_price ?? 0);
+        return d !== 0 ? d : byNameThenId(a, b);
+      });
+      break;
+    case 'stock':
+      novelties.sort((a, b) => {
+        const d = (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0);
+        return d !== 0 ? d : byNameThenId(a, b);
+      });
+      break;
+    default:
+      // Valor desconhecido → no-op (preserva ordem), igual a sortProducts.
+      break;
+  }
+  return novelties;
 }
 
 export interface UseNoveltiesOptions {
@@ -199,29 +326,45 @@ export interface UseNoveltiesOptions {
 }
 
 /**
- * Hook para buscar novidades — produtos adicionados nos últimos 30 dias.
+ * Hook para buscar novidades — produtos sinalizados como novidade pela pipeline
+ * DB (is_new + novelty_expires_at futuro).
  * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
-  const { limit = 100, onlyHighlighted = false } = options;
+  const { limit, onlyHighlighted = false } = options;
 
   return useQuery<NoveltyWithDetails[]>({
-    queryKey: ['novelties-details', limit, onlyHighlighted],
+    queryKey: ['novelties-details', limit ?? 'all', onlyHighlighted],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const nowIso = new Date().toISOString();
 
-      const baseQuery = applyNoveltyQualityFilters(
-        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
-      );
-
-      const { data, error } = await baseQuery
-        .gte('created_at', cutoff)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: true })
-        .range(0, limit - 1);
-      if (error) return handleQueryError('useNovelties', 'products', error);
-
-      const records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
+      // FIX (auditoria Novidades, P1-B): paginacao completa. `limit`, quando
+      // informado, atua como teto opcional para previews (home/sidebar).
+      // FIX (P0): pertinência via pipeline (is_new + novelty_expires_at > now),
+      // não mais janela de created_at.
+      const PAGE = 1000;
+      const MAX_PAGES = 25; // anti-loop: teto ~25k
+      const hardCap = typeof limit === 'number' ? limit : Number.POSITIVE_INFINITY;
+      const records: RawProduct[] = [];
+      let from = 0;
+      for (let page = 0; page < MAX_PAGES; page += 1) {
+        const want = Math.min(PAGE, hardCap - records.length);
+        if (want <= 0) break;
+        const { data, error } = await applyNoveltyPredicate(
+          fromTable('products').select(NOVELTY_SELECT),
+          nowIso,
+        )
+          .order('novelty_detected_at', { ascending: false })
+          .order('id', { ascending: true })
+          .range(from, from + want - 1);
+        if (error) return handleQueryError('useNovelties', 'products', error);
+        const rows = (data ?? []) as unknown as RawProduct[];
+        records.push(...rows);
+        from += rows.length;
+        // HARDENING: para só em página vazia (robusto a db-max-rows < PAGE);
+        // o teto opcional `limit` é respeitado pelo guard `want <= 0` no topo.
+        if (rows.length === 0) break;
+      }
 
       let novelties = records.map(toNovelty).filter((n) => n.is_active);
 
@@ -244,15 +387,13 @@ export function useExpiringNovelties(maxDays: number = 7) {
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['expiring-novelties', maxDays],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const nowIso = new Date().toISOString();
 
-      const baseQuery = applyNoveltyQualityFilters(
-        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
-      );
-
-      const { data, error } = await baseQuery
-        .gte('created_at', cutoff)
-        .order('created_at', { ascending: true })
+      const { data, error } = await applyNoveltyPredicate(
+        fromTable('products').select(NOVELTY_SELECT),
+        nowIso,
+      )
+        .order('novelty_expires_at', { ascending: true })
         .order('id', { ascending: true })
         .range(0, 199);
       if (error) return handleQueryError('useNovelties', 'products', error);
@@ -277,11 +418,24 @@ export function useNoveltyStats() {
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
-      const todayStart        = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const weekStart         = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).toISOString();
-      const fifteenStart      = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14).toISOString();
-      const thirtyStart       = getCutoffDate();
-      const expiringSoonCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 23).toISOString();
+      const nowIso = now.toISOString();
+      // Janelas de "chegada" ancoradas na DETECÇÃO como novidade (pipeline),
+      // não na criação no catálogo — consistente com o grid e os badges.
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 6,
+      ).toISOString();
+      const fifteenStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 14,
+      ).toISOString();
+      // "Expirando em breve" = expira dentro dos próximos N dias (expiração real).
+      const expiringSoonLimit = new Date(
+        now.getTime() + NOVELTY_EXPIRING_SOON_DAYS * MS_PER_DAY,
+      ).toISOString();
 
       const emptyStats: NoveltyStatsDisplay = {
         totalNovelties: 0,
@@ -294,88 +448,125 @@ export function useNoveltyStats() {
         arrivedLast15Days: 0,
         topSupplierName: null,
         topSupplierCount: 0,
+        supplierBreakdown: [],
       };
 
-      // Helper: query base com filtros de qualidade para HEAD counts
-      const qualityBase = () =>
-        applyNoveltyQualityFilters(
-          fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      // Helper: query base de NOVIDADE (pipeline + qualidade) para HEAD counts.
+      const noveltyBase = () =>
+        applyNoveltyPredicate(
+          fromTable('products').select('id', { count: 'exact', head: true }),
+          nowIso,
         );
 
-      const [
-        todayRes,
-        weekRes,
-        fifteenRes,
-        activeRes,
-        expiringSoonRes,
-        totalRes,
-        supplierRes,
-      ] = await Promise.all([
-        // Chegaram hoje (com filtros de qualidade)
-        qualityBase().gte('created_at', todayStart),
-        // Últimos 7 dias
-        qualityBase().gte('created_at', weekStart),
-        // Últimos 15 dias
-        qualityBase().gte('created_at', fifteenStart),
-        // Novidades ativas (últimos 30 dias)
-        qualityBase().gte('created_at', thirtyStart),
-        // Expirando em breve
-        qualityBase().gte('created_at', thirtyStart).lt('created_at', expiringSoonCutoff),
-        // Total do catálogo ativo (sem filtros de qualidade — denominador real)
-        fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        // supplier_id para top fornecedor (com filtros de qualidade)
-        applyNoveltyQualityFilters(
-          fromTable('products').select('supplier_id').eq('is_active', true),
-        ).gte('created_at', thirtyStart),
-      ]);
+      const [todayRes, weekRes, fifteenRes, activeRes, expiringSoonRes, totalRes] =
+        await Promise.all([
+          // Detectadas como novidade hoje
+          noveltyBase().gte('novelty_detected_at', todayStart),
+          // Detectadas nos últimos 7 dias
+          noveltyBase().gte('novelty_detected_at', weekStart),
+          // Detectadas nos últimos 15 dias
+          noveltyBase().gte('novelty_detected_at', fifteenStart),
+          // Novidades ativas (conjunto da pipeline, sem janela artificial)
+          noveltyBase(),
+          // Expirando em breve (expira dentro dos próximos N dias)
+          noveltyBase().lte('novelty_expires_at', expiringSoonLimit),
+          // Total do catálogo ativo (sem filtros — denominador real)
+          fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        ]);
 
-      if (todayRes.error)   { handleQueryError('useNovelties', 'products', todayRes.error);   return emptyStats; }
-      if (weekRes.error)    { handleQueryError('useNovelties', 'products', weekRes.error);    return emptyStats; }
-      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyStats; }
-      if (activeRes.error)  { handleQueryError('useNovelties', 'products', activeRes.error);  return emptyStats; }
-      if (totalRes.error)   { handleQueryError('useNovelties', 'products', totalRes.error);   return emptyStats; }
+      if (todayRes.error) {
+        handleQueryError('useNovelties', 'products', todayRes.error);
+        return emptyStats;
+      }
+      if (weekRes.error) {
+        handleQueryError('useNovelties', 'products', weekRes.error);
+        return emptyStats;
+      }
+      if (fifteenRes.error) {
+        handleQueryError('useNovelties', 'products', fifteenRes.error);
+        return emptyStats;
+      }
+      if (activeRes.error) {
+        handleQueryError('useNovelties', 'products', activeRes.error);
+        return emptyStats;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyStats;
+      }
 
-      const arrivedToday      = todayRes.count    ?? 0;
-      const arrivedThisWeek   = weekRes.count      ?? 0;
-      const arrivedLast15Days = fifteenRes.count   ?? 0;
-      const activeCount       = activeRes.count    ?? 0;
-      const expiringSoon      = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
-      const totalProducts     = totalRes.count     ?? 0;
+      const arrivedToday = todayRes.count ?? 0;
+      const arrivedThisWeek = weekRes.count ?? 0;
+      const arrivedLast15Days = fifteenRes.count ?? 0;
+      const activeCount = activeRes.count ?? 0;
+      const expiringSoon = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
+      const totalProducts = totalRes.count ?? 0;
 
-      const supplierRows = (!supplierRes.error && supplierRes.data)
-        ? (supplierRes.data as unknown as { supplier_id: string | null }[])
-        : [];
-
+      // FIX (auditoria Novidades, P1-A/P1-C): ranking de fornecedores 100%
+      // server-side sobre TODO o conjunto de novidades da pipeline, paginado. Antes:
+      //  (1) o card "Top Fornecedor" usava 1 SELECT sem .range() -> sujeito ao
+      //      teto db-max-rows (~1000) e mudo em escala;
+      //  (2) o painel "Por Fornecedor" (ExpiringNoveltiesWidget) derivava o
+      //      ranking de apenas 200 itens -> contradizia o card (ex.: painel
+      //      dizia "Só Marcas 54%" quando a verdade era "XBZ 58%").
+      const SUP_PAGE = 1000;
+      const SUP_MAX_PAGES = 25; // anti-loop: teto ~25k
       const supplierCounts = new Map<string, number>();
-      for (const row of supplierRows) {
-        if (row.supplier_id) {
-          supplierCounts.set(row.supplier_id, (supplierCounts.get(row.supplier_id) ?? 0) + 1);
-        }
-      }
-
-      let topSupplierId: string | null = null;
-      let topSupplierCount = 0;
-      for (const [id, count] of supplierCounts) {
-        if (count > topSupplierCount) {
-          topSupplierCount = count;
-          topSupplierId = id;
-        }
-      }
-
-      let topSupplierName: string | null = null;
-      if (topSupplierId) {
-        try {
-          const { data: supData, error: supError } = await fromTable('suppliers')
-            .select('name')
-            .eq('id', topSupplierId)
-            .range(0, 0);
-          if (!supError && supData && supData.length > 0) {
-            topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
+      {
+        let supFrom = 0;
+        for (let page = 0; page < SUP_MAX_PAGES; page += 1) {
+          const { data: supPage, error: supPageErr } = await applyNoveltyPredicate(
+            fromTable('products').select('supplier_id'),
+            nowIso,
+          )
+            .order('id', { ascending: true })
+            .range(supFrom, supFrom + SUP_PAGE - 1);
+          if (supPageErr) {
+            handleQueryError('useNovelties', 'products', supPageErr);
+            break;
           }
-        } catch {
-          /* fallback silencioso */
+          const rows = (supPage ?? []) as unknown as { supplier_id: string | null }[];
+          for (const row of rows) {
+            if (row.supplier_id) {
+              supplierCounts.set(row.supplier_id, (supplierCounts.get(row.supplier_id) ?? 0) + 1);
+            }
+          }
+          supFrom += rows.length;
+          if (rows.length === 0) break; // robusto a db-max-rows < SUP_PAGE
         }
       }
+
+      const sortedSuppliers = [...supplierCounts.entries()].sort((a, b) => b[1] - a[1]);
+      const topSupplierIds = sortedSuppliers.slice(0, 8).map(([id]) => id);
+
+      const supplierNameById = new Map<string, string>();
+      if (topSupplierIds.length > 0) {
+        const { data: supData, error: supErr } = await fromTable('suppliers')
+          .select('id, name')
+          .in('id', topSupplierIds)
+          .range(0, topSupplierIds.length - 1);
+        if (!supErr && supData) {
+          for (const sup of supData as unknown as { id: string; name: string }[]) {
+            supplierNameById.set(sup.id, sup.name);
+          }
+        }
+      }
+
+      const supplierBreakdown: NoveltySupplierBreakdown[] = sortedSuppliers
+        .slice(0, 6)
+        .map(([id, count]) => ({
+          id,
+          name: supplierNameById.get(id) ?? '—',
+          count,
+          percentage: activeCount > 0 ? Math.round((count / activeCount) * 100) : 0,
+        }));
+
+      const topSupplierId: string | null =
+        sortedSuppliers.length > 0 ? sortedSuppliers[0][0] : null;
+      const topSupplierCount = sortedSuppliers.length > 0 ? sortedSuppliers[0][1] : 0;
+      const topSupplierName: string | null = topSupplierId
+        ? (supplierNameById.get(topSupplierId) ?? null)
+        : null;
 
       return {
         totalNovelties: activeCount,
@@ -388,6 +579,7 @@ export function useNoveltyStats() {
         arrivedLast15Days,
         topSupplierName,
         topSupplierCount,
+        supplierBreakdown,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -407,7 +599,7 @@ export function useNovelties(
   return useQuery({
     queryKey: ['novelties-rpc', supplierCode, limit, maxDays],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const nowIso = new Date().toISOString();
       let supplierId: string | undefined;
 
       if (supplierCode) {
@@ -421,11 +613,8 @@ export function useNovelties(
         }
       }
 
-      let query = applyNoveltyQualityFilters(
-        fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
-      )
-        .gte('created_at', cutoff)
-        .order('created_at', { ascending: false })
+      let query = applyNoveltyPredicate(fromTable('products').select(NOVELTY_SELECT), nowIso)
+        .order('novelty_detected_at', { ascending: false })
         .order('id', { ascending: true })
         .range(0, limit - 1);
 
@@ -440,8 +629,9 @@ export function useNovelties(
         .map(toNovelty)
         .filter((n) => n.is_active);
 
+      // maxDays = "detectadas há no máximo N dias" (idade da novidade).
       if (maxDays) {
-        novelties = novelties.filter((n) => n.days_remaining >= NOVELTY_WINDOW_DAYS - maxDays);
+        novelties = novelties.filter((n) => n.days_as_novelty <= maxDays);
       }
 
       return novelties;
@@ -459,13 +649,12 @@ export function useNoveltyCount() {
   return useQuery<number>({
     queryKey: ['novelty-count'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const nowIso = new Date().toISOString();
 
-      const { count, error } = await applyNoveltyQualityFilters(
-        fromTable('products').select('id', { count: 'exact' }).eq('is_active', true),
-      )
-        .gte('created_at', cutoff)
-        .range(0, 0);
+      const { count, error } = await applyNoveltyPredicate(
+        fromTable('products').select('id', { count: 'exact' }),
+        nowIso,
+      ).range(0, 0);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
         return 0;
@@ -487,8 +676,10 @@ export function useIsProductNovelty(productId: string) {
   return useQuery<{ isNovelty: boolean; daysRemaining: number | null }>({
     queryKey: ['is-novelty', productId],
     queryFn: async () => {
-      const { data, error } = await applyNoveltyQualityFilters(
-        fromTable('products').select('id, created_at').eq('is_active', true),
+      const nowIso = new Date().toISOString();
+      const { data, error } = await applyNoveltyPredicate(
+        fromTable('products').select('id, novelty_expires_at'),
+        nowIso,
       )
         .eq('id', productId)
         .range(0, 0);
@@ -497,12 +688,12 @@ export function useIsProductNovelty(productId: string) {
         return { isNovelty: false, daysRemaining: null };
       }
 
-      const rows = (data ?? []) as unknown as { id: string; created_at: string }[];
+      const rows = (data ?? []) as unknown as { id: string; novelty_expires_at: string }[];
       if (rows.length === 0) {
         return { isNovelty: false, daysRemaining: null };
       }
 
-      const daysRemaining = calcDaysRemaining(rows[0].created_at);
+      const daysRemaining = calcDaysRemaining(rows[0].novelty_expires_at);
       return {
         isNovelty: daysRemaining > 0,
         daysRemaining: daysRemaining > 0 ? daysRemaining : null,
@@ -522,7 +713,7 @@ export function useNoveltyProductIds() {
   return useQuery<Set<string>>({
     queryKey: ['novelty-product-ids'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const nowIso = new Date().toISOString();
 
       // BUGFIX (audit 200-commits, P1-1): substitui o cap silencioso .range(0,1999)
       // por paginacao completa. O PostgREST pode aplicar db-max-rows (~1000), entao
@@ -535,10 +726,10 @@ export function useNoveltyProductIds() {
       // QUALQUER teto do servidor, sem depender do acoplamento PAGE == teto.
       let from = 0;
       for (let page = 0; page < MAX_PAGES; page += 1) {
-        const { data, error } = await applyNoveltyQualityFilters(
-          fromTable('products').select('id').eq('is_active', true),
+        const { data, error } = await applyNoveltyPredicate(
+          fromTable('products').select('id'),
+          nowIso,
         )
-          .gte('created_at', cutoff)
           .order('id', { ascending: true }) // ordenacao estavel p/ paginacao deterministica
           .range(from, from + PAGE - 1);
         if (error) {

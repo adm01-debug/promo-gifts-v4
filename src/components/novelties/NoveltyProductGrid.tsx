@@ -21,7 +21,11 @@ import {
   CheckSquare,
   Loader2,
 } from 'lucide-react';
-import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
+import {
+  useNoveltiesSelectionMode,
+  useNoveltiesWithDetails,
+  sortNovelties,
+} from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
@@ -38,7 +42,6 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { NoveltyTableView } from './NoveltyCards';
 import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
-import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
@@ -89,7 +92,11 @@ export function NoveltyProductGrid() {
   // set-state/ref-write após desmontar e leak do timeout).
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
+  // FIX (auditoria Novidades, P1-B): sem teto fixo. Antes `{ limit: 400 }`
+  // truncava o grid quando havia mais de 400 novidades ativas (ex.: 550 -> 150
+  // produtos, incl. fornecedores inteiros, invisiveis; e o contador divergia do
+  // card "Novidades Ativas"). O hook agora pagina o conjunto completo da janela.
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails();
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -162,7 +169,10 @@ export function NoveltyProductGrid() {
       filtered = filtered.filter((p) => p.supplier_id === selectedSupplier);
     if (selectedCategory !== 'all')
       filtered = filtered.filter((p) => p.category_id === selectedCategory);
-    sortProducts(filtered as unknown as Parameters<typeof sortProducts>[0], sortMode);
+    // FIX (auditoria Novidades, P1): ordena pelos campos REAIS de
+    // NoveltyWithDetails. Antes `sortProducts(... as Product[])` era no-op
+    // silencioso (formas divergentes) e "Mais recentes" caía em A-Z.
+    sortNovelties(filtered, sortMode);
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
@@ -583,7 +593,7 @@ export function NoveltyProductGrid() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((option) => (
+              {SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller')).map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
