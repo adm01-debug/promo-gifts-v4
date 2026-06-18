@@ -88,7 +88,7 @@ export function useFiltersPageState() {
     // FIX-28: validar NaN e fazer clamp (min<=max). Valores inválidos na URL
     // (?priceMin=abc, min>max) caíam como NaN e zeravam a lista sem feedback.
     if (pMin || pMax) {
-      const PRICE_MAX = 99999; // Aumentado limite máximo
+      const PRICE_MAX = 9999; // Consistente com sentinel do pipeline (applyProductFilters) e defaultFilters
       const parsedMin = pMin ? parseFloat(pMin) : 0;
       const parsedMax = pMax ? parseFloat(pMax) : PRICE_MAX;
       let min = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : 0;
@@ -264,12 +264,14 @@ export function useFiltersPageState() {
     productIds: sizeFilteredProductIds,
     hasFilter: hasSizeFilter,
     isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
   } = useProductsBySize(filters.sizes || []);
   // BUG-DB-02: datas/tags/ramos/segmentos/público server-side via RPC.
   const {
     productIds: metadataFilteredProductIds,
     hasFilter: hasMetadataFilter,
     isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
   } = useProductsByMetadata({
     datas: filters.datasComemorativas,
     tags: filters.tags || [],
@@ -277,6 +279,19 @@ export function useFiltersPageState() {
     segmentos: filters.segmentosAtividade || [],
     publico: filters.publicoAlvo,
   });
+  // BUG-METADATA-SILENT-FAIL: notifica o usuário quando a RPC fn_super_filtro_product_ids
+  // falha (antes: grade zerava silenciosamente sem nenhum feedback).
+  const prevMetadataErrorRef = useRef<unknown>(null);
+  useEffect(() => {
+    if (metadataFilterError && metadataFilterError !== prevMetadataErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de metadados', {
+        description:
+          'O filtro de Datas/Tags/Público/Nichos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMetadataErrorRef.current = metadataFilterError;
+  }, [metadataFilterError]);
+
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
@@ -425,9 +440,11 @@ export function useFiltersPageState() {
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
+        sizeFilterError,
         hasMetadataFilter,
         metadataFilteredProductIds,
         isLoadingMetadataFilter,
+        metadataFilterError,
         promoSalesMap,
         supplierSalesMap,
         promoSales90dMap,
@@ -445,9 +462,11 @@ export function useFiltersPageState() {
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,
+      sizeFilterError,
       hasMetadataFilter,
       metadataFilteredProductIds,
       isLoadingMetadataFilter,
+      metadataFilterError,
       hasCategoryFilter,
       categoryFilteredProductIds,
       isLoadingCategoryFilter,

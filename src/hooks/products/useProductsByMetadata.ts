@@ -29,6 +29,7 @@ interface UseProductsByMetadataResult {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsByMetadata({
@@ -40,6 +41,7 @@ export function useProductsByMetadata({
 }: UseProductsByMetadataOptions): UseProductsByMetadataResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const hasFilter = useMemo(
     () =>
@@ -82,6 +84,7 @@ export function useProductsByMetadata({
     setIsLoading(true);
 
     try {
+      setError(null);
       // fn_super_filtro_product_ids ainda nao consta nos tipos gerados (types.ts).
       const { data, error } = await (
         supabase as unknown as {
@@ -109,6 +112,9 @@ export function useProductsByMetadata({
       if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByMetadata] Critical Error:', err);
       setProductIds(new Set());
+      setError(err);
+      // Marca como "tentado" para evitar loop de retry no mesmo filterKey.
+      lastFetchedKey.current = filterKey;
     } finally {
       if (token === fetchTokenRef.current) setIsLoading(false);
     }
@@ -119,5 +125,5 @@ export function useProductsByMetadata({
     if (filterKey !== lastFetchedKey.current || !hasFilter) fetchProductIds();
   }, [filterKey, hasFilter, fetchProductIds]);
 
-  return { productIds, hasFilter, isLoading };
+  return { productIds, hasFilter, isLoading, error };
 }
