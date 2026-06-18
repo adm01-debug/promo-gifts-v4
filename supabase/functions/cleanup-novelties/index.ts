@@ -18,9 +18,6 @@ Deno.serve(async (req) => {
   if (!cronAuth.ok) return cronAuth.response;
 
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
 
   console.log('🧹 Iniciando limpeza de flags expirados...');
 

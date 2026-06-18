@@ -50,10 +50,6 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   "connections-auto-test",
   "connections-health-check",
   "connections-hub-audit",
-  // Internal test orchestrators — never called from a browser, no OPTIONS needed.
-  "test-cart-concurrency",
-  "test-cart-limit",
-  "test-cart-rls",
   // pg_cron jobs — called via net.http_post internally, never by a browser.
   "backfill-image-dimensions",
   "asia-ingestion",

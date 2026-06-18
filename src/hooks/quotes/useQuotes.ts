@@ -60,7 +60,7 @@ export function useQuotes() {
           schema: 'public',
           table: 'quotes',
           // O filtro simplificado garante que qualquer mudança no escopo do usuário invalide o cache
-          filter: scope === 'self' ? `user_id=eq.${userId}` : undefined,
+          filter: scope === 'self' ? `seller_id=eq.${userId}` : undefined,
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['quotes'] });

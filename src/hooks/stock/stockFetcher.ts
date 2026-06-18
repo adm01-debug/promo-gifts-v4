@@ -168,6 +168,31 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
 // PROCESSAMENTO DE DADOS
 // ============================================
 
+/**
+ * Pares (qtd × data) de reposições futuras de um supplier source.
+ *
+ * A tabela Ouro `variant_supplier_sources` expõe até SEIS slots
+ * (`next_quantity_1..6` / `next_date_1..6`). Centralizamos a extração aqui
+ * para que `buildFutureEntries` (lista global) e a montagem de
+ * `futureSegments` (por variação) leiam exatamente os mesmos slots — sem
+ * dropar silenciosamente as chegadas 4–6 (bug histórico: só 1–3 eram lidas).
+ */
+function nextStockPairs(s: ExternalSupplierSource): Array<{
+  q: number | null | undefined;
+  d: string | null | undefined;
+  suffix: string;
+  status: 'confirmed' | 'pending';
+}> {
+  return [
+    { q: s.next_quantity_1, d: s.next_date_1, suffix: '1', status: 'confirmed' },
+    { q: s.next_quantity_2, d: s.next_date_2, suffix: '2', status: 'pending' },
+    { q: s.next_quantity_3, d: s.next_date_3, suffix: '3', status: 'pending' },
+    { q: s.next_quantity_4, d: s.next_date_4, suffix: '4', status: 'pending' },
+    { q: s.next_quantity_5, d: s.next_date_5, suffix: '5', status: 'pending' },
+    { q: s.next_quantity_6, d: s.next_date_6, suffix: '6', status: 'pending' },
+  ];
+}
+
 function buildFutureEntries(
   supplierSource: ExternalSupplierSource,
   productId: string,
@@ -177,46 +202,7 @@ function buildFutureEntries(
   productSku?: string,
 ): FutureStockEntry[] {
   const entries: FutureStockEntry[] = [];
-  const pairs = [
-    {
-      q: supplierSource.next_quantity_1,
-      d: supplierSource.next_date_1,
-      suffix: '1',
-      status: 'confirmed' as const,
-    },
-    {
-      q: supplierSource.next_quantity_2,
-      d: supplierSource.next_date_2,
-      suffix: '2',
-      status: 'pending' as const,
-    },
-    {
-      q: supplierSource.next_quantity_3,
-      d: supplierSource.next_date_3,
-      suffix: '3',
-      status: 'pending' as const,
-    },
-    // BUG-STOCK-03 FIX: a schema tem next_quantity_4..6 / next_date_4..6.
-    // Antes só liamos 1..3, sumindo reposições futuras dos slots 4-6.
-    {
-      q: supplierSource.next_quantity_4,
-      d: supplierSource.next_date_4,
-      suffix: '4',
-      status: 'pending' as const,
-    },
-    {
-      q: supplierSource.next_quantity_5,
-      d: supplierSource.next_date_5,
-      suffix: '5',
-      status: 'pending' as const,
-    },
-    {
-      q: supplierSource.next_quantity_6,
-      d: supplierSource.next_date_6,
-      suffix: '6',
-      status: 'pending' as const,
-    },
-  ];
+  const pairs = nextStockPairs(supplierSource);
   for (const { q, d, suffix, status } of pairs) {
     // BUG-STOCK-01 FIX: falsy check `if (q && d)` would skip q=0.
     // Use explicit null/undefined check instead.
@@ -245,69 +231,66 @@ export async function fetchAndProcessStockData(): Promise<{
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
 }> {
-  const [
-    allProducts,
-    allVariants,
-    allSupplierSources,
-    allCategories,
-    allSuppliers,
-    allImages,
-  ] = await Promise.all([
-    fetchPaginatedFromBridge<ExternalProductWithVariants>(
-      'products',
-      'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
-      1000,
-      100000,
-      { active: true },
-    ),
-    fetchPaginatedFromBridge<ExternalVariantStock>(
-      'product_variants',
-      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
-      1000,
-      100000,
-      { is_active: true },
-    ),
-    fetchPaginatedFromBridge<ExternalSupplierSource>(
-      'variant_supplier_sources',
-      'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,next_quantity_4,next_date_4,next_quantity_5,next_date_5,next_quantity_6,next_date_6,is_active,updated_at',
-      1000,
-      100000,
-      { is_active: true },
-    ),
-    fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
-    fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
-      'suppliers',
-      'id,name,code',
-      1000,
-      100000,
-    ),
-    // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
-    // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
-    fetchPaginatedFromBridge<{
-      id: string;
-      product_id: string | null;
-      variant_id: string | null;
-      supplier_code: string | null;
-      url_cdn: string | null;
-      is_primary: boolean | null;
-      is_og_image: boolean | null;
-      image_type: string | null;
-    }>(
-      'product_images',
-      'id,product_id,variant_id,supplier_code,url_cdn,is_primary,is_og_image,image_type',
-      1000,
-      200000,
-    ).catch(() => [] as Array<{
-      id: string;
-      product_id: string | null;
-      variant_id: string | null;
-      supplier_code: string | null;
-      url_cdn: string | null;
-      is_primary: boolean | null;
-      is_og_image: boolean | null;
-      image_type: string | null;
-    }>),
-  ]);
+  const [allProducts, allVariants, allSupplierSources, allCategories, allSuppliers, allImages] =
+    await Promise.all([
+      fetchPaginatedFromBridge<ExternalProductWithVariants>(
+        'products',
+        'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
+        1000,
+        100000,
+        { active: true },
+      ),
+      fetchPaginatedFromBridge<ExternalVariantStock>(
+        'product_variants',
+        'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
+        1000,
+        100000,
+        { is_active: true },
+      ),
+      fetchPaginatedFromBridge<ExternalSupplierSource>(
+        'variant_supplier_sources',
+        'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,next_quantity_4,next_date_4,next_quantity_5,next_date_5,next_quantity_6,next_date_6,is_active,updated_at',
+        1000,
+        100000,
+        { is_active: true },
+      ),
+      fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+      fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
+        'suppliers',
+        'id,name,code',
+        1000,
+        100000,
+      ),
+      // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
+      // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
+      fetchPaginatedFromBridge<{
+        id: string;
+        product_id: string | null;
+        variant_id: string | null;
+        supplier_code: string | null;
+        url_cdn: string | null;
+        is_primary: boolean | null;
+        is_og_image: boolean | null;
+        image_type: string | null;
+      }>(
+        'product_images',
+        'id,product_id,variant_id,supplier_code,url_cdn,is_primary,is_og_image,image_type',
+        1000,
+        200000,
+      ).catch(
+        () =>
+          [] as Array<{
+            id: string;
+            product_id: string | null;
+            variant_id: string | null;
+            supplier_code: string | null;
+            url_cdn: string | null;
+            is_primary: boolean | null;
+            is_og_image: boolean | null;
+            image_type: string | null;
+          }>,
+      ),
+    ]);
 
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
@@ -343,7 +326,6 @@ export async function fetchAndProcessStockData(): Promise<{
   logger.log(
     `[Stock] Carregados: ${allProducts.length} produtos, ${allVariants.length} variantes, ${allSupplierSources.length} sources, ${allImages.length} imagens`,
   );
-
 
   const variantsByProduct = new Map<string, ExternalVariantStock[]>();
   allVariants.forEach((v) => {
@@ -384,19 +366,19 @@ export async function fetchAndProcessStockData(): Promise<{
         // Reservas não existem na camada Ouro (sem coluna reserved_quantity).
         const reservedStock = 0;
         let inTransitStock = 0;
+        const futureSegments: Array<{ quantity: number; date: string }> = [];
 
         if (supplierSource) {
-          // Soma apenas quantidades futuras positivas (defensivo: ignora 0/negativos/NaN),
-          // cobrindo os 6 slots de previsão da schema.
-          const addInTransit = (n?: number | null) => {
-            if (typeof n === 'number' && Number.isFinite(n) && n > 0) inTransitStock += n;
-          };
-          addInTransit(supplierSource.next_quantity_1);
-          addInTransit(supplierSource.next_quantity_2);
-          addInTransit(supplierSource.next_quantity_3);
-          addInTransit(supplierSource.next_quantity_4);
-          addInTransit(supplierSource.next_quantity_5);
-          addInTransit(supplierSource.next_quantity_6);
+          // Constrói segmentos granulares (qtd × data) preservando a data de
+          // CADA chegada (slots 1–6). `inTransitStock` mantém o total agregado
+          // (display), mas a janela de Estoque Futuro passa a somar por data
+          // via segmentos.
+          for (const { q, d } of nextStockPairs(supplierSource)) {
+            if (q !== null && q !== undefined && q > 0) {
+              inTransitStock += q;
+              if (d) futureSegments.push({ quantity: q, date: d });
+            }
+          }
           futureEntries.push(
             ...buildFutureEntries(
               supplierSource,
@@ -435,9 +417,9 @@ export async function fetchAndProcessStockData(): Promise<{
           daysUntilStockout: calculateDaysUntilStockout(availableStock),
           futureStock: inTransitStock > 0 ? inTransitStock : undefined,
           futureStockDate: supplierSource?.next_date_1 || undefined,
+          futureSegments: futureSegments.length > 0 ? futureSegments : undefined,
           updatedAt: pv.updated_at || product.updated_at || new Date().toISOString(),
         });
-
       });
 
       // Fallback: estoque no nivel do produto
@@ -522,4 +504,3 @@ export async function fetchAndProcessStockData(): Promise<{
   );
   return { productStocks: summaries, alerts, futureStock: futureEntries };
 }
-

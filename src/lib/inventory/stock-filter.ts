@@ -44,7 +44,6 @@ export interface FilterContext {
   minQtyIncludesFutureStock: boolean;
 }
 
-
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
@@ -65,8 +64,6 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
   };
 }
 
-
-
 // ---------- estágio 1: seleção de variações ----------
 export function selectMatchingVariants(
   product: ProductStockSummary,
@@ -77,7 +74,8 @@ export function selectMatchingVariants(
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
-    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN)) return false;
+    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN))
+      return false;
     return true;
   });
 }
@@ -162,7 +160,6 @@ export function buildStockIndexes(
   return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
 }
 
-
 // ---------- predicados auxiliares ----------
 function matchStatus(
   product: ProductStockSummary,
@@ -208,6 +205,22 @@ function matchSearch(
 }
 
 function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
+  // Caminho preferencial: quando há segmentos granulares (qtd × data),
+  // soma APENAS as chegadas cuja data cai dentro da janela. Evita o
+  // super/subdimensionamento de colapsar múltiplas datas num único total.
+  if (v.futureSegments && v.futureSegments.length > 0) {
+    let sum = 0;
+    for (const seg of v.futureSegments) {
+      const qty = seg?.quantity;
+      if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) continue;
+      if (!seg.date) continue;
+      const t = Date.parse(seg.date);
+      if (Number.isNaN(t) || t > cutoffMs) continue;
+      sum += qty;
+    }
+    return sum;
+  }
+  // Fallback (contrato de data única): total `futureStock` atrelado a uma só data.
   if (!v.futureStock || v.futureStock <= 0) return 0;
   const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
   if (!dateStr) return 0;
@@ -235,8 +248,6 @@ function matchMinQuantity(
   }
   return pool >= ctx.minQty;
 }
-
-
 
 // ---------- estágio 3: orquestrador ----------
 export function applyStockFilters(
@@ -298,7 +309,6 @@ export function applyStockFilters(
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
-
 
   return sortProducts(out, filters);
 }
