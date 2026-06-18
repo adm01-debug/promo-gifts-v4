@@ -224,8 +224,6 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['novelties-details', limit ?? 'all', onlyHighlighted],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
-
       // FIX (auditoria Novidades, P1-B): paginacao completa. Antes pedia
       // .range(0, limit-1) com limit fixo (o grid usava 400), truncando o
       // conjunto em silencio quando havia mais novidades ativas que o limite
@@ -244,7 +242,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         const { data, error } = await applyNoveltyQualityFilters(
           fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
         )
-          .gte('created_at', cutoff)
+          .eq('is_new', true)
           .order('created_at', { ascending: false })
           .order('id', { ascending: true })
           .range(from, from + want - 1);
@@ -302,7 +300,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
 /**
  * Hook para estatísticas de novidades — contagens 100% server-side, sem limite artificial.
  * Filtros de qualidade aplicados: is_stockout=false, sale_price>0, primary_image_url IS NOT NULL.
- * Alinha os counts do frontend com a pipeline DB (product_novelties).
+ * Alinha os counts do frontend com a fonte canonica is_new (product_novelties via trigger).
  */
 export function useNoveltyStats() {
   return useQuery<NoveltyStatsDisplay>({
@@ -349,8 +347,8 @@ export function useNoveltyStats() {
         qualityBase().gte('created_at', weekStart),
         // Últimos 15 dias
         qualityBase().gte('created_at', fifteenStart),
-        // Novidades ativas (últimos 30 dias)
-        qualityBase().gte('created_at', thirtyStart),
+        // Novidades ativas (canonico: is_new = product_novelties via trigger)
+        qualityBase().eq('is_new', true),
         // Expirando em breve
         qualityBase().gte('created_at', thirtyStart).lt('created_at', expiringSoonCutoff),
         // Total do catálogo ativo (sem filtros de qualidade — denominador real)
@@ -386,7 +384,7 @@ export function useNoveltyStats() {
           const { data: supPage, error: supPageErr } = await applyNoveltyQualityFilters(
             fromTable('products').select('supplier_id').eq('is_active', true),
           )
-            .gte('created_at', thirtyStart)
+            .eq('is_new', true)
             .order('id', { ascending: true })
             .range(supFrom, supFrom + SUP_PAGE - 1);
           if (supPageErr) {
@@ -470,7 +468,6 @@ export function useNovelties(
   return useQuery({
     queryKey: ['novelties-rpc', supplierCode, limit, maxDays],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
       let supplierId: string | undefined;
 
       if (supplierCode) {
@@ -487,7 +484,7 @@ export function useNovelties(
       let query = applyNoveltyQualityFilters(
         fromTable('products').select(NOVELTY_SELECT).eq('is_active', true),
       )
-        .gte('created_at', cutoff)
+        .eq('is_new', true)
         .order('created_at', { ascending: false })
         .order('id', { ascending: true })
         .range(0, limit - 1);
@@ -522,12 +519,10 @@ export function useNoveltyCount() {
   return useQuery<number>({
     queryKey: ['novelty-count'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
-
       const { count, error } = await applyNoveltyQualityFilters(
         fromTable('products').select('id', { count: 'exact' }).eq('is_active', true),
       )
-        .gte('created_at', cutoff)
+        .eq('is_new', true)
         .range(0, 0);
       if (error) {
         handleQueryError('useNovelties', 'products', error);
@@ -585,8 +580,6 @@ export function useNoveltyProductIds() {
   return useQuery<Set<string>>({
     queryKey: ['novelty-product-ids'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
-
       // BUGFIX (audit 200-commits, P1-1): substitui o cap silencioso .range(0,1999)
       // por paginacao completa. O PostgREST pode aplicar db-max-rows (~1000), entao
       // pedir 2000 numa tacada poderia truncar novidades em bursts de ingestao.
@@ -601,7 +594,7 @@ export function useNoveltyProductIds() {
         const { data, error } = await applyNoveltyQualityFilters(
           fromTable('products').select('id').eq('is_active', true),
         )
-          .gte('created_at', cutoff)
+          .eq('is_new', true)
           .order('id', { ascending: true }) // ordenacao estavel p/ paginacao deterministica
           .range(from, from + PAGE - 1);
         if (error) {
