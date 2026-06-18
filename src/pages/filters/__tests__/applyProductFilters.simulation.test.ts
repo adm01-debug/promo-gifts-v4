@@ -499,3 +499,301 @@ describe('SIM — interseção de filtros server-side com filtros locais', () =>
     expect(ids(out)).toEqual(['5']); // 5175 >= 50, sem teto (9999 é sentinel)
   });
 });
+
+// ---------------------------------------------------------------------------
+// Caminhos de ERRO — graça degradada (grade não zera em falha server-side)
+// ---------------------------------------------------------------------------
+describe('SIM — error gates: falha de servidor nunca zera a grade', () => {
+  it('metadataFilterError: grade intacta (não zera) quando RPC falha', () => {
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(), // RPC retornou vazio por erro
+      isLoadingMetadataFilter: false,
+      metadataFilterError: new Error('rpc timeout'),
+    });
+    // Com erro: não zera — grade completa retorna
+    expect(run(f({ datasComemorativas: ['natal'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('sizeFilterError: grade intacta quando query de tamanhos falha', () => {
+    const ctx = baseCtx({
+      hasSizeFilter: true,
+      sizeFilteredProductIds: new Set(),
+      isLoadingSizeFilter: false,
+      sizeFilterError: new Error('connection refused'),
+    });
+    expect(run(f({ sizes: ['M'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('categoryFilterError: grade intacta quando categories-api falha', () => {
+    const ctx = baseCtx({
+      hasCategoryFilter: true,
+      categoryFilteredProductIds: new Set(),
+      isLoadingCategoryFilter: false,
+      categoryFilterError: new Error('categories-api 503'),
+    });
+    expect(run(f(), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('cor: Set vazio + carregando = mantém (loading gate)', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: true,
+    });
+    expect(run(f(), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('material: Set vazio + carregando = mantém (loading gate)', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: true,
+    });
+    expect(run(f(), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('erro metadata + filtro local ativo: filtra local, NÃO server-side', () => {
+    // metadata server falhou; filtro local featured deve ainda funcionar
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(),
+      isLoadingMetadataFilter: false,
+      metadataFilterError: new Error('rpc error'),
+    });
+    // featured ainda funciona (filtro local)
+    const out = run(f({ featured: true }), ctx);
+    expect(ids(out)).toEqual(['1', '4']);
+  });
+
+  it('dois filtros server-side em erro simultâneo: nenhum zera a grade', () => {
+    const ctx = baseCtx({
+      hasCategoryFilter: true,
+      categoryFilteredProductIds: new Set(),
+      isLoadingCategoryFilter: false,
+      categoryFilterError: new Error('x'),
+      hasSizeFilter: true,
+      sizeFilteredProductIds: new Set(),
+      isLoadingSizeFilter: false,
+      sizeFilterError: new Error('y'),
+    });
+    expect(run(f({ sizes: ['M'], categories: ['cat-1'] }), ctx).length).toBe(CATALOG.length);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Filtros de vendas — promoSalesMap e supplierSalesMap
+// ---------------------------------------------------------------------------
+describe('SIM — filtros de vendas (promoSales90d e supplierSales90d)', () => {
+  const promoMap = new Map([
+    ['1', 50],
+    ['3', 120],
+    ['5', 8],
+  ]);
+  const supplierMap = new Map([
+    ['1', { depleted90d: 300, depleted30d: 100 }],
+    ['8', { depleted90d: 2000, depleted30d: 600 }],
+  ]);
+
+  it('minPromoSales90d filtra produtos abaixo do threshold', () => {
+    const ctx = baseCtx({ promoSales90dMap: promoMap });
+    const out = run(f({ minPromoSales90d: 100 }), ctx);
+    expect(ids(out)).toEqual(['3']); // apenas p3 tem 120 >= 100
+  });
+
+  it('minPromoSales90d=0 → não filtra (padrão)', () => {
+    const ctx = baseCtx({ promoSales90dMap: promoMap });
+    expect(run(f({ minPromoSales90d: 0 }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('minPromoSales90d sem map → não filtra (mapa ausente)', () => {
+    expect(run(f({ minPromoSales90d: 50 })).length).toBe(CATALOG.length);
+  });
+
+  it('minPromoSales90d com mapa vazio → não filtra', () => {
+    const ctx = baseCtx({ promoSales90dMap: new Map() });
+    expect(run(f({ minPromoSales90d: 50 }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('produto não presente no promoMap tem contagem=0 (abaixo de threshold)', () => {
+    const ctx = baseCtx({ promoSales90dMap: promoMap });
+    const out = run(f({ minPromoSales90d: 1 }), ctx);
+    // p2,4,6,7,8 não estão no mapa → excluídos; p1(50),p3(120),p5(8) passam
+    expect(ids(out)).toEqual(['1', '3', '5']);
+  });
+
+  it('minSupplierSales90d filtra pelo depleted90d do fornecedor', () => {
+    const ctx = baseCtx({ supplierSalesMap: supplierMap });
+    const out = run(f({ minSupplierSales90d: 1000 }), ctx);
+    expect(ids(out)).toEqual(['8']); // depleted90d=2000 >= 1000
+  });
+
+  it('supplierSalesMap: produto ausente tem depleted90d=0', () => {
+    const ctx = baseCtx({ supplierSalesMap: supplierMap });
+    const out = run(f({ minSupplierSales90d: 100 }), ctx);
+    expect(ids(out)).toEqual(['1', '8']); // 300 e 2000 >= 100
+  });
+
+  it('promoSales + supplierSales combinados: AND entre thresholds', () => {
+    const ctx = baseCtx({ promoSales90dMap: promoMap, supplierSalesMap: supplierMap });
+    // minPromo >= 40: p1(50), p3(120) | minSupplier >= 200: p1(300), p8(2000)
+    // intersecção: apenas p1 (aparece nos dois)
+    const out = run(f({ minPromoSales90d: 40, minSupplierSales90d: 200 }), ctx);
+    expect(ids(out)).toEqual(['1']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Metadata server-side (hasMetadataFilter) — comportamento do gate
+// ---------------------------------------------------------------------------
+describe('SIM — metadata server-side gate', () => {
+  it('hasMetadataFilter=true: bloco client-side endomarketing NÃO executa', () => {
+    // produto 5 tem tags.endomarketing=['onboarding'] → client-side acertaria
+    // mas com hasMetadataFilter=true, o bloco client-side é pulado
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(['1', '2']), // server diz apenas 1 e 2
+      isLoadingMetadataFilter: false,
+    });
+    // filtro endomarketing=['onboarding'] com server ativo → usa Set do server
+    const out = run(f({ endomarketing: ['onboarding'] }), ctx);
+    expect(ids(out)).toEqual(['1', '2']); // server Set, ignora client-side
+    expect(ids(out)).not.toContain('5'); // p5 está fora do server Set
+  });
+
+  it('hasMetadataFilter=true: bloco client-side publicoAlvo NÃO executa', () => {
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(['8']),
+      isLoadingMetadataFilter: false,
+    });
+    const out = run(f({ publicoAlvo: ['executivo'] }), ctx);
+    expect(ids(out)).toEqual(['8']); // server Set (p8 não tem tag executivo mas server decidiu)
+  });
+
+  it('hasMetadataFilter=false: bloco client-side publicoAlvo executa normalmente', () => {
+    // produto 5 tem tags.publicoAlvo=['executivo']
+    const out = run(f({ publicoAlvo: ['executivo'] }));
+    expect(ids(out)).toEqual(['5']);
+  });
+
+  it('hasMetadataFilter=true + Set vazio + carregando → mantém catálogo', () => {
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(),
+      isLoadingMetadataFilter: true,
+    });
+    expect(run(f({ datasComemorativas: ['natal'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('hasMetadataFilter=true + Set populado → intersecta com outros filtros locais', () => {
+    const ctx = baseCtx({
+      hasMetadataFilter: true,
+      metadataFilteredProductIds: new Set(['1', '4', '5']),
+      isLoadingMetadataFilter: false,
+    });
+    // metadata server retorna {1,4,5}; featured=true filtra localmente → {1,4}
+    const out = run(f({ featured: true }), ctx);
+    expect(ids(out)).toEqual(['1', '4']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cenários de regressão e casos extremos adicionais
+// ---------------------------------------------------------------------------
+describe('SIM — regressões e casos extremos adicionais', () => {
+  it('minStock com variações: produto com stock=0 mas variação G=3 passa com minStock=2', () => {
+    // produto 7: stock=0, variações [{P,0},{G,3}]
+    const out = run(f({ minStock: 2 }));
+    expect(ids(out)).toContain('7'); // variação G tem 3 >= 2
+  });
+
+  it('minStock com variações: produto 7 excluído com minStock=4 (max variação=3)', () => {
+    const out = run(f({ minStock: 4 }));
+    expect(ids(out)).not.toContain('7');
+  });
+
+  it('supplier match por supplier.id tem prioridade sobre nome', () => {
+    const out = run(f({ suppliers: ['sup-1'] }));
+    expect(ids(out)).toContain('8'); // supplier.id = 'sup-1'
+  });
+
+  it('busca vazia não filtra nada', () => {
+    expect(run(f({ search: '' })).length).toBe(CATALOG.length);
+  });
+
+  it('busca case-insensitive', () => {
+    expect(ids(run(f({ search: 'CANETA' })))).toEqual(['1']);
+    expect(ids(run(f({ search: 'Squeeze' })))).toEqual(['2']);
+  });
+
+  it('fuzzy ativo + sort=name: preserva ordem de relevância (não reordena)', () => {
+    const fuzzyResults = [CATALOG[2], CATALOG[0]]; // ordem de relevância
+    const ctx = baseCtx({ hasFuzzySearch: true, fuzzySearchResults: fuzzyResults });
+    const out = run(f({ sortBy: 'name' }), ctx);
+    expect(out[0].id).toBe('3'); // preserva ordem fuzzy, não reordena por nome
+    expect(out[1].id).toBe('1');
+  });
+
+  it('gender multi-value: produtos matching qualquer gênero da lista', () => {
+    const out = run(f({ gender: ['unissex', 'feminino'] }));
+    expect(ids(out)).toContain('1'); // unissex
+    expect(ids(out)).toContain('3'); // feminino
+    expect(ids(out)).not.toContain('4'); // sem gender definido
+  });
+
+  it('sizes legado: produto sem variações é excluído mesmo que tamanho coincida', () => {
+    // produto 1 não tem variações; tamanho M não casa
+    const out = run(f({ sizes: ['M'] }));
+    expect(ids(out)).not.toContain('1');
+    expect(ids(out)).toContain('3'); // tem variação M
+  });
+
+  it('técnicas ativas com techniquesDataAvailable=true filtra por metadata.techniques', () => {
+    const productWithTech = makeProduct({
+      id: 'tech-p',
+      name: 'Produto Técnica',
+      metadata: { techniques: ['serigrafia'] },
+    });
+    const run2 = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters([...CATALOG, productWithTech], filters, filters.sortBy, ctx);
+    const ctx = baseCtx({ techniquesDataAvailable: true });
+    const out = run2(f({ techniques: ['serigrafia'] }), ctx);
+    expect(ids(out)).toContain('tech-p');
+    // produtos sem técnica mas techniquesDataAvailable=true → NÃO excluídos (passa se metaTechs vazio)
+    expect(ids(out)).toContain('1'); // sem metadata.techniques → metaTechs=[] → passa
+  });
+
+  it('técnicas: produto com técnicas mas sem match é excluído', () => {
+    const productWithTech = makeProduct({
+      id: 'tech-p',
+      name: 'Produto Técnica',
+      metadata: { techniques: ['bordado'] },
+    });
+    const run2 = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters([...CATALOG, productWithTech], filters, filters.sortBy, ctx);
+    const ctx = baseCtx({ techniquesDataAvailable: true });
+    const out = run2(f({ techniques: ['serigrafia'] }), ctx);
+    expect(ids(out)).not.toContain('tech-p'); // bordado != serigrafia
+  });
+
+  it('pipeline completo: 8 filtros simultâneos retorna exatamente os corretos', () => {
+    // produto 8: AcmeCo, preço 89.9, hasCommercialPackaging, stock 50
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(['8', '1', '2', '3', '4', '5', '6', '7']),
+    });
+    const out = run(
+      f({
+        suppliers: ['acmeco'],
+        priceRange: [50, 200],
+        hasCommercialPackaging: true,
+        inStock: true,
+        minStock: 10,
+        sortBy: 'price-asc',
+      }),
+      ctx,
+    );
+    expect(ids(out)).toEqual(['8']);
+  });
+});

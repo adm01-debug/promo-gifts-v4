@@ -156,6 +156,16 @@ export default function FiltersPage() {
           }
           if (f.inStock) next.inStock = true;
           if (f.isKit) next.isKit = true;
+          // FIX-5: mapeamento estendido dos filtros de voz para FilterState
+          if (f.gender) next.gender = [...new Set([...prev.gender, f.gender])];
+          if (f.featured) next.featured = true;
+          if (f.isNew) next.isNew = true;
+          if (f.hasPersonalization) next.hasPersonalization = true;
+          if (f.onSale) next.onSale = true;
+          if (typeof f.minStock === 'number' && f.minStock > 0) next.minStock = f.minStock;
+          if (f.publicoAlvo) next.publicoAlvo = [...new Set([...prev.publicoAlvo, f.publicoAlvo])];
+          if (f.endomarketing)
+            next.endomarketing = [...new Set([...prev.endomarketing, 'endomarketing'])];
           return next;
         });
         toast.success(action.response);
