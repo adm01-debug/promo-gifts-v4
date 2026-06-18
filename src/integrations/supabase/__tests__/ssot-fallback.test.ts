@@ -77,7 +77,7 @@ describe('SSOT Supabase — fallback em runtime', () => {
       expect(url).not.toContain(FORBIDDEN);
     } else {
       // Fallback: valida via supabase client interno
-      const client = (mod as { supabase?: { supabaseUrl?: string } }).supabase;
+      const client = (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase;
       expect(client?.supabaseUrl ?? '').toContain(CANONICAL);
     }
   });

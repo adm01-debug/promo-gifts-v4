@@ -45,6 +45,17 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 const mockCurrentOrg = { id: 'org-abc', name: 'Promo Brindes' };
+
+// Full OrganizationContextType shape (interface is not exported); cast-free stub.
+const makeNullOrgContext = () => ({
+  organizations: [],
+  currentOrg: null,
+  currentRole: null,
+  isLoading: false,
+  switchOrganization: vi.fn(),
+  createOrganization: vi.fn(),
+  refetch: vi.fn(),
+});
 vi.mock('@/contexts/OrganizationContext', () => ({
   useOrganization: vi.fn(() => ({ currentOrg: mockCurrentOrg })),
 }));
@@ -92,7 +103,7 @@ beforeEach(() => {
 // ── useOrgData ────────────────────────────────────────────────────────────────
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
-        vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null });
+        vi.mocked(useOrganization).mockReturnValueOnce(makeNullOrgContext());
     
     const { result } = renderHook(
       () => useOrgData('products'),
@@ -178,7 +189,7 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-        vi.mocked(useOrganization).mockReturnValue({ currentOrg: null });
+        vi.mocked(useOrganization).mockReturnValue(makeNullOrgContext());
     
     const { result } = renderHook(
       () => useOrgCreate('products'),
