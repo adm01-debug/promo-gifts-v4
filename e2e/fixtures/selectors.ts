@@ -120,6 +120,13 @@ export const Sel = {
     listItemThumb: TID("product-list-item-thumb"),
     /** Thumb clicável na view de tabela (abre QuickView). */
     tableRowThumb: TID("product-table-row-thumb"),
+    /** Thumbs do QuickView em módulos satélite (Novidades / Reposição / Estoque). */
+    noveltyGridThumb: TID("novelty-grid-card-thumb"),
+    noveltyListThumb: TID("novelty-list-card-thumb"),
+    noveltyTableThumb: TID("novelty-table-row-thumb"),
+    replenishmentGridThumb: TID("replenishment-grid-card-thumb"),
+    replenishmentTableThumb: TID("replenishment-table-row-thumb"),
+    stockTableThumb: TID("stock-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
     /** Nome no detalhe do produto (ProductDetailHero h1). */
