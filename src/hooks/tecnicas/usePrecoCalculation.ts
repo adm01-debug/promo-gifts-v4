@@ -258,7 +258,7 @@ export function usePriceSimulator(productBasePrice: number = 0) {
 
   const selectedCalculation = useMemo(() => {
     if (!selectedTechniqueCode) return calculations[0] || null;
-    return calculations.find((c) => c.techniqueCode === selectedTechniqueCode) || null;
+    return calculations.find((c) => c.techniqueCode === selectedTechniqueCode) ?? null;
   }, [calculations, selectedTechniqueCode]);
 
   const totalWithProduct = useMemo(() => {

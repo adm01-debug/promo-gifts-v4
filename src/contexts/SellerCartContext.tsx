@@ -84,7 +84,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         ? carts[0].id
         : null;
 
-  const activeCart = carts.find((c) => c.id === resolvedActiveCartId) || null;
+  const activeCart = carts.find((c) => c.id === resolvedActiveCartId) ?? null;
 
   useEffect(() => {
     if (!user?.id) return;

@@ -206,7 +206,7 @@ export default function KitLibraryPage() {
   };
 
   const pinnedKit = useMemo(
-    () => myKits.find((k) => k.is_pinned && matchKit(k)) || null,
+    () => myKits.find((k) => k.is_pinned && matchKit(k)) ?? null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor],
   );

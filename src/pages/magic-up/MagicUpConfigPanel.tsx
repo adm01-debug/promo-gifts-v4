@@ -332,7 +332,7 @@ function ProductCard({ m }: { m: MagicUpStateReturn }) {
             <Select
               value={m.selectedTechnique?.id ?? ''}
               onValueChange={(v) =>
-                m.setSelectedTechnique(m.availableTechniques.find((t) => t.id === v) || null)
+                m.setSelectedTechnique(m.availableTechniques.find((t) => t.id === v) ?? null)
               }
             >
               <SelectTrigger className="h-9">

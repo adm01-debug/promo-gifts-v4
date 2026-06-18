@@ -158,7 +158,7 @@ export async function findBestMatch(params: {
   let tabelaAdequada: TabelaPrecoTecnica | null = null;
 
   if (colors) {
-    tabelaAdequada = tabelas.find((t) => t.maxCores !== null && t.maxCores >= colors) || null;
+    tabelaAdequada = tabelas.find((t) => t.maxCores !== null && t.maxCores >= colors) ?? null;
   }
 
   // Se não encontrou por cores, pegar a com mais cores disponível

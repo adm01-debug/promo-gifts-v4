@@ -114,7 +114,7 @@ export function PromptGenerator({
 
   const selectedArea = useMemo(() => {
     if (!selectedAreaId || !printAreas) return null;
-    return printAreas.find((a) => a.area_id === selectedAreaId) || null;
+    return printAreas.find((a) => a.area_id === selectedAreaId) ?? null;
   }, [selectedAreaId, printAreas]);
 
   const availableTechniques = useMemo(() => {
@@ -124,7 +124,7 @@ export function PromptGenerator({
 
   const selectedTech = useMemo(() => {
     if (!selectedTechId) return null;
-    return availableTechniques.find((t) => t.id === selectedTechId) || null;
+    return availableTechniques.find((t) => t.id === selectedTechId) ?? null;
   }, [selectedTechId, availableTechniques]);
 
   const locationLabel = useMemo(() => {

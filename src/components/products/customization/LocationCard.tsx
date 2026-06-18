@@ -108,13 +108,13 @@ export function LocationCard({
   // Get areas for the currently selected technique group
   const selectedTechGroup = useMemo(() => {
     if (!selectedGroupCode) return null;
-    return techniqueGroups.find((g) => g.groupCode === selectedGroupCode) || null;
+    return techniqueGroups.find((g) => g.groupCode === selectedGroupCode) ?? null;
   }, [techniqueGroups, selectedGroupCode]);
 
   // Get the selected area object for ConfigurationPanel
   const selectedArea = useMemo(() => {
     if (!selectedVariationId) return null;
-    return group.areas.find((a) => a.area_id === selectedVariationId) || null;
+    return group.areas.find((a) => a.area_id === selectedVariationId) ?? null;
   }, [group.areas, selectedVariationId]);
 
   // Step 2: Select technique group

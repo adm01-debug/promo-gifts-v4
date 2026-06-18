@@ -92,7 +92,7 @@ export default function CollectionDetailPage() {
   const { data: externalCollections = [] } = useExternalCollections();
   const externalCollection = useMemo(() => {
     if (localCollection) return null;
-    return externalCollections.find((c) => c.id === id) || null;
+    return externalCollections.find((c) => c.id === id) ?? null;
   }, [localCollection, externalCollections, id]);
 
   const isExternal = !!externalCollection;

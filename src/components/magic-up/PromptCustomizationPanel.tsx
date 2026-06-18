@@ -31,7 +31,7 @@ export function PromptCustomizationPanel({
 }: PromptCustomizationPanelProps) {
   const selectedArea = useMemo(() => {
     if (!selectedAreaId) return null;
-    return printAreas.find((a) => a.area_id === selectedAreaId) || null;
+    return printAreas.find((a) => a.area_id === selectedAreaId) ?? null;
   }, [selectedAreaId, printAreas]);
 
   const availableTechniques = useMemo(() => {
@@ -41,7 +41,7 @@ export function PromptCustomizationPanel({
 
   const selectedTech = useMemo(() => {
     if (!selectedTechId) return null;
-    return availableTechniques.find((t) => t.id === selectedTechId) || null;
+    return availableTechniques.find((t) => t.id === selectedTechId) ?? null;
   }, [selectedTechId, availableTechniques]);
 
   const locationLabel = useMemo(() => {

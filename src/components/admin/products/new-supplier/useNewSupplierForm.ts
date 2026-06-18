@@ -414,7 +414,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           cep ? `CEP ${cep}` : null,
         ]
           .filter(Boolean)
-          .join(', ') || null;
+          .join(', ') ?? null;
 
       // BUG-01 FIX: buildNotesField no longer serializes phone/fiscal data — those use dedicated columns
       const notesValue = buildNotesField(
@@ -690,5 +690,5 @@ function buildNotesField(
     parts.push(`[Transportadora: ${transportadoraPadrao.trim()}, ID: ${transportadoraId || '-'}]`);
   // NOTE: phone, phone2, inscricao_estadual, tax_regime, state_uf, social media
   // are NO LONGER serialized here — they use dedicated columns.
-  return parts.join('\n') || null;
+  return parts.join('\n') ?? null;
 }

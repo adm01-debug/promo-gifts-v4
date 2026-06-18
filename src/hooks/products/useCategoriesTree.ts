@@ -209,7 +209,7 @@ export function useCategorySelection(initialCategoryId?: string) {
   const [selectedId, setSelectedId] = useState<string | null>(initialCategoryId || null);
   const selectedCategory = useMemo(() => {
     if (!selectedId) return null;
-    return categories.find((cat) => cat.id === selectedId) || null;
+    return categories.find((cat) => cat.id === selectedId) ?? null;
   }, [categories, selectedId]);
   const breadcrumb = useMemo(() => {
     if (!selectedId) return [];

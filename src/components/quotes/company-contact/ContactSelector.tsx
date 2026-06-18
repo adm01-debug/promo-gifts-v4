@@ -22,7 +22,7 @@ export function ContactDropdown({
 }: ContactDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const selected = contacts.find((c) => c.id === contactId) || null;
+  const selected = contacts.find((c) => c.id === contactId) ?? null;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
