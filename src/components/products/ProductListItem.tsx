@@ -380,12 +380,28 @@ export const ProductListItem = memo(function ProductListItem({
         onClick={handleClick}
       >
         {/* Thumbnail — compact square */}
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]">
+        <div
+          className="group/thumb relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]"
+          role="button"
+          tabIndex={0}
+          aria-label={`Visualização rápida de ${product.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setQuickViewOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              setQuickViewOpen(true);
+            }
+          }}
+        >
           <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">
             <OptimizedImage
               src={thumbUrl}
               alt={product.name}
-              className="object-contain"
+              className="object-contain transition-transform duration-300 group-hover/thumb:scale-105"
               containerClassName="h-full w-full"
               urlOriginal={product.images?.[0]}
               priority={priority}
