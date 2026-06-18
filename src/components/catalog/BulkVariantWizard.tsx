@@ -129,7 +129,7 @@ function ProductVariantStep({
       <div className="space-y-4">
         <ProductHeader product={product} step={stepIndex} total={totalSteps} />
         <div className="grid grid-cols-2 gap-2">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>

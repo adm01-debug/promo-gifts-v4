@@ -27,7 +27,7 @@ export function EventsMultiSelect({ value, onChange }: Props) {
     const next = new Set(selected);
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    onChange(Array.from(next));
+    onChange([...next]);
   };
 
   const toggleGroup = (groupKeys: string[], allOn: boolean) => {
@@ -36,7 +36,7 @@ export function EventsMultiSelect({ value, onChange }: Props) {
       if (allOn) next.delete(k);
       else next.add(k);
     }
-    onChange(Array.from(next));
+    onChange([...next]);
   };
 
   const removeLegacy = (key: string) => {

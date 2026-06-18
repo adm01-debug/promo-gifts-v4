@@ -118,7 +118,7 @@ async function fetchHealth(): Promise<HealthData> {
   for (const r of rotations ?? []) {
     if (!lastBySecret.has(r.secret_name)) lastBySecret.set(r.secret_name, r.rotated_at);
   }
-  const staleSecrets = Array.from(lastBySecret.values()).filter((t) => t < ninetyDaysAgo).length;
+  const staleSecrets = [...lastBySecret.values()].filter((t) => t < ninetyDaysAgo).length;
 
   return {
     activeWebhooks: activeWebhooks ?? 0,
@@ -338,7 +338,7 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
         )}
         {isLoading || !data ? (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 5 }, (_, i) => (
               <div key={i} className="h-20 animate-pulse rounded-lg bg-muted/30" />
             ))}
           </div>

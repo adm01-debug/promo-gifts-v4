@@ -224,7 +224,7 @@ export function IncidentDetailsDrawer({ incident, open, onOpenChange }: Props) {
             </header>
             {isLoading || !data ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {Array.from({ length: 8 }).map((_, i) => (
+                {Array.from({ length: 8 }, (_, i) => (
                   <Skeleton key={i} className="h-16 rounded-lg" />
                 ))}
               </div>

@@ -190,11 +190,11 @@ export function useCatalogSelection(
   );
 
   const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
+    const ids = [...selectedIds];
     return paginatedProducts.filter((p) => ids.includes(p.id));
   }, [selectedIds, paginatedProducts]);
 
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? [...selectedIds][0] : '';
   const firstSelectedProduct = paginatedProducts.find((p) => p.id === firstSelectedId);
 
   const selectedTotalValue = useMemo(() => {

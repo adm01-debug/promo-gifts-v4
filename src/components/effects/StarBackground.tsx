@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 
 export const StarBackground = memo(function StarBackground() {
   const stars = useMemo(() => {
-    return Array.from({ length: 150 }).map((_, i) => ({
+    return Array.from({ length: 150 }, (_, i) => ({
       id: i,
       size: Math.random() * 2.5 + 0.5,
       top: `${Math.random() * 100}%`,

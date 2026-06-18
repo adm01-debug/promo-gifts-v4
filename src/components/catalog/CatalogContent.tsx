@@ -106,7 +106,7 @@ export const CatalogContent = memo(function CatalogContent({
     if (viewMode === 'list') {
       return (
         <div className="space-y-2" data-testid="catalog-list-skeleton">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 8 }, (_, i) => (
             <div
               key={i}
               className="duration-300 animate-in fade-in slide-in-from-left-2"

@@ -120,7 +120,7 @@ export function AppHealthDashboard() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {isLoading || !kpis ? (
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
+          Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-24 w-full" />)
         ) : (
           <>
             <KpiCard

@@ -16,8 +16,6 @@ export interface VariantStock {
   /** Imagem da variação quando disponível (fallback para a do produto pai). */
   imageUrl?: string;
 
-
-
   // Identificação da variação
   colorId?: string;
   colorName?: string;
@@ -424,7 +422,7 @@ export function aggregateVariantsToProduct(
     colorMap.get(colorKey)?.push(v);
   });
 
-  const availableColors: ColorStockInfo[] = Array.from(colorMap.entries()).map(
+  const availableColors: ColorStockInfo[] = [...colorMap.entries()].map(
     ([colorName, colorVariants]) => {
       const totalStock = colorVariants.reduce((sum, v) => sum + v.currentStock, 0);
       const availableStock = colorVariants.reduce((sum, v) => sum + v.availableStock, 0);

@@ -31,7 +31,7 @@ function FilterPanelSkeleton() {
     <div className="space-y-4 p-4">
       <Skeleton className="h-8 w-full" />
       <Skeleton className="h-6 w-3/4" />
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 6 }, (_, i) => (
         <Skeleton key={i} className="h-10 w-full" />
       ))}
     </div>

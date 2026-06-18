@@ -318,7 +318,7 @@ export function BridgeProductsPreviewPanel() {
               </thead>
               <tbody>
                 {isLoading && products.length === 0 ? (
-                  Array.from({ length: 5 }).map((_, i) => (
+                  Array.from({ length: 5 }, (_, i) => (
                     <tr key={`skel-${i}`} className="border-t">
                       <td colSpan={7} className="px-3 py-2">
                         <Skeleton className="h-5 w-full" />

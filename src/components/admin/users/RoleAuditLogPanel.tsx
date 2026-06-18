@@ -111,7 +111,7 @@ export function RoleAuditLogPanel() {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, full_name, email')
-          .in('user_id', Array.from(ids));
+          .in('user_id', [...ids]);
         (profiles ?? []).forEach((p) => {
           if (p.user_id) profilesMap.set(p.user_id, { ...p, user_id: p.user_id });
         });
