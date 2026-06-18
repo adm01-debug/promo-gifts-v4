@@ -20,9 +20,16 @@ interface CatalogFilteringOptions {
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
+  // Filtro de cor server-side (opcional p/ retrocompat com call sites/tests legados;
+  // o catálogo de produção sempre os fornece via useProductsByColor).
+  hasColorFilter?: boolean;
+  colorFilteredProductIds?: Set<string>;
+  isLoadingColorFilter?: boolean;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, number>;
 }
+
+const EMPTY_ID_SET: ReadonlySet<string> = new Set<string>();
 
 export function useCatalogFiltering({
   realProducts,
@@ -36,18 +43,13 @@ export function useCatalogFiltering({
   hasCategoryFilter,
   categoryFilteredProductIds,
   isLoadingCategoryFilter,
+  hasColorFilter = false,
+  colorFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingColorFilter = false,
   promoSalesMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
-  const colorFilterSet = useMemo(() => new Set(filters.colors), [filters.colors]);
-  const colorGroupSet = useMemo(() => new Set(filters.colorGroups), [filters.colorGroups]);
-  const colorVariationSet = useMemo(
-    () => new Set(filters.colorVariations),
-    [filters.colorVariations],
-  );
-  const hasColorFilters =
-    colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
   const categoryFilterSet = useMemo(
     () => new Set(filters.categories.map(String)),
     [filters.categories],
@@ -78,35 +80,16 @@ export function useCatalogFiltering({
 
     if (result.length === 0) return result;
 
-    // Optimized Color Filtering: Process once per product
-    if (hasColorFilters) {
-      const groupArray =
-        colorGroupSet.size > 0 ? Array.from(colorGroupSet).map((s) => s.toLowerCase()) : null;
-
-      result = result.filter((p) => {
-        if (!p.colors?.length) return false;
-
-        // Use for...of for slightly better performance on large sets
-        for (const c of p.colors) {
-          if (colorFilterSet.size > 0 && colorFilterSet.has(c.name)) return true;
-
-          if (colorVariationSet.size > 0) {
-            const vSlug = (c.variationSlug || '').toLowerCase().trim();
-            if (colorVariationSet.has(vSlug)) return true;
-          }
-
-          if (groupArray) {
-            const gSlug = (c.groupSlug || '').toLowerCase().trim();
-            const gName = (c.group || '').toLowerCase().trim();
-            const cName = (c.name || '').toLowerCase().trim();
-
-            if (colorGroupSet.has(gSlug) || colorGroupSet.has(gName)) return true;
-            // groupArray is small, so some is fine
-            if (groupArray.some((s) => cName.includes(s))) return true;
-          }
-        }
-        return false;
-      });
+    // Color Filtering (server-side): os ids vêm de useProductsByColor (resolve
+    // grupo/variação/cor → product_variants.color_id). Necessário porque os
+    // produtos lightweight chegam com colors:[] (enriquecimento é posterior),
+    // então inspecionar p.colors aqui zerava a grade. Padrão de categoria/material.
+    if (hasColorFilter && !isLoadingColorFilter) {
+      if (colorFilteredProductIds.size > 0) {
+        result = result.filter((p) => colorFilteredProductIds.has(p.id));
+      } else {
+        return [];
+      }
     }
 
     if (result.length === 0) return result;
@@ -181,6 +164,9 @@ export function useCatalogFiltering({
     filters.inStock,
     filters.isKit,
     filters.materiais,
+    // BUG-DEP FIX: hasCommercialPackaging era lido no corpo mas faltava nas deps
+    // → alternar "Embalagem comercial" não re-filtrava até outra dep mudar.
+    filters.hasCommercialPackaging,
     sortBy,
     hasFuzzySearch,
     fuzzySearchResults,
@@ -191,14 +177,13 @@ export function useCatalogFiltering({
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    hasColorFilter,
+    colorFilteredProductIds,
+    isLoadingColorFilter,
     promoSalesMap,
     supplierSalesMap,
-    colorFilterSet,
-    colorGroupSet,
-    colorVariationSet,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,
-    hasColorFilters,
   ]);
 }

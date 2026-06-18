@@ -117,7 +117,10 @@ export function ProductStatusBadge({
           return 'bg-[#FF1493] text-white font-bold shadow-[0_2px_8px_rgba(255,20,147,0.4)] ring-1 ring-white/20';
         }
         // Badge "Novidade X dias" (canto esquerdo) — cor por faixa, sempre legível
-        const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
+        // Clamp em 0: a view de novidades pode devolver days_remaining > 30
+        // (janela estendida / skew), o que produzia rótulos negativos
+        // ("Novidade -29 dias" / "Adicionado há -29 dias").
+        const daysElapsed = daysRemaining !== undefined ? Math.max(0, 30 - daysRemaining) : 0;
         if (daysElapsed <= 5) {
           // Recém-chegado — azul vívido
           return 'bg-[#2563EB] text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]';
@@ -191,7 +194,10 @@ export function ProductStatusBadge({
           </>
         );
       case 'novelty': {
-        const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
+        // Clamp em 0: a view de novidades pode devolver days_remaining > 30
+        // (janela estendida / skew), o que produzia rótulos negativos
+        // ("Novidade -29 dias" / "Adicionado há -29 dias").
+        const daysElapsed = daysRemaining !== undefined ? Math.max(0, 30 - daysRemaining) : 0;
         const label =
           daysElapsed === 0
             ? 'Novidade hoje!'
@@ -237,7 +243,10 @@ export function ProductStatusBadge({
   const getTooltipContent = () => {
     switch (type) {
       case 'novelty': {
-        const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
+        // Clamp em 0: a view de novidades pode devolver days_remaining > 30
+        // (janela estendida / skew), o que produzia rótulos negativos
+        // ("Novidade -29 dias" / "Adicionado há -29 dias").
+        const daysElapsed = daysRemaining !== undefined ? Math.max(0, 30 - daysRemaining) : 0;
         return (
           <div className="text-sm">
             <p className="font-semibold">🆕 Produto Novidade</p>
