@@ -185,11 +185,11 @@ export function useFiltersSelectionMode({
   );
 
   const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
+    const ids = [...selectedIds];
     return filteredProducts.filter((p) => ids.includes(p.id));
   }, [selectedIds, filteredProducts]);
 
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? [...selectedIds][0] : '';
   const firstSelectedProduct = filteredProducts.find((p) => p.id === firstSelectedId);
 
   return {

@@ -78,7 +78,7 @@ export default function KitTemplatesMetricsPage() {
           else counter.set(it.sku, { name: it.name, count: 1 });
         }
       }
-      return Array.from(counter.entries())
+      return [...counter.entries()]
         .map(([sku, v]) => ({ sku, name: v.name, count: v.count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 20);

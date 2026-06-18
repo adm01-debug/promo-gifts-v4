@@ -390,7 +390,7 @@ export function useProductImageGallery({
   );
 
   const handleFilesChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    await processUploadBatch(Array.from(e.target.files ?? []));
+    await processUploadBatch([...(e.target.files ?? [])]);
   };
 
   // P0 FIX: handleRemove now soft-deletes in external DB + cleans storage
@@ -558,7 +558,7 @@ export function useProductImageGallery({
       }
       setIsBulkUpdating(true);
       try {
-        const selectedList = Array.from(selectedUrls);
+        const selectedList = [...selectedUrls];
         const updates = selectedList
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
@@ -609,7 +609,7 @@ export function useProductImageGallery({
       setIsBulkUpdating(true);
       try {
         const variant = variantCode !== 'none' ? variantMap.get(variantCode) : null;
-        const selectedList = Array.from(selectedUrls);
+        const selectedList = [...selectedUrls];
         const updates = selectedList
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
@@ -661,7 +661,7 @@ export function useProductImageGallery({
     if (selectedUrls.size === 0) return;
     setIsBulkUpdating(true);
     try {
-      const toRemove = Array.from(selectedUrls);
+      const toRemove = [...selectedUrls];
       await Promise.all(toRemove.map((url) => removeStorageFileByUrl(url)));
       const extUpdates = toRemove
         .map((url) => extImageMap.get(url))
@@ -701,7 +701,7 @@ export function useProductImageGallery({
       e.stopPropagation();
       setIsDragOverZone(false);
       await processUploadBatch(
-        Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/')),
+        [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/')),
       );
     },
     [processUploadBatch],
@@ -723,7 +723,7 @@ export function useProductImageGallery({
       if (selectedUrls.size === 0 || !productId) return;
       setIsBulkUpdating(true);
       try {
-        const selectedList = Array.from(selectedUrls);
+        const selectedList = [...selectedUrls];
         const updates = selectedList
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);

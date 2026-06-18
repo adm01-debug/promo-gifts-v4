@@ -95,7 +95,7 @@ export function ProductVariantSelector({
       {/* ── Grouped by color with size chips ── */}
       {hasSizes && grouped ? (
         <div className="space-y-3">
-          {Array.from(grouped.entries()).map(([colorName, group]) => {
+          {[...grouped.entries()].map(([colorName, group]) => {
             const hex = group[0]?.hex;
             const anySelected = group.some((v) => selectedVariant?.code === v.code);
 

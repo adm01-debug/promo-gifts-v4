@@ -110,7 +110,7 @@ export function ImageFilterBar({
       {/* Variant filter row */}
       {filterMode === 'by-variant' && hasVariants && (
         <div className="flex flex-wrap gap-1.5 pl-1">
-          {Array.from(stats.byVariant.entries()).map(([code, count]) => {
+          {[...stats.byVariant.entries()].map(([code, count]) => {
             const variant = variantMap.get(code);
             return (
               <button

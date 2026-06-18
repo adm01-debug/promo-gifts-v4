@@ -41,7 +41,7 @@ export function useAdvancedPriceSearch() {
             : null;
       if (catName) cats.add(catName);
     });
-    return Array.from(cats).sort();
+    return [...cats].sort();
   }, [products]);
 
   const availableColors = useMemo(() => {
@@ -53,7 +53,7 @@ export function useAdvancedPriceSearch() {
         }
       });
     });
-    return Array.from(colorMap.values());
+    return [...colorMap.values()];
   }, [products]);
 
   const filteredProducts = useMemo((): ProductWithCalculatedPrice[] => {

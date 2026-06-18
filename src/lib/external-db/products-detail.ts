@@ -503,7 +503,7 @@ export async function fetchPromobrindCategories(): Promise<{ id: string; name: s
       if (p.category_id) uniqueIds.add(p.category_id);
       if (p.main_category_id) uniqueIds.add(p.main_category_id);
     });
-    return Array.from(uniqueIds).map((id) => ({ id, name: id }));
+    return [...uniqueIds].map((id) => ({ id, name: id }));
   }
 }
 
@@ -531,7 +531,7 @@ export async function fetchPromobrindColors(): Promise<
         });
       }
     });
-    return Array.from(uniqueColors.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    return [...uniqueColors.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   } catch (err) {
     if (err instanceof Error && (err.message.includes('410') || err.message.includes('Gone'))) {
       logger.warn('[products-detail] Bridge deprecated (410) for colors');

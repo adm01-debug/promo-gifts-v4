@@ -162,7 +162,7 @@ export default function KitLibraryPage() {
     templates.forEach((t) => {
       if (t.tag) set.add(t.tag);
     });
-    return Array.from(set).sort();
+    return [...set].sort();
   }, [myKits, templates]);
 
   const availableColors = useMemo(() => {
@@ -170,7 +170,7 @@ export default function KitLibraryPage() {
     myKits.forEach((k) => {
       if (k.color) set.add(k.color);
     });
-    return Array.from(set);
+    return [...set];
   }, [myKits]);
 
   const availableCategories = useMemo(() => {
@@ -178,7 +178,7 @@ export default function KitLibraryPage() {
     templates.forEach((t) => {
       if (t.category) set.add(t.category);
     });
-    return Array.from(set).sort();
+    return [...set].sort();
   }, [templates]);
 
   // Filters

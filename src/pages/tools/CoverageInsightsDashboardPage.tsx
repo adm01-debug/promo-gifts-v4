@@ -53,7 +53,7 @@ export default function CoverageInsightsDashboardPage() {
       map.set(key, list);
     });
 
-    return Array.from(map.entries())
+    return [...map.entries()]
       .map(([key, history]) => {
         const [module, route] = key.split('::');
         const sorted = history.sort((a, b) => a.date.localeCompare(b.date));

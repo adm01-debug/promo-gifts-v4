@@ -46,9 +46,9 @@ export function FocusTrap({
 
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
-    return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    ).filter((el) => el.offsetParent !== null);
+    return [...containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
+      (el) => el.offsetParent !== null,
+    );
   }, []);
 
   const focusFirst = useCallback(() => {
@@ -156,9 +156,9 @@ export function useFocusTrap(active: boolean = true) {
 
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
-    return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    ).filter((el) => el.offsetParent !== null);
+    return [...containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
+      (el) => el.offsetParent !== null,
+    );
   }, []);
 
   const focusFirst = useCallback(() => {

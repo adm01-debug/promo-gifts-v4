@@ -216,7 +216,7 @@ export function extractSizeOptions(tables: PriceTableInput[]): SizeOption[] {
   }
 
   // Ordenar por área
-  return Array.from(uniqueAreas.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
+  return [...uniqueAreas.values()].sort((a, b) => a.areaCm2 - b.areaCm2);
 }
 
 /**

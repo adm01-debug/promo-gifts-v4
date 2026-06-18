@@ -53,7 +53,7 @@ export function ImageStatsBar({ stats, hasPrimary, hasOgImage }: Props) {
           {stats.cfVerified}/{stats.total} no Cloudflare
         </span>
       )}
-      {Array.from(stats.byType.entries())
+      {[...stats.byType.entries()]
         .sort((a, b) => b[1] - a[1])
         .map(([type, count]) => {
           const info = IMAGE_TYPES.find((t) => t.value === type);

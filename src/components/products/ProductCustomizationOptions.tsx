@@ -138,7 +138,7 @@ export function ProductCustomizationOptions({
       }
 
       forceTick((n) => n + 1);
-      const items = Array.from(pricesRef.current.values());
+      const items = [...pricesRef.current.values()];
       onSelectionChange?.(items);
     },
     [options, onSelectionChange],
@@ -148,7 +148,7 @@ export function ProductCustomizationOptions({
 
   /** Calcula exclusividade circular ↔ plano. */
   const exclusion = useMemo(() => {
-    const confirmedCodes = Array.from(pricesRef.current.keys());
+    const confirmedCodes = [...pricesRef.current.keys()];
     const confirmedHasCircular = confirmedCodes.some((code) => {
       const l = locations.find((x) => x.location_code === code);
       return l ? isCircularLocation(l) : false;
@@ -359,7 +359,7 @@ export function ProductCustomizationOptions({
             </div>
 
             <div className="grid gap-2">
-              {Array.from(pricesRef.current.values()).map((item) => (
+              {[...pricesRef.current.values()].map((item) => (
                 <div
                   key={item.locationCode}
                   className="flex items-start justify-between rounded-lg border border-primary/10 bg-primary/5 p-2.5"

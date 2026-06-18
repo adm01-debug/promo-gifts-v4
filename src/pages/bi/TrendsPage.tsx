@@ -158,7 +158,7 @@ export default function TrendsPage() {
         productMap.set(key, existing);
       });
 
-      const enriched = Array.from(productMap.values()).map((p) => {
+      const enriched = [...productMap.values()].map((p) => {
         const score = calculateTrendingScore({
           recentCount: p.recentViews,
           baselineCount: p.baselineViews,
@@ -215,7 +215,7 @@ export default function TrendsPage() {
         }
       });
 
-      const currentArr: AggregatedSearch[] = Array.from(current.entries())
+      const currentArr: AggregatedSearch[] = [...current.entries()]
         .map(([term, d]) => ({
           term,
           count: d.count,
@@ -279,11 +279,11 @@ export default function TrendsPage() {
         const p = prev.get(d);
         if (p) p.searches += 1;
       });
-      const current = Array.from(cur.values()).map((d) => ({
+      const current = [...cur.values()].map((d) => ({
         ...d,
         dateLabel: format(new Date(d.date), 'dd/MM', { locale: ptBR }),
       }));
-      const previous = Array.from(prev.values()).map((p) => ({
+      const previous = [...prev.values()].map((p) => ({
         date: '',
         views: p.views,
         searches: p.searches,

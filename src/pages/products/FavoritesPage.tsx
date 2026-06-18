@@ -341,7 +341,7 @@ export default function FavoritesPage() {
   };
 
   const handleRemoveSelected = () => {
-    const ids = Array.from(selectedIds);
+    const ids = [...selectedIds];
     if (isRemoteListView) {
       ids.forEach((pid) => {
         const meta = noteMap.get(pid);

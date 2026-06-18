@@ -165,7 +165,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
           {/* Color grid by group */}
           <ScrollArea className="max-h-[280px]">
             <div className="space-y-3 pr-2">
-              {Array.from(groupedColors.entries()).map(([groupName, items]) => (
+              {[...groupedColors.entries()].map(([groupName, items]) => (
                 <div key={groupName}>
                   <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {groupName}

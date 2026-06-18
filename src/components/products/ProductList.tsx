@@ -167,7 +167,7 @@ export const ProductList = memo(function ProductList({
 
   const handleBulkCompare = useCallback(() => {
     if (!onToggleCompare) return;
-    const ids = Array.from(selectedIds).slice(0, 4);
+    const ids = [...selectedIds].slice(0, 4);
     ids.forEach((id) => {
       if (!isInCompare?.(id)) onToggleCompare(id);
     });
@@ -222,14 +222,14 @@ export const ProductList = memo(function ProductList({
   type SkeletonEntry = { id: string; isSkeleton: true };
   const displayProducts: Array<Product | SkeletonEntry> =
     isLoading && products.length === 0
-      ? Array.from({ length: 8 }).map((_, i) => ({
+      ? Array.from({ length: 8 }, (_, i) => ({
           id: `skeleton-${i}`,
           isSkeleton: true as const,
         }))
       : products;
 
   // Get first selected product for collection modal
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? [...selectedIds][0] : '';
   const firstSelectedProduct = products.find((p) => p.id === firstSelectedId);
 
   return (

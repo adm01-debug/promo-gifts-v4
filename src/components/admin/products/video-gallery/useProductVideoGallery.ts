@@ -548,9 +548,7 @@ export function useProductVideoGallery(productId?: string) {
       e.preventDefault();
       e.stopPropagation();
       setIsDragOver(false);
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        ACCEPTED_VIDEO_TYPES.includes(f.type),
-      );
+      const files = [...e.dataTransfer.files].filter((f) => ACCEPTED_VIDEO_TYPES.includes(f.type));
       if (files.length > 0) await processUploadBatch(files);
       else toast.error('Nenhum arquivo de vídeo válido encontrado');
     },
@@ -559,7 +557,7 @@ export function useProductVideoGallery(productId?: string) {
 
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? []);
+      const files = [...(e.target.files ?? [])];
       if (files.length > 0) await processUploadBatch(files);
       if (fileInputRef.current) fileInputRef.current.value = '';
     },
