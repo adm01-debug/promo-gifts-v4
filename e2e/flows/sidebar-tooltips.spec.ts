@@ -17,13 +17,24 @@ test.describe("Sidebar — tooltips comerciais (hover/unhover)", () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, "user");
     await gotoAndSettle(page, "/");
+
+    // Em viewports mobile a sidebar fica atrás de um hamburger.
+    // Abre o menu se ele não estiver visível.
+    const sidebar = page.locator('aside, [data-sidebar="sidebar"]').first();
+    if (!(await sidebar.isVisible().catch(() => false))) {
+      const openBtn = page.getByRole("button", { name: /abrir menu|menu/i }).first();
+      if (await openBtn.isVisible().catch(() => false)) {
+        await openBtn.click();
+        await sidebar.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+      }
+    }
   });
 
   test("hover mostra tooltip e mouse out o remove em todos os itens", async ({ page }) => {
     // Garante grupos expandidos: Catálogo + Orçamentos abrem por defaultOpen.
     // Pega todos os triggers de tooltip da sidebar.
     const triggers = page.locator(
-      'aside [data-tooltip-label], nav [data-tooltip-label]',
+      'aside [data-tooltip-label], nav [data-tooltip-label], [data-sidebar="sidebar"] [data-tooltip-label]',
     );
     const count = await triggers.count();
     expect(count, "deve existir ao menos 5 itens com tooltip visíveis").toBeGreaterThanOrEqual(5);
