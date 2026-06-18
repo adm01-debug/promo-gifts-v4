@@ -113,11 +113,16 @@ export function StockFilterToolbar({
     [filters],
   );
 
-  // Debounce search
+  // Search é commit-on-Enter / botão Busca (não há mais debounce).
+  // Mantém sincronia quando filtros são resetados externamente.
   useEffect(() => {
-    const t = setTimeout(() => onUpdateFilter('search', localSearch), 300);
-    return () => clearTimeout(t);
+    setLocalSearch(filters.search ?? '');
+  }, [filters.search]);
+
+  const commitSearch = useCallback(() => {
+    onUpdateFilter('search', localSearch);
   }, [localSearch, onUpdateFilter]);
+
 
   // Debounce quantity
   useEffect(() => {
