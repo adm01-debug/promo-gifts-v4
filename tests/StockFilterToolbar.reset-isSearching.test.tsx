@@ -27,39 +27,38 @@ describe('StockFilterToolbar — handleReset cancela isSearching', () => {
     vi.clearAllMocks();
   });
 
-  it('zera isSearching e remove aria-busy após Busca → Reset', async () => {
+  it('aria-busy alterna "false"→"true"→"false" em Busca + Reset', async () => {
     render(<StockFilterToolbar {...baseProps} />);
 
     const input = screen.getByPlaceholderText(/Buscar no Estoque/i);
     const searchBtn = screen.getByTestId('stock-search-button');
 
-    // 1) Digita e clica em Busca → entra em isSearching=true.
+    // Estado inicial: aria-busy="false".
+    expect(searchBtn).toHaveAttribute('aria-busy', 'false');
+
     fireEvent.change(input, { target: { value: 'caneca azul' } });
     expect(searchBtn).toBeEnabled();
 
     fireEvent.click(searchBtn);
 
-    // Estado intermediário: aria-busy=true (filters.search ainda não refletiu).
+    // Transição 1: false → true.
     await waitFor(() => {
       expect(searchBtn).toHaveAttribute('aria-busy', 'true');
     });
+    expect(screen.getByText(/Buscando…/i)).toBeInTheDocument();
 
-    // 2) Clica em Reset (botão X que aparece quando há filtros ativos
-    //    OU dentro do popover). Como activeFiltersCount muda apenas
-    //    após o pai responder, simulamos chamando o handler exposto
-    //    via o botão X do input (mais barato) — e ALÉM disso disparamos
-    //    o reset via prop para garantir o cenário completo.
+    // Reset rápido via X do input.
     const clearXInsideInput = screen.getByRole('button', { name: /Limpar busca/i });
     act(() => {
       fireEvent.click(clearXInsideInput);
     });
 
-    // 3) O fix garante: aria-busy volta a "false" imediatamente
-    //    (mesmo antes do fallback de 600ms).
+    // Transição 2: true → false (sem esperar fallback de 600ms).
     await waitFor(() => {
       expect(searchBtn).toHaveAttribute('aria-busy', 'false');
     });
     expect(screen.queryByText(/Buscando…/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Busca$/)).toBeInTheDocument();
   });
 
   it('Reset via prop (handleReset) também limpa o spinner sem esperar 600ms', async () => {

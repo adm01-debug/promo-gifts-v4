@@ -13,7 +13,9 @@ on:
       - 'src/hooks/stock/**'
       - 'src/types/stock.ts'
       - 'tests/**stock**'
+      - 'tests/StockFilterToolbar*.tsx'
       - 'e2e/routes/app/stock-*.spec.ts'
+      - 'e2e/admin/stock-*.spec.ts'
       - 'scripts/stock-benchmark.mjs'
       - '.github/workflows/stock-module-quality.yml'
   workflow_dispatch:
@@ -56,6 +58,7 @@ jobs:
             tests/stock-performance.test.ts \
             tests/StockFilterToolbar.field-order.test.tsx \
             tests/StockFilterToolbar.test.tsx \
+            tests/StockFilterToolbar.reset-isSearching.test.tsx \
             tests/StockStatCard.test.tsx \
             tests/stock-module.test.tsx \
             tests/stock-types.test.ts \
@@ -130,6 +133,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # As specs novas (stock-search-button / race-and-keyboard) precisam
+        # rodar pelo menos em chromium-authed (desktop) e mobile-chrome,
+        # conforme contrato dos testes (VIEWPORTS = desktop + mobile).
         project: [chromium-authed, firefox-authed, webkit-authed, mobile-chrome, mobile-safari]
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +155,9 @@ jobs:
             --project=${{ matrix.project }} \
             e2e/routes/app/stock-dashboard.spec.ts \
             e2e/routes/app/stock-filter-switching.spec.ts \
-            e2e/routes/app/stock-table-sticky.spec.ts
+            e2e/routes/app/stock-table-sticky.spec.ts \
+            e2e/admin/stock-search-button.spec.ts \
+            e2e/admin/stock-search-race-and-keyboard.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
