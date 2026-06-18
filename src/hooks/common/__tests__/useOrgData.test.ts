@@ -93,7 +93,7 @@ beforeEach(() => {
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
         vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null });
-    
+
     const { result } = renderHook(
       () => useOrgData('products'),
       { wrapper: makeWrapper() }
@@ -105,7 +105,7 @@ describe('useOrgData', () => {
   });
 
   it('adiciona filtro organization_id automaticamente', async () => {
-        const mockEqChain = vi.fn().mockResolvedValue({ data: [{ id: '1' }], error: null });
+    const mockEqChain = vi.fn().mockResolvedValue({ data: [{ id: '1' }], error: null });
     const mockEqOrg = vi.fn(() => ({ eq: mockEqChain }));
     mockSelect.mockReturnValue({ eq: mockEqOrg });
 
@@ -118,14 +118,13 @@ describe('useOrgData', () => {
   });
 
   it('aplica filtros extras via options.filters', async () => {
-        const mockEqExtra = vi.fn().mockResolvedValue({ data: [], error: null });
+    const mockEqExtra = vi.fn().mockResolvedValue({ data: [], error: null });
     const mockEqOrg = vi.fn(() => ({ eq: mockEqExtra }));
     mockSelect.mockReturnValue({ eq: mockEqOrg });
 
-    renderHook(
-      () => useOrgData('products', { filters: { is_active: true } }),
-      { wrapper: makeWrapper() }
-    );
+    renderHook(() => useOrgData('products', { filters: { is_active: true } }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(mockEqExtra).toHaveBeenCalledWith('is_active', true);
@@ -134,10 +133,9 @@ describe('useOrgData', () => {
 
   it('retorna dados do Supabase quando query bem-sucedida', async () => {
     // Mock default retorna [] já configurado no beforeEach
-    const { result } = renderHook(
-      () => useOrgData<{ id: string; name: string }>('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgData<{ id: string; name: string }>('products'), {
+      wrapper: makeWrapper(),
+    });
 
     // isSuccess indica que a query completou sem erro
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -147,10 +145,9 @@ describe('useOrgData', () => {
 
   it('configura queryKey com tableName + orgId', async () => {
     // O queryKey deve incluir o tableName e o id da org para cache correto
-    const { result } = renderHook(
-      () => useOrgData('categories', { filters: { type: 'main' } }),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgData('categories', { filters: { type: 'main' } }), {
+      wrapper: makeWrapper(),
+    });
     // A query inicia com estado pending (fetching)
     // O facto de não crashar é o teste aqui
     expect(result.current).toBeTruthy();
@@ -160,11 +157,7 @@ describe('useOrgData', () => {
 // ── useOrgCreate ──────────────────────────────────────────────────────────────
 describe('useOrgCreate', () => {
   it('injeta organization_id no payload', async () => {
-    
-    const { result } = renderHook(
-      () => useOrgCreate('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgCreate('products'), { wrapper: makeWrapper() });
 
     result.current.mutate({ name: 'Novo produto' } as never);
 
@@ -179,7 +172,7 @@ describe('useOrgCreate', () => {
 
   it('lança erro quando currentOrg=null', async () => {
         vi.mocked(useOrganization).mockReturnValue({ currentOrg: null });
-    
+
     const { result } = renderHook(
       () => useOrgCreate('products'),
       { wrapper: makeWrapper() }
@@ -196,11 +189,7 @@ describe('useOrgCreate', () => {
 // ── useOrgUpdate ──────────────────────────────────────────────────────────────
 describe('useOrgUpdate', () => {
   it('atualiza por id e chama toast.success', async () => {
-    
-    const { result } = renderHook(
-      () => useOrgUpdate('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgUpdate('products'), { wrapper: makeWrapper() });
 
     result.current.mutate({ id: 'p1', name: 'Atualizado' } as never);
 
@@ -213,11 +202,7 @@ describe('useOrgUpdate', () => {
 // ── useOrgDelete ──────────────────────────────────────────────────────────────
 describe('useOrgDelete', () => {
   it('deleta por id e chama toast.success', async () => {
-    
-    const { result } = renderHook(
-      () => useOrgDelete('products'),
-      { wrapper: makeWrapper() }
-    );
+    const { result } = renderHook(() => useOrgDelete('products'), { wrapper: makeWrapper() });
 
     result.current.mutate('p1');
 
@@ -230,11 +215,8 @@ describe('useOrgDelete', () => {
     mockDelete.mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: { message: 'Not found' } }),
     });
-    
-    const { result } = renderHook(
-      () => useOrgDelete('products'),
-      { wrapper: makeWrapper() }
-    );
+
+    const { result } = renderHook(() => useOrgDelete('products'), { wrapper: makeWrapper() });
 
     result.current.mutate('p-inexistente');
 
