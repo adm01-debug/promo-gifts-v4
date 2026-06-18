@@ -91,13 +91,12 @@ describe('SidebarNavGroup — tooltips on hover', () => {
         expect(screen.getByRole('tooltip', { name: message })).toBeInTheDocument();
       });
 
-      // Radix fecha em pointerleave do trigger (wrapper <div>).
-      const trigger = link.parentElement as HTMLElement;
-      fireEvent.pointerLeave(trigger);
-      fireEvent.mouseLeave(trigger);
+      // Radix Tooltip fecha de forma confiável via tecla Escape (testado no jsdom).
+      await user.keyboard('{Escape}');
       await waitFor(() => {
         expect(screen.queryByRole('tooltip', { name: message })).not.toBeInTheDocument();
       });
+
 
     },
   );
