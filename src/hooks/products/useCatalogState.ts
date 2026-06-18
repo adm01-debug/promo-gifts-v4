@@ -569,10 +569,17 @@ export function useCatalogState() {
     ? lastNonTransitionedProductsRef.current
     : filteredProducts;
 
-  const rawPaginatedProducts = useMemo(
-    () => displayFilteredProducts.slice(0, displayCount),
-    [displayFilteredProducts, displayCount],
-  );
+  const rawPaginatedProducts = useMemo(() => {
+    // Deduplica por ID antes de fatiar — produtos duplicados podem surgir em
+    // páginas adjacentes quando o sort não tem tiebreaker único (ex: name + id).
+    const seen = new Set<string>();
+    const deduped = displayFilteredProducts.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+    return deduped.slice(0, displayCount);
+  }, [displayFilteredProducts, displayCount]);
 
   const hasColorFilterActive =
     (filters.colorGroups?.length || 0) > 0 || (filters.colorVariations?.length || 0) > 0;
