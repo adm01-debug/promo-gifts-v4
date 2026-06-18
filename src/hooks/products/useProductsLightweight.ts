@@ -65,8 +65,7 @@ export function mapLightweightToProduct(
   const imageUrl = p.primary_image_url || p.primary_image_fallback_url || '/placeholder.svg';
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
-  // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda)
-  // quando disponível na view; cair em main_category_id → category_id como fallback.
+  // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda).
   const resolvedCategoryId = (p.leaf_category_id as string | undefined)
     || p.category_id
     || p.main_category_id;
@@ -148,7 +147,8 @@ export const PRODUCT_SELECT_LIGHTWEIGHT =
   'is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, ' +
   'created_at, gender, price_updated_at, ' +
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
-  // FIX BUG-D (2026-06-18): leaf category pré-computada em v_products_public
+  // FIX BUG-D (2026-06-18): leaf_category_id/name pré-computados em v_products_public
+  // via mv_product_leaf_category. Elimina o round-trip de useProductLeafCategories.
   'leaf_category_id, leaf_category_name, leaf_category_level';
 // FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
 // Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e

@@ -1,10 +1,13 @@
 /**
- * Hook para ranking de vendas por fornecedor (dados reais do BD).
+ * Hook para ranking de vendas por fornecedor (dados reais do BD externo).
+ * Consome mv_product_intelligence via RPC fn_get_product_intelligence_all()
+ * para obter turnover_score e avg_depletion_7d de TODOS os produtos.
+ * Cache de 10 minutos — dados de MV não mudam em tempo real.
  *
  * FIX BUG-A (2026-06-18): dbInvoke com limit:20000 usava PostgREST range()
- * truncado silenciosamente pelo max_rows=1000 do servidor. Resultado: 6 243/7 243
- * produtos (86%) com turnover_score=0 → sort 'best-seller-supplier' quebrado.
- * Corrigido via RPC fn_get_product_intelligence_all() que bypassa max_rows.
+ * e era silenciosamente truncado pelo max_rows=1000 do servidor, deixando
+ * 6 243/7 243 produtos (86%) com turnover_score=0 → sort 'best-seller-supplier'
+ * completamente quebrado. A RPC bypassa max_rows e retorna TODAS as 7 243 linhas.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -29,23 +32,39 @@ export interface SupplierSalesEntry {
   depleted90d: number;
 }
 
+/**
+ * Fetches supplier sales ranking via RPC fn_get_product_intelligence_all().
+ * Returns a Map<productId, SupplierSalesEntry> for use in sorting.
+ *
+ * Replaces the previous dbInvoke approach that was capped at 1 000 rows by
+ * PostgREST max_rows (Supabase default), leaving 6 243 products unranked.
+ */
 export function useSupplierSalesRanking() {
   return useQuery({
     queryKey: ['supplier-sales-ranking'],
     queryFn: async (): Promise<Map<string, SupplierSalesEntry>> => {
       try {
-        // FIX BUG-A: RPC bypassa db-max-rows=1000, retorna todas as 7 243 linhas.
-        const { data, error } = await supabase.rpc('fn_get_product_intelligence_all');
+        // FIX BUG-A: usar RPC que retorna todas as 7 243+ linhas sem limite.
+        // supabase.rpc() não é afetado por db-max-rows do PostgREST.
+        // RPC existe no DB canônico (Gold) mas types.ts gerado pelo Lovable pode não tê-la — cast pontual.
+        const { data, error } = await supabase.rpc('fn_get_product_intelligence_all' as never);
+
         if (error) {
           const msg = error.message ?? '';
-          if (msg.includes('not been populated') || msg.includes('does not exist') || msg.includes('não mapeada')) {
+          if (
+            msg.includes('not been populated') ||
+            msg.includes('does not exist') ||
+            msg.includes('não mapeada')
+          ) {
             logger.warn('[SupplierSalesRanking] MV not populated yet, returning empty map');
             return new Map();
           }
           throw error;
         }
-        const rows = (data ?? []) as ProductIntelligenceRanking[];
+
+        const rows = (data ?? []) as unknown as ProductIntelligenceRanking[];
         const map = new Map<string, SupplierSalesEntry>();
+
         for (const row of rows) {
           if (!row.product_id) continue;
           map.set(row.product_id, {
@@ -57,11 +76,18 @@ export function useSupplierSalesRanking() {
             depleted90d:   row.total_depleted_90d || 0,
           });
         }
-        logger.info(`[SupplierSalesRanking] Loaded ${map.size} products from mv_product_intelligence (RPC)`);
+
+        logger.info(
+          `[SupplierSalesRanking] Loaded ${map.size} products from mv_product_intelligence (RPC)`,
+        );
         return map;
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : '';
-        if (msg.includes('not been populated') || msg.includes('não mapeada') || msg.includes('does not exist')) {
+        if (
+          msg.includes('not been populated') ||
+          msg.includes('não mapeada') ||
+          msg.includes('does not exist')
+        ) {
           logger.warn('[SupplierSalesRanking] MV not populated yet, returning empty map');
           return new Map();
         }
