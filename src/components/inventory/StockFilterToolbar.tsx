@@ -609,10 +609,24 @@ export function StockFilterToolbar({
               variant="default"
               size="sm"
               className="shrink-0"
-              aria-label="Aplicar busca"
+              data-testid="stock-search-button"
+              // Habilitado quando há algo a buscar: texto digitado OU
+              // pelo menos um filtro ativo (status, categoria, fornecedor,
+              // cor, quantidade mínima). Loading desabilita.
+              disabled={
+                isSearching ||
+                (localSearch.trim() === '' && activeFiltersCount === 0)
+              }
+              aria-label="Aplicar busca no estoque"
+              aria-busy={isSearching}
+              title="Aplicar busca (Enter)"
             >
-              Busca
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              <span>{isSearching ? 'Buscando…' : 'Busca'}</span>
             </Button>
+
           </div>
         </StockHelpTooltip>
 
