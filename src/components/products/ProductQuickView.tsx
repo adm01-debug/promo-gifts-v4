@@ -514,6 +514,30 @@ export const ProductQuickView = React.memo(
                     </Button>
                   )}
 
+                  {onAddToQuote && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onAddToQuote(product)}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar ao orçamento"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {onAddToCollection && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onAddToCollection(product)}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar à coleção"
+                    >
+                      <FolderPlus className="h-4 w-4" />
+                    </Button>
+                  )}
+
                   {onShare && (
                     <Button
                       variant="outline"
