@@ -37,6 +37,7 @@ ALLOWLIST=(
   color_nuances
   kit_component_media
   kit_component_print_areas
+  mv_stock_velocity
   personalization_simulations
   personalization_techniques
   print_area_techniques

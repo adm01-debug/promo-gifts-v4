@@ -46,13 +46,14 @@ interface ExternalVariantStock {
   updated_at?: string;
 }
 
-interface ExternalSupplierSource {
+export interface ExternalSupplierSource {
   id: string;
   variant_id: string;
   supplier_id?: string;
   supplier_sku?: string;
   quantity: number;
-  reserved_quantity?: number;
+  // NOTA: a camada Ouro (variant_supplier_sources) NÃO possui coluna
+  // reserved_quantity. Reservas não são rastreadas aqui; availableStock == current.
   next_quantity_1?: number | null;
   next_date_1?: string | null;
   next_quantity_2?: number | null;
@@ -69,9 +70,45 @@ interface ExternalSupplierSource {
   updated_at?: string;
 }
 
+/**
+ * Linha de `mv_stock_velocity` (Ouro/Medallion) — velocidade real de baixa
+ * por variação, calculada a partir de `stock_snapshots`/movimentos. É a fonte
+ * canônica do "Risco de Ruptura" (média diária de baixa nos últimos 7/30/90d).
+ * O `id` é alias do PK (`variant_supplier_source_id`) para a paginação genérica.
+ */
+export interface ExternalStockVelocity {
+  id: string;
+  variant_id: string | null;
+  avg_daily_depletion_7d: number | null;
+  avg_daily_depletion_30d: number | null;
+}
+
 export function toNumber(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * Índice de baixa diária real por `variant_id`, a partir das linhas de
+ * `mv_stock_velocity`.
+ *
+ * Regras (SSOT do Risco de Ruptura):
+ *  - prioriza a média de 30 dias; cai para 7 dias quando 30d ainda não
+ *    consolidou (ex.: variação recém-criada);
+ *  - ignora valores ≤ 0, nulos ou não-finitos (ausência de sinal);
+ *  - com múltiplos sources por variação, mantém a MAIOR baixa (pior caso →
+ *    previsão de ruptura mais conservadora).
+ */
+export function buildVelocityIndex(rows: ExternalStockVelocity[]): Map<string, number> {
+  const index = new Map<string, number>();
+  for (const v of rows) {
+    if (!v?.variant_id) continue;
+    const daily = toNumber(v.avg_daily_depletion_30d, 0) || toNumber(v.avg_daily_depletion_7d, 0);
+    if (daily <= 0) continue;
+    const prev = index.get(v.variant_id) ?? 0;
+    if (daily > prev) index.set(v.variant_id, daily);
+  }
+  return index;
 }
 
 // ============================================
@@ -86,10 +123,19 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   filters?: Record<string, unknown>,
 ): Promise<T[]> {
   // PostgREST nativo (Caminho B). A `external-db-bridge` foi descontinuada (410 Gone).
+  //
+  // BUG-STOCK-04 FIX — Paginação por KEYSET (cursor em `id`), não offset/range.
+  // Raiz da contagem de variações inflada no dashboard (ex.: 22.620 vs ~18.4k):
+  // o PostgREST NÃO garante ordem estável entre requisições HTTP separadas.
+  // Com `.range()` e sem `.order()`, durante uma janela de escrita (sync de
+  // fornecedor XBZ/SPOT em product_variants) as páginas se sobrepõem → linhas
+  // duplicadas/saltadas → totais errados. Keyset (`order(id)` + `id > lastId`)
+  // é imune a reordenação de linhas existentes e a inserts concorrentes; o
+  // Set `seen` é cinto-e-suspensório contra qualquer duplicata residual.
   const all: T[] = [];
-  let offset = 0;
+  const seen = new Set<string>();
+  let lastId: string | null = null;
   let totalCount: number | null = null;
-  let lastFirstId: string | undefined;
 
   // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).
   const resolvedTable = (GOLD_READ_ALIASES as Record<string, string>)[table] ?? table;
@@ -97,7 +143,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   while (all.length < maxRecords) {
     let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(
       select,
-      offset === 0 ? { count: 'exact' } : undefined,
+      lastId === null ? { count: 'exact' } : undefined,
     );
 
     if (filters) {
@@ -108,7 +154,9 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
       }
     }
 
-    query = query.range(offset, offset + pageSize - 1);
+    // Cursor estável: ordena por id e busca a próxima página após o último id visto.
+    query = query.order('id', { ascending: true }).limit(pageSize);
+    if (lastId !== null) query = query.gt('id', lastId);
 
     const { data, error, count } = await query;
     if (error) {
@@ -129,23 +177,26 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     }
 
     const records = (data ?? []) as unknown as T[];
-    if (offset === 0 && typeof count === 'number') totalCount = count;
-
+    if (lastId === null && typeof count === 'number') totalCount = count;
     if (records.length === 0) break;
-    if (records[0]?.id === lastFirstId) {
-      logger.warn(`[Stock] Paginacao ignorando offset em ${table}; parando.`);
-      break;
+
+    for (const r of records) {
+      const rid = r?.id;
+      if (rid && !seen.has(rid)) {
+        seen.add(rid);
+        all.push(r);
+      }
     }
-    lastFirstId = records[0]?.id;
 
-    all.push(...records);
-    offset += records.length;
+    const nextCursor = records[records.length - 1]?.id ?? null;
+    // Segurança: se o cursor não avançou, paramos para não loopar.
+    if (nextCursor === null || nextCursor === lastId) break;
+    lastId = nextCursor;
 
-    if (totalCount !== null && offset >= totalCount) break;
-    if (totalCount === null && records.length < pageSize) break;
+    if (records.length < pageSize) break;
   }
 
-  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros`);
+  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros (keyset)`);
   return all;
 }
 
@@ -162,7 +213,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
  * `futureSegments` (por variação) leiam exatamente os mesmos slots — sem
  * dropar silenciosamente as chegadas 4–6 (bug histórico: só 1–3 eram lidas).
  */
-function nextStockPairs(s: ExternalSupplierSource): Array<{
+export function nextStockPairs(s: ExternalSupplierSource): Array<{
   q: number | null | undefined;
   d: string | null | undefined;
   suffix: string;
@@ -178,7 +229,7 @@ function nextStockPairs(s: ExternalSupplierSource): Array<{
   ];
 }
 
-function buildFutureEntries(
+export function buildFutureEntries(
   supplierSource: ExternalSupplierSource,
   productId: string,
   variantId: string,
@@ -216,72 +267,91 @@ export async function fetchAndProcessStockData(): Promise<{
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
 }> {
-  const [allProducts, allVariants, allSupplierSources, allCategories, allSuppliers, allImages] =
-    await Promise.all([
-      fetchPaginatedFromBridge<ExternalProductWithVariants>(
-        'products',
-        'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
-        1000,
-        100000,
-        { active: true },
-      ),
-      fetchPaginatedFromBridge<ExternalVariantStock>(
-        'product_variants',
-        'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
-        1000,
-        100000,
-        { is_active: true },
-      ),
-      fetchPaginatedFromBridge<ExternalSupplierSource>(
-        'variant_supplier_sources',
-        'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,next_quantity_4,next_date_4,next_quantity_5,next_date_5,next_quantity_6,next_date_6,is_active,updated_at',
-        1000,
-        100000,
-        { is_active: true },
-      ),
-      fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
-      fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
-        'suppliers',
-        'id,name,code',
-        1000,
-        100000,
-      ),
-      // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
-      // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
-      fetchPaginatedFromBridge<{
-        id: string;
-        product_id: string | null;
-        variant_id: string | null;
-        supplier_code: string | null;
-        url_cdn: string | null;
-        is_primary: boolean | null;
-        is_og_image: boolean | null;
-        image_type: string | null;
-      }>(
-        'product_images',
-        'id,product_id,variant_id,supplier_code,url_cdn,is_primary,is_og_image,image_type',
-        1000,
-        200000,
-      ).catch(
-        () =>
-          [] as Array<{
-            id: string;
-            product_id: string | null;
-            variant_id: string | null;
-            supplier_code: string | null;
-            url_cdn: string | null;
-            is_primary: boolean | null;
-            is_og_image: boolean | null;
-            image_type: string | null;
-          }>,
-      ),
-    ]);
+  const [
+    allProducts,
+    allVariants,
+    allSupplierSources,
+    allCategories,
+    allSuppliers,
+    allImages,
+    allVelocity,
+  ] = await Promise.all([
+    fetchPaginatedFromBridge<ExternalProductWithVariants>(
+      'products',
+      'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
+      1000,
+      100000,
+      { active: true },
+    ),
+    fetchPaginatedFromBridge<ExternalVariantStock>(
+      'product_variants',
+      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
+      1000,
+      100000,
+      { is_active: true },
+    ),
+    fetchPaginatedFromBridge<ExternalSupplierSource>(
+      'variant_supplier_sources',
+      'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,next_quantity_4,next_date_4,next_quantity_5,next_date_5,next_quantity_6,next_date_6,is_active,updated_at',
+      1000,
+      100000,
+      { is_active: true },
+    ),
+    fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+    fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
+      'suppliers',
+      'id,name,code',
+      1000,
+      100000,
+    ),
+    // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
+    // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
+    fetchPaginatedFromBridge<{
+      id: string;
+      product_id: string | null;
+      variant_id: string | null;
+      supplier_code: string | null;
+      url_cdn: string | null;
+      is_primary: boolean | null;
+      is_og_image: boolean | null;
+      image_type: string | null;
+    }>(
+      'product_images',
+      'id,product_id,variant_id,supplier_code,url_cdn,is_primary,is_og_image,image_type',
+      1000,
+      200000,
+    ).catch(
+      () =>
+        [] as Array<{
+          id: string;
+          product_id: string | null;
+          variant_id: string | null;
+          supplier_code: string | null;
+          url_cdn: string | null;
+          is_primary: boolean | null;
+          is_og_image: boolean | null;
+          image_type: string | null;
+        }>,
+    ),
+    // Velocidade real de baixa (mv_stock_velocity). Alimenta avgDailySales →
+    // Risco de Ruptura preditivo + dias-até-esgotar reais. Tolerante a falha:
+    // se a view não estiver disponível, caímos no comportamento sem velocidade.
+    fetchPaginatedFromBridge<ExternalStockVelocity>(
+      'mv_stock_velocity',
+      'id:variant_supplier_source_id,variant_id,avg_daily_depletion_7d,avg_daily_depletion_30d',
+      1000,
+      100000,
+    ).catch(() => [] as ExternalStockVelocity[]),
+  ]);
 
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
   allCategories.forEach((c) => categoryMap.set(c.id, c.name));
   const supplierMap = new Map<string, string>();
   allSuppliers.forEach((s) => supplierMap.set(s.id, s.name));
+
+  // Velocidade real por variação (mv_stock_velocity) → avgDailySales.
+  const velocityByVariant = buildVelocityIndex(allVelocity);
 
   // Index images. Priorizamos: is_og_image > is_primary > qualquer outra.
   const productImageByProductId = new Map<string, string>();
@@ -348,7 +418,8 @@ export async function fetchAndProcessStockData(): Promise<{
         // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
         // Use nullish coalescing to preserve intentional zero.
         const minStock = product.min_quantity ?? 10;
-        const reservedStock = supplierSource ? toNumber(supplierSource.reserved_quantity, 0) : 0;
+        // Reservas não existem na camada Ouro (sem coluna reserved_quantity).
+        const reservedStock = 0;
         let inTransitStock = 0;
         const futureSegments: Array<{ quantity: number; date: string }> = [];
 
@@ -378,6 +449,11 @@ export async function fetchAndProcessStockData(): Promise<{
         const availableStock = calculateAvailableStock(currentStock, reservedStock);
         const status = calculateStockStatus(currentStock, minStock, undefined, inTransitStock);
 
+        // Velocidade real → alimenta Risco de Ruptura e dias-até-esgotar.
+        // Sem sinal (variação nova/sem baixa) mantém o fallback histórico.
+        const avgDaily = velocityByVariant.get(pv.id);
+        const hasVelocity = typeof avgDaily === 'number' && avgDaily > 0;
+
         const variantImage =
           imageByVariantId.get(pv.id) ||
           (pv.color_code ? imageBySupplierCode.get(pv.color_code.toUpperCase()) : undefined) ||
@@ -398,7 +474,11 @@ export async function fetchAndProcessStockData(): Promise<{
           inTransitStock,
           availableStock,
           status,
-          daysUntilStockout: calculateDaysUntilStockout(availableStock),
+          avgDailySales: hasVelocity ? avgDaily : undefined,
+          daysUntilStockout: calculateDaysUntilStockout(
+            availableStock,
+            hasVelocity ? avgDaily : undefined,
+          ),
           futureStock: inTransitStock > 0 ? inTransitStock : undefined,
           futureStockDate: supplierSource?.next_date_1 || undefined,
           futureSegments: futureSegments.length > 0 ? futureSegments : undefined,

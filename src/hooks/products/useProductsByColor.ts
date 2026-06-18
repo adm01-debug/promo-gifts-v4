@@ -77,11 +77,20 @@ export function useProductsByColor({
         {
           table: 'color_variations',
           operation: 'select' as const,
-          select: 'id, name, slug, group_id',
+          select: 'id, name, slug, group_id, nuance_id',
           filters: { is_active: true },
           limit: 500,
           offset: 0,
           cacheKey: 'ref:color_variations',
+        },
+        {
+          table: 'color_nuances',
+          operation: 'select' as const,
+          select: 'id, name, slug',
+          filters: { is_active: true },
+          limit: 500,
+          offset: 0,
+          cacheKey: 'ref:color_nuances',
         },
       ];
 
@@ -112,7 +121,27 @@ export function useProductsByColor({
             targetColorIds.add((v as Record<string, unknown>).id as string);
       }
 
-      if (targetColorIds.size === 0 && colorNuances.length === 0) {
+      // FIX-NUANCE (2026-06-18): resolve nuances (color_nuances.slug) via
+      // color_variations.nuance_id -> variation ids -> product_variants.color_id.
+      // Antes, colorNuances era IGNORADO: nuance sozinha zerava (targetColorIds vazio)
+      // e nuance combinada era silenciosamente descartada. Semantica OR (uniao),
+      // consistente com group/variation/color dentro do mesmo bloco de cor.
+      if (colorNuances.length > 0) {
+        const nuancesData = (refResults[2]?.records || []) as Record<string, unknown>[];
+        const nuanceIdBySlug = new Map(nuancesData.map((n) => [n.slug as string, n.id as string]));
+        const targetNuanceIds = new Set<string>();
+        for (const slug of colorNuances) {
+          const nid = nuanceIdBySlug.get(slug);
+          if (nid) targetNuanceIds.add(nid);
+        }
+        for (const v of variationsData) {
+          const nid = (v as Record<string, unknown>).nuance_id as string | null;
+          if (nid && targetNuanceIds.has(nid))
+            targetColorIds.add((v as Record<string, unknown>).id as string);
+        }
+      }
+
+      if (targetColorIds.size === 0) {
         setProductIds(new Set());
         lastFetchedKey.current = filterKey;
         return;

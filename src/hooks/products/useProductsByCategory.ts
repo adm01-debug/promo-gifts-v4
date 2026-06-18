@@ -88,6 +88,11 @@ export function useProductsByCategory({
       logger.error('Erro ao buscar produtos por categoria:', err);
       setError(message);
       setProductIds(new Set());
+      // Marca a chave como tentada mesmo em erro: sem isto, o effect (key !==
+      // lastFetchedKey) re-disparava a cada render — e como fetchProductIds tem
+      // identidade instável (categoryIds nas deps) — gerando refetch infinito
+      // enquanto a categories-api estiver fora. Retry manual via refetch().
+      lastFetchedKey.current = categoryIdsKey;
     } finally {
       setIsLoading(false);
       isFetchingRef.current = false;

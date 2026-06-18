@@ -8,6 +8,8 @@ import {
   useSuppliers,
 } from '@/hooks/products';
 import { useRamoAtividadeFilter } from '@/hooks/crm';
+import { usePublicoAlvoOptions } from '@/hooks/products/usePublicoAlvoOptions';
+import { useAvailableSizes } from '@/hooks/products/useProductsBySize';
 import type { FilterState, FilterPanelProps } from './types';
 
 export function useFilterPanelState(
@@ -61,11 +63,11 @@ export function useFilterPanelState(
 
   const { data: categoryIcons = [] } = useCategoryIcons();
 
-  const publicoAlvoOptions = useMemo(() => {
-    const set = new Set<string>();
-    products?.forEach((p) => p.tags?.publicoAlvo?.forEach((v) => set.add(v)));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products]);
+  // BUG-DB-03 FIX (2026-06-18): opcoes de Publico-Alvo vinham de products.tags.publicoAlvo,
+  // que o catalogo lightweight nunca hidrata (secao ficava eternamente vazia). Agora vem do
+  // SSOT v_super_filtro_options (filtro_tipo=target_audience) -> mesmos slugs que a RPC
+  // fn_super_filtro_product_ids casa contra products.target_audience.
+  const publicoAlvoOptions = usePublicoAlvoOptions();
 
   const endomarketingOptions = useMemo(() => {
     const set = new Set<string>();
@@ -91,6 +93,8 @@ export function useFilterPanelState(
 
   const { techniqueOptions, tagOptions } = useAdvancedFilters();
   const { suppliers: supplierOptions, isLoading: suppliersLoading } = useSuppliers();
+  // SF-E: tamanhos disponíveis vêm de product_variants (catálogo leve não traz variações).
+  const { sizes: availableSizes } = useAvailableSizes();
 
   const {
     groups: materialGroups,
@@ -233,7 +237,7 @@ export function useFilterPanelState(
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
-      
+
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
       fornecedores: filters.suppliers?.length || 0,
       publico: filters.publicoAlvo?.length || 0,
@@ -301,6 +305,7 @@ export function useFilterPanelState(
     tagOptions,
     supplierOptions,
     suppliersLoading,
+    availableSizes,
     materialGroups,
     allMaterials,
     materialsLoading,
