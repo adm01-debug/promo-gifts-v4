@@ -8,6 +8,8 @@ import {
   ChevronRight,
   BarChart2,
   Share2,
+  FileText,
+  FolderPlus,
 } from 'lucide-react';
 import {
   Dialog,
