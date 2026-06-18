@@ -143,7 +143,12 @@ export function applyProductFilters(
       }),
     );
   }
-  if (filters.endomarketing.length > 0) {
+  // BUG-DB-07 FIX (2026-06-18): gate !hasMetadataFilter, consistente com publicoAlvo,
+  // datasComemorativas e ramosAtividade. Sem o gate, um URL ?endomarketing=X com
+  // hasMetadataFilter=true zeraria a grade (tags.endomarketing vazio no catálogo leve).
+  // Quando metadata filter está ativo, a RPC fn_super_filtro_product_ids cobre
+  // todos os metadados; o bloco client-side é corretamente ignorado.
+  if (!hasMetadataFilter && filters.endomarketing.length > 0) {
     const eSet = new Set(filters.endomarketing.map((e) => e.toLowerCase()));
     result = result.filter((product) =>
       (product.tags?.endomarketing || []).some((t: string) => eSet.has(t.toLowerCase())),
