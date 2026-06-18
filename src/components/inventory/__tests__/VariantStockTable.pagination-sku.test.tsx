@@ -22,22 +22,27 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(), vi.fn()],
   Link: (p: { children: React.ReactNode }) => p.children,
 }));
+// QuickViewThumb calls useQuery internally — stub to avoid needing QueryClientProvider.
+vi.mock('@/components/products/QuickViewThumb', () => ({
+  QuickViewThumb: () => null,
+}));
 
-const mkVariant = (i: number): VariantStock => ({
-  id: `v${i}`,
-  productId: 'p1',
-  variantId: `v${i}`,
-  variantSku: `SKU-${i}`,
-  colorName: `Cor ${i}`,
-  colorHex: '#abc',
-  currentStock: 100,
-  minStock: 10,
-  reservedStock: 0,
-  inTransitStock: 0,
-  availableStock: 100,
-  status: 'in_stock',
-  updatedAt: '2026-01-01',
-} as VariantStock);
+const mkVariant = (i: number): VariantStock =>
+  ({
+    id: `v${i}`,
+    productId: 'p1',
+    variantId: `v${i}`,
+    variantSku: `SKU-${i}`,
+    colorName: `Cor ${i}`,
+    colorHex: '#abc',
+    currentStock: 100,
+    minStock: 10,
+    reservedStock: 0,
+    inTransitStock: 0,
+    availableStock: 100,
+    status: 'in_stock',
+    updatedAt: '2026-01-01',
+  }) as VariantStock;
 
 const product: ProductStockSummary = {
   productId: 'p1',
