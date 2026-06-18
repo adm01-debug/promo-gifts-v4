@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
@@ -62,6 +63,15 @@ function formatRelativeTime(date: Date, now: number): string {
   if (diffH < 24) return `há ${diffH} h`;
   const diffD = Math.floor(diffH / 24);
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
+}
+
+function HeaderSlotPortal({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setSlot(document.getElementById('stock-header-slot'));
+  }, []);
+  if (!slot) return null;
+  return createPortal(children, slot);
 }
 
 export function StockDashboard() {
@@ -316,29 +326,31 @@ export function StockDashboard() {
           )}
         </div>
 
-        <div
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-          title={lastRefresh.toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })}
-          aria-live="polite"
-        >
-          <Clock className="h-3.5 w-3.5" />
-          <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
-          <span className="text-muted-foreground/60">
-            ·{' '}
-            {lastRefresh.toLocaleTimeString('pt-BR', {
+        <HeaderSlotPortal>
+          <div
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            title={lastRefresh.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
               hour: '2-digit',
               minute: '2-digit',
+              second: '2-digit',
             })}
-          </span>
-          {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-        </div>
+            aria-live="polite"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
+            <span className="text-muted-foreground/60">
+              ·{' '}
+              {lastRefresh.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+            {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+          </div>
+        </HeaderSlotPortal>
       </div>
 
       {/* Summary Cards — clickable filters */}
