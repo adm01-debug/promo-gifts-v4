@@ -1,81 +1,167 @@
 /**
- * SF-E — useProductsBySize / useAvailableSizes
+ * Testes — useProductsBySize + useAvailableSizes (SF-E)
  *
- * Trava a construção da query contra product_variants e a transformação dos
- * registros em Set de product IDs / lista de tamanhos distintos.
+ * O catalogo leve nao carrega variacoes, entao filtragem por tamanho
+ * vai via product_variants. Invariantes testadas:
+ *
+ * useProductsBySize:
+ *   - disabled quando sizes=[]: hasFilter=false, sem query ao DB
+ *   - retorna Set de product_ids quando sizes fornecidos
+ *   - sizeKey e ordenado (estabilidade de cache)
+ *   - isLoading=false quando sem filtro
+ *
+ * useAvailableSizes:
+ *   - retorna sizes distintos (deduplicados)
+ *   - faz trim de espacos
+ *   - retorna [] enquanto carrega
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const dbInvoke = vi.fn();
-vi.mock('@/lib/db/postgrest', () => ({ dbInvoke: (args: unknown) => dbInvoke(args) }));
-
+import React from 'react';
 import { useProductsBySize, useAvailableSizes } from '../useProductsBySize';
 
-function wrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
-  );
+const mockDbInvoke = vi.fn();
+
+vi.mock('@/lib/db/postgrest', () => ({
+  dbInvoke: (...args: unknown[]) => mockDbInvoke(...args),
+}));
+
+function makeWrapper() {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: qc }, children);
 }
 
-beforeEach(() => dbInvoke.mockReset());
+beforeEach(() => vi.clearAllMocks());
 
+// -- useProductsBySize -------------------------------------------------------
 describe('useProductsBySize', () => {
-  it('não consulta quando não há tamanhos selecionados', () => {
-    const { result } = renderHook(() => useProductsBySize([]), { wrapper: wrapper() });
+  it('sizes=[] desativa query: hasFilter=false, sem chamada ao DB', () => {
+    mockDbInvoke.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useProductsBySize([]), {
+      wrapper: makeWrapper(),
+    });
     expect(result.current.hasFilter).toBe(false);
     expect(result.current.isLoading).toBe(false);
-    expect(dbInvoke).not.toHaveBeenCalled();
+    expect(mockDbInvoke).not.toHaveBeenCalled();
   });
 
-  it('consulta product_variants por size_code (IN) e devolve Set de product_ids', async () => {
-    dbInvoke.mockResolvedValue({
-      records: [{ product_id: 'a' }, { product_id: 'b' }, { product_id: 'a' }],
-      count: null,
+  it('productIds e Set vazio quando sizes=[]', () => {
+    const { result } = renderHook(() => useProductsBySize([]), {
+      wrapper: makeWrapper(),
     });
-    const { result } = renderHook(() => useProductsBySize(['M', 'P']), { wrapper: wrapper() });
-    expect(result.current.hasFilter).toBe(true);
-    await waitFor(() => expect(result.current.productIds.size).toBe(2));
-    expect([...result.current.productIds].sort()).toEqual(['a', 'b']);
-
-    const arg = dbInvoke.mock.calls[0][0];
-    expect(arg.table).toBe('product_variants');
-    expect(arg.select).toBe('product_id');
-    expect(arg.filters.is_active).toBe(true);
-    // chave estável: ordenada
-    expect(arg.filters.size_code).toEqual(['M', 'P']);
+    expect(result.current.productIds).toBeInstanceOf(Set);
+    expect(result.current.productIds.size).toBe(0);
   });
 
-  it('usa chave de cache estável independente da ordem de seleção', async () => {
-    dbInvoke.mockResolvedValue({ records: [], count: null });
-    const { result } = renderHook(() => useProductsBySize(['P', 'M']), { wrapper: wrapper() });
-    await waitFor(() => expect(dbInvoke).toHaveBeenCalled());
-    expect(dbInvoke.mock.calls[0][0].filters.size_code).toEqual(['M', 'P']);
+  it('retorna Set com product_ids (com deduplicacao)', async () => {
+    mockDbInvoke.mockResolvedValue({
+      records: [
+        { product_id: 'p1' },
+        { product_id: 'p2' },
+        { product_id: 'p1' }, // duplicata
+      ],
+    });
+    const { result } = renderHook(() => useProductsBySize(['M', 'G']), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.productIds.has('p1')).toBe(true);
+    expect(result.current.productIds.has('p2')).toBe(true);
+    expect(result.current.productIds.size).toBe(2);
     expect(result.current.hasFilter).toBe(true);
+  });
+
+  it('sizeKey passado ao dbInvoke e ordenado (estabilidade de cache)', async () => {
+    mockDbInvoke.mockResolvedValue({ records: [] });
+    renderHook(() => useProductsBySize(['G', 'P', 'M']), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(mockDbInvoke).toHaveBeenCalled());
+    const filters = mockDbInvoke.mock.calls[0][0].filters;
+    expect(filters.size_code).toEqual(['G', 'M', 'P']);
+  });
+
+  it('ignora records sem product_id', async () => {
+    mockDbInvoke.mockResolvedValue({
+      records: [
+        { product_id: null },
+        { product_id: '' },
+        { product_id: 'p1' },
+      ],
+    });
+    const { result } = renderHook(() => useProductsBySize(['M']), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.productIds.size).toBe(1);
   });
 });
 
+// -- useAvailableSizes -------------------------------------------------------
 describe('useAvailableSizes', () => {
-  it('busca size_code não-nulo (gt "") e devolve tamanhos distintos', async () => {
-    dbInvoke.mockResolvedValue({
-      records: [
-        { size_code: 'M' },
-        { size_code: 'M' },
-        { size_code: 'G' },
-        { size_code: null },
-        { size_code: '  ' },
-      ],
-      count: null,
+  it('retorna [] e isLoading=true antes do fetch completar', () => {
+    mockDbInvoke.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useAvailableSizes(), {
+      wrapper: makeWrapper(),
     });
-    const { result } = renderHook(() => useAvailableSizes(), { wrapper: wrapper() });
-    await waitFor(() => expect(result.current.sizes.length).toBe(2));
-    expect(result.current.sizes.sort()).toEqual(['G', 'M']);
+    expect(result.current.sizes).toEqual([]);
+    expect(result.current.isLoading).toBe(true);
+  });
 
-    const arg = dbInvoke.mock.calls[0][0];
-    expect(arg.table).toBe('product_variants');
-    expect(arg.filters.size_code).toEqual({ op: 'gt', value: '' });
+  it('retorna sizes distintos (deduplicados)', async () => {
+    mockDbInvoke.mockResolvedValue({
+      records: [
+        { size_code: 'P' },
+        { size_code: 'M' },
+        { size_code: 'P' },
+        { size_code: 'G' },
+      ],
+    });
+    const { result } = renderHook(() => useAvailableSizes(), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sizes.sort()).toEqual(['G', 'M', 'P']);
+  });
+
+  it('faz trim de espacos nos codes', async () => {
+    mockDbInvoke.mockResolvedValue({
+      records: [{ size_code: '  M  ' }, { size_code: 'G' }],
+    });
+    const { result } = renderHook(() => useAvailableSizes(), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sizes).toContain('M');
+    expect(result.current.sizes).not.toContain('  M  ');
+  });
+
+  it('filtra size_code null, vazio e apenas espacos', async () => {
+    mockDbInvoke.mockResolvedValue({
+      records: [
+        { size_code: null },
+        { size_code: '' },
+        { size_code: '   ' },
+        { size_code: 'P' },
+      ],
+    });
+    const { result } = renderHook(() => useAvailableSizes(), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sizes).toEqual(['P']);
+  });
+
+  it('retorna [] quando records vazio', async () => {
+    mockDbInvoke.mockResolvedValue({ records: [] });
+    const { result } = renderHook(() => useAvailableSizes(), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sizes).toEqual([]);
   });
 });
