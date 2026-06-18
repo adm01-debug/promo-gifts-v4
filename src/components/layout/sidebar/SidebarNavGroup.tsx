@@ -146,7 +146,9 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         const wrappedTrigger = item.tooltip ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex w-full">{triggerButton}</span>
+              <span className="inline-flex w-full" data-tooltip-label={item.tooltip}>
+                {triggerButton}
+              </span>
             </TooltipTrigger>
             <TooltipContent side="right" className="z-[100] max-w-[240px]">
               <p className="text-tooltip">{item.tooltip}</p>
@@ -155,6 +157,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         ) : (
           triggerButton
         );
+
         return (
           <div key={item.label}>
             {wrappedTrigger}
