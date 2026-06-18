@@ -69,6 +69,18 @@ export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
+// INVARIANTE DE QUANTIDADE (espelha o CHECK do banco: 1 <= quantity <= 999999)
+// ============================================
+// Single source of truth para todos os caminhos de escrita (edição direta E
+// mesclagem por add/move/duplicate). Antes, só updateItemQuantity clampava o
+// teto; os caminhos de merge somavam `existing + qty` sem teto, podendo derivar
+// acima do limite da UI e (sem o CHECK de teto) até estourar o int4 no banco.
+export const MIN_ITEM_QUANTITY = 1;
+export const MAX_ITEM_QUANTITY = 999999;
+export const clampQuantity = (q: number): number =>
+  Math.min(Math.max(Math.trunc(Number(q) || 0), MIN_ITEM_QUANTITY), MAX_ITEM_QUANTITY);
+
+// ============================================
 // HOOK
 // ============================================
 
@@ -190,7 +202,7 @@ export function useSellerCarts() {
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
       const colorName = item.color_name ?? null;
       // Quantidade sempre >= 1: protege o invariante mesmo se o chamador passar 0/negativo.
-      const quantityToAdd = Math.max(1, Math.trunc(Number(item.quantity) || 1));
+      const quantityToAdd = Math.max(MIN_ITEM_QUANTITY, Math.trunc(Number(item.quantity) || 1));
 
       const existing = await findVariantInCart(cartId, item.product_id, colorName);
 
@@ -198,7 +210,8 @@ export function useSellerCarts() {
         const { error } = await supabase
           .from('seller_cart_items')
           .update({
-            quantity: existing.quantity + quantityToAdd,
+            // clamp do TETO: somatório de adds repetidos não pode ultrapassar 999999.
+            quantity: clampQuantity(existing.quantity + quantityToAdd),
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
@@ -211,7 +224,7 @@ export function useSellerCarts() {
           product_sku: item.product_sku || null,
           product_image_url: item.product_image_url || null,
           product_price: item.product_price,
-          quantity: quantityToAdd,
+          quantity: clampQuantity(quantityToAdd),
           color_name: colorName,
           color_hex: item.color_hex || null,
           notes: item.notes ?? null,
@@ -224,7 +237,7 @@ export function useSellerCarts() {
           if (retryExisting) {
             await supabase
               .from('seller_cart_items')
-              .update({ quantity: retryExisting.quantity + quantityToAdd })
+              .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
           }
         } else if (error) {
@@ -266,7 +279,7 @@ export function useSellerCarts() {
       // Defesa em profundidade: a UI já impede valores < 1, mas garantimos aqui
       // o invariante 1 <= quantity <= 999999 (espelha o CHECK no banco) para
       // qualquer chamador programático (templates, restore, futuros callers).
-      const safeQty = Math.min(Math.max(Math.trunc(Number(quantity) || 0), 1), 999999);
+      const safeQty = clampQuantity(quantity);
       const { error } = await supabase
         .from('seller_cart_items')
         .update({ quantity: safeQty })
@@ -416,7 +429,7 @@ export function useSellerCarts() {
       if (existing && existing.id !== itemId) {
         const { error: updErr } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: existing.quantity + item.quantity })
+          .update({ quantity: clampQuantity(existing.quantity + item.quantity) })
           .eq('id', existing.id);
         if (updErr) throw updErr;
         const { error: delErr } = await supabase
@@ -455,7 +468,7 @@ export function useSellerCarts() {
       if (existing) {
         const { error } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: existing.quantity + item.quantity })
+          .update({ quantity: clampQuantity(existing.quantity + item.quantity) })
           .eq('id', existing.id);
         if (error) throw error;
         return;
