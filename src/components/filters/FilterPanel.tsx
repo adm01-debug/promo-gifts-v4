@@ -98,9 +98,15 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[0]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [v, filters.priceRange[1]] })
-              }
+              onChange={(v) => {
+                const curMax = filters.priceRange[1];
+                // Auto-swap: se novo mínimo supera máximo real (< sentinela 9999), inverte
+                if (v > curMax && curMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [curMax, v] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [v, curMax] });
+                }
+              }}
               fallback={0}
               min={0}
               className={filters.priceRange[0] > 0 ? 'border-brand-primary/60' : ''}
@@ -111,9 +117,16 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[1] >= 9999 ? '' : filters.priceRange[1]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [filters.priceRange[0], v || 9999] })
-              }
+              onChange={(v) => {
+                const newMax = v || 9999;
+                const curMin = filters.priceRange[0];
+                // Auto-swap: se novo máximo real é menor que mínimo, inverte
+                if (newMax < curMin && newMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [newMax, curMin] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [curMin, newMax] });
+                }
+              }}
               fallback={9999}
               placeholder="Sem limite"
               min={0}
