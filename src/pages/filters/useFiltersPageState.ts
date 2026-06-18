@@ -7,6 +7,7 @@ import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsBySize } from '@/hooks/products/useProductsBySize';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import { useDebounce } from '@/hooks/common/useDebounce';
@@ -249,6 +250,13 @@ export function useFiltersPageState() {
     isLoading: isLoadingCategoryFilter,
     error: categoryFilterError,
   } = useProductsByCategory({ categoryIds: filters.categories, includeDescendants: true });
+  // SF-E: filtragem de tamanho server-side (product_variants). O catálogo leve
+  // não carrega variações, então o match client-side era inerte (sempre vazio).
+  const {
+    productIds: sizeFilteredProductIds,
+    hasFilter: hasSizeFilter,
+    isLoading: isLoadingSizeFilter,
+  } = useProductsBySize(filters.sizes || []);
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
@@ -394,6 +402,9 @@ export function useFiltersPageState() {
         hasMaterialFilter,
         materialFilteredProductIds,
         isLoadingMaterialFilter,
+        hasSizeFilter,
+        sizeFilteredProductIds,
+        isLoadingSizeFilter,
         promoSalesMap,
         supplierSalesMap,
         promoSales90dMap,
@@ -408,6 +419,9 @@ export function useFiltersPageState() {
       hasMaterialFilter,
       materialFilteredProductIds,
       isLoadingMaterialFilter,
+      hasSizeFilter,
+      sizeFilteredProductIds,
+      isLoadingSizeFilter,
       hasCategoryFilter,
       categoryFilteredProductIds,
       isLoadingCategoryFilter,
