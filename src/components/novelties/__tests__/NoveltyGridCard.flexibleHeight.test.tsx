@@ -50,6 +50,7 @@ const product: NoveltyWithDetails = {
   detected_at: new Date().toISOString(),
   expires_at: new Date().toISOString(),
   days_remaining: 20,
+  days_as_novelty: 10,
   status: 'active',
   is_highlighted: false,
   is_active: true,
@@ -75,9 +76,7 @@ describe('NoveltyGridCard › altura flexível (sem max-h / h fixo)', () => {
   });
 
   it('mantém min-h-[420px] (sem h/max-h fixo) também com skeleton de preço/estoque', () => {
-    const { container } = render(
-      <NoveltyGridCard product={product} isPriceStockLoading />,
-    );
+    const { container } = render(<NoveltyGridCard product={product} isPriceStockLoading />);
     const cls = getArticle(container).className;
     expect(cls).toMatch(/min-h-\[420px\]/);
     expect(cls).not.toMatch(/(^|\s)max-h-/);
