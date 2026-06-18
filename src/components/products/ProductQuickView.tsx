@@ -548,14 +548,13 @@ export const ProductQuickView = React.memo(
                         return;
                       }
                       const url = typeof window !== 'undefined' ? window.location.href : '';
+                      const nav: Navigator | undefined =
+                        typeof navigator !== 'undefined' ? navigator : undefined;
                       try {
-                        if (typeof navigator !== 'undefined' && 'share' in navigator) {
-                          await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
-                            title: product.name,
-                            url,
-                          });
-                        } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                          await navigator.clipboard.writeText(url);
+                        if (nav && typeof nav.share === 'function') {
+                          await nav.share({ title: product.name, url });
+                        } else if (nav?.clipboard) {
+                          await nav.clipboard.writeText(url);
                           toast.success('Link copiado');
                         }
                       } catch {
