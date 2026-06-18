@@ -129,15 +129,25 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
           const body = await response.clone().json().catch(() => ({}));
           if (body.code === 'UNAUTHORIZED_LEGACY_JWT' || body.message?.includes('Invalid JWT') || body.message?.includes('Invalid API key')) {
             const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+            const isCanonical = projectId === CURRENT_PROJECT_ID;
+            const diagnostic = isCanonical
+              ? 'JWT/anon key inválida para o projeto canônico — possível rotação de chave. Atualize VITE_SUPABASE_PUBLISHABLE_KEY no painel Lovable.'
+              : `Projeto resolvido (${projectId}) ≠ canônico (${CURRENT_PROJECT_ID}). Troque a conexão Supabase no painel Lovable → Cloud para o projeto canônico.`;
             log.error('auth_401_detected', {
               url,
               status: response.status,
               body,
               project_id: projectId,
-              is_canonical: projectId === CURRENT_PROJECT_ID
+              is_canonical: isCanonical,
+              diagnostic,
+              recommendation: 'painel Lovable → Cloud → Database → reconectar projeto canônico',
             });
-            if (projectId !== CURRENT_PROJECT_ID && !projectId.includes('localhost')) {
-              console.error(`[Supabase Critical] 401 Unauthorized on project ${projectId}. Current configuration might be invalid.`);
+            if (import.meta.env.DEV) {
+              console.error(
+                "%c[Supabase 401]",
+                "color: red; font-weight: bold;",
+                diagnostic,
+              );
             }
           }
         }
