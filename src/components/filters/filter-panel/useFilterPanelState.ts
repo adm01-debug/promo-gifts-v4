@@ -8,6 +8,7 @@ import {
   useSuppliers,
 } from '@/hooks/products';
 import { useRamoAtividadeFilter } from '@/hooks/crm';
+import { usePublicoAlvoOptions } from '@/hooks/products/usePublicoAlvoOptions';
 import type { FilterState, FilterPanelProps } from './types';
 
 export function useFilterPanelState(
@@ -61,11 +62,11 @@ export function useFilterPanelState(
 
   const { data: categoryIcons = [] } = useCategoryIcons();
 
-  const publicoAlvoOptions = useMemo(() => {
-    const set = new Set<string>();
-    products?.forEach((p) => p.tags?.publicoAlvo?.forEach((v) => set.add(v)));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products]);
+  // BUG-DB-03 FIX (2026-06-18): opcoes de Publico-Alvo vinham de products.tags.publicoAlvo,
+  // que o catalogo lightweight nunca hidrata (secao ficava eternamente vazia). Agora vem do
+  // SSOT v_super_filtro_options (filtro_tipo=target_audience) -> mesmos slugs que a RPC
+  // fn_super_filtro_product_ids casa contra products.target_audience.
+  const publicoAlvoOptions = usePublicoAlvoOptions();
 
   const endomarketingOptions = useMemo(() => {
     const set = new Set<string>();
