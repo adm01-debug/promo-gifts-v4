@@ -44,7 +44,8 @@ export function useSupplierSalesRanking() {
         const result = await dbInvoke<ProductIntelligenceRanking>({
           table: 'mv_product_intelligence',
           operation: 'select',
-          select: 'product_id, turnover_score, avg_depletion_7d, avg_depletion_30d, abc_classification, total_depleted_30d',
+          select:
+            'product_id, turnover_score, avg_depletion_7d, avg_depletion_30d, abc_classification, total_depleted_30d',
           limit: 20000,
         });
 

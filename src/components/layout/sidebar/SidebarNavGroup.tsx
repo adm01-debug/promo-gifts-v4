@@ -27,7 +27,6 @@ export interface NavItem {
   tooltip?: string;
 }
 
-
 export interface NavGroup {
   id: string;
   label: string;
@@ -255,7 +254,6 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 
       return <div key={item.href}>{linkContent}</div>;
     };
-
 
     if (isCollapsed) {
       return <div className="space-y-0.5 py-1">{group.items.map(renderNavLink)}</div>;
