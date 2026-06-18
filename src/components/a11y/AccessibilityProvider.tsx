@@ -164,11 +164,9 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>, isActive: boolea
           e.preventDefault();
           lastFocusable?.focus();
         }
-      } else {
-        if (document.activeElement === lastFocusable) {
-          e.preventDefault();
-          firstFocusable?.focus();
-        }
+      } else if (document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable?.focus();
       }
     };
 
