@@ -192,10 +192,10 @@ export function applyProductFilters(
         return product.variations.some((v: ProductVariation) => (v.stock ?? 0) >= filters.minStock);
       return (product.stock || 0) >= filters.minStock;
     });
-  // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3.
+  // Vendas Fornecedor (90d): usa a coluna REAL total_depleted_90d da MV (BUG-DB-06; ratio 90d/30d~1.0, x3 era chute).
   if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
     const threshold = filters.minSupplierSales90d;
-    result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) * 3 >= threshold);
+    result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted90d ?? 0) >= threshold);
   }
   // Vendas Promo Brindes (90d).
   if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {

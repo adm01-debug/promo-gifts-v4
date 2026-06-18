@@ -17,6 +17,7 @@ interface ProductIntelligenceRanking {
   avg_depletion_30d: number;
   abc_classification: string;
   total_depleted_30d: number;
+  total_depleted_90d: number;
 }
 
 export interface SupplierSalesEntry {
@@ -25,6 +26,7 @@ export interface SupplierSalesEntry {
   velocity30d: number;
   abcClass: string;
   depleted30d: number;
+  depleted90d: number;
 }
 
 /**
@@ -44,8 +46,7 @@ export function useSupplierSalesRanking() {
         const result = await dbInvoke<ProductIntelligenceRanking>({
           table: 'mv_product_intelligence',
           operation: 'select',
-          select:
-            'product_id, turnover_score, avg_depletion_7d, avg_depletion_30d, abc_classification, total_depleted_30d',
+          select: 'product_id, turnover_score, avg_depletion_7d, avg_depletion_30d, abc_classification, total_depleted_30d, total_depleted_90d',
           limit: 20000,
         });
 
@@ -59,6 +60,7 @@ export function useSupplierSalesRanking() {
             velocity30d: row.avg_depletion_30d || 0,
             abcClass: row.abc_classification || 'C',
             depleted30d: row.total_depleted_30d || 0,
+            depleted90d: row.total_depleted_90d || 0,
           });
         }
 
