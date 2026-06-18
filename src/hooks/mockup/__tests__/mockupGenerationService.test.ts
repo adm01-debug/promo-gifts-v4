@@ -266,6 +266,69 @@ describe('generateMockupApi', () => {
     expect(body.productImageUrl).toBe('https://cdn.example.com/product.png');
   });
 
+  // BUG-400c regression: a freshly-uploaded logo is a data: URL, and the edge
+  // function rejects data: URLs supplied as logoUrl. It MUST be sent as logoBase64.
+  it('sends a data: URL logo as logoBase64 (never as logoUrl) — primary upload flow', async () => {
+    invoke.mockResolvedValue({
+      data: { mockupUrl: 'https://cdn.example.com/out.png' },
+      error: null,
+    });
+    const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAA=';
+    await generateMockupApi({ ...baseParams, areas: [area({ logoPreview: dataUrl })] });
+
+    const body = invoke.mock.calls[0][1].body as Record<string, unknown>;
+    expect(body.logoBase64).toBe(dataUrl);
+    expect(body).not.toHaveProperty('logoUrl');
+  });
+
+  // BUG-400c regression: field names + technique metadata must match the edge contract.
+  it('maps geometry to logoWidthCm/logoHeightCm and technique to techniqueName', async () => {
+    invoke.mockResolvedValue({
+      data: { mockupUrl: 'https://cdn.example.com/out.png' },
+      error: null,
+    });
+    await generateMockupApi({
+      ...baseParams,
+      areas: [area({ logoWidth: 8, logoHeight: 4 })],
+    });
+
+    const body = invoke.mock.calls[0][1].body as Record<string, unknown>;
+    expect(body.logoWidthCm).toBe(8);
+    expect(body.logoHeightCm).toBe(4);
+    expect(body.techniqueName).toBe('Serigrafia');
+    // legacy/wrong field names must NOT be present
+    expect(body).not.toHaveProperty('logoWidth');
+    expect(body).not.toHaveProperty('logoHeight');
+    expect(body).not.toHaveProperty('technique');
+  });
+
+  // BUG-400d regression: logo-less areas must be filtered out, not sent and failed.
+  it('ignores areas without a logo and treats a single logged area as the single path', async () => {
+    invoke.mockResolvedValue({
+      data: { mockupUrl: 'https://cdn.example.com/out.png' },
+      error: null,
+    });
+    const res = await generateMockupApi({
+      ...baseParams,
+      areas: [
+        area({ name: 'Frente', logoPreview: 'https://cdn.example.com/logo.png' }),
+        area({ name: 'Costas', logoPreview: null }),
+      ],
+    });
+
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(res.batchResults).toEqual([]);
+    expect(res.singleUrl).toBe('https://cdn.example.com/out.png');
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it('throws a friendly error when no area has a logo', async () => {
+    await expect(
+      generateMockupApi({ ...baseParams, areas: [area({ logoPreview: null })] }),
+    ).rejects.toThrow(/upload de pelo menos um logo/i);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it('translates the SVG_NOT_SUPPORTED error code into a friendly message (G1)', async () => {
     invoke.mockResolvedValue({
       data: null,

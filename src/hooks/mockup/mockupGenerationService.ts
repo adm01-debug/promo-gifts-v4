@@ -286,18 +286,32 @@ async function invokeMockupForArea(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
+  // BUG-400c FIX (2026-06-18): the edge function contract (see
+  // supabase/functions/generate-mockup/index.ts) expects:
+  //   - `logoBase64` for inline data: URLs OR `logoUrl` for an https URL
+  //     (it validates logoUrl with isValidHttpUrl, which REJECTS data: URLs);
+  //   - `logoWidthCm` / `logoHeightCm` (NOT logoWidth/logoHeight);
+  //   - `techniqueName` as a string (NOT a Technique object).
+  // The previous payload sent `logoUrl: area.logoPreview` (a base64 data: URL
+  // right after upload) → 400 "Either logoBase64 or a valid logoUrl is required",
+  // and sent logoWidth/logoHeight so the logo always fell back to the 5×3 cm
+  // defaults. This broke the primary "upload a logo → generate" flow outright.
+  const logo = area.logoPreview ?? '';
+  const isDataUrl = logo.startsWith('data:');
+  const logoPayload = isDataUrl ? { logoBase64: logo } : { logoUrl: logo };
+
   const generateCall = supabase.functions.invoke('generate-mockup', {
     body: {
       productImageUrl: params.productImage,
       productName: params.productName,
-      technique: params.technique,
+      techniqueName: params.technique.name,
       techniquePrompt: getTechniquePrompt(params.technique),
-      logoUrl: area.logoPreview,
+      ...logoPayload,
       areaName: area.name,
       positionX: area.positionX,
       positionY: area.positionY,
-      logoWidth: area.logoWidth,
-      logoHeight: area.logoHeight,
+      logoWidthCm: area.logoWidth,
+      logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
     },
@@ -324,7 +338,16 @@ async function invokeMockupForArea(
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
-  const areasWithLogos = params.areas;
+  // BUG-400d FIX (2026-06-18): only areas that actually have a logo can be
+  // composited — a logo-less area would be sent with an empty logo and rejected
+  // by the edge function (422/400), surfacing as a spurious "X área(s) não
+  // puderam ser geradas" warning. Callers may pass the full area list, so filter
+  // defensively here (single source of truth for the contract).
+  const areasWithLogos = params.areas.filter((a) => !!a.logoPreview);
+
+  if (areasWithLogos.length === 0) {
+    throw new Error('Faça upload de pelo menos um logo antes de gerar o mockup.');
+  }
 
   // BUG-E: pre-validate BEFORE the (expensive) edge invocation.
   assertNotSvg(areasWithLogos);

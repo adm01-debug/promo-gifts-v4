@@ -52,16 +52,21 @@ export function BulkAddToCartModal({
       for (const item of items) {
         const p = item.product;
         const v = item.variant;
-        addToActiveCart({
-          product_id: p.id,
-          product_name: p.name,
-          product_sku: p.sku || undefined,
-          product_image_url: v?.selected_thumbnail || p.images?.[0] || undefined,
-          product_price: p.price,
-          quantity: 1,
-          color_name: v?.color_name || undefined,
-          color_hex: v?.color_hex || undefined,
-        });
+        // silent: mostramos um único toast agregado após o loop.
+        addToActiveCart(
+          {
+            product_id: p.id,
+            product_name: p.name,
+            product_sku: p.sku || undefined,
+            product_image_url: v?.selected_thumbnail || p.images?.[0] || undefined,
+            product_price: p.price,
+            quantity: 1,
+            color_name: v?.color_name || undefined,
+            color_hex: v?.color_hex || undefined,
+          },
+          undefined,
+          { silent: true },
+        );
       }
       setDone(true);
       toast.success(

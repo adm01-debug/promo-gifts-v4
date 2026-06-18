@@ -95,9 +95,11 @@ export function ExpiringNoveltiesWidget() {
             <ScrollArea className="h-auto max-h-[220px]">
               <div className="space-y-1">
                 {expiringItems.map((item) => (
-                  <div
+                  <button
+                    type="button"
                     key={item.novelty_id}
-                    className="group flex cursor-pointer items-center gap-2 rounded-md border border-warning/20 bg-warning/5 p-1.5 transition-all duration-150 hover:border-warning/40 hover:bg-warning/10"
+                    aria-label={`Abrir produto ${item.product_name}`}
+                    className="group flex w-full items-center gap-2 rounded-md border border-warning/20 bg-warning/5 p-1.5 text-left transition-all duration-150 hover:border-warning/40 hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning"
                     onClick={() => handleClick(item.product_id)}
                   >
                     <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-muted">
@@ -126,7 +128,7 @@ export function ExpiringNoveltiesWidget() {
                       </div>
                     </div>
                     <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-warning" />
-                  </div>
+                  </button>
                 ))}
               </div>
             </ScrollArea>

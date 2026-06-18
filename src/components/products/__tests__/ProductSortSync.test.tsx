@@ -122,9 +122,12 @@ describe('Product Sort Standardization', () => {
 
     if (sortSelect) {
       fireEvent.click(sortSelect);
-      // We might need to wait for the Portal content
-      expect(SORT_OPTIONS).not.toHaveLength(0);
-      for (const option of SORT_OPTIONS) {
+      // O grid de Novidades omite intencionalmente as opções "best-seller"
+      // (dependem de dados de venda não aplicáveis a novidades — ver filtro em
+      // NoveltyProductGrid). O contrato é: todas as DEMAIS opções aparecem.
+      const gridOptions = SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'));
+      expect(gridOptions).not.toHaveLength(0);
+      for (const option of gridOptions) {
         const elements = screen.queryAllByText(option.label);
         expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
       }

@@ -361,7 +361,9 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         const rows = (data ?? []) as unknown as RawProduct[];
         records.push(...rows);
         from += rows.length;
-        if (rows.length < want) break; // ultima pagina
+        // HARDENING: para só em página vazia (robusto a db-max-rows < PAGE);
+        // o teto opcional `limit` é respeitado pelo guard `want <= 0` no topo.
+        if (rows.length === 0) break;
       }
 
       let novelties = records.map(toNovelty).filter((n) => n.is_active);
@@ -530,7 +532,7 @@ export function useNoveltyStats() {
             }
           }
           supFrom += rows.length;
-          if (rows.length < SUP_PAGE) break;
+          if (rows.length === 0) break; // robusto a db-max-rows < SUP_PAGE
         }
       }
 

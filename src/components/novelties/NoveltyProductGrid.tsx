@@ -593,7 +593,7 @@ export function NoveltyProductGrid() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((option) => (
+              {SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller')).map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
