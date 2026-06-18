@@ -263,7 +263,7 @@ export function ProductFormFullscreen({
       step.requiredFields
         .filter((f) => {
           const val = formValues[f];
-          if (typeof val === 'number') return val <= 0 || val === undefined || val === null;
+          if (typeof val === 'number') return val <= 0;
           return !val;
         })
         .map((f) => step.fieldLabels[f] || f),

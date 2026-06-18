@@ -25,7 +25,7 @@ function camadaBadgeClass(camada: string | null): string {
 }
 
 function pct(value: number | null): string {
-  return value === null || value === undefined ? '—' : `${Math.round(Number(value))}%`;
+  return value === null ? '—' : `${Math.round(value)}%`;
 }
 
 export function MedallionPipelineCard() {

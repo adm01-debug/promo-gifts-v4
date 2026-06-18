@@ -158,8 +158,7 @@ export function MaterialGroupTree({
                     const linked = linkedMap.get(type.id);
                     const percentage = linked?.percentage;
                     const detailText =
-                      linked?.part ||
-                      (percentage !== null && percentage !== undefined ? `${percentage}%` : '');
+                      linked?.part || (typeof percentage === 'number' ? `${percentage}%` : '');
                     return (
                       <div key={type.id}>
                         <label

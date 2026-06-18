@@ -15,10 +15,10 @@ interface ProductPdfOptions {
 }
 
 const formatCurrency = (value: number | null | undefined) =>
-  value !== null && value !== undefined ? `R$ ${value.toFixed(2).replace('.', ',')}` : '—';
+  typeof value === 'number' ? `R$ ${value.toFixed(2).replace('.', ',')}` : '—';
 
 const formatDimension = (value: number | null | undefined, unit: string) =>
-  value !== null && value !== undefined ? `${value} ${unit}` : '—';
+  typeof value === 'number' ? `${value} ${unit}` : '—';
 
 const formatBool = (value: boolean | undefined) => (value ? 'Sim' : 'Não');
 

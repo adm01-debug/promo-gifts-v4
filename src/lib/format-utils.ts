@@ -9,7 +9,7 @@
  * @returns String formatada ou "Sem dados"
  */
 export function formatTooltipNumber(value: number | undefined | null, decimals = 0): string {
-  if (value === undefined || value === null || Number.isNaN(value)) return 'Sem dados';
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'Sem dados';
   return value.toLocaleString('pt-BR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -20,7 +20,7 @@ export function formatTooltipNumber(value: number | undefined | null, decimals =
  * Formata percentuais com sinal e sufixo
  */
 export function formatTooltipPercent(value: number | undefined | null, decimals = 0): string {
-  if (value === undefined || value === null || Number.isNaN(value)) return 'Sem dados';
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'Sem dados';
   const sign = value >= 0 ? '+' : '';
   return `${sign}${formatTooltipNumber(value, decimals)}%`;
 }
@@ -29,7 +29,7 @@ export function formatTooltipPercent(value: number | undefined | null, decimals 
  * Formata moeda R$
  */
 export function formatTooltipCurrency(value: number | undefined | null): string {
-  if (value === undefined || value === null || Number.isNaN(value)) return 'Sem dados';
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'Sem dados';
   return value.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',

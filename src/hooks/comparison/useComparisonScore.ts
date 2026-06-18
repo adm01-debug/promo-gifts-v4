@@ -113,7 +113,7 @@ export function useComparisonScore(
       };
       const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
       return {
-        productId: p.id !== null && p.id !== undefined ? String(p.id) : `__idx_${i}`,
+        productId: String(p.id ?? `__idx_${i}`),
         total: Math.round((total / totalWeight) * 100),
         breakdown,
         isWinner: false,
