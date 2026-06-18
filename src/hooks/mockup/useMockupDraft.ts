@@ -228,7 +228,23 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
       if (localData && backendData) {
         const localDate = new Date(localData.updatedAt || 0);
         const backendDate = new Date(backendData.updatedAt || 0);
-        return backendDate > localDate ? backendData : localData;
+        const chosen = backendDate > localDate ? backendData : localData;
+        // AUDIT 2026-06-17 — data: URL logos are intentionally NOT persisted to the
+        // backend draft (saveToBackend only keeps http logos to avoid multi-MB base64
+        // rows), but localStorage keeps the full preview. When the backend copy wins
+        // the recency check it would otherwise come back with the logo stripped, so a
+        // freshly-uploaded logo silently vanished on reload. Re-hydrate any missing
+        // logo previews from the local copy (matched by area id, falling back to index).
+        if (chosen === backendData) {
+          chosen.personalizationAreas = chosen.personalizationAreas.map((a, i) => {
+            if (a.logoPreview) return a;
+            const localMatch =
+              localData.personalizationAreas.find((la) => la.id === a.id) ??
+              localData.personalizationAreas[i];
+            return localMatch?.logoPreview ? { ...a, logoPreview: localMatch.logoPreview } : a;
+          });
+        }
+        return chosen;
       }
 
       return backendData || localData;

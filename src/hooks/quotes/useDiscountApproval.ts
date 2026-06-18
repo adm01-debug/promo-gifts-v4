@@ -167,6 +167,10 @@ export function useDiscountApproval() {
     async (requestId: string, approved: boolean, adminNotes?: string): Promise<boolean> => {
       if (!user) return false;
       try {
+        const validUntilDate = approved
+          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
         const { data: request, error: updateError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
@@ -175,6 +179,7 @@ export function useDiscountApproval() {
             admin_id: user.id,
             admin_notes: adminNotes || null,
             responded_at: new Date().toISOString(),
+            valid_until: validUntilDate,
           })
           .eq('id', requestId)
           .select()

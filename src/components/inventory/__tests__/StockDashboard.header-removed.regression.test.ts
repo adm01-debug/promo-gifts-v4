@@ -8,10 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const SRC = readFileSync(
-  resolve(__dirname, '../StockDashboard.tsx'),
-  'utf-8',
-);
+const SRC = readFileSync(resolve(__dirname, '../StockDashboard.tsx'), 'utf-8');
 
 describe('StockDashboard — header removido (regressão)', () => {
   it('não contém o título "Visão Geral"', () => {

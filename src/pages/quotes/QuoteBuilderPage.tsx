@@ -84,6 +84,9 @@ export default function QuoteBuilderPage() {
           validUntil: s.validUntil,
           discountType: s.discountType,
           discountValue: s.discountValue,
+          // Inclui a margem de negociação na detecção de alterações para que
+          // ajustar SÓ o markup também dispare o aviso de "alterações não salvas".
+          negotiationMarkup: s.negotiationMarkup,
           paymentMethod: s.paymentMethod,
           paymentTerms: s.paymentTerms,
           deliveryTime: s.deliveryTime,
@@ -109,7 +112,7 @@ export default function QuoteBuilderPage() {
               dismissConflict();
               window.location.reload();
             }}
-            onOverwrite={() => overwriteAndSave('draft')}
+            onOverwrite={() => overwriteAndSave()}
           />
         </div>
       )}
@@ -260,7 +263,9 @@ export default function QuoteBuilderPage() {
                   value={s.validityDays}
                   onValueChange={(val) => {
                     s.setValidityDays(val);
-                    s.setValidUntil(format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'));
+                    s.setValidUntil(
+                      format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
+                    );
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">

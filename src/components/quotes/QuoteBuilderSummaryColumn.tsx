@@ -2,7 +2,7 @@
  * QuoteBuilderSummaryColumn — Coluna 3: Resumo com cards de itens, desconto e CTAs
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -162,10 +162,11 @@ export function QuoteBuilderSummaryColumn({
     [items, showOnlyStale, staleIndexes],
   );
 
-  // Auto-desliga o filtro se a contagem zerar (após confirmar todos)
-  if (showOnlyStale && staleCount === 0) {
-    setTimeout(() => setShowOnlyStale(false), 0);
-  }
+  // Auto-desliga o filtro se a contagem zerar (após confirmar todos).
+  // Em um effect (não no corpo do render) para evitar setState durante a renderização.
+  useEffect(() => {
+    if (showOnlyStale && staleCount === 0) setShowOnlyStale(false);
+  }, [showOnlyStale, staleCount]);
 
   const handleRequestApproval = () => {
     onSave('pending_approval', sellerNotes);
