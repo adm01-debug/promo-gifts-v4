@@ -273,3 +273,60 @@ test.describe("QuickView • fechamento e a11y", () => {
   });
 });
 
+/**
+ * Navegação por teclado + focus trap (a11y do shadcn Dialog).
+ *
+ * Cobre:
+ *  - Enter no thumb abre o QuickView
+ *  - Space no thumb abre o QuickView
+ *  - Foco fica preso dentro do modal ao tabular (focus trap Radix)
+ *  - Primeiro elemento focável é parte do dialog (não vaza para o body)
+ */
+test.describe("QuickView • navegação por teclado e focus trap", () => {
+  test.beforeEach(() => requireAuth());
+
+  async function focusFirstThumb(page: Page) {
+    await gotoAndSettle(page, "/estoque");
+    const thumb = page.locator(Sel.product.stockTableThumb).first();
+    if ((await thumb.count()) === 0) test.skip(true, "Tabela de estoque vazia");
+    await thumb.focus();
+    return thumb;
+  }
+
+  for (const key of ["Enter", "Space"] as const) {
+    test(`${key} no thumb abre o QuickView`, async ({ page }) => {
+      await focusFirstThumb(page);
+      await page.keyboard.press(key);
+      await expect(page.locator(Sel.product.quickViewName).first()).toBeVisible({
+        timeout: 10_000,
+      });
+    });
+  }
+
+  test("foco permanece preso dentro do dialog ao tabular", async ({ page }) => {
+    await focusFirstThumb(page);
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog").first();
+    await expect(dialog).toBeVisible({ timeout: 10_000 });
+
+    // Tabula várias vezes — o foco JAMAIS deve sair do dialog.
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press("Tab");
+      const inside = await dialog.evaluate(
+        (el) => el.contains(document.activeElement) || el === document.activeElement,
+      );
+      expect(inside, `Tab #${i + 1} vazou o foco do dialog`).toBe(true);
+    }
+
+    // Shift+Tab também respeita o trap.
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press("Shift+Tab");
+      const inside = await dialog.evaluate(
+        (el) => el.contains(document.activeElement) || el === document.activeElement,
+      );
+      expect(inside, `Shift+Tab #${i + 1} vazou o foco do dialog`).toBe(true);
+    }
+  });
+});
+
+

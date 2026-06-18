@@ -1,8 +1,8 @@
-name: E2E • Thumb QuickView (paridade entre módulos)
+name: E2E • Thumb QuickView (paridade + a11y)
 
-# Suíte focada que executa em TODO PR e bloqueia merge em caso de regressão
-# (sem continue-on-error). Cobre Catálogo/Novidades/Reposição/Estoque +
-# estados de borda + ESC/overlay no QuickView.
+# Bloqueia merge em regressão. Roda smoke (fail-fast) e DEPOIS a suíte completa
+# em paralelo nos 3 browsers (chromium/firefox/webkit). Falha em qualquer um
+# = falha o workflow (matrix sem fail-fast desabilitado = comportamento padrão).
 on:
   push:
     branches: [main, master]
@@ -13,31 +13,63 @@ concurrency:
   group: e2e-thumb-quickview-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: "true"
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+  E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+  E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+  E2E_BASE_URL: http://localhost:8080
+
 jobs:
-  thumb-quickview:
-    name: Playwright • 03b thumb-quickview
-    timeout-minutes: 20
+  smoke:
+    name: Smoke (fail-fast)
+    timeout-minutes: 8
     runs-on: ubuntu-latest
-    env:
-      CI: "true"
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
-      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
-      E2E_BASE_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: "npm"
+        with: { node-version: lts/*, cache: npm }
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Run thumb-quickview suite
-        run: npx playwright test e2e/flows/03b-product-thumb-quickview.spec.ts --reporter=line,html
+      - name: Smoke
+        run: npx playwright test e2e/flows/03b-thumb-quickview.smoke.spec.ts --reporter=line
       - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-failure-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  thumb-quickview:
+    name: ${{ matrix.browser }} • 03b
+    needs: smoke
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: lts/*, cache: npm }
+      - run: npm ci
+      - name: Install Playwright + deps (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run thumb-quickview suite
+        run: |
+          npx playwright test e2e/flows/03b-product-thumb-quickview.spec.ts \
+            --project=${{ matrix.browser }}-authed \
+            --reporter=line,html
+      - name: Upload report + traces + videos (${{ matrix.browser }})
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-thumb-quickview
-          path: playwright-report/
+          name: playwright-${{ matrix.browser }}-report
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 14
