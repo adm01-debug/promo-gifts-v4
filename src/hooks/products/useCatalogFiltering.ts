@@ -20,9 +20,16 @@ interface CatalogFilteringOptions {
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
+  // Filtro de cor server-side (opcional p/ retrocompat com call sites/tests legados;
+  // o catálogo de produção sempre os fornece via useProductsByColor).
+  hasColorFilter?: boolean;
+  colorFilteredProductIds?: Set<string>;
+  isLoadingColorFilter?: boolean;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, number>;
 }
+
+const EMPTY_ID_SET: ReadonlySet<string> = new Set<string>();
 
 export function useCatalogFiltering({
   realProducts,
@@ -36,18 +43,13 @@ export function useCatalogFiltering({
   hasCategoryFilter,
   categoryFilteredProductIds,
   isLoadingCategoryFilter,
+  hasColorFilter = false,
+  colorFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingColorFilter = false,
   promoSalesMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
-  const colorFilterSet = useMemo(() => new Set(filters.colors), [filters.colors]);
-  const colorGroupSet = useMemo(() => new Set(filters.colorGroups), [filters.colorGroups]);
-  const colorVariationSet = useMemo(
-    () => new Set(filters.colorVariations),
-    [filters.colorVariations],
-  );
-  const hasColorFilters =
-    colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
   const categoryFilterSet = useMemo(
     () => new Set(filters.categories.map(String)),
     [filters.categories],
@@ -78,35 +80,16 @@ export function useCatalogFiltering({
 
     if (result.length === 0) return result;
 
-    // Optimized Color Filtering: Process once per product
-    if (hasColorFilters) {
-      const groupArray =
-        colorGroupSet.size > 0 ? Array.from(colorGroupSet).map((s) => s.toLowerCase()) : null;
-
-      result = result.filter((p) => {
-        if (!p.colors?.length) return false;
-
-        // Use for...of for slightly better performance on large sets
-        for (const c of p.colors) {
-          if (colorFilterSet.size > 0 && colorFilterSet.has(c.name)) return true;
-
-          if (colorVariationSet.size > 0) {
-            const vSlug = (c.variationSlug || '').toLowerCase().trim();
-            if (colorVariationSet.has(vSlug)) return true;
-          }
-
-          if (groupArray) {
-            const gSlug = (c.groupSlug || '').toLowerCase().trim();
-            const gName = (c.group || '').toLowerCase().trim();
-            const cName = (c.name || '').toLowerCase().trim();
-
-            if (colorGroupSet.has(gSlug) || colorGroupSet.has(gName)) return true;
-            // groupArray is small, so some is fine
-            if (groupArray.some((s) => cName.includes(s))) return true;
-          }
-        }
-        return false;
-      });
+    // Color Filtering (server-side): os ids vêm de useProductsByColor (resolve
+    // grupo/variação/cor → product_variants.color_id). Necessário porque os
+    // produtos lightweight chegam com colors:[] (enriquecimento é posterior),
+    // então inspecionar p.colors aqui zerava a grade. Padrão de categoria/material.
+    if (hasColorFilter && !isLoadingColorFilter) {
+      if (colorFilteredProductIds.size > 0) {
+        result = result.filter((p) => colorFilteredProductIds.has(p.id));
+      } else {
+        return [];
+      }
     }
 
     if (result.length === 0) return result;
@@ -126,7 +109,9 @@ export function useCatalogFiltering({
     // BUG-21 FIX: era < 500, deve ser < 9999 para ativar filtro no range completo [0, 9999].
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
       const [min, max] = filters.priceRange;
-      result = result.filter((p) => p.price >= min && p.price <= max);
+      // FIX-SF-F: 9999 é sentinela "sem limite" — não excluir produtos caros quando
+      // só o mínimo é definido. max >= 9999 vira ilimitado.
+      result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
     }
 
     if (filters.inStock) {
@@ -140,6 +125,14 @@ export function useCatalogFiltering({
     if (filters.isKit) {
       result = result.filter((product) => isProductKit(product));
     }
+
+    // SF-A parity: estes flags foram corrigidos no mapeamento leve mas estavam
+    // ausentes do pipeline de filtragem do catálogo Index — Quick Options inertes
+    // em /produtos (mesmo bug que SF-A corrigiu em /filtros via applyProductFilters).
+    if (filters.featured) result = result.filter((p) => p.featured === true);
+    if (filters.isNew) result = result.filter((p) => p.newArrival === true);
+    if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
+    if (filters.onSale) result = result.filter((p) => p.onSale === true);
 
     if (genderFilterSet.size > 0) {
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
@@ -180,7 +173,14 @@ export function useCatalogFiltering({
     filters.priceRange[1],
     filters.inStock,
     filters.isKit,
+    filters.featured,
+    filters.isNew,
+    filters.hasPersonalization,
+    filters.onSale,
     filters.materiais,
+    // BUG-DEP FIX: hasCommercialPackaging era lido no corpo mas faltava nas deps
+    // → alternar "Embalagem comercial" não re-filtrava até outra dep mudar.
+    filters.hasCommercialPackaging,
     sortBy,
     hasFuzzySearch,
     fuzzySearchResults,
@@ -191,14 +191,13 @@ export function useCatalogFiltering({
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    hasColorFilter,
+    colorFilteredProductIds,
+    isLoadingColorFilter,
     promoSalesMap,
     supplierSalesMap,
-    colorFilterSet,
-    colorGroupSet,
-    colorVariationSet,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,
-    hasColorFilters,
   ]);
 }

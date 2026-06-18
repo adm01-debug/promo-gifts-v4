@@ -81,23 +81,26 @@ function CatalogToolbarInner({
         <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-2.5 sm:px-3"
-                  aria-label="Abrir filtros do catálogo"
-                >
-                  <Filter className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Filtros</span>
-                  {activeFiltersCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 min-w-5 text-xs sm:ml-2">
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
-                </Button>
-              </SheetTrigger>
+              <span className="inline-flex">
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2.5 sm:px-3"
+                    aria-label="Abrir filtros do catálogo"
+                  >
+                    <Filter className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 min-w-5 text-xs sm:ml-2">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+              </span>
             </TooltipTrigger>
+
             <TooltipContent>
               {activeFiltersCount > 0
                 ? `Refinar busca · ${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} ativo${activeFiltersCount > 1 ? 's' : ''}`
