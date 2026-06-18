@@ -381,7 +381,7 @@ export function useProductsCatalog(filters?: {
   suppliers?: string[];
   sortBy?: string;
 }) {
-  const search = filters?.search || '';
+  const search = filters?.search ?? '';
   const categories = filters?.categories ?? [];
   const suppliers = filters?.suppliers ?? [];
   const sortBy = filters?.sortBy || 'newest';

@@ -339,7 +339,7 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
+    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
@@ -571,7 +571,7 @@ export function useSuppliersManager() {
 
   // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
-    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
+    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') ?? '';
     if (!validateCnpj(digits)) {
       toast.error('CNPJ inválido');
       return;

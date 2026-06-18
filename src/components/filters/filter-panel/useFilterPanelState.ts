@@ -261,7 +261,7 @@ export function useFilterPanelState(
     }
     if (filters.sortBy !== 'newest') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);
-      summaries.ordenacao = opt?.label || '';
+      summaries.ordenacao = opt?.label ?? '';
     }
     return summaries;
   }, [filters]);

@@ -60,7 +60,7 @@ export function useGenericFuzzySearch<T>(
 
   // Executar busca
   return useMemo(() => {
-    const trimmedQuery = query?.trim() || '';
+    const trimmedQuery = query?.trim() ?? '';
 
     if (!trimmedQuery || trimmedQuery.length < minChars) {
       // Sem busca: retorna todos os itens (ou limitado)

@@ -30,7 +30,7 @@ describe('AuthBrandingPanel Visual Classes', () => {
     const grid = container.querySelector('.grid-cols-2');
     expect(grid).toBeInTheDocument();
 
-    const classes = grid?.className || '';
+    const classes = grid?.className ?? '';
     // Layout atual do painel: grid full-width, sem overflow lateral (-mx) do design antigo.
     expect(classes).toContain('w-full');
   });

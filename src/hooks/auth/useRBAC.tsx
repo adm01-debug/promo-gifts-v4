@@ -122,7 +122,7 @@ export function useRBAC() {
   }, [roleName, dbPermissions]);
 
   const role: Role = {
-    id: profile?.id || '',
+    id: profile?.id ?? '',
     name: roleName,
     description: getDescriptionForRole(roleName),
   };

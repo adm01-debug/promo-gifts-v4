@@ -150,7 +150,7 @@ export function useGlobalSearch() {
         case 'search':
         case 'filter':
           if (action.data?.query || action.data?.filters) {
-            const searchTerm = action.data?.query || '';
+            const searchTerm = action.data?.query ?? '';
             const filterParts: string[] = [];
             if (action.data?.filters?.category) filterParts.push(action.data.filters.category);
             if (action.data?.filters?.color) filterParts.push(action.data.filters.color);

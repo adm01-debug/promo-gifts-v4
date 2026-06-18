@@ -464,7 +464,7 @@ export function useMagicUpState() {
 
   // ─── Effective prompt ─────────────────────────────────────────
   const effectivePrompt = useMemo(() => {
-    const base = selectedScene?.prompt || '';
+    const base = selectedScene?.prompt ?? '';
     const extra = additionalDetails.trim();
     if (base && extra) return `${base}\n\nADDITIONAL DETAILS: ${extra}`;
     return extra || base;

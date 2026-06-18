@@ -486,7 +486,7 @@ export function usePersonalizationManager() {
             if (groupTechniques?.length) {
               for (const gt of groupTechniques) {
                 const technique = techniques?.find((t) => t.id === gt.technique_id);
-                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code || ''}`;
+                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code ?? ''}`;
                 await untypedFrom('product_component_location_techniques').insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,

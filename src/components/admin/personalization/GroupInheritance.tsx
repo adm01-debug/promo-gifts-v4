@@ -97,7 +97,7 @@ export function GroupInheritance({
                 await untypedFrom('product_component_location_techniques').insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,
-                  composed_code: `${gc.component_code}-${gl.location_code}-${tech?.code || ''}`,
+                  composed_code: `${gc.component_code}-${gl.location_code}-${tech?.code ?? ''}`,
                   max_colors: gt.max_colors,
                   is_default: gt.is_default,
                   is_active: gt.is_active,

@@ -726,7 +726,7 @@ export function useProductImageGallery({
               'Imagem';
             const variantLabel =
               ext.supplier_code || ext.variant_id
-                ? variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name || ''
+                ? variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name ?? ''
                 : '';
             const altText = template
               .replace('{tipo}', typeLabel)

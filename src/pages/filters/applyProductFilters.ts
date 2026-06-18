@@ -112,7 +112,7 @@ export function applyProductFilters(
     const supplierIdSet = new Set(filters.suppliers);
     const supplierLowerArr = filters.suppliers.map((s) => s.toLowerCase());
     result = result.filter((product) => {
-      if (supplierIdSet.has(product.supplier?.id || '')) return true;
+      if (supplierIdSet.has(product.supplier?.id ?? '')) return true;
       if (supplierIdSet.has(product.supplier_reference || '')) return true;
       const sName = (product.supplier?.name || product.brand || '').toLowerCase();
       return supplierLowerArr.some((s) => sName.includes(s));
@@ -265,7 +265,7 @@ export function applyProductFilters(
   if (techniquesDataAvailable && filters.techniques?.length) {
     const techSet = new Set(filters.techniques.map((t) => t.toLowerCase()));
     result = result.filter((product) => {
-      const metaTechs: string[] = (product.metadata?.techniques as string[]) || [];
+      const metaTechs: string[] = (product.metadata?.techniques as string[]) ?? [];
       if (metaTechs.length > 0) {
         return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
       }

@@ -330,7 +330,7 @@ function ProductCard({ m }: { m: MagicUpStateReturn }) {
               <Paintbrush className="h-3 w-3" /> Técnica
             </Label>
             <Select
-              value={m.selectedTechnique?.id || ''}
+              value={m.selectedTechnique?.id ?? ''}
               onValueChange={(v) =>
                 m.setSelectedTechnique(m.availableTechniques.find((t) => t.id === v) || null)
               }
@@ -498,7 +498,7 @@ function SceneCard({ m }: { m: MagicUpStateReturn }) {
                 m.setSelectedTechnique({
                   id: info.techniqueId,
                   name: info.techniqueName,
-                  code: tech?.code || '',
+                  code: tech?.code ?? '',
                 });
               } else {
                 m.setSelectedTechnique(null);
