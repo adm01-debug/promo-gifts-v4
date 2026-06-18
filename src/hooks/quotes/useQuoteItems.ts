@@ -9,6 +9,8 @@ interface Product {
   sku: string;
   price: number;
   images: string[] | null;
+  /** Quantidade mínima de pedido do fornecedor (B2B). Usada como qty inicial. */
+  minQuantity?: number;
   priceUpdatedAt?: string;
   priceFreshnessThresholdDays?: number;
 }
@@ -57,6 +59,11 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
           return newItems;
         }
 
+        // B2B: respeita a quantidade mínima do fornecedor como qty inicial.
+        // Antes começava sempre em 1 (mesmo para produtos com mínimo de 50/100),
+        // permitindo enviar orçamento com quantidade inviável. Adicionar via busca
+        // passa a iniciar no mínimo; cliques subsequentes incrementam de 1 em 1.
+        const initialQuantity = Math.max(1, Math.floor(product.minQuantity ?? 1));
         const newItems = [
           ...prev,
           {
@@ -64,7 +71,7 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
             product_name: product.name,
             product_sku: product.sku,
             product_image_url: imageUrl,
-            quantity: 1,
+            quantity: initialQuantity,
             unit_price: product.price,
             color_name: colorName,
             color_hex: colorHex,
