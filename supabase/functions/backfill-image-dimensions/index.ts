@@ -4,8 +4,6 @@
 // Called by pg_cron job #125 (every 5min) via net.http_post.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { authorizeCron } from '../_shared/dispatcher-auth.ts'
-import { createStructuredLogger } from '../_shared/structured-logger.ts';
-import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -110,9 +108,6 @@ async function fetchDims(img: ImgRow): Promise<{ id: string; width: number; heig
 }
 
 Deno.serve(async (req: Request) => {
-  const __reqId = getOrCreateRequestId(req);
-  const log = createStructuredLogger({ fn: 'backfill-image-dimensions', requestId: __reqId, req });
-  log.info('request_start');
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
       status: 405,

@@ -1,7 +1,5 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
-import { createStructuredLogger } from '../_shared/structured-logger.ts';
-import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const getCorsHeaders = () => buildPublicCorsHeaders();
 
@@ -26,9 +24,6 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 }
 
 Deno.serve(async (req) => {
-  const __reqId = getOrCreateRequestId(req);
-  const log = createStructuredLogger({ fn: 'audit-suite', requestId: __reqId, req });
-  log.info('request_start');
   const preflight = handleCorsPreflight(req);
   if (preflight) return preflight;
 

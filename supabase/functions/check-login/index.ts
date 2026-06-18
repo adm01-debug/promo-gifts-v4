@@ -17,8 +17,6 @@
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { buildPublicCorsHeaders, handleCorsPreflight } from '../_shared/cors.ts';
-import { createStructuredLogger } from '../_shared/structured-logger.ts';
-import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const CORS = buildPublicCorsHeaders({ allowMethods: 'POST, OPTIONS' });
 
@@ -33,9 +31,6 @@ function extractIP(req: Request): string {
 }
 
 Deno.serve(async (req: Request) => {
-  const __reqId = getOrCreateRequestId(req);
-  const log = createStructuredLogger({ fn: 'check-login', requestId: __reqId, req });
-  log.info('request_start');
   const preflight = handleCorsPreflight(req, { public: true });
   if (preflight) return preflight;
 

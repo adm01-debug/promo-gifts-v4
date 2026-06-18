@@ -504,7 +504,7 @@ export function useSuppliersManager() {
       }
       setEditingSupplier(null);
       fetchSuppliers();
-    } catch {
+    } catch (err: unknown) {
       toast.error('Erro ao salvar fornecedor');
     } finally {
       setSaving(false);
@@ -525,7 +525,7 @@ export function useSuppliersManager() {
       await dbInvokeDelete({ table: 'suppliers', id: supplier.id });
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
-    } catch {
+    } catch (err: unknown) {
       toast.error('Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
@@ -561,7 +561,7 @@ export function useSuppliersManager() {
       const { data: urlData } = supabase.storage.from('supplier-logos').getPublicUrl(filePath);
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
-    } catch {
+    } catch (err: unknown) {
       toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
@@ -596,7 +596,7 @@ export function useSuppliersManager() {
         if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
-    } catch {
+    } catch (err: unknown) {
       toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);

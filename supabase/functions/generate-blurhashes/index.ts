@@ -16,8 +16,6 @@ import { authorizeCron } from '../_shared/dispatcher-auth.ts'
 import { encode } from 'https://esm.sh/blurhash@2.0.5'
 import jpeg from 'https://esm.sh/jpeg-js@0.4.4'
 import { decode as decodePng } from 'https://esm.sh/fast-png@6.0.0'
-import { createStructuredLogger } from '../_shared/structured-logger.ts';
-import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -150,9 +148,6 @@ async function computeBlurhash(img: ImgRow): Promise<{ id: string; blurhash: str
 }
 
 Deno.serve(async (req: Request) => {
-  const __reqId = getOrCreateRequestId(req);
-  const log = createStructuredLogger({ fn: 'generate-blurhashes', requestId: __reqId, req });
-  log.info('request_start');
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
       status: 405,

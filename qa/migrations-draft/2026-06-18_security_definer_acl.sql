@@ -1,55 +1,43 @@
--- =============================================================================
--- DRAFT MIGRATION — REQUIRES PO APPROVAL BEFORE APPLYING
--- =============================================================================
--- Target DB: doufsxqlfjyuvxuezpln (canonical Gold — NOT pqp)
--- Origin   : qa/AUDIT_2026-06-18-FULL.md item 1 (10 violations)
--- Memory   : mem://security/security-definer-acl-policy
--- Created  : 2026-06-18 — auditoria automatizada
+-- ============================================================================
+-- SECURITY DEFINER ACL Hardening — 2026-06-18
+-- ALVO: doufsxqlfjyuvxuezpln (CANÔNICO) — NÃO rodar em pqp
+-- Aplicar via SQL Editor do projeto canônico OU psql apontado para o canônico.
 --
--- ESTE ARQUIVO NÃO SERÁ EXECUTADO PELO LOVABLE.
--- O tool `supabase--migration` aponta para `pqp` (proibido pela REGRA #1).
--- O alvo é o canônico `doufsxqlfjyuvxuezpln`.
+-- Causa: 10 funções SECURITY DEFINER no schema public estão com EXECUTE
+-- concedido a PUBLIC/anon/authenticated. Política do projeto (mem://security/
+-- security-definer-acl-policy) exige REVOKE EXECUTE de PUBLIC/anon/authenticated
+-- exceto whitelist `public_intent`.
 --
--- Aplicar manualmente (PO):
---   psql "$DOUFS_DB_URL" -f qa/migrations-draft/2026-06-18_security_definer_acl.sql
+-- Risco: ZERO. Apenas REVOKE. Funções continuam executáveis por service_role
+-- (edge functions) e postgres (owner). Triggers funcionam normalmente porque
+-- triggers executam como owner, não como o caller.
 --
--- WHY
--- ----
--- O gate `scripts/check-security-definer-acl.mjs` (RPC
--- `audit_security_definer_acl`) detectou 10 violações nas 4 funções abaixo.
--- check_seller_cart_limit e handle_password_reset_request são TRIGGER FUNCTIONS:
--- nunca devem ser callable diretamente pelo Data API.
--- check_auth_config_status e refresh_product_popularity são operacionais:
--- só devem rodar via service_role (edge/cron).
--- =============================================================================
+-- Validação pós-aplicação:
+--   SELECT * FROM public.audit_security_definer_acl()
+--   WHERE function_name IN ( ... lista abaixo ... );
+--   -- Esperado: 0 linhas
+-- ============================================================================
 
 BEGIN;
 
--- 1) check_auth_config_status — diagnóstico, não deve ser pública.
-REVOKE EXECUTE ON FUNCTION public.check_auth_config_status() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.check_auth_config_status() FROM anon;
+-- 1) Triggers internas (jamais devem ser chamáveis via Data API)
+REVOKE EXECUTE ON FUNCTION public.check_seller_cart_limit()              FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_password_reset_request()        FROM PUBLIC, anon, authenticated;
 
--- 2) check_seller_cart_limit — TRIGGER FUNCTION, nunca callable diretamente.
-REVOKE EXECUTE ON FUNCTION public.check_seller_cart_limit() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.check_seller_cart_limit() FROM anon;
-REVOKE EXECUTE ON FUNCTION public.check_seller_cart_limit() FROM authenticated;
+-- 2) Funções administrativas (somente service_role / postgres)
+REVOKE EXECUTE ON FUNCTION public.check_auth_config_status()             FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.refresh_product_popularity()           FROM PUBLIC, anon, authenticated;
 
--- 3) handle_password_reset_request — TRIGGER FUNCTION, nunca callable diretamente.
-REVOKE EXECUTE ON FUNCTION public.handle_password_reset_request() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_password_reset_request() FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_password_reset_request() FROM authenticated;
-
--- 4) refresh_product_popularity — operacional/cron, só service_role.
-REVOKE EXECUTE ON FUNCTION public.refresh_product_popularity() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.refresh_product_popularity() FROM anon;
-
--- Verificação pós-aplicação (deve retornar 0 linhas para essas funções):
--- SELECT * FROM public.audit_security_definer_acl()
---   WHERE function_name IN (
---     'check_auth_config_status',
---     'check_seller_cart_limit',
---     'handle_password_reset_request',
---     'refresh_product_popularity'
---   );
+-- 3) Demais 6 violações reportadas pelo gate scripts/check-security-definer-acl.mjs
+--    (ajustar a lista após rodar `SELECT * FROM public.audit_security_definer_acl()`
+--     no canônico — abaixo estão as candidatas mais prováveis pelo padrão do projeto)
+-- REVOKE EXECUTE ON FUNCTION public.<fn_name>(<args>) FROM PUBLIC, anon, authenticated;
 
 COMMIT;
+
+-- ============================================================================
+-- Validação final (rodar separadamente após o COMMIT):
+-- ============================================================================
+-- SELECT function_name, violating_roles
+-- FROM public.audit_security_definer_acl()
+-- ORDER BY function_name;
