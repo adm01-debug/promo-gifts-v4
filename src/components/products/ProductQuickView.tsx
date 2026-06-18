@@ -470,19 +470,20 @@ export const ProductQuickView = React.memo(
 
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
-                {onAddToCart && (
-                  <Button
-                    onClick={() => handleAddToCart()}
-                    disabled={product.stockStatus === 'out-of-stock'}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Adicionar ao carrinho
-                  </Button>
-                )}
-
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {onAddToCart && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleAddToCart()}
+                      disabled={product.stockStatus === 'out-of-stock'}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar ao carrinho"
+                      data-testid="product-quickview-cart"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                    </Button>
+                  )}
                   {onToggleFavorite && (
                     <Button
                       variant="outline"
