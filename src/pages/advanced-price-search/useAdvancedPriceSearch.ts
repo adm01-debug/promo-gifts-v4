@@ -100,7 +100,7 @@ export function useAdvancedPriceSearch() {
         );
 
         if (matchingTable) {
-          customizationPrice = matchingTable.unit_price || 0;
+          customizationPrice = matchingTable.unit_price ?? 0;
           setupPrice = matchingTable.setup_price || 0;
           handlingPrice = matchingTable.handling_price || 0;
         }

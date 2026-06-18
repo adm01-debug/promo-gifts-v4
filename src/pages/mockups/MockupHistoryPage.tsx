@@ -81,7 +81,7 @@ export default function MockupHistoryPage() {
           layout_url: null,
         } as unknown as GeneratedMockup;
       });
-      return { mockups, totalCount: count || 0 };
+      return { mockups, totalCount: count ?? 0 };
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutos

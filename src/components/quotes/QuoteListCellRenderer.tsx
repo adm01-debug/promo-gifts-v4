@@ -86,7 +86,7 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       return (
         <div className="flex items-center justify-end gap-2">
           <span className="text-sm font-bold text-foreground">
-            {formatCurrency(quote.total || 0)}
+            {formatCurrency(quote.total ?? 0)}
           </span>
         </div>
       );

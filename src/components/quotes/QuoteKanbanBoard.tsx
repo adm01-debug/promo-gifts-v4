@@ -167,7 +167,7 @@ function QuoteCard({ quote, isDragging, isSaving }: QuoteCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
             <DollarSign className="h-3.5 w-3.5 text-success" />
-            {formatBRL(quote.total || 0)}
+            {formatBRL(quote.total ?? 0)}
           </div>
           {quote.created_at && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -324,7 +324,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
 
     quotes.forEach((quote) => {
       if (totals[quote.status] !== undefined) {
-        totals[quote.status] += quote.total || 0;
+        totals[quote.status] += quote.total ?? 0;
       }
     });
 

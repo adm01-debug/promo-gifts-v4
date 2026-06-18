@@ -29,10 +29,10 @@ export function useQuotesListPage() {
     const total = quotes.length;
     const approved = quotes.filter((q) => q.status === 'approved').length;
     const pending = quotes.filter((q) => ['pending', 'sent'].includes(q.status)).length;
-    const totalValue = quotes.reduce((sum, q) => sum + (q.total || 0), 0);
+    const totalValue = quotes.reduce((sum, q) => sum + (q.total ?? 0), 0);
     const approvedValue = quotes
       .filter((q) => q.status === 'approved')
-      .reduce((sum, q) => sum + (q.total || 0), 0);
+      .reduce((sum, q) => sum + (q.total ?? 0), 0);
     const conversionRate = total > 0 ? Math.round((approved / total) * 100) : 0;
 
     return { total, approved, pending, totalValue, approvedValue, conversionRate };
@@ -73,9 +73,9 @@ export function useQuotesListPage() {
         case 'oldest':
           return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
         case 'highest':
-          return (b.total || 0) - (a.total || 0);
+          return (b.total ?? 0) - (a.total ?? 0);
         case 'lowest':
-          return (a.total || 0) - (b.total || 0);
+          return (a.total ?? 0) - (b.total ?? 0);
         case 'expiring': {
           const aDate = a.valid_until ? new Date(a.valid_until).getTime() : Infinity;
           const bDate = b.valid_until ? new Date(b.valid_until).getTime() : Infinity;

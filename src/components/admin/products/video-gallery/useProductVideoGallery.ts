@@ -253,7 +253,7 @@ export function useProductVideoGallery(productId?: string) {
     ): Promise<string | null> => {
       if (!productId) return null;
       const nextOrder =
-        videos.length > 0 ? Math.max(...videos.map((v) => v.display_order || 0)) + 1 : 0;
+        videos.length > 0 ? Math.max(...videos.map((v) => v.display_order ?? 0)) + 1 : 0;
       const { data, error } = await untypedFrom<{ id: string }>('product_videos')
         .insert({
           product_id: productId,

@@ -415,7 +415,7 @@ export function QuoteBuilderSummaryColumn({
                                   </div>
                                 </div>
                                 <span className="shrink-0 font-bold tabular-nums text-foreground">
-                                  {formatCurrency(p.total_cost || 0)}
+                                  {formatCurrency(p.total_cost ?? 0)}
                                 </span>
                               </div>
                             ))}

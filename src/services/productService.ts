@@ -82,7 +82,7 @@ export const productService = {
 
     // Belt+suspenders: client-side filter kept as safety net for bridge fallback
     if (filters?.inStock) {
-      result = result.filter((p) => (p.stock || 0) > 0);
+      result = result.filter((p) => (p.stock ?? 0) > 0);
     }
 
     return result;

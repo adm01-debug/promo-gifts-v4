@@ -116,7 +116,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
   const allInUnit =
     item.unit_price +
     personalizations.reduce((sum, p) => {
-      const pTotal = p.total_cost || 0;
+      const pTotal = p.total_cost ?? 0;
       return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
     }, 0);
 
@@ -205,7 +205,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   <span className="font-medium">
                     {fmt(
                       personalizations.reduce((sum, p) => {
-                        const pTotal = p.total_cost || 0;
+                        const pTotal = p.total_cost ?? 0;
                         return (
                           sum +
                           (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
@@ -251,7 +251,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                     const parsed = parseNotesField(p.notes ?? '');
                     const unitRounded =
                       item.quantity > 0
-                        ? Math.round(((p.total_cost || 0) / item.quantity) * 100) / 100
+                        ? Math.round(((p.total_cost ?? 0) / item.quantity) * 100) / 100
                         : 0;
                     const totalRounded = Math.round(unitRounded * item.quantity * 100) / 100;
 
@@ -326,7 +326,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                             <div>
                               <span className="block text-muted-foreground">Setup</span>
                               <span className="font-semibold text-foreground">
-                                {fmt(p.setup_cost || 0)}
+                                {fmt(p.setup_cost ?? 0)}
                               </span>
                             </div>
                             <div>

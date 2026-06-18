@@ -128,7 +128,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         if (!qi.created_at) continue;
         const date = qi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
-        entry.quotedQty += qi.quantity || 0;
+        entry.quotedQty += qi.quantity ?? 0;
         entry.quotedValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         entry.quoteCount += 1;
         dailyMap.set(date, entry);
@@ -138,8 +138,8 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         if (!oi.created_at) continue;
         const date = oi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
-        entry.orderedQty += oi.quantity || 0;
-        entry.orderedValue += (oi.quantity || 0) * (oi.unit_price || 0);
+        entry.orderedQty += oi.quantity ?? 0;
+        entry.orderedValue += (oi.quantity ?? 0) * (oi.unit_price ?? 0);
         entry.orderCount += 1;
         dailyMap.set(date, entry);
       }
@@ -160,7 +160,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        s.totalQty += qi.quantity || 0;
+        s.totalQty += qi.quantity ?? 0;
         s.totalValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         s.quoteCount += 1;
         sellerMap.set(sellerId, s);
@@ -177,8 +177,8 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        s.totalQty += oi.quantity || 0;
-        s.totalValue += (oi.quantity || 0) * (oi.unit_price || 0);
+        s.totalQty += oi.quantity ?? 0;
+        s.totalValue += (oi.quantity ?? 0) * (oi.unit_price ?? 0);
         s.orderCount += 1;
         sellerMap.set(sellerId, s);
       }

@@ -130,7 +130,7 @@ export function useCatalogFiltering({
     }
 
     if (filters.inStock) {
-      result = result.filter((p) => (p.stock || 0) > 0);
+      result = result.filter((p) => (p.stock ?? 0) > 0);
     }
 
     if (filters.hasCommercialPackaging) {

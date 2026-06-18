@@ -101,7 +101,7 @@ export function QuoteProductCustomization({
   }
 
   const confirmed = existingPersonalizations;
-  const confirmedTotal = confirmed.reduce((s, p) => s + (p.total_cost || 0), 0);
+  const confirmedTotal = confirmed.reduce((s, p) => s + (p.total_cost ?? 0), 0);
 
   return (
     <div className="space-y-4">
@@ -122,10 +122,10 @@ export function QuoteProductCustomization({
           usaDimensao: !!(p.width_cm || p.height_cm),
           price: {
             success: true,
-            preco_unitario: p.unit_cost || 0,
-            valor_gravacao: (p.unit_cost || 0) * quantity,
-            setup_total: p.setup_cost || 0,
-            total_cobrado: p.total_cost || 0,
+            preco_unitario: p.unit_cost ?? 0,
+            valor_gravacao: (p.unit_cost ?? 0) * quantity,
+            setup_total: p.setup_cost ?? 0,
+            total_cobrado: p.total_cost ?? 0,
             nome_tabela: p.technique_name ?? '',
             quantidade: quantity,
             num_cores: p.colors_count || 1,
@@ -165,7 +165,7 @@ export function QuoteProductCustomization({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge variant="secondary" className="text-xs font-semibold">
-                  {fmt(p.total_cost || 0)}
+                  {fmt(p.total_cost ?? 0)}
                 </Badge>
                 <Button
                   variant="ghost"

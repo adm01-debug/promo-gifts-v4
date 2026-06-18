@@ -64,7 +64,7 @@ export function useQuoteViewData(id: string | undefined) {
         s +
         (i.personalizations ?? []).reduce(
           (ps: number, p: { total_cost?: number }) =>
-            ps + calcPersTotal(p.total_cost || 0, i.quantity),
+            ps + calcPersTotal(p.total_cost ?? 0, i.quantity),
           0,
         ),
       0,
@@ -124,9 +124,9 @@ export function useQuoteViewData(id: string | undefined) {
               width_cm: p.width_cm || undefined,
               height_cm: p.height_cm || undefined,
               area_cm2: p.area_cm2 || undefined,
-              unit_cost: p.unit_cost || 0,
-              setup_cost: p.setup_cost || 0,
-              total_cost: p.total_cost || 0,
+              unit_cost: p.unit_cost ?? 0,
+              setup_cost: p.setup_cost ?? 0,
+              total_cost: p.total_cost ?? 0,
               notes: p.notes || undefined,
             })) ?? [],
         })) ?? [],

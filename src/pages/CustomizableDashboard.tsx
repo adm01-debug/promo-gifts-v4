@@ -178,8 +178,8 @@ export function CustomizableDashboard() {
       }
       const [quotesRes, draftRes] = await Promise.all([quotesQ, draftQ]);
       setMetrics({
-        quotes: quotesRes.count || 0,
-        quotesDraft: draftRes.count || 0,
+        quotes: quotesRes.count ?? 0,
+        quotesDraft: draftRes.count ?? 0,
       });
     };
     fetchMetrics();

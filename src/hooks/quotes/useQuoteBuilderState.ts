@@ -650,7 +650,7 @@ export function useQuoteBuilderState() {
       product_sku: p.product_sku ?? '',
       product_image_url: p.product_image_url || undefined,
       quantity: p.quantity || 1,
-      unit_price: p.unit_price || 0,
+      unit_price: p.unit_price ?? 0,
       color_name: p.color_name || undefined,
       color_hex: p.color_hex || undefined,
       personalizations: [],

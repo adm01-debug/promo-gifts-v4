@@ -43,7 +43,7 @@ export function buildWhatsAppUrl(quote: Quote, approvalLink: string | null): str
   const lines = [
     `📋 *Proposta Comercial ${quote.quote_number ?? ''}*`,
     '',
-    `💰 Valor Total: *${formatCurrency(quote.total || 0)}*`,
+    `💰 Valor Total: *${formatCurrency(quote.total ?? 0)}*`,
   ];
   if (quote.valid_until) {
     lines.push(

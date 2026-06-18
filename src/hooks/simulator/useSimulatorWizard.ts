@@ -213,7 +213,7 @@ export function useSimulatorWizard() {
     const grandTotalPerUnit = state.quantity > 0 ? grandTotal / state.quantity : 0;
     const maxDays =
       state.personalizations.length > 0
-        ? Math.max(...state.personalizations.map((p) => p.pricing.productionDays || 0))
+        ? Math.max(...state.personalizations.map((p) => p.pricing.productionDays ?? 0))
         : 0;
     return { productTotal, customizationTotal, grandTotal, grandTotalPerUnit, maxDays };
   }, [effectivePrice, state.quantity, state.personalizations]);

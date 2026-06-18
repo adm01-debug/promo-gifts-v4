@@ -77,7 +77,7 @@ export function useKitBuilder() {
 
     const boxWeight = selectedBox?.weight ?? 0;
     const itemsWeight = selectedItems.reduce(
-      (sum, item) => sum + (item.weight || 0) * item.quantity,
+      (sum, item) => sum + (item.weight ?? 0) * item.quantity,
       0,
     );
     const totalWeight = boxWeight + itemsWeight;

@@ -387,7 +387,7 @@ export default function QuotesDashboardPage() {
                       {statusConfig[quote.status]?.label || quote.status}
                     </Badge>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {formatCurrency(quote.total || 0)}
+                      {formatCurrency(quote.total ?? 0)}
                     </p>
                   </div>
                 </div>

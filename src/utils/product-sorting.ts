@@ -76,7 +76,7 @@ export function sortProducts(
       products.sort(withIdTiebreak((a, b) => b.price - a.price));
       break;
     case 'stock':
-      products.sort(withIdTiebreak((a, b) => (b.stock || 0) - (a.stock || 0)));
+      products.sort(withIdTiebreak((a, b) => (b.stock ?? 0) - (a.stock ?? 0)));
       break;
     case 'newest':
       products.sort((a, b) => {
@@ -111,8 +111,8 @@ export function sortProducts(
           const aScore = (a.featured ? 10 : 0) + (a.newArrival ? 5 : 0);
           const bScore = (b.featured ? 10 : 0) + (b.newArrival ? 5 : 0);
           if (bScore !== aScore) return bScore - aScore;
-          const aStock = a.stock || 0;
-          const bStock = b.stock || 0;
+          const aStock = a.stock ?? 0;
+          const bStock = b.stock ?? 0;
           if (bStock !== aStock) return bStock - aStock;
           return byNameThenId(a, b);
         });

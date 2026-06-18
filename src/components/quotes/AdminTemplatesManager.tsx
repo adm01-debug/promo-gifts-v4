@@ -68,7 +68,7 @@ export function AdminTemplatesManager({ onEditTemplate }: AdminTemplatesManagerP
     const itemsTotal = template.items.reduce((sum, item) => {
       const personalizationCost =
         item.personalizations?.reduce(
-          (pSum, p) => pSum + (p.unitCost || 0) * item.quantity + (p.setupCost || 0),
+          (pSum, p) => pSum + (p.unitCost ?? 0) * item.quantity + (p.setupCost ?? 0),
           0,
         ) || 0;
       return sum + item.quantity * item.unitPrice + personalizationCost;

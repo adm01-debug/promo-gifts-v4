@@ -117,11 +117,11 @@ export function useQuotesDashboard() {
       filtered = filtered.filter((q) => q.client_id === selectedClientId);
 
     const totalQuotes = filtered.length;
-    const totalValue = filtered.reduce((s, q) => s + (q.total || 0), 0);
+    const totalValue = filtered.reduce((s, q) => s + (q.total ?? 0), 0);
     const approved = filtered.filter((q) => q.status === 'approved');
     const rejected = filtered.filter((q) => q.status === 'rejected');
     const pending = filtered.filter((q) => ['pending', 'sent'].includes(q.status));
-    const approvedValue = approved.reduce((s, q) => s + (q.total || 0), 0);
+    const approvedValue = approved.reduce((s, q) => s + (q.total ?? 0), 0);
     const responded = [...approved, ...rejected];
     const approvalRate = responded.length > 0 ? (approved.length / responded.length) * 100 : 0;
     const rejectionRate = responded.length > 0 ? (rejected.length / responded.length) * 100 : 0;
@@ -158,7 +158,7 @@ export function useQuotesDashboard() {
         a[m].total++;
         if (q.status === 'approved') {
           a[m].approved++;
-          a[m].value += q.total || 0;
+          a[m].value += q.total ?? 0;
         }
         if (q.status === 'rejected') a[m].rejected++;
         return a;
@@ -285,7 +285,7 @@ export function useQuotesDashboard() {
           q.quote_number || (q.id ?? ''),
           statusConfig[q.status]?.label || q.status,
           q.client_response_at ? format(new Date(q.client_response_at), 'dd/MM/yyyy HH:mm') : '-',
-          formatCurrency(q.total || 0),
+          formatCurrency(q.total ?? 0),
         ]),
         theme: 'grid',
         headStyles: { fillColor: [245, 158, 11] },

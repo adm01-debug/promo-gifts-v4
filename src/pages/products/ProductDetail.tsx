@@ -109,7 +109,7 @@ export default function ProductDetail() {
         .select('*', { count: 'exact', head: true })
         .eq('product_id', id ?? '')
         .gte('created_at', thirtyDaysAgo.toISOString());
-      return count || 0;
+      return count ?? 0;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,

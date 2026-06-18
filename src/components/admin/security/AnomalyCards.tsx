@@ -58,9 +58,9 @@ export function AnomalyCards() {
       ).size;
 
       setStats({
-        loginFailures24h: loginRes.count || 0,
-        botHits24h: botRes.count || 0,
-        tokenFailures24h: tokenRes.count || 0,
+        loginFailures24h: loginRes.count ?? 0,
+        botHits24h: botRes.count ?? 0,
+        tokenFailures24h: tokenRes.count ?? 0,
         distinctTokenIps24h: distinctIps,
         loading: false,
       });

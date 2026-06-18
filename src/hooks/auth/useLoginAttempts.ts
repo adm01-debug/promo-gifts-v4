@@ -48,8 +48,8 @@ export function useLoginAttempts(options: UseLoginAttemptsOptions = {}) {
 
       return {
         attempts: (data ?? []) as LoginAttempt[],
-        totalCount: count || 0,
-        totalPages: Math.ceil((count || 0) / pageSize),
+        totalCount: count ?? 0,
+        totalPages: Math.ceil((count ?? 0) / pageSize),
       };
     },
     /**

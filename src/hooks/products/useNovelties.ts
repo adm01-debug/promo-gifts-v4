@@ -18,10 +18,7 @@ const NOVELTY_SELECT =
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applyNoveltyQualityFilters = (query: any): any =>
-  query
-    .eq('is_stockout', false)
-    .not('primary_image_url', 'is', null)
-    .gt('sale_price', 0);
+  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0);
 
 /**
  * Calcula a data de corte para novidades (últimos N dias)
@@ -277,11 +274,23 @@ export function useNoveltyStats() {
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
-      const todayStart        = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const weekStart         = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).toISOString();
-      const fifteenStart      = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14).toISOString();
-      const thirtyStart       = getCutoffDate();
-      const expiringSoonCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 23).toISOString();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 6,
+      ).toISOString();
+      const fifteenStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 14,
+      ).toISOString();
+      const thirtyStart = getCutoffDate();
+      const expiringSoonCutoff = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 23,
+      ).toISOString();
 
       const emptyStats: NoveltyStatsDisplay = {
         totalNovelties: 0,
@@ -302,49 +311,58 @@ export function useNoveltyStats() {
           fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
         );
 
-      const [
-        todayRes,
-        weekRes,
-        fifteenRes,
-        activeRes,
-        expiringSoonRes,
-        totalRes,
-        supplierRes,
-      ] = await Promise.all([
-        // Chegaram hoje (com filtros de qualidade)
-        qualityBase().gte('created_at', todayStart),
-        // Últimos 7 dias
-        qualityBase().gte('created_at', weekStart),
-        // Últimos 15 dias
-        qualityBase().gte('created_at', fifteenStart),
-        // Novidades ativas (últimos 30 dias)
-        qualityBase().gte('created_at', thirtyStart),
-        // Expirando em breve
-        qualityBase().gte('created_at', thirtyStart).lt('created_at', expiringSoonCutoff),
-        // Total do catálogo ativo (sem filtros de qualidade — denominador real)
-        fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        // supplier_id para top fornecedor (com filtros de qualidade)
-        applyNoveltyQualityFilters(
-          fromTable('products').select('supplier_id').eq('is_active', true),
-        ).gte('created_at', thirtyStart),
-      ]);
+      const [todayRes, weekRes, fifteenRes, activeRes, expiringSoonRes, totalRes, supplierRes] =
+        await Promise.all([
+          // Chegaram hoje (com filtros de qualidade)
+          qualityBase().gte('created_at', todayStart),
+          // Últimos 7 dias
+          qualityBase().gte('created_at', weekStart),
+          // Últimos 15 dias
+          qualityBase().gte('created_at', fifteenStart),
+          // Novidades ativas (últimos 30 dias)
+          qualityBase().gte('created_at', thirtyStart),
+          // Expirando em breve
+          qualityBase().gte('created_at', thirtyStart).lt('created_at', expiringSoonCutoff),
+          // Total do catálogo ativo (sem filtros de qualidade — denominador real)
+          fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+          // supplier_id para top fornecedor (com filtros de qualidade)
+          applyNoveltyQualityFilters(
+            fromTable('products').select('supplier_id').eq('is_active', true),
+          ).gte('created_at', thirtyStart),
+        ]);
 
-      if (todayRes.error)   { handleQueryError('useNovelties', 'products', todayRes.error);   return emptyStats; }
-      if (weekRes.error)    { handleQueryError('useNovelties', 'products', weekRes.error);    return emptyStats; }
-      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyStats; }
-      if (activeRes.error)  { handleQueryError('useNovelties', 'products', activeRes.error);  return emptyStats; }
-      if (totalRes.error)   { handleQueryError('useNovelties', 'products', totalRes.error);   return emptyStats; }
+      if (todayRes.error) {
+        handleQueryError('useNovelties', 'products', todayRes.error);
+        return emptyStats;
+      }
+      if (weekRes.error) {
+        handleQueryError('useNovelties', 'products', weekRes.error);
+        return emptyStats;
+      }
+      if (fifteenRes.error) {
+        handleQueryError('useNovelties', 'products', fifteenRes.error);
+        return emptyStats;
+      }
+      if (activeRes.error) {
+        handleQueryError('useNovelties', 'products', activeRes.error);
+        return emptyStats;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyStats;
+      }
 
-      const arrivedToday      = todayRes.count    ?? 0;
-      const arrivedThisWeek   = weekRes.count      ?? 0;
-      const arrivedLast15Days = fifteenRes.count   ?? 0;
-      const activeCount       = activeRes.count    ?? 0;
-      const expiringSoon      = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
-      const totalProducts     = totalRes.count     ?? 0;
+      const arrivedToday = todayRes.count ?? 0;
+      const arrivedThisWeek = weekRes.count ?? 0;
+      const arrivedLast15Days = fifteenRes.count ?? 0;
+      const activeCount = activeRes.count ?? 0;
+      const expiringSoon = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
+      const totalProducts = totalRes.count ?? 0;
 
-      const supplierRows = (!supplierRes.error && supplierRes.data)
-        ? (supplierRes.data as unknown as { supplier_id: string | null }[])
-        : [];
+      const supplierRows =
+        !supplierRes.error && supplierRes.data
+          ? (supplierRes.data as unknown as { supplier_id: string | null }[])
+          : [];
 
       const supplierCounts = new Map<string, number>();
       for (const row of supplierRows) {
@@ -471,7 +489,7 @@ export function useNoveltyCount() {
         return 0;
       }
 
-      return count || 0;
+      return count ?? 0;
     },
     staleTime: 2 * 60 * 1000,
     retry: 2,

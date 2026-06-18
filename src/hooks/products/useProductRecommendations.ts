@@ -73,7 +73,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
               productSku: item.product_sku ?? '',
               productImage: item.product_image_url,
               timesOrderedTogether: 0,
-              price: item.unit_price || 0,
+              price: item.unit_price ?? 0,
             };
           }
           acc[key].timesOrderedTogether++;

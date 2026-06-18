@@ -24,7 +24,7 @@ export function DiscountApprovalHeaderBadge() {
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      return count || 0;
+      return count ?? 0;
     },
     enabled: Boolean(isAdmin), // força boolean estável — evita re-trigger em undefined→false
     retry: 0, // sem retries: falha = falha, não flood de HEAD requests

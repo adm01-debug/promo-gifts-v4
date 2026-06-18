@@ -46,7 +46,7 @@ export function QuickActionsPanel() {
     const pending = quotes.filter((q) => q.status === 'pending' || q.status === 'sent').length;
     const approved = monthQuotes.filter((q) => q.status === 'approved').length;
     const rejected = monthQuotes.filter((q) => q.status === 'rejected').length;
-    const monthTotal = monthQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
+    const monthTotal = monthQuotes.reduce((sum, q) => sum + (q.total ?? 0), 0);
     const decidedCount = approved + rejected;
     const conversionRate = decidedCount > 0 ? Math.round((approved / decidedCount) * 100) : 0;
 

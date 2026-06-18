@@ -263,7 +263,7 @@ export const ProductTableView = memo(function ProductTableView({
         case 'price':
           return dir * (a.price - b.price);
         case 'stock':
-          return dir * ((a.stock || 0) - (b.stock || 0));
+          return dir * ((a.stock ?? 0) - (b.stock ?? 0));
         case 'supplier':
           return dir * (a.supplier?.name ?? '').localeCompare(b.supplier?.name ?? '');
         default:

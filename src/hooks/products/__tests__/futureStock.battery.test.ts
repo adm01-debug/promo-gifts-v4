@@ -74,11 +74,11 @@ const sortEntries = (entries: StockEntry[], order: SortOrder) =>
     switch (order) {
       case 'nearest': {
         const t = new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime();
-        return t !== 0 ? t : (a.entryIndex || 0) - (b.entryIndex || 0);
+        return t !== 0 ? t : (a.entryIndex ?? 0) - (b.entryIndex ?? 0);
       }
       case 'farthest': {
         const t = new Date(b.expectedDate).getTime() - new Date(a.expectedDate).getTime();
-        return t !== 0 ? t : (b.entryIndex || 0) - (a.entryIndex || 0);
+        return t !== 0 ? t : (b.entryIndex ?? 0) - (a.entryIndex ?? 0);
       }
       case 'quantity-desc':
         return b.expectedQuantity - a.expectedQuantity;

@@ -124,7 +124,7 @@ export function QuoteTemplateForm({
       const itemBase = item.quantity * item.unitPrice;
       const personalizationCost =
         item.personalizations?.reduce((pSum, p) => {
-          return pSum + (p.unitCost || 0) * item.quantity + (p.setupCost || 0);
+          return pSum + (p.unitCost ?? 0) * item.quantity + (p.setupCost ?? 0);
         }, 0) || 0;
       return sum + itemBase + personalizationCost;
     }, 0);

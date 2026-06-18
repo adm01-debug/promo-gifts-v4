@@ -59,7 +59,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
   const getTotalWeight = (kit: KitForComparison): number => {
     const boxWeight = kit.box_data?.weight ?? 0;
     const itemsWeight = (kit.items_data ?? []).reduce(
-      (sum: number, i: KitItemData) => sum + (i.weight || 0) * (i.quantity || 1),
+      (sum: number, i: KitItemData) => sum + (i.weight ?? 0) * (i.quantity || 1),
       0,
     );
     return boxWeight + itemsWeight;

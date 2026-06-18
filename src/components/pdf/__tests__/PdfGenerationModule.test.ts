@@ -218,7 +218,7 @@ describe('ProposalProductTable — cálculo de lineTotal', () => {
   function computeLineTotal(item: ProposalItem): number {
     const persUnitCost =
       item.personalizations?.reduce((sum, p) => {
-        const pTotal = p.total_cost || 0;
+        const pTotal = p.total_cost ?? 0;
         return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
       }, 0) ?? 0;
     const allInUnitPrice = item.unitPrice + persUnitCost;

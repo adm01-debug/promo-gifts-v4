@@ -478,7 +478,7 @@ export function useFiltersPageState() {
           return product.variations.some(
             (v: ProductVariation) => (v.stock ?? 0) >= filters.minStock,
           );
-        return (product.stock || 0) >= filters.minStock;
+        return (product.stock ?? 0) >= filters.minStock;
       });
     // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3 (MV expõe apenas total_depleted_30d).
     // Padroniza janela com o filtro Promo Brindes (90d). Map inerte enquanto carrega.
@@ -499,7 +499,7 @@ export function useFiltersPageState() {
       result = result.filter((product) => {
         if (product.variations && product.variations.length > 0)
           return product.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
-        return (product.stock || 0) > 0;
+        return (product.stock ?? 0) > 0;
       });
     if (filters.hasCommercialPackaging)
       result = result.filter((product) => product.hasCommercialPackaging === true);

@@ -142,7 +142,7 @@ export function TechniqueSelector({
       if (maxDays && t.estimated_days && t.estimated_days > maxDays) return false;
 
       // Price range filter
-      const totalCost = (t.setup_cost || 0) + (t.unit_cost || 0) * quantity;
+      const totalCost = (t.setup_cost ?? 0) + (t.unit_cost ?? 0) * quantity;
       if (totalCost < priceRange[0] || totalCost > priceRange[1]) return false;
 
       return true;
@@ -290,7 +290,7 @@ export function TechniqueSelector({
         className="space-y-2"
       >
         {filteredTechniques.map((technique) => {
-          const totalCost = (technique.setup_cost || 0) + (technique.unit_cost || 0) * quantity;
+          const totalCost = (technique.setup_cost ?? 0) + (technique.unit_cost ?? 0) * quantity;
           const minQtyMet = !technique.min_quantity || quantity >= technique.min_quantity;
           const isSelected = selectedId === technique.id;
 

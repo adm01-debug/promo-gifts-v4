@@ -40,7 +40,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const realSubtotal = items.reduce((sum, item) => {
     const baseTotal = item.quantity * item.unit_price;
     const persTotal = (item.personalizations ?? []).reduce(
-      (pSum, p) => pSum + (p.total_cost || 0),
+      (pSum, p) => pSum + (p.total_cost ?? 0),
       0,
     );
     return sum + baseTotal + persTotal;
@@ -184,9 +184,9 @@ export function buildPersonalizationsInsertPayload(
     area_cm2: p.area_cm2,
     width_cm: p.width_cm,
     height_cm: p.height_cm,
-    setup_cost: round2(p.setup_cost || 0),
-    unit_cost: round2(p.unit_cost || 0),
-    total_cost: round2(p.total_cost || 0),
+    setup_cost: round2(p.setup_cost ?? 0),
+    unit_cost: round2(p.unit_cost ?? 0),
+    total_cost: round2(p.total_cost ?? 0),
     notes: p.notes,
   }));
 }

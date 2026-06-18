@@ -508,7 +508,7 @@ export function useGlobalSearch() {
             allResults.push({
               id: k.id,
               title: k.name ?? '',
-              subtitle: `${k.status} • ${k.kit_quantity}x • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(k.total_price || 0)}`,
+              subtitle: `${k.status} • ${k.kit_quantity}x • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(k.total_price ?? 0)}`,
               type: 'kit',
               href: `/kits/${k.id}`,
             }),

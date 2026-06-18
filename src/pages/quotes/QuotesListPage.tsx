@@ -295,7 +295,7 @@ export default function QuotesListPage() {
                         Empresa: q.client_company ?? '',
                         Contato: q.client_name ?? '',
                         Status: q.status,
-                        Valor: q.total || 0,
+                        Valor: q.total ?? 0,
                         Data: q.created_at ? format(new Date(q.created_at), 'dd/MM/yyyy') : '',
                       })),
                     });

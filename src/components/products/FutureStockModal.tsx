@@ -127,13 +127,13 @@ export function FutureStockModal({
           const timeA = new Date(a.expectedDate).getTime();
           const timeB = new Date(b.expectedDate).getTime();
           if (timeA !== timeB) return timeA - timeB;
-          return (a.entryIndex || 0) - (b.entryIndex || 0); // Desempate pelo índice da entrada
+          return (a.entryIndex ?? 0) - (b.entryIndex ?? 0); // Desempate pelo índice da entrada
         }
         case 'farthest': {
           const timeA = new Date(a.expectedDate).getTime();
           const timeB = new Date(b.expectedDate).getTime();
           if (timeA !== timeB) return timeB - timeA;
-          return (b.entryIndex || 0) - (a.entryIndex || 0);
+          return (b.entryIndex ?? 0) - (a.entryIndex ?? 0);
         }
         case 'quantity-desc':
           return b.expectedQuantity - a.expectedQuantity;

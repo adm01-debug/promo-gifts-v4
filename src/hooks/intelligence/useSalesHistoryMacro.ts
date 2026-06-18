@@ -127,7 +127,7 @@ export function useSalesHistoryMacro(days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        entry.quotedQty += qi.quantity || 0;
+        entry.quotedQty += qi.quantity ?? 0;
         entry.quotedValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         entry.quoteCount += 1;
         dailyMap.set(date, entry);
@@ -144,8 +144,8 @@ export function useSalesHistoryMacro(days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        entry.orderedQty += oi.quantity || 0;
-        entry.orderedValue += (oi.quantity || 0) * (oi.unit_price || 0);
+        entry.orderedQty += oi.quantity ?? 0;
+        entry.orderedValue += (oi.quantity ?? 0) * (oi.unit_price ?? 0);
         entry.orderCount += 1;
         dailyMap.set(date, entry);
       }
@@ -165,7 +165,7 @@ export function useSalesHistoryMacro(days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        s.totalQty += qi.quantity || 0;
+        s.totalQty += qi.quantity ?? 0;
         s.totalValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         s.quoteCount += 1;
         sellerMap.set(sellerId, s);
@@ -181,8 +181,8 @@ export function useSalesHistoryMacro(days = 30) {
           quoteCount: 0,
           orderCount: 0,
         };
-        s.totalQty += oi.quantity || 0;
-        s.totalValue += (oi.quantity || 0) * (oi.unit_price || 0);
+        s.totalQty += oi.quantity ?? 0;
+        s.totalValue += (oi.quantity ?? 0) * (oi.unit_price ?? 0);
         s.orderCount += 1;
         sellerMap.set(sellerId, s);
       }

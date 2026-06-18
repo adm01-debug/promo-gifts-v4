@@ -156,7 +156,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
             {group.items.map(({ item, globalIdx }, _idx) => {
               const persUnitCost =
                 item.personalizations?.reduce((sum, p) => {
-                  const pTotal = p.total_cost || 0;
+                  const pTotal = p.total_cost ?? 0;
                   return (
                     sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
                   );

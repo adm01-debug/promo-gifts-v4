@@ -62,8 +62,8 @@ function formatCurrency(value: number | null): string {
 }
 
 function calculateTotalCost(technique: Technique, quantity: number): number {
-  const setup = technique.setup_cost || 0;
-  const unit = technique.unit_cost || 0;
+  const setup = technique.setup_cost ?? 0;
+  const unit = technique.unit_cost ?? 0;
   return setup + unit * quantity;
 }
 

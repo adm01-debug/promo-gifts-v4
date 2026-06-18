@@ -279,7 +279,7 @@ export function useProductImageGallery({
         const variant = variantCode !== 'none' ? variantMap.get(variantCode) : null;
         const nextOrder =
           externalImages.length > 0
-            ? Math.max(...externalImages.map((i) => i.display_order || 0)) + 1
+            ? Math.max(...externalImages.map((i) => i.display_order ?? 0)) + 1
             : 0;
         const { error } = await untypedFrom('product_images').insert({
           product_id: productId,

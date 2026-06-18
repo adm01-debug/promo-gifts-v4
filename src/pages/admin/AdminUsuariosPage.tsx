@@ -79,7 +79,7 @@ export default function AdminUsuariosPage() {
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      return count || 0;
+      return count ?? 0;
     },
     enabled: isAdmin,
     refetchInterval: 30_000,
