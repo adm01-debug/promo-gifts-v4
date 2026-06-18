@@ -218,7 +218,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
           logoUrl,
           clientName,
           colorsCount: extra?.colorsCount || null,
-          annotations: annotations && annotations.length > 0 ? annotations : null,
+          annotations: annotations?.length ? annotations : null,
         },
       })
       .select('id')

@@ -70,7 +70,7 @@ export function QuantityComparisonTable({ product, selectedConfigs, quantities }
         bestUnit = Infinity;
       quantities.forEach((qty) => {
         const result = calculateForConfig(config, qty);
-        if (result && result.unitTotal < bestUnit) {
+        if (result?.unitTotal !== undefined && result.unitTotal < bestUnit) {
           bestUnit = result.unitTotal;
           bestQty = qty;
         }

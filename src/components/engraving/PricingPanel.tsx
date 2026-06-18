@@ -76,7 +76,7 @@ export function PricingPanel() {
     let results = tabelas;
 
     // Aplicar busca fuzzy
-    if (searchQuery && searchQuery.length >= 2) {
+    if ((searchQuery?.length ?? 0) >= 2) {
       const fuseResults = tabelasFuse.search(searchQuery);
       results = fuseResults.map((r) => r.item);
     }

@@ -117,7 +117,7 @@ function buildClientCells(rows: ClientRow[]): {
       monthLabel: MONTH_LABELS[m - 1],
       quotesCount: q,
       totalRevenue: v?.r ?? 0,
-      avgTicket: v && v.n > 0 ? v.t / v.n : 0,
+      avgTicket: v?.n ? v.t / v.n : 0,
       sharePercent: totalQuotes > 0 ? (q / totalQuotes) * 100 : 0,
       intensity: maxQuotes > 0 ? q / maxQuotes : 0,
     });
@@ -138,7 +138,7 @@ function buildIndustryCells(rows: IndustryRow[]): IndustryMonthCell[] {
   const monthly: Record<number, { q: number; r: number }> = {};
   for (let m = 1; m <= 12; m++) {
     const v = acc[m];
-    monthly[m] = v && v.n > 0 ? { q: v.q / v.n, r: v.r / v.n } : { q: 0, r: 0 };
+    monthly[m] = v?.n ? { q: v.q / v.n, r: v.r / v.n } : { q: 0, r: 0 };
   }
   const totalQ = Object.values(monthly).reduce((s, v) => s + v.q, 0);
   const maxQ = Math.max(0, ...Object.values(monthly).map((v) => v.q));

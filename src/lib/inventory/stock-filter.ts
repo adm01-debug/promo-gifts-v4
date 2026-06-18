@@ -43,7 +43,6 @@ export interface FilterContext {
   futureCutoffMs: number; // 0 quando desativado
 }
 
-
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
@@ -63,7 +62,6 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
   };
 }
 
-
 // ---------- estágio 1: seleção de variações ----------
 export function selectMatchingVariants(
   product: ProductStockSummary,
@@ -74,7 +72,8 @@ export function selectMatchingVariants(
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
-    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN)) return false;
+    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN))
+      return false;
     return true;
   });
 }
@@ -158,7 +157,6 @@ export function buildStockIndexes(
   const productsWithAlerts = new Set(alerts.map((a) => a.productId));
   return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
 }
-
 
 // ---------- predicados auxiliares ----------
 function matchStatus(
@@ -247,7 +245,7 @@ export function applyStockFilters(
   if (ctx.colorGroupN && !ctx.colorNameN) {
     const s = idx.byColorGroupN.get(ctx.colorGroupN);
     // colorGroup pode bater por substring em colorName → fallback p/ scan se sem índice.
-    if (s && s.size > 0) idSets.push(s);
+    if (s?.size) idSets.push(s);
   }
   if (ctx.categoryN) {
     const s = idx.byCategoryN.get(ctx.categoryN);
@@ -285,7 +283,6 @@ export function applyStockFilters(
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
-
 
   return sortProducts(out, filters);
 }

@@ -103,7 +103,7 @@ function CascadeSelects({
     result.push({ items: roots, selectedId: selectedChain[0] ?? '' });
     for (let i = 0; i < selectedChain.length; i++) {
       const node = nodeMap.get(selectedChain[i]);
-      if (node && node.children.length > 0) {
+      if (node?.children?.length) {
         result.push({ items: node.children, selectedId: selectedChain[i + 1] ?? '' });
       }
     }

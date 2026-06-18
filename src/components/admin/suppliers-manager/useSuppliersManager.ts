@@ -742,5 +742,5 @@ function buildNotesPayload(
   // They now use dedicated columns: phone, phone2, inscricao_estadual, tax_regime, state_uf.
   // Social media (instagram, facebook, etc.) also use dedicated columns now.
 
-  return parts.join('\n') ?? null;
+  return parts.join('\n') || null;
 }

@@ -186,7 +186,7 @@ export function ReplenishmentProductGrid() {
     const next = new Map(productMap);
     for (const [id, prod] of next) {
       const c = colorsByProduct.get(id);
-      if (c && c.length > 0) {
+      if (c?.length) {
         next.set(id, {
           ...prod,
           colors: c.map((x) => ({ name: x.name, hex: x.hex ?? '', group: '' })),

@@ -90,7 +90,7 @@ export function sortProducts(
       break;
     case 'best-seller-supplier': {
       const sMap = options?.supplierSalesMap;
-      if (sMap && sMap.size > 0) {
+      if (sMap?.size) {
         // Real data from external DB (mv_product_intelligence)
         products.sort((a, b) => {
           const aEntry = sMap.get(a.id);

@@ -140,7 +140,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
   });
 
   const productVariants: ProductVariant[] = useMemo(() => {
-    if (dbVariants && dbVariants.length > 0) {
+    if (dbVariants?.length) {
       return dbVariants.map((v) => ({
         code: v.id,
         name: v.color_name || 'Padrão',

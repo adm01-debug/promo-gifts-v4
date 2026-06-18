@@ -344,7 +344,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           .select('id,name,cnpj')
           .eq('cnpj', cnpj.trim())
           .limit(1);
-        if (existingRecords && existingRecords.length > 0) {
+        if (existingRecords?.length) {
           toast.error(`Já existe um fornecedor com este CNPJ: "${existingRecords[0].name}".`);
           setSaving(false);
           return;
@@ -414,7 +414,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           cep ? `CEP ${cep}` : null,
         ]
           .filter(Boolean)
-          .join(', ') ?? null;
+          .join(', ') || null;
 
       // BUG-01 FIX: buildNotesField no longer serializes phone/fiscal data — those use dedicated columns
       const notesValue = buildNotesField(
@@ -476,7 +476,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         if (logoUrl) {
           try {
             const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
-            if (tempPath && tempPath.startsWith('suppliers/new-')) {
+            if (tempPath?.startsWith('suppliers/new-')) {
               const ext = tempPath.split('.').pop() || 'png';
               const canonicalPath = `suppliers/${result.id}.${ext}`;
               const { error: moveError } = await supabase.storage
@@ -690,5 +690,5 @@ function buildNotesField(
     parts.push(`[Transportadora: ${transportadoraPadrao.trim()}, ID: ${transportadoraId || '-'}]`);
   // NOTE: phone, phone2, inscricao_estadual, tax_regime, state_uf, social media
   // are NO LONGER serialized here — they use dedicated columns.
-  return parts.join('\n') ?? null;
+  return parts.join('\n') || null;
 }

@@ -97,7 +97,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           limit: 50,
         });
 
-        if (relationships && relationships.length > 0) {
+        if (relationships?.length) {
           const relatedIds = relationships.map((r) => r.related_product_id);
           const items = await fetchProductsByIds(relatedIds);
           if (items.length > 0) return items;
@@ -119,7 +119,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
           limit: 10,
         });
 
-        if (memberships && memberships.length > 0) {
+        if (memberships?.length) {
           const groupIds = [...new Set(memberships.map((m) => m.product_group_id))].filter(Boolean);
           if (groupIds.length === 0) throw new Error('No valid group IDs');
 

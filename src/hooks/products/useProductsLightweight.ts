@@ -151,8 +151,8 @@ async function fetchCatalogPage(
 ): Promise<CatalogPage> {
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
-  if (categories && categories.length > 0) filters.category_id = categories;
-  if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
+  if (categories?.length) filters.category_id = categories;
+  if (suppliers?.length) filters.supplier_id = suppliers;
 
   let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
 

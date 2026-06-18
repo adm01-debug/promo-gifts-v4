@@ -133,7 +133,7 @@ export function useDiscountApproval() {
           supabase.from('user_roles').select('user_id').eq('role', 'admin'),
           supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
         ]);
-        if (adminRoles && adminRoles.length > 0) {
+        if (adminRoles?.length) {
           const sellerName = profile?.full_name || 'Vendedor';
           const msg =
             markup > 0

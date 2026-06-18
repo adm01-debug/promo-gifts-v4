@@ -66,7 +66,7 @@ export const ProductCategoryBadges = memo(function ProductCategoryBadges({
     allCategories.push(category);
   }
 
-  if (groups && groups.length > 0) {
+  if (groups?.length) {
     groups.forEach((group) => {
       if (group && !allCategories.some((c) => c.id === group.id)) {
         allCategories.push(group);

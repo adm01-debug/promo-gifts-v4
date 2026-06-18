@@ -174,7 +174,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
       }
 
       const sku = mapped.sku ? String(mapped.sku).trim() : '';
-      if (sku && sku.length > 50) errors.push('SKU excede 50 caracteres');
+      if ((sku?.length ?? 0) > 50) errors.push('SKU excede 50 caracteres');
       if (mapped.name && String(mapped.name).length > 300) {
         warnings.push('Nome truncado em 300 caracteres');
         mapped.name = String(mapped.name).substring(0, 300);

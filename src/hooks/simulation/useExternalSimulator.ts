@@ -175,7 +175,7 @@ export function useExternalProductSearch(searchQuery: string) {
           // Enriquecer produtos com imagens
           products.forEach((product) => {
             const productImages = imagesByProduct.get(product.id);
-            if (productImages && productImages.length > 0) {
+            if (productImages?.length) {
               productImages.sort((a, b) => a.display_order - b.display_order);
 
               const primaryImage = productImages.find((img) => img.is_primary) || productImages[0];
@@ -361,7 +361,7 @@ export function useExternalProductsList(options?: {
           // Enriquecer produtos com imagens
           products.forEach((product) => {
             const productImages = imagesByProduct.get(product.id);
-            if (productImages && productImages.length > 0) {
+            if (productImages?.length) {
               productImages.sort((a, b) => a.display_order - b.display_order);
 
               const primaryImage = productImages.find((img) => img.is_primary) || productImages[0];

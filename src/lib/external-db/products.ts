@@ -520,7 +520,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
   products.forEach((product) => {
     const productImages = imagesByProduct.get(product.id);
-    if (productImages && productImages.length > 0) {
+    if (productImages?.length) {
       productImages.sort((a, b) => a.order - b.order);
       // Excluir tipos técnicos: não são fotos de produto (ver TECHNICAL_IMAGE_TYPES).
       // Alinhado com trigger trg_sync_product_images e backfill de 2026-06-01.

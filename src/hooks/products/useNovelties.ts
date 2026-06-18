@@ -387,7 +387,7 @@ export function useNoveltyStats() {
             .select('name')
             .eq('id', topSupplierId)
             .range(0, 0);
-          if (!supError && supData && supData.length > 0) {
+          if (!supError && supData?.length) {
             topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
           }
         } catch {
@@ -434,7 +434,7 @@ export function useNovelties(
           .eq('code', supplierCode)
           .range(0, 0);
         if (supError) return handleQueryError('useNovelties', 'suppliers', supError);
-        if (supData && supData.length > 0) {
+        if (supData?.length) {
           supplierId = (supData[0] as unknown as { id: string }).id;
         }
       }

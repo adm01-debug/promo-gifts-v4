@@ -81,7 +81,7 @@ export function MultiAreaManager({
         e.preventDefault();
         setIsDraggingOver(false);
         const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
+        if (file?.type.startsWith('image/')) {
           const targetAreaId = activeAreaId || areas[0]?.id;
           if (targetAreaId) {
             onLogoUpload(targetAreaId, file);

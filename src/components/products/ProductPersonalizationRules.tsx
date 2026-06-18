@@ -144,7 +144,7 @@ export function ProductPersonalizationRules({
         .eq('is_active', true)
         .limit(1);
 
-      if (customComponents && customComponents.length > 0) {
+      if (customComponents?.length) {
         return { source: 'product' as const, productDbId };
       }
 
