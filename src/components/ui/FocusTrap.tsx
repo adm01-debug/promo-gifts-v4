@@ -61,7 +61,7 @@ export function FocusTrap({
   const focusLast = useCallback(() => {
     const elements = getFocusableElements();
     if (elements.length > 0) {
-      elements[elements.length - 1].focus();
+      elements.at(-1)?.focus();
     }
   }, [getFocusableElements]);
 
@@ -171,7 +171,7 @@ export function useFocusTrap(active: boolean = true) {
   const focusLast = useCallback(() => {
     const elements = getFocusableElements();
     if (elements.length > 0) {
-      elements[elements.length - 1].focus();
+      elements.at(-1)?.focus();
     }
   }, [getFocusableElements]);
 

@@ -44,7 +44,7 @@ export function useKitUndoRedo() {
   const pushSnapshot = useCallback((snapshot: KitSnapshot) => {
     if (isRestoringRef.current) return;
     setHistory((prev) => {
-      const last = prev[prev.length - 1];
+      const last = prev.at(-1);
       if (last && JSON.stringify(last) === JSON.stringify(snapshot)) return prev;
       const next = [...prev, snapshot];
       if (next.length > MAX_HISTORY) next.shift();
@@ -65,7 +65,7 @@ export function useKitUndoRedo() {
       isRestoringRef.current = false;
       return null;
     }
-    const prev = newHistory[newHistory.length - 1];
+    const prev = newHistory.at(-1) ?? null;
     setHistory(newHistory);
     setFuture((f) => [current, ...f]);
     // Clear any pending timer before scheduling the reset

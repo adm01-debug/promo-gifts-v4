@@ -63,7 +63,7 @@ export function MyRecentQuotesWidget() {
       return data ?? [];
     },
     getNextPageParam: (last) =>
-      last.length < PAGE_SIZE ? undefined : (last[last.length - 1]?.updated_at ?? undefined),
+      last.length < PAGE_SIZE ? undefined : (last.at(-1)?.updated_at ?? undefined),
   });
 
   const all = useMemo(() => data?.pages.flat() ?? [], [data]);

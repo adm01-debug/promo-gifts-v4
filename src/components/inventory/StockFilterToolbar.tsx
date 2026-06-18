@@ -224,8 +224,7 @@ export function StockFilterToolbar({
                     nuances: [],
                   }}
                   onChange={(sel) => {
-                    const selected =
-                      sel.groups.length > 0 ? sel.groups[sel.groups.length - 1] : undefined;
+                    const selected = sel.groups.length > 0 ? sel.groups.at(-1) : undefined;
                     onUpdateFilter('colorGroup', selected);
                     onUpdateFilter('colorName', undefined);
                   }}
@@ -248,10 +247,7 @@ export function StockFilterToolbar({
                 <ExternalCategoryFilter
                   selectedCategories={filters.categoryId ? [filters.categoryId] : []}
                   onCategoriesChange={(cats) =>
-                    onUpdateFilter(
-                      'categoryId',
-                      cats.length > 0 ? cats[cats.length - 1] : undefined,
-                    )
+                    onUpdateFilter('categoryId', cats.length > 0 ? cats.at(-1) : undefined)
                   }
                   compact
                 />

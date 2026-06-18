@@ -317,8 +317,8 @@ export function ChatMessageList({
 
         {/* Follow-up actions */}
         {messages.length > 0 &&
-          messages[messages.length - 1]?.role === 'assistant' &&
-          !messages[messages.length - 1]?.isError &&
+          messages.at(-1)?.role === 'assistant' &&
+          !messages.at(-1)?.isError &&
           !isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
@@ -367,7 +367,7 @@ export function ChatMessageList({
           )}
 
         {/* Typing indicator */}
-        {isLoading && messages[messages.length - 1]?.role === 'user' && (
+        {isLoading && messages.at(-1)?.role === 'user' && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}

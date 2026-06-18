@@ -88,7 +88,7 @@ const formatPrice = (price: number) => {
     return (
       <span className="flex items-baseline justify-end gap-1">
         <span className="text-[9px] font-medium text-muted-foreground/50">R$</span>
-        <span>{parts[parts.length - 1]}</span>
+        <span>{parts.at(-1)}</span>
       </span>
     );
   }

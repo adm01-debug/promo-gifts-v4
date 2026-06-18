@@ -124,7 +124,7 @@ export function ConnectionDetailsDialog({
       .map((f) => f.status?.updated_at)
       .filter((v): v is string => !!v)
       .sort();
-    return stamps[stamps.length - 1] ?? null;
+    return stamps.at(-1) ?? null;
   }, [fields]);
 
   return (

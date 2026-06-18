@@ -147,7 +147,7 @@ export function findPriceTier(
       return faixa;
     }
   }
-  return faixas.length > 0 ? faixas[faixas.length - 1] : null;
+  return faixas.at(-1) ?? null;
 }
 
 export function calculateCustomizationTotal(

@@ -23,7 +23,7 @@ export interface NormalizationResult {
 function stripQuotes(s: string, changes: string[]): string {
   if (s.length >= 2) {
     const first = s[0];
-    const last = s[s.length - 1];
+    const last = s.at(-1);
     if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
       changes.push('aspas envolventes removidas');
       return s.slice(1, -1);

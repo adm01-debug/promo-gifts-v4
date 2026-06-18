@@ -163,7 +163,7 @@ export async function findBestMatch(params: {
 
   // Se não encontrou por cores, pegar a com mais cores disponível
   if (!tabelaAdequada) {
-    tabelaAdequada = tabelas[tabelas.length - 1];
+    tabelaAdequada = tabelas.at(-1) ?? null;
   }
 
   // Validar dimensões se fornecidas

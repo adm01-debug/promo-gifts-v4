@@ -232,7 +232,7 @@ export function aggregateByEndpoint(input: readonly BridgeCallSample[]): BridgeA
       avgMs: Math.round(sumDur / arr.length),
       p50Ms: percentile(durations, 50),
       p95Ms: percentile(durations, 95),
-      maxMs: durations[durations.length - 1] ?? 0,
+      maxMs: durations.at(-1) ?? 0,
       totalReqBytes: totalReq,
       totalRespBytes: totalResp,
       avgReqBytes: Math.round(totalReq / arr.length),

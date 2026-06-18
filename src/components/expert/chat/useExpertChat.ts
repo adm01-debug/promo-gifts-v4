@@ -453,8 +453,7 @@ export function useExpertChat({
     if (!lastUserInput) return;
     setMessages((prev) => {
       const filtered = prev.filter((m) => !m.isError);
-      if (filtered.length > 0 && filtered[filtered.length - 1]?.role === 'user')
-        return filtered.slice(0, -1);
+      if (filtered.length > 0 && filtered.at(-1)?.role === 'user') return filtered.slice(0, -1);
       return filtered;
     });
     handleAutoSend(lastUserInput);
@@ -576,8 +575,7 @@ export function useExpertChat({
                   assistantMessage += content;
                   setMessages((prev) => {
                     const n = [...prev];
-                    if (n[n.length - 1]?.role === 'assistant')
-                      n[n.length - 1].content = assistantMessage;
+                    if (n.at(-1)?.role === 'assistant') n[n.length - 1].content = assistantMessage;
                     return n;
                   });
                 }

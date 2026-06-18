@@ -195,7 +195,7 @@ async function fetchDetails(input: IncidentDetailsInput): Promise<IncidentDetail
       deliveryFail: delivFail,
       deliverySuccessRate: delivRows.length > 0 ? (delivSuccess / delivRows.length) * 100 : null,
       firstEventAt: allTimestamps[0] ?? null,
-      lastEventAt: allTimestamps[allTimestamps.length - 1] ?? null,
+      lastEventAt: allTimestamps.at(-1) ?? null,
     },
     tests: testRows,
     deliveries: delivRows,

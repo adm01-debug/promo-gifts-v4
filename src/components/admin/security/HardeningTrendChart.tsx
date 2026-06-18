@@ -39,7 +39,7 @@ export function HardeningTrendChart() {
     max: d.max_score,
   }));
 
-  const last = data[data.length - 1];
+  const last = data.at(-1);
   const min = data.length > 0 ? Math.min(...data.map((d) => d.score)) : null;
 
   return (

@@ -244,7 +244,7 @@ async function fetchSequential(
       ),
     );
     for (const page of pages) products.push(...page.records);
-    if (pages[pages.length - 1]?.records.length < LIGHTWEIGHT_PAGE_SIZE) break;
+    if ((pages.at(-1)?.records.length ?? 0) < LIGHTWEIGHT_PAGE_SIZE) break;
     if (products.length >= maxTotal) break;
   }
   return products;

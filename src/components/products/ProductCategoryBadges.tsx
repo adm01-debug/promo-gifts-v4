@@ -114,7 +114,7 @@ export const ProductCategoryBadges = memo(function ProductCategoryBadges({
         // Caminho completo só para a categoria principal e quando houver ≥2 níveis.
         const path = isMainCategory && (categoryPath?.length ?? 0) > 1 ? categoryPath : null;
         const ancestors = path ? path.slice(0, -1) : [];
-        const leaf = path ? path[path.length - 1] : '';
+        const leaf = path ? path.at(-1) : '';
         return (
           <Tooltip key={cat.id}>
             <TooltipTrigger asChild>

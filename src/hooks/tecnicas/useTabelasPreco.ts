@@ -149,7 +149,7 @@ export async function buscarTabelaAdequada(
 
   // Se não encontrou por cores, pegar a com mais cores disponível
   if (!tabelaAdequada && tabelas.length > 0) {
-    tabelaAdequada = tabelas[tabelas.length - 1];
+    tabelaAdequada = tabelas.at(-1);
   }
 
   // Validar dimensões se fornecidas

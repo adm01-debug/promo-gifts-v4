@@ -146,8 +146,8 @@ export function MyClientsWidget() {
       return { quotes: qRes.data ?? [], orders: oRes.data ?? [] };
     },
     getNextPageParam: (last) => {
-      const lastQ = last.quotes[last.quotes.length - 1]?.updated_at;
-      const lastO = last.orders[last.orders.length - 1]?.updated_at;
+      const lastQ = last.quotes.at(-1)?.updated_at;
+      const lastO = last.orders.at(-1)?.updated_at;
       const more = last.quotes.length >= PAGE_SIZE || last.orders.length >= PAGE_SIZE;
       if (!more) return undefined;
       // Cursor = o mais antigo entre os dois lotes para garantir cobertura.

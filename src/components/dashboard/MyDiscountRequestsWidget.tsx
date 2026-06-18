@@ -63,7 +63,7 @@ export function MyDiscountRequestsWidget() {
       return data ?? [];
     },
     getNextPageParam: (last) =>
-      last.length < PAGE_SIZE ? undefined : (last[last.length - 1]?.created_at ?? undefined),
+      last.length < PAGE_SIZE ? undefined : (last.at(-1)?.created_at ?? undefined),
   });
 
   const all = useMemo(() => data?.pages.flat() ?? [], [data]);

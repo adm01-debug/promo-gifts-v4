@@ -57,7 +57,7 @@ export default function CoverageInsightsDashboardPage() {
       .map(([key, history]) => {
         const [module, route] = key.split('::');
         const sorted = history.sort((a, b) => a.date.localeCompare(b.date));
-        const latest = sorted[sorted.length - 1]?.coverage ?? 0;
+        const latest = sorted.at(-1)?.coverage ?? 0;
         const trend = getTrend(sorted.map((i) => i.coverage));
         return { module, route, latest, trend, history: sorted };
       })

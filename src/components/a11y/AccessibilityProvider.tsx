@@ -193,7 +193,7 @@ export function useKeyboardShortcut(
     if (!enabled) return;
 
     const keys = shortcut.toLowerCase().split('+');
-    const targetKey = keys[keys.length - 1];
+    const targetKey = keys.at(-1);
     const modifiers = {
       ctrl: keys.includes('ctrl'),
       shift: keys.includes('shift'),
