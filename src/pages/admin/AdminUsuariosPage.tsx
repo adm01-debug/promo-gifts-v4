@@ -40,7 +40,7 @@ const VALID_TABS = ['users', 'password-reset', 'discounts', 'audit'] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 export default function AdminUsuariosPage() {
-  const { user, isAdmin, isDev } = useAuth();
+  const { user, isAdmin, isDev, rolesLoaded } = useAuth();
   const { pendingCount } = usePasswordResetRequests();
   const {
     users,
