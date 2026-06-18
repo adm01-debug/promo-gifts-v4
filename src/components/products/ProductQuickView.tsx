@@ -65,6 +65,8 @@ export const ProductQuickView = React.memo(
     onAddToCart,
     onNavigateToProduct,
     onShare,
+    onAddToQuote,
+    onAddToCollection,
   }: ProductQuickViewProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
