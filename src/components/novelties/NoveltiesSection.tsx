@@ -206,7 +206,11 @@ export function NoveltiesSection() {
                           </div>
                         )}
                         <div className="absolute left-2 top-2">
-                          <NoveltyBadge daysRemaining={item.days_remaining} size="sm" />
+                          <NoveltyBadge
+                            daysRemaining={item.days_remaining}
+                            daysElapsed={item.days_as_novelty}
+                            size="sm"
+                          />
                         </div>
                       </div>
 

@@ -58,6 +58,39 @@ vi.mock('@/hooks/products', () => ({
     isFetching: false,
     error: null,
   })),
+  // Faithful-enough local sort used by the grid (the real one lives in
+  // useNovelties.ts and sorts by the real NoveltyWithDetails fields).
+  sortNovelties: (arr: NoveltyWithDetails[], sortBy: string) => {
+    const cmpName = (a: NoveltyWithDetails, b: NoveltyWithDetails) =>
+      (a.product_name || '').localeCompare(b.product_name || '', 'pt-BR');
+    switch (sortBy) {
+      case 'newest':
+        arr.sort(
+          (a, b) =>
+            new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime() || cmpName(a, b),
+        );
+        break;
+      case 'name':
+      case 'name-asc':
+        arr.sort(cmpName);
+        break;
+      case 'name-desc':
+        arr.sort((a, b) => cmpName(b, a));
+        break;
+      case 'price-asc':
+        arr.sort((a, b) => (a.base_price ?? 0) - (b.base_price ?? 0));
+        break;
+      case 'price-desc':
+        arr.sort((a, b) => (b.base_price ?? 0) - (a.base_price ?? 0));
+        break;
+      case 'stock':
+        arr.sort((a, b) => (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0));
+        break;
+      default:
+        break;
+    }
+    return arr;
+  },
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),

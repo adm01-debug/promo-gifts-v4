@@ -22,6 +22,7 @@ vi.mock('@/hooks/products', () => ({
     clearSelection: vi.fn(),
     noveltyToProduct: vi.fn(),
   })),
+  sortNovelties: (arr: unknown[]) => arr,
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({
