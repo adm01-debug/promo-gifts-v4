@@ -246,6 +246,7 @@ export function GlobalSearch({
         case 'Escape':
           onClose();
           break;
+        // no default
       }
     };
     document.addEventListener('keydown', handleKeyDown);

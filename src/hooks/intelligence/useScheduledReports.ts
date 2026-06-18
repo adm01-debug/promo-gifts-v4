@@ -159,5 +159,6 @@ function calculateNextRun(frequency: ReportFrequency): Date {
       next.setMonth(next.getMonth() + 1);
       return next;
     }
+    // no default
   }
 }

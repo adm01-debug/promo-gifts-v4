@@ -141,6 +141,7 @@ export function normalizeSecretError(
         hint: 'Aguarde alguns segundos e tente novamente.',
         retryable: true,
       });
+    // no default
   }
 
   // 2) Fallback: heuristics on the message text

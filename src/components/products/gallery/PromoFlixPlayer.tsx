@@ -893,6 +893,7 @@ export function PromoFlixPlayer({
           e.preventDefault();
           toggleRaioX();
           break;
+        // no default
       }
     };
     window.addEventListener('keydown', onKey);

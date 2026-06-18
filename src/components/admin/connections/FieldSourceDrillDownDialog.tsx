@@ -83,6 +83,7 @@ const kindIcon = (kind: FieldDrillDownData['technicalSource']['kind']) => {
       return <GitMerge className="h-3.5 w-3.5" />;
     case 'hook':
       return <KeyRound className="h-3.5 w-3.5" />;
+    // no default
   }
 };
 

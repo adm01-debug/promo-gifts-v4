@@ -97,6 +97,7 @@ export function ComparisonMobileView({
             {p.supplier?.name ?? '—'}
           </span>
         );
+      // no default
     }
   };
 

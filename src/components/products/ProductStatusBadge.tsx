@@ -228,8 +228,10 @@ export function ProductStatusBadge({
                 <span>{value || 'Termina em breve'}</span>
               </>
             );
+          // no default
         }
         break;
+      // no default
     }
     return <span>{value}</span>;
   };

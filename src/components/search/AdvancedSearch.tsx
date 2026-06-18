@@ -193,6 +193,7 @@ export function AdvancedSearch({
         setIsOpen(false);
         setSelectedIndex(-1);
         break;
+      // no default
     }
   };
 

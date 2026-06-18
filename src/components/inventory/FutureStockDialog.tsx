@@ -414,6 +414,7 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
           cmp = (STATUS_SORT_ORDER[a.status] ?? 4) - (STATUS_SORT_ORDER[b.status] ?? 4);
           break;
         }
+        // no default
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });

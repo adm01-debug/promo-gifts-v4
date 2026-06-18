@@ -323,6 +323,7 @@ export const ProductCard = memo(
           case 'packaging':
             navigate('/filtros?hasCommercialPackaging=1');
             break;
+          // no default
         }
       },
       [onStatusClick, navigate],

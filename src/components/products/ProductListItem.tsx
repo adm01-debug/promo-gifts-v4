@@ -153,6 +153,7 @@ export const ProductListItem = memo(function ProductListItem({
         case 'kit':
           navigate('/filtros?isKit=1');
           break;
+        // no default
       }
     },
     [onStatusClick, navigate],

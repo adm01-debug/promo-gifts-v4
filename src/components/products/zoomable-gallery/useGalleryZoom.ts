@@ -93,6 +93,7 @@ export function useGalleryZoom(images: string[], isFullscreen: boolean) {
         case '0':
           resetView();
           break;
+        // no default
       }
     };
     window.addEventListener('keydown', handleKeyDown);

@@ -102,6 +102,7 @@ export function PresentationMode({
           e.preventDefault();
           goTo(totalSlides - 1);
           break;
+        // no default
       }
     }
     window.addEventListener('keydown', handleKey);

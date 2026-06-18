@@ -148,6 +148,7 @@ export function useKitBuilder() {
       case 'summary':
         canProceed = kitState.isValid;
         break;
+      // no default
     }
 
     return {

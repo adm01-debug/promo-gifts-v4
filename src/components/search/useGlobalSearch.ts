@@ -195,6 +195,7 @@ export function useGlobalSearch() {
             window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', altKey: true }));
           }, 500);
           break;
+        // no default
       }
     },
     // FIX BUG-GS-03 / BUG-GS-18 / BUG-GS-19: added setQuery and setResults.

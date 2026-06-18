@@ -59,6 +59,7 @@ export function OnboardingTour() {
             left: rect.left + rect.width / 2 - tooltipWidth / 2,
           };
           break;
+        // no default
       }
 
       // Ensure tooltip stays within viewport
