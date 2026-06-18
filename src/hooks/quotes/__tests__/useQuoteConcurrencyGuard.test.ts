@@ -172,13 +172,9 @@ describe('resetBaseline', () => {
 
   it('resetBaseline sem argumento usa Date.now() aproximado', async () => {
     const { result } = renderHook(() => useQuoteConcurrencyGuard(makeQuote(T0)));
-    const before = Date.now();
     act(() => {
       result.current.resetBaseline();
     });
-    const after = Date.now();
-    // Sanidade temporal: o intervalo que cerca o reset é monotônico.
-    expect(after).toBeGreaterThanOrEqual(before);
 
     // Próximo check com timestamp antigo não deve gerar conflito
     // (baseline foi atualizado para agora, T0 < agora)

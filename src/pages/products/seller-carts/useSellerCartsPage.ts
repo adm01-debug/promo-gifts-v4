@@ -342,13 +342,13 @@ export function useSellerCartsPage() {
       try {
         const { data, error } = await supabase.from('products').select('id').in('id', ids);
         validIds = error
-          ? new Set(cart.items.map((i) => i.product_id)) // fail-open: nao bloqueia em erro
-          : new Set((data ?? []).map((row) => String(row.id)));
+          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
+          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
       } catch {
-        validIds = new Set(cart.items.map((i) => i.product_id)); // fail-open
+        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
       }
     }
-    const validItems = cart.items.filter((i) => validIds.has(i.product_id));
+    const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
     const staleCount = cart.items.length - validItems.length;
     if (validItems.length === 0) {
       setConfirmQuoteCart(null);

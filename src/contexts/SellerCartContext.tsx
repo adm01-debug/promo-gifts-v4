@@ -29,11 +29,7 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (
-    item: AddToCartInput,
-    cartId?: string,
-    options?: { silent?: boolean },
-  ) => void;
+  addToActiveCart: (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;

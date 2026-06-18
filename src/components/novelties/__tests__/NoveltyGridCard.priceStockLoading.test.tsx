@@ -55,6 +55,7 @@ const baseProduct: NoveltyWithDetails = {
   detected_at: new Date().toISOString(),
   expires_at: new Date().toISOString(),
   days_remaining: 20,
+  days_as_novelty: 10,
   status: 'active',
   is_highlighted: false,
   is_active: true,
@@ -65,9 +66,7 @@ const baseProduct: NoveltyWithDetails = {
 
 describe('NoveltyGridCard › isPriceStockLoading', () => {
   it('renderiza skeletons de preço e estoque quando isPriceStockLoading=true', () => {
-    const { queryByTestId } = render(
-      <NoveltyGridCard product={baseProduct} isPriceStockLoading />,
-    );
+    const { queryByTestId } = render(<NoveltyGridCard product={baseProduct} isPriceStockLoading />);
     expect(queryByTestId('novelty-card-price-skeleton')).not.toBeNull();
     expect(queryByTestId('novelty-card-stock-skeleton')).not.toBeNull();
     // Conteúdo real não deve aparecer
@@ -76,9 +75,7 @@ describe('NoveltyGridCard › isPriceStockLoading', () => {
   });
 
   it('skeletons têm atributos de acessibilidade (aria-busy/aria-label)', () => {
-    const { getByTestId } = render(
-      <NoveltyGridCard product={baseProduct} isPriceStockLoading />,
-    );
+    const { getByTestId } = render(<NoveltyGridCard product={baseProduct} isPriceStockLoading />);
     const priceSk = getByTestId('novelty-card-price-skeleton');
     expect(priceSk.getAttribute('aria-busy')).toBe('true');
     expect(priceSk.getAttribute('aria-label')).toBe('Carregando preço');
@@ -98,9 +95,7 @@ describe('NoveltyGridCard › isPriceStockLoading', () => {
   });
 
   it('rodapé permanece presente e ancorado mesmo no estado de loading', () => {
-    const { getByTestId } = render(
-      <NoveltyGridCard product={baseProduct} isPriceStockLoading />,
-    );
+    const { getByTestId } = render(<NoveltyGridCard product={baseProduct} isPriceStockLoading />);
     const footer = getByTestId('novelty-card-footer');
     expect(footer.className).toContain('mt-auto');
     expect(footer.className).toContain('min-h-[2.75rem]');
