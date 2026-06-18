@@ -412,6 +412,7 @@ export function useCatalogState() {
     ramos: filters.ramosAtividade,
     segmentos: filters.segmentosAtividade,
     publico: filters.publicoAlvo,
+    endomarketing: [],
   });
 
   useExternalCategoriesQuery();

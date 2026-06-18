@@ -34,6 +34,9 @@ export interface LightweightProduct {
   supplier_id: string | null;
   category_id: string | null;
   main_category_id: string | null;
+  /** Leaf category (mais profunda) — preenchido por mv_product_leaf_category na view v_products_public. */
+  leaf_category_id?: string | null;
+  leaf_category_name?: string | null;
   brand: string | null;
   is_active: boolean;
   active: boolean;

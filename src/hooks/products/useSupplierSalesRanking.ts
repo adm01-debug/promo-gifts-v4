@@ -46,7 +46,8 @@ export function useSupplierSalesRanking() {
       try {
         // FIX BUG-A: usar RPC que retorna todas as 7 243+ linhas sem limite.
         // supabase.rpc() não é afetado por db-max-rows do PostgREST.
-        const { data, error } = await supabase.rpc('fn_get_product_intelligence_all');
+        // RPC existe no DB canônico (Gold) mas types.ts gerado pelo Lovable pode não tê-la — cast pontual.
+        const { data, error } = await supabase.rpc('fn_get_product_intelligence_all' as never);
 
         if (error) {
           const msg = error.message ?? '';
@@ -61,7 +62,7 @@ export function useSupplierSalesRanking() {
           throw error;
         }
 
-        const rows = (data ?? []) as ProductIntelligenceRanking[];
+        const rows = (data ?? []) as unknown as ProductIntelligenceRanking[];
         const map = new Map<string, SupplierSalesEntry>();
 
         for (const row of rows) {

@@ -29,7 +29,7 @@ interface CatalogFilteringOptions {
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
   promoSalesMap?: Map<string, number>;
-  supplierSalesMap?: Map<string, number>;
+  supplierSalesMap?: Map<string, SupplierSalesEntry>;
 }
 
 const EMPTY_ID_SET: ReadonlySet<string> = new Set<string>();
@@ -172,11 +172,10 @@ export function useCatalogFiltering({
 
     // Business Logic - Do not change sorting behavior
     const skipSort = hasFuzzySearch && sortBy === 'name';
-    // supplierSalesMap arrives typed as Map<string, number> via an upstream cast,
-    // but its runtime entries are SupplierSalesEntry (from useSupplierSalesRanking).
+    // supplierSalesMap entries são SupplierSalesEntry (from useSupplierSalesRanking).
     sortProducts(result, sortBy, {
       promoSalesMap,
-      supplierSalesMap: supplierSalesMap as unknown as Map<string, SupplierSalesEntry> | undefined,
+      supplierSalesMap,
       skipSort,
     });
 
