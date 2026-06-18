@@ -1,3 +1,12 @@
+-- Auditoria Estoque (follow-up revisão P1): garante os slots 4-6 mesmo em DB recriado do zero
+-- (idempotente; em produção as colunas já existem). Necessário antes da view/trigger que os usa.
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_quantity_4 integer;
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_date_4 date;
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_quantity_5 integer;
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_date_5 date;
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_quantity_6 integer;
+ALTER TABLE public.variant_supplier_sources ADD COLUMN IF NOT EXISTS next_date_6 date;
+
 -- Auditoria do módulo Estoque (2026-06-17) — observabilidade NÃO destrutiva.
 --
 -- Contexto: a auditoria identificou que o "Estoque Futuro" e o total de unidades

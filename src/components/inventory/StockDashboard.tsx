@@ -363,6 +363,17 @@ export function StockDashboard() {
                 {criticalAlerts.length} alertas
               </Badge>
             )}
+            {warningAlerts.length > 0 && (
+              <Badge
+                variant="/tmp/edits.mjs"
+                data-testid="warning-alerts-badge"
+                className="cursor-pointer gap-1 text-xs"
+                onClick={() => setLowStockDialogOpen(true)}
+              >
+                <AlertCircle className="h-3 w-3" />
+                {warningAlerts.length} avisos
+              </Badge>
+            )}
             <HealthScoreInfoDialog
               productsInStock={summary.productsInStock}
               totalProducts={summary.totalProducts}

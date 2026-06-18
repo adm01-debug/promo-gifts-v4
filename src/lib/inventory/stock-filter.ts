@@ -187,6 +187,10 @@ function matchStatus(
   }
   if (product.overallStatus === status) return true;
   if (status === 'low_stock' && product.overallStatus === 'critical') return true;
+  // "Crítico" é decisão de PRODUTO (overallStatus) e espelha 1:1 o KPI do card.
+  // Variantes nunca recebem status 'critical'; esta guarda torna explícito e
+  // impede que um futuro fallback por variante infle o filtro vs. o card.
+  if (status === 'critical') return false;
   return product.variants.some((v) => v.status === status);
 }
 
