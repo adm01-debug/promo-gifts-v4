@@ -155,7 +155,9 @@ jobs:
             --project=${{ matrix.project }} \
             e2e/routes/app/stock-dashboard.spec.ts \
             e2e/routes/app/stock-filter-switching.spec.ts \
-            e2e/routes/app/stock-table-sticky.spec.ts
+            e2e/routes/app/stock-table-sticky.spec.ts \
+            e2e/admin/stock-search-button.spec.ts \
+            e2e/admin/stock-search-race-and-keyboard.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
