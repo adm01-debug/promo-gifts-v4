@@ -28,6 +28,9 @@ interface CatalogFilteringOptions {
   hasMetadataFilter?: boolean;
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
+  hasSizeFilter?: boolean;
+  sizeFilteredProductIds?: Set<string>;
+  isLoadingSizeFilter?: boolean;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, SupplierSalesEntry>;
 }
@@ -52,6 +55,9 @@ export function useCatalogFiltering({
   hasMetadataFilter = false,
   metadataFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingMetadataFilter = false,
+  hasSizeFilter = false,
+  sizeFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingSizeFilter = false,
   promoSalesMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
@@ -154,6 +160,17 @@ export function useCatalogFiltering({
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
     }
 
+    // BUG-CATALOG-SIZES FIX: tamanhos eram filtráveis no painel mas ignorados
+    // no pipeline do catálogo principal. useProductsBySize consulta product_variants
+    // server-side (mesmo padrão de cor/categoria/material).
+    if (hasSizeFilter && !isLoadingSizeFilter) {
+      if (sizeFilteredProductIds.size > 0) {
+        result = result.filter((p) => sizeFilteredProductIds.has(p.id));
+      } else {
+        return [];
+      }
+    }
+
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -212,6 +229,9 @@ export function useCatalogFiltering({
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    hasSizeFilter,
+    sizeFilteredProductIds,
+    isLoadingSizeFilter,
     promoSalesMap,
     supplierSalesMap,
     categoryFilterSet,
