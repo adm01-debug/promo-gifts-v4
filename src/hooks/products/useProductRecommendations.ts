@@ -104,7 +104,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (viewsError) return [];
 
-      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) || [];
+      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) ?? [];
 
       try {
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =

@@ -617,7 +617,7 @@ export function useCategoryRanking(
           filters: { summary_date: { op: 'gte', value: sinceDate } }, // FIX: objeto -> .gte() (era string -> .eq() -> 400)
           limit: 5000,
         });
-        (result?.records || []).forEach((snap) => {
+        (result?.records ?? []).forEach((snap) => {
           const cat = productCategoryMap.get(snap.product_id);
           if (!cat) return;
           const e = categoryMap.get(cat.catId) || {

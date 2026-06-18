@@ -19,7 +19,7 @@ export function useMaterialGroups(): UseMaterialGroupsReturn {
     gcTime: 30 * 60 * 1000, // 30 minutos
   });
 
-  const groups = data?.groups || [];
+  const groups = data?.groups ?? [];
 
   const totalGroups = groups.length;
   const totalMaterials = groups.reduce((sum, g) => sum + (g.total_materials || 0), 0);

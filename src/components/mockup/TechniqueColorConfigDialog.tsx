@@ -79,7 +79,7 @@ export function TechniqueColorConfigDialog({
   const [laserTone, setLaserTone] = useState<LaserTone>(currentConfig?.laserTone || 'escuro');
   const [colorCount, setColorCount] = useState<number>(currentConfig?.colorCount || 1);
   const [selectedIndices, setSelectedIndices] = useState<number[]>(
-    currentConfig?.selectedPantoneIndices || [],
+    currentConfig?.selectedPantoneIndices ?? [],
   );
 
   // Reset when dialog opens with new config
@@ -87,7 +87,7 @@ export function TechniqueColorConfigDialog({
     if (open) {
       setLaserTone(currentConfig?.laserTone || 'escuro');
       setColorCount(currentConfig?.colorCount || 1);
-      setSelectedIndices(currentConfig?.selectedPantoneIndices || []);
+      setSelectedIndices(currentConfig?.selectedPantoneIndices ?? []);
     }
   }, [open, currentConfig]);
 

@@ -91,13 +91,13 @@ export default function AdminAiUsagePage() {
         </div>
 
         <AiCharts
-          byDay={stats?.byDay || []}
-          byFunction={stats?.byFunction || []}
+          byDay={stats?.byDay ?? []}
+          byFunction={stats?.byFunction ?? []}
           isLoading={statsLoading}
         />
         <AiTables
-          byUser={stats?.byUser || []}
-          byModel={stats?.byModel || []}
+          byUser={stats?.byUser ?? []}
+          byModel={stats?.byModel ?? []}
           logs={logs || []}
           statsLoading={statsLoading}
           logsLoading={logsLoading}

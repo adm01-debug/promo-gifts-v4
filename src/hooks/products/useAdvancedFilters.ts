@@ -166,7 +166,7 @@ export function useAdvancedFilters() {
         code: tech.code || '',
         estimatedDays: tech.estimated_days,
         minQuantity: tech.min_quantity,
-      })) || []
+      })) ?? []
     );
   }, [techniquesDB.data]);
 
@@ -179,7 +179,7 @@ export function useAdvancedFilters() {
         name: sup.name,
         code: sup.code,
         leadTimeDays: sup.lead_time_days,
-      })) || []
+      })) ?? []
     );
   }, [suppliersDB.data]);
 
@@ -191,7 +191,7 @@ export function useAdvancedFilters() {
         id: color.id,
         name: color.name,
         hex: color.hex_code || '#cccccc',
-      })) || []
+      })) ?? []
     );
   }, [colorGroupsDB.data]);
 
@@ -204,7 +204,7 @@ export function useAdvancedFilters() {
         name: tag.name,
         slug: tag.slug,
         color: tag.color,
-      })) || []
+      })) ?? []
     );
   }, [tagsDB.data]);
 

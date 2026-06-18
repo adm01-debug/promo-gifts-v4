@@ -54,11 +54,11 @@ export function useProductsByMaterial(
   });
 
   const productIds = useMemo(() => {
-    return new Set(data?.productIds || []);
+    return new Set(data?.productIds ?? []);
   }, [data?.productIds]);
 
   const productIdsArray = useMemo(() => {
-    return data?.productIds || [];
+    return data?.productIds ?? [];
   }, [data?.productIds]);
 
   return {

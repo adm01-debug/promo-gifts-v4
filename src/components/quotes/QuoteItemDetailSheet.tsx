@@ -57,7 +57,7 @@ function fmt(v: number) {
 
 function parseNotesField(notes: string) {
   const [locationPart, dimPart] = notes.split(' | ');
-  const locationSegments = locationPart?.split(' — ') || [];
+  const locationSegments = locationPart?.split(' — ') ?? [];
   const location = locationSegments[0] || null;
   const code = locationSegments[1] || null;
   let dimensions: string | null = null;

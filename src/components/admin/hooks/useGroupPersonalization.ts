@@ -275,10 +275,10 @@ export function useGroupPersonalization() {
   });
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.group_component_id === componentId) || [];
+    locations?.filter((l) => l.group_component_id === componentId) ?? [];
 
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.group_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.group_location_id === locationId) ?? [];
 
   const reorderComponents = async (
     components: GroupComponent[],

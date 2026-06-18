@@ -66,8 +66,8 @@ export async function syncQuoteToBitrix({
     return { success: false };
   }
 
-  const itemsSemBitrixId = quote.items?.filter((item) => !item.bitrix_product_id) || [];
-  const itensSincronizaveis = quote.items?.filter((item) => !!item.bitrix_product_id) || [];
+  const itemsSemBitrixId = quote.items?.filter((item) => !item.bitrix_product_id) ?? [];
+  const itensSincronizaveis = quote.items?.filter((item) => !!item.bitrix_product_id) ?? [];
 
   if (itensSincronizaveis.length === 0) {
     toast.error('Nenhum produto com ID Bitrix24');

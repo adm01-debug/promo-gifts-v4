@@ -96,8 +96,8 @@ export function useProductsByColor({
 
       const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
 
-      const groupsData = (refResults[0]?.records || []) as Record<string, unknown>[];
-      const variationsData = (refResults[1]?.records || []) as Record<string, unknown>[];
+      const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
+      const variationsData = (refResults[1]?.records ?? []) as Record<string, unknown>[];
 
       const groupsBySlug = new Map(groupsData.map((g) => [g.slug as string, g.id as string]));
       const variationsBySlug = new Map(variationsData.map((v) => [v.slug as string, v]));
@@ -127,7 +127,7 @@ export function useProductsByColor({
       // e nuance combinada era silenciosamente descartada. Semantica OR (uniao),
       // consistente com group/variation/color dentro do mesmo bloco de cor.
       if (colorNuances.length > 0) {
-        const nuancesData = (refResults[2]?.records || []) as Record<string, unknown>[];
+        const nuancesData = (refResults[2]?.records ?? []) as Record<string, unknown>[];
         const nuanceIdBySlug = new Map(nuancesData.map((n) => [n.slug as string, n.id as string]));
         const targetNuanceIds = new Set<string>();
         for (const slug of colorNuances) {

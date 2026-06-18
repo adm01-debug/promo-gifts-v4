@@ -79,7 +79,7 @@ export function MockupClientSelector({
   const errorMessage = error instanceof Error ? error.message : null;
 
   const allCompanies = useMemo(() => {
-    return data?.pages.flatMap((page) => page.records) || [];
+    return data?.pages.flatMap((page) => page.records) ?? [];
   }, [data]);
 
   const { results: filteredCompanies } = useClientFuzzySearch(allCompanies, searchQuery);
