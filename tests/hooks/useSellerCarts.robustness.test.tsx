@@ -173,3 +173,33 @@ describe('moveItemToCart — compensação sob falha do delete', () => {
     expect(dstUpdates.length).toBe(2);
   });
 });
+
+describe('addItem / restoreItems — sem touch manual de updated_at (trigger é dono)', () => {
+  it('addItem de variante nova NÃO escreve em seller_carts (trigger propaga updated_at)', async () => {
+    itemsTable = [];
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
+    await result.current.addItem.mutateAsync({
+      cartId: 'cart-A',
+      item: { product_id: 'p1', product_name: 'Prod', product_price: 10, quantity: 1 },
+    });
+
+    expect(ops.some((o) => o.kind === 'insert' && o.table === 'seller_cart_items')).toBe(true);
+    expect(ops.some((o) => o.table === 'seller_carts')).toBe(false);
+  });
+
+  it('restoreItems NÃO escreve em seller_carts (trigger propaga updated_at)', async () => {
+    itemsTable = [];
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
+    await result.current.restoreItems.mutateAsync({
+      cartId: 'cart-A',
+      items: [{ product_id: 'p1', product_name: 'Prod', product_price: 10, quantity: 2 }],
+    });
+
+    expect(ops.some((o) => o.kind === 'insert' && o.table === 'seller_cart_items')).toBe(true);
+    expect(ops.some((o) => o.table === 'seller_carts')).toBe(false);
+  });
+});

@@ -245,11 +245,9 @@ export function useSellerCarts() {
         }
       }
 
-      // Atualiza timestamp do carrinho principal
-      await supabase
-        .from('seller_carts')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', cartId);
+      // updated_at do carrinho-pai é propagado pelo trigger
+      // trg_touch_seller_cart_on_item_change (migration 20260617130000) em
+      // INSERT/UPDATE/DELETE — não precisamos do round-trip manual aqui.
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -544,10 +542,8 @@ export function useSellerCarts() {
       const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);
       if (error) throw error;
 
-      await supabase
-        .from('seller_carts')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', cartId);
+      // updated_at do carrinho-pai é propagado pelo trigger
+      // trg_touch_seller_cart_on_item_change (migration 20260617130000).
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
