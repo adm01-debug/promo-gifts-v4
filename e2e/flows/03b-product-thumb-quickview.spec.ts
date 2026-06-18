@@ -329,4 +329,28 @@ test.describe("QuickView • navegação por teclado e focus trap", () => {
   });
 });
 
+/**
+ * Paridade de ações no /estoque: o QuickView deve exibir os 4 botões padrão
+ * (Carrinho, Favoritar, Comparar, Compartilhar) — antes do fix, apenas
+ * Carrinho + Compartilhar apareciam.
+ */
+test.describe("Estoque • QuickView — paridade de ações (4 botões)", () => {
+  test.beforeEach(() => requireAuth());
+
+  test("exibe cart + favorite + compare + share no /estoque", async ({ page }) => {
+    await gotoAndSettle(page, "/estoque");
+    const thumb = page.locator(Sel.product.stockTableThumb).first();
+    if (!(await thumb.count())) test.skip(true, "Nenhum thumb visível em /estoque");
+
+    await thumb.click();
+    await expect(page.locator(Sel.product.quickViewName)).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator(Sel.product.quickViewCart)).toBeVisible();
+    await expect(page.locator(Sel.product.quickViewFavorite)).toBeVisible();
+    await expect(page.locator(Sel.product.quickViewCompare)).toBeVisible();
+    await expect(page.locator(Sel.product.quickViewShare)).toBeVisible();
+  });
+});
+
+
 

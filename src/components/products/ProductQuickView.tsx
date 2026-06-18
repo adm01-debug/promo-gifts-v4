@@ -546,6 +546,7 @@ export const ProductQuickView = React.memo(
                         isFavorited && 'border-red-200 bg-red-50 text-red-500',
                       )}
                       aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      data-testid="product-quickview-favorite"
                     >
                       <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
                     </Button>
@@ -564,6 +565,7 @@ export const ProductQuickView = React.memo(
                         isInCompare && 'border-primary/30 bg-primary/5 text-primary',
                       )}
                       aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                      data-testid="product-quickview-compare"
                     >
                       <BarChart2 className="h-4 w-4" />
                     </Button>

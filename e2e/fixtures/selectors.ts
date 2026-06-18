@@ -129,6 +129,12 @@ export const Sel = {
     stockTableThumb: TID("stock-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
+    /** Botões padronizados do ProductQuickView. */
+    quickViewCart: TID("product-quickview-cart"),
+    quickViewFavorite: TID("product-quickview-favorite"),
+    quickViewCompare: TID("product-quickview-compare"),
+    quickViewShare: TID("product-quickview-share"),
+    quickViewActions: TID("product-quickview-actions"),
     /** Nome no detalhe do produto (ProductDetailHero h1). */
     name: TID("product-name"),
     /** Qualquer nome de produto (catálogo + detalhe + lista + tabela + quickview). */
