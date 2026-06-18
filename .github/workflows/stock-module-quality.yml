@@ -13,7 +13,9 @@ on:
       - 'src/hooks/stock/**'
       - 'src/types/stock.ts'
       - 'tests/**stock**'
+      - 'tests/StockFilterToolbar*.tsx'
       - 'e2e/routes/app/stock-*.spec.ts'
+      - 'e2e/admin/stock-*.spec.ts'
       - 'scripts/stock-benchmark.mjs'
       - '.github/workflows/stock-module-quality.yml'
   workflow_dispatch:
