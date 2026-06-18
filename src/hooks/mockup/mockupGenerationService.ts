@@ -237,6 +237,10 @@ export interface GenerateMockupParams {
   productName: string;
   technique: Technique;
   areas: PersonalizationArea[];
+  /** Largura física do produto em cm (WYSIWYG): proporciona escala real do logo gerado. */
+  productWidthCm?: number | null;
+  /** Altura física do produto em cm (WYSIWYG): proporciona escala real do logo gerado. */
+  productHeightCm?: number | null;
 }
 
 export interface GenerateMockupResult {
@@ -314,6 +318,10 @@ async function invokeMockupForArea(
       logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
+      // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
+      // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
+      productWidthCm: params.productWidthCm ?? undefined,
+      productHeightCm: params.productHeightCm ?? undefined,
     },
   });
 
