@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authorizeCron } from '../_shared/dispatcher-auth.ts';
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -75,6 +77,9 @@ async function syncCatalogo() {
 }
 
 Deno.serve(async (req: Request) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'asia-ingestion', requestId: __reqId, req });
+  log.info('request_start');
   const cors = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
 
