@@ -139,11 +139,21 @@ export default function FiltersPage() {
         const f = action.data.filters;
         state.setFilters((prev: FilterState) => {
           const next = { ...prev };
-          if (f.color) next.colors = [...prev.colors, f.color];
-          if (f.category) next.categories = [...prev.categories, f.category];
-          if (f.material) next.materiais = [...prev.materiais, f.material];
-          if (f.maxPrice) next.priceRange = [prev.priceRange[0], f.maxPrice];
-          if (f.minPrice) next.priceRange = [f.minPrice, prev.priceRange[1]];
+          // Dedup ao acumular — voz pode repetir o mesmo termo entre comandos.
+          if (f.color) next.colors = [...new Set([...prev.colors, f.color])];
+          if (f.category) next.categories = [...new Set([...prev.categories, f.category])];
+          if (f.material) next.materiais = [...new Set([...prev.materiais, f.material])];
+          // BUG-VOZ-PRICE FIX: aplicar min E max de forma acumulativa. Antes, quando
+          // ambos vinham no mesmo comando, a segunda atribuição lia prev.priceRange e
+          // descartava o valor recém-definido pela primeira (ex.: "entre 10 e 50" perdia o 50).
+          const hasMin = typeof f.minPrice === 'number';
+          const hasMax = typeof f.maxPrice === 'number';
+          if (hasMin || hasMax) {
+            next.priceRange = [
+              hasMin ? (f.minPrice as number) : next.priceRange[0],
+              hasMax ? (f.maxPrice as number) : next.priceRange[1],
+            ];
+          }
           if (f.inStock) next.inStock = true;
           if (f.isKit) next.isKit = true;
           return next;
