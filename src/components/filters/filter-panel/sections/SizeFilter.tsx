@@ -60,22 +60,39 @@ function getSizeOrder(code: string): number {
 interface SizeFilterProps {
   selectedSizes: string[];
   onToggleSize: (size: string) => void;
-  /** Products with variations containing size_code */
+  /**
+   * SF-E: tamanhos disponíveis vindos de product_variants (fonte canônica).
+   * Quando fornecido, tem precedência sobre a derivação por `products` — o
+   * catálogo leve não carrega variações, então `products` ficaria sempre vazio.
+   */
+  availableSizes?: string[];
+  /** Fallback: products with variations containing size_code (modo legado). */
   products?: Array<{ variations?: Array<{ size_code?: string | null }> }>;
 }
 
-export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeFilterProps) {
+export function SizeFilter({
+  selectedSizes,
+  onToggleSize,
+  availableSizes: availableSizesProp,
+  products = [],
+}: SizeFilterProps) {
   const [search, setSearch] = useState('');
 
   const availableSizes = useMemo(() => {
     const sizeSet = new Set<string>();
-    products.forEach((p) => {
-      p.variations?.forEach((v) => {
-        if (v.size_code) sizeSet.add(v.size_code);
+    if (availableSizesProp && availableSizesProp.length > 0) {
+      availableSizesProp.forEach((s) => {
+        if (s) sizeSet.add(s);
       });
-    });
+    } else {
+      products.forEach((p) => {
+        p.variations?.forEach((v) => {
+          if (v.size_code) sizeSet.add(v.size_code);
+        });
+      });
+    }
     return Array.from(sizeSet).sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
-  }, [products]);
+  }, [availableSizesProp, products]);
 
   const filteredSizes = useMemo(() => {
     if (!search) return availableSizes;
