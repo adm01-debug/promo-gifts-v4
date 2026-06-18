@@ -269,21 +269,20 @@ function SellerCartsContent() {
   const handleDuplicateLast = useCallback(
     (sourceCart: typeof s.activeCart) => {
       if (!sourceCart) return;
-      sourceCart.items.forEach((i) => {
-        // re-uses the addToActiveCart through handleLoadTemplate-like flow
-        s.handleLoadTemplate([
-          {
-            product_id: i.product_id,
-            product_name: i.product_name,
-            product_sku: i.product_sku || undefined,
-            product_image_url: i.product_image_url || undefined,
-            product_price: i.product_price,
-            quantity: i.quantity,
-            color_name: i.color_name || undefined,
-            color_hex: i.color_hex || undefined,
-          },
-        ]);
-      });
+      // Aplica todos os itens de uma vez (handleLoadTemplate já é silencioso por
+      // item e emite um único toast) — antes era 1 chamada por item, gerando N toasts.
+      s.handleLoadTemplate(
+        sourceCart.items.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          product_sku: i.product_sku || undefined,
+          product_image_url: i.product_image_url || undefined,
+          product_price: i.product_price,
+          quantity: i.quantity,
+          color_name: i.color_name || undefined,
+          color_hex: i.color_hex || undefined,
+        })),
+      );
     },
     [s],
   );
@@ -902,7 +901,7 @@ function SellerCartsContent() {
         }}
         variant="warning"
         title={`Gerar orçamento para ${s.confirmQuoteCart?.company_name}?`}
-        description={`Os ${s.confirmQuoteCart?.items.length || 0} itens serão transferidos para um novo orçamento e o carrinho será removido.`}
+        description={`Os ${s.confirmQuoteCart?.items.length || 0} itens serão levados para um novo orçamento. O carrinho permanece salvo para você continuar ajustando.`}
         confirmLabel="Gerar Orçamento"
         cancelLabel="Cancelar"
         onConfirm={s.confirmGenerateQuote}
