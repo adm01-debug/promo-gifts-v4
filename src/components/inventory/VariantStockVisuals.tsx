@@ -75,7 +75,6 @@ export function VariantThumb({
       aria-label={`Imagem de ${productName}${colorName ? ` na cor ${colorName}` : ''}`}
     >
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imageUrl}
           alt={`${productName}${colorName ? ` — ${colorName}` : ''}`}
@@ -164,41 +163,39 @@ export function RichColorSwatch({
 // StockStatusChip — chip único consolidado
 // ============================================
 
-const CHIP_CONFIG: Record<
-  StockStatus,
-  { label: string; classes: string; icon: React.ReactNode }
-> = {
-  in_stock: {
-    label: 'Em Estoque',
-    classes: 'border-success/30 bg-success/10 text-success',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-  incoming: {
-    label: 'Chegando',
-    classes: 'border-primary/30 bg-primary/10 text-primary',
-    icon: <Truck className="h-3 w-3" />,
-  },
-  low_stock: {
-    label: 'Risco de Ruptura',
-    classes: 'border-warning/30 bg-warning/10 text-warning',
-    icon: <TrendingDown className="h-3 w-3" />,
-  },
-  critical: {
-    label: 'Crítico',
-    classes: 'border-destructive/30 bg-destructive/10 text-destructive',
-    icon: <AlertTriangle className="h-3 w-3" />,
-  },
-  out_of_stock: {
-    label: 'Esgotado',
-    classes: 'border-destructive/40 bg-destructive/15 text-destructive',
-    icon: <XCircle className="h-3 w-3" />,
-  },
-  overstocked: {
-    label: 'Em Estoque',
-    classes: 'border-success/30 bg-success/10 text-success',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-};
+const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: React.ReactNode }> =
+  {
+    in_stock: {
+      label: 'Em Estoque',
+      classes: 'border-success/30 bg-success/10 text-success',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    incoming: {
+      label: 'Chegando',
+      classes: 'border-primary/30 bg-primary/10 text-primary',
+      icon: <Truck className="h-3 w-3" />,
+    },
+    low_stock: {
+      label: 'Risco de Ruptura',
+      classes: 'border-warning/30 bg-warning/10 text-warning',
+      icon: <TrendingDown className="h-3 w-3" />,
+    },
+    critical: {
+      label: 'Crítico',
+      classes: 'border-destructive/30 bg-destructive/10 text-destructive',
+      icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    out_of_stock: {
+      label: 'Esgotado',
+      classes: 'border-destructive/40 bg-destructive/15 text-destructive',
+      icon: <XCircle className="h-3 w-3" />,
+    },
+    overstocked: {
+      label: 'Em Estoque',
+      classes: 'border-success/30 bg-success/10 text-success',
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+  };
 
 export function StockStatusChip({
   status,

@@ -132,17 +132,13 @@ function naiveFilter(
     .filter(({ vs }) => !hasVar || vs.length > 0)
     .filter(({ vs, p }) => {
       if (minQ <= 0) return true;
-      const pool = hasVar
-        ? vs.reduce((s, v) => s + v.availableStock, 0)
-        : p.totalAvailableStock;
+      const pool = hasVar ? vs.reduce((s, v) => s + v.availableStock, 0) : p.totalAvailableStock;
       return pool >= minQ;
     })
     .map(({ p, vs }) => ({
       productId: p.productId,
       totalVariants: hasVar ? vs.length : p.variants.length,
-      totalCurrentStock: hasVar
-        ? vs.reduce((s, v) => s + v.currentStock, 0)
-        : p.totalCurrentStock,
+      totalCurrentStock: hasVar ? vs.reduce((s, v) => s + v.currentStock, 0) : p.totalCurrentStock,
     }));
 }
 
@@ -153,7 +149,10 @@ function naiveFilter(
 //   STRESS_SIMS          (default 5000)    — nº de simulações
 //   STRESS_UNIVERSE_SEED (default 0xa5ee5) — semente do universo
 //   STRESS_REPLAY_SEED   (opcional)        — reexecuta SÓ a iteração com essa seed
-const ENV = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
+const ENV = (typeof process !== 'undefined' ? process.env : {}) as Record<
+  string,
+  string | undefined
+>;
 const MASTER_SEED = Number(ENV.STRESS_MASTER_SEED ?? 0xbeef);
 const UNIVERSE_SEED = Number(ENV.STRESS_UNIVERSE_SEED ?? 0xa5ee5);
 const SIMS = Number(ENV.STRESS_SIMS ?? 5000);
@@ -161,9 +160,11 @@ const REPLAY_SEED = ENV.STRESS_REPLAY_SEED ? Number(ENV.STRESS_REPLAY_SEED) : un
 
 function deriveSeed(master: number, i: number): number {
   let x = (master ^ (i * 0x9e3779b1)) >>> 0;
-  x ^= x << 13; x >>>= 0;
+  x ^= x << 13;
+  x >>>= 0;
   x ^= x >>> 17;
-  x ^= x << 5; x >>>= 0;
+  x ^= x << 5;
+  x >>>= 0;
   return x >>> 0;
 }
 
@@ -171,9 +172,10 @@ describe('stock-filter.stress — simulações reproduzíveis vs oráculo', () =
   it(`fast-path === naïve [master=0x${MASTER_SEED.toString(16)} sims=${SIMS}]`, () => {
     const universe = makeUniverse(UNIVERSE_SEED, 200);
     const indexes = buildStockIndexes(universe, []);
-    const iterations = REPLAY_SEED !== undefined
-      ? [REPLAY_SEED]
-      : Array.from({ length: SIMS }, (_, i) => deriveSeed(MASTER_SEED, i));
+    const iterations =
+      REPLAY_SEED !== undefined
+        ? [REPLAY_SEED]
+        : Array.from({ length: SIMS }, (_, i) => deriveSeed(MASTER_SEED, i));
 
     const failures: Array<{ seed: number; filters: StockFilters }> = [];
     let nonEmpty = 0;
@@ -183,15 +185,20 @@ describe('stock-filter.stress — simulações reproduzíveis vs oráculo', () =
       const rnd = mulberry32(seed);
       const f = makeFilters(rnd);
       const actual = applyStockFilters(universe, f, [], indexes);
-      const oracle = naiveFilter(universe, f).sort((a, b) => a.productId.localeCompare(b.productId));
+      const oracle = naiveFilter(universe, f).sort((a, b) =>
+        a.productId.localeCompare(b.productId),
+      );
       const actualSorted = actual
-        .map((p) => ({ productId: p.productId, totalVariants: p.totalVariants, totalCurrentStock: p.totalCurrentStock }))
+        .map((p) => ({
+          productId: p.productId,
+          totalVariants: p.totalVariants,
+          totalCurrentStock: p.totalCurrentStock,
+        }))
         .sort((a, b) => a.productId.localeCompare(b.productId));
 
       if (JSON.stringify(actualSorted) !== JSON.stringify(oracle)) {
         failures.push({ seed, filters: f });
         if (failures.length <= 5) {
-          // eslint-disable-next-line no-console
           console.error(
             `[stress mismatch] replay exato: STRESS_REPLAY_SEED=${seed} STRESS_MASTER_SEED=${MASTER_SEED} STRESS_UNIVERSE_SEED=${UNIVERSE_SEED}`,
             { filters: f, actual: actualSorted, oracle },
@@ -202,7 +209,6 @@ describe('stock-filter.stress — simulações reproduzíveis vs oráculo', () =
       if (actual.length > maxResult) maxResult = actual.length;
     }
 
-    // eslint-disable-next-line no-console
     console.log('[stock-filter stress]', {
       master_seed: `0x${MASTER_SEED.toString(16)}`,
       universe_seed: `0x${UNIVERSE_SEED.toString(16)}`,
@@ -214,7 +220,9 @@ describe('stock-filter.stress — simulações reproduzíveis vs oráculo', () =
     });
     expect(
       failures,
-      failures.length ? `Reexecute: STRESS_REPLAY_SEED=${failures[0].seed} STRESS_MASTER_SEED=${MASTER_SEED}` : '',
+      failures.length
+        ? `Reexecute: STRESS_REPLAY_SEED=${failures[0].seed} STRESS_MASTER_SEED=${MASTER_SEED}`
+        : '',
     ).toEqual([]);
   });
 
@@ -231,8 +239,9 @@ describe('stock-filter.stress — simulações reproduzíveis vs oráculo', () =
       const seen = new Set<string>();
       for (const p of out) {
         if (seen.has(p.productId)) {
-          // eslint-disable-next-line no-console
-          console.error(`[invariant fail] duplicado em STRESS_REPLAY_SEED=${seed} STRESS_INVARIANT_SEED=${INV_MASTER}`);
+          console.error(
+            `[invariant fail] duplicado em STRESS_REPLAY_SEED=${seed} STRESS_INVARIANT_SEED=${INV_MASTER}`,
+          );
         }
         expect(seen.has(p.productId)).toBe(false);
         seen.add(p.productId);

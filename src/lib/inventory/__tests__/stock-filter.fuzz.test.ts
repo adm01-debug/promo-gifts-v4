@@ -196,14 +196,18 @@ describe('stock-filter — fuzz (500 simulações)', () => {
 
     // (6) Reuso de índice entre filtros distintos: roda 3 filtros e reseta — saída final estável
     const filtersA: StockFilters = { ...defaultStockFilters, sortBy: 'name', colorName: 'Azul' };
-    const filtersB: StockFilters = { ...defaultStockFilters, sortBy: 'name', colorName: 'Verde', minQuantityNeeded: 200 };
+    const filtersB: StockFilters = {
+      ...defaultStockFilters,
+      sortBy: 'name',
+      colorName: 'Verde',
+      minQuantityNeeded: 200,
+    };
     const r1 = applyStockFilters(universe, filtersA, [], indexes);
     applyStockFilters(universe, filtersB, [], indexes);
     const r2 = applyStockFilters(universe, filtersA, [], indexes);
     expect(r1).toEqual(r2);
 
     // log mínimo p/ inspeção
-    // eslint-disable-next-line no-console
     console.log('[stock-filter fuzz]', report);
     expect(report.total).toBe(SIMS);
   });
