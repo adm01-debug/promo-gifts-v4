@@ -19,6 +19,16 @@ export const round2 = (n: number | null | undefined): number => {
   return Math.round((v + Number.EPSILON) * 100) / 100;
 };
 
+/**
+ * Markup persistido sempre dentro de [0, MARKUP_MAX_PERCENT].
+ * O banco agora REJEITA (CHECK valid_negotiation_markup_range) markup fora de faixa em vez de
+ * clampar em silêncio; calculateQuoteTotals já lança erro acima do teto, mas markup negativo
+ * escapava e seria gravado cru. Este clamp garante que o valor enviado nunca dispare o CHECK
+ * e que o markup gravado seja exatamente o usado no cálculo.
+ */
+const clampMarkup = (v: number | null | undefined): number =>
+  round2(Math.max(0, Math.min(MARKUP_MAX_PERCENT, v || 0)));
+
 export function validateDiscount(
   quote: Partial<Quote>,
   totals: { subtotal: number; discountAmount: number },
@@ -102,7 +112,7 @@ export function buildInsertPayload(
     discount_percent: round2(quote.discount_percent || 0),
     discount_amount: round2(totals.discountAmount),
     total: round2(totals.total),
-    negotiation_markup_percent: round2(quote.negotiation_markup_percent || 0),
+    negotiation_markup_percent: clampMarkup(quote.negotiation_markup_percent),
     payment_method: quote.payment_method || null,
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
@@ -130,7 +140,7 @@ export function buildUpdatePayload(
     discount_percent: round2(quote.discount_percent || 0),
     discount_amount: round2(totals.discountAmount),
     total: round2(totals.total),
-    negotiation_markup_percent: round2(quote.negotiation_markup_percent || 0),
+    negotiation_markup_percent: clampMarkup(quote.negotiation_markup_percent),
     payment_method: quote.payment_method || null,
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
@@ -168,9 +178,9 @@ export function buildItemsInsertPayload(
     price_updated_at: item.price_updated_at ?? null,
     price_freshness_threshold_days: item.price_freshness_threshold_days ?? null,
     bitrix_product_id:
-      item.bitrix_product_id === null || item.bitrix_product_id === undefined
-        ? null
-        : String(item.bitrix_product_id),
+      item.bitrix_product_id !== null && item.bitrix_product_id !== undefined
+        ? String(item.bitrix_product_id)
+        : null,
   }));
 }
 

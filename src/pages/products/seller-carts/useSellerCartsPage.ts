@@ -297,17 +297,23 @@ export function useSellerCartsPage() {
 
   const handleLoadTemplate = useCallback(
     (items: CartTemplateItem[]) => {
+      // silent: cada item entra sem toast individual; mostramos um único
+      // toast agregado abaixo (evita empilhar N toasts ao aplicar template).
       items.forEach((item) => {
-        addToActiveCart({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          product_sku: item.product_sku,
-          product_image_url: item.product_image_url,
-          product_price: item.product_price,
-          quantity: item.quantity,
-          color_name: item.color_name,
-          color_hex: item.color_hex,
-        });
+        addToActiveCart(
+          {
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_sku: item.product_sku,
+            product_image_url: item.product_image_url,
+            product_price: item.product_price,
+            quantity: item.quantity,
+            color_name: item.color_name,
+            color_hex: item.color_hex,
+          },
+          undefined,
+          { silent: true },
+        );
       });
       toast.success('Template aplicado ao carrinho');
     },
@@ -336,13 +342,13 @@ export function useSellerCartsPage() {
       try {
         const { data, error } = await supabase.from('products').select('id').in('id', ids);
         validIds = error
-          ? new Set(cart.items.map((i) => i.product_id)) // fail-open: nao bloqueia em erro
-          : new Set((data ?? []).map((row) => String(row.id)));
+          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
+          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
       } catch {
-        validIds = new Set(cart.items.map((i) => i.product_id)); // fail-open
+        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
       }
     }
-    const validItems = cart.items.filter((i) => validIds.has(i.product_id));
+    const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
     const staleCount = cart.items.length - validItems.length;
     if (validItems.length === 0) {
       setConfirmQuoteCart(null);

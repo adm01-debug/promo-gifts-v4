@@ -49,4 +49,47 @@ describe('mapLightweightToProduct', () => {
     expect(PRODUCT_SELECT_LIGHTWEIGHT).toContain('is_new');
     expect(PRODUCT_SELECT_LIGHTWEIGHT).toContain('created_at');
   });
+
+  // REGRESSÃO — toggles "Destaques", "Promoções", "Com Personalização" e
+  // "Com Embalagem Nativa" do Super Filtro. Estes campos eram hardcoded
+  // (featured/onSale=false) ou ausentes do mapeamento, deixando os filtros
+  // inertes (sempre 0 resultados) apesar de milhares de produtos qualificados.
+  it('mapeia featured a partir de is_featured', () => {
+    expect(mapLightweightToProduct({ ...baseProduct, is_featured: true }).featured).toBe(true);
+    expect(mapLightweightToProduct({ ...baseProduct, is_featured: false }).featured).toBe(false);
+  });
+
+  it('mapeia featured também a partir de is_bestseller (espelha product-mapper)', () => {
+    expect(mapLightweightToProduct({ ...baseProduct, is_bestseller: true }).featured).toBe(true);
+  });
+
+  it('mapeia onSale a partir de is_on_sale', () => {
+    expect(mapLightweightToProduct({ ...baseProduct, is_on_sale: true }).onSale).toBe(true);
+    expect(mapLightweightToProduct({ ...baseProduct }).onSale).toBe(false);
+  });
+
+  it('mapeia hasPersonalization a partir de allows_personalization', () => {
+    expect(
+      mapLightweightToProduct({ ...baseProduct, allows_personalization: true }).hasPersonalization,
+    ).toBe(true);
+  });
+
+  it('mapeia hasCommercialPackaging a partir de has_commercial_packaging', () => {
+    expect(
+      mapLightweightToProduct({ ...baseProduct, has_commercial_packaging: true })
+        .hasCommercialPackaging,
+    ).toBe(true);
+  });
+
+  it('inclui os flags de opções rápidas no select do catálogo leve', () => {
+    for (const field of [
+      'is_featured',
+      'is_bestseller',
+      'is_on_sale',
+      'allows_personalization',
+      'has_commercial_packaging',
+    ]) {
+      expect(PRODUCT_SELECT_LIGHTWEIGHT).toContain(field);
+    }
+  });
 });
