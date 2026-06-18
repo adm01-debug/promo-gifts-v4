@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree } from 'lucide-react';
+import { Package, Building2, FolderTree, Clock } from 'lucide-react';
 import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
@@ -87,7 +87,9 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   isPriceStockLoading = false,
   priority = false,
 }: NoveltyCardProps) {
-  const fresh = product.days_remaining >= 25;
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
   // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
   // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -165,6 +167,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
+            daysElapsed={product.days_as_novelty}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -183,6 +186,19 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                 onStatusClick?.('novelty');
               }}
             />
+          </div>
+        )}
+        {/* Urgência: novidade saindo da janela (≤7 dias). Mutuamente exclusiva
+            com "NEW" (fresh = detectado há ≤5d). */}
+        {product.status === 'expiring_soon' && !fresh && !selectionMode && (
+          <div className="absolute right-2 top-2">
+            <span
+              data-testid="novelty-expiring-badge"
+              className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {product.days_remaining <= 1 ? 'Último dia' : `Últimos ${product.days_remaining}d`}
+            </span>
           </div>
         )}
       </div>
@@ -314,7 +330,9 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   onStatusClick,
   colors,
 }: NoveltyCardProps) {
-  const fresh = product.days_remaining >= 25;
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
   // Mini-carrossel de variantes — mesmo comportamento do grid.
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
@@ -381,6 +399,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
         <div className="mb-0.5 flex items-center gap-2">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
+            daysElapsed={product.days_as_novelty}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -533,6 +552,7 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5 text-center">
                   <NoveltyBadge
                     daysRemaining={product.days_remaining}
+                    daysElapsed={product.days_as_novelty}
                     size="sm"
                     onClick={() => {}}
                   />
