@@ -62,6 +62,8 @@ jobs:
             tests/hooks/stock-velocity-index.test.ts \
             tests/hooks/stock-future-entries.test.ts \
             tests/hooks/stockFetcher-410.test.ts \
+            tests/lib/rupture-risk.test.ts \
+            tests/lib/rupture-risk.simulation.test.ts \
             src/components/inventory/__tests__ \
             src/lib/inventory/__tests__
 
