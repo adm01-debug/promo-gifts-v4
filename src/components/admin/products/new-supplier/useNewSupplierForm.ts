@@ -516,7 +516,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         resetForm();
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar fornecedor');
+      toast.error('Erro ao criar fornecedor');
     } finally {
       setSaving(false);
     }
