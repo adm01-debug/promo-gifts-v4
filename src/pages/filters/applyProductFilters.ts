@@ -38,6 +38,15 @@ export interface ProductFilterContext {
   hasSizeFilter?: boolean;
   sizeFilteredProductIds?: Set<string>;
   isLoadingSizeFilter?: boolean;
+  /**
+   * BUG-DB-02 (metadados server-side): datas/tags/ramos/segmentos/público vivem em
+   * tabelas relacionais e NÃO são hidratados no catálogo leve. Quando o Set vem da
+   * RPC fn_super_filtro_product_ids, ele substitui os blocos client-side legados
+   * (product.tags.* é vazio no leve → zeravam a grade). Opcional p/ retrocompat.
+   */
+  hasMetadataFilter?: boolean;
+  metadataFilteredProductIds?: Set<string>;
+  isLoadingMetadataFilter?: boolean;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, SupplierSalesEntry>;
   promoSales90dMap?: Map<string, number>;
@@ -66,6 +75,9 @@ export function applyProductFilters(
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
+    hasMetadataFilter,
+    metadataFilteredProductIds,
+    isLoadingMetadataFilter,
     promoSalesMap,
     supplierSalesMap,
     promoSales90dMap,
@@ -106,13 +118,23 @@ export function applyProductFilters(
       return supplierLowerArr.some((s) => sName.includes(s));
     });
   }
-  if (filters.publicoAlvo.length > 0) {
+  // BUG-DB-02: metadados server-side (datas/tags/ramos/segmentos/público) via RPC.
+  // Quando o Set é fornecido, substitui os 4 blocos client-side legados abaixo
+  // (operam sobre product.tags.*, vazio no catálogo leve → zeravam a grade).
+  if (hasMetadataFilter && metadataFilteredProductIds) {
+    if (metadataFilteredProductIds.size > 0) {
+      result = result.filter((p) => metadataFilteredProductIds.has(p.id));
+    } else if (!isLoadingMetadataFilter) {
+      result = [];
+    }
+  }
+  if (!hasMetadataFilter && filters.publicoAlvo.length > 0) {
     const pSet = new Set(filters.publicoAlvo.map((p) => p.toLowerCase()));
     result = result.filter((product) =>
       (product.tags?.publicoAlvo || []).some((t: string) => pSet.has(t.toLowerCase())),
     );
   }
-  if (filters.datasComemorativas.length > 0) {
+  if (!hasMetadataFilter && filters.datasComemorativas.length > 0) {
     const dcLower = filters.datasComemorativas.map((d) => d.toLowerCase());
     result = result.filter((product) =>
       (product.tags?.datasComemorativas || []).some((t: string) => {
@@ -127,7 +149,7 @@ export function applyProductFilters(
       (product.tags?.endomarketing || []).some((t: string) => eSet.has(t.toLowerCase())),
     );
   }
-  if (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0) {
+  if (!hasMetadataFilter && (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0)) {
     const ramosLower = filters.ramosAtividade?.map((r) => r.toLowerCase()) ?? [];
     const segLower = filters.segmentosAtividade?.map((s) => s.toLowerCase()) ?? [];
     result = result.filter((product) => {
@@ -219,7 +241,7 @@ export function applyProductFilters(
     }
   }
   // BUG-SF-02 FIX: tags — match por slug contra qualquer campo de string do produto.
-  if (filters.tags?.length) {
+  if (!hasMetadataFilter && filters.tags?.length) {
     const tagIdsLower = filters.tags.map((t) => t.toLowerCase());
     result = result.filter((product) => {
       const allTagValues = [

@@ -8,6 +8,7 @@ import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
 import { useProductsBySize } from '@/hooks/products/useProductsBySize';
+import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import { useDebounce } from '@/hooks/common/useDebounce';
@@ -264,6 +265,18 @@ export function useFiltersPageState() {
     hasFilter: hasSizeFilter,
     isLoading: isLoadingSizeFilter,
   } = useProductsBySize(filters.sizes || []);
+  // BUG-DB-02: datas/tags/ramos/segmentos/público server-side via RPC.
+  const {
+    productIds: metadataFilteredProductIds,
+    hasFilter: hasMetadataFilter,
+    isLoading: isLoadingMetadataFilter,
+  } = useProductsByMetadata({
+    datas: filters.datasComemorativas,
+    tags: filters.tags || [],
+    ramos: filters.ramosAtividade || [],
+    segmentos: filters.segmentosAtividade || [],
+    publico: filters.publicoAlvo,
+  });
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
@@ -412,6 +425,9 @@ export function useFiltersPageState() {
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
+        hasMetadataFilter,
+        metadataFilteredProductIds,
+        isLoadingMetadataFilter,
         promoSalesMap,
         supplierSalesMap,
         promoSales90dMap,
@@ -429,6 +445,9 @@ export function useFiltersPageState() {
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,
+      hasMetadataFilter,
+      metadataFilteredProductIds,
+      isLoadingMetadataFilter,
       hasCategoryFilter,
       categoryFilteredProductIds,
       isLoadingCategoryFilter,
