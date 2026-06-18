@@ -363,3 +363,139 @@ describe('SIM — fuzzy search e ordenação', () => {
     expect(run(f({ techniques: ['serigrafia'] })).length).toBe(CATALOG.length);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Condições de fronteira — sentinel de preço
+// ---------------------------------------------------------------------------
+describe('SIM — fronteiras do sentinel de preço (SF-F)', () => {
+  it('priceRange [0,9999] = padrão → NÃO ativa filtro (todos os 8 passam)', () => {
+    expect(run(f({ priceRange: [0, 9999] })).length).toBe(CATALOG.length);
+  });
+  it('priceRange [0,9998] → max real, inclui R$5175 mas exclui R$12000', () => {
+    const out = run(f({ priceRange: [0, 9998] }));
+    expect(out.map((p) => p.id)).toContain('5'); // 5175 < 9998 → inclui
+    expect(out.map((p) => p.id)).not.toContain('6'); // 12000 > 9998 → exclui
+  });
+  it('priceRange [10000,9999] → min > sentinel; exclui tudo exceto produto >=10000', () => {
+    const out = run(f({ priceRange: [10000, 9999] }));
+    // priceFilterActive: 10000>0 → sim. max(9999) < 9999 → false (sem teto). min=10000.
+    expect(out.map((p) => p.id)).toEqual(['6']); // só brinde caro 12000
+  });
+  it('priceRange [0,12001] → max > sentinel tratado como sem limite, todos passam', () => {
+    // max=12001 >= 9999 → sem limite superior
+    const out = run(f({ priceRange: [0, 12001] }));
+    expect(out.length).toBe(CATALOG.length);
+  });
+  it('priceRange [5000,9999] → inclui produto R$5175 E R$12000', () => {
+    const out = ids(run(f({ priceRange: [5000, 9999] })));
+    expect(out).toContain('5'); // 5175 >= 5000
+    expect(out).toContain('6'); // 12000 >= 5000, sem teto
+  });
+  it('priceRange [50,50] → intervalo fechado; inclui apenas Squeeze R$49.9? NÃO (49.9 < 50)', () => {
+    const out = run(f({ priceRange: [50, 50] }));
+    // 50 < 9999 → max ativo. produtos com price=50 exatamente
+    expect(out.every((p) => p.price >= 50 && p.price <= 50)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Catálogo vazio e casos extremos
+// ---------------------------------------------------------------------------
+describe('SIM — catálogo vazio e extremos', () => {
+  it('catálogo vazio → resultado vazio independente de filtros', () => {
+    const run0 = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters([], filters, filters.sortBy, ctx);
+    expect(run0(f({ featured: true }))).toHaveLength(0);
+    expect(run0(f({ search: 'algo' }))).toHaveLength(0);
+    expect(run0(f())).toHaveLength(0);
+  });
+
+  it('todos os filtros boolean ativos simultaneamente → apenas produtos que satisfazem todos', () => {
+    const superProduct = makeProduct({
+      id: 'super',
+      name: 'Super Produto Kit',
+      featured: true,
+      onSale: true,
+      hasPersonalization: true,
+      hasCommercialPackaging: true,
+      newArrival: true,
+      isKit: true,
+      stock: 10,
+      price: 99,
+      gender: 'unissex',
+      materials: ['couro'],
+    });
+    const catalog2 = [...CATALOG, superProduct];
+    const run2 = (filters: FilterState, ctx = baseCtx()) =>
+      applyProductFilters(catalog2, filters, filters.sortBy, ctx);
+    const out = run2(
+      f({
+        featured: true,
+        onSale: true,
+        hasPersonalization: true,
+        hasCommercialPackaging: true,
+        isNew: true,
+        isKit: true,
+        inStock: true,
+        gender: ['unissex'],
+      }),
+    );
+    expect(out.map((p) => p.id)).toEqual(['super']);
+  });
+
+  it('priceMin = priceMax = 0 → NÃO filtra (0 não é maior que 0)', () => {
+    // priceFilterActive = 0 > 0 || 0 < 9999 → verdadeiro. filter: price >= 0 && (0 < 9999 → price <= 0)
+    // Apenas produtos com preço 0 passariam. Catálogo não tem preço 0, todos excluídos.
+    const out = run(f({ priceRange: [0, 0] }));
+    expect(out).toHaveLength(0);
+  });
+
+  it('ramo + segmento AND logic: produto que tem só ramo mas não segmento é excluído', () => {
+    // produto 5 tem ramo='tecnologia', nicho='startups'
+    // Se filtrar ramo='tecnologia' E segmento='corporativo', o produto 5 não tem 'corporativo'
+    const out = run(f({ ramosAtividade: ['tecnologia'], segmentosAtividade: ['corporativo'] }));
+    expect(out.map((p) => p.id)).not.toContain('5');
+  });
+
+  it('ramo + segmento AND logic: produto com ambos passa', () => {
+    const out = run(f({ ramosAtividade: ['tecnologia'], segmentosAtividade: ['startups'] }));
+    expect(out.map((p) => p.id)).toContain('5');
+  });
+
+  it('datasComemorativas filtra por tag', () => {
+    // nenhum produto do catálogo tem datasComemorativas, todos excluídos
+    const out = run(f({ datasComemorativas: ['natal'] }));
+    expect(out).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Filtros server-side — interseção de múltiplos Sets
+// ---------------------------------------------------------------------------
+describe('SIM — interseção de filtros server-side com filtros locais', () => {
+  it('color Set + featured ambos ativos → interseção (AND)', () => {
+    // colorFilteredProductIds = {1} + featured=true → produto 1 tem featured=true → permanece
+    const ctx = baseCtx({ hasColorFilter: true, colorFilteredProductIds: new Set(['1', '2']) });
+    const out = run(f({ featured: true }), ctx);
+    expect(ids(out)).toEqual(['1']); // produto 1 é featured AND está no color set
+  });
+
+  it('size server-side Set vazio + carregando → mantém catálogo completo', () => {
+    const ctx = baseCtx({
+      hasSizeFilter: true,
+      sizeFilteredProductIds: new Set(),
+      isLoadingSizeFilter: true,
+    });
+    expect(run(f({ sizes: ['XGG'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('material + price combinados (server-side + local)', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(['2', '5']),
+    });
+    // produto 2 = R$49.9, produto 5 = R$5175. filtro preço [50, 9999] → exclui produto 2
+    const out = run(f({ priceRange: [50, 9999] }), ctx);
+    expect(ids(out)).toEqual(['5']); // 5175 >= 50, sem teto (9999 é sentinel)
+  });
+});

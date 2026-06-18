@@ -143,6 +143,14 @@ export function useCatalogFiltering({
       result = result.filter((product) => isProductKit(product));
     }
 
+    // SF-A parity: estes flags foram corrigidos no mapeamento leve mas estavam
+    // ausentes do pipeline de filtragem do catálogo Index — Quick Options inertes
+    // em /produtos (mesmo bug que SF-A corrigiu em /filtros via applyProductFilters).
+    if (filters.featured) result = result.filter((p) => p.featured === true);
+    if (filters.isNew) result = result.filter((p) => p.newArrival === true);
+    if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
+    if (filters.onSale) result = result.filter((p) => p.onSale === true);
+
     if (genderFilterSet.size > 0) {
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
     }
@@ -182,6 +190,10 @@ export function useCatalogFiltering({
     filters.priceRange[1],
     filters.inStock,
     filters.isKit,
+    filters.featured,
+    filters.isNew,
+    filters.hasPersonalization,
+    filters.onSale,
     filters.materiais,
     sortBy,
     hasFuzzySearch,
