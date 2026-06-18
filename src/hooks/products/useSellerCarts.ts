@@ -427,16 +427,28 @@ export function useSellerCarts() {
       // no item existente do destino e remove o item de origem.
       const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
       if (existing && existing.id !== itemId) {
+        const previousQty = existing.quantity;
         const { error: updErr } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: clampQuantity(existing.quantity + item.quantity) })
+          .update({ quantity: clampQuantity(previousQty + item.quantity) })
           .eq('id', existing.id);
         if (updErr) throw updErr;
         const { error: delErr } = await supabase
           .from('seller_cart_items')
           .delete()
           .eq('id', itemId);
-        if (delErr) throw delErr;
+        if (delErr) {
+          // Compensação: o destino já recebeu a soma, mas a origem não foi
+          // removida. Sem reverter, a quantidade ficaria DOBRADA (dst somado +
+          // src ainda presente — pior que o estado inicial). Como não há
+          // transação no client, restauramos o destino ao valor anterior e
+          // propagamos o erro; onError revalida do servidor por garantia.
+          await supabase
+            .from('seller_cart_items')
+            .update({ quantity: previousQty })
+            .eq('id', existing.id);
+          throw delErr;
+        }
         return;
       }
 
@@ -451,6 +463,8 @@ export function useSellerCarts() {
       toast.success('Item movido para outro carrinho');
     },
     onError: (err: Error) => {
+      // Revalida do servidor: desfaz qualquer estado otimista/parcial da UI.
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.error('Não foi possível mover o item', { description: sanitizeError(err) });
     },
   });
