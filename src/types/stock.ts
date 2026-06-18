@@ -300,9 +300,7 @@ export type StockSortOption =
   | 'sku'
   | 'stock_quantity'
   | 'available_stock'
-  | 'days_remaining'
-  | 'color_name'
-  | 'last_updated';
+  | 'days_remaining';
 
 export type StockGroupOption =
   | 'none'
@@ -426,6 +424,8 @@ export function aggregateVariantsToProduct(
   for (const v of variants) {
     switch (v.status) {
       case 'in_stock':
+      case 'incoming':
+      case 'overstocked':
         variantsInStock++;
         break;
       case 'low_stock':
