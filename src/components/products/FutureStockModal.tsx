@@ -292,6 +292,10 @@ export function FutureStockModal({
                         <Tooltip key={color.name}>
                           <TooltipTrigger asChild>
                             <button
+                              type="button"
+                              title={color.name}
+                              aria-label={`Filtrar por cor ${color.name}`}
+                              aria-pressed={isSelected}
                               onClick={() => setSelectedColor(isSelected ? null : color.name)}
                               className={cn(
                                 'relative overflow-hidden rounded-lg transition-all duration-200',

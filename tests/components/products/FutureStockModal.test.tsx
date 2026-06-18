@@ -1,15 +1,17 @@
 import { render as rtlRender, screen, fireEvent, within } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ReactElement } from 'react';
 import { FutureStockModal } from '@/components/products/FutureStockModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import * as useVariantSupplierSources from '@/hooks/products/useVariantSupplierSources';
 
-// FutureStockModal usa <Tooltip> (radix), que exige um TooltipProvider ancestral.
-// Em produção o App inteiro é embrulhado em <TooltipProvider> (App.tsx). Os testes
-// renderizavam o modal isolado → "Tooltip must be used within TooltipProvider".
-// Embrulhamos aqui, espelhando o ambiente real (mesmo padrão de HeaderUserMenuTooltips).
-const render = (ui: ReactElement) => rtlRender(<TooltipProvider>{ui}</TooltipProvider>);
+// O FutureStockModal usa Radix `Tooltip`, que exige um `TooltipProvider` no
+// contexto (fornecido globalmente em App.tsx). Em testes isolados precisamos
+// recriá-lo, senão o render lança "`Tooltip` must be used within `TooltipProvider`".
+const TooltipWrapper = ({ children }: { children: ReactNode }) => (
+  <TooltipProvider>{children}</TooltipProvider>
+);
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: TooltipWrapper });
 
 // Mock do hook useProductVariantsWithStock
 vi.mock('@/hooks/products/useVariantSupplierSources', async () => {
@@ -169,10 +171,8 @@ describe('FutureStockModal (UI Tests)', () => {
       />
     );
 
-    // Clica no botão de filtro Azul no grid. O card de cor é um <button> cujo
-    // nome acessível inclui o nome da cor (texto + alt da miniatura); o título
-    // HTML foi substituído por <Tooltip> (radix), então buscamos por role/nome.
-    const blueFilterBtn = screen.getAllByRole('button', { name: /Azul/i })[0];
+    // Clica no botão de filtro Azul no grid usando um matcher parcial para o título
+    const blueFilterBtn = screen.queryAllByTitle(/Azul/i)[0];
     if (!blueFilterBtn) throw new Error('Botão de filtro não encontrado');
     fireEvent.click(blueFilterBtn);
 

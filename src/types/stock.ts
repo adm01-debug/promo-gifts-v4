@@ -16,8 +16,6 @@ export interface VariantStock {
   /** Imagem da variação quando disponível (fallback para a do produto pai). */
   imageUrl?: string;
 
-
-
   // Identificação da variação
   colorId?: string;
   colorName?: string;
@@ -44,6 +42,21 @@ export interface VariantStock {
   futureStock?: number;
   futureStockDate?: string;
   expectedReplenishDate?: string;
+  /**
+   * Reposições futuras granulares (quantidade × data) quando a fonte expõe
+   * múltiplas chegadas com datas distintas (ex.: next_quantity_1..3 /
+   * next_date_1..3 em `variant_supplier_sources`).
+   *
+   * Por quê: `futureStock` é um total único atrelado a `futureStockDate`
+   * (uma só data). Quando uma variação tem 3 chegadas em datas diferentes,
+   * colapsá-las numa única data faz o filtro de janela ("Estoque Futuro
+   * dentro de N dias") superestimar (conta chegadas distantes dentro de uma
+   * janela curta) ou subestimar (ignora uma chegada cuja 2ª/3ª data está na
+   * janela, mas a 1ª não). Com os segmentos, a janela soma APENAS as
+   * chegadas com data ≤ corte. Opcional — consumidores caem no comportamento
+   * de data única quando ausente.
+   */
+  futureSegments?: Array<{ quantity: number; date: string }>;
 
   // Status calculado
   status: StockStatus;
@@ -266,7 +279,6 @@ export interface StockFilters {
   includeFutureStock?: boolean;
   futureStockWindowDays?: 7 | 15 | 30;
 
-
   // Busca
   search: string;
 
@@ -372,7 +384,6 @@ export function calculateStockStatus(
   if (max && current > max * 1.5) return 'overstocked';
   return 'in_stock';
 }
-
 
 export function calculateDaysUntilStockout(
   currentStock: number,
