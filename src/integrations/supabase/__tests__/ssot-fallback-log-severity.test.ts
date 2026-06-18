@@ -9,7 +9,7 @@
  *  - canônico preservado mesmo após dedup
  *  - auth_401_detected expõe diagnostic + recommendation
  */
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -65,7 +65,9 @@ describe('SSOT — severidade do log por variação de envUrl', () => {
     const inconsistency = calls.filter((c) => c.event === 'config_inconsistency');
     expect(inconsistency.length).toBeGreaterThanOrEqual(1);
     for (const c of inconsistency) expect(c.level).toBe('warn');
-    expect(calls.find((c) => c.level === 'error' && c.event === 'config_inconsistency')).toBeUndefined();
+    expect(
+      calls.find((c) => c.level === 'error' && c.event === 'config_inconsistency'),
+    ).toBeUndefined();
   });
 
   it('envUrl=localhost → não emite config_inconsistency', async () => {

@@ -14,8 +14,9 @@
  *   - getApprovalStatus: retorna null quando não encontrado
  *   - fetchPendingRequests: carrega pendingRequests da lista
  */
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { supabase } from '@/integrations/supabase/client';
 import { useDiscountApproval } from '../useDiscountApproval';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -95,13 +96,15 @@ describe('requestApproval', () => {
     });
 
     expect(supabase.from).toHaveBeenCalledWith('discount_approval_requests');
-    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-      quote_id: 'q-abc',
-      seller_id: mockUser.id,
-      requested_discount_percent: 15,
-      max_allowed_percent: 10,
-      seller_notes: 'precisamos fechar',
-    }));
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quote_id: 'q-abc',
+        seller_id: mockUser.id,
+        requested_discount_percent: 15,
+        max_allowed_percent: 10,
+        seller_notes: 'precisamos fechar',
+      }),
+    );
   });
 
   it('retorna true quando inserção bem-sucedida', async () => {
@@ -137,7 +140,6 @@ describe('respondToApproval', () => {
     // Activity log insert
     const chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
 
-    const { supabase } = require('@/integrations/supabase/client');
     let callCount = 0;
     vi.mocked(supabase.from).mockImplementation(() => {
       callCount++;
@@ -191,7 +193,9 @@ describe('getApprovalStatus', () => {
     vi.mocked(supabase.from).mockReturnValue({ select: selectMock } as never);
 
     const { result } = renderHook(() => useDiscountApproval());
-    await act(async () => { await result.current.fetchPendingRequests(); });
+    await act(async () => {
+      await result.current.fetchPendingRequests();
+    });
 
     const found = result.current.getApprovalStatus('q-target');
     expect(found).not.toBeNull();

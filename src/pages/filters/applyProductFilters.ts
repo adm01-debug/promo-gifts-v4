@@ -38,6 +38,7 @@ export interface ProductFilterContext {
   hasSizeFilter?: boolean;
   sizeFilteredProductIds?: Set<string>;
   isLoadingSizeFilter?: boolean;
+  sizeFilterError?: unknown;
   /**
    * BUG-DB-02 (metadados server-side): datas/tags/ramos/segmentos/público vivem em
    * tabelas relacionais e NÃO são hidratados no catálogo leve. Quando o Set vem da
@@ -47,6 +48,7 @@ export interface ProductFilterContext {
   hasMetadataFilter?: boolean;
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
+  metadataFilterError?: unknown;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, SupplierSalesEntry>;
   promoSales90dMap?: Map<string, number>;
@@ -75,9 +77,11 @@ export function applyProductFilters(
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
+    sizeFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
     promoSalesMap,
     supplierSalesMap,
     promoSales90dMap,
@@ -124,9 +128,10 @@ export function applyProductFilters(
   if (hasMetadataFilter && metadataFilteredProductIds) {
     if (metadataFilteredProductIds.size > 0) {
       result = result.filter((p) => metadataFilteredProductIds.has(p.id));
-    } else if (!isLoadingMetadataFilter) {
+    } else if (!isLoadingMetadataFilter && !metadataFilterError) {
       result = [];
     }
+    // Se metadataFilterError: RPC falhou — preserva a grade (erro visível via toast no hook consumer)
   }
   if (!hasMetadataFilter && filters.publicoAlvo.length > 0) {
     const pSet = new Set(filters.publicoAlvo.map((p) => p.toLowerCase()));
@@ -154,7 +159,10 @@ export function applyProductFilters(
       (product.tags?.endomarketing ?? []).some((t: string) => eSet.has(t.toLowerCase())),
     );
   }
-  if (!hasMetadataFilter && (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0)) {
+  if (
+    !hasMetadataFilter &&
+    (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0)
+  ) {
     const ramosLower = filters.ramosAtividade?.map((r) => r.toLowerCase()) ?? [];
     const segLower = filters.segmentosAtividade?.map((s) => s.toLowerCase()) ?? [];
     result = result.filter((product) => {
@@ -232,7 +240,7 @@ export function applyProductFilters(
     if (hasSizeFilter && sizeFilteredProductIds) {
       if (sizeFilteredProductIds.size > 0) {
         result = result.filter((p) => sizeFilteredProductIds.has(p.id));
-      } else if (!isLoadingSizeFilter) {
+      } else if (!isLoadingSizeFilter && !sizeFilterError) {
         result = [];
       }
     } else {

@@ -13,7 +13,7 @@
  *   - createNewVersion: retorna null quando user=null
  *   - createNewVersion: retorna null quando quote não encontrado
  */
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useQuoteVersions } from '../useQuoteVersions';
 
@@ -97,10 +97,20 @@ describe('fetchVersions', () => {
     // Mock: quote sem parent (root)
     const quoteData = { id: 'q-root', parent_quote_id: null, version: 1 };
     const versionsData = [
-      { id: 'q-root', quote_number: 'ORC-001', version: 1, status: 'draft',
-        total: 100, subtotal: 100, discount_amount: 0, discount_percent: 0,
-        created_at: '2026-01-01', updated_at: '2026-01-01',
-        is_latest_version: false, parent_quote_id: null },
+      {
+        id: 'q-root',
+        quote_number: 'ORC-001',
+        version: 1,
+        status: 'draft',
+        total: 100,
+        subtotal: 100,
+        discount_amount: 0,
+        discount_percent: 0,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        is_latest_version: false,
+        parent_quote_id: null,
+      },
     ];
 
     // Chain: .from('quotes').select().eq().single()

@@ -33,18 +33,19 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
     const { stages, avgCycleDays, total } = result.current;
     expect(total).toBe(0);
     expect(avgCycleDays).toBeNull();
-    stages.forEach(s => expect(s.count).toBe(0));
+    expect(stages).not.toHaveLength(0);
+    for (const s of stages) expect(s.count).toBe(0);
   });
 
   it('draft rateFromPrev = null (primeira etapa)', () => {
-    const { result } = renderHook(() => useQuoteFunnel([q('1','draft')], {}));
-    const draft = result.current.stages.find(s => s.id === 'draft');
+    const { result } = renderHook(() => useQuoteFunnel([q('1', 'draft')], {}));
+    const draft = result.current.stages.find((s) => s.id === 'draft');
     expect(draft?.rateFromPrev).toBeNull();
   });
 
   // Total
   it('total = quotes.length (inclui todos os status)', () => {
-    const quotes = [q('1','draft'), q('2','sent'), q('3','converted')];
+    const quotes = [q('1', 'draft'), q('2', 'sent'), q('3', 'converted')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
     expect(result.current.total).toBe(3);
   });
@@ -59,35 +60,35 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
       q('5', 'converted'),
     ];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const sent = result.current.stages.find(s => s.id === 'sent');
+    const sent = result.current.stages.find((s) => s.id === 'sent');
     // sent(1) + pending(1) + approved(1) + converted(1) = 4
     expect(sent?.count).toBe(4);
   });
 
   it('approvedTotal = approved + converted', () => {
-    const quotes = [q('1','draft'), q('2','approved'), q('3','converted')];
+    const quotes = [q('1', 'draft'), q('2', 'approved'), q('3', 'converted')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const approved = result.current.stages.find(s => s.id === 'approved');
+    const approved = result.current.stages.find((s) => s.id === 'approved');
     expect(approved?.count).toBe(2); // approved(1) + converted(1)
   });
 
   it('converted count = somente converted', () => {
-    const quotes = [q('1','approved'), q('2','converted'), q('3','converted')];
+    const quotes = [q('1', 'approved'), q('2', 'converted'), q('3', 'converted')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const conv = result.current.stages.find(s => s.id === 'converted');
+    const conv = result.current.stages.find((s) => s.id === 'converted');
     expect(conv?.count).toBe(2);
   });
 
   // viewedMap
   it('viewedTotal soma qualifying (com viewedMap) + approved + converted', () => {
     const quotes = [
-      q('1', 'sent'),       // qualifying se em viewedMap
-      q('2', 'pending'),    // qualifying se em viewedMap
-      q('3', 'approved'),   // sempre conta no viewedTotal
+      q('1', 'sent'), // qualifying se em viewedMap
+      q('2', 'pending'), // qualifying se em viewedMap
+      q('3', 'approved'), // sempre conta no viewedTotal
     ];
     const viewedMap = { '1': { viewedAt: '2026-01-01' } }; // q1 viewed
     const { result } = renderHook(() => useQuoteFunnel(quotes, viewedMap));
-    const viewed = result.current.stages.find(s => s.id === 'viewed');
+    const viewed = result.current.stages.find((s) => s.id === 'viewed');
     // q1(viewed via map) + q3(approved, sempre) = 2
     expect(viewed?.count).toBe(2);
   });
@@ -95,16 +96,16 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
   it('viewed = 0 quando viewedMap vazio e nao ha approved/converted', () => {
     const quotes = [q('1', 'sent'), q('2', 'draft')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const viewed = result.current.stages.find(s => s.id === 'viewed');
+    const viewed = result.current.stages.find((s) => s.id === 'viewed');
     expect(viewed?.count).toBe(0);
   });
 
   // rateFromPrev
   it('rateFromPrev de sent = (sentTotal / total) * 100', () => {
     // 2 de 4 quotes sao sent
-    const quotes = [q('1','draft'), q('2','draft'), q('3','sent'), q('4','sent')];
+    const quotes = [q('1', 'draft'), q('2', 'draft'), q('3', 'sent'), q('4', 'sent')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const sent = result.current.stages.find(s => s.id === 'sent');
+    const sent = result.current.stages.find((s) => s.id === 'sent');
     expect(sent?.rateFromPrev).toBeCloseTo(50, 1); // 2/4 = 50%
   });
 
@@ -112,7 +113,7 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
     // Nenhum quote enviado, calcular viewed
     const quotes = [q('1', 'draft')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
-    const viewed = result.current.stages.find(s => s.id === 'viewed');
+    const viewed = result.current.stages.find((s) => s.id === 'viewed');
     expect(viewed?.rateFromPrev).toBe(0); // sentTotal=0
   });
 
@@ -128,7 +129,7 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
   });
 
   it('avgCycleDays = null quando nao ha quotes aprovadas/convertidas', () => {
-    const quotes = [q('1','draft'), q('2','sent')];
+    const quotes = [q('1', 'draft'), q('2', 'sent')];
     const { result } = renderHook(() => useQuoteFunnel(quotes, {}));
     expect(result.current.avgCycleDays).toBeNull();
   });
@@ -136,7 +137,7 @@ describe('useQuoteFunnel — funil de orçamentos', () => {
   // 5 etapas corretas
   it('retorna exatamente 5 etapas na ordem correta', () => {
     const { result } = renderHook(() => useQuoteFunnel([], {}));
-    const ids = result.current.stages.map(s => s.id);
+    const ids = result.current.stages.map((s) => s.id);
     expect(ids).toEqual(['draft', 'sent', 'viewed', 'approved', 'converted']);
   });
 });

@@ -20,6 +20,7 @@ export interface UseProductsBySizeReturn {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsBySize(sizes: string[] = []): UseProductsBySizeReturn {
@@ -27,7 +28,7 @@ export function useProductsBySize(sizes: string[] = []): UseProductsBySizeReturn
   // Chave estável: a ordem da seleção não deve invalidar o cache.
   const sizeKey = useMemo(() => [...sizes].sort(), [sizes]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['products-by-size', sizeKey],
     queryFn: async () => {
       const result = await dbInvoke<{ product_id: string }>({
@@ -47,7 +48,12 @@ export function useProductsBySize(sizes: string[] = []): UseProductsBySizeReturn
   });
 
   const productIds = useMemo(() => data ?? new Set<string>(), [data]);
-  return { productIds, hasFilter, isLoading: hasFilter ? isLoading : false };
+  return {
+    productIds,
+    hasFilter,
+    isLoading: hasFilter ? isLoading : false,
+    error: hasFilter ? error : null,
+  };
 }
 
 export interface UseAvailableSizesReturn {

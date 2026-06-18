@@ -16,6 +16,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuotes } from '../useQuotes';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -117,13 +118,12 @@ describe('user=null — queries desabilitadas', () => {
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
 
   it('quotes = [] quando user=null', () => {
-    const { useAuth } = require('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: null });
 
     const { result } = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
@@ -137,14 +137,14 @@ describe('BUG-NEW-02 — Realtime subscription', () => {
   it('cria channel supabase quando user autenticado', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
     expect(supabase.channel).toHaveBeenCalledWith('quotes-realtime');
   });
 
   it('cancela channel ao desmontar (cleanup BUG-NEW-02)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     const { unmount } = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
     unmount();
     expect(supabase.removeChannel).toHaveBeenCalled();
   });
