@@ -155,7 +155,14 @@ export function useFiltersPageState() {
     isFetchingNextPage,
   } = useProductsCatalog({
     search: serverSearchTerm,
-    categories: filters.categories,
+    // BUG-DB-01 FIX (2026-06-18): categoria NAO e filtrada server-side aqui.
+    // fetchCatalogPage aplicava products.category_id IN(selecionadas) de forma EXATA
+    // (categoria PRIMARIA, SEM expandir descendentes). Selecionar uma categoria-pai
+    // (ex.: "Ecologia" 0 diretos / 1.335 c/ descendentes; "Lazer" 0/715) buscava ~0
+    // produtos, e a intersecao client-side com categoryFilteredProductIds (Edge
+    // categories-api, COM descendentes via PCA) so reduzia esse conjunto vazio ->
+    // grade zerada (perda 75-100% em 14+ categorias-pai). A categoria passa a ser
+    // filtrada 100% client-side via categoryFilteredProductIds (mesmo padrao de cor/material).
     suppliers: filters.suppliers,
     sortBy: filters.sortBy,
   });
