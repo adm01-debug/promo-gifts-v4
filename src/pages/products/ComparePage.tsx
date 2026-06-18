@@ -127,7 +127,7 @@ export default function ComparePage() {
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             name: 'Comparar Produtos',
-            url: 'https://criar-together-now.lovable.app/comparar',
+            url: 'https://www.promogifts.com.br/comparar',
           }}
         />
         <CompareEmptyStateSmart />

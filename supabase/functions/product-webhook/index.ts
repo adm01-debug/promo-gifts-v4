@@ -14,11 +14,21 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const configuredBatchSize = Number(Deno.env.get('PRODUCT_WEBHOOK_BATCH_SIZE') ?? '200');
 const MAX_BATCH_SIZE = 500;
-const BATCH_SIZE = Number.isFinite(configuredBatchSize)
-  ? Math.min(Math.max(Math.trunc(configuredBatchSize), 100), MAX_BATCH_SIZE)
-  : 200;
+const MIN_BATCH_SIZE = 100;
+const rawBatchSize = Number.isFinite(configuredBatchSize) ? Math.trunc(configuredBatchSize) : 200;
+const BATCH_SIZE = Math.min(Math.max(rawBatchSize, MIN_BATCH_SIZE), MAX_BATCH_SIZE);
+if (rawBatchSize !== BATCH_SIZE) {
+  console.warn(`[product-webhook] PRODUCT_WEBHOOK_BATCH_SIZE=${rawBatchSize} clamped to ${BATCH_SIZE}`);
+}
 const DEFAULT_WEBHOOK_TOLERANCE_SEC = 300;
 const MAX_WEBHOOK_TOLERANCE_SEC = 3600;
+const MAX_NONCE_LENGTH = 256;
+
+// UUID v4 regex — validates supplier_id/category_id before writing to UUID columns
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUUID(val: unknown): val is string {
+  return typeof val === 'string' && UUID_RE.test(val);
+}
 
 const allowedOrigins = new Set(
   (Deno.env.get('PRODUCT_WEBHOOK_ALLOWED_ORIGINS') ?? '')
@@ -50,34 +60,37 @@ type ProductPayload =
   | NonNullable<ProductWebhookV1Payload['product']>
   | NonNullable<ProductWebhookV2Payload['product']>;
 
+// NormalizedProduct fields must map 1-to-1 to `products` table columns.
+// BREAKING HISTORY: original type used `price`, `stock`, `featured`, `new_arrival`,
+// `on_sale`, `synced_at` — none of which exist as column names in the DB.
+// All upserts were silently failing with column-not-found errors. Fixed 2026-06-18.
 type NormalizedProduct = {
   external_id: string | null;
   sku: string;
   name: string;
   description: string | null;
-  price: number;
+  sale_price: number;          // DB column: sale_price (was: price)
   min_quantity: number;
-  category_id: string | null;
-  category_name: string | null;
-  subcategory: string | null;
-  supplier_id: string | null;
-  supplier_name: string | null;
-  stock: number;
-  stock_status: string;
+  category_id: string | null;  // UUID or null; numeric IDs from webhook are rejected
+  supplier_id: string | null;  // UUID or null; validated before insertion
+  brand: string | null;        // DB column: brand (was: supplier_name)
+  stock_quantity: number;      // DB column: stock_quantity (was: stock)
+  is_stockout: boolean;        // DB column: is_stockout (was: stock_status string)
+  sync_status: string;         // DB column: sync_status, always 'synced' on webhook write
   is_kit: boolean;
   is_active: boolean;
-  featured: boolean;
-  new_arrival: boolean;
-  on_sale: boolean;
+  active: boolean;             // mirrors is_active (both booleans exist in DB)
+  is_featured: boolean;        // DB column: is_featured (was: featured)
+  is_new: boolean;             // DB column: is_new (was: new_arrival)
+  is_on_sale: boolean;         // DB column: is_on_sale (was: on_sale)
   images: string[];
-  video_url: string | null;
+  videos: unknown[];           // DB column: videos jsonb[] (was: video_url string)
   colors: unknown[];
   materials: string[];
   tags: Record<string, unknown>;
-  kit_items: unknown[];
   variations: unknown[];
-  metadata: Record<string, unknown>;
-  synced_at: string;
+  schema_json: Record<string, unknown>; // DB column: schema_json (metadata + kit_items merged here)
+  last_sync_at: string;        // DB column: last_sync_at (was: synced_at)
 };
 
 type UpsertOutcome = {
@@ -224,6 +237,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (nonce.length > MAX_NONCE_LENGTH) {
+      logAuthFailure('nonce_too_long', req, { nonceLength: nonce.length, max: MAX_NONCE_LENGTH });
+      return new Response(UNAUTHORIZED_BODY, {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const nowSec = Math.floor(Date.now() / 1000);
     if (Math.abs(nowSec - timestamp) > webhookTimestampToleranceSec) {
       logAuthFailure('timestamp_out_of_window', req, {
@@ -278,7 +299,9 @@ Deno.serve(async (req) => {
     const externalIds = data.external_ids as string[] | undefined;
     const productsReceived = products?.length || (singleProduct ? 1 : 0);
 
-    const { data: syncLog, error: logError } = await supabase
+    // product_sync_logs lives in the `archive` schema, not `public`.
+    const archiveClient = supabase.schema('archive');
+    const { data: syncLog, error: logError } = await archiveClient
       .from('product_sync_logs')
       .insert({
         status: 'processing',
@@ -327,13 +350,21 @@ Deno.serve(async (req) => {
         if (!externalIds || externalIds.length === 0) {
           throw new Error('external_ids array is required for delete action');
         }
+        // Soft-delete: set is_active=false + is_deleted=true + deleted_at timestamp.
+        // Hard delete is irreversible and has no audit trail; misconfigured n8n nodes
+        // could permanently wipe catalog entries. Soft-delete allows recovery.
         const { error: deleteError, count } = await supabase
           .from('products')
-          .delete()
+          .update({
+            is_active: false,
+            active: false,
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+          })
           .in('external_id', externalIds);
         if (deleteError) throw deleteError;
         outcome = { ...outcome, processed: externalIds.length, db_roundtrips: 1 };
-        console.log(`Deleted ${count} products`);
+        console.log(`[product-webhook] Soft-deleted ${count ?? externalIds.length} products via external_ids`);
         break;
       }
 
@@ -342,7 +373,7 @@ Deno.serve(async (req) => {
     }
 
     if (syncLogId) {
-      await supabase
+      await archiveClient
         .from('product_sync_logs')
         .update({
           status: outcome.failed > 0 ? 'partial' : 'completed',
@@ -531,35 +562,51 @@ async function upsertProducts(
 }
 
 function normalizeProduct(product: ProductPayload): NormalizedProduct {
-  const stockStatus = calculateStockStatus(product.stock || 0);
+  const stockQty = product.stock ?? 0;
+  const isActive = product.is_active !== false;
+  // category_id from external systems is a Bitrix numeric ID; DB column is UUID.
+  // String "42" would be stored as-is but fail UUID FK lookups. Null it out until
+  // a category-reconciliation step looks up the UUID via categories.bitrix_id.
+  const categoryId = isUUID(product.category_id) ? (product.category_id as string) : null;
+  // supplier_id must be a valid UUID referencing the suppliers table.
+  const supplierId = isUUID(product.supplier_id) ? product.supplier_id : null;
+  // Merge metadata + kit_items into schema_json (single jsonb column).
+  const schemaJson: Record<string, unknown> = {
+    ...((product.metadata || {}) as Record<string, unknown>),
+    ...(Array.isArray(product.kit_items) && product.kit_items.length > 0
+      ? { kit_items: product.kit_items }
+      : {}),
+  };
+  // video_url from V1 payload → videos[] array expected by DB column.
+  const videos = product.video_url ? [{ url: product.video_url }] : [];
+
   return {
     external_id: product.external_id || null,
     sku: product.sku,
     name: product.name,
     description: product.description || null,
-    price: product.price || 0,
+    sale_price: product.price,       // webhook 'price' field = sale_price in DB
     min_quantity: product.min_quantity || 1,
-    category_id: product.category_id == null ? null : String(product.category_id),
-    category_name: product.category_name || null,
-    subcategory: product.subcategory || null,
-    supplier_id: product.supplier_id || null,
-    supplier_name: product.supplier_name || null,
-    stock: product.stock || 0,
-    stock_status: product.stock_status || stockStatus,
+    category_id: categoryId,
+    supplier_id: supplierId,
+    brand: product.supplier_name || null,
+    stock_quantity: stockQty,
+    is_stockout: stockQty <= 0,
+    sync_status: 'synced',
     is_kit: product.is_kit || false,
-    is_active: product.is_active !== false,
-    featured: product.featured || false,
-    new_arrival: product.new_arrival || false,
-    on_sale: product.on_sale || false,
+    is_active: isActive,
+    active: isActive,
+    is_featured: product.featured || false,
+    is_new: product.new_arrival || false,
+    is_on_sale: product.on_sale || false,
     images: product.images || [],
-    video_url: product.video_url || null,
+    videos,
     colors: product.colors || [],
     materials: product.materials || [],
     tags: product.tags || {},
-    kit_items: product.kit_items || [],
     variations: product.variations || [],
-    metadata: (product.metadata || {}) as Record<string, unknown>,
-    synced_at: new Date().toISOString(),
+    schema_json: schemaJson,
+    last_sync_at: new Date().toISOString(),
   };
 }
 
@@ -571,8 +618,3 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   return chunked;
 }
 
-function calculateStockStatus(stock: number): string {
-  if (stock <= 0) return 'out-of-stock';
-  if (stock < 100) return 'low-stock';
-  return 'in-stock';
-}
