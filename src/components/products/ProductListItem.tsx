@@ -654,8 +654,8 @@ export const ProductListItem = memo(function ProductListItem({
           setVariantPickerOpen(true);
         }}
         onAddToCollection={() => {
-          setCollectionVariant('add');
-          setCollectionModalOpen(true);
+          setVariantPickerMode('collection');
+          setVariantPickerOpen(true);
         }}
       />
 
