@@ -25,6 +25,9 @@ import { cn } from '@/lib/utils';
 // FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
+// Collator pt-BR compartilhado: mesma ordenação natural/acento-insensível do grid/lista
+// (apenas type-imports em runtime → sem ciclo). Evita localeCompare sem locale e null-throw.
+import { compareNamePtBR } from '@/utils/product-sorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 
@@ -255,20 +258,30 @@ export const ProductTableView = memo(function ProductTableView({
     }
     return [...hydratedProducts].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
+      // Desempate determinístico por id (independente de dir) → ordem estável
+      // entre renders com virtualização + carregamento progressivo.
+      const idTie = a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      let primary = 0;
       switch (sortCol) {
         case 'name':
-          return dir * a.name.localeCompare(b.name);
+          primary = compareNamePtBR(a.name, b.name);
+          break;
         case 'sku':
-          return dir * (a.sku || '').localeCompare(b.sku || '');
+          primary = compareNamePtBR(a.sku, b.sku);
+          break;
         case 'price':
-          return dir * (a.price - b.price);
+          primary = (a.price || 0) - (b.price || 0);
+          break;
         case 'stock':
-          return dir * ((a.stock || 0) - (b.stock || 0));
+          primary = (a.stock || 0) - (b.stock || 0);
+          break;
         case 'supplier':
-          return dir * (a.supplier?.name || '').localeCompare(b.supplier?.name || '');
+          primary = compareNamePtBR(a.supplier?.name, b.supplier?.name);
+          break;
         default:
-          return 0;
+          return idTie;
       }
+      return primary !== 0 ? dir * primary : idTie;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydratedProducts, sortCol, sortDir]);

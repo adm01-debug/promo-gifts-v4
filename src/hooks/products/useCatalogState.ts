@@ -8,6 +8,7 @@ import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategori
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsByColor } from '@/hooks/products/useProductsByColor';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import type { Product } from '@/types/product-catalog';
@@ -381,10 +382,26 @@ export function useCatalogState() {
     includeDescendants: true,
   });
 
+  // BUG-COLOR-01 FIX: o catálogo (Index) filtrava cor inspecionando p.colors, mas
+  // realProducts vêm do lightweight com colors:[] (enriquecimento de cor roda DEPOIS
+  // da filtragem) → qualquer filtro de cor zerava a grade. Resolvido server-side via
+  // useProductsByColor, simétrico a categoria/material (mesmo padrão do FiltersPage).
+  const {
+    productIds: colorFilteredProductIds,
+    hasFilter: hasColorFilter,
+    isLoading: isLoadingColorFilter,
+  } = useProductsByColor({
+    colorGroups: filters.colorGroups || [],
+    colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    colors: filters.colors || [],
+  });
+
   useExternalCategoriesQuery();
   const { data: realStats } = useCatalogRealStats();
 
-  const isLoading = isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter;
+  const isLoading =
+    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
@@ -493,6 +510,9 @@ export function useCatalogState() {
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    hasColorFilter,
+    colorFilteredProductIds,
+    isLoadingColorFilter,
     promoSalesMap,
     supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });

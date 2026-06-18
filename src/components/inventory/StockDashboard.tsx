@@ -16,14 +16,11 @@ import {
   ChevronRight,
   Clock,
   BarChart3,
-  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
@@ -36,12 +33,10 @@ import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
-import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
 const StockHealthBreakdownDrawer = lazyWithRetry(() =>
   import('./StockHealthBreakdownDrawer').then((m) => ({ default: m.StockHealthBreakdownDrawer })),
 );
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
-import { calcHealthScore } from '@/lib/inventory/health-score';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
 
@@ -145,8 +140,6 @@ export function StockDashboard() {
     return () => window.removeEventListener('keydown', handler);
   }, [handleRefresh, toast]);
 
-
-
   // Toast when new critical alerts appear after refresh
   useEffect(() => {
     if (isLoading) return;
@@ -183,16 +176,6 @@ export function StockDashboard() {
   }, [filters.status]);
 
   const isFiltered = filters.status !== 'all';
-
-  // Health score calculation (SSOT em src/lib/inventory/health-score.ts)
-  const healthScore = useMemo(
-    () =>
-      calcHealthScore({
-        productsInStock: summary.productsInStock,
-        totalProducts: summary.totalProducts,
-      }),
-    [summary.productsInStock, summary.totalProducts],
-  );
 
   // Future stock total
   const futureStockTotal = useMemo(
@@ -319,57 +302,7 @@ export function StockDashboard() {
       {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Visão Geral</h2>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    data-testid="health-score-badge"
-                    aria-label={`Saúde do estoque: ${healthScore}%. Clique para detalhar.`}
-                    onClick={() => setHealthDrawerOpen(true)}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      healthScore >= 80 && 'border-success/20 bg-success/10 text-success',
-                      healthScore >= 50 &&
-                        healthScore < 80 &&
-                        'border-warning/20 bg-warning/10 text-warning',
-                      healthScore < 50 &&
-                        'border-destructive/20 bg-destructive/10 text-destructive',
-                    )}
-                  >
-                    <Shield className="h-3 w-3" />
-                    Saúde: {healthScore}%
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-[220px] text-xs">
-                    {summary.productsInStock} de {summary.totalProducts} produtos com estoque
-                    adequado. Clique para ver a lista por faixa.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {criticalAlerts.length > 0 && (
-              <Badge
-                variant="destructive"
-                data-testid="critical-alerts-badge"
-                className="animate-pulse cursor-pointer gap-1 text-xs"
-                onClick={() => setOutOfStockDialogOpen(true)}
-              >
-                <AlertCircle className="h-3 w-3" />
-                {criticalAlerts.length} alertas
-              </Badge>
-            )}
-            <HealthScoreInfoDialog
-              productsInStock={summary.productsInStock}
-              totalProducts={summary.totalProducts}
-              criticalAlerts={criticalAlerts.length}
-            />
-          </div>
-        </div>
+        <div className="flex flex-col gap-2" />
 
         <div
           className="flex items-center gap-2 text-xs text-muted-foreground"
@@ -395,7 +328,6 @@ export function StockDashboard() {
           {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
         </div>
       </div>
-
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
@@ -429,25 +361,26 @@ export function StockDashboard() {
           }
         />
         <StatCard
-          title="Estoque Baixo"
-          // SSOT KPI ↔ chip: o valor bate 1:1 com `filters.status ===
-          // 'low_stock'` (que é o que o clique aplica). Críticos têm
-          // KPI próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          title="Crítico"
+          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status ===
+          // 'critical'` (o que o clique aplica). "Crítico" = produtos
+          // parcialmente sem estoque (overallStatus==='critical'). A régua
+          // por `min` (low_stock) foi descontinuada e o KPI ficava sempre 0;
+          // este card agora expõe um número real e clicável.
           // Testado em VariantStockTable.kpi-consistency.test.tsx.
-          value={summary.productsLowStock.toLocaleString('pt-BR')}
+          value={summary.productsCritical.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
-          isActive={filters.status === 'low_stock'}
+          isActive={filters.status === 'critical'}
           onClick={() => {
-            updateFilter('status', filters.status === 'low_stock' ? 'all' : 'low_stock');
-            if (warningAlerts.length > 0) setLowStockDialogOpen(true);
+            updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
           }}
-          clickHint="Filtrar produtos com estoque baixo (não inclui críticos)"
+          clickHint="Filtrar produtos em estado crítico (parcialmente sem estoque)"
           trend={
-            summary.productsCritical > 0
+            summary.totalProducts > 0 && summary.productsCritical > 0
               ? {
                   value: -1,
-                  label: `+ ${summary.productsCritical.toLocaleString('pt-BR')} em estado crítico`,
+                  label: `${Math.round((summary.productsCritical / summary.totalProducts) * 100)}% do catálogo`,
                 }
               : undefined
           }
@@ -498,7 +431,6 @@ export function StockDashboard() {
           }
         />
       </div>
-
 
       {/* Active Filter Badge */}
       {isFiltered && (
