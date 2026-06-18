@@ -53,7 +53,7 @@ export function useCatalogPreferences() {
         .from('profiles')
         .select('preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error || !data?.preferences) {
         if (error) {
@@ -83,7 +83,7 @@ export function useCatalogPreferences() {
         .from('profiles')
         .select('preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const existingPrefs = (existingData?.preferences as Record<string, unknown>) || {};
 
