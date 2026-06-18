@@ -126,7 +126,9 @@ export function useCatalogFiltering({
     // BUG-21 FIX: era < 500, deve ser < 9999 para ativar filtro no range completo [0, 9999].
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
       const [min, max] = filters.priceRange;
-      result = result.filter((p) => p.price >= min && p.price <= max);
+      // FIX-SF-F: 9999 é sentinela "sem limite" — não excluir produtos caros quando
+      // só o mínimo é definido. max >= 9999 vira ilimitado.
+      result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
     }
 
     if (filters.inStock) {
@@ -140,6 +142,14 @@ export function useCatalogFiltering({
     if (filters.isKit) {
       result = result.filter((product) => isProductKit(product));
     }
+
+    // SF-A parity: estes flags foram corrigidos no mapeamento leve mas estavam
+    // ausentes do pipeline de filtragem do catálogo Index — Quick Options inertes
+    // em /produtos (mesmo bug que SF-A corrigiu em /filtros via applyProductFilters).
+    if (filters.featured) result = result.filter((p) => p.featured === true);
+    if (filters.isNew) result = result.filter((p) => p.newArrival === true);
+    if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
+    if (filters.onSale) result = result.filter((p) => p.onSale === true);
 
     if (genderFilterSet.size > 0) {
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
@@ -180,6 +190,10 @@ export function useCatalogFiltering({
     filters.priceRange[1],
     filters.inStock,
     filters.isKit,
+    filters.featured,
+    filters.isNew,
+    filters.hasPersonalization,
+    filters.onSale,
     filters.materiais,
     sortBy,
     hasFuzzySearch,
