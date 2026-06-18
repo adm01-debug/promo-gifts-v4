@@ -162,6 +162,9 @@ export function StockFilterToolbar({
   const handleReset = () => {
     setLocalSearch('');
     setQuantityInput('');
+    // Evita ficar com aria-busy="true" / spinner travado se o usuário
+    // resetar logo após clicar em "Busca" (race entre commit e reset).
+    setIsSearching(false);
     onResetFilters();
   };
 
