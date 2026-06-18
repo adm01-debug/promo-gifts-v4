@@ -280,17 +280,23 @@ export function useSellerCartsPage() {
 
   const handleLoadTemplate = useCallback(
     (items: CartTemplateItem[]) => {
+      // silent: cada item entra sem toast individual; mostramos um único
+      // toast agregado abaixo (evita empilhar N toasts ao aplicar template).
       items.forEach((item) => {
-        addToActiveCart({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          product_sku: item.product_sku,
-          product_image_url: item.product_image_url,
-          product_price: item.product_price,
-          quantity: item.quantity,
-          color_name: item.color_name,
-          color_hex: item.color_hex,
-        });
+        addToActiveCart(
+          {
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_sku: item.product_sku,
+            product_image_url: item.product_image_url,
+            product_price: item.product_price,
+            quantity: item.quantity,
+            color_name: item.color_name,
+            color_hex: item.color_hex,
+          },
+          undefined,
+          { silent: true },
+        );
       });
       toast.success('Template aplicado ao carrinho');
     },
