@@ -135,6 +135,10 @@ export function useQuoteBuilderState() {
   // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
   const baselineUpdatedAtRef = useRef<string | null>(null);
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
+  // Status que o usuário tentou salvar quando o conflito foi detectado.
+  // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
+  // evitando rebaixar silenciosamente o orçamento para rascunho.
+  const pendingSaveStatusRef = useRef<'draft' | 'pending' | 'pending_approval'>('draft');
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -1006,6 +1010,7 @@ export function useQuoteBuilderState() {
               minute: '2-digit',
               timeZone: 'America/Sao_Paulo',
             });
+            pendingSaveStatusRef.current = status; // preserva a intenção do save
             setConflictInfo({ modifiedAt: remoteTs, label });
             return; // Bloqueia o save — usuário decide no banner
           }
@@ -1163,12 +1168,14 @@ export function useQuoteBuilderState() {
     dismissConflict: () => setConflictInfo(null),
     /**
      * Ignora o conflito detectado e salva mesmo assim (overwrite consciente).
+     * Preserva o status que o usuário tentou salvar (não rebaixa para rascunho).
      * Após o save, atualiza o baseline para evitar falsos positivos futuros.
      */
-    overwriteAndSave: async (status: 'draft' | 'pending' | 'pending_approval' = 'draft') => {
+    overwriteAndSave: async (status?: 'draft' | 'pending' | 'pending_approval') => {
+      const effectiveStatus = status ?? pendingSaveStatusRef.current;
       setConflictInfo(null);
       baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
-      await handleSaveQuote(status);
+      await handleSaveQuote(effectiveStatus);
     },
   };
 }

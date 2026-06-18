@@ -109,7 +109,7 @@ export default function QuoteBuilderPage() {
               dismissConflict();
               window.location.reload();
             }}
-            onOverwrite={() => overwriteAndSave('draft')}
+            onOverwrite={() => overwriteAndSave()}
           />
         </div>
       )}
@@ -260,7 +260,9 @@ export default function QuoteBuilderPage() {
                   value={s.validityDays}
                   onValueChange={(val) => {
                     s.setValidityDays(val);
-                    s.setValidUntil(format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'));
+                    s.setValidUntil(
+                      format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
+                    );
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">
