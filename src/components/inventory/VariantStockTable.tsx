@@ -335,6 +335,7 @@ function FlatVariantRow({
         open={collectionOpen}
         onOpenChange={setCollectionOpen}
         rows={collectionRows}
+        onApplied={() => setCollectionOpen(false)}
       />
     )}
     </>
