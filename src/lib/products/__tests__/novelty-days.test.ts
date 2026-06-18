@@ -3,32 +3,7 @@
  * Reproduz a mesma fórmula usada no componente para travar contrato.
  */
 import { describe, it, expect } from 'vitest';
-
-const NOVELTY_WINDOW_DAYS = 30;
-
-function resolveNoveltyDaysRemaining(
-  createdAt: string | null | undefined,
-  noveltyDaysRemaining: number | undefined,
-  newArrival: boolean,
-): number | undefined {
-  let resolved = noveltyDaysRemaining;
-  if (resolved === undefined && newArrival && createdAt) {
-    const ts = Date.parse(createdAt);
-    if (!Number.isNaN(ts)) {
-      const elapsed = Math.floor((Date.now() - ts) / 86400000);
-      const remaining = NOVELTY_WINDOW_DAYS - elapsed;
-      if (remaining > 0 && remaining <= NOVELTY_WINDOW_DAYS) resolved = remaining;
-    }
-  }
-  return resolved;
-}
-
-function badgeLabel(daysRemaining: number | undefined): string {
-  const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
-  if (daysElapsed === 0) return 'Novidade hoje!';
-  if (daysElapsed === 1) return 'Novidade 1 dia';
-  return `Novidade ${daysElapsed} dias`;
-}
+import { resolveNoveltyDaysRemaining, noveltyBadgeLabel as badgeLabel } from '@/lib/products/novelty-days';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 
