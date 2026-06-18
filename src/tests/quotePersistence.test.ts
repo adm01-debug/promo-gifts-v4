@@ -71,3 +71,52 @@ describe('Quote Module - Integration (Frontend Totals vs Backend Persistence)', 
     expect(totalsForPayload.discountAmount).toBe(frontendTotals.discountAmount);
   });
 });
+
+/**
+ * Invariante app-side (companheiro da blindagem DB fn_quotes_calc_real_values):
+ *
+ * O trigger de segurança server-side deriva real_discount_percent do discount_amount.
+ * Se o app gravasse discount_percent > 0 mas discount_amount = 0, o servidor
+ * calcularia real_discount_percent = 0 e a validação de alçada
+ * (trg_quotes_validate_discount) seria silenciosamente burlada.
+ *
+ * calculateQuoteTotals é a SSOT que garante que o app SEMPRE produz um
+ * discount_amount consistente com discount_percent (= subtotal × pct/100),
+ * fechando o gap pela origem. Estes testes travam esse invariante para que
+ * nenhuma refatoração futura reintroduza o input perigoso.
+ */
+describe('Quote — invariante discount_amount derivado de discount_percent (anti-bypass de alçada)', () => {
+  const items: QuoteItem[] = [
+    { product_id: 'p1', product_name: 'P1', quantity: 10, unit_price: 100, personalizations: [] },
+  ]; // subtotal real = 1000
+
+  it('modo percentual: discount_amount = subtotal × pct/100 (NUNCA 0 quando pct > 0)', () => {
+    const totals = calculateQuoteTotals({ discount_percent: 15 }, items);
+    // 1000 × 15% = 150 — jamais 0, evitando o input que burlaria a alçada no servidor
+    expect(totals.discountAmount).toBe(150);
+    expect(totals.realDiscountPercent).toBe(15);
+  });
+
+  it('modo percentual com markup: discount_amount sobre o subtotal apresentado', () => {
+    const totals = calculateQuoteTotals(
+      { discount_percent: 12, negotiation_markup_percent: 10 },
+      items,
+    );
+    // presented = 1100; discount_amount = 1100 × 12% = 132 (consistente com o trigger)
+    expect(totals.discountAmount).toBe(132);
+    // real = (1000 - (1100 - 132)) / 1000 = 3,2%
+    expect(totals.realDiscountPercent).toBe(3.2);
+  });
+
+  it('modo valor: discount_percent ausente → usa discount_amount cru', () => {
+    const totals = calculateQuoteTotals({ discount_amount: 300 }, items);
+    expect(totals.discountAmount).toBe(300);
+    expect(totals.realDiscountPercent).toBe(30);
+  });
+
+  it('sem desconto: discount_amount = 0 e realDiscountPercent = 0', () => {
+    const totals = calculateQuoteTotals({}, items);
+    expect(totals.discountAmount).toBe(0);
+    expect(totals.realDiscountPercent).toBe(0);
+  });
+});
