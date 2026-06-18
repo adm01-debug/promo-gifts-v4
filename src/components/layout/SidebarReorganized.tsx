@@ -405,7 +405,7 @@ export const SidebarReorganized = React.memo(
       });
     }, [location.pathname]);
 
-    const { isAdmin, isDev } = useAuth();
+    const { isAdmin, isDev, rolesLoaded } = useAuth();
     const isMobile = useMediaQuery('(max-width: 1023px)');
 
     const { data: pendingApprovalCount } = useQuery({
@@ -418,7 +418,7 @@ export const SidebarReorganized = React.memo(
           .eq('status', 'pending');
         return count || 0;
       },
-      enabled: Boolean(isAdmin),
+      enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto — FIX 2026-06-18 BUG-DAR-401
       refetchInterval: 30_000,
       staleTime: 15_000,
       retry: 0,
