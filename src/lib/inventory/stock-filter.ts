@@ -54,7 +54,9 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     colorName,
     colorNameN: normalize(colorName),
     colorGroupN,
-    categoryN: normalize(filters.categoryId),
+    // categoryId from the UI is a UUID (from ExternalCategoryFilter), not a name.
+    // Store raw so the index (keyed by UUID) matches correctly.
+    categoryN: filters.categoryId ?? '',
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
@@ -147,7 +149,9 @@ export function buildStockIndexes(
     set.add(id);
   };
   for (const p of products) {
-    addTo(byCategoryN, normalize(p.categoryName), p.productId);
+    // Key by categoryId (UUID) when available — that's what the UI filter sends.
+    // Fall back to normalized name for legacy paths without an ID.
+    addTo(byCategoryN, p.categoryId ?? normalize(p.categoryName), p.productId);
     addTo(bySupplierN, normalize(p.supplierName), p.productId);
     for (const v of p.variants) {
       const cn = normalize(v.colorName);
@@ -303,7 +307,7 @@ export function applyStockFilters(
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
     if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
     if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
-    if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
+    if (ctx.categoryN && (p.categoryId ?? normalize(p.categoryName)) !== ctx.categoryN) continue;
     if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
     if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;

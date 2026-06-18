@@ -35,7 +35,7 @@ vi.mock('@/lib/supabase-untyped', () => {
         calls.push({ table, method, args });
         return q;
       });
-    for (const m of ['select', 'is', 'in', 'eq', 'range']) {
+    for (const m of ['select', 'is', 'in', 'eq', 'range', 'order', 'limit', 'gt']) {
       q[m] = chain(m);
     }
     (q as { then?: unknown }).then = (
@@ -164,17 +164,16 @@ describe('fetchPaginatedFromBridge', () => {
     expect(calls.filter((c) => c.method === 'select')).toHaveLength(1);
   });
 
-  it('guards against a non-advancing offset (duplicate first id) and stops', async () => {
-    // Both pages report the SAME first id and count never satisfied -> guard fires.
-    const samePage = [{ id: 'dup' }, { id: 'dup2' }];
+  it('guards against a non-advancing cursor (same last id twice) and stops', async () => {
+    // Page 2 ends with the same last id as page 1 → cursor stuck → guard fires.
     queue(
       'categories',
-      { data: samePage, error: null, count: 999 },
-      { data: [{ id: 'dup' }, { id: 'dup3' }], error: null, count: 999 },
+      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 },
+      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 }, // exact same page
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
-    // first page accepted, second page's first id === lastFirstId -> break
-    expect(rows.map((r) => r.id)).toEqual(['dup', 'dup2']);
+    // seen-set deduplicates, cursor ('a2') === lastId ('a2') → break after 2nd page.
+    expect(rows.map((r) => r.id)).toEqual(['a1', 'a2']);
     expect(logger.warn).toHaveBeenCalled();
   });
 
@@ -219,11 +218,14 @@ describe('fetchPaginatedFromBridge', () => {
     expect(eqCall!.args).toEqual(['active', true]);
   });
 
-  it('requests the correct range window per page', async () => {
+  it('uses keyset cursor pagination (order + limit, not range)', async () => {
     queue('categories', { data: [{ id: 'c1' }], error: null, count: 1 });
     await fetchPaginatedFromBridge('categories', 'id', 500);
-    const range = calls.find((c) => c.method === 'range');
-    expect(range!.args).toEqual([0, 499]);
+    const orderCall = calls.find((c) => c.method === 'order');
+    const limitCall = calls.find((c) => c.method === 'limit');
+    expect(orderCall).toBeDefined();
+    expect(orderCall!.args[0]).toBe('id');
+    expect(limitCall!.args[0]).toBe(500);
   });
 });
 
@@ -305,8 +307,10 @@ describe('fetchAndProcessStockData', () => {
     const v = ps.variants[0];
     // supplier source quantity (12) wins over variant stock_quantity (8)
     expect(v.currentStock).toBe(12);
-    expect(v.reservedStock).toBe(2);
-    expect(v.availableStock).toBe(10); // 12 - 2
+    // Gold layer (variant_supplier_sources) has no reserved_quantity column —
+    // reservations are not tracked here; reservedStock is always 0.
+    expect(v.reservedStock).toBe(0);
+    expect(v.availableStock).toBe(12); // 12 - 0
     expect(v.minStock).toBe(5);
     expect(v.colorName).toBe('Azul');
   });
@@ -415,11 +419,11 @@ describe('fetchAndProcessStockData', () => {
     const res = await fetchAndProcessStockData();
     const v = res.productStocks[0].variants[0];
     expect(v.id).toBe('p1');
-    expect(v.colorName).toBe('Padrao');
+    expect(v.colorName).toBe('Padrão');
     expect(v.currentStock).toBe(4);
   });
 
-  it('picks the most recently updated supplier source per variant', async () => {
+  it('aggregates quantities from multiple active supplier sources for the same variant', async () => {
     seedAll({
       products: [{ id: 'p1', name: 'P', sku: 'S' }],
       variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 0, is_active: true }],
@@ -429,10 +433,11 @@ describe('fetchAndProcessStockData', () => {
       ],
     });
     const res = await fetchAndProcessStockData();
-    expect(res.productStocks[0].variants[0].currentStock).toBe(9);
+    // BUG-3 FIX: both sources are active → currentStock = 5 + 9 = 14
+    expect(res.productStocks[0].variants[0].currentStock).toBe(14);
   });
 
-  it('keeps the earlier source when a later one is older (dedup keeps newest)', async () => {
+  it('multi-source aggregation is order-independent (same sum regardless of input order)', async () => {
     seedAll({
       products: [{ id: 'p1', name: 'P', sku: 'S' }],
       variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 0, is_active: true }],
@@ -442,8 +447,8 @@ describe('fetchAndProcessStockData', () => {
       ],
     });
     const res = await fetchAndProcessStockData();
-    // newest (sNew, qty 9) was seen first and must not be replaced by the older one
-    expect(res.productStocks[0].variants[0].currentStock).toBe(9);
+    // reversed order — sum must still be 9 + 5 = 14
+    expect(res.productStocks[0].variants[0].currentStock).toBe(14);
   });
 
   it('falls back to supplier-code image when no variant image exists', async () => {

@@ -32,7 +32,7 @@ vi.mock('@/hooks/products/useExternalDatabase', () => ({
 }));
 
 // Mocks genéricos para outros hooks de dados
-const noop = { data: [], fetchAll: vi.fn() };
+const _noop = { data: [], fetchAll: vi.fn() };
 vi.mock('@/hooks/products/useMaterialTypes', () => ({
   useMaterialTypes: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
 }));
@@ -79,7 +79,9 @@ describe('useAdvancedFilters', () => {
   describe('updateFilter', () => {
     it('atualiza campo especifico sem afetar os outros', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('search', 'caneta'); });
+      act(() => {
+        result.current.updateFilter('search', 'caneta');
+      });
       expect(result.current.filters.search).toBe('caneta');
       // Outros campos devem manter o valor padrão
       expect(result.current.filters.categories).toEqual([]);
@@ -88,13 +90,17 @@ describe('useAdvancedFilters', () => {
 
     it('atualiza boolean toggle (isKit)', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('isKit', true); });
+      act(() => {
+        result.current.updateFilter('isKit', true);
+      });
       expect(result.current.filters.isKit).toBe(true);
     });
 
     it('atualiza priceRange com tupla', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('priceRange', [50, 500]); });
+      act(() => {
+        result.current.updateFilter('priceRange', [50, 500]);
+      });
       expect(result.current.filters.priceRange).toEqual([50, 500]);
     });
   });
@@ -103,21 +109,31 @@ describe('useAdvancedFilters', () => {
   describe('toggleArrayFilter', () => {
     it('adiciona valor ao array quando ausente', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.toggleArrayFilter('colors', 'azul'); });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'azul');
+      });
       expect(result.current.filters.colors).toContain('azul');
     });
 
     it('remove valor do array quando presente', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.toggleArrayFilter('colors', 'azul'); });
-      act(() => { result.current.toggleArrayFilter('colors', 'azul'); });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'azul');
+      });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'azul');
+      });
       expect(result.current.filters.colors).not.toContain('azul');
     });
 
     it('multiplos valores coexistem no array', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.toggleArrayFilter('tags', 'promo'); });
-      act(() => { result.current.toggleArrayFilter('tags', 'sustentavel'); });
+      act(() => {
+        result.current.toggleArrayFilter('tags', 'promo');
+      });
+      act(() => {
+        result.current.toggleArrayFilter('tags', 'sustentavel');
+      });
       expect(result.current.filters.tags).toHaveLength(2);
     });
   });
@@ -126,19 +142,25 @@ describe('useAdvancedFilters', () => {
   describe('activeFiltersCount', () => {
     it('incrementa ao adicionar filtro diferente do padrao', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('search', 'caneta'); });
+      act(() => {
+        result.current.updateFilter('search', 'caneta');
+      });
       expect(result.current.activeFiltersCount).toBeGreaterThan(0);
     });
 
     it('nao incrementa ao definir mesmo valor do padrao', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('stockStatus', 'all'); }); // mesmo padrão
+      act(() => {
+        result.current.updateFilter('stockStatus', 'all');
+      }); // mesmo padrão
       expect(result.current.activeFiltersCount).toBe(0);
     });
 
     it('isKit=true contribui para contagem', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('isKit', true); });
+      act(() => {
+        result.current.updateFilter('isKit', true);
+      });
       expect(result.current.activeFiltersCount).toBeGreaterThanOrEqual(1);
     });
   });
@@ -147,10 +169,18 @@ describe('useAdvancedFilters', () => {
   describe('resetFilters', () => {
     it('restaura todos os filtros ao padrao', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('search', 'caneta'); });
-      act(() => { result.current.toggleArrayFilter('colors', 'azul'); });
-      act(() => { result.current.updateFilter('isKit', true); });
-      act(() => { result.current.resetFilters(); });
+      act(() => {
+        result.current.updateFilter('search', 'caneta');
+      });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'azul');
+      });
+      act(() => {
+        result.current.updateFilter('isKit', true);
+      });
+      act(() => {
+        result.current.resetFilters();
+      });
       expect(result.current.filters).toEqual(defaultAdvancedFilters);
       expect(result.current.activeFiltersCount).toBe(0);
     });
@@ -160,9 +190,15 @@ describe('useAdvancedFilters', () => {
   describe('resetFilterGroup', () => {
     it('restaura apenas as chaves especificadas', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.updateFilter('search', 'caneta'); });
-      act(() => { result.current.toggleArrayFilter('colors', 'azul'); });
-      act(() => { result.current.resetFilterGroup(['colors']); });
+      act(() => {
+        result.current.updateFilter('search', 'caneta');
+      });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'azul');
+      });
+      act(() => {
+        result.current.resetFilterGroup(['colors']);
+      });
       // search deve continuar alterado
       expect(result.current.filters.search).toBe('caneta');
       // colors deve ter voltado ao padrão
@@ -179,7 +215,9 @@ describe('useAdvancedFilters', () => {
 
     it('retorna true quando algum campo do grupo difere do padrao', () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      act(() => { result.current.toggleArrayFilter('colors', 'vermelho'); });
+      act(() => {
+        result.current.toggleArrayFilter('colors', 'vermelho');
+      });
       expect(result.current.hasActiveFiltersInGroup(['colors', 'categories'])).toBe(true);
     });
   });

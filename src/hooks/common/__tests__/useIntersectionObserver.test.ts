@@ -49,7 +49,7 @@ afterEach(() => {
 
 describe('useIntersectionObserver', () => {
   it('isVisible=false inicialmente', () => {
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = useRef<HTMLDivElement>(null);
       return useIntersectionObserver(ref);
     });
@@ -58,7 +58,7 @@ describe('useIntersectionObserver', () => {
 
   it('chama observe no mount quando ref tem elemento', () => {
     const div = document.createElement('div');
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
@@ -68,24 +68,30 @@ describe('useIntersectionObserver', () => {
 
   it('isVisible=true quando IntersectionObserver dispara intersecao', () => {
     const div = document.createElement('div');
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
     const io = MockIntersectionObserver.instances[0];
-    act(() => { io?.simulateIntersecting(div, true); });
+    act(() => {
+      io?.simulateIntersecting(div, true);
+    });
     expect(result.current.isVisible).toBe(true);
   });
 
   it('isVisible=false quando IntersectionObserver dispara sem intersecao', () => {
     const div = document.createElement('div');
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
     const io = MockIntersectionObserver.instances[0];
-    act(() => { io?.simulateIntersecting(div, true); });
-    act(() => { io?.simulateIntersecting(div, false); });
+    act(() => {
+      io?.simulateIntersecting(div, true);
+    });
+    act(() => {
+      io?.simulateIntersecting(div, false);
+    });
     expect(result.current.isVisible).toBe(false);
   });
 
@@ -101,7 +107,7 @@ describe('useIntersectionObserver', () => {
   });
 
   it('nao registra observer quando ref.current=null', () => {
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = { current: null };
       return useIntersectionObserver(ref as never);
     });

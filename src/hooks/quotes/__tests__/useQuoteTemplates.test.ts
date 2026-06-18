@@ -17,15 +17,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useQuoteTemplates } from '../useQuoteTemplates';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
-const mockOrder = vi.fn();
-const mockLimit = vi.fn();
+const _mockOrder = vi.fn();
+const _mockLimit = vi.fn();
 const mockSelect = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => ({
       select: mockSelect,
-      insert: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue({ data: [], error: null }) }),
+      insert: vi
+        .fn()
+        .mockReturnValue({ select: vi.fn().mockResolvedValue({ data: [], error: null }) }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
       delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
     })),
@@ -78,10 +80,12 @@ describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
-    await act(async () => { await result.current.fetchTemplates(); });
+    await act(async () => {
+      await result.current.fetchTemplates();
+    });
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.loading).toBe(false);
@@ -95,10 +99,12 @@ describe('fetchTemplates', () => {
     const mockLimitFn = vi.fn().mockResolvedValue({ data: [], error: null });
     const mockOrderFn = vi.fn().mockReturnValue({ limit: mockLimitFn });
     mockSelect.mockReturnValue({ order: mockOrderFn });
-    const { supabase } = await import('@/integrations/supabase/client');
+    await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
-    await act(async () => { await result.current.fetchTemplates(); });
+    await act(async () => {
+      await result.current.fetchTemplates();
+    });
 
     expect(supabase.from).toHaveBeenCalledWith('quote_templates');
     expect(mockOrderFn).toHaveBeenCalledWith('updated_at', { ascending: false });
@@ -111,7 +117,9 @@ describe('fetchTemplates', () => {
     mockSelect.mockReturnValue({ order: mockOrderFn });
 
     const { result } = renderHook(() => useQuoteTemplates());
-    await act(async () => { await result.current.fetchTemplates(); });
+    await act(async () => {
+      await result.current.fetchTemplates();
+    });
 
     expect(result.current.error).toBe('Erro ao carregar templates');
     expect(result.current.loading).toBe(false);
@@ -119,7 +127,9 @@ describe('fetchTemplates', () => {
 
   it('loading: true durante fetch, false ao completar', async () => {
     let resolveQuery!: (val: unknown) => void;
-    const pending = new Promise(r => { resolveQuery = r; });
+    const pending = new Promise((r) => {
+      resolveQuery = r;
+    });
     const mockLimitFn = vi.fn().mockReturnValue(pending);
     const mockOrderFn = vi.fn().mockReturnValue({ limit: mockLimitFn });
     mockSelect.mockReturnValue({ order: mockOrderFn });
@@ -128,7 +138,9 @@ describe('fetchTemplates', () => {
 
     // Iniciar fetch sem resolver
     let fetchPromise: Promise<void>;
-    act(() => { fetchPromise = result.current.fetchTemplates(); });
+    act(() => {
+      fetchPromise = result.current.fetchTemplates();
+    });
     expect(result.current.loading).toBe(true);
 
     // Resolver
@@ -145,10 +157,12 @@ describe('fetchAllTemplates — isAdmin guard', () => {
   it('nao chama DB quando user nao e admin', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
-    await act(async () => { await result.current.fetchAllTemplates?.(); });
+    await act(async () => {
+      await result.current.fetchAllTemplates?.();
+    });
 
     expect(result.current.allTemplates ?? []).toEqual([]);
   });

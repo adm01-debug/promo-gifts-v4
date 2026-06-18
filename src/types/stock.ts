@@ -89,6 +89,7 @@ export interface ProductStockSummary {
   productName: string;
   productSku: string;
   productImageUrl?: string;
+  categoryId?: string;
   categoryName?: string;
   supplierName?: string;
 
@@ -403,7 +404,13 @@ export function aggregateVariantsToProduct(
   variants: VariantStock[],
 ): Omit<
   ProductStockSummary,
-  'productId' | 'productName' | 'productSku' | 'productImageUrl' | 'categoryName' | 'supplierName'
+  | 'productId'
+  | 'productName'
+  | 'productSku'
+  | 'productImageUrl'
+  | 'categoryId'
+  | 'categoryName'
+  | 'supplierName'
 > {
   const totalCurrentStock = variants.reduce((sum, v) => sum + v.currentStock, 0);
   const totalMinStock = variants.reduce((sum, v) => sum + v.minStock, 0);

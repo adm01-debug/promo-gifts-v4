@@ -41,6 +41,9 @@ interface ExternalVariantStock {
   color_name?: string;
   color_hex?: string;
   color_code?: string;
+  color_group?: string;
+  size_code?: string;
+  size_name?: string;
   stock_quantity: number;
   is_active?: boolean;
   updated_at?: string;
@@ -188,9 +191,16 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
       }
     }
 
+    // Otimização: se o total já é conhecido e já buscamos tudo, não faz mais
+    // um round-trip para confirmar página vazia.
+    if (totalCount !== null && all.length >= totalCount) break;
+
     const nextCursor = records[records.length - 1]?.id ?? null;
     // Segurança: se o cursor não avançou, paramos para não loopar.
-    if (nextCursor === null || nextCursor === lastId) break;
+    if (nextCursor === null || nextCursor === lastId) {
+      logger.warn(`[Stock] ${table}: cursor preso em "${nextCursor}" — interrompendo paginação.`);
+      break;
+    }
     lastId = nextCursor;
 
     if (records.length < pageSize) break;
@@ -285,7 +295,7 @@ export async function fetchAndProcessStockData(): Promise<{
     ),
     fetchPaginatedFromBridge<ExternalVariantStock>(
       'product_variants',
-      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
+      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,color_group,size_code,size_name,stock_quantity,is_active,updated_at',
       1000,
       100000,
       { is_active: true },
@@ -390,9 +400,17 @@ export async function fetchAndProcessStockData(): Promise<{
     variantsByProduct.set(v.product_id, existing);
   });
 
+  // BUG-3 FIX: a variant can have sources from multiple suppliers. Accumulate
+  // the total quantity across all active sources; keep the most-recently-updated
+  // source record for metadata (future stock dates, supplier_sku, etc.).
   const sourcesByVariant = new Map<string, ExternalSupplierSource>();
+  const sourceQtyByVariant = new Map<string, number>();
   allSupplierSources.forEach((s) => {
     if (!s.variant_id) return;
+    sourceQtyByVariant.set(
+      s.variant_id,
+      (sourceQtyByVariant.get(s.variant_id) ?? 0) + (s.quantity || 0),
+    );
     const existing = sourcesByVariant.get(s.variant_id);
     if (!existing || (s.updated_at && existing.updated_at && s.updated_at > existing.updated_at)) {
       sourcesByVariant.set(s.variant_id, s);
@@ -413,7 +431,7 @@ export async function fetchAndProcessStockData(): Promise<{
       productVariants.forEach((pv) => {
         const supplierSource = sourcesByVariant.get(pv.id);
         const currentStock = supplierSource
-          ? toNumber(supplierSource.quantity, toNumber(pv.stock_quantity, 0))
+          ? toNumber(sourceQtyByVariant.get(pv.id), toNumber(pv.stock_quantity, 0))
           : toNumber(pv.stock_quantity, 0);
         // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
         // Use nullish coalescing to preserve intentional zero.
@@ -466,8 +484,11 @@ export async function fetchAndProcessStockData(): Promise<{
           variantSku: pv.sku || `${product.sku}-${pv.color_code || 'VAR'}`,
           imageUrl: variantImage,
           colorId: pv.color_id,
-          colorName: pv.color_name || 'Padrao',
+          colorName: pv.color_name || 'Padrão',
           colorHex: pv.color_hex,
+          colorGroup: pv.color_group || undefined,
+          sizeName: pv.size_name || undefined,
+          sizeCode: pv.size_code || undefined,
           currentStock,
           minStock,
           reservedStock,
@@ -530,7 +551,7 @@ export async function fetchAndProcessStockData(): Promise<{
         productId: product.id,
         variantId: product.id,
         variantSku: product.sku || 'PROD',
-        colorName: 'Padrao',
+        colorName: 'Padrão',
         currentStock,
         minStock,
         reservedStock: 0,
@@ -556,6 +577,7 @@ export async function fetchAndProcessStockData(): Promise<{
       productName: product.name,
       productSku: product.sku || '',
       productImageUrl,
+      categoryId: product.category_id,
       categoryName,
       supplierName,
       ...aggregated,

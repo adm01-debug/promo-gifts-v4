@@ -119,7 +119,7 @@ export function RichColorSwatch({
   isActive = false,
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
-  // "Colorido"/"Sortido" — usa gradiente conic; "Padrao" — neutro.
+  // "Colorido"/"Sortido" — usa gradiente conic; "Padrão" — neutro.
   const isMixed = MIXED_COLOR_RE.test(label);
   const bg = hex
     ? hex
