@@ -15,6 +15,10 @@
 -- não precisar derrubar/recriar a constraint já existente.
 
 -- 1) Sanea linhas legadas eventualmente acima do teto (clamp para 999999)
+--    LOCK elimina a janela de corrida: sem ele um INSERT/UPDATE concorrente
+--    poderia escrever quantity > 999999 entre o UPDATE abaixo e o ADD CONSTRAINT.
+LOCK TABLE public.seller_cart_items IN SHARE ROW EXCLUSIVE MODE;
+
 UPDATE public.seller_cart_items
 SET quantity = 999999
 WHERE quantity > 999999;
