@@ -38,7 +38,11 @@ export function useProductsByCategory({
 
   // Ref para evitar chamadas duplicadas
   const lastFetchedKey = useRef<string>('');
-  const isFetchingRef = useRef(false);
+  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
+  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
+  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
+  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  const fetchTokenRef = useRef(0);
 
   // Verificar se há filtro ativo
   const hasFilter = useMemo(() => {
@@ -47,7 +51,6 @@ export function useProductsByCategory({
 
   const fetchProductIds = useCallback(async () => {
     // Evitar chamadas duplicadas
-    if (isFetchingRef.current) return;
     if (lastFetchedKey.current === categoryIdsKey && productIds.size > 0) return;
 
     if (!hasFilter || !enabled) {
@@ -58,7 +61,7 @@ export function useProductsByCategory({
       return;
     }
 
-    isFetchingRef.current = true;
+    const token = ++fetchTokenRef.current;
     setIsLoading(true);
     setError(null);
 
@@ -71,6 +74,7 @@ export function useProductsByCategory({
         },
       });
 
+      if (token !== fetchTokenRef.current) return; // superseded
       if (invokeError) {
         throw new Error(invokeError.message);
       }
@@ -84,6 +88,7 @@ export function useProductsByCategory({
       setSource(data.source || null);
       lastFetchedKey.current = categoryIdsKey;
     } catch (err) {
+      if (token !== fetchTokenRef.current) return; // superseded
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       logger.error('Erro ao buscar produtos por categoria:', err);
       setError(message);
@@ -94,8 +99,7 @@ export function useProductsByCategory({
       // enquanto a categories-api estiver fora. Retry manual via refetch().
       lastFetchedKey.current = categoryIdsKey;
     } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
+      if (token === fetchTokenRef.current) setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryIdsKey, includeDescendants, hasFilter, enabled, categoryIds]);
