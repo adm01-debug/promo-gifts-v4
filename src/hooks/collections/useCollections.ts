@@ -355,7 +355,7 @@ export function useCollections() {
           return {
             ...col,
             productIds: [...col.productIds, productId],
-            productItems: [...col.productItems, { productId, variant }],
+            productItems: [...col.productItems, { productId, variant, priceAtSave: priceAtSave ?? null }],
             updatedAt: new Date().toISOString(),
           };
         }),
@@ -432,14 +432,14 @@ export function useCollections() {
   }, []);
 
   const addProductToMultipleCollections = useCallback(
-    (productId: string, collectionIds: string[], variant?: CollectionVariantInfo) => {
+    (productId: string, collectionIds: string[], variant?: CollectionVariantInfo, priceAtSave?: number | null) => {
       setCollections((prev) =>
         prev.map((col) => {
           if (collectionIds.includes(col.id) && !col.productIds.includes(productId)) {
             return {
               ...col,
               productIds: [...col.productIds, productId],
-              productItems: [...col.productItems, { productId, variant }],
+              productItems: [...col.productItems, { productId, variant, priceAtSave: priceAtSave ?? null }],
               updatedAt: new Date().toISOString(),
             };
           }
@@ -454,6 +454,7 @@ export function useCollections() {
         color_name: variant?.color_name || null,
         color_hex: variant?.color_hex || null,
         thumbnail_url: variant?.thumbnail || null,
+        price_at_save: priceAtSave ?? null,
         sort_order: 0,
       }));
 

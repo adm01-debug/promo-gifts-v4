@@ -231,6 +231,7 @@ export function useFilterPanelState(
       filters.featured,
       filters.isNew,
       filters.hasPersonalization,
+      filters.onSale,
       filters.inStock,
       filters.hasCommercialPackaging,
     ].filter(Boolean).length;
