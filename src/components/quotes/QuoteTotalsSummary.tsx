@@ -41,7 +41,7 @@ export function QuoteTotalsSummary({
     : discountAmount || 0;
   // Apenas 'fob_pre' (FOB Pré-negociado) tem custo repassado no orçamento.
   // 'fob' = FOB puro (frete por conta do cliente, sem cost no orçamento).
-  const shippingValue = shippingType === 'fob_pre' ? shippingCost || 0 : 0;
+  const shippingValue = shippingType === 'fob_pre' ? (shippingCost ?? 0) : 0;
   const computedTotal = fullSubtotal - discountValue + shippingValue;
   const hasPersonalizations = personalizationTotal > 0;
 
@@ -76,8 +76,8 @@ export function QuoteTotalsSummary({
                   : shippingType === 'fob'
                     ? 'FOB — Por conta do cliente'
                     : shippingType === 'fob_pre'
-                      ? `FOB Pré-negociado (${formatCurrency(shippingCost || 0)})`
-                      : formatCurrency(shippingCost || 0)}
+                      ? `FOB Pré-negociado (${formatCurrency(shippingCost ?? 0)})`
+                      : formatCurrency(shippingCost ?? 0)}
               </span>
             </div>
           )}

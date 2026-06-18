@@ -260,7 +260,9 @@ export default function QuoteBuilderPage() {
                   value={s.validityDays}
                   onValueChange={(val) => {
                     s.setValidityDays(val);
-                    s.setValidUntil(format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'));
+                    s.setValidUntil(
+                      format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
+                    );
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -553,7 +555,7 @@ export default function QuoteBuilderPage() {
                         <span className="text-xs text-muted-foreground">R$</span>
                         <CurrencyInput
                           data-testid="shipping-cost-input"
-                          value={s.shippingCost || 0}
+                          value={s.shippingCost ?? 0}
                           onChange={(n) => s.setShippingCost(n)}
                           className={cn(
                             'h-8 text-xs',

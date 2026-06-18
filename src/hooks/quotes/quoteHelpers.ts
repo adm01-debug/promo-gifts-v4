@@ -64,7 +64,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
     ? round2(subtotal * (quote.discount_percent / 100))
     : quote.discount_amount || 0;
   const shippingCostValue =
-    quote.shipping_type === 'fob_pre' ? round2(quote.shipping_cost || 0) : 0;
+    quote.shipping_type === 'fob_pre' ? round2(quote.shipping_cost ?? 0) : 0;
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
@@ -107,7 +107,7 @@ export function buildInsertPayload(
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
     shipping_type: quote.shipping_type || null,
-    shipping_cost: round2(quote.shipping_cost || 0),
+    shipping_cost: round2(quote.shipping_cost ?? 0),
     notes: quote.notes || null,
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,
@@ -135,7 +135,7 @@ export function buildUpdatePayload(
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
     shipping_type: quote.shipping_type || null,
-    shipping_cost: round2(quote.shipping_cost || 0),
+    shipping_cost: round2(quote.shipping_cost ?? 0),
     notes: quote.notes || null,
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,

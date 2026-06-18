@@ -93,7 +93,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
           (orders ?? []).forEach((order) => {
             const segment = order.client_id ? clientSegmentMap[order.client_id] : null;
             if (segment) {
-              segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
+              segmentCounts[segment] = (segmentCounts[segment] ?? 0) + 1;
             }
           });
 

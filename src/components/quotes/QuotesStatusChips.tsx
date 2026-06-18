@@ -19,7 +19,7 @@ export function QuotesStatusChips({ quotes, value, onChange }: QuotesStatusChips
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: quotes.length };
     for (const q of quotes) {
-      map[q.status] = (map[q.status] || 0) + 1;
+      map[q.status] = (map[q.status] ?? 0) + 1;
     }
     return map;
   }, [quotes]);

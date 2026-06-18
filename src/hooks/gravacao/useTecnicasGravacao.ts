@@ -74,7 +74,7 @@ export function useTecnicasGravacao() {
       (faixasResult.data ?? []).forEach((f) => {
         const tid = (f as unknown as { tabela_preco_gravacao_id: string }).tabela_preco_gravacao_id;
         if (tid) {
-          variantesCount[tid] = (variantesCount[tid] || 0) + 1;
+          variantesCount[tid] = (variantesCount[tid] ?? 0) + 1;
         }
       });
 

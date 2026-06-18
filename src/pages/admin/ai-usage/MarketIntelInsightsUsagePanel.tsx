@@ -71,7 +71,7 @@ export function MarketIntelInsightsUsagePanel() {
   const chartData = useMemo(() => {
     const byDay = events.reduce<Record<string, number>>((acc, e) => {
       const day = e.created_at.slice(0, 10);
-      acc[day] = (acc[day] || 0) + 1;
+      acc[day] = (acc[day] ?? 0) + 1;
       return acc;
     }, {});
     return Object.entries(byDay)
@@ -86,7 +86,7 @@ export function MarketIntelInsightsUsagePanel() {
   // Top usuários
   const topUsers = useMemo(() => {
     const byUser = events.reduce<Record<string, number>>((acc, e) => {
-      acc[e.user_id] = (acc[e.user_id] || 0) + 1;
+      acc[e.user_id] = (acc[e.user_id] ?? 0) + 1;
       return acc;
     }, {});
     return Object.entries(byUser)

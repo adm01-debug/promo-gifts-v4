@@ -315,12 +315,12 @@ export function LocationPanel({
           technique.usa_dimensao &&
           currentW !== undefined &&
           currentW !== null &&
-          currentW > (technique.efetiva_largura_max || 0);
+          currentW > (technique.efetiva_largura_max ?? 0);
         forcedH =
           technique.usa_dimensao &&
           currentH !== undefined &&
           currentH !== null &&
-          currentH > (technique.efetiva_altura_max || 0);
+          currentH > (technique.efetiva_altura_max ?? 0);
         forcedC =
           technique.cobra_por_cor &&
           currentC !== undefined &&

@@ -139,7 +139,7 @@ export function StockDashboard() {
 
   // Future stock total
   const futureStockTotal = useMemo(
-    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
+    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity ?? 0), 0),
     [futureStock],
   );
 

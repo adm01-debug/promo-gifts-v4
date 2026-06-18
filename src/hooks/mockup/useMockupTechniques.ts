@@ -249,9 +249,9 @@ export function useFilteredTechniques(
         for (const option of location.options) {
           const key = option.tecnica_nome;
           const existing = techniqueMap.get(key);
-          const area = (option.efetiva_largura_max || 0) * (option.efetiva_altura_max || 0);
+          const area = (option.efetiva_largura_max ?? 0) * (option.efetiva_altura_max ?? 0);
           const existingArea = existing
-            ? (existing.option.efetiva_largura_max || 0) * (existing.option.efetiva_altura_max || 0)
+            ? (existing.option.efetiva_largura_max ?? 0) * (existing.option.efetiva_altura_max ?? 0)
             : 0;
           if (!existing || area > existingArea)
             techniqueMap.set(key, { option, locationName: location.location_name });

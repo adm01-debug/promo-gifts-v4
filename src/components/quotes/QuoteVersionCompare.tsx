@@ -230,7 +230,7 @@ export function QuoteVersionCompare({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Frete</span>
-                      <span>{formatCurrency(detail.shipping_cost || 0)}</span>
+                      <span>{formatCurrency(detail.shipping_cost ?? 0)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold">

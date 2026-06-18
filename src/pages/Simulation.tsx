@@ -173,7 +173,7 @@ export default function SimulationPage() {
                     {report?.consistencyChecks.passed || 0}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    / {report?.consistencyChecks.failed || 0} falhas
+                    / {report?.consistencyChecks.failed ?? 0} falhas
                   </span>
                 </div>
               </CardContent>

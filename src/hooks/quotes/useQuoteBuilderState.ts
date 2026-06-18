@@ -972,7 +972,7 @@ export function useQuoteBuilderState() {
         status: effectiveStatus,
         discount_percent: discountType === 'percent' ? discountValue : 0,
         discount_amount: discountType === 'amount' ? discountValue : 0,
-        negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
+        negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup ?? 0)),
         notes: notes || undefined,
         internal_notes: internalNotes || undefined,
         valid_until: validUntil || undefined,
@@ -980,7 +980,7 @@ export function useQuoteBuilderState() {
         payment_terms: paymentTerms || undefined,
         delivery_time: deliveryTime || undefined,
         shipping_type: shippingType || undefined,
-        shipping_cost: shippingType === 'fob_pre' ? shippingCost || 0 : 0,
+        shipping_cost: shippingType === 'fob_pre' ? (shippingCost ?? 0) : 0,
       };
       let result;
       if (isEditMode && quoteId) {

@@ -46,7 +46,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
     if (!request || isCapturing || processedRef.current === request.recordId) return;
 
     // Trava de loop: impede mais de 3 tentativas para o mesmo recordId
-    const count = (captureCountRef.current[request.recordId] || 0) + 1;
+    const count = (captureCountRef.current[request.recordId] ?? 0) + 1;
     captureCountRef.current[request.recordId] = count;
 
     if (count > 3) {

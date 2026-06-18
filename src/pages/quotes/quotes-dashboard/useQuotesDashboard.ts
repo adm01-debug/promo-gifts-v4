@@ -140,7 +140,7 @@ export function useQuotesDashboard() {
 
     const statusCounts = filtered.reduce(
       (a, q) => {
-        a[q.status] = (a[q.status] || 0) + 1;
+        a[q.status] = (a[q.status] ?? 0) + 1;
         return a;
       },
       {} as Record<string, number>,

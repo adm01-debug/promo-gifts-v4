@@ -67,7 +67,7 @@ export async function fetchPromobrindPriceTables(options?: {
     max_colors: (r.max_colors as number) || null,
     max_area_width_cm: (r.max_area_width_cm as number) || null,
     max_area_height_cm: (r.max_area_height_cm as number) || null,
-    unit_price: (r.tier_1_unit_price as number) || 0,
+    unit_price: (r.tier_1_unit_price as number) ?? 0,
     setup_price: (r.setup_price as number) || null,
     handling_price: (r.handling_price as number) || null,
     sla_days: (r.tier_1_sla_days as number) || null,

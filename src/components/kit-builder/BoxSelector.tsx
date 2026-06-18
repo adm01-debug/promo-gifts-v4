@@ -219,13 +219,13 @@ export function BoxSelector({
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
                     Largura mín:{' '}
-                    <span className="font-semibold text-foreground">{filters.minWidth || 0}cm</span>
+                    <span className="font-semibold text-foreground">{filters.minWidth ?? 0}cm</span>
                   </Label>
                   <Slider
                     min={0}
                     max={maxDims.width}
                     step={1}
-                    value={[filters.minWidth || 0]}
+                    value={[filters.minWidth ?? 0]}
                     onValueChange={([v]) =>
                       onFiltersChange({ ...filters, minWidth: v || undefined })
                     }
@@ -251,13 +251,13 @@ export function BoxSelector({
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
                     Profundidade mín:{' '}
-                    <span className="font-semibold text-foreground">{filters.minDepth || 0}cm</span>
+                    <span className="font-semibold text-foreground">{filters.minDepth ?? 0}cm</span>
                   </Label>
                   <Slider
                     min={0}
                     max={maxDims.depth}
                     step={1}
-                    value={[filters.minDepth || 0]}
+                    value={[filters.minDepth ?? 0]}
                     onValueChange={([v]) =>
                       onFiltersChange({ ...filters, minDepth: v || undefined })
                     }

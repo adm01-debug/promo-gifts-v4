@@ -118,7 +118,7 @@ export function QuoteBuilderSummaryColumn({
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
   const presentedSubtotal = useMemo(() => {
-    return round2((realSubtotal || 0) * (1 + (negotiationMarkup || 0) / 100));
+    return round2((realSubtotal || 0) * (1 + (negotiationMarkup ?? 0) / 100));
   }, [realSubtotal, negotiationMarkup]);
 
   const handleDiscountTypeChange = (next: 'percent' | 'amount') => {
@@ -561,7 +561,7 @@ export function QuoteBuilderSummaryColumn({
                   discountType === 'percent'
                     ? discountValue
                     : realSubtotal > 0
-                      ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
+                      ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup ?? 0) / 100))) *
                         100
                       : 0
                 }

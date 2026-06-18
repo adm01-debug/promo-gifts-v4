@@ -159,29 +159,29 @@ async function fetchSupplierSparklineBatch(productIds: string[]): Promise<Sparkl
     // Pai
     if (!depletedByDate.product[row.product_id]) depletedByDate.product[row.product_id] = {};
     depletedByDate.product[row.product_id][date] =
-      (depletedByDate.product[row.product_id][date] || 0) + depleted;
+      (depletedByDate.product[row.product_id][date] ?? 0) + depleted;
 
     if (row.stock_close !== null && row.stock_close !== undefined) {
       if (!stockCloseByDate.product[row.product_id]) stockCloseByDate.product[row.product_id] = {};
       stockCloseByDate.product[row.product_id][date] =
-        (stockCloseByDate.product[row.product_id][date] || 0) + row.stock_close;
+        (stockCloseByDate.product[row.product_id][date] ?? 0) + row.stock_close;
     }
     totalRestocked.product[row.product_id] =
-      (totalRestocked.product[row.product_id] || 0) + restocked;
+      (totalRestocked.product[row.product_id] ?? 0) + restocked;
 
     // Variante
     if (row.variant_id) {
       const vid = row.variant_id;
       variantIdsSeen.add(vid);
       if (!depletedByDate.variant[vid]) depletedByDate.variant[vid] = {};
-      depletedByDate.variant[vid][date] = (depletedByDate.variant[vid][date] || 0) + depleted;
+      depletedByDate.variant[vid][date] = (depletedByDate.variant[vid][date] ?? 0) + depleted;
 
       if (row.stock_close !== null && row.stock_close !== undefined) {
         if (!stockCloseByDate.variant[vid]) stockCloseByDate.variant[vid] = {};
         stockCloseByDate.variant[vid][date] =
-          (stockCloseByDate.variant[vid][date] || 0) + row.stock_close;
+          (stockCloseByDate.variant[vid][date] ?? 0) + row.stock_close;
       }
-      totalRestocked.variant[vid] = (totalRestocked.variant[vid] || 0) + restocked;
+      totalRestocked.variant[vid] = (totalRestocked.variant[vid] ?? 0) + restocked;
     }
   }
 

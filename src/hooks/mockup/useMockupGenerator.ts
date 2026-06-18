@@ -150,7 +150,7 @@ export function useMockupGenerator() {
       const heights = opts
         .map((o: CustomizationOption) => o.efetiva_altura_max || o.max_height || 0)
         .filter(Boolean);
-      const colors = opts.map((o: CustomizationOption) => o.max_cores || 0).filter(Boolean);
+      const colors = opts.map((o: CustomizationOption) => o.max_cores ?? 0).filter(Boolean);
       return {
         code: loc.location_code,
         name: loc.location_name,
