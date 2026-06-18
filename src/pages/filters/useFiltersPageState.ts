@@ -487,12 +487,14 @@ export function useFiltersPageState() {
           );
         return (product.stock || 0) >= filters.minStock;
       });
-    // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3 (MV expõe apenas total_depleted_30d).
-    // Padroniza janela com o filtro Promo Brindes (90d). Map inerte enquanto carrega.
+    // BUG-DB-06 FIX (2026-06-18): usa a coluna REAL total_depleted_90d da MV
+    // (mv_product_intelligence) em vez da aproximacao fabricada depleted30d*3.
+    // O multiplicador x3 era um chute (o ratio 90d/30d real e ~1.0, nao 3.0).
+    // Map inerte enquanto carrega.
     if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
       const threshold = filters.minSupplierSales90d;
       result = result.filter(
-        (p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) * 3 >= threshold,
+        (p) => (supplierSalesMap.get(p.id)?.depleted90d ?? 0) >= threshold,
       );
     }
     // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
