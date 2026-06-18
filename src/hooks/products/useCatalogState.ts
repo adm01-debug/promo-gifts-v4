@@ -9,6 +9,7 @@ import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
+import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import type { Product } from '@/types/product-catalog';
@@ -397,11 +398,27 @@ export function useCatalogState() {
     colors: filters.colors || [],
   });
 
+  // BUG-META-01 FIX: wiring de useProductsByMetadata — filtros de metadados
+  // (público-alvo, datas comemorativas, ramos/segmentos, tags) existiam no
+  // FilterState e eram contados em activeFiltersCount mas NUNCA aplicados à grade
+  // porque este hook nunca era chamado aqui. Padrão idêntico ao de cor/categoria/material.
+  const {
+    productIds: metadataFilteredProductIds,
+    hasFilter: hasMetadataFilter,
+    isLoading: isLoadingMetadataFilter,
+  } = useProductsByMetadata({
+    datas: filters.datasComemorativas,
+    tags: filters.tags,
+    ramos: filters.ramosAtividade,
+    segmentos: filters.segmentosAtividade,
+    publico: filters.publicoAlvo,
+  });
+
   useExternalCategoriesQuery();
   const { data: realStats } = useCatalogRealStats();
 
   const isLoading =
-    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter;
+    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter || isLoadingMetadataFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
@@ -489,6 +506,8 @@ export function useCatalogState() {
     if (filters.isKit) count += 1;
     if (filters.featured) count += 1;
     if (filters.gender?.length) count += filters.gender.length;
+    // BUG-META-01 FIX: tags eram filtráveis via seção Tags mas não contadas aqui.
+    if (filters.tags?.length) count += filters.tags.length;
     return count;
   }, [filters]);
 
@@ -513,6 +532,9 @@ export function useCatalogState() {
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    hasMetadataFilter,
+    metadataFilteredProductIds,
+    isLoadingMetadataFilter,
     promoSalesMap,
     supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });
