@@ -4,6 +4,24 @@ import { useCatalogFiltering } from '../useCatalogFiltering';
 import { defaultFilters } from '@/components/filters/filter-panel/types';
 import type { Product } from '@/types/product-catalog';
 
+function run(products: Product[], overrides: Partial<typeof defaultFilters>) {
+  return renderHook(() =>
+    useCatalogFiltering({
+      realProducts: products,
+      filters: { ...defaultFilters, ...overrides },
+      sortBy: 'name',
+      hasFuzzySearch: false,
+      fuzzySearchResults: [],
+      hasMaterialFilter: false,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      hasCategoryFilter: false,
+      categoryFilteredProductIds: new Set(),
+      isLoadingCategoryFilter: false,
+    }),
+  ).result.current;
+}
+
 describe('useCatalogFiltering', () => {
   const mockProducts: Product[] = [
     {
@@ -130,5 +148,63 @@ describe('useCatalogFiltering', () => {
     );
 
     expect(result.current.map((product) => product.id)).toEqual(['3']);
+  });
+});
+
+// SF-A parity — Quick Options no catálogo Index (/produtos)
+// Estes flags eram silenciosamente ignorados em useCatalogFiltering apesar de
+// estarem corretamente mapeados pelo mapLightweightToProduct (fix SF-A).
+// Sem este teste, o Lovable pode reverter a correção sem CI detectar.
+describe('useCatalogFiltering — Quick Options parity (SF-A fix)', () => {
+  const makeP = (id: string, over: Partial<Product> = {}): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+      ...over,
+    }) as unknown as Product;
+
+  const catalog = [
+    makeP('a', { featured: true }),
+    makeP('b', { onSale: true }),
+    makeP('c', { hasPersonalization: true }),
+    makeP('d', { newArrival: true }),
+    makeP('e'),
+  ];
+
+  it('featured filtra corretamente no catálogo Index', () => {
+    expect(run(catalog, { featured: true }).map((p) => p.id)).toEqual(['a']);
+  });
+
+  it('onSale filtra corretamente no catálogo Index', () => {
+    expect(run(catalog, { onSale: true }).map((p) => p.id)).toEqual(['b']);
+  });
+
+  it('hasPersonalization filtra corretamente no catálogo Index', () => {
+    expect(run(catalog, { hasPersonalization: true }).map((p) => p.id)).toEqual(['c']);
+  });
+
+  it('isNew (newArrival) filtra corretamente no catálogo Index', () => {
+    expect(run(catalog, { isNew: true }).map((p) => p.id)).toEqual(['d']);
+  });
+
+  it('sem filtro retorna catálogo completo', () => {
+    expect(run(catalog, {}).length).toBe(catalog.length);
+  });
+
+  it('featured + onSale combinados (AND) só retorna interseção', () => {
+    const both = [makeP('x', { featured: true, onSale: true }), makeP('y', { featured: true })];
+    expect(run(both, { featured: true, onSale: true }).map((p) => p.id)).toEqual(['x']);
   });
 });

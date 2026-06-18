@@ -52,7 +52,8 @@ export interface ExternalSupplierSource {
   supplier_id?: string;
   supplier_sku?: string;
   quantity: number;
-  reserved_quantity?: number;
+  // NOTA: a camada Ouro (variant_supplier_sources) NÃO possui coluna
+  // reserved_quantity. Reservas não são rastreadas aqui; availableStock == current.
   next_quantity_1?: number | null;
   next_date_1?: string | null;
   next_quantity_2?: number | null;
@@ -122,10 +123,19 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   filters?: Record<string, unknown>,
 ): Promise<T[]> {
   // PostgREST nativo (Caminho B). A `external-db-bridge` foi descontinuada (410 Gone).
+  //
+  // BUG-STOCK-04 FIX — Paginação por KEYSET (cursor em `id`), não offset/range.
+  // Raiz da contagem de variações inflada no dashboard (ex.: 22.620 vs ~18.4k):
+  // o PostgREST NÃO garante ordem estável entre requisições HTTP separadas.
+  // Com `.range()` e sem `.order()`, durante uma janela de escrita (sync de
+  // fornecedor XBZ/SPOT em product_variants) as páginas se sobrepõem → linhas
+  // duplicadas/saltadas → totais errados. Keyset (`order(id)` + `id > lastId`)
+  // é imune a reordenação de linhas existentes e a inserts concorrentes; o
+  // Set `seen` é cinto-e-suspensório contra qualquer duplicata residual.
   const all: T[] = [];
-  let offset = 0;
+  const seen = new Set<string>();
+  let lastId: string | null = null;
   let totalCount: number | null = null;
-  let lastFirstId: string | undefined;
 
   // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).
   const resolvedTable = (GOLD_READ_ALIASES as Record<string, string>)[table] ?? table;
@@ -133,7 +143,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   while (all.length < maxRecords) {
     let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(
       select,
-      offset === 0 ? { count: 'exact' } : undefined,
+      lastId === null ? { count: 'exact' } : undefined,
     );
 
     if (filters) {
@@ -144,7 +154,9 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
       }
     }
 
-    query = query.range(offset, offset + pageSize - 1);
+    // Cursor estável: ordena por id e busca a próxima página após o último id visto.
+    query = query.order('id', { ascending: true }).limit(pageSize);
+    if (lastId !== null) query = query.gt('id', lastId);
 
     const { data, error, count } = await query;
     if (error) {
@@ -165,23 +177,26 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     }
 
     const records = (data ?? []) as unknown as T[];
-    if (offset === 0 && typeof count === 'number') totalCount = count;
-
+    if (lastId === null && typeof count === 'number') totalCount = count;
     if (records.length === 0) break;
-    if (records[0]?.id === lastFirstId) {
-      logger.warn(`[Stock] Paginacao ignorando offset em ${table}; parando.`);
-      break;
+
+    for (const r of records) {
+      const rid = r?.id;
+      if (rid && !seen.has(rid)) {
+        seen.add(rid);
+        all.push(r);
+      }
     }
-    lastFirstId = records[0]?.id;
 
-    all.push(...records);
-    offset += records.length;
+    const nextCursor = records[records.length - 1]?.id ?? null;
+    // Segurança: se o cursor não avançou, paramos para não loopar.
+    if (nextCursor === null || nextCursor === lastId) break;
+    lastId = nextCursor;
 
-    if (totalCount !== null && offset >= totalCount) break;
-    if (totalCount === null && records.length < pageSize) break;
+    if (records.length < pageSize) break;
   }
 
-  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros`);
+  logger.log(`[Stock] ${table}: carregados ${all.length}/${totalCount ?? '?'} registros (keyset)`);
   return all;
 }
 
@@ -403,7 +418,8 @@ export async function fetchAndProcessStockData(): Promise<{
         // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
         // Use nullish coalescing to preserve intentional zero.
         const minStock = product.min_quantity ?? 10;
-        const reservedStock = supplierSource ? toNumber(supplierSource.reserved_quantity, 0) : 0;
+        // Reservas não existem na camada Ouro (sem coluna reserved_quantity).
+        const reservedStock = 0;
         let inTransitStock = 0;
         const futureSegments: Array<{ quantity: number; date: string }> = [];
 

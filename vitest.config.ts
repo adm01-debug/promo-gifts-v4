@@ -55,15 +55,18 @@ export default defineConfig({
       '.git',
       '.cache',
       'tests/__deprecated__',
-      // Specs Playwright (@playwright/test) NÃO podem ser coletados pelo Vitest —
-      // `test.describe()` do Playwright lança "did not expect ... here" e quebra
-      // a coleta inteira. O Playwright só roda specs em `e2e/` (testDir em
-      // playwright.config.ts), então estes arquivos sob `tests/` nunca rodaram
-      // como teste Vitest (sempre erro de coleta) nem como E2E (diretório errado).
-      // Excluí-los do Vitest remove ZERO teste funcional e destrava o gate.
+      // Specs Playwright (importam `@playwright/test` / fixture `test-base` e usam
+      // `test.describe`) ficam sob `tests/` mas NÃO podem ser coletados pelo Vitest
+      // — quebram a coleta com "Playwright Test did not expect test.describe() to be
+      // called here". Rodam apenas via Playwright. Mantemos os specs Vitest legítimos
+      // de `tests/security/` (RLS, seller-scope etc.), excluindo só os Playwright.
       'tests/e2e/**',
       'tests/navigation-tooltips.spec.ts',
       'tests/security/notification-rls.spec.ts',
+      // Live RLS test conecta ao Supabase real (createClient com credenciais reais).
+      // Com placeholder credentials em CI, retorna error.code vazio ao invés de '42501'.
+      // Deve rodar apenas em ambientes com VITE_SUPABASE_URL/KEY reais configurados.
+      'tests/rls/live-rls.test.ts',
     ],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com

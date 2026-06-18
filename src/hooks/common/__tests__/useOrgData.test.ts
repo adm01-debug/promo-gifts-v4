@@ -28,9 +28,7 @@ import React from 'react';
 import { useOrgData, useOrgCreate, useOrgUpdate, useOrgDelete } from '../useOrgData';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
-const _mockSingle = vi.fn();
 const mockSelect = vi.fn();
-const _mockEq = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
@@ -94,7 +92,9 @@ beforeEach(() => {
 // ── useOrgData ────────────────────────────────────────────────────────────────
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
-    vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null } as never);
+    vi.mocked(useOrganization).mockReturnValueOnce({
+      currentOrg: null,
+    } as unknown as ReturnType<typeof useOrganization>);
 
     const { result } = renderHook(() => useOrgData('products'), { wrapper: makeWrapper() });
 
@@ -170,7 +170,9 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-    vi.mocked(useOrganization).mockReturnValue({ currentOrg: null } as never);
+    vi.mocked(useOrganization).mockReturnValue({
+      currentOrg: null,
+    } as unknown as ReturnType<typeof useOrganization>);
 
     const { result } = renderHook(() => useOrgCreate('products'), { wrapper: makeWrapper() });
 

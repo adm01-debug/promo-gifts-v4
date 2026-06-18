@@ -8,6 +8,7 @@ import {
   useSuppliers,
 } from '@/hooks/products';
 import { useRamoAtividadeFilter } from '@/hooks/crm';
+import { useAvailableSizes } from '@/hooks/products/useProductsBySize';
 import type { FilterState, FilterPanelProps } from './types';
 
 export function useFilterPanelState(
@@ -91,6 +92,8 @@ export function useFilterPanelState(
 
   const { techniqueOptions, tagOptions } = useAdvancedFilters();
   const { suppliers: supplierOptions, isLoading: suppliersLoading } = useSuppliers();
+  // SF-E: tamanhos disponíveis vêm de product_variants (catálogo leve não traz variações).
+  const { sizes: availableSizes } = useAvailableSizes();
 
   const {
     groups: materialGroups,
@@ -233,7 +236,7 @@ export function useFilterPanelState(
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
-      
+
       preco: filters.priceRange[0] > 0 || filters.priceRange[1] < 9999 ? 1 : 0,
       fornecedores: filters.suppliers?.length || 0,
       publico: filters.publicoAlvo?.length || 0,
@@ -301,6 +304,7 @@ export function useFilterPanelState(
     tagOptions,
     supplierOptions,
     suppliersLoading,
+    availableSizes,
     materialGroups,
     allMaterials,
     materialsLoading,

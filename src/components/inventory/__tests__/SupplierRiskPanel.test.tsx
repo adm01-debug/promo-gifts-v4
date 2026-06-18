@@ -1,225 +1,242 @@
-/**
- * Testes para SupplierRiskPanel — cobertura do orchestrator de risco de fornecedor.
- * Cobre: estado vazio, produtos com severidades variadas, busca, filtro de severidade,
- * seleção, contadores KPI e lastUpdated.
- */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { SupplierRiskPanel } from '@/components/inventory/SupplierRiskPanel';
-import type { ProductStockSummary } from '@/types/stock';
+import { render, screen, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { SupplierRiskPanel } from '../SupplierRiskPanel';
+import type { ProductStockSummary, VariantStock } from '@/types/stock';
 
-// Mocka o virtualizer para controle determinístico da lista
-vi.mock('@tanstack/react-virtual', () => ({
-  useVirtualizer: vi.fn(({ count }: { count: number }) => ({
-    getTotalSize: () => count * 52,
-    getVirtualItems: () =>
-      Array.from({ length: count }, (_, i) => ({
-        index: i,
-        start: i * 52,
-        size: 52,
-        key: i,
-      })),
-  })),
-}));
-
-// Mocka o painel de detalhe para isolar o componente principal
-vi.mock('@/components/inventory/risk/ProductRiskDetail', () => ({
-  ProductRiskDetail: ({ productId }: { productId: string }) => (
-    <div data-testid={`product-risk-detail-${productId}`}>Detalhe {productId}</div>
+// ── Mock the heavy detail child — keeps the panel under test isolated. ──
+vi.mock('../risk/ProductRiskDetail', () => ({
+  ProductRiskDetail: ({ productId, productName }: { productId: string; productName?: string }) => (
+    <div data-testid="product-risk-detail">detail:{productName ?? productId}</div>
   ),
 }));
 
-function makeProduct(
-  id: string,
-  overrides: Partial<ProductStockSummary> = {},
-): ProductStockSummary {
+// ── Mock the virtualizer so rows render in jsdom (zero-height container). ──
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({ count }: { count: number }) => ({
+    getTotalSize: () => count * 52,
+    getVirtualItems: () =>
+      Array.from({ length: count }, (_, index) => ({
+        index,
+        key: index,
+        size: 52,
+        start: index * 52,
+      })),
+  }),
+}));
+
+// ── Factory ─────────────────────────────────────────────────────
+let seq = 0;
+const variant = (over: Partial<VariantStock> = {}): VariantStock => {
+  seq += 1;
   return {
-    productId: id,
-    productName: `Produto ${id}`,
-    productSku: `SKU-${id}`,
-    totalCurrentStock: 100,
-    totalMinStock: 50,
-    totalReservedStock: 0,
-    totalInTransitStock: 0,
-    totalAvailableStock: 100,
-    overallStatus: 'in_stock',
-    variantsInStock: 1,
-    variantsLowStock: 0,
-    variantsCritical: 0,
-    variantsOutOfStock: 0,
-    totalVariants: 1,
-    variants: [],
-    availableColors: [],
-    ...overrides,
+    id: over.id ?? `v-${seq}`,
+    productId: over.productId ?? `p-${seq}`,
+    variantId: over.variantId ?? `vid-${seq}`,
+    variantSku: over.variantSku ?? `VSKU-${seq}`,
+    currentStock: over.currentStock ?? 10,
+    minStock: over.minStock ?? 5,
+    reservedStock: over.reservedStock ?? 0,
+    inTransitStock: over.inTransitStock ?? 0,
+    availableStock: over.availableStock ?? 10,
+    status: over.status ?? 'in_stock',
+    updatedAt: over.updatedAt ?? '2026-06-15T10:00:00.000Z',
+    ...over,
   };
-}
+};
 
-const criticalProduct = makeProduct('crit', {
-  overallStatus: 'critical',
-  totalCurrentStock: 5,
-  variants: [{ updatedAt: '2026-06-18T10:00:00.000Z' } as never],
+const product = (over: Partial<ProductStockSummary> = {}): ProductStockSummary => {
+  seq += 1;
+  return {
+    productId: over.productId ?? `prod-${seq}`,
+    productName: over.productName ?? `Produto ${seq}`,
+    productSku: over.productSku ?? `SKU-${seq}`,
+    totalCurrentStock: over.totalCurrentStock ?? 100,
+    totalMinStock: over.totalMinStock ?? 20,
+    totalReservedStock: over.totalReservedStock ?? 0,
+    totalInTransitStock: over.totalInTransitStock ?? 0,
+    totalAvailableStock: over.totalAvailableStock ?? 100,
+    overallStatus: over.overallStatus ?? 'in_stock',
+    variantsInStock: over.variantsInStock ?? 1,
+    variantsLowStock: over.variantsLowStock ?? 0,
+    variantsCritical: over.variantsCritical ?? 0,
+    variantsOutOfStock: over.variantsOutOfStock ?? 0,
+    totalVariants: over.totalVariants ?? 1,
+    variants: over.variants ?? [variant()],
+    availableColors: over.availableColors ?? [],
+    ...over,
+  };
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  seq = 0;
 });
 
-const warningProduct = makeProduct('warn', {
-  overallStatus: 'low_stock',
-  totalCurrentStock: 20,
-  variants: [],
-});
-
-const okProduct = makeProduct('ok1', {
-  overallStatus: 'in_stock',
-  totalCurrentStock: 200,
-  variants: [],
-});
-
-describe('SupplierRiskPanel — estado vazio', () => {
-  it('renders empty state message when no products', () => {
+describe('SupplierRiskPanel — empty state', () => {
+  it('mostra estado vazio quando não há produtos', () => {
     render(<SupplierRiskPanel products={[]} />);
-    expect(screen.getByText(/Sem dados disponíveis/)).toBeInTheDocument();
-  });
-
-  it('renders panel title in empty state', () => {
-    render(<SupplierRiskPanel products={[]} />);
-    expect(screen.getByText(/Risco de Ruptura no Fornecedor/)).toBeInTheDocument();
+    expect(screen.getByText('Sem dados disponíveis')).toBeInTheDocument();
+    expect(screen.getByText(/Carregue os dados de estoque/)).toBeInTheDocument();
   });
 });
 
-describe('SupplierRiskPanel — com produtos', () => {
-  const products = [criticalProduct, warningProduct, okProduct];
-
-  it('renders product names', () => {
-    render(<SupplierRiskPanel products={products} />);
-    expect(screen.getByText('Produto crit')).toBeInTheDocument();
-    expect(screen.getByText('Produto warn')).toBeInTheDocument();
-    expect(screen.getByText('Produto ok1')).toBeInTheDocument();
+describe('SupplierRiskPanel — populated', () => {
+  it('renderiza título, descrição e lista de produtos', () => {
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'Caneca OK', overallStatus: 'in_stock' }),
+          product({
+            productName: 'Mochila Crítica',
+            overallStatus: 'out_of_stock',
+            variantsOutOfStock: 1,
+          }),
+        ]}
+      />,
+    );
+    expect(screen.getByText('Risco de Ruptura no Fornecedor')).toBeInTheDocument();
+    expect(screen.getByText('Caneca OK')).toBeInTheDocument();
+    expect(screen.getByText('Mochila Crítica')).toBeInTheDocument();
   });
 
-  it('shows critical badge when there are critical products', () => {
-    render(<SupplierRiskPanel products={products} />);
-    // Badge in the title shows "N crítico(s)"
-    const criticalBadge = screen.getAllByText(/1 crítico/i);
-    expect(criticalBadge.length).toBeGreaterThan(0);
+  it('exibe badge de críticos no cabeçalho quando há produtos críticos', () => {
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'Crit1', overallStatus: 'critical', variantsCritical: 1 }),
+          product({ productName: 'Crit2', overallStatus: 'out_of_stock', variantsOutOfStock: 1 }),
+        ]}
+      />,
+    );
+    expect(screen.getByText(/2 crítico/)).toBeInTheDocument();
   });
 
-  it('renders KPI counters with correct totals', () => {
-    render(<SupplierRiskPanel products={products} />);
-    // 1 critical, 1 warning, 1 ok
-    const statuses = screen
-      .getAllByRole('status')
-      .map((el) => el.getAttribute('aria-label'))
-      .filter(Boolean);
-    expect(statuses.some((s) => s?.includes('1 produtos críticos'))).toBe(true);
-    expect(statuses.some((s) => s?.includes('1 produtos em atenção'))).toBe(true);
-    expect(statuses.some((s) => s?.includes('1 produtos OK'))).toBe(true);
+  it('exibe data da última atualização quando há variants com updatedAt', () => {
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({
+            productName: 'Com Data',
+            variants: [variant({ updatedAt: '2026-06-15T13:45:00.000Z' })],
+          }),
+        ]}
+      />,
+    );
+    // dd/MM HH:mm formatted (TZ America/Sao_Paulo)
+    expect(screen.getByText(/15\/06/)).toBeInTheDocument();
   });
 
-  it('auto-selects first product (critical = first by sort)', () => {
-    render(<SupplierRiskPanel products={products} />);
-    // Critical product is first — its detail should be shown
-    expect(screen.getByTestId('product-risk-detail-crit')).toBeInTheDocument();
+  it('auto-seleciona o primeiro produto e mostra o detalhe', async () => {
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'Primeiro', overallStatus: 'critical', variantsCritical: 1 }),
+        ]}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('product-risk-detail')).toHaveTextContent('detail:Primeiro'),
+    );
   });
 
-  it('selects product on click', async () => {
-    render(<SupplierRiskPanel products={products} />);
-    const okBtn = screen.getByRole('option', { name: /Produto ok1/i });
-    await act(async () => {
-      fireEvent.click(okBtn);
-    });
-    expect(screen.getByTestId('product-risk-detail-ok1')).toBeInTheDocument();
-  });
-
-  it('shows lastUpdated timestamp when variant has updatedAt', () => {
-    render(<SupplierRiskPanel products={[criticalProduct]} />);
-    // The aria-label for the timestamp span
-    const timeEl = document.querySelector('[aria-label*="Última atualização"]');
-    expect(timeEl).not.toBeNull();
-  });
-});
-
-describe('SupplierRiskPanel — busca', () => {
-  const products = [criticalProduct, warningProduct, okProduct];
-
-  it('filters products by name', async () => {
-    render(<SupplierRiskPanel products={products} />);
-    const input = screen.getByPlaceholderText(/Buscar produto ou SKU/i);
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'crit' } });
-    });
-    // After debounce timeout (300ms) — act alone doesn't advance timers,
-    // but at least the input is reflected
-    expect(input).toHaveValue('crit');
-  });
-
-  it('shows "Nenhum produto encontrado" when search has no results', async () => {
-    vi.useFakeTimers();
-    render(<SupplierRiskPanel products={products} />);
-    const input = screen.getByPlaceholderText(/Buscar produto ou SKU/i);
-    fireEvent.change(input, { target: { value: 'xyznonexistent' } });
-    await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(screen.getByText('Nenhum produto encontrado')).toBeInTheDocument();
-    vi.useRealTimers();
+  it('renderiza os 4 botões de filtro de severidade com contagens', () => {
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ overallStatus: 'critical', variantsCritical: 1 }),
+          product({ overallStatus: 'low_stock', variantsLowStock: 1 }),
+          product({ overallStatus: 'in_stock' }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: /Todos \(3\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Críticos \(1\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Atenção \(1\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /OK \(1\)/ })).toBeInTheDocument();
   });
 });
 
-describe('SupplierRiskPanel — filtro de severidade', () => {
-  const products = [criticalProduct, warningProduct, okProduct];
-
-  it('renders severity filter buttons', () => {
-    render(<SupplierRiskPanel products={products} />);
-    expect(screen.getByRole('radiogroup', { name: /Filtrar por severidade/i })).toBeInTheDocument();
+describe('SupplierRiskPanel — interactions', () => {
+  it('filtra por severidade crítica ao clicar no botão', async () => {
+    const user = userEvent.setup();
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'CriticoX', overallStatus: 'critical', variantsCritical: 1 }),
+          product({ productName: 'SaudavelY', overallStatus: 'in_stock' }),
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole('radio', { name: /Críticos/ }));
+    expect(screen.getByText('CriticoX')).toBeInTheDocument();
+    expect(screen.queryByText('SaudavelY')).not.toBeInTheDocument();
   });
 
-  it('clicking "Críticos" filter hides non-critical products', async () => {
-    render(<SupplierRiskPanel products={products} />);
-    const critBtn = screen.getByRole('radio', { name: /Críticos/i });
-    await act(async () => {
-      fireEvent.click(critBtn);
-    });
-    // only critical should remain in the list
-    expect(screen.queryByText('Produto ok1')).toBeNull();
-    expect(screen.queryByText('Produto warn')).toBeNull();
-    expect(screen.getByText('Produto crit')).toBeInTheDocument();
-  });
-
-  it('clicking "OK" filter shows only ok products', async () => {
-    render(<SupplierRiskPanel products={products} />);
-    const okBtn = screen.getByRole('radio', { name: /^OK/i });
-    await act(async () => {
-      fireEvent.click(okBtn);
-    });
-    expect(screen.getByText('Produto ok1')).toBeInTheDocument();
-    expect(screen.queryByText('Produto crit')).toBeNull();
-  });
-
-  it('clicking "Todos" after filter shows all products', async () => {
-    render(<SupplierRiskPanel products={products} />);
-    const critBtn = screen.getByRole('radio', { name: /Críticos/i });
-    const todosBtn = screen.getByRole('radio', { name: /Todos/i });
-    await act(async () => {
-      fireEvent.click(critBtn);
-    });
-    await act(async () => {
-      fireEvent.click(todosBtn);
-    });
-    expect(screen.getByText('Produto ok1')).toBeInTheDocument();
-    expect(screen.getByText('Produto warn')).toBeInTheDocument();
-    expect(screen.getByText('Produto crit')).toBeInTheDocument();
-  });
-});
-
-describe('SupplierRiskPanel — estado "sem produto nesta categoria"', () => {
-  it('shows message when all products filtered out by severity', async () => {
-    // only ok product, filter by critical → empty list
-    vi.useFakeTimers();
-    render(<SupplierRiskPanel products={[okProduct]} />);
-    const critBtn = screen.getByRole('radio', { name: /Críticos/i });
-    await act(async () => {
-      fireEvent.click(critBtn);
-      vi.advanceTimersByTime(400);
-    });
+  it('filtro sem correspondência mostra "Nenhum produto nesta categoria"', async () => {
+    const user = userEvent.setup();
+    render(
+      <SupplierRiskPanel
+        products={[product({ productName: 'SoOK', overallStatus: 'in_stock' })]}
+      />,
+    );
+    await user.click(screen.getByRole('radio', { name: /Críticos/ }));
     expect(screen.getByText('Nenhum produto nesta categoria')).toBeInTheDocument();
-    vi.useRealTimers();
+  });
+
+  it('busca por nome filtra a lista (com debounce) e mostra vazio quando não acha', async () => {
+    const user = userEvent.setup();
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'Caneca Térmica', productSku: 'CAN-1' }),
+          product({ productName: 'Mochila', productSku: 'MOC-1' }),
+        ]}
+      />,
+    );
+    const input = screen.getByLabelText('Buscar produto no painel de risco');
+    await user.type(input, 'Caneca');
+    await waitFor(() => expect(screen.queryByText('Mochila')).not.toBeInTheDocument());
+    expect(screen.getByText('Caneca Térmica')).toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, 'inexistente-xyz');
+    await waitFor(() => expect(screen.getByText('Nenhum produto encontrado')).toBeInTheDocument());
+  });
+
+  it('seleciona produto da lista ao clicar e atualiza o detalhe', async () => {
+    const user = userEvent.setup();
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'Alpha', overallStatus: 'critical', variantsCritical: 1 }),
+          product({ productName: 'Beta', overallStatus: 'critical', variantsCritical: 1 }),
+        ]}
+      />,
+    );
+    const list = screen.getByRole('listbox');
+    await user.click(within(list).getByRole('option', { name: /Beta/ }));
+    await waitFor(() =>
+      expect(screen.getByTestId('product-risk-detail')).toHaveTextContent('detail:Beta'),
+    );
+  });
+
+  it('atualiza os contadores do rodapé conforme o filtro aplicado', async () => {
+    const user = userEvent.setup();
+    render(
+      <SupplierRiskPanel
+        products={[
+          product({ productName: 'C1', overallStatus: 'critical', variantsCritical: 1 }),
+          product({ productName: 'W1', overallStatus: 'low_stock', variantsLowStock: 1 }),
+          product({ productName: 'O1', overallStatus: 'in_stock' }),
+        ]}
+      />,
+    );
+    // footer status regions
+    expect(screen.getByRole('status', { name: /1 produtos críticos/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /OK/ }));
+    // after filtering to OK only, critical footer drops to 0
+    expect(screen.getByRole('status', { name: /0 produtos críticos/ })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /1 produtos OK/ })).toBeInTheDocument();
   });
 });

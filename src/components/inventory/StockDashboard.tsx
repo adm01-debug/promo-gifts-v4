@@ -361,25 +361,26 @@ export function StockDashboard() {
           }
         />
         <StatCard
-          title="Estoque Baixo"
-          // SSOT KPI ↔ chip: o valor bate 1:1 com `filters.status ===
-          // 'low_stock'` (que é o que o clique aplica). Críticos têm
-          // KPI próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          title="Crítico"
+          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status ===
+          // 'critical'` (o que o clique aplica). "Crítico" = produtos
+          // parcialmente sem estoque (overallStatus==='critical'). A régua
+          // por `min` (low_stock) foi descontinuada e o KPI ficava sempre 0;
+          // este card agora expõe um número real e clicável.
           // Testado em VariantStockTable.kpi-consistency.test.tsx.
-          value={summary.productsLowStock.toLocaleString('pt-BR')}
+          value={summary.productsCritical.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
-          isActive={filters.status === 'low_stock'}
+          isActive={filters.status === 'critical'}
           onClick={() => {
-            updateFilter('status', filters.status === 'low_stock' ? 'all' : 'low_stock');
-            if (warningAlerts.length > 0) setLowStockDialogOpen(true);
+            updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
           }}
-          clickHint="Filtrar produtos com estoque baixo (não inclui críticos)"
+          clickHint="Filtrar produtos em estado crítico (parcialmente sem estoque)"
           trend={
-            summary.productsCritical > 0
+            summary.totalProducts > 0 && summary.productsCritical > 0
               ? {
                   value: -1,
-                  label: `+ ${summary.productsCritical.toLocaleString('pt-BR')} em estado crítico`,
+                  label: `${Math.round((summary.productsCritical / summary.totalProducts) * 100)}% do catálogo`,
                 }
               : undefined
           }
