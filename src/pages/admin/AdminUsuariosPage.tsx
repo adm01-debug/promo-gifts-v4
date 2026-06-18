@@ -81,9 +81,10 @@ export default function AdminUsuariosPage() {
         .eq('status', 'pending');
       return count || 0;
     },
-    enabled: isAdmin,
+    enabled: rolesLoaded && Boolean(isAdmin), // FIX 2026-06-18: rolesLoaded garante JWT pronto
     refetchInterval: 30_000,
     staleTime: 15_000,
+    retry: 0,           // sem flood em erro temporário
   });
 
   const [searchQuery, setSearchQuery] = useState('');
