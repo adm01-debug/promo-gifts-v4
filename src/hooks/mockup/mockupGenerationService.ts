@@ -267,6 +267,31 @@ function assertNotSvg(areas: PersonalizationArea[]): void {
   }
 }
 
+// AUDIT 2026-06-17 — products without a real photo resolve to /placeholder.svg in
+// the UI (the gallery renders it fine), but sending that placeholder to the edge
+// produced an opaque HTTP 400 ("host not allowed" / SVG rejected). Validate the
+// product image up-front and fail with a clear, actionable PT-BR message instead.
+function assertProductImageReady(productImage: string): void {
+  if (/\/placeholder\.svg(\?|#|$)/i.test(productImage)) {
+    throw new Error(
+      'O produto selecionado ainda não tem foto cadastrada (imagem placeholder). Adicione a imagem do produto antes de gerar o mockup.',
+    );
+  }
+  let url: URL;
+  try {
+    url = new URL(productImage);
+  } catch {
+    throw new Error(
+      'O produto selecionado não possui uma imagem válida. Adicione uma foto ao produto e tente novamente.',
+    );
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(
+      'O produto selecionado não possui uma imagem válida (URL não-HTTP). Adicione uma foto ao produto e tente novamente.',
+    );
+  }
+}
+
 /**
  * Extracts a human-friendly message from a supabase FunctionsHttpError.
  * The edge function encodes { error, errorCode, message } in the non-2xx body,
@@ -351,6 +376,8 @@ export async function generateMockupApi(
 
   // BUG-E: pre-validate BEFORE the (expensive) edge invocation.
   assertNotSvg(areasWithLogos);
+  // AUDIT 2026-06-17 — block /placeholder.svg and invalid product images up-front.
+  assertProductImageReady(params.productImage);
 
   // BUG-I: single-area path sends ONLY the relevant area — never the dead areas[] payload.
   if (areasWithLogos.length === 1) {
