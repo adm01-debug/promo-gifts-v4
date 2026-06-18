@@ -196,7 +196,7 @@ export function RetestButton({
       const active = document.activeElement as HTMLElement | null;
       if (active) {
         const tag = active.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
         if (active.isContentEditable) return;
       }
       const wrapper = wrapperRef.current;

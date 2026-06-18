@@ -106,9 +106,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
       clearSessionStartTimer();
       setPartialTranscript('');
       setPhase((current) =>
-        current === 'processing' || current === 'speaking' || current === 'error'
-          ? current
-          : 'idle',
+        (['processing', 'speaking', 'error'] as string[]).includes(current) ? current : 'idle',
       );
     },
     onError: (err: unknown) => handleScribeErrorRef.current(err),
@@ -233,9 +231,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
         usingFallbackRef.current = false;
         setPartialTranscript('');
         setPhase((current) =>
-          current === 'processing' || current === 'speaking' || current === 'error'
-            ? current
-            : 'idle',
+          (['processing', 'speaking', 'error'] as string[]).includes(current) ? current : 'idle',
         );
       },
     });

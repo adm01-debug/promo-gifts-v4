@@ -149,7 +149,7 @@ export function GlobalRefreshFromDbButton({
       const t = e.target as HTMLElement | null;
       if (!t) return;
       const tag = t.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || t.isContentEditable) return;
       e.preventDefault();
       requestConfirm();
     }

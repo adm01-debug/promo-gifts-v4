@@ -34,8 +34,7 @@ export function useKitWizardShortcuts({
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const tag = target.tagName;
-      const isField =
-        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+      const isField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || target.isContentEditable;
       if (isField) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 

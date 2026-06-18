@@ -210,7 +210,7 @@ export default function OwnershipAuditAdminPage() {
               <p
                 className={cn(
                   'text-3xl font-bold',
-                  current?.total_issues_found ? 'text-destructive' : 'text-success',
+                  (current?.total_issues_found ?? 0) > 0 ? 'text-destructive' : 'text-success',
                 )}
               >
                 {current?.total_issues_found ?? '—'}
@@ -247,7 +247,7 @@ export default function OwnershipAuditAdminPage() {
               <p
                 className={cn(
                   'text-3xl font-bold',
-                  current?.rls_gaps_count ? 'text-destructive' : 'text-success',
+                  (current?.rls_gaps_count ?? 0) > 0 ? 'text-destructive' : 'text-success',
                 )}
               >
                 {current?.rls_gaps_count ?? '—'}
