@@ -76,7 +76,7 @@ function renderGroup() {
 
 describe('SidebarNavGroup — tooltips on hover', () => {
   it.each(Object.entries(TOOLTIPS))(
-    'mostra tooltip ao passar o mouse em "%s" e some ao sair',
+    'mostra tooltip ao passar o mouse em "%s" e fecha ao pressionar Escape',
     async (label, message) => {
       const user = userEvent.setup();
       renderGroup();
