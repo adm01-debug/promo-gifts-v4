@@ -7,6 +7,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   recordAction,
   exportCartToCSV,
@@ -321,9 +322,40 @@ export function useSellerCartsPage() {
     setConfirmQuoteCart(cart);
   }, []);
 
-  const confirmGenerateQuote = useCallback(() => {
+  const confirmGenerateQuote = useCallback(async () => {
     if (!confirmQuoteCart) return;
     const cart = confirmQuoteCart;
+
+    // T3: produto pode ter sido descontinuado depois de entrar no carrinho (product_id
+    // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
+    // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const ids = [...new Set(cart.items.map((i) => i.product_id))].filter((id) => uuidRe.test(id));
+    let validIds = new Set<string>();
+    if (ids.length > 0) {
+      try {
+        const { data, error } = await supabase.from('products').select('id').in('id', ids);
+        validIds = error
+          ? new Set(cart.items.map((i) => i.product_id)) // fail-open: nao bloqueia em erro
+          : new Set((data ?? []).map((row) => String(row.id)));
+      } catch {
+        validIds = new Set(cart.items.map((i) => i.product_id)); // fail-open
+      }
+    }
+    const validItems = cart.items.filter((i) => validIds.has(i.product_id));
+    const staleCount = cart.items.length - validItems.length;
+    if (validItems.length === 0) {
+      setConfirmQuoteCart(null);
+      toast.error('Nao foi possivel gerar o orcamento', {
+        description: 'Nenhum item deste carrinho esta mais disponivel no catalogo.',
+      });
+      return;
+    }
+    if (staleCount > 0) {
+      toast.warning(staleCount + ' item(ns) fora do catalogo ignorado(s)', {
+        description: 'Produtos descontinuados nao entram no orcamento.',
+      });
+    }
     setConfirmQuoteCart(null);
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
@@ -335,7 +367,7 @@ export function useSellerCartsPage() {
         companyId: cart.company_id,
         companyName: cart.company_name,
         companyLocation: cart.company_location || undefined,
-        items: cart.items.map((i) => ({
+        items: validItems.map((i) => ({
           product_id: i.product_id,
           product_name: i.product_name,
           product_sku: i.product_sku || undefined,
