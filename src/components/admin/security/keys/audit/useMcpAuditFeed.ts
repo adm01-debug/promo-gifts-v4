@@ -92,7 +92,7 @@ export function useMcpAuditFeed() {
     }
 
     const base = (data ?? []) as AuditFeedRow[];
-    const userIds = Array.from(new Set(base.map((r) => r.user_id).filter(Boolean))) as string[];
+    const userIds = [...new Set(base.map((r) => r.user_id).filter(Boolean))] as string[];
     const profiles: Record<string, { email?: string | null; full_name?: string | null }> = {};
     if (userIds.length > 0) {
       const { data: profs } = await supabase

@@ -298,14 +298,14 @@ export default function FiltersPage() {
                       if (result.type === 'category') {
                         state.handleFilterChange({
                           ...state.filters,
-                          categories: Array.from(new Set([...state.filters.categories, result.id])),
+                          categories: [...new Set([...state.filters.categories, result.id])],
                         });
                         return;
                       }
                       if (result.type === 'supplier') {
                         state.handleFilterChange({
                           ...state.filters,
-                          suppliers: Array.from(new Set([...state.filters.suppliers, result.id])),
+                          suppliers: [...new Set([...state.filters.suppliers, result.id])],
                         });
                         return;
                       }
