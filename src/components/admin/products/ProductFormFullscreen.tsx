@@ -333,7 +333,7 @@ export function ProductFormFullscreen({
     }
     clearDraft();
     handleSubmit(async (data) => {
-      if (skuStatus === 'duplicate') return;
+      if (skuStatus === 'duplicate' || skuStatus === 'checking') return;
       await onSubmit(data, images);
     })(e);
   };
@@ -373,7 +373,7 @@ export function ProductFormFullscreen({
               type="submit"
               size="sm"
               data-testid="admin-save-btn"
-              disabled={isSaving || skuStatus === 'duplicate'}
+              disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
               className="gap-2 font-semibold shadow-sm"
             >
               {isSaving ? (
@@ -515,7 +515,7 @@ export function ProductFormFullscreen({
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={isSaving || skuStatus === 'duplicate'}
+                  disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
                   className="gap-2 font-semibold shadow-sm"
                 >
                   {isSaving ? (
@@ -609,7 +609,7 @@ export function ProductFormFullscreen({
               <Button
                 type="submit"
                 size="sm"
-                disabled={isSaving || skuStatus === 'duplicate'}
+                disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
                 className="gap-2"
               >
                 {isSaving ? (
