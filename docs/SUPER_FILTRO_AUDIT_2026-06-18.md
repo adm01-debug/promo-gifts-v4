@@ -112,9 +112,46 @@ elevar a sentinela (ex.: `Infinity`/`1_000_000`) de forma consistente em
 
 ---
 
-## Validação
+## Validação (1ª rodada)
 - `tsc -p tsconfig.app.json --noEmit` → **0 erros**
 - `eslint` (arquivos alterados, `--max-warnings=0`) → **limpo**
 - `vitest` (hooks/products, pages/filters, external-db, regressão Super Filtro)
   → **820 passados / 5 skipped / 0 falhas**
 - Colunas novas validadas contra `v_products_public` em produção.
+
+---
+
+## 2ª RODADA — Execução das melhorias rumo a 10/10 (2026-06-18)
+
+As limitações SF-D/SF-E/SF-F deixaram de ser "documentadas" e foram **resolvidas**.
+
+### SF-F — Sentinela de preço `9999` → **RESOLVIDO**
+`priceRange[1] >= 9999` passa a ser tratado como "sem limite superior" em
+`applyProductFilters` e `useCatalogFiltering`. Produtos acima de R$9.999 deixam
+de ser excluídos quando só o mínimo é definido. +5 testes de regressão.
+
+### Refactor — `applyProductFilters` (pipeline puro) + **simulação exaustiva**
+Toda a lógica de filtragem/ordenação foi extraída do `useMemo` para a função
+pura `src/pages/filters/applyProductFilters.ts`, testável sem React. Nova suíte
+`applyProductFilters.simulation.test.ts` roda **~500+ cenários combinatórios**
+(matriz de 23 filtros atômicos em pares) provando invariantes: subconjunto do
+catálogo, sem duplicatas, AND nunca aumenta contagem, idempotência, ordenação
+preserva o conjunto, mais asserts exatos por filtro e por Set server-side.
+
+### SF-E — Filtro de **Tamanhos funcional** (server-side) → **RESOLVIDO**
+Novos hooks `useProductsBySize` (IDs por `size_code` em `product_variants`) e
+`useAvailableSizes` (tamanhos distintos, `size_code > ''`). Integrados ao
+pipeline com a mesma semântica dos demais filtros server-side. `SizeFilter`
+popula os tamanhos reais do catálogo. Validado em produção: **G/GG/M/P/XGG**;
+seleção `['M','P']` → **16 produtos**. +4 testes de hook.
+
+### SF-D — Seção **Técnicas** ocultada (honestidade de UI) → **RESOLVIDO**
+Sem vínculo produto↔técnica no banco (junção `product_group_location_techniques`
+= 0 linhas; produto leve sem `metadata.techniques`), a seção era um controle
+morto. Ocultada no painel; `SECTION_CONFIG`/renderer preservados para re-habilitar
+em uma linha quando houver suporte server-side.
+
+### Validação (2ª rodada)
+- `tsc` 0 erros · `eslint` baseline limpo
+- `vitest` suíte ampla → **3326 passados / 0 falhas** (inclui simulação + novos hooks)
+- Consultas SF-E validadas contra produção (`product_variants` via bridge).

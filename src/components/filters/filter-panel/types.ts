@@ -166,7 +166,9 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
 export const SECTION_GROUPS = [
   {
     label: 'PRODUTO',
-    sections: ['cores', 'categorias', 'preco', 'materiais', 'genero', 'tamanhos'],
+    // BUG-DB-04: 'tamanhos' removido — secao morta (catalogo lightweight nao carrega
+    // variations; apenas 16 produtos ativos tem size_code). Renderer/config preservados.
+    sections: ['cores', 'categorias', 'preco', 'materiais', 'genero'],
     icon: Package,
   },
   {
@@ -176,7 +178,9 @@ export const SECTION_GROUPS = [
   },
   {
     label: 'MARKETING',
-    sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],
+    // BUG-DB-05: 'endomarketing' removido — secao redundante/vazia. 'Endomarketing' e na
+    // verdade uma TAG (2.760 produtos), filtravel na secao Tags; nao ha sub-opcoes proprias.
+    sections: ['publico', 'datas-comemorativas', 'ramos-atividade'],
     icon: Target,
   },
   // BUG-SF-03 FIX: 'ordenacao' estava definido em SECTION_CONFIG e sectionRenderers
