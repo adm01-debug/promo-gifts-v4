@@ -66,7 +66,7 @@ describe('useSupplierComparison logic', () => {
       });
       expect(score).toBeDefined();
       expect(typeof score).toBe('number');
-      expect(isNaN(score)).toBe(false);
+      expect(Number.isNaN(score)).toBe(false);
     });
   });
 });

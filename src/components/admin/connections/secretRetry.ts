@@ -25,7 +25,7 @@ export function isRetryableSecretError(err: SecretError | undefined): boolean {
     msg.includes('failed to fetch') ||
     msg.includes('timeout') ||
     msg.includes('timed out') ||
-    (msg.includes('aborted') === false &&
+    (!msg.includes('aborted') &&
       (msg.includes(' 500') ||
         msg.includes(' 502') ||
         msg.includes(' 503') ||

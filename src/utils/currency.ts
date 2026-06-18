@@ -36,7 +36,7 @@ const BRL_COMPACT = new Intl.NumberFormat('pt-BR', {
  * @example formatBRL(1234.5) → "R$ 1.234,50"
  */
 export function formatBRL(value: number | null | undefined): string {
-  if (value === null || value === undefined || isNaN(value)) return 'R$ 0,00';
+  if (value === null || value === undefined || Number.isNaN(value)) return 'R$ 0,00';
   return BRL_FORMATTER.format(value);
 }
 
@@ -45,7 +45,7 @@ export function formatBRL(value: number | null | undefined): string {
  * @example formatBRLShort(1234.5) → "R$ 1.235"
  */
 export function formatBRLShort(value: number | null | undefined): string {
-  if (value === null || value === undefined || isNaN(value)) return 'R$ 0';
+  if (value === null || value === undefined || Number.isNaN(value)) return 'R$ 0';
   return BRL_FORMATTER_NO_CENTS.format(Math.round(value));
 }
 
@@ -54,7 +54,7 @@ export function formatBRLShort(value: number | null | undefined): string {
  * @example formatBRLCompact(1234567) → "R$ 1,2 mi"
  */
 export function formatBRLCompact(value: number | null | undefined): string {
-  if (value === null || value === undefined || isNaN(value)) return 'R$ 0';
+  if (value === null || value === undefined || Number.isNaN(value)) return 'R$ 0';
   return BRL_COMPACT.format(value);
 }
 
@@ -66,5 +66,5 @@ export function parseBRL(str: string): number {
   // Remove símbolo de moeda, pontos de milhar; troca vírgula decimal por ponto
   const cleaned = str.replace(/[R$\s.]/g, '').replace(',', '.');
   const result = parseFloat(cleaned);
-  return isNaN(result) ? 0 : result;
+  return Number.isNaN(result) ? 0 : result;
 }

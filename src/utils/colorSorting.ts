@@ -262,7 +262,7 @@ function getLuminanceFromHex(hex: string | undefined | null): number {
   const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
 
   // Valida se parse foi bem-sucedido
-  if (isNaN(r) || isNaN(g) || isNaN(b)) {
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
     return 0.5;
   }
 

@@ -380,7 +380,7 @@ export function safeParseDateForChart(
 ): { dateFormatted: string; fullDate: string } | null {
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
+    if (Number.isNaN(d.getTime())) return null;
     return {
       dateFormatted: format(d, 'dd/MM', { locale: ptBR }),
       fullDate: format(d, 'dd/MM/yyyy', { locale: ptBR }),

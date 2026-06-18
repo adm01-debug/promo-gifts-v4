@@ -161,7 +161,7 @@ export async function handleSyncBitrix(params: {
   const result = data.result;
   const parsedBitrixId = result?.quote_id ? Number(result.quote_id) : null;
   const bitrixQuoteIdFromResponse =
-    parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
+    parsedBitrixId && !Number.isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
   const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;

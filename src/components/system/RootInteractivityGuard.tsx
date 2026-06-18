@@ -85,7 +85,7 @@ function isLikelyGhostOverlay(el: HTMLElement): boolean {
   // DISCRIMINATOR 2: must have meaningful stacking order
   const zRaw = style.zIndex;
   const z = zRaw === 'auto' ? 0 : parseInt(zRaw, 10);
-  if (isNaN(z) || z < 10) return false;
+  if (Number.isNaN(z) || z < 10) return false;
 
   return true;
 }
