@@ -411,7 +411,7 @@ export function useExpiringNovelties(maxDays: number = 7) {
 /**
  * Hook para estatísticas de novidades — contagens 100% server-side, sem limite artificial.
  * Filtros de qualidade aplicados: is_stockout=false, sale_price>0, primary_image_url IS NOT NULL.
- * Alinha os counts do frontend com a pipeline DB (product_novelties).
+ * Alinha os counts do frontend com a fonte canonica is_new (product_novelties via trigger).
  */
 export function useNoveltyStats() {
   return useQuery<NoveltyStatsDisplay>({
