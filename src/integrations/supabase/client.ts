@@ -39,12 +39,22 @@ const validateEnv = (): boolean => {
   const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
   const isPlaceholder = envUrl.includes('placeholder');
   if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
-    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
+    // Severidade: WARN (não ERROR) — o guard SSOT já neutralizou o impacto aplicando
+    // o fallback canônico. ERROR ficava ruidoso a cada reload sempre que o Lovable
+    // reescrevia o .env, poluindo dashboards de telemetria. Mantemos o nome do evento
+    // ("config_inconsistency") para preservar contratos (ssot-fallback.test.ts e
+    // alertas externos que filtram por substring).
+    log.warn('config_inconsistency', {
+      envUrl,
+      expected: CURRENT_PROJECT_ID,
+      fallback_applied: CANONICAL_URL,
+      severity_note: 'auto_resolved_by_ssot_guard',
+    });
     if (import.meta.env.DEV) {
-      console.error(
-        "%c[Supabase Critical]",
-        "color: red; font-weight: bold;",
-        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
+      console.warn(
+        "%c[Supabase SSOT]",
+        "color: orange; font-weight: bold;",
+        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Fallback canônico aplicado: ${CANONICAL_URL}.`,
       );
     }
     return false;
