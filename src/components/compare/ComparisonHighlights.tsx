@@ -15,7 +15,7 @@ export function useComparisonHighlight(
   mode: 'lower-is-better' | 'higher-is-better',
 ): HighlightResult[] {
   if (values.length < 2) return values.map(() => 'neutral');
-  const valid = values.filter((v) => !isNaN(v) && isFinite(v));
+  const valid = values.filter((v) => !Number.isNaN(v) && isFinite(v));
   if (valid.length === 0) return values.map(() => 'neutral');
   const best = mode === 'lower-is-better' ? Math.min(...valid) : Math.max(...valid);
   const worst = mode === 'lower-is-better' ? Math.max(...valid) : Math.min(...valid);

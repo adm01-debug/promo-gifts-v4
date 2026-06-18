@@ -68,7 +68,7 @@ function formatEventDate(dateStr: string | null | undefined): string {
   try {
     const normalized = DATE_ONLY_RE.test(dateStr) ? `${dateStr}T12:00:00` : dateStr;
     const d = new Date(normalized);
-    if (isNaN(d.getTime())) return '';
+    if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',

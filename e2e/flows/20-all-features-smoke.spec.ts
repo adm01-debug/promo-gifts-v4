@@ -109,7 +109,7 @@ async function assertFeatureLoads(
         stableUrl = cur;
         stableCount = 1;
       }
-      return stableCount >= 3 ? true : false;
+      return stableCount >= 3;
     },
     { timeout: 3_000, intervalMs: 250, message: `aguardando URL estabilizar em ${path}` },
   );

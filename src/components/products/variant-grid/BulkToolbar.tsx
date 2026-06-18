@@ -32,7 +32,7 @@ export function BulkToolbar({
 
   const handleStockSubmit = () => {
     const num = parseInt(stockValue, 10);
-    if (isNaN(num) || num < 0) return;
+    if (Number.isNaN(num) || num < 0) return;
     onUpdateStock(num);
     setStockValue('');
     setStockPopoverOpen(false);
@@ -112,7 +112,9 @@ export function BulkToolbar({
               className="h-7 w-full text-xs"
               onClick={handleStockSubmit}
               disabled={
-                !stockValue || isNaN(parseInt(stockValue, 10)) || parseInt(stockValue, 10) < 0
+                !stockValue ||
+                Number.isNaN(parseInt(stockValue, 10)) ||
+                parseInt(stockValue, 10) < 0
               }
             >
               Aplicar

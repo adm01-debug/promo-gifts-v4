@@ -367,7 +367,7 @@ export const SortableCartItem = memo(function SortableCartItem({
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val) && val > 0) onUpdateQuantity(item.id, val);
+                  if (!Number.isNaN(val) && val > 0) onUpdateQuantity(item.id, val);
                 }}
                 className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />

@@ -134,7 +134,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
 
       if (mapped.sale_price !== undefined && mapped.sale_price !== '') {
         const price = parseFloat(String(mapped.sale_price).replace(',', '.'));
-        if (isNaN(price) || price < 0) {
+        if (Number.isNaN(price) || price < 0) {
           errors.push('Preço inválido');
         } else {
           mapped.sale_price = price;
@@ -144,7 +144,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
       for (const numField of NUMERIC_FIELDS) {
         if (mapped[numField] !== undefined && mapped[numField] !== '') {
           const val = parseFloat(String(mapped[numField]).replace(',', '.'));
-          if (isNaN(val)) {
+          if (Number.isNaN(val)) {
             warnings.push(
               `"${TARGET_FIELDS.find((f) => f.key === numField)?.label}" ignorado (inválido)`,
             );

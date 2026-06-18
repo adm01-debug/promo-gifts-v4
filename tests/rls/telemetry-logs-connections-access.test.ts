@@ -221,7 +221,7 @@ describe('Matriz role × tabela (telemetria/logs/conexões)', () => {
   const tables = Array.from(new Set(POLICIES.map((p) => p.table)));
 
   ROLES.forEach((role) => {
-    const expected = role === 'agente' || role === 'anon' ? false : true;
+    const expected = role !== 'agente' && role !== 'anon';
     it(`${role} → ${expected ? 'acessa' : 'NÃO acessa'} pelo menos uma policy de cada tabela`, () => {
       tables.forEach((t) => {
         const tablePolicies = POLICIES.filter((p) => p.table === t);

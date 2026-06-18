@@ -97,7 +97,9 @@ export function StatCard({
 
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
   const isNumeric =
-    (typeof numericValue === 'number' && !isNaN(numericValue) && typeof value !== 'string') ||
+    (typeof numericValue === 'number' &&
+      !Number.isNaN(numericValue) &&
+      typeof value !== 'string') ||
     (typeof value === 'string' && /^\d/.test(value));
   const animatedValue = useCountUp(isNumeric ? numericValue : 0);
 
@@ -154,7 +156,7 @@ export function StatCard({
             </p>
             <p
               data-testid="stock-stat-card-value"
-              className="truncate text-xl font-bold leading-tight tabular-nums tracking-tight sm:text-2xl"
+              className="truncate text-xl font-bold tabular-nums leading-tight tracking-tight sm:text-2xl"
             >
               {displayValue}
             </p>
@@ -195,7 +197,6 @@ export function StatCard({
           </div>
         </div>
       </div>
-
 
       {/* Click hint on hover */}
       {clickHint && onClick && (

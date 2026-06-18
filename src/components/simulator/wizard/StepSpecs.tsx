@@ -257,7 +257,8 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
                     value={engravingSpecs.width}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
-                      if (!isNaN(v) && v >= 0.5 && v <= maxWidth) wizard.updateSpecs({ width: v });
+                      if (!Number.isNaN(v) && v >= 0.5 && v <= maxWidth)
+                        wizard.updateSpecs({ width: v });
                     }}
                     min={0.5}
                     max={maxWidth}
@@ -311,7 +312,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
                     value={engravingSpecs.height}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
-                      if (!isNaN(v) && v >= 0.5 && v <= maxHeight)
+                      if (!Number.isNaN(v) && v >= 0.5 && v <= maxHeight)
                         wizard.updateSpecs({ height: v });
                     }}
                     min={0.5}

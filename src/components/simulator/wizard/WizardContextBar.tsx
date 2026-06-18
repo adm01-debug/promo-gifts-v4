@@ -42,7 +42,7 @@ export function WizardContextBar({ wizard }: WizardContextBarProps) {
 
   const commitQty = () => {
     const parsed = parseInt(tempQty, 10);
-    if (!isNaN(parsed) && parsed > 0) {
+    if (!Number.isNaN(parsed) && parsed > 0) {
       wizard.setQuantity(parsed);
     }
     setEditingQty(false);

@@ -53,7 +53,7 @@ function getSizeOrder(code: string): number {
   const idx = SIZE_ORDER.indexOf(upper);
   if (idx >= 0) return idx;
   const num = parseFloat(upper);
-  if (!isNaN(num)) return 1000 + num;
+  if (!Number.isNaN(num)) return 1000 + num;
   return 2000;
 }
 

@@ -62,11 +62,11 @@ export function ProductPriceSection({
               const raw = e.target.value.replace(/[^0-9.,]/g, '');
               onCostPriceDisplayChange(raw);
               const num = parseFloat(raw.replace(',', '.'));
-              if (!isNaN(num)) setValue('cost_price', num);
+              if (!Number.isNaN(num)) setValue('cost_price', num);
             }}
             onBlur={(e) => {
               const num = parseFloat(e.target.value.replace(',', '.'));
-              if (!isNaN(num)) onCostPriceDisplayChange(num.toFixed(2));
+              if (!Number.isNaN(num)) onCostPriceDisplayChange(num.toFixed(2));
             }}
             className="h-9"
           />
@@ -104,12 +104,12 @@ export function ProductPriceSection({
               const raw = e.target.value.replace(/[^0-9.,]/g, '');
               onSalePriceDisplayChange(raw);
               const num = parseFloat(raw.replace(',', '.'));
-              if (!isNaN(num)) setValue('sale_price', num);
+              if (!Number.isNaN(num)) setValue('sale_price', num);
               onSalePriceManualEdit();
             }}
             onBlur={(e) => {
               const num = parseFloat(e.target.value.replace(',', '.'));
-              if (!isNaN(num)) onSalePriceDisplayChange(num.toFixed(2));
+              if (!Number.isNaN(num)) onSalePriceDisplayChange(num.toFixed(2));
             }}
             className={cn('h-9', errors.sale_price && 'border-destructive')}
           />
