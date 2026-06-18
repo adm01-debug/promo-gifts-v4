@@ -60,4 +60,55 @@ test.describe("Sidebar — tooltips comerciais (hover/unhover)", () => {
       });
     }
   });
+
+  test("scroll na sidebar não deixa tooltip preso e novos itens funcionam", async ({ page }) => {
+    const sidebar = page
+      .locator('aside, [data-sidebar="sidebar"]')
+      .filter({ has: page.locator("[data-tooltip-label]") })
+      .first();
+    await expect(sidebar).toBeVisible();
+
+    const triggers = sidebar.locator("[data-tooltip-label]");
+    const count = await triggers.count();
+    expect(count, "sidebar precisa ter itens com tooltip").toBeGreaterThanOrEqual(3);
+
+    // 1) Abre tooltip no primeiro item.
+    const first = triggers.first();
+    const firstLabel = await first.getAttribute("data-tooltip-label");
+    await first.scrollIntoViewIfNeeded();
+    await first.hover();
+    const firstTooltip = page.getByRole("tooltip", { name: firstLabel! });
+    await expect(firstTooltip).toBeVisible({ timeout: 2000 });
+
+    // 2) Rola a sidebar (e a janela) — tooltip aberto NÃO pode ficar preso.
+    await sidebar.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      (el.querySelector('[data-sidebar="content"]') as HTMLElement | null)?.scrollTo?.(
+        0,
+        el.scrollHeight,
+      );
+    });
+    await page.mouse.wheel(0, 600);
+    await page.mouse.move(2000, 2000);
+    await expect(
+      firstTooltip,
+      "tooltip do item inicial deve sumir após scroll + mouse out",
+    ).toBeHidden({ timeout: 2000 });
+
+    // 3) Não pode sobrar nenhum tooltip órfão visível.
+    await expect(page.locator('[role="tooltip"]:visible')).toHaveCount(0);
+
+    // 4) Item agora visível após o scroll deve continuar funcional.
+    const last = triggers.last();
+    const lastLabel = await last.getAttribute("data-tooltip-label");
+    await last.scrollIntoViewIfNeeded();
+    await last.hover();
+    const lastTooltip = page.getByRole("tooltip", { name: lastLabel! });
+    await expect(lastTooltip, `tooltip pós-scroll deve abrir em "${lastLabel}"`).toBeVisible({
+      timeout: 2000,
+    });
+
+    await page.mouse.move(2000, 2000);
+    await expect(lastTooltip).toBeHidden({ timeout: 2000 });
+  });
 });
