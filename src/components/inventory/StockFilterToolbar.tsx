@@ -4,7 +4,6 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Search,
   X,
   Building2,
   Palette,
