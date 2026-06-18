@@ -58,7 +58,7 @@ describe('useIntersectionObserver', () => {
 
   it('chama observe no mount quando ref tem elemento', () => {
     const div = document.createElement('div');
-    const { result } = renderHook(() => {
+    const { result: _result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
