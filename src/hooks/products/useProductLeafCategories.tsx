@@ -134,13 +134,12 @@ function useGlobalLeafCategories(): LeafCategoryMap {
   const { data } = useQuery({
     queryKey: ['global-leaf-categories'],
     queryFn: async (): Promise<Map<string, LeafCategory>> => {
-      // RPC existe no DB canônico (Gold) mas types.ts gerado pelo Lovable pode não tê-la — cast pontual.
-      const { data, error } = await supabase.rpc('fn_get_all_leaf_categories' as never);
+      const { data, error } = await supabase.rpc('fn_get_all_leaf_categories');
       if (error) {
         logger.warn('[useProductLeafCategories] RPC falhou; usando fallback vazio', error);
         return new Map();
       }
-      const rows = (data ?? []) as unknown as LeafCategoryRow[];
+      const rows = (data ?? []) as LeafCategoryRow[];
       const map = new Map<string, LeafCategory>();
       for (const row of rows) {
         if (!row.product_id || !row.leaf_category_id) continue;

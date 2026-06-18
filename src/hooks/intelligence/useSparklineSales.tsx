@@ -63,8 +63,8 @@ export function SparklineSalesProvider({ productIds, children }: Props) {
     return unique;
   }, [productIds]);
 
-  // FIX BUG-B: aguardar 1 500 ms para que o render crítico do catálogo complete
-  // antes de disparar as 10+ queries de sparkline que consomem conexões PostgREST.
+  // FIX BUG-B (2026-06-18): defer 1500ms para não bloquear o render crítico.
+  // Sem o defer: 500 produtos → 10 batches stock_daily_summary simultâneos → LCP +5-7s.
   const [deferred, setDeferred] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setDeferred(true), 1500);
