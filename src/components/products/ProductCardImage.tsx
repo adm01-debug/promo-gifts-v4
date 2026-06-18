@@ -18,6 +18,7 @@ import { memo } from 'react';
 import { Package } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { resolveNoveltyDaysRemaining } from '@/lib/products/novelty-days';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
@@ -248,15 +249,11 @@ export const ProductCardImage = memo(function ProductCardImage({
           {(() => {
             // Compute days remaining from product.created_at when explicit
             // novelty props are not provided (catálogo/super filtro/etc).
-            let resolvedDaysRemaining = noveltyDaysRemaining;
-            if (resolvedDaysRemaining === undefined && newArrival && product.created_at) {
-              const ts = Date.parse(product.created_at);
-              if (!Number.isNaN(ts)) {
-                const elapsed = Math.floor((Date.now() - ts) / 86400000);
-                const remaining = 30 - elapsed;
-                if (remaining > 0 && remaining <= 30) resolvedDaysRemaining = remaining;
-              }
-            }
+            const resolvedDaysRemaining = resolveNoveltyDaysRemaining(
+              product.created_at,
+              noveltyDaysRemaining,
+              newArrival,
+            );
             const showNovelty = (isNovelty && noveltyDaysRemaining !== undefined) || newArrival;
             if (!showNovelty) return null;
             return (
