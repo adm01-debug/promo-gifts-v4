@@ -536,7 +536,7 @@ export function useCatalogState() {
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
     promoSalesMap,
-    supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
+    supplierSalesMap,
   });
 
   // Mantém filteredProductsRef sincronizado (consumido por setSortBy e pelo

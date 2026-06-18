@@ -122,11 +122,12 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   return {
     id: p.id,
     name: p.name,
-    description: p.description || p.short_description || p.meta_description || null,
+    description: p.description ?? p.short_description ?? p.meta_description ?? null,
     shortDescription: p.short_description ?? '',
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),
+    sale_price: typeof p.sale_price === 'number' ? p.sale_price : undefined,
     image_url: images[0],
     primary_image_url: p.primary_image_url || null,
     primary_image_fallback_url: p.primary_image_fallback_url || null,
