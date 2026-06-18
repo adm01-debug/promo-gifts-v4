@@ -16,6 +16,7 @@ import {
   Filter,
   Truck,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -118,9 +119,25 @@ export function StockFilterToolbar({
     setLocalSearch(filters.search ?? '');
   }, [filters.search]);
 
+  // Loading transitório enquanto a busca é aplicada (UX feedback).
+  const [isSearching, setIsSearching] = useState(false);
   const commitSearch = useCallback(() => {
+    setIsSearching(true);
     onUpdateFilter('search', localSearch);
   }, [localSearch, onUpdateFilter]);
+
+  // Encerra o loading assim que o filtro externo reflete o valor digitado
+  // (ou após 600ms como fallback de segurança).
+  useEffect(() => {
+    if (!isSearching) return;
+    if ((filters.search ?? '') === localSearch) {
+      setIsSearching(false);
+      return;
+    }
+    const t = setTimeout(() => setIsSearching(false), 600);
+    return () => clearTimeout(t);
+  }, [isSearching, filters.search, localSearch]);
+
 
 
   // Debounce quantity
@@ -592,10 +609,24 @@ export function StockFilterToolbar({
               variant="default"
               size="sm"
               className="shrink-0"
-              aria-label="Aplicar busca"
+              data-testid="stock-search-button"
+              // Habilitado quando há algo a buscar: texto digitado OU
+              // pelo menos um filtro ativo (status, categoria, fornecedor,
+              // cor, quantidade mínima). Loading desabilita.
+              disabled={
+                isSearching ||
+                (localSearch.trim() === '' && activeFiltersCount === 0)
+              }
+              aria-label="Aplicar busca no estoque"
+              aria-busy={isSearching}
+              title="Aplicar busca (Enter)"
             >
-              Busca
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              <span>{isSearching ? 'Buscando…' : 'Busca'}</span>
             </Button>
+
           </div>
         </StockHelpTooltip>
 

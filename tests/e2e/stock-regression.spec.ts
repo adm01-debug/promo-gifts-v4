@@ -29,10 +29,13 @@ test.describe('Estoque Dashboard E2E', () => {
     await outOfStockCard.click();
     await expect(page.locator('text=Filtro ativo:')).toBeVisible();
 
-    const searchInput = page.getByPlaceholder('Buscar no Estoque (Nome, SKU ou Cor)...');
+    const searchInput = page.getByPlaceholder(/Buscar no Estoque/i);
     await searchInput.fill('SKU_INEXISTENTE_TESTE_PROMO');
+    // Após removerem o debounce, a busca só aplica com Enter ou clique no botão "Busca".
+    await searchInput.press('Enter');
     await expect(page.locator('text=Nenhum produto encontrado')).toBeVisible();
-    await page.locator('button[aria-label="Remover filtro"], .absolute.right-2.top-1\\/2').first().click();
+    await page.getByRole('button', { name: /Limpar busca/i }).click();
+
 
     await page.locator('button:has-text("Filtros")').click();
     await page.locator('text=Ordenar por').click();
