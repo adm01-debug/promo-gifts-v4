@@ -48,7 +48,23 @@ export default defineConfig({
     typecheck: {
       enabled: false,
     },
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests/__deprecated__'],
+    exclude: [
+      'node_modules',
+      'dist',
+      '.idea',
+      '.git',
+      '.cache',
+      'tests/__deprecated__',
+      // Specs Playwright (@playwright/test) NÃO podem ser coletados pelo Vitest —
+      // `test.describe()` do Playwright lança "did not expect ... here" e quebra
+      // a coleta inteira. O Playwright só roda specs em `e2e/` (testDir em
+      // playwright.config.ts), então estes arquivos sob `tests/` nunca rodaram
+      // como teste Vitest (sempre erro de coleta) nem como E2E (diretório errado).
+      // Excluí-los do Vitest remove ZERO teste funcional e destrava o gate.
+      'tests/e2e/**',
+      'tests/navigation-tooltips.spec.ts',
+      'tests/security/notification-rls.spec.ts',
+    ],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
     // maxThreads: 2 para evitar contenção.

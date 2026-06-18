@@ -121,9 +121,14 @@ describe('Product Sort Standardization', () => {
 
     if (sortSelect) {
       fireEvent.click(sortSelect);
-      // We might need to wait for the Portal content
-      expect(SORT_OPTIONS).not.toHaveLength(0);
-      for (const option of SORT_OPTIONS) {
+      // We might need to wait for the Portal content.
+      // NoveltyProductGrid OMITE intencionalmente os sorts "best-seller-*"
+      // (produtos novos não têm histórico de vendas) — ver o filtro
+      // `.filter((o) => !o.value.startsWith('best-seller'))` no componente.
+      // O teste de paridade deve espelhar exatamente esse subconjunto.
+      const noveltyOptions = SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller'));
+      expect(noveltyOptions).not.toHaveLength(0);
+      for (const option of noveltyOptions) {
         const elements = screen.queryAllByText(option.label);
         expect.soft(elements.length, `option "${option.label}"`).toBeGreaterThan(0);
       }
