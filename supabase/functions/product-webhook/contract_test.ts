@@ -35,7 +35,7 @@ Deno.test("Contract: ProductWebhook V2 should require idempotency_key", () => {
 Deno.test("Contract: ProductWebhook V2 should require external_id", () => {
   const payload = {
     action: "upsert",
-    idempotency_key: "550e8400-e29b-41d4-a716-446655440000",
+    idempotency_key: "550e8400-e29b-41d4-a716-446655440000", // test-only: idempotency fixture
     product: {
       sku: "SKU-001",
       name: "Test Product",
