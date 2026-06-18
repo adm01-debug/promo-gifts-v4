@@ -302,7 +302,19 @@ export function StockDashboard() {
       {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2" />
+        <div className="flex flex-col gap-2">
+          {warningAlerts.length > 0 && (
+            <Badge
+              variant="secondary"
+              data-testid="warning-alerts-badge"
+              className="cursor-pointer gap-1 text-xs"
+              onClick={() => setLowStockDialogOpen(true)}
+            >
+              <AlertCircle className="h-3 w-3" />
+              {warningAlerts.length} aviso{warningAlerts.length > 1 ? 's' : ''} de esgotamento
+            </Badge>
+          )}
+        </div>
 
         <div
           className="flex items-center gap-2 text-xs text-muted-foreground"
