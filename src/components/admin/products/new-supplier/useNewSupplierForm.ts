@@ -254,7 +254,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       setLogoUrl(urlData.publicUrl);
       toast.success('Logo enviada');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar logo');
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
