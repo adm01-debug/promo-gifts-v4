@@ -649,6 +649,14 @@ export const ProductListItem = memo(function ProductListItem({
         isInCompare={isInCompare}
         onToggleCompare={onToggleCompare}
         onShare={onShare}
+        onAddToQuote={() => {
+          setVariantPickerMode('quote');
+          setVariantPickerOpen(true);
+        }}
+        onAddToCollection={() => {
+          setCollectionVariant('add');
+          setCollectionModalOpen(true);
+        }}
       />
 
       {/* Share Preview Dialog */}
