@@ -473,7 +473,7 @@ export default function FiltersPage() {
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -540,11 +540,12 @@ export default function FiltersPage() {
                       </TooltipTrigger>
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
-                    {/* Selection toggle & Layout */}
-                    <div
-                      data-testid="superfiltro-toolbar-actions"
-                      className="ml-auto flex items-center gap-2"
-                    >
+                  </div>
+                  {/* Selection toggle & Layout — pinned right (full toolbar) */}
+                  <div
+                    data-testid="superfiltro-toolbar-actions"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2"
+                  >
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -600,7 +601,7 @@ export default function FiltersPage() {
                         />
                       </div>
                     </div>
-                  </div>
+
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
                       {state.activeFiltersSummary.slice(0, 3).map((filter) => (
