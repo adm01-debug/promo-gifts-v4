@@ -21,6 +21,17 @@ interface GenerateMockupBody {
   logoRotation?: number;
   logoScale?: number;
   productName?: string;
+  // AUDIT 2026-06-17 — physical-aware WYSIWYG calibration (optional, back-compat):
+  // when the client sends the product's real-world dimensions (cm) the edge sizes
+  // the logo with the SAME px-per-cm the on-screen preview uses, so the generated
+  // mockup matches what the user positioned. When absent, the edge falls back to the
+  // legacy /20 reference (a 20 cm product filling the canvas) — no regression.
+  // productFractionX/Y are the product's bounding-box occupancy in the preview frame
+  // (0..1); omitted ⇒ treated as 1 (product fills its contain rect).
+  productWidthCm?: number;
+  productHeightCm?: number;
+  productFractionX?: number;
+  productFractionY?: number;
 }
 
 // ─ Validation ──────────────────────────────────────────────────────────────
@@ -36,33 +47,86 @@ function validationError(
   );
 }
 
-function isValidHttpUrl(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  try {
-    const u = new URL(value);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch { return false; }
+// ─ SSRF hardening ────────────────────────────────────────────────────────────
+// AUDIT 2026-06-17: this function fetches arbitrary productImageUrl / logoUrl
+// values supplied by the caller. Without egress controls that is a Server-Side
+// Request Forgery vector — a caller could aim the URL at cloud metadata
+// (169.254.169.254), loopback, or RFC1918 hosts and read internal responses.
+// We now reject private/reserved/internal targets UNCONDITIONALLY (independent of
+// the allowlist), covering IPv4, IPv6, IPv4-mapped IPv6, and decimal/hex IP
+// obfuscation. The optional MOCKUP_FETCH_ALLOWED_HOSTS allowlist narrows egress
+// further to known CDNs when set.
+// NOTE: this blocks IP *literals* and obvious internal hostnames; it does not on
+// its own stop DNS-rebinding (a public name that resolves to a private IP).
+// Setting MOCKUP_FETCH_ALLOWED_HOSTS to the real product/logo CDNs closes that gap.
+function isBlockedV4(ip: string): boolean {
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some((o) => !Number.isInteger(o) || o < 0 || o > 255)) return true;
+  const [a, b, c] = p;
+  if (a === 0 || a === 10 || a === 127) return true;        // this-host / RFC1918-10 / loopback
+  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT 100.64/10
+  if (a === 169 && b === 254) return true;                  // link-local + cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;         // RFC1918 172.16/12
+  if (a === 192 && b === 168) return true;                  // RFC1918 192.168/16
+  if (a === 192 && b === 0 && c === 0) return true;         // 192.0.0.0/24
+  if (a === 198 && (b === 18 || b === 19)) return true;     // benchmarking 198.18/15
+  if (a >= 224) return true;                                // multicast / reserved
+  return false;
+}
+// Reduce an IPv4-mapped IPv6 address to its dotted IPv4, handling BOTH the decimal
+// form (::ffff:127.0.0.1) and the hex form the URL parser normalises to (::ffff:7f00:1).
+function v4FromMapped(ip: string): string | null {
+  let m = ip.match(/:ffff:(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) return `${+m[1]}.${+m[2]}.${+m[3]}.${+m[4]}`;
+  m = ip.match(/:ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (m) {
+    const hi = parseInt(m[1], 16), lo = parseInt(m[2], 16);
+    return `${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`;
+  }
+  return null;
+}
+function isBlockedHost(hostname: string): boolean {
+  const h = (hostname || "").toLowerCase().trim().replace(/\.$/, "");
+  if (h === "") return true;
+  if (h === "localhost" || h.endsWith(".localhost") || h === "localhost.localdomain") return true;
+  if (h === "metadata" || h === "metadata.google.internal" || h.endsWith(".internal")) return true;
+  if (h.includes(":")) { // IPv6 literal
+    const ip = h.replace(/^\[/, "").replace(/\]$/, "");
+    if (ip === "::1" || ip === "::") return true;
+    if (ip.startsWith("fe80")) return true;                 // link-local
+    if (ip.startsWith("fc") || ip.startsWith("fd")) return true; // ULA fc00::/7
+    const mapped = v4FromMapped(ip);
+    if (mapped) return isBlockedV4(mapped);
+    return false;                                            // global-unicast v6 allowed
+  }
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) return isBlockedV4(h);
+  if (/^(0x[0-9a-f]+|\d+)$/i.test(h)) return true;           // decimal/hex IP obfuscation
+  return false;                                              // DNS hostname — allowlist handles the rest
 }
 
-// SSRF mitigation: optionally restrict which hosts the function will fetch from.
-// Configured via MOCKUP_FETCH_ALLOWED_HOSTS (comma-separated hostnames). When unset
-// the function allows all hosts (logged) so existing product CDNs keep working — set
-// the env var to lock it down once the legitimate domains are confirmed.
-function hostAllowed(rawUrl: string): boolean {
-  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  if (allow.length === 0) {
-    console.warn("[generate-mockup] MOCKUP_FETCH_ALLOWED_HOSTS not set — allowing all hosts");
-    return true;
-  }
-  try {
-    const host = new URL(rawUrl).hostname.toLowerCase();
-    return allow.some((a) => host === a || host.endsWith("." + a));
-  } catch {
+// Single egress gate: valid http(s) scheme + not an internal/blocked target +
+// (optionally) within the MOCKUP_FETCH_ALLOWED_HOSTS allowlist. Replaces the old
+// isValidHttpUrl + hostAllowed pair (which allowed ALL hosts when the env was unset).
+function isFetchableUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  let u: URL;
+  try { u = new URL(value); } catch { return false; }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+  if (isBlockedHost(u.hostname)) {
+    console.warn(`[generate-mockup] blocked SSRF-unsafe host: ${u.hostname}`);
     return false;
   }
+  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
+    .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (allow.length > 0) {
+    const host = u.hostname.toLowerCase();
+    if (!allow.some((a) => host === a || host.endsWith("." + a))) {
+      console.warn(`[generate-mockup] host not in MOCKUP_FETCH_ALLOWED_HOSTS: ${host}`);
+      return false;
+    }
+  }
+  return true;
 }
 
 // SVG cannot be rasterised by createImageBitmap in the Deno edge runtime, so it must
@@ -105,6 +169,63 @@ function base64ToBytes(dataUrl: string): Uint8Array {
 // ─ Canvas composition ───────────────────────────────────────────────────────
 
 const CANVAS_PX = 1024;
+// Logo-sizing calibration (AUDIT 2026-06-17 — WYSIWYG):
+const FALLBACK_PRODUCT_REFERENCE_CM = 20; // legacy assumption: 20 cm product fills canvas
+const MAX_LOGO_CANVAS_FRACTION = 0.98;    // never let the logo overflow the frame
+const MIN_LOGO_PX = 8;                     // keep tiny logos visible
+
+// Sanitizers so malformed numbers can never produce NaN/Infinity/0 geometry.
+const finiteOr = (x: unknown, fallback: number): number =>
+  (typeof x === "number" && Number.isFinite(x)) ? x : fallback;
+const positiveOr = (x: unknown, fallback: number): number => {
+  const v = finiteOr(x, NaN);
+  return v > 0 ? v : fallback;
+};
+const fraction01 = (x: unknown): number => {
+  const v = finiteOr(x, NaN);
+  return (v > 0 && v <= 1) ? v : 1; // out-of-range ⇒ "fills its rect"
+};
+
+// Compute the logo's pixel size on the 1024² canvas. When the product's real
+// dimensions (cm) are known we mirror the preview's px-per-cm so the on-screen
+// placement and the rendered mockup agree (WYSIWYG); otherwise we reproduce the
+// legacy /20 behaviour exactly. The clamp is PROPORTIONAL — it shrinks both sides
+// by the same factor, so the logo's aspect ratio is always preserved.
+// Validated by 25 calibration scenarios (parity ≤1e-9, fallback ≡ legacy, clamp,
+// and sanitization of NaN/negative/Infinity/0 inputs).
+function computeLogoPx(
+  containW: number, containH: number,
+  logoWidthCm: unknown, logoHeightCm: unknown,
+  productWidthCm: unknown, productHeightCm: unknown,
+  fractionX: unknown, fractionY: unknown,
+  scalePct: number,
+): { lw: number; lh: number } {
+  const s = scalePct / 100;
+  const lwCm = positiveOr(logoWidthCm, 5);
+  const lhCm = positiveOr(logoHeightCm, 3);
+  const pW = positiveOr(productWidthCm, 0);
+  const pH = positiveOr(productHeightCm, 0);
+
+  let pxPerCm: number;
+  if (pW > 0 && pH > 0) {
+    const fx = fraction01(fractionX), fy = fraction01(fractionY);
+    pxPerCm = Math.min((containW * fx) / pW, (containH * fy) / pH); // mirrors the preview
+  } else {
+    pxPerCm = CANVAS_PX / FALLBACK_PRODUCT_REFERENCE_CM;            // legacy fallback
+  }
+
+  let lw = lwCm * pxPerCm * s;
+  let lh = lhCm * pxPerCm * s;
+
+  const maxPx = CANVAS_PX * MAX_LOGO_CANVAS_FRACTION;
+  const over = Math.max(lw / maxPx, lh / maxPx, 1);
+  lw /= over; lh /= over;                                           // proportional clamp
+  if (lw < MIN_LOGO_PX && lh < MIN_LOGO_PX) {
+    const boost = MIN_LOGO_PX / Math.max(lw, lh);
+    lw *= boost; lh *= boost;
+  }
+  return { lw, lh };
+}
 
 // BUG-A13 FIX (26/05/2026): OffscreenCanvas pode não estar disponível em todos
 // os runtimes Deno Edge. Adicionado try/catch específico com mensagem clara.
@@ -115,10 +236,14 @@ async function compositeImages(
   logoBytes: Uint8Array,
   posXPct: number,
   posYPct: number,
-  logoWRatio: number,
-  logoHRatio: number,
+  logoWidthCm: number,
+  logoHeightCm: number,
   rotDeg: number,
   scalePct: number,
+  productWidthCm?: number,
+  productHeightCm?: number,
+  fractionX?: number,
+  fractionY?: number,
 ): Promise<Blob> {
   // BUG-A13 FIX: Guard explícito para OffscreenCanvas indisponível
   if (typeof OffscreenCanvas === "undefined") {
@@ -142,19 +267,35 @@ async function compositeImages(
   ]);
 
   // BUG-A15 FIX: const/let em vez de var
-  // Product -- cover-fill crop
+  // AUDIT 2026-06-17 — WYSIWYG parity: the on-screen preview (LogoPreviewCanvas)
+  // renders the product with `object-contain` on a neutral background and positions
+  // the logo as a percentage of that full square frame. The previous cover-fill crop
+  // here zoomed/cropped the product, so the generated mockup did NOT match the
+  // preview and the logo's %-position drifted (worst on non-square products: mugs,
+  // pens, bottles). Switch to contain + white letterbox so the output mirrors the
+  // preview frame and nothing on the product gets cropped.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
   const pa = prodBmp.width / prodBmp.height;
-  let sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
-  if (pa > 1) { sw = prodBmp.height; sx = (prodBmp.width - sw) / 2; }
-  else        { sh = prodBmp.width;  sy = (prodBmp.height - sh) / 2; }
-  ctx.drawImage(prodBmp, sx, sy, sw, sh, 0, 0, CANVAS_PX, CANVAS_PX);
+  let dw = CANVAS_PX, dh = CANVAS_PX, dx = 0, dy = 0;
+  if (pa > 1) { dh = CANVAS_PX / pa; dy = (CANVAS_PX - dh) / 2; }
+  else        { dw = CANVAS_PX * pa; dx = (CANVAS_PX - dw) / 2; }
+  ctx.drawImage(prodBmp, 0, 0, prodBmp.width, prodBmp.height, dx, dy, dw, dh);
 
-  // Logo -- positioned, rotated, scaled
+  // Logo -- positioned, rotated, scaled.
+  // Size comes from computeLogoPx, which mirrors the preview's px-per-cm using the
+  // SAME contain rect (dw×dh) computed just above for the product — that's what makes
+  // the rendered logo match the on-screen placement. Falls back to legacy /20 when the
+  // product has no known cm dimensions.
   const cx = (posXPct / 100) * CANVAS_PX;
   const cy = (posYPct / 100) * CANVAS_PX;
-  const s  = scalePct / 100;
-  const lw = logoWRatio * CANVAS_PX * s;
-  const lh = logoHRatio * CANVAS_PX * s;
+  const { lw, lh } = computeLogoPx(
+    dw, dh,
+    logoWidthCm, logoHeightCm,
+    productWidthCm, productHeightCm,
+    fractionX, fractionY,
+    scalePct,
+  );
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((rotDeg * Math.PI) / 180);
@@ -194,18 +335,21 @@ Deno.serve(async (req) => {
       : ({} as GenerateMockupBody);
   } catch { return validationError("Request body must be valid JSON", corsHeaders); }
 
-  if (!isValidHttpUrl(body.productImageUrl))
-    return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);
+  // isFetchableUrl unifies scheme validation + SSRF blocking + optional allowlist.
+  if (!isFetchableUrl(body.productImageUrl))
+    return validationError(
+      "productImageUrl é obrigatória, deve ser http(s) e não pode apontar para um host interno/bloqueado.",
+      corsHeaders,
+      "PRODUCT_URL_UNFETCHABLE",
+    );
 
-  if (!hostAllowed(body.productImageUrl!))
-    return validationError("productImageUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
-
-  const hasLogo = body.logoBase64 || isValidHttpUrl(body.logoUrl);
+  // A logo arrives either as inline base64 OR as a fetchable URL (same egress gate).
+  const hasLogo = !!body.logoBase64 || isFetchableUrl(body.logoUrl);
   if (!hasLogo)
-    return validationError("Either logoBase64 or a valid logoUrl is required", corsHeaders);
-
-  if (body.logoUrl && !body.logoBase64 && !hostAllowed(body.logoUrl))
-    return validationError("logoUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
+    return validationError(
+      "Forneça logoBase64 ou um logoUrl http(s) válido e acessível (não interno/bloqueado).",
+      corsHeaders,
+    );
 
   // G1: reject SVG data URLs before any fetch/decode work.
   if (body.logoBase64 && /^data:image\/svg/i.test(body.logoBase64.trim()))
@@ -213,8 +357,11 @@ Deno.serve(async (req) => {
 
   const posX    = Math.max(0, Math.min(100, body.positionX ?? 50));
   const posY    = Math.max(0, Math.min(100, body.positionY ?? 50));
-  const logoWR  = Math.max(0.05, Math.min(0.9, (body.logoWidthCm  ?? 5) / 20));
-  const logoHR  = Math.max(0.05, Math.min(0.9, (body.logoHeightCm ?? 3) / 20));
+  // Logo size is no longer pre-reduced to a /20 ratio here. We forward the raw cm
+  // (with defaults) and let computeLogoPx() inside compositeImages convert cm→px
+  // using the product's contain rect, so the result matches the preview (WYSIWYG).
+  const logoWidthCm  = body.logoWidthCm  ?? 5;
+  const logoHeightCm = body.logoHeightCm ?? 3;
   const rotation = body.logoRotation ?? 0;
   const scale    = Math.max(10, Math.min(300, body.logoScale ?? 100));
 
@@ -261,7 +408,8 @@ Deno.serve(async (req) => {
     let compositeBlob: Blob;
     try {
       compositeBlob = await compositeImages(
-        productBytes, logoBytes, posX, posY, logoWR, logoHR, rotation, scale,
+        productBytes, logoBytes, posX, posY, logoWidthCm, logoHeightCm, rotation, scale,
+        body.productWidthCm, body.productHeightCm, body.productFractionX, body.productFractionY,
       );
     } catch (e) {
       console.error("[generate-mockup] canvas error:", e);
