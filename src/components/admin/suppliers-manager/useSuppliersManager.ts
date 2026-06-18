@@ -562,7 +562,7 @@ export function useSuppliersManager() {
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar logo');
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
