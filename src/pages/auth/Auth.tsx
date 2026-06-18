@@ -380,7 +380,7 @@ export default function Auth() {
         });
       }
 
-      if (profileData && profileData.is_active === false) {
+      if (profileData?.is_active === false) {
         toast({
           variant: 'destructive',
           title: 'Acesso Bloqueado',

@@ -23,7 +23,7 @@ export const ProductSparkline = memo(function ProductSparkline({
 
   // Real data from batch context
   const realData = useSparklineData(productId);
-  const hasRealData = realData && realData.totalQty > 0;
+  const hasRealData = realData !== null && realData !== undefined && realData.totalQty > 0;
 
   // Points: use real daily quantities only — no demo fallback
   const points = useMemo(() => {

@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 export async function checkSecurityDefinerAccess() {
   const { error } = await supabase.rpc('repair_ownership_orphans', { _dry_run: true });
 
-  if (error && error.message.includes('permission denied')) {
+  if (error?.message?.includes('permission denied')) {
     logger.warn(
       '✅ SECURITY DEFINER repair_ownership_orphans access blocked for anon/authenticated (correctly limited to service_role)',
     );

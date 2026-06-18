@@ -77,7 +77,7 @@ export default function ExternalDatabaseTest() {
         </Badge>
       );
     }
-    if (data && data.length > 0) {
+    if (data?.length) {
       return (
         <Badge variant="default" className="gap-1 bg-success">
           <CheckCircle2 className="h-3 w-3" />

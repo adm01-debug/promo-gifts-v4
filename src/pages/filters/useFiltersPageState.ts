@@ -482,14 +482,14 @@ export function useFiltersPageState() {
       });
     // Vendas Fornecedor (90d): aproxima 90d como depleted30d * 3 (MV expõe apenas total_depleted_30d).
     // Padroniza janela com o filtro Promo Brindes (90d). Map inerte enquanto carrega.
-    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap?.size) {
       const threshold = filters.minSupplierSales90d;
       result = result.filter(
         (p) => (supplierSalesMap.get(p.id)?.depleted30d ?? 0) * 3 >= threshold,
       );
     }
     // Vendas Promo Brindes (90d): soma de order_items.quantity por product_id, últimos 90d.
-    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+    if (filters.minPromoSales90d > 0 && promoSales90dMap?.size) {
       const threshold = filters.minPromoSales90d;
       result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
     }

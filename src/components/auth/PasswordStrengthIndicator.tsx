@@ -31,7 +31,7 @@ export function PasswordStrengthIndicator({
 
   // Check for breached password when password changes (debounced)
   useEffect(() => {
-    if (debouncedPassword && debouncedPassword.length >= 8) {
+    if ((debouncedPassword?.length ?? 0) >= 8) {
       checkPassword(debouncedPassword).then(() => {
         setHasCheckedBreach(true);
       });

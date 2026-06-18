@@ -57,7 +57,7 @@ export function useQuotesListPage() {
   const filteredQuotes = useMemo(() => {
     let results = quotes;
 
-    if (searchTerm && searchTerm.length >= 2) {
+    if ((searchTerm?.length ?? 0) >= 2) {
       const fuseResults = quoteFuse.search(searchTerm);
       results = fuseResults.map((r) => r.item);
     }

@@ -78,7 +78,7 @@ export function useAutoSaveQuote<T>({
         const payload = JSON.parse(saved);
         const migrated = migratePayload<T>(payload);
 
-        if (migrated && migrated.data && onRestoreRef.current) {
+        if (migrated?.data && onRestoreRef.current) {
           onRestoreRef.current(migrated.data);
           lastSavedRef.current = JSON.stringify(migrated.data);
         }

@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
       const emailMap = await resolveEmails(updaterIds);
       const results = allowed.map((n) => {
         const dbRow = dbMap.get(n);
-        if (dbRow && dbRow.length > 0) {
+        if (dbRow?.length) {
           return {
             name: n,
             has_value: true,

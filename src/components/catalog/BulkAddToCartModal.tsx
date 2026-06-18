@@ -104,7 +104,7 @@ export function BulkAddToCartModal({
             </div>
 
             {/* Show variant selections summary */}
-            {variantSelections && variantSelections.some((s) => s.variant) && (
+            {variantSelections?.some((s) => s.variant) && (
               <div className="max-h-32 space-y-1 overflow-y-auto">
                 {variantSelections.map((s, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">

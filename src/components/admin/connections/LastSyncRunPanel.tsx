@@ -85,7 +85,7 @@ export function LastSyncRunPanel() {
   }, [load]);
 
   const loading = last === undefined;
-  const ok = last && last.status === 'ok';
+  const ok = last?.status === 'ok';
 
   return (
     <Card>

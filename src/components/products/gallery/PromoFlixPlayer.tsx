@@ -350,7 +350,7 @@ export function PromoFlixPlayer({
             // (currentLevel = -1) por padrão. Valores legados (índice cru) são ignorados,
             // o que também corrige o bug histórico de travar em baixa resolução entre vídeos.
             const savedQuality = localStorage.getItem('promoflix_quality');
-            if (savedQuality && savedQuality.startsWith('h:')) {
+            if (savedQuality?.startsWith('h:')) {
               const targetH = parseInt(savedQuality.slice(2), 10);
               if (Number.isFinite(targetH) && targetH > 0) {
                 let bestIdx = -1;

@@ -45,7 +45,7 @@ export function VoiceSuggestionsPanel({
           transition={{ delay: 0.25 }}
           className="w-full space-y-3 text-center"
         >
-          {recentCommands && recentCommands.length > 0 ? (
+          {recentCommands?.length ? (
             <>
               <p className="text-[10px] font-medium uppercase tracking-widest text-white/25">
                 Comandos recentes

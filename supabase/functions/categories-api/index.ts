@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
           .in('category_id', targetCategoryIds)
           .eq('is_active', true);
 
-        if (!directError && directProducts && directProducts.length > 0) {
+        if (!directError && directProducts?.length) {
           directProducts.forEach((p: any) => allProductIds.add(p.id));
           primarySource = 'products.category_id';
           console.log('Category product strategy result', {
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
           .select('product_id')
           .in('category_id', targetCategoryIds);
 
-        if (!assignError && assignments && assignments.length > 0) {
+        if (!assignError && assignments?.length) {
           assignments.forEach((a: any) => allProductIds.add(a.product_id));
           if (primarySource === 'none') primarySource = 'product_category_assignments';
           else primarySource += '+product_category_assignments';
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
           .select('product_id')
           .in('category_id', targetCategoryIds);
 
-        if (!fallbackError && fallbackData && fallbackData.length > 0) {
+        if (!fallbackError && fallbackData?.length) {
           fallbackData.forEach((a: any) => allProductIds.add(a.product_id));
           if (primarySource === 'none') primarySource = 'product_categories';
           else primarySource += '+product_categories';
