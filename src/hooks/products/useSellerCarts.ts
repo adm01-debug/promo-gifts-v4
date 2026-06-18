@@ -400,7 +400,13 @@ export function useSellerCarts() {
           sort_order: i.sort_order,
         }));
         const { error: itemsErr } = await supabase.from('seller_cart_items').insert(newItems);
-        if (itemsErr) throw itemsErr;
+        if (itemsErr) {
+          // Compensação: a cópia dos itens falhou. Sem isso, sobraria um
+          // carrinho vazio órfão consumindo o limite de 3 (canCreateCart) e
+          // poluindo a lista. Remove o carrinho recém-criado e propaga o erro.
+          await supabase.from('seller_carts').delete().eq('id', newCart.id);
+          throw itemsErr;
+        }
       }
 
       return newCart.id;

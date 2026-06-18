@@ -203,3 +203,21 @@ describe('addItem / restoreItems — sem touch manual de updated_at (trigger é 
     expect(ops.some((o) => o.table === 'seller_carts')).toBe(false);
   });
 });
+
+describe('duplicateCart — compensação contra carrinho órfão', () => {
+  it('se a cópia dos itens falha, remove o carrinho recém-criado (sem órfão)', async () => {
+    // cart-A tem 1 item -> duplicar tenta inserir os itens no carrinho novo
+    itemsTable = [mkRow({ id: 'a1', cart_id: 'cart-A', product_id: 'p1', quantity: 2 })];
+    failNext = [{ op: 'insert', table: 'seller_cart_items' }];
+
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
+    await expect(result.current.duplicateCart.mutateAsync('cart-A')).rejects.toBeTruthy();
+
+    // o carrinho criado (cart-new-1) deve ter sido removido na compensação
+    expect(cartsTable.some((c) => c.id === 'cart-new-1')).toBe(false);
+    expect(ops.some((o) => o.kind === 'insert' && o.table === 'seller_carts')).toBe(true);
+    expect(ops.some((o) => o.kind === 'delete' && o.table === 'seller_carts')).toBe(true);
+  });
+});
