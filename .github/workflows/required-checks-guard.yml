@@ -25,7 +25,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          REQUIRED="Lint, Typecheck & Test"
+          # Contexto REAL do job de gate (quality-gate.yml -> job name "TypeScript + ESLint Gate").
+          # ATENCAO: precisa bater 1:1 com um check que roda em PRs; nome fantasma trava todo PR.
+          REQUIRED="TypeScript + ESLint Gate"
           # Vercel preview build status — gate adicional contra deploys vermelhos.
           # Tolerante: se Vercel ainda não estiver configurado como required,
           # emite warning ao invés de fail (permite roll-out gradual).
