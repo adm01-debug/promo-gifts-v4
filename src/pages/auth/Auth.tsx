@@ -301,7 +301,7 @@ export default function Auth() {
 
         toast({
           variant: 'destructive',
-          title: title,
+          title,
           description: (
             <div className="space-y-3">
               <p className="font-medium leading-relaxed">{description}</p>

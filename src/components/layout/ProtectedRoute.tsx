@@ -66,7 +66,12 @@ export function ProtectedRoute({
             ? 'Você não tem permissão para acessar esta área.'
             : 'Autenticação adicional necessária.'
         }
-        action={{ label: 'Voltar ao início', onClick: () => (window.location.href = '/') }}
+        action={{
+          label: 'Voltar ao início',
+          onClick: () => {
+            window.location.href = '/';
+          },
+        }}
       />
     );
   }

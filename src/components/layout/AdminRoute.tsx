@@ -61,7 +61,12 @@ export function AdminRoute({ children }: AdminRouteProps) {
         variant="security"
         title="Área Administrativa"
         description="Acesso restrito a gestores e administradores."
-        action={{ label: 'Voltar ao início', onClick: () => (window.location.href = '/') }}
+        action={{
+          label: 'Voltar ao início',
+          onClick: () => {
+            window.location.href = '/';
+          },
+        }}
       />
     );
   }

@@ -69,7 +69,7 @@ function createStars(count: number, width: number, height: number): Star[] {
   return Array.from({ length: count }, (_, i) => ({
     x: Math.random() * width,
     y: Math.random() * height,
-    size: 0.6 + Math.random() * 1.0, // Reduzi levemente o tamanho para não poluir
+    size: 0.6 + Math.random(), // Reduzi levemente o tamanho para não poluir
     driftSpeed: 1 + Math.random() * 4,
     breathPhase: Math.random() * Math.PI * 2,
     breathDuration: 4000 + Math.random() * 4000,
