@@ -31,6 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
+import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import {
   computeRuptureRisk,
   DEFAULT_RUPTURE_HORIZON,
