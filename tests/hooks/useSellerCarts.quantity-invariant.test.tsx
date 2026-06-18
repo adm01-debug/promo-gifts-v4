@@ -197,4 +197,43 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
 
     expect(lastUpdate()?.payload).toMatchObject({ quantity: MAX_ITEM_QUANTITY });
   });
+
+  it('duplicateItemToCart sem variante existente no destino clampa a quantidade no teto', async () => {
+    // Fonte tem quantidade acima do teto (dado legado corrompido hipotético).
+    // Sem variante no destino → INSERT novo. quantity deve ser clampado.
+    itemsTable = [
+      mkRow({ id: 'src', cart_id: 'cart-A', product_id: 'p2', color_name: 'Verde', quantity: 5_000_000 }),
+    ];
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
+    await result.current.duplicateItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' });
+
+    const insert = ops.find((o) => o.kind === 'insert');
+    expect(insert?.payload).toMatchObject({ quantity: MAX_ITEM_QUANTITY });
+  });
+
+  it('restoreItems clampa quantidade acima do teto antes de inserir (lote)', async () => {
+    itemsTable = [];
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
+    await result.current.restoreItems.mutateAsync({
+      cartId: 'cart-A',
+      items: [
+        { product_id: 'p3', product_name: 'A', product_price: 5, quantity: 2_000_000 },
+        { product_id: 'p4', product_name: 'B', product_price: 5, quantity: 0 },
+        { product_id: 'p5', product_name: 'C', product_price: 5, quantity: -99 },
+        { product_id: 'p6', product_name: 'D', product_price: 5 }, // quantity undefined → 1
+      ],
+    });
+
+    const insert = ops.find((o) => o.kind === 'insert');
+    const rows = insert?.payload as Array<{ product_id: string; quantity: number }>;
+    expect(rows).toHaveLength(4);
+    expect(rows.find((r) => r.product_id === 'p3')?.quantity).toBe(MAX_ITEM_QUANTITY);
+    expect(rows.find((r) => r.product_id === 'p4')?.quantity).toBe(1);  // 0 → piso 1
+    expect(rows.find((r) => r.product_id === 'p5')?.quantity).toBe(1);  // -99 → piso 1
+    expect(rows.find((r) => r.product_id === 'p6')?.quantity).toBe(1);  // undefined → 1
+  });
 });

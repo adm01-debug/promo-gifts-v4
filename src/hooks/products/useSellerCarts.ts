@@ -235,10 +235,11 @@ export function useSellerCarts() {
           const retryExisting = await findVariantInCart(cartId, item.product_id, colorName);
 
           if (retryExisting) {
-            await supabase
+            const { error: retryErr } = await supabase
               .from('seller_cart_items')
               .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
+            if (retryErr) throw retryErr;
           }
         } else if (error) {
           throw error;
@@ -499,7 +500,7 @@ export function useSellerCarts() {
         product_sku: item.product_sku,
         product_image_url: item.product_image_url,
         product_price: item.product_price,
-        quantity: item.quantity,
+        quantity: clampQuantity(item.quantity),
         color_name: item.color_name,
         color_hex: item.color_hex,
         notes: item.notes,
@@ -539,7 +540,7 @@ export function useSellerCarts() {
         product_sku: item.product_sku || null,
         product_image_url: item.product_image_url || null,
         product_price: item.product_price,
-        quantity: item.quantity || 1,
+        quantity: clampQuantity(item.quantity || 1),
         color_name: item.color_name || null,
         color_hex: item.color_hex || null,
         notes: item.notes ?? null,
