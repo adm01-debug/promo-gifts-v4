@@ -46,7 +46,7 @@ interface ExternalVariantStock {
   updated_at?: string;
 }
 
-interface ExternalSupplierSource {
+export interface ExternalSupplierSource {
   id: string;
   variant_id: string;
   supplier_id?: string;
@@ -198,7 +198,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
  * `futureSegments` (por variação) leiam exatamente os mesmos slots — sem
  * dropar silenciosamente as chegadas 4–6 (bug histórico: só 1–3 eram lidas).
  */
-function nextStockPairs(s: ExternalSupplierSource): Array<{
+export function nextStockPairs(s: ExternalSupplierSource): Array<{
   q: number | null | undefined;
   d: string | null | undefined;
   suffix: string;
@@ -214,7 +214,7 @@ function nextStockPairs(s: ExternalSupplierSource): Array<{
   ];
 }
 
-function buildFutureEntries(
+export function buildFutureEntries(
   supplierSource: ExternalSupplierSource,
   productId: string,
   variantId: string,
