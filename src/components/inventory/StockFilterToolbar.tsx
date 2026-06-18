@@ -2,7 +2,7 @@
  * StockFilterToolbar — Advanced filter bar for Stock Dashboard
  * Uses same FilterSection architecture as Super Filtro
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Search,
   X,
