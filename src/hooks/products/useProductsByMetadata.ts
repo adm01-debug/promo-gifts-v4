@@ -64,10 +64,13 @@ export function useProductsByMetadata({
   );
 
   const lastFetchedKey = useRef('');
-  const isFetchingRef = useRef(false);
+  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
+  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
+  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
+  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  const fetchTokenRef = useRef(0);
 
   const fetchProductIds = useCallback(async () => {
-    if (isFetchingRef.current) return;
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
       setProductIds(new Set());
@@ -75,7 +78,7 @@ export function useProductsByMetadata({
       return;
     }
 
-    isFetchingRef.current = true;
+    const token = ++fetchTokenRef.current;
     setIsLoading(true);
 
     try {
@@ -95,6 +98,7 @@ export function useProductsByMetadata({
         _publico: publico,
       });
 
+      if (token !== fetchTokenRef.current) return; // superseded — nova selecao de filtro
       if (error) throw error;
 
       const rows = (data as Array<{ product_id: string }> | null) || [];
@@ -102,11 +106,11 @@ export function useProductsByMetadata({
       lastFetchedKey.current = filterKey;
       logger.log(`[useProductsByMetadata] Found ${rows.length} products`);
     } catch (err) {
+      if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByMetadata] Critical Error:', err);
       setProductIds(new Set());
     } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
+      if (token === fetchTokenRef.current) setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, hasFilter]);

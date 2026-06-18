@@ -49,10 +49,13 @@ export function useProductsByColor({
   );
 
   const lastFetchedKey = useRef('');
-  const isFetchingRef = useRef(false);
+  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
+  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
+  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
+  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  const fetchTokenRef = useRef(0);
 
   const fetchProductIds = useCallback(async () => {
-    if (isFetchingRef.current) return;
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
       setProductIds(new Set());
@@ -60,7 +63,7 @@ export function useProductsByColor({
       return;
     }
 
-    isFetchingRef.current = true;
+    const token = ++fetchTokenRef.current;
     setIsLoading(true);
 
     try {
@@ -95,6 +98,7 @@ export function useProductsByColor({
       ];
 
       const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
+      if (token !== fetchTokenRef.current) return; // superseded
 
       const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
       const variationsData = (refResults[1]?.records ?? []) as Record<string, unknown>[];
@@ -142,6 +146,7 @@ export function useProductsByColor({
       }
 
       if (targetColorIds.size === 0) {
+        if (token !== fetchTokenRef.current) return; // superseded
         setProductIds(new Set());
         lastFetchedKey.current = filterKey;
         return;
@@ -175,17 +180,18 @@ export function useProductsByColor({
         }
       }
 
+      if (token !== fetchTokenRef.current) return; // superseded
       setProductIds(matchingProductIds);
       lastFetchedKey.current = filterKey;
       logger.log(
         `[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`,
       );
     } catch (err) {
+      if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
       setProductIds(new Set());
     } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
+      if (token === fetchTokenRef.current) setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, hasFilter]);
