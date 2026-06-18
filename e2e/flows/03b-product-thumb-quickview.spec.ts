@@ -352,5 +352,40 @@ test.describe("Estoque • QuickView — paridade de ações (4 botões)", () =>
   });
 });
 
+/**
+ * Regressão de estabilidade: abrir e fechar o QuickView várias vezes em sequência
+ * a partir do /estoque. Garante que nenhum handler/testid duplicado dispara erro
+ * de render quando o modal monta/desmonta repetidamente (cobre o caso do
+ * BulkAddToCollectionModal single-row co-montado dentro do <TableRow>).
+ */
+test.describe("Estoque • QuickView — abertura/fechamento em sequência", () => {
+  test.beforeEach(() => requireAuth());
+
+  test("abre e fecha o QuickView 3x sem crash nem testid duplicado", async ({ page }) => {
+    await gotoAndSettle(page, "/estoque");
+    const thumb = page.locator(Sel.product.stockTableThumb).first();
+    if (!(await thumb.count())) test.skip(true, "Nenhum thumb visível em /estoque");
+
+    for (let i = 0; i < 3; i++) {
+      await thumb.click();
+      await expect(page.locator(Sel.product.quickViewName).first()).toBeVisible({
+        timeout: 10_000,
+      });
+      // Sanidade: apenas UMA instância de cada botão (sem duplicação por re-render).
+      await expect(page.locator(Sel.product.quickViewCart)).toHaveCount(1);
+      await expect(page.locator(Sel.product.quickViewFavorite)).toHaveCount(1);
+      await expect(page.locator(Sel.product.quickViewCompare)).toHaveCount(1);
+      await expect(page.locator(Sel.product.quickViewShare)).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await expect(page.locator(Sel.product.quickViewName)).toHaveCount(0, {
+        timeout: 5_000,
+      });
+    }
+    // A página continua respondendo.
+    await expect(page.locator("body")).toBeVisible();
+  });
+});
+
+
 
 
