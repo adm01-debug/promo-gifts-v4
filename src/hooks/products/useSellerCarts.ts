@@ -404,7 +404,15 @@ export function useSellerCarts() {
           // Compensação: a cópia dos itens falhou. Sem isso, sobraria um
           // carrinho vazio órfão consumindo o limite de 3 (canCreateCart) e
           // poluindo a lista. Remove o carrinho recém-criado e propaga o erro.
-          await supabase.from('seller_carts').delete().eq('id', newCart.id);
+          const { error: cleanupErr } = await supabase
+            .from('seller_carts')
+            .delete()
+            .eq('id', newCart.id);
+          if (cleanupErr) {
+            throw new Error(
+              `Falha ao inserir itens (${itemsErr.message}) e ao limpar carrinho criado (${cleanupErr.message}) — o carrinho ${newCart.id} pode estar órfão`,
+            );
+          }
           throw itemsErr;
         }
       }
@@ -432,9 +440,18 @@ export function useSellerCarts() {
       const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
       if (existing && existing.id !== itemId) {
         const previousQty = existing.quantity;
+        const projected = previousQty + item.quantity;
+        // Rejeita antes de qualquer escrita: mover com overflow silenciosamente
+        // apagaria unidades que não cabem no destino. Falhar é mais seguro que
+        // perder quantidade.
+        if (projected > MAX_ITEM_QUANTITY) {
+          throw new Error(
+            `A quantidade combinada (${projected.toLocaleString('pt-BR')}) excede o limite de ${MAX_ITEM_QUANTITY.toLocaleString('pt-BR')} unidades por SKU`,
+          );
+        }
         const { error: updErr } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: clampQuantity(previousQty + item.quantity) })
+          .update({ quantity: projected })
           .eq('id', existing.id);
         if (updErr) throw updErr;
         const { error: delErr } = await supabase
@@ -442,15 +459,26 @@ export function useSellerCarts() {
           .delete()
           .eq('id', itemId);
         if (delErr) {
-          // Compensação: o destino já recebeu a soma, mas a origem não foi
-          // removida. Sem reverter, a quantidade ficaria DOBRADA (dst somado +
-          // src ainda presente — pior que o estado inicial). Como não há
-          // transação no client, restauramos o destino ao valor anterior e
-          // propagamos o erro; onError revalida do servidor por garantia.
-          await supabase
+          // Compensação condicional: reverte o destino só se a quantidade ainda
+          // for o valor que escrevemos. Se outra aba/usuário alterou o destino
+          // entre o UPDATE e este rollback, o .eq('quantity', projected) evita
+          // sobrescrever a mudança deles com o valor obsoleto.
+          const { data: rollbackData, error: rollbackErr } = await supabase
             .from('seller_cart_items')
             .update({ quantity: previousQty })
-            .eq('id', existing.id);
+            .eq('id', existing.id)
+            .eq('quantity', projected)
+            .select('id');
+          if (rollbackErr) {
+            throw new Error(
+              `Falha ao mover item (delete: ${delErr.message}; compensação: ${rollbackErr.message}) — recarregue para verificar o estado`,
+            );
+          }
+          if (!rollbackData?.length) {
+            throw new Error(
+              `Falha ao mover item (delete: ${delErr.message}; compensação: destino já modificado por outra operação) — recarregue para verificar o estado`,
+            );
+          }
           throw delErr;
         }
         return;
@@ -484,9 +512,15 @@ export function useSellerCarts() {
       // Mescla se o destino já tiver a variante (evita 23505 do unique constraint).
       const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
       if (existing) {
+        const projected = existing.quantity + item.quantity;
+        if (projected > MAX_ITEM_QUANTITY) {
+          throw new Error(
+            `A quantidade combinada (${projected.toLocaleString('pt-BR')}) excede o limite de ${MAX_ITEM_QUANTITY.toLocaleString('pt-BR')} unidades por SKU`,
+          );
+        }
         const { error } = await supabase
           .from('seller_cart_items')
-          .update({ quantity: clampQuantity(existing.quantity + item.quantity) })
+          .update({ quantity: projected })
           .eq('id', existing.id);
         if (error) throw error;
         return;

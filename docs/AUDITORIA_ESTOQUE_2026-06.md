@@ -84,7 +84,39 @@ crash de render mascarava as asserções reais.
   acessibilidade** (o _accessible name_ antes era ruído: estoque + alt + nome) e
   alvo estável para testes. 5/5 casos passam.
 
-### ⚠️ DOCUMENTADO — F4 (Alta): "Risco de Ruptura" preditivo está inerte em produção
+### ✅ CORRIGIDO (2ª rodada) — F4 (Alta): "Risco de Ruptura" preditivo agora usa velocidade REAL
+
+**Resolução:** A inspeção da base canônica (`doufsxqlfjyuvxuezpln`) via MCP revelou
+a materialized view **`mv_stock_velocity`** — fonte real de baixa diária por
+variação (`avg_daily_depletion_7d/30d/90d`, 18.479 variações, 8.261 com baixa
+de 30d > 0, refresh agendado), já com `SELECT` para `anon`/`authenticated`.
+
+O `stockFetcher` passou a:
+- buscar `mv_stock_velocity` (7ª query paralela, tolerante a falha) e indexar a
+  baixa por variação via `buildVelocityIndex` (prioriza 30d, cai p/ 7d, ignora
+  ≤0, mantém o pior caso entre múltiplos sources);
+- popular `variant.avgDailySales` com o sinal real → o **Risco de Ruptura**
+  preditivo, o seletor de horizonte e a reclassificação `in_stock → low_stock`
+  passam a funcionar de fato;
+- alimentar `calculateDaysUntilStockout` com a baixa real (antes assumia 2/dia
+  fixo), tornando os alertas "Esgotamento Previsto" fidedignos. Sem sinal de
+  velocidade, mantém o fallback histórico.
+
+Sem migração (a view já é legível). Allowlist do guard `lint-untyped-from`
+atualizada (pendente regen de `types.ts`). Cobertura nova:
+`tests/hooks/stock-velocity-index.test.ts` (índice + ativação ponta-a-ponta:
+SKU saudável→at-risk com baixa real; sem falso positivo com baixa pequena).
+
+**Bônus — correção de teste de simulação (`rupture-risk.simulation.test.ts`):**
+o invariante **I7** classificava `current = 0` como pré-condição inválida e
+falhava de forma determinística, conflitando com o fallback documentado
+(SKU esgotada = risco máximo). Corrigido para ser field-aware (`0` só é inválido
+para os campos que exigem `> 0`) + novo I7b cobrindo `current = 0` como risco
+máximo. 39/39 estáveis.
+
+<details><summary>Histórico (1ª rodada — quando ainda estava inerte)</summary>
+
+> **F4 (Alta): "Risco de Ruptura" preditivo está inerte em produção**
 
 **Sintoma:** A reclassificação preditiva em `VariantStockTable` chama
 `computeRuptureRisk({ avgDailyDepletion: variant.avgDailySales, ... })`, mas
@@ -110,6 +142,8 @@ de `stock_movements`/vendas dos últimos 30 dias) e mapeá-la para
 (`rupture-risk.ts`) já estão prontas e testadas para consumir o sinal assim que
 existir. `lead_time_days` já disponível em `variant_supplier_sources` pode
 informar o horizonte default por fornecedor.
+
+</details>
 
 ---
 

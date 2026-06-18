@@ -124,14 +124,17 @@ export function FutureStockModal({
     entries.sort((a, b) => {
       switch (sortOrder) {
         case 'nearest': {
-          const timeA = new Date(a.expectedDate).getTime();
-          const timeB = new Date(b.expectedDate).getTime();
+          // parseISO (local midnight) p/ casar com o filtro de período e o
+          // cálculo de daysUntil; new Date('YYYY-MM-DD') usava UTC midnight,
+          // divergindo no limite do dia (UTC-3) entre ordenação e filtragem.
+          const timeA = parseISO(a.expectedDate).getTime();
+          const timeB = parseISO(b.expectedDate).getTime();
           if (timeA !== timeB) return timeA - timeB;
           return (a.entryIndex || 0) - (b.entryIndex || 0); // Desempate pelo índice da entrada
         }
         case 'farthest': {
-          const timeA = new Date(a.expectedDate).getTime();
-          const timeB = new Date(b.expectedDate).getTime();
+          const timeA = parseISO(a.expectedDate).getTime();
+          const timeB = parseISO(b.expectedDate).getTime();
           if (timeA !== timeB) return timeB - timeA;
           return (b.entryIndex || 0) - (a.entryIndex || 0);
         }
@@ -442,8 +445,8 @@ export function FutureStockModal({
                                 .filter((e) => e.variantId === vId)
                                 .sort(
                                   (a, b) =>
-                                    new Date(a.expectedDate).getTime() -
-                                    new Date(b.expectedDate).getTime(),
+                                    parseISO(a.expectedDate).getTime() -
+                                    parseISO(b.expectedDate).getTime(),
                                 );
 
                               const first = variantEntries[0];

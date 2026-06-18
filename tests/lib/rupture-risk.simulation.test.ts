@@ -125,16 +125,33 @@ describe('Simulações exaustivas — 500 cenários determinísticos', () => {
 });
 
 describe('Simulações de pré-condições inválidas — 200 cenários', () => {
-  const INVALID_NUMS = [0, -1, -1000, NaN, Infinity, -Infinity, null, undefined] as const;
+  // Conjuntos de invalidez por campo:
+  //  - `current` aceita 0 (SKU esgotada = risco MÁXIMO documentado), portanto 0
+  //    NÃO é inválido para current — só negativos/não-finitos/null/undefined são.
+  //  - `avgDailyDepletion`/`targetQty`/`horizonDays` exigem > 0 finito, então 0
+  //    também é inválido.
+  const INVALID_POSITIVE_ONLY = [0, -1, -1000, NaN, Infinity, -Infinity, null, undefined] as const;
+  const INVALID_CURRENT = [-1, -1000, NaN, Infinity, -Infinity, null, undefined] as const;
 
-  it('I7 — qualquer campo inválido força atRisk=false e projected=null', () => {
+  it('I7 — campo inválido força atRisk=false e projected=null', () => {
     for (let i = 0; i < 200; i++) {
       const base = genValidScenario();
       const field = pick(['current', 'avgDailyDepletion', 'targetQty', 'horizonDays'] as const);
-      const bad = pick(INVALID_NUMS);
+      const bad = pick(field === 'current' ? INVALID_CURRENT : INVALID_POSITIVE_ONLY);
       const r = computeRuptureRisk({ ...base, [field]: bad } as never);
       expect(r.atRisk).toBe(false);
       expect(r.projectedStock).toBeNull();
+    }
+  });
+
+  it('I7b — current=0 é risco MÁXIMO (SKU esgotada), não pré-condição inválida', () => {
+    // Independe de avg/target/horizonte: out-of-stock sempre entra no KPI de risco.
+    for (let i = 0; i < 50; i++) {
+      const base = genValidScenario();
+      const r = computeRuptureRisk({ ...base, current: 0 });
+      expect(r.atRisk).toBe(true);
+      expect(r.projectedStock).toBe(0);
+      expect(r.daysToTarget).toBe(0);
     }
   });
 });
