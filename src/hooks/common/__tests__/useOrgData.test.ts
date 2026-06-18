@@ -94,7 +94,9 @@ beforeEach(() => {
 // ── useOrgData ────────────────────────────────────────────────────────────────
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
-    useOrganization.mockReturnValueOnce({ currentOrg: null });
+    vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null } as ReturnType<
+      typeof useOrganization
+    >);
 
     const { result } = renderHook(() => useOrgData('products'), { wrapper: makeWrapper() });
 
@@ -170,7 +172,9 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-    useOrganization.mockReturnValue({ currentOrg: null });
+    vi.mocked(useOrganization).mockReturnValue({ currentOrg: null } as ReturnType<
+      typeof useOrganization
+    >);
 
     const { result } = renderHook(() => useOrgCreate('products'), { wrapper: makeWrapper() });
 
