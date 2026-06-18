@@ -254,7 +254,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       setLogoUrl(urlData.publicUrl);
       toast.success('Logo enviada');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar logo');
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -286,7 +286,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao consultar CNPJ');
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }
@@ -516,7 +516,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         resetForm();
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar fornecedor');
+      toast.error('Erro ao criar fornecedor');
     } finally {
       setSaving(false);
     }
