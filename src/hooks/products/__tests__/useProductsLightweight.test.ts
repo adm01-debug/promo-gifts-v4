@@ -15,7 +15,7 @@
  *   price fallback: sale_price ?? cost_price ?? 0
  *   image fallback: primary_image_url → fallback_url → '/placeholder.svg'
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { mapLightweightToProduct } from '../useProductsLightweight';
 
 // ── Fixture: LightweightProduct mínimo ───────────────────────────────────────
