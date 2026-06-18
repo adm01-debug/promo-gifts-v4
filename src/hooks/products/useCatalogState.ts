@@ -506,6 +506,13 @@ export function useCatalogState() {
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
     if (filters.featured) count += 1;
+    // BUG-COUNT-01 FIX: isNew, hasPersonalization, onSale, hasCommercialPackaging eram
+    // aplicados no pipeline de filtragem (useCatalogFiltering) mas nunca contados aqui,
+    // fazendo o badge de filtros ativos mostrar número menor que o real.
+    if (filters.isNew) count += 1;
+    if (filters.hasPersonalization) count += 1;
+    if (filters.onSale) count += 1;
+    if (filters.hasCommercialPackaging) count += 1;
     if (filters.gender?.length) count += filters.gender.length;
     // BUG-META-01 FIX: tags eram filtráveis via seção Tags mas não contadas aqui.
     if (filters.tags?.length) count += filters.tags.length;
