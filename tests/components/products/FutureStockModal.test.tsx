@@ -1,7 +1,17 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render as rtlRender, screen, fireEvent, within } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FutureStockModal } from '@/components/products/FutureStockModal';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import * as useVariantSupplierSources from '@/hooks/products/useVariantSupplierSources';
+
+// O FutureStockModal usa Radix `Tooltip`, que exige um `TooltipProvider` no
+// contexto (fornecido globalmente em App.tsx). Em testes isolados precisamos
+// recriá-lo, senão o render lança "`Tooltip` must be used within `TooltipProvider`".
+const TooltipWrapper = ({ children }: { children: ReactNode }) => (
+  <TooltipProvider>{children}</TooltipProvider>
+);
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: TooltipWrapper });
 
 // Mock do hook useProductVariantsWithStock
 vi.mock('@/hooks/products/useVariantSupplierSources', async () => {
