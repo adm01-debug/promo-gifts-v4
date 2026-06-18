@@ -71,7 +71,6 @@ export function AutoTestJobStatusCard() {
     const ok = last24.reduce((acc, r) => acc + r.ok_count, 0);
     const fail = last24.reduce((acc, r) => acc + r.fail_count, 0);
     return {
-      total24: t,
       ok24: ok,
       fail24: fail,
       successRate24: t > 0 ? Math.round((ok / t) * 100) : null,
