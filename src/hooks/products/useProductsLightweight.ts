@@ -4,6 +4,8 @@
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
 import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
@@ -148,6 +150,56 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   }
 }
 
+/**
+ * FIX 2026-06-18 (catalog-audit): ordenação server-side para os sorts
+ * best-seller-* via RPC get_catalog_bestseller_page. Sem isto, o servidor
+ * paginava por `name` e o cliente reordenava SÓ a janela já carregada
+ * (~2000 de ~7150) — campeões de venda alfabeticamente tardios nunca
+ * alcançavam o topo. A RPC ordena o conjunto GLOBAL de ativos (turnover ou
+ * vendas promo) e devolve as próprias linhas de v_products_public (mesmas
+ * colunas/grants), sem precisar de um segundo fetch por id (evita URL gigante).
+ * Usada apenas no caminho SEM busca/filtros; com filtros o ranking permanece
+ * client-side sobre o conjunto (menor) filtrado.
+ */
+async function fetchBestSellerCatalogPage(
+  offset: number,
+  sortBy: string,
+): Promise<CatalogPage> {
+  const isFirstLoad = offset === 0;
+  const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
+  const span = CATALOG_PAGE_SIZE * pagesToFetch;
+
+  // RPC fora dos tipos gerados -> cast `as never` (padrão do projeto).
+  const { data, error } = await supabase.rpc('get_catalog_bestseller_page' as never, {
+    p_sort: sortBy,
+    p_limit: span,
+    p_offset: offset,
+  } as never);
+  if (error) throw error;
+
+  const rows = (data as unknown as LightweightProduct[] | null) ?? [];
+  const categoriesById = await loadCategoriesMap();
+  const products = rows.map((r) => mapLightweightToProduct(r, categoriesById));
+
+  // Total exato apenas no primeiro load (o front mantém o número estável depois).
+  let totalEstimate: number | null = null;
+  if (isFirstLoad) {
+    const { count } = await dbInvoke<LightweightProduct>({
+      table: 'products',
+      operation: 'select',
+      select: 'id',
+      filters: { active: true },
+      limit: 1,
+      offset: 0,
+      countMode: 'exact',
+    });
+    totalEstimate = count;
+  }
+
+  const nextOffset = rows.length === span ? offset + rows.length : null;
+  return { products, nextOffset, totalEstimate };
+}
+
 async function fetchCatalogPage(
   offset: number,
   search?: string,
@@ -155,6 +207,21 @@ async function fetchCatalogPage(
   suppliers?: string[],
   sortBy?: string,
 ): Promise<CatalogPage> {
+  // best-seller-*: ordenação server-side (RPC) no caminho sem busca/filtros.
+  // Fallback gracioso: qualquer erro cai no fluxo padrão (name + re-sort client-side).
+  const isBestSeller = sortBy === 'best-seller-supplier' || sortBy === 'best-seller-promo';
+  const hasNoConstraints =
+    !search &&
+    (!categories || categories.length === 0) &&
+    (!suppliers || suppliers.length === 0);
+  if (isBestSeller && hasNoConstraints) {
+    try {
+      return await fetchBestSellerCatalogPage(offset, sortBy as string);
+    } catch (err) {
+      logger.warn('[catalog] RPC best-seller indisponível; fallback p/ ordenação client-side', err);
+    }
+  }
+
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
   if (categories && categories.length > 0) filters.category_id = categories;
