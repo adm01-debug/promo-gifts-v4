@@ -491,8 +491,10 @@ export const ProductQuickView = React.memo(
 
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
+                <TooltipProvider delayDuration={200}>
                 <div className="flex flex-wrap gap-2">
                   {onAddToCart && (
+                    <QuickViewTooltip label="Adicionar ao carrinho">
                     <Button
                       variant="outline"
                       size="icon"
@@ -504,8 +506,10 @@ export const ProductQuickView = React.memo(
                     >
                       <ShoppingCart className="h-4 w-4" />
                     </Button>
+                    </QuickViewTooltip>
                   )}
                   {onToggleFavorite && (
+                    <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
                     <Button
                       variant="outline"
                       size="icon"
@@ -518,9 +522,11 @@ export const ProductQuickView = React.memo(
                     >
                       <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
                   {onToggleCompare && (
+                    <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
                     <Button
                       variant="outline"
                       size="icon"
@@ -534,9 +540,11 @@ export const ProductQuickView = React.memo(
                     >
                       <BarChart2 className="h-4 w-4" />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
                   {onAddToQuote && (
+                    <QuickViewTooltip label="Adicionar ao orçamento">
                     <Button
                       variant="outline"
                       size="icon"
@@ -546,9 +554,11 @@ export const ProductQuickView = React.memo(
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
                   {onAddToCollection && (
+                    <QuickViewTooltip label="Adicionar à coleção">
                     <Button
                       variant="outline"
                       size="icon"
@@ -558,8 +568,10 @@ export const ProductQuickView = React.memo(
                     >
                       <FolderPlus className="h-4 w-4" />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
+                  <QuickViewTooltip label="Compartilhar">
                   <Button
                     variant="outline"
                     size="icon"
@@ -588,6 +600,8 @@ export const ProductQuickView = React.memo(
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
+                  </QuickViewTooltip>
+
 
                   {onNavigateToProduct && (
                     <Button variant="outline" onClick={handleNavigate} className="flex-1">
