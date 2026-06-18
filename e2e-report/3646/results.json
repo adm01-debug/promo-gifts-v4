@@ -1,0 +1,2905 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+        "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+      },
+      "gitCommit": {
+        "shortHash": "cc57eee",
+        "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+        "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+        "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781781253000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781781253000
+        },
+        "branch": "main"
+      },
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "commitHash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27755594709"
+          },
+          "gitCommit": {
+            "shortHash": "cc57eee",
+            "hash": "cc57eeeabb6f30866869f7c04f81a753775e125e",
+            "subject": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)",
+            "body": "feat(super-filtro): 2ª rodada rumo a 10/10 — SF-D/E/F + pipeline puro + simulação (#839)\n\n* fix(super-filtro): corrige toggles de Opções Rápidas inertes + voz\n\nAuditoria exaustiva do módulo Super Filtro (/produtos, /filtros) validada\ncontra os dados reais de produção (doufsxqlfjyuvxuezpln · v_products_public).\n\nSF-A (ALTO): os toggles \"Destaques\", \"Com Personalização\" e \"Com Embalagem\nNativa\" sempre retornavam 0 resultados. O catálogo leve mapeava featured/onSale\ncomo false hardcoded e omitia hasPersonalization/hasCommercialPackaging, e o\nSELECT não buscava as colunas. Afetava 2.147 / 4.985 / 1.747 produtos.\n- products-lightweight.ts e useProductsLightweight.ts: colunas is_featured,\n  is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging\n  adicionadas ao SELECT e ao tipo LightweightProduct.\n- mapLightweightToProduct agora espelha src/utils/product-mapper.ts.\n- Corrige tambem o filtro \"Com Embalagem Nativa\" no catalogo Index.\n\nSF-B (MEDIO): onSale passa a ser mapeado de is_on_sale (toggle \"Promoções\"\nagora honesto; hoje 0 produtos em promoção, funcionará quando ativadas).\n\nSF-C (BAIXO): handleVoiceAction perdia o preço máximo quando min e max vinham\nno mesmo comando; cor/categoria/material agora deduplicam ao acumular.\n\nRegressão: 6 novos casos em useProductsLightweight.mapper.test.ts travam o\nmapeamento e o SELECT (proteção contra reversão — REGRA #7).\nLimitações documentadas em docs/SUPER_FILTRO_AUDIT_2026-06-18.md.\n\nInclui correção de baseline pré-existente (eqeqeq) em quoteHelpers.ts,\npreservando a semântica null+undefined, necessária para o gate de lint.\n\ntsc 0 erros · eslint limpo · vitest 820 passed/0 falhas.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(e2e): fecha bloco test() faltante em stock-filters-no-text.spec\n\nO teste \"Empty state explicativo... restaura lista\" não fechava seu\ncallback com `});` (linha 74→75 abria um novo test() sem fechar o anterior),\ndeixando um bloco aberto até o EOF. Resultado: SyntaxError \"Unexpected end\nof file (234:0)\" que impedia o parse de TODA a suíte de E2E smoke (Gate 3).\n\nDefeito pré-existente em main (idêntico, não introduzido por mudança de\nfiltro). Correção mecânica: adiciona o `});` ausente. Arquivo agora faz\nparse limpo (esbuild exit 0); os 5 testes de stock-filters passam a ser\ncarregáveis pela primeira vez.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-F — sentinela de preço 9999 não exclui produtos caros\n\npriceRange[1] === 9999 é o sentinela \"sem limite superior\". Antes o filtro\naplicava `price <= 9999`, removendo produtos acima de R$9.999 quando o usuário\ndefinia apenas o mínimo (ex.: min=50, max=\"sem limite\"). Inócuo hoje (preço\nmáx. real = R$5.175), mas incorreto por construção. Agora max >= 9999 é tratado\ncomo ilimitado em useFiltersPageState e useCatalogFiltering.\n\nMantém a semântica de ativação (filtro ativo quando min>0 ou max<9999) e os\ntestes existentes do threshold 9999. +5 casos de regressão.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* refactor(super-filtro): extrai pipeline puro applyProductFilters + simulação\n\nMove toda a lógica de filtragem/ordenação do useMemo de useFiltersPageState\npara uma função pura testável `applyProductFilters(products, filters, sortBy, ctx)`.\nO hook agora computa os Sets/maps server-side e o contexto e delega à função.\nComportamento idêntico (672 testes verdes).\n\nAdiciona simulação exaustiva (applyProductFilters.simulation.test.ts):\n- ~500+ cenários combinatórios (matriz de 23 filtros atômicos, pares).\n- Invariantes: subconjunto do catálogo, sem duplicatas, AND nunca aumenta\n  contagem, idempotência, ordenação preserva o conjunto.\n- Asserts exatos por filtro isolado + Sets server-side (cor/categoria/size) +\n  fuzzy + técnicas inertes.\n\nA função já aceita contexto de tamanho server-side (hasSizeFilter/\nsizeFilteredProductIds) — usado pela SF-E no próximo commit; sem ele cai no\ncomportamento legado (idêntico ao anterior).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* feat(super-filtro): SF-E — filtro de Tamanhos funcional (server-side)\n\nO catálogo leve não carrega variações, então a seção \"Tamanhos\" sempre exibia\n\"Nenhum tamanho disponível\" e o filtro era inerte. Agora usa product_variants\n(mesma fonte de useProductsByColor):\n\n- useProductsBySize(sizes): Set de product IDs com variação ativa nos tamanhos\n  selecionados (chave de cache estável independente da ordem).\n- useAvailableSizes(): tamanhos distintos do catálogo (filtro size_code > ''\n  exclui null/vazio) para popular o painel.\n- useFiltersPageState passa o contexto de tamanho a applyProductFilters\n  (hasSizeFilter/sizeFilteredProductIds/isLoadingSizeFilter), com a mesma\n  semântica dos demais filtros server-side (vazio + não carregando → zera).\n- SizeFilter aceita `availableSizes` (precedência sobre derivação por products).\n\nValidado em produção: tamanhos G/GG/M/P/XGG; ['M','P'] → 16 produtos reais.\n+4 testes de hook (construção da query e transformação).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): SF-D — oculta seção Técnicas (filtro não-funcional)\n\nNão existe vínculo produto↔técnica no catálogo: a junção\nproduct_group_location_techniques tem 0 linhas e o produto leve não traz\nmetadata.techniques. A seção exibia a lista-mestre de técnicas como checkboxes\nselecionáveis que nunca filtravam nada (controle morto e enganoso).\n\nOculta a seção 'tecnicas' no painel do Super Filtro. SECTION_CONFIG e o renderer\npermanecem intactos — reverter a única linha re-habilita a seção quando houver\ndado/suporte server-side (ex.: useProductsByTechnique). O filtro já era inerte\nde forma consistente (não conta, não chipa, não filtra via techniquesDataAvailable),\nentão ocultar é puramente uma melhoria de honestidade de UI.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* docs(super-filtro): registra 2ª rodada — SF-D/SF-E/SF-F resolvidos + simulação\n\nAtualiza o relatório de auditoria: as limitações antes documentadas foram\nexecutadas (preço sem-limite, Tamanhos funcional server-side, Técnicas ocultada)\ne registra a extração do pipeline puro applyProductFilters com simulação\nexaustiva (~500+ cenários combinatórios).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(super-filtro): gap SF-A parity — useCatalogFiltering ignora featured/onSale/hasPersonalization/isNew\n\nA correção SF-A (mapLightweightToProduct) alinhou o mapeamento de dados, mas o\npipeline de filtragem do catálogo Index (/produtos — useCatalogFiltering) nunca\naplicava os flags featured, onSale, hasPersonalization e isNew. Os checkboxes\nQuick Options ficavam selecionáveis sem efeito nessa rota.\n\nAdicionadas as 4 guards (paralelas a applyProductFilters) + 6 testes de regressão\nem useCatalogFiltering.test.ts e ~40 novos cenários de fronteira em\napplyProductFilters.simulation.test.ts (sentinel SF-F, catálogo vazio, todos os\nbooleans simultâneos, interseção de Sets server-side, ramo+segmento AND).\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n* fix(build): resolve regressões do merge main — TS + lint baseline (Vercel FAILED)\n\nO merge de origin/main para a branch trouxe 3 erros de TypeScript e 15 erros de\nESLint que derrubaram o build do Vercel (gate typecheck) e o gate lint:baseline.\nNenhum relacionado ao Super Filtro — correção para destravar a PR.\n\nTypeScript (tsconfig.app.json):\n- useOrgData.test.ts: mock parcial de useOrganization tipado via\n  ReturnType<typeof useOrganization> (TS2345 x2).\n- ssot-fallback.test.ts: cast via unknown (TS2352) + teste de runtime tornado\n  robusto a env de dev local (localhost) preservando a invariante SSOT dura\n  (\"nunca resolve para o projeto proibido pqp\"; canônico exigido fora de dev).\n\nESLint baseline (StockDashboard.tsx):\n- Removidos imports/variável órfãos deixados pelo refactor do merge\n  (Shield, Tooltip*, cn, HealthScoreInfoDialog, calcHealthScore, memo healthScore).\n  StockHealthBreakdownDrawer — que os substituiu — permanece intacto e testado.\n\nhttps://claude.ai/code/session_01PFdx5bCHUeNRBJy178Nzgg\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781781253000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781781253000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "flows/20-all-features-smoke.spec.ts",
+      "file": "flows/20-all-features-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Funcionalidades principais (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 187,
+          "column": 6,
+          "specs": [
+            {
+              "title": "00 · Sessão autenticada carregada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 193,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:05.155Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-8c9fb14f2e83317f491b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 191,
+              "column": 3
+            },
+            {
+              "title": "01 · Dashboard inicial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 238,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:05.580Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f801d6ecc787a925aeb6",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "02 · Dashboard customizável",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 230,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:05.837Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-1aa5e3ad483ce45b1c6c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "03 · Catálogo de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 212,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:06.085Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-253ae362bd5626789659",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "04 · Filtros avançados",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 184,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:06.313Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-110dc0fa032becab6640",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "05 · Novidades",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:06.509Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e4a6d737d328021a651e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "06 · Tendências",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:06.707Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-3ae39b2c3b877a418e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "07 · Favoritos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:06.907Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2268b4d3c0df46d58d59",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "08 · Coleções",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 232,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:07.107Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-829cb350ddf82e3baf1c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "09 · Comparador de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 193,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:07.356Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-6b1e8a70fa62e09c373b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "10 · Carrinhos do vendedor",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:07.563Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f7bd8da36df3637213d8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "11 · Lista de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:07.764Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0f5dcc37061bad34985f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "12 · Dashboard de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 190,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:07.974Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-53ac0053bfd2f95b6d91",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "13 · Funil (Kanban) de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 218,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:08.185Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7649c21e1516aceb28db",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "14 · Templates de orçamento",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 180,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:08.428Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4731c12b152112bd3b3e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "15 · Criar novo orçamento (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 195,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:08.622Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c88b4c904ba629ff2573",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "16 · Simulador (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:08.833Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c0e6d498102b3493ec79",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "17 · Simulador de preços",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:09.037Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-037ec93935b1f9277e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "18 · Busca avançada de preço",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:09.241Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2305ee06071100aeefc3",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "19 · Estoque",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 210,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:09.439Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ce9bf6a79e01ecc158e2",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "20 · Reposição",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:09.675Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-974a4e17211e71aacc48",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "21 · Kit Builder",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:09.876Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e0aeef09f232cccff716",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "22 · Meus Kits",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:10.074Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-271a34e5be2dd1a0e443",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "23 · Gerador de Mockup",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:10.284Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-574111961ec59afa7b2f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "24 · Histórico de Mockups",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 186,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:10.487Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-641280ed64c247121f5d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "25 · Magic Up (publicidade IA)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 209,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:10.691Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0456e8e3b51a0bdd9c81",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "26 · Inteligência comercial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:10.927Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ae86d5b42aba66c9a0b8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "27 · Business Intelligence",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:11.125Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d015393694fb525997c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "28 · BI — Comparador de clientes",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 179,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:11.327Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-a261e495e711a6b68ef7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "29 · Match de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 161,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:11.522Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4f2e19b9d60114026065",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "30 · Dropbox browser",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 180,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:11.700Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d7243934391105bc8dde",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "99 · Cobertura smoke ↔ catálogo está sincronizada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:11.894Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d4c42fcdd8509d36ce89",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 225,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke Rotas públicas (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 249,
+          "column": 6,
+          "specs": [
+            {
+              "title": "90 · Tela de login renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2064,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:12.097Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7a93262fd723f9d058b7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 253,
+              "column": 3
+            },
+            {
+              "title": "91 · Reset de senha renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1545,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:14.188Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-48906e3ad28c0353437f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "92 · 404 (rota inexistente)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1147,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:15.749Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b9916301819a96e1e50f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 271,
+              "column": 3
+            },
+            {
+              "title": "93 · Login com credenciais inválidas permanece em /login",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 312,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:16.912Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 312,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-407ad34c5a77e84f494d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 312,
+              "column": 8
+            },
+            {
+              "title": "95 · /reset-password sem token não habilita reset",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1649,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:16.913Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d508e0a40eec76592d9",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 355,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke RLS guard (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 381,
+          "column": 6,
+          "specs": [
+            {
+              "title": "94 · RLS bloqueia leitura de tabelas sensíveis para o usuário comum",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 389,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 208,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:18.575Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 389,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b4bf3c4a225eb5b5ad18",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 386,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/22-google-oauth-smoke.spec.ts",
+      "file": "flows/22-google-oauth-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Google OAuth — wiring até /auth/callback",
+          "file": "flows/22-google-oauth-smoke.spec.ts",
+          "line": 85,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clique em 'Continuar com Google' dispara authorize com provider=google",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 88,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:18.798Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 88,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-06371fe6855e2b192a1d",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 88,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com code válido troca por sessão e autentica usuário",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 118,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:18.798Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 118,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-970819a4f207fc57f2cc",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 118,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com ?error= mostra hint detalhado e código do erro",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2178,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:18.810Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-3a52cd50c12072728a6c",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 175,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/25-password-reset-smoke.spec.ts",
+      "file": "flows/25-password-reset-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Fluxo: Password Reset UI",
+          "file": "flows/25-password-reset-smoke.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "mostra erro para link inválido (sem token)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2475,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:21.008Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-279ebe32f4b48ce5696b",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "renderiza formulário quando há token no hash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2374,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:23.497Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-0fd2f43979b2c88c09c3",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 15,
+              "column": 3
+            },
+            {
+              "title": "valida força da senha e critérios em tempo real",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2094,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:25.884Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-2afc28e8ca65b7b9eed8",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 30,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "smoke.spec.ts",
+      "file": "smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Auth Critical Flow @smoke",
+          "file": "smoke.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "deve realizar login com sucesso e redirecionar para a home",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                        "line": 25,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 234,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:28.005Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                            "line": 25,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-bc831c3493139bc3e2ca",
+              "file": "smoke.spec.ts",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "deve bloquear acesso a rotas protegidas quando deslogado",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2987,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Smoke] Testando bloqueio de rota protegida\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:28.256Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-04516ebae480da85096c",
+              "file": "smoke.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "deve exibir formulário de esqueci minha senha",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3916,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T12:28:31.257Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-a71d0c7d51ae8cc11e21",
+              "file": "smoke.spec.ts",
+              "line": 60,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-18T12:28:00.294Z",
+    "duration": 34964.282,
+    "expected": 10,
+    "skipped": 37,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
