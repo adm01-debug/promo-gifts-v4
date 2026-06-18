@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { invokeCrmBatch, type CrmBatchResult } from '@/lib/crm-db';
 import {
   CheckCircle,
@@ -88,7 +88,7 @@ export default function SystemStatusPage() {
 
     // 1. Instance & Session Info
     const supabaseUrl = SUPABASE_URL || '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+    const supabaseKey = SUPABASE_PUBLISHABLE_KEY || '';
     const {
       data: { session },
     } = await supabase.auth.getSession();
