@@ -20,7 +20,11 @@ export default function StockDashboardPage() {
           >
             Estoque
           </h1>
-          <div id="stock-header-slot" className="flex shrink-0 items-center" />
+          <div
+            id="stock-header-slot"
+            data-testid="stock-header-slot"
+            className="flex shrink-0 items-center"
+          />
         </div>
         <StockDashboard />
       </div>
