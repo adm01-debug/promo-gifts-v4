@@ -48,6 +48,8 @@ interface ProductQuickViewProps {
   onAddToCart?: (productId: string, quantity: number, colorId?: string) => void;
   onNavigateToProduct?: (productId: string) => void;
   onShare?: (product: Product) => void;
+  onAddToQuote?: (product: Product) => void;
+  onAddToCollection?: (product: Product) => void;
 }
 
 export const ProductQuickView = React.memo(
