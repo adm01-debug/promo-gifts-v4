@@ -564,11 +564,30 @@ export const ProductTableView = memo(function ProductTableView({
                 </div>
 
                 <div className="w-12 px-2">
-                  <div className="h-10 w-10 overflow-hidden rounded-md border border-border/30 bg-muted/30">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Visualização rápida de ${product.name}`}
+                    data-testid="product-table-row-thumb"
+                    className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewProduct(product);
+                      setQuickViewOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setQuickViewProduct(product);
+                        setQuickViewOpen(true);
+                      }
+                    }}
+                  >
                     <img
                       src={thumbUrl}
                       alt=""
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
                       loading="lazy"
                     />
                   </div>
