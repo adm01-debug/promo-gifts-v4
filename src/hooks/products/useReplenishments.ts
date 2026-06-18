@@ -190,7 +190,7 @@ async function enrichReplenishments(
     supplierIds.length > 0
       ? supabase
           .from('v_suppliers_public')
-          .select('id, name, code')
+          .select('id, name, code, low_stock_threshold')
           .in('id', supplierIds)
           .limit(200)
       : Promise.resolve({ data: [], error: null }),
@@ -198,15 +198,25 @@ async function enrichReplenishments(
 
   const catMap = new Map((catResult.data || []).map((c) => [c.id, c.name]));
   const supMap = new Map(
-    (supResult.data || []).map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
+    (supResult.data || []).map((s) => [
+      s.id,
+      { name: s.name, code: s.code ?? null, low_stock_threshold: (s as any).low_stock_threshold ?? 10 },
+    ]),
   );
 
-  return items.map((n) => ({
-    ...n,
-    category_name: (n.category_id ? catMap.get(n.category_id) : undefined) ?? null,
-    supplier_name: (n.supplier_id ? supMap.get(n.supplier_id)?.name : undefined) ?? null,
-    supplier_code: (n.supplier_id ? supMap.get(n.supplier_id)?.code : undefined) ?? null,
-  }));
+  return items.map((n) => {
+    const sup = n.supplier_id ? supMap.get(n.supplier_id) : undefined;
+    const threshold = sup?.low_stock_threshold ?? 10;
+    return {
+      ...n,
+      category_name: (n.category_id ? catMap.get(n.category_id) : undefined) ?? null,
+      supplier_name: sup?.name ?? null,
+      supplier_code: sup?.code ?? null,
+      // Recalculate with per-supplier low_stock_threshold (Asia=50, others=10)
+      min_quantity: threshold,
+      stock_status: getStockStatus(n.stock_quantity, threshold),
+    };
+  });
 }
 
 // ─── Hooks ───────────────────────────────────────────────────────
@@ -224,10 +234,15 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
     queryFn: async () => {
       const cutoff = getCutoffDate();
 
+      // Note: 'isReplenishment' uses updated_at heuristic as proxy for real restock events.
+      // Products with stock_quantity > 0 are filtered here to eliminate price/data updates
+      // from appearing as replenishments. For true zero→positive restock detection, use
+      // fn_get_replenishment_stats() which reads stock_daily_summary.restock_zero_to_positive.
       const { data, error } = await supabase
         .from('v_products_public')
         .select(REPLENISHMENT_SELECT)
         .is('is_active', true)
+        .gt('stock_quantity', 0)
         .gte('updated_at', cutoff)
         .order('updated_at', { ascending: false })
         .range(0, limit - 1);
@@ -340,6 +355,7 @@ export function useReplenishmentCount() {
         .from('v_products_public')
         .select('id, created_at, updated_at')
         .is('is_active', true)
+        .gt('stock_quantity', 0)
         .gte('updated_at', cutoff)
         .limit(500);
 
