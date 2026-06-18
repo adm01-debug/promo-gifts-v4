@@ -165,7 +165,7 @@ export function useExpertChat({
           .from('profiles')
           .select('full_name, preferences')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         if (profile?.full_name) setSellerFirstName(profile.full_name.split(' ')[0]);
         const prefs = profile?.preferences as Record<string, unknown> | null;
         if (prefs && typeof prefs.flow_autoplay_tts === 'boolean') {
@@ -645,7 +645,7 @@ export function useExpertChat({
           .from('profiles')
           .select('preferences')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         const currentPrefs = (profile?.preferences as Record<string, unknown>) || {};
         await supabase
           .from('profiles')
