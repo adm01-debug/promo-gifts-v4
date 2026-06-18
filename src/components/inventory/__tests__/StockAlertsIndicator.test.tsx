@@ -75,7 +75,7 @@ const setLists = (over?: {
 
 const renderIndicator = () =>
   render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <TooltipProvider>
         <StockAlertsIndicator />
       </TooltipProvider>
@@ -190,7 +190,13 @@ describe('StockAlertsIndicator — painel, abas e período', () => {
     mockCounts.mockReturnValue({ data: counts({ low_stock: 1 }), isLoading: false });
     setLists({
       low: [
-        item({ id: 'l1', kind: 'low', productName: 'Mochila Z', stockQuantity: 7, lowStockThreshold: 10 }),
+        item({
+          id: 'l1',
+          kind: 'low',
+          productName: 'Mochila Z',
+          stockQuantity: 7,
+          lowStockThreshold: 10,
+        }),
       ],
     });
     renderIndicator();

@@ -36,11 +36,17 @@ export function useSupplierSalesRanking() {
     queryKey: ['supplier-sales-ranking'],
     queryFn: async (): Promise<Map<string, SupplierSalesEntry>> => {
       try {
+        // FIX 2026-06-18 (catalog-audit): limit 5000 truncava a MV (7.243 linhas),
+        // deixando ~2.243 produtos SEM turnover_score no sort client-side
+        // 'best-seller-supplier' (ranqueados como 0 → afundavam para o fim da lista).
+        // Elevado para 20000 (margem de crescimento). O custo extra é desprezível:
+        // são ~6 colunas numéricas por linha e o resultado fica em cache por 10 min.
         const result = await dbInvoke<ProductIntelligenceRanking>({
           table: 'mv_product_intelligence',
           operation: 'select',
-          select: '*',
-          limit: 5000,
+          select:
+            'product_id, turnover_score, avg_depletion_7d, avg_depletion_30d, abc_classification, total_depleted_30d',
+          limit: 20000,
         });
 
         const map = new Map<string, SupplierSalesEntry>();

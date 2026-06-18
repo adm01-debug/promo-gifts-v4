@@ -23,6 +23,8 @@ export interface NavItem {
   exact?: boolean;
   children?: NavItem[];
   shortcut?: string;
+  /** Texto curto e comercial exibido em tooltip ao passar o mouse. */
+  tooltip?: string;
 }
 
 export interface NavGroup {
@@ -198,20 +200,33 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
             <TooltipTrigger asChild>
               <div>{linkContent}</div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="z-[100]">
-              <div className="flex items-center gap-2">
-                <span>{item.label}</span>
-                {item.shortcut && (
-                  <kbd className="text-tooltip rounded bg-muted/50 px-1 py-0.5 font-mono text-muted-foreground/60">
-                    {item.shortcut}
-                  </kbd>
-                )}
-                {item.badge !== null && (
-                  <span className="text-tooltip rounded-full bg-primary/20 px-1.5 py-0.5 font-semibold text-white">
-                    {item.badge}
-                  </span>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{item.label}</span>
+                  {item.shortcut && (
+                    <kbd className="text-tooltip rounded bg-muted/50 px-1 py-0.5 font-mono text-muted-foreground/60">
+                      {item.shortcut}
+                    </kbd>
+                  )}
+                </div>
+                {item.tooltip && (
+                  <p className="text-tooltip text-muted-foreground">{item.tooltip}</p>
                 )}
               </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+
+      if (item.tooltip) {
+        return (
+          <Tooltip key={item.href}>
+            <TooltipTrigger asChild>
+              <div>{linkContent}</div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <p className="text-tooltip">{item.tooltip}</p>
             </TooltipContent>
           </Tooltip>
         );
