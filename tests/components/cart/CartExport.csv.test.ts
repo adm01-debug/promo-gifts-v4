@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { csvCell, buildCartCsv } from '@/components/cart/cart-utils/CartExport';
+import { csvCell, buildCartCsv, safeCartFileName } from '@/components/cart/cart-utils/CartExport';
 import type { SellerCart } from '@/hooks/products';
 
 const baseItem = {
@@ -83,5 +83,31 @@ describe('buildCartCsv', () => {
     const lines = csv.split('\n');
     // 10*2 + 5*3 = 35.00
     expect(lines[lines.length - 1]).toContain('"35.00"');
+  });
+
+  it('coage preço/quantidade null/NaN para 0 sem quebrar (sem "NaN" no CSV)', () => {
+    const csv = buildCartCsv(
+      makeCart([
+        { product_price: null as unknown as number, quantity: 2 },
+        { id: 'i2', product_id: 'p2', product_price: 5, quantity: NaN as unknown as number },
+      ]),
+    );
+    expect(csv).not.toContain('NaN');
+    // ambos os subtotais viram 0.00 e o total final também
+    expect(csv.split('\n').at(-1)).toContain('"0.00"');
+  });
+});
+
+describe('safeCartFileName', () => {
+  it('substitui caracteres inválidos de path e normaliza', () => {
+    expect(safeCartFileName('A/B Ltda', 'csv')).toBe('carrinho-a-b-ltda.csv');
+    expect(safeCartFileName('ACME', 'pdf')).toBe('carrinho-acme.pdf');
+    expect(safeCartFileName('Foo: Bar* "Baz"?', 'csv')).toBe('carrinho-foo-bar-baz.csv');
+  });
+
+  it('usa fallback quando o nome fica vazio após sanear', () => {
+    expect(safeCartFileName('', 'csv')).toBe('carrinho-sem-nome.csv');
+    expect(safeCartFileName(null, 'pdf')).toBe('carrinho-sem-nome.pdf');
+    expect(safeCartFileName('///', 'csv')).toBe('carrinho-sem-nome.csv');
   });
 });
