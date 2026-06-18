@@ -93,7 +93,7 @@ export const ProductQuickView = React.memo(
         url_original: img.url_original || null,
         image_type: img.image_type,
         is_primary: img.is_primary,
-        is_og_image: img.is_og_image || false,
+        is_og_image: img.is_og_image ?? false,
         applies_to_color: img.applies_to_color ?? null,
         supplier_code: img.supplier_code || null,
         alt_text: img.alt_text,

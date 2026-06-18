@@ -101,7 +101,7 @@ function TreeNodeItem({
 
 function nodeOrDescendantsMatch(node: CategoryNode, term: string): boolean {
   if (node.name.toLowerCase().includes(term.toLowerCase())) return true;
-  return node.children?.some((c) => nodeOrDescendantsMatch(c, term)) || false;
+  return node.children?.some((c) => nodeOrDescendantsMatch(c, term)) ?? false;
 }
 
 export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSelectProps) {

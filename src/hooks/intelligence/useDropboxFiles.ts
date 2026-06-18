@@ -30,8 +30,8 @@ export function useDropboxFiles() {
         body: { action: 'check' },
       });
       if (error) throw error;
-      setIsConnected(data?.connected || false);
-      return data?.connected || false;
+      setIsConnected(data?.connected ?? false);
+      return data?.connected ?? false;
     } catch {
       setIsConnected(false);
       return false;

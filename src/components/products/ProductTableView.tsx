@@ -639,8 +639,8 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="w-48 shrink-0 px-1">
                   <TableRowActions
                     product={product}
-                    isFavorite={isFavorite?.(product.id) || false}
-                    isInCompare={isInCompare?.(product.id) || false}
+                    isFavorite={isFavorite?.(product.id) ?? false}
+                    isInCompare={isInCompare?.(product.id) ?? false}
                     canAddToCompare={canAddToCompare}
                     onToggleFavorite={onToggleFavorite}
                     onToggleCompare={onToggleCompare}
@@ -682,9 +682,9 @@ export const ProductTableView = memo(function ProductTableView({
           product={quickViewProduct}
           open={quickViewOpen}
           onOpenChange={setQuickViewOpen}
-          isFavorited={isFavorite?.(quickViewProduct.id) || false}
+          isFavorited={isFavorite?.(quickViewProduct.id) ?? false}
           onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare?.(quickViewProduct.id) || false}
+          isInCompare={isInCompare?.(quickViewProduct.id) ?? false}
           onToggleCompare={onToggleCompare}
           onShare={onShareProduct}
         />

@@ -101,7 +101,7 @@ export function MatchFiltersPanel({
         <div className="flex items-center justify-between">
           <label className="text-[10px] font-medium text-muted-foreground">Apenas em estoque</label>
           <Switch
-            checked={filters.onlyInStock || false}
+            checked={filters.onlyInStock ?? false}
             onCheckedChange={(v) => setFilters((f) => ({ ...f, onlyInStock: v }))}
           />
         </div>

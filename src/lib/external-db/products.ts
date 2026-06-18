@@ -415,7 +415,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       filename: img.filename || null,
       type: img.image_type,
       isPrimary: img.is_primary,
-      isOgImage: img.is_og_image || false,
+      isOgImage: img.is_og_image ?? false,
       appliesToColor: img.applies_to_color ?? null,
       order: img.display_order,
       supplierCode: img.supplier_code || null,

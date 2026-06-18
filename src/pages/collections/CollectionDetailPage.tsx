@@ -131,7 +131,7 @@ export default function CollectionDetailPage() {
         description: externalCollection.description || undefined,
         color: externalCollection.icon_color || '#3B82F6',
         icon: externalCollection.icon || '📁',
-        isFeatured: externalCollection.is_featured || false,
+        isFeatured: externalCollection.is_featured ?? false,
         updatedAt: externalCollection.updated_at,
         isExternal: true as const,
       };

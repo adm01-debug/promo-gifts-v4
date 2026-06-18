@@ -110,8 +110,8 @@ export function useTechniquePricing(techniqueCode: string | null) {
           maxAreaWidth: 0,
           maxAreaHeight: 0,
           areaCm2: 0,
-          priceByColor: (t.cobra_por_cor as boolean) || false,
-          priceByArea: (t.usa_faixa_dimensional as boolean) || false,
+          priceByColor: (t.cobra_por_cor as boolean) ?? false,
+          priceByArea: (t.usa_faixa_dimensional as boolean) ?? false,
           setupPrice: (t.custo_setup as number) || 0,
           handlingPrice: (t.custo_manuseio as number) || 0,
         }));

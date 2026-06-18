@@ -113,7 +113,7 @@ export function ItemSelector({
           <div className="flex items-center gap-2">
             <Switch
               id="only-fitting"
-              checked={filters.onlyFitting || false}
+              checked={filters.onlyFitting ?? false}
               onCheckedChange={(checked) => onFiltersChange({ ...filters, onlyFitting: checked })}
             />
             <Label htmlFor="only-fitting" className="cursor-pointer text-sm">

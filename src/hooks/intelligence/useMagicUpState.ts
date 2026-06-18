@@ -328,7 +328,7 @@ export function useMagicUpState() {
             url: img.url_cdn || (img.url_original ?? ''),
             supplierCode: img.supplier_code || null,
             isPrimary: img.is_primary,
-            isOgImage: img.is_og_image || false,
+            isOgImage: img.is_og_image ?? false,
           }))
           .filter((img) => !!(img as ProductImage).url) as ProductImage[];
         setProductImages(images);

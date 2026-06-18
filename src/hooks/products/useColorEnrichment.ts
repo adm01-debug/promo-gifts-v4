@@ -282,7 +282,7 @@ export function useColorEnrichment({
           for (const v of variants) {
             if (v.selected_thumbnail) {
               const productPrimaries = primaryImagesByProduct.get(productId);
-              const isMainImage = productPrimaries?.has(v.selected_thumbnail) || false;
+              const isMainImage = productPrimaries?.has(v.selected_thumbnail) ?? false;
               if (!isMainImage) {
                 bestImage = v.selected_thumbnail;
                 bestColorName = v.color_name;

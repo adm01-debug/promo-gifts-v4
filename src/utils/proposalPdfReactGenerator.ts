@@ -41,7 +41,7 @@ export async function generateProposalPDFv2(
       React.createElement(PropostaComercialTailwind, {
         data,
         ref: templateRef,
-        isDraft: options?.isDraft || false,
+        isDraft: options?.isDraft ?? false,
       }),
     );
 

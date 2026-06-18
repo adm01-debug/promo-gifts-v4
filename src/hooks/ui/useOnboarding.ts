@@ -157,7 +157,7 @@ export function useOnboarding() {
 
         if (data) {
           setOnboardingId(data.id);
-          setHasCompletedTour(data.has_completed_tour || false);
+          setHasCompletedTour(data.has_completed_tour ?? false);
           setCurrentStep(data.current_step || 0);
           if (!data.has_completed_tour) {
             setShowTour(true);
@@ -172,7 +172,7 @@ export function useOnboarding() {
 
           if (retryData) {
             setOnboardingId(retryData.id);
-            setHasCompletedTour(retryData.has_completed_tour || false);
+            setHasCompletedTour(retryData.has_completed_tour ?? false);
             setCurrentStep(retryData.current_step || 0);
             if (!retryData.has_completed_tour) setShowTour(true);
           } else {

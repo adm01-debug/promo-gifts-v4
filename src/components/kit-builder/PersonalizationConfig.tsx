@@ -127,7 +127,7 @@ function ItemPersonalizationCard({
     personalization.colors || 1,
     personalization.width || null,
     personalization.height || null,
-    currentTech?.usa_dimensao || false,
+    currentTech?.usa_dimensao ?? false,
   );
 
   const currentUnitPrice = priceData?.preco_unitario ?? personalization.estimatedPrice;

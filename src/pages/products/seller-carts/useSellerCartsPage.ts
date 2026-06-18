@@ -56,7 +56,7 @@ export function useSellerCartsPage() {
 
   const productsCtx = useContext(ProductsContext);
   const allProducts = useMemo(() => productsCtx?.products ?? [], [productsCtx?.products]);
-  const isLoadingProducts = productsCtx?.isLoading || false;
+  const isLoadingProducts = productsCtx?.isLoading ?? false;
 
   const [showNewCart, setShowNewCart] = useState(false);
 

@@ -187,7 +187,7 @@ export function PromptGenerator({
           maxWidth: selectedArea?.max_width || null,
           maxHeight: selectedArea?.max_height || null,
           dimensionUnit: selectedArea?.unit || 'cm',
-          isCurved: selectedArea?.is_curved || false,
+          isCurved: selectedArea?.is_curved ?? false,
           clientName,
           clientSegment,
           brandColorName,

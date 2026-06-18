@@ -195,7 +195,7 @@ export function useQuoteTemplates() {
           seller_id: user.id,
           name: input.name,
           description: input.description || null,
-          is_default: input.is_default || false,
+          is_default: input.is_default ?? false,
           items: structuredClone(input.items ?? []) as unknown as Json,
           template_data: {},
           discount_percent: input.discount_percent || 0,
