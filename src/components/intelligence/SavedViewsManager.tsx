@@ -92,7 +92,7 @@ export function SavedViewsManager() {
   const applyView = (view: SavedView) => {
     const sp = new URLSearchParams();
     Object.entries(view.filters).forEach(([k, v]) => sp.set(k, v));
-    navigate(`/tendencias?${sp.toString()}`, { replace: true });
+    navigate(`/tendencias?${sp}`, { replace: true });
     toast({ title: 'Visão aplicada', description: view.name });
   };
 

@@ -57,7 +57,7 @@ export function FavoritesViewHeader({
     if (list?.id) params.set('list_id', list.id);
     if (list?.client_id) params.set('client_id', list.client_id);
     if (list?.client_name) params.set('client_name', list.client_name);
-    navigate(`/orcamentos/novo?${params.toString()}`);
+    navigate(`/orcamentos/novo?${params}`);
   };
 
   return (

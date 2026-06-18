@@ -172,7 +172,7 @@ export function ClientCategoryRadar({ clientId, ramoAtividade, clientName }: Pro
     const params = new URLSearchParams();
     if (clientId) params.set('clientId', clientId);
     if (row.label) params.set('category', row.label);
-    navigate(`/orcamentos/novo?${params.toString()}`);
+    navigate(`/orcamentos/novo?${params}`);
   };
 
   if (isLoading) {

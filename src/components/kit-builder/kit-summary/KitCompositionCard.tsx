@@ -24,7 +24,7 @@ export function KitCompositionCard({
     const params = new URLSearchParams();
     params.set('product_id', productId);
     if (techniqueName) params.set('technique', techniqueName);
-    navigate(`/mockup-generator?${params.toString()}`);
+    navigate(`/mockup-generator?${params}`);
   };
 
   return (

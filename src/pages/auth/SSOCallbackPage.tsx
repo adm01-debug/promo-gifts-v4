@@ -73,7 +73,7 @@ export default function SSOCallbackPage() {
       params.set('error', detail.code);
       params.set('error_description', detail.description);
       params.set('hint', detail.hint);
-      return `/login?${params.toString()}`;
+      return `/login?${params}`;
     };
 
     const error = searchParams.get('error');

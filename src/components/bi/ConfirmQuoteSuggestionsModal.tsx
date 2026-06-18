@@ -90,7 +90,7 @@ export function ConfirmQuoteSuggestionsModal({
     params.set('source', 'bi-suggestions');
 
     onOpenChange(false);
-    navigate(`/orcamentos/novo?${params.toString()}`);
+    navigate(`/orcamentos/novo?${params}`);
   };
 
   const totalEstimateMin = suggestions

@@ -112,7 +112,7 @@ export default function ComparePage() {
     const params = new URLSearchParams({ products: productParams });
     if (client?.id) params.set('client_id', client.id);
     if (client?.name) params.set('client_name', client.name);
-    navigate(`/orcamentos/novo?${params.toString()}`);
+    navigate(`/orcamentos/novo?${params}`);
   };
 
   // Empty state with smart suggestions

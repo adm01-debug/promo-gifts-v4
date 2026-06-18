@@ -272,7 +272,7 @@ export const ProductListItem = memo(function ProductListItem({
       params.set('cor', currentVariant.name);
       if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
       if (currentVariant.hex) params.set('hex', currentVariant.hex);
-      navigate(`/produto/${product.id}?${params.toString()}`);
+      navigate(`/produto/${product.id}?${params}`);
     } else {
       if (onView) onView(product);
       else navigate(`/produto/${product.id}`);

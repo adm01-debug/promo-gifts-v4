@@ -142,7 +142,7 @@ export const MobileProductActions = React.forwardRef<HTMLDivElement, MobileProdu
             if (v?.color_name) params.set('color_name', v.color_name);
             if (v?.color_hex) params.set('color_hex', v.color_hex);
             if (v?.size_code) params.set('size_code', v.size_code);
-            navigate(`/orcamentos/novo?${params.toString()}`);
+            navigate(`/orcamentos/novo?${params}`);
           }}
         />
       </>

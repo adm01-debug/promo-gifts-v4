@@ -117,7 +117,7 @@ export function MatchCard({
       min_quantity: String(p.minQuantity || 1),
       ...(p.image_url ? { product_image: p.image_url } : {}),
     });
-    navigate(`/orcamentos/novo?${params.toString()}`);
+    navigate(`/orcamentos/novo?${params}`);
   };
 
   return (

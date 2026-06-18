@@ -569,7 +569,7 @@ export const ProductCard = memo(
             params.set('cor', currentVariant.name);
             params.set('pid', product.id);
             if (currentVariant.groupSlug) params.set('grupo', currentVariant.groupSlug);
-            navigate(`/produto/${product.id}?${params.toString()}`);
+            navigate(`/produto/${product.id}?${params}`);
           } else {
             const colorParam = activeColorName
               ? `?cor=${encodeURIComponent(activeColorName)}&pid=${product.id}`

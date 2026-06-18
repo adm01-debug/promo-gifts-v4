@@ -336,7 +336,7 @@ export const ProductTableView = memo(function ProductTableView({
         if (variant?.color_name) params.set('color_name', variant.color_name);
         if (variant?.color_hex) params.set('color_hex', variant.color_hex);
         if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-        setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+        setTimeout(() => navigate(`/orcamentos/novo?${params}`), 0);
       } else if (variantPickerMode === 'share') {
         setShareProduct(variantPickerProduct);
         setShareVariant(
