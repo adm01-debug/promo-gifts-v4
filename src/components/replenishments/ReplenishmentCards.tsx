@@ -146,15 +146,22 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
       <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
-          <HoverSetImage
-            key={activeImage ?? product.product_image ?? 'placeholder'}
-            primary={activeImage}
-            // Desativa o crossfade "todas as cores" quando o usuário está
-            // navegando pelas variantes — a foto da cor selecionada vence.
-            set={activeColorName ? null : product.product_set_image}
-            alt={`Foto de ${product.product_name}`}
-            priority={priority}
-          />
+          <QuickViewThumb
+            productId={product.product_id}
+            productName={product.product_name}
+            testId="replenishment-grid-card-thumb"
+            className="h-full w-full"
+          >
+            <HoverSetImage
+              key={activeImage ?? product.product_image ?? 'placeholder'}
+              primary={activeImage}
+              // Desativa o crossfade "todas as cores" quando o usuário está
+              // navegando pelas variantes — a foto da cor selecionada vence.
+              set={activeColorName ? null : product.product_set_image}
+              alt={`Foto de ${product.product_name}`}
+              priority={priority}
+            />
+          </QuickViewThumb>
 
           {/* Badge superior esquerdo — Reposição */}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
