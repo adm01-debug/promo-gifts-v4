@@ -29,7 +29,11 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (item: AddToCartInput, cartId?: string) => void;
+  addToActiveCart: (
+    item: AddToCartInput,
+    cartId?: string,
+    options?: { silent?: boolean },
+  ) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
@@ -133,7 +137,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const addToActiveCart = useCallback(
-    (item: AddToCartInput, cartId?: string) => {
+    (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => {
       const targetId = cartId || resolvedActiveCartId;
 
       if (!targetId) {
@@ -149,9 +153,13 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         { cartId: targetId, item },
         {
           onSuccess: () => {
-            toast.success(`${item.product_name} adicionado ao carrinho`, {
-              description: targetCart?.company_name,
-            });
+            // silent: usado em lote (template/bulk) onde o chamador exibe um
+            // único toast agregado — evita N toasts empilhados.
+            if (!options?.silent) {
+              toast.success(`${item.product_name} adicionado ao carrinho`, {
+                description: targetCart?.company_name,
+              });
+            }
             // Update active cart if we explicitly added to a specific one
             if (cartId && cartId !== resolvedActiveCartId) {
               setActiveCartId(cartId);

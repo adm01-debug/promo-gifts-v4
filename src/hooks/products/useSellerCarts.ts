@@ -77,6 +77,27 @@ export function useSellerCarts() {
   const queryClient = useQueryClient();
   const userId = user?.id;
 
+  // Localiza o item de mesma variante (product_id + color_name) dentro de um
+  // carrinho. Necessário porque o constraint unique_cart_item_variant
+  // (cart_id, product_id, color_name) NULLS NOT DISTINCT bloqueia qualquer
+  // INSERT/UPDATE que colida — então add/move/duplicate precisam MESCLAR
+  // quantidades em vez de falhar. color_name === null exige `.is(null)`.
+  const findVariantInCart = async (
+    cartId: string,
+    productId: string,
+    colorName: string | null,
+  ): Promise<{ id: string; quantity: number } | null> => {
+    const base = supabase
+      .from('seller_cart_items')
+      .select('id, quantity')
+      .eq('cart_id', cartId)
+      .eq('product_id', productId);
+    const { data } = await (
+      colorName === null ? base.is('color_name', null) : base.eq('color_name', colorName)
+    ).maybeSingle();
+    return data ?? null;
+  };
+
   // Fetch all carts with items
   const cartsQuery = useQuery<SellerCart[]>({
     queryKey: [QUERY_KEY, userId],
@@ -168,23 +189,10 @@ export function useSellerCarts() {
   const addItem = useMutation({
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
       const colorName = item.color_name ?? null;
-      const quantityToAdd = item.quantity || 1;
+      // Quantidade sempre >= 1: protege o invariante mesmo se o chamador passar 0/negativo.
+      const quantityToAdd = Math.max(1, Math.trunc(Number(item.quantity) || 1));
 
-      const { data: existing } = await (
-        colorName === null
-          ? supabase
-              .from('seller_cart_items')
-              .select('id, quantity')
-              .eq('cart_id', cartId)
-              .eq('product_id', item.product_id)
-              .is('color_name', null)
-          : supabase
-              .from('seller_cart_items')
-              .select('id, quantity')
-              .eq('cart_id', cartId)
-              .eq('product_id', item.product_id)
-              .eq('color_name', colorName)
-      ).maybeSingle();
+      const existing = await findVariantInCart(cartId, item.product_id, colorName);
 
       if (existing) {
         const { error } = await supabase
@@ -211,21 +219,7 @@ export function useSellerCarts() {
 
         // Se bater no constraint (race condition), tenta o update mais uma vez
         if (error?.code === '23505') {
-          const { data: retryExisting } = await (
-            colorName === null
-              ? supabase
-                  .from('seller_cart_items')
-                  .select('id, quantity')
-                  .eq('cart_id', cartId)
-                  .eq('product_id', item.product_id)
-                  .is('color_name', null)
-              : supabase
-                  .from('seller_cart_items')
-                  .select('id, quantity')
-                  .eq('cart_id', cartId)
-                  .eq('product_id', item.product_id)
-                  .eq('color_name', colorName)
-          ).maybeSingle();
+          const retryExisting = await findVariantInCart(cartId, item.product_id, colorName);
 
           if (retryExisting) {
             await supabase
@@ -269,9 +263,13 @@ export function useSellerCarts() {
   // Update item quantity
   const updateItemQuantity = useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
+      // Defesa em profundidade: a UI já impede valores < 1, mas garantimos aqui
+      // o invariante 1 <= quantity <= 999999 (espelha o CHECK no banco) para
+      // qualquer chamador programático (templates, restore, futuros callers).
+      const safeQty = Math.min(Math.max(Math.trunc(Number(quantity) || 0), 1), 999999);
       const { error } = await supabase
         .from('seller_cart_items')
-        .update({ quantity })
+        .update({ quantity: safeQty })
         .eq('id', itemId);
       if (error) throw error;
     },
@@ -408,6 +406,27 @@ export function useSellerCarts() {
   // Move item to another cart
   const moveItemToCart = useMutation({
     mutationFn: async ({ itemId, targetCartId }: { itemId: string; targetCartId: string }) => {
+      const item = (cartsQuery.data || []).flatMap((c) => c.items).find((i) => i.id === itemId);
+      if (!item) throw new Error('Item não encontrado');
+
+      // Se o carrinho destino já tiver a mesma variante, um UPDATE puro de
+      // cart_id violaria unique_cart_item_variant. Mesclamos: soma a quantidade
+      // no item existente do destino e remove o item de origem.
+      const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
+      if (existing && existing.id !== itemId) {
+        const { error: updErr } = await supabase
+          .from('seller_cart_items')
+          .update({ quantity: existing.quantity + item.quantity })
+          .eq('id', existing.id);
+        if (updErr) throw updErr;
+        const { error: delErr } = await supabase
+          .from('seller_cart_items')
+          .delete()
+          .eq('id', itemId);
+        if (delErr) throw delErr;
+        return;
+      }
+
       const { error } = await supabase
         .from('seller_cart_items')
         .update({ cart_id: targetCartId })
@@ -431,6 +450,17 @@ export function useSellerCarts() {
       const item = allItems.find((i) => i.id === itemId);
       if (!item) throw new Error('Item não encontrado');
 
+      // Mescla se o destino já tiver a variante (evita 23505 do unique constraint).
+      const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
+      if (existing) {
+        const { error } = await supabase
+          .from('seller_cart_items')
+          .update({ quantity: existing.quantity + item.quantity })
+          .eq('id', existing.id);
+        if (error) throw error;
+        return;
+      }
+
       const { error } = await supabase.from('seller_cart_items').insert({
         cart_id: targetCartId,
         product_id: item.product_id,
@@ -442,7 +472,8 @@ export function useSellerCarts() {
         color_name: item.color_name,
         color_hex: item.color_hex,
         notes: item.notes,
-        sort_order: item.sort_order,
+        // sort_order omitido: o trigger assign_cart_item_sort_order atribui o
+        // próximo valor gapless no destino (copiar o do origem causaria colisão de ordem).
       });
       if (error) throw error;
     },
