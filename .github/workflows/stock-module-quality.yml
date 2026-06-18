@@ -58,6 +58,7 @@ jobs:
             tests/stock-performance.test.ts \
             tests/StockFilterToolbar.field-order.test.tsx \
             tests/StockFilterToolbar.test.tsx \
+            tests/StockFilterToolbar.reset-isSearching.test.tsx \
             tests/StockStatCard.test.tsx \
             tests/stock-module.test.tsx \
             tests/stock-types.test.ts \
