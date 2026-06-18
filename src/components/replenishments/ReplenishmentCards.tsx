@@ -399,27 +399,34 @@ export function ReplenishmentTableView({
                 )}
                 <TableCell className="p-1.5">
                   <div className="h-9 w-9 overflow-hidden rounded bg-muted">
-                    {product.product_image ? (
-                      <img
-                        src={product.product_image}
-                        alt={`Foto de ${product.product_name}`}
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          img.onerror = null;
-                          img.src = '/placeholder.svg';
-                        }}
-                        className="h-full w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-full w-full items-center justify-center"
-                        aria-hidden="true"
-                      >
-                        <Package className="h-3.5 w-3.5 text-muted-foreground/30" />
-                      </div>
-                    )}
+                    <QuickViewThumb
+                      productId={product.product_id}
+                      productName={product.product_name}
+                      testId="replenishment-table-row-thumb"
+                      className="h-full w-full"
+                    >
+                      {product.product_image ? (
+                        <img
+                          src={product.product_image}
+                          alt={`Foto de ${product.product_name}`}
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            img.onerror = null;
+                            img.src = '/placeholder.svg';
+                          }}
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-full w-full items-center justify-center"
+                          aria-hidden="true"
+                        >
+                          <Package className="h-3.5 w-3.5 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </QuickViewThumb>
                   </div>
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
