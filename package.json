@@ -7,7 +7,7 @@
     "e2e:generate-fixtures": "tsx e2e/scripts/generate-fixtures.ts",
     "e2e:watch-fixtures": "npx chokidar-cli \"e2e/fixtures/permissions-matrix.ts\" -c \"npm run e2e:generate-fixtures\"",
     "dev": "npm run e2e:generate-fixtures && vite",
-    "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && npm run typecheck && npm run lint:baseline && vite build",
+    "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "TZ=America/Sao_Paulo vitest run",
@@ -118,7 +118,8 @@
     "test:replenishment:unit": "vitest run tests/replenishment/",
     "test:replenishment:e2e": "npx playwright test e2e/replenishment/",
     "test:replenishment:dashboard": "node scripts/replenishment-ci/metrics-dashboard.mjs",
-    "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts"
+    "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts",
+    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
