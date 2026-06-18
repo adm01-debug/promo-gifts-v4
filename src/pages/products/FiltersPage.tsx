@@ -540,11 +540,12 @@ export default function FiltersPage() {
                       </TooltipTrigger>
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
-                    {/* Selection toggle & Layout */}
-                    <div
-                      data-testid="superfiltro-toolbar-actions"
-                      className="ml-auto flex items-center gap-2"
-                    >
+                  </div>
+                  {/* Selection toggle & Layout — pinned right (full toolbar) */}
+                  <div
+                    data-testid="superfiltro-toolbar-actions"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2"
+                  >
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
