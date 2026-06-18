@@ -36,6 +36,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { FutureStockEntry } from '@/types/stock';
+import { computeFutureStockStats } from '@/lib/inventory/future-stock-stats';
 
 interface FutureStockDialogProps {
   open: boolean;
@@ -421,31 +422,10 @@ export function FutureStockDialog({ open, onOpenChange, entries }: FutureStockDi
     return items;
   }, [entries, search, statusFilter, dateRange, sortField, sortDir]);
 
-  // Summary stats
+  // Summary stats — delega ao SSOT (deduplicado por id, sem dupla contagem).
   const stats = useMemo(() => {
-    const totalUnits = filtered.reduce((s, e) => s + e.expectedQuantity, 0);
-    const confirmed = filtered.filter((e) => e.status === 'confirmed');
-    const confirmedUnits = confirmed.reduce((s, e) => s + e.expectedQuantity, 0);
-    const inTransit = filtered.filter((e) => e.status === 'in_transit');
-    const inTransitUnits = inTransit.reduce((s, e) => s + e.expectedQuantity, 0);
-    const uniqueProducts = new Set(filtered.map((e) => e.productId)).size;
-    const overdue = filtered.filter((e) => daysUntil(e.expectedDate) < 0);
-    const nextDate =
-      filtered.length > 0
-        ? filtered.reduce(
-            (min, e) => (e.expectedDate < min ? e.expectedDate : min),
-            filtered[0].expectedDate,
-          )
-        : null;
-    return {
-      totalUnits,
-      confirmedUnits,
-      inTransitUnits,
-      uniqueProducts,
-      nextDate,
-      total: filtered.length,
-      overdueCount: overdue.length,
-    };
+    const s = computeFutureStockStats(filtered);
+    return { ...s, total: s.totalEntries };
   }, [filtered]);
 
   const toggleSort = (field: SortField) => {

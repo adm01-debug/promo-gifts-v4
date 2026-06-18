@@ -106,7 +106,7 @@ export function NoveltiesSection() {
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos (30d)</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="7">Últimos 7 dias</SelectItem>
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
               </SelectContent>
@@ -206,7 +206,11 @@ export function NoveltiesSection() {
                           </div>
                         )}
                         <div className="absolute left-2 top-2">
-                          <NoveltyBadge daysRemaining={item.days_remaining} size="sm" />
+                          <NoveltyBadge
+                            daysRemaining={item.days_remaining}
+                            daysElapsed={item.days_as_novelty}
+                            size="sm"
+                          />
                         </div>
                       </div>
 

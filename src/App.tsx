@@ -90,7 +90,7 @@ const App = () => {
                * Keep v7_startTransition disabled: under concurrent root work it can
                * update history before the matching route render commits.
                */}
-              <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <AuthProvider>
                   <AppBootstrapContainer>
                     <AppBootstrap>

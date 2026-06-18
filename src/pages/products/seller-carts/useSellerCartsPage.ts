@@ -7,6 +7,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   recordAction,
   exportCartToCSV,
@@ -105,12 +106,28 @@ export function useSellerCartsPage() {
     };
   }, [activeCart, allProducts]);
 
+  // C5: guarda o ultimo cartId que existiu para este vendedor, para distinguir
+  // URL invalida/de terceiro (nunca existiu -> avisa) de carrinho deletado
+  // nesta sessao (existia e sumiu -> redireciona em silencio).
+  const lastResolvedCartIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (routeCartId && carts.length > 0) {
-      const found = carts.find((c) => c.id === routeCartId);
-      if (found) setActiveCartId(routeCartId);
+    if (!routeCartId || isLoading) return;
+    const found = carts.some((c) => c.id === routeCartId);
+    if (found) {
+      lastResolvedCartIdRef.current = routeCartId;
+      setActiveCartId(routeCartId);
+      return;
     }
-  }, [routeCartId, carts, setActiveCartId]);
+    // Nao encontrado: a RLS ja oculta carrinhos de outros vendedores, entao cair
+    // silenciosamente no primeiro carrinho induziria o vendedor a editar o pedido errado.
+    if (lastResolvedCartIdRef.current !== routeCartId) {
+      toast.error('Carrinho nao encontrado', {
+        description: 'Ele pode ter sido removido ou pertence a outro vendedor.',
+      });
+    }
+    navigate('/carrinhos', { replace: true });
+  }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
   useEffect(() => {
     setLocalCartNotes(activeCart?.notes || '');
@@ -157,21 +174,26 @@ export function useSellerCartsPage() {
       const item = activeCart?.items.find((i) => i.id === itemId);
       removeItem(itemId);
       if (item && activeCart) {
-        recordAction(activeCart.id, { type: 'remove', itemName, time: new Date() });
+        const cartId = activeCart.id;
+        recordAction(cartId, { type: 'remove', itemName, time: new Date() });
         showUndoToast({
           title: `${itemName} removido`,
           description: activeCart.company_name,
           onUndo: () => {
-            addToActiveCart({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              product_sku: item.product_sku || undefined,
-              product_image_url: item.product_image_url || undefined,
-              product_price: item.product_price,
-              quantity: item.quantity,
-              color_name: item.color_name || undefined,
-              color_hex: item.color_hex || undefined,
-            });
+            addToActiveCart(
+              {
+                product_id: item.product_id,
+                product_name: item.product_name,
+                product_sku: item.product_sku || undefined,
+                product_image_url: item.product_image_url || undefined,
+                product_price: item.product_price,
+                quantity: item.quantity,
+                color_name: item.color_name || undefined,
+                color_hex: item.color_hex || undefined,
+                notes: item.notes ?? undefined,
+              },
+              cartId,
+            );
           },
         });
       }
@@ -248,6 +270,7 @@ export function useSellerCartsPage() {
           quantity: item.quantity,
           color_name: item.color_name || undefined,
           color_hex: item.color_hex || undefined,
+          notes: item.notes ?? undefined,
         }));
         restoreItems(activeCart.id, addItems);
       },
@@ -274,17 +297,23 @@ export function useSellerCartsPage() {
 
   const handleLoadTemplate = useCallback(
     (items: CartTemplateItem[]) => {
+      // silent: cada item entra sem toast individual; mostramos um único
+      // toast agregado abaixo (evita empilhar N toasts ao aplicar template).
       items.forEach((item) => {
-        addToActiveCart({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          product_sku: item.product_sku,
-          product_image_url: item.product_image_url,
-          product_price: item.product_price,
-          quantity: item.quantity,
-          color_name: item.color_name,
-          color_hex: item.color_hex,
-        });
+        addToActiveCart(
+          {
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_sku: item.product_sku,
+            product_image_url: item.product_image_url,
+            product_price: item.product_price,
+            quantity: item.quantity,
+            color_name: item.color_name,
+            color_hex: item.color_hex,
+          },
+          undefined,
+          { silent: true },
+        );
       });
       toast.success('Template aplicado ao carrinho');
     },
@@ -299,9 +328,40 @@ export function useSellerCartsPage() {
     setConfirmQuoteCart(cart);
   }, []);
 
-  const confirmGenerateQuote = useCallback(() => {
+  const confirmGenerateQuote = useCallback(async () => {
     if (!confirmQuoteCart) return;
     const cart = confirmQuoteCart;
+
+    // T3: produto pode ter sido descontinuado depois de entrar no carrinho (product_id
+    // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
+    // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const ids = [...new Set(cart.items.map((i) => i.product_id))].filter((id) => uuidRe.test(id));
+    let validIds = new Set<string>();
+    if (ids.length > 0) {
+      try {
+        const { data, error } = await supabase.from('products').select('id').in('id', ids);
+        validIds = error
+          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
+          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
+      } catch {
+        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
+      }
+    }
+    const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
+    const staleCount = cart.items.length - validItems.length;
+    if (validItems.length === 0) {
+      setConfirmQuoteCart(null);
+      toast.error('Nao foi possivel gerar o orcamento', {
+        description: 'Nenhum item deste carrinho esta mais disponivel no catalogo.',
+      });
+      return;
+    }
+    if (staleCount > 0) {
+      toast.warning(staleCount + ' item(ns) fora do catalogo ignorado(s)', {
+        description: 'Produtos descontinuados nao entram no orcamento.',
+      });
+    }
     setConfirmQuoteCart(null);
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
@@ -313,7 +373,7 @@ export function useSellerCartsPage() {
         companyId: cart.company_id,
         companyName: cart.company_name,
         companyLocation: cart.company_location || undefined,
-        items: cart.items.map((i) => ({
+        items: validItems.map((i) => ({
           product_id: i.product_id,
           product_name: i.product_name,
           product_sku: i.product_sku || undefined,

@@ -86,9 +86,13 @@ export function mapLightweightToProduct(
     is_active: p.is_active || p.active,
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
-    featured: false,
+    // Espelha product-mapper.ts: featured = is_featured OR is_bestseller.
+    // Antes hardcoded false → toggle "Destaques" do Super Filtro retornava 0.
+    featured: Boolean(p.is_featured || p.is_bestseller),
     newArrival: Boolean(p.is_new) || isWithinNoveltyWindow(p.created_at),
-    onSale: false,
+    onSale: Boolean(p.is_on_sale),
+    hasPersonalization: Boolean(p.allows_personalization),
+    hasCommercialPackaging: Boolean(p.has_commercial_packaging),
     isKit: p.is_kit ?? false,
     gender: p.gender || null,
     category: { id: resolvedCategoryId || '0', name: resolvedCategoryName ?? 'Sem categoria' },
@@ -120,7 +124,9 @@ export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, short_description, ' +
   'sale_price, cost_price, primary_image_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
-  'stock_quantity, min_quantity, is_kit, is_new, created_at, gender, price_updated_at, ' +
+  'stock_quantity, min_quantity, is_kit, is_new, ' +
+  'is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, ' +
+  'created_at, gender, price_updated_at, ' +
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 // FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
 // Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
@@ -154,15 +160,19 @@ async function fetchCatalogPage(
   if (categories && categories.length > 0) filters.category_id = categories;
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
-  let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
+  let orderBy: { column: string; ascending?: boolean; nullsFirst?: boolean } = {
+    column: 'name',
+    ascending: true,
+  };
 
   if (sortBy) {
     switch (sortBy) {
       case 'price-asc':
-        orderBy = { column: 'sale_price', ascending: true };
+        // NULLS LAST: produtos sem preço não devem liderar a ordenação por preço.
+        orderBy = { column: 'sale_price', ascending: true, nullsFirst: false };
         break;
       case 'price-desc':
-        orderBy = { column: 'sale_price', ascending: false };
+        orderBy = { column: 'sale_price', ascending: false, nullsFirst: false };
         break;
       case 'newest':
         orderBy = { column: 'created_at', ascending: false };
@@ -175,6 +185,13 @@ async function fetchCatalogPage(
         break;
     }
   }
+
+  // BUG-PAGE-01 FIX: desempate determinístico por id em TODAS as ordenações.
+  // Sem ele, colunas não-únicas (created_at com até 591 empates, sale_price, stock
+  // com 1353 zerados, name com 891 nomes repetidos) + paginação OFFSET produzem
+  // ordem instável entre páginas → o mesmo produto pode DUPLICAR ou SUMIR no scroll.
+  const secondaryOrderBy = { column: 'id', ascending: true } as const;
+
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
 
@@ -184,6 +201,7 @@ async function fetchCatalogPage(
     select: PRODUCT_SELECT_LIGHTWEIGHT,
     filters,
     orderBy,
+    secondaryOrderBy,
     limit: CATALOG_PAGE_SIZE,
     offset: offset + i * CATALOG_PAGE_SIZE,
     ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
@@ -202,6 +220,7 @@ async function fetchCatalogPage(
         select: PRODUCT_SELECT_LIGHTWEIGHT,
         filters,
         orderBy,
+        secondaryOrderBy,
         limit: CATALOG_PAGE_SIZE,
         offset: offset + i * CATALOG_PAGE_SIZE,
         ...(i === 0 && isFirstLoad ? { countMode: 'exact' as const } : {}),
