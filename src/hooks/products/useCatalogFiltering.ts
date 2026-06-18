@@ -25,6 +25,9 @@ interface CatalogFilteringOptions {
   hasColorFilter?: boolean;
   colorFilteredProductIds?: Set<string>;
   isLoadingColorFilter?: boolean;
+  hasMetadataFilter?: boolean;
+  metadataFilteredProductIds?: Set<string>;
+  isLoadingMetadataFilter?: boolean;
   promoSalesMap?: Map<string, number>;
   supplierSalesMap?: Map<string, number>;
 }
@@ -46,6 +49,9 @@ export function useCatalogFiltering({
   hasColorFilter = false,
   colorFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingColorFilter = false,
+  hasMetadataFilter = false,
+  metadataFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingMetadataFilter = false,
   promoSalesMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
@@ -76,6 +82,16 @@ export function useCatalogFiltering({
       }
     } else if (categoryFilterSet.size > 0) {
       result = result.filter((p) => categoryFilterSet.has(p.category_id || ''));
+    }
+
+    // BUG-META-01 FIX: filtro de metadados server-side (público-alvo, datas, ramos, segmentos, tags)
+    // via RPC fn_super_filtro_product_ids. Mesmo padrão do color/category filter.
+    if (hasMetadataFilter && !isLoadingMetadataFilter) {
+      if (metadataFilteredProductIds.size > 0) {
+        result = result.filter((p) => metadataFilteredProductIds.has(p.id));
+      } else {
+        return [];
+      }
     }
 
     if (result.length === 0) return result;
@@ -194,6 +210,9 @@ export function useCatalogFiltering({
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    hasMetadataFilter,
+    metadataFilteredProductIds,
+    isLoadingMetadataFilter,
     promoSalesMap,
     supplierSalesMap,
     categoryFilterSet,
