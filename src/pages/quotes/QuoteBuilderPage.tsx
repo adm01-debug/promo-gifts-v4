@@ -84,6 +84,9 @@ export default function QuoteBuilderPage() {
           validUntil: s.validUntil,
           discountType: s.discountType,
           discountValue: s.discountValue,
+          // Inclui a margem de negociação na detecção de alterações para que
+          // ajustar SÓ o markup também dispare o aviso de "alterações não salvas".
+          negotiationMarkup: s.negotiationMarkup,
           paymentMethod: s.paymentMethod,
           paymentTerms: s.paymentTerms,
           deliveryTime: s.deliveryTime,
