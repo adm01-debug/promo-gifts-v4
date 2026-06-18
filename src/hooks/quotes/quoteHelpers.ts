@@ -207,11 +207,24 @@ export function buildPersonalizationsInsertPayload(
   }));
 }
 
+/**
+ * Mapa completo de todos os status possíveis de orçamento.
+ * Sincronizado com o CHECK valid_quote_status no banco:
+ * draft | pending | pending_approval | sent | viewed |
+ * approved | converted | rejected | expired | cancelled
+ *
+ * FIX: versão anterior omitia pending_approval, viewed, converted e cancelled,
+ * fazendo a UI exibir o valor cru do banco para esses status.
+ */
 export const STATUS_LABELS: Record<string, string> = {
-  draft: 'Rascunho',
-  pending: 'Pendente',
-  sent: 'Enviado',
-  approved: 'Aprovado',
-  rejected: 'Rejeitado',
-  expired: 'Expirado',
+  draft:            'Rascunho',
+  pending:          'Pendente',
+  pending_approval: 'Aguardando Aprovação',
+  sent:             'Enviado',
+  viewed:           'Visualizado',
+  approved:         'Aprovado',
+  converted:        'Convertido',
+  rejected:         'Rejeitado',
+  expired:          'Expirado',
+  cancelled:        'Cancelado',
 };
