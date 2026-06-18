@@ -58,6 +58,44 @@ vi.mock('@/hooks/products', () => ({
     isFetching: false,
     error: null,
   })),
+  // Faithful-enough local sort used by the grid (the real one lives in
+  // useNovelties.ts and sorts by the real NoveltyWithDetails fields).
+  sortNovelties: (arr: NoveltyWithDetails[], sortBy: string) => {
+    // Espelha o desempate estável por product_id do contrato real (sortNovelties).
+    const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails) => {
+      const byName = (a.product_name || '').localeCompare(b.product_name || '', 'pt-BR');
+      if (byName !== 0) return byName;
+      return a.product_id < b.product_id ? -1 : a.product_id > b.product_id ? 1 : 0;
+    };
+    switch (sortBy) {
+      case 'newest':
+        arr.sort(
+          (a, b) =>
+            new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime() ||
+            byNameThenId(a, b),
+        );
+        break;
+      case 'name':
+      case 'name-asc':
+        arr.sort(byNameThenId);
+        break;
+      case 'name-desc':
+        arr.sort((a, b) => byNameThenId(b, a));
+        break;
+      case 'price-asc':
+        arr.sort((a, b) => (a.base_price ?? 0) - (b.base_price ?? 0) || byNameThenId(a, b));
+        break;
+      case 'price-desc':
+        arr.sort((a, b) => (b.base_price ?? 0) - (a.base_price ?? 0) || byNameThenId(a, b));
+        break;
+      case 'stock':
+        arr.sort((a, b) => (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0) || byNameThenId(a, b));
+        break;
+      default:
+        break;
+    }
+    return arr;
+  },
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),

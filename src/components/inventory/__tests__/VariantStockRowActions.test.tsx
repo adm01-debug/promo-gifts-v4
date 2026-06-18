@@ -93,7 +93,7 @@ function renderActions(overrides?: { variant?: Partial<VariantStock> }) {
   const v = { ...variant, ...overrides?.variant };
   return render(
     <TooltipProvider>
-      <MemoryRouter initialEntries={['/estoque']}>
+      <MemoryRouter initialEntries={['/estoque']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route
             path="/estoque"

@@ -75,7 +75,8 @@ const setLists = (over?: {
 
 const renderIndicator = () =>
   render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+
       <TooltipProvider>
         <StockAlertsIndicator />
       </TooltipProvider>
