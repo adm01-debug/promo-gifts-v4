@@ -33,7 +33,7 @@ interface QuickViewThumbProps {
   onAddToQuote?: (product: Product) => void;
   onAddToCollection?: (product: Product) => void;
   onShare?: (product: Product) => void;
-  onNavigateToProduct?: (product: Product) => void;
+  onNavigateToProduct?: (productId: string) => void;
 }
 
 export function QuickViewThumb({
