@@ -3,7 +3,8 @@ import { authorizeCron } from '../_shared/dispatcher-auth.ts';
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SUPPLIER_ID   = 'd2734e23-d633-4819-bb15-e51aa44e2118';
+// SEC-001: UUID lido de env var (era hardcoded). Default = seed legado Asia.
+const SUPPLIER_ID   = Deno.env.get('ASIA_SUPPLIER_ID') ?? 'd2734e23-d633-4819-bb15-e51aa44e2118';
 const ASIA_BASE     = Deno.env.get('ASIA_BASE_URL') ?? 'https://asia.ajung.site';
 const POR_PAGINA    = 50;
 const MAX_PAGES     = 30;
