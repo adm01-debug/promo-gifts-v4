@@ -539,17 +539,35 @@ export const ProductQuickView = React.memo(
                     </Button>
                   )}
 
-                  {onShare && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onShare(product)}
-                      className="flex-shrink-0"
-                      aria-label="Compartilhar"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={async () => {
+                      if (onShare) {
+                        onShare(product);
+                        return;
+                      }
+                      const url = typeof window !== 'undefined' ? window.location.href : '';
+                      try {
+                        if (typeof navigator !== 'undefined' && 'share' in navigator) {
+                          await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
+                            title: product.name,
+                            url,
+                          });
+                        } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          await navigator.clipboard.writeText(url);
+                          toast.success('Link copiado');
+                        }
+                      } catch {
+                        /* user cancelled */
+                      }
+                    }}
+                    className="flex-shrink-0"
+                    aria-label="Compartilhar"
+                    data-testid="product-quickview-share"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
 
                   {onNavigateToProduct && (
                     <Button variant="outline" onClick={handleNavigate} className="flex-1">
