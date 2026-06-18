@@ -149,35 +149,34 @@ function FlatVariantRow({
 
   // Ações single-row do QuickView no /estoque (paridade com o catálogo).
   const [collectionOpen, setCollectionOpen] = useState(false);
-  const collectionRows: BulkCollectionRow[] = [
-    {
-      productId: product.productId,
-      productName: product.productName,
-      variant: {
-        color_name: variant.colorName,
-        color_hex: variant.colorHex,
-        size_code: variant.sizeCode,
-        variant_id: variant.variantId,
-        thumbnail: variant.imageUrl ?? product.productImageUrl,
+  const collectionRows = useMemo<BulkCollectionRow[]>(
+    () => [
+      {
+        productId: product.productId,
+        productName: product.productName,
+        variant: {
+          color_name: variant.colorName,
+          color_hex: variant.colorHex,
+          size_code: variant.sizeCode,
+          variant_id: variant.variantId,
+          thumbnail: variant.imageUrl ?? product.productImageUrl,
+        },
       },
-    },
-  ];
+    ],
+    [
+      product.productId,
+      product.productName,
+      product.productImageUrl,
+      variant.colorName,
+      variant.colorHex,
+      variant.sizeCode,
+      variant.variantId,
+      variant.imageUrl,
+    ],
+  );
   const handleAddToQuote = () => {
     try {
-      const param = `items[]=${encodeURIComponent(
-        JSON.stringify({
-          product_id: product.productId,
-          product_name: product.productName,
-          product_sku: variant.variantSku,
-          variant_id: variant.variantId,
-          quantity: variant.minStock || 1,
-          color_name: variant.colorName ?? null,
-          color_hex: variant.colorHex ?? null,
-          size_code: variant.sizeCode ?? null,
-          product_image: variant.imageUrl ?? product.productImageUrl ?? '',
-        }),
-      )}`;
-      navigate(`/orcamentos/novo?${param}`);
+      navigate(`/orcamentos/novo?${buildQuoteParam({ product, variant })}`);
     } catch {
       /* noop — toast já é tratado no fluxo de cotação */
     }
