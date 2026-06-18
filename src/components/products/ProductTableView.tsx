@@ -719,6 +719,16 @@ export const ProductTableView = memo(function ProductTableView({
           isInCompare={isInCompare?.(quickViewProduct.id) || false}
           onToggleCompare={onToggleCompare}
           onShare={onShareProduct}
+          onAddToQuote={(p) => {
+            setVariantPickerProduct(p);
+            setVariantPickerMode('quote');
+            setVariantPickerOpen(true);
+          }}
+          onAddToCollection={(p) => {
+            setVariantPickerProduct(p);
+            setVariantPickerMode('collection');
+            setVariantPickerOpen(true);
+          }}
         />
       )}
       {shareProduct && (
