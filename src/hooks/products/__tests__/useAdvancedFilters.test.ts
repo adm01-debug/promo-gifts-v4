@@ -32,7 +32,7 @@ vi.mock('@/hooks/products/useExternalDatabase', () => ({
 }));
 
 // Mocks genéricos para outros hooks de dados
-const noop = { data: [], fetchAll: vi.fn() };
+const __noop = { data: [], fetchAll: vi.fn() };
 vi.mock('@/hooks/products/useMaterialTypes', () => ({
   useMaterialTypes: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
 }));

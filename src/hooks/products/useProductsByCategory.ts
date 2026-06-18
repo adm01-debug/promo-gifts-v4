@@ -50,8 +50,12 @@ export function useProductsByCategory({
   }, [categoryIds.length]);
 
   const fetchProductIds = useCallback(async () => {
-    // Evitar chamadas duplicadas
-    if (lastFetchedKey.current === categoryIdsKey && productIds.size > 0) return;
+    // FIX BUG-CAT-01 (2026-06-18): guard usa apenas lastFetchedKey (useRef, sempre
+    // atual). Versão anterior usava `productIds.size > 0` (closure stale): para
+    // categorias com 0 produtos, re-fetch extra em cada render. Agora: lastFetchedKey
+    // sozinho é suficiente — muda após fetch bem-sucedido ou erro marcado.
+    // Forçar re-fetch explícito: chamar refetch(), que reseta lastFetchedKey.current.
+    if (lastFetchedKey.current === categoryIdsKey) return;
 
     if (!hasFilter || !enabled) {
       setProductIds(new Set());
@@ -118,7 +122,11 @@ export function useProductsByCategory({
     error,
     categoriesCount,
     source,
-    refetch: fetchProductIds,
+    // FIX BUG-CAT-01: refetch reseta a chave para forçar re-fetch mesmo da mesma categoria.
+    refetch: () => {
+      lastFetchedKey.current = '';
+      return fetchProductIds();
+    },
   };
 }
 

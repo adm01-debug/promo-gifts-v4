@@ -17,8 +17,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useQuoteTemplates } from '../useQuoteTemplates';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
-const mockOrder = vi.fn();
-const mockLimit = vi.fn();
+const _mockOrder = vi.fn();
+const _mockLimit = vi.fn();
 const mockSelect = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -78,7 +78,7 @@ describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { supabase: _supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => { await result.current.fetchTemplates(); });
@@ -145,7 +145,6 @@ describe('fetchAllTemplates — isAdmin guard', () => {
   it('nao chama DB quando user nao e admin', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => { await result.current.fetchAllTemplates?.(); });
