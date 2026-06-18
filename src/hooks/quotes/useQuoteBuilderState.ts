@@ -135,6 +135,15 @@ export function useQuoteBuilderState() {
   // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
   const baselineUpdatedAtRef = useRef<string | null>(null);
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
+  // Status que o usuário tentou salvar quando o conflito foi detectado.
+  // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
+  // evitando rebaixar silenciosamente o orçamento para rascunho.
+  const pendingSaveStatusRef = useRef<'draft' | 'pending' | 'pending_approval'>('draft');
+  // Preserva a justificativa de aprovação digitada pelo vendedor caso um conflito
+  // de concorrência interrompa o save: o diálogo de aprovação limpa seu estado local
+  // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
+  // = undefined e o admin perderia o motivo informado.
+  const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -912,16 +921,17 @@ export function useQuoteBuilderState() {
   const isDraftValid = !!clientId;
 
   // ── Discount limit check ──
+  // Compara contra o DESCONTO REAL (sobre o subtotal real, sem markup) — exatamente
+  // a métrica que o trigger server-side `fn_quotes_validate_discount` enforce via
+  // `real_discount_percent`. Usar o desconto APARENTE aqui (discountValue ou
+  // discountValue/subtotal) divergia da regra do banco quando havia margem de
+  // negociação: o markup dilui o desconto real, então um desconto aparente acima
+  // do limite podia estar, na verdade, dentro da alçada. O gate antigo empurrava
+  // esses casos para aprovação desnecessariamente — anulando o propósito do markup.
   const isDiscountExceeded = useMemo(() => {
     if (maxDiscountPercent === null) return false;
-    if (discountType === 'percent') return discountValue > maxDiscountPercent;
-    // For amount type, calculate effective percent
-    if (subtotal > 0) {
-      const effectivePercent = (discountValue / subtotal) * 100;
-      return effectivePercent > maxDiscountPercent;
-    }
-    return false;
-  }, [maxDiscountPercent, discountType, discountValue, subtotal]);
+    return realDiscountPercent > maxDiscountPercent;
+  }, [maxDiscountPercent, realDiscountPercent]);
 
   // ── Save ──
   const handleSaveQuote = useCallback(
@@ -971,7 +981,7 @@ export function useQuoteBuilderState() {
         client_phone: contactInfo?.phone || undefined,
         status: effectiveStatus,
         discount_percent: discountType === 'percent' ? discountValue : 0,
-        discount_amount: discountType === 'amount' ? discountValue : 0,
+        discount_amount: discountType === 'amount' ? discountAmount : 0,
         negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
         notes: notes || undefined,
         internal_notes: internalNotes || undefined,
@@ -1005,6 +1015,8 @@ export function useQuoteBuilderState() {
               minute: '2-digit',
               timeZone: 'America/Sao_Paulo',
             });
+            pendingSaveStatusRef.current = status; // preserva a intenção do save
+            pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
             setConflictInfo({ modifiedAt: remoteTs, label });
             return; // Bloqueia o save — usuário decide no banner
           }
@@ -1033,6 +1045,7 @@ export function useQuoteBuilderState() {
       companyInfo,
       discountType,
       discountValue,
+      discountAmount,
       negotiationMarkup,
       realDiscountPercent,
       notes,
@@ -1162,12 +1175,18 @@ export function useQuoteBuilderState() {
     dismissConflict: () => setConflictInfo(null),
     /**
      * Ignora o conflito detectado e salva mesmo assim (overwrite consciente).
+     * Preserva o status que o usuário tentou salvar (não rebaixa para rascunho).
      * Após o save, atualiza o baseline para evitar falsos positivos futuros.
      */
-    overwriteAndSave: async (status: 'draft' | 'pending' | 'pending_approval' = 'draft') => {
+    overwriteAndSave: async (status?: 'draft' | 'pending' | 'pending_approval') => {
+      const effectiveStatus = status ?? pendingSaveStatusRef.current;
+      // Repassa a justificativa preservada para que o requestApproval no replay
+      // não perca o motivo informado pelo vendedor.
+      const sellerNotes =
+        effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
       baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
-      await handleSaveQuote(status);
+      await handleSaveQuote(effectiveStatus, sellerNotes);
     },
   };
 }
