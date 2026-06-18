@@ -139,6 +139,11 @@ export function useQuoteBuilderState() {
   // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
   // evitando rebaixar silenciosamente o orçamento para rascunho.
   const pendingSaveStatusRef = useRef<'draft' | 'pending' | 'pending_approval'>('draft');
+  // Preserva a justificativa de aprovação digitada pelo vendedor caso um conflito
+  // de concorrência interrompa o save: o diálogo de aprovação limpa seu estado local
+  // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
+  // = undefined e o admin perderia o motivo informado.
+  const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -1011,6 +1016,7 @@ export function useQuoteBuilderState() {
               timeZone: 'America/Sao_Paulo',
             });
             pendingSaveStatusRef.current = status; // preserva a intenção do save
+            pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
             setConflictInfo({ modifiedAt: remoteTs, label });
             return; // Bloqueia o save — usuário decide no banner
           }
@@ -1173,9 +1179,13 @@ export function useQuoteBuilderState() {
      */
     overwriteAndSave: async (status?: 'draft' | 'pending' | 'pending_approval') => {
       const effectiveStatus = status ?? pendingSaveStatusRef.current;
+      // Repassa a justificativa preservada para que o requestApproval no replay
+      // não perca o motivo informado pelo vendedor.
+      const sellerNotes =
+        effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
       baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
-      await handleSaveQuote(effectiveStatus);
+      await handleSaveQuote(effectiveStatus, sellerNotes);
     },
   };
 }

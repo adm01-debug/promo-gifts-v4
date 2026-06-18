@@ -13,6 +13,7 @@ import React from 'react';
 
 const updateQuoteSpy = vi.fn(async () => ({ id: 'quote-1' }));
 const createQuoteSpy = vi.fn(async () => ({ id: 'quote-1' }));
+const requestApprovalSpy = vi.fn(async () => undefined);
 // Referência estável: o efeito de load do hook depende de `fetchQuote`; um spy
 // recriado a cada render reentraria no efeito em loop.
 const fetchQuoteSpy = vi.fn(async () => LOADED_QUOTE);
@@ -86,7 +87,7 @@ vi.mock('@/hooks/quotes', () => ({
   }),
   useQuoteTemplates: () => ({ templates: [] }),
   useSellerDiscountLimits: () => ({ myLimit: 50 }),
-  useDiscountApproval: () => ({ requestApproval: vi.fn() }),
+  useDiscountApproval: () => ({ requestApproval: requestApprovalSpy }),
   useQuoteItems: () => ({
     items: [VALID_ITEM],
     setItems: vi.fn(),
@@ -143,5 +144,33 @@ describe('useQuoteBuilderState — overwrite preserva status', () => {
     expect(updateQuoteSpy).toHaveBeenCalledTimes(1);
     const [, quoteArg] = updateQuoteSpy.mock.calls[0] as unknown as [string, { status: string }];
     expect(quoteArg.status).toBe('pending');
+  });
+
+  it('overwrite de "pending_approval" preserva a justificativa do vendedor no requestApproval', async () => {
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
+
+    await waitFor(() => expect(result.current.loadingQuote).toBe(false));
+    await waitFor(() => expect(result.current.isFormValid).toBe(true));
+
+    const justification = 'Cliente estratégico — volume alto';
+
+    // 1) Solicita aprovação com justificativa → conflito detectado, save bloqueado.
+    await act(async () => {
+      await result.current.handleSaveQuote('pending_approval', justification);
+    });
+    expect(result.current.conflictInfo).not.toBeNull();
+    expect(requestApprovalSpy).not.toHaveBeenCalled();
+
+    // 2) Sobrescrever mesmo assim → mantém 'pending_approval' E a justificativa.
+    await act(async () => {
+      await result.current.overwriteAndSave();
+    });
+
+    const [, quoteArg] = updateQuoteSpy.mock.calls[0] as unknown as [string, { status: string }];
+    expect(quoteArg.status).toBe('pending_approval');
+    expect(requestApprovalSpy).toHaveBeenCalledTimes(1);
+    // requestApproval(quoteId, realDiscountPercent, maxDiscountPercent, sellerNotes)
+    const approvalArgs = requestApprovalSpy.mock.calls[0] as unknown as unknown[];
+    expect(approvalArgs[3]).toBe(justification);
   });
 });
