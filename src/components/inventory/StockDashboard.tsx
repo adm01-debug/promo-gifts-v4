@@ -16,14 +16,11 @@ import {
   ChevronRight,
   Clock,
   BarChart3,
-  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
@@ -36,12 +33,10 @@ import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
 import { StockFilterToolbar } from './StockFilterToolbar';
 import { FutureStockDialog } from './FutureStockDialog';
-import { HealthScoreInfoDialog } from './HealthScoreInfoDialog';
 const StockHealthBreakdownDrawer = lazyWithRetry(() =>
   import('./StockHealthBreakdownDrawer').then((m) => ({ default: m.StockHealthBreakdownDrawer })),
 );
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
-import { calcHealthScore } from '@/lib/inventory/health-score';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
 
@@ -145,8 +140,6 @@ export function StockDashboard() {
     return () => window.removeEventListener('keydown', handler);
   }, [handleRefresh, toast]);
 
-
-
   // Toast when new critical alerts appear after refresh
   useEffect(() => {
     if (isLoading) return;
@@ -183,16 +176,6 @@ export function StockDashboard() {
   }, [filters.status]);
 
   const isFiltered = filters.status !== 'all';
-
-  // Health score calculation (SSOT em src/lib/inventory/health-score.ts)
-  const healthScore = useMemo(
-    () =>
-      calcHealthScore({
-        productsInStock: summary.productsInStock,
-        totalProducts: summary.totalProducts,
-      }),
-    [summary.productsInStock, summary.totalProducts],
-  );
 
   // Future stock total
   const futureStockTotal = useMemo(
@@ -321,7 +304,6 @@ export function StockDashboard() {
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-2" />
 
-
         <div
           className="flex items-center gap-2 text-xs text-muted-foreground"
           title={lastRefresh.toLocaleString('pt-BR', {
@@ -346,7 +328,6 @@ export function StockDashboard() {
           {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
         </div>
       </div>
-
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
@@ -449,7 +430,6 @@ export function StockDashboard() {
           }
         />
       </div>
-
 
       {/* Active Filter Badge */}
       {isFiltered && (
