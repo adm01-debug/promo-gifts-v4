@@ -241,7 +241,18 @@ export function useFiltersPageState() {
     if (filters.onSale) params.set('onSale', '1');
     if (filters.hasCommercialPackaging) params.set('hasCommercialPackaging', '1');
     if (filters.sortBy && filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
-    setSearchParams(params, { replace: true });
+    // FIX-13: use functional updater to preserve non-filter URL params (e.g. viewMode).
+    // Without this, switching filters wipes viewMode from the URL because the params
+    // object is built from scratch and setSearchParams(params) replaces the full URL.
+    // The standalone viewMode effect (below) does NOT re-run when only filters change.
+    setSearchParams(
+      (prev) => {
+        const vm = prev.get('viewMode');
+        if (vm && vm !== 'grid') params.set('viewMode', vm);
+        return params;
+      },
+      { replace: true },
+    );
   }, [filters, setSearchParams]);
 
   const {

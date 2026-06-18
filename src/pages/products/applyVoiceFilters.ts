@@ -19,11 +19,12 @@ export function applyVoiceFilters(prev: FilterState, f: VoiceFilters): FilterSta
 
   // BUG-VOZ-PRICE FIX: apply min AND max atomically so both survive in a single command.
   // FIX-11: clamp to ≥0 — voice agent may produce negative values from misrecognition.
-  const hasMin = typeof f.minPrice === 'number';
-  const hasMax = typeof f.maxPrice === 'number';
+  // FIX-14: use Number.isFinite() — typeof NaN === 'number' would corrupt priceRange with NaN/Infinity.
+  const hasMin = Number.isFinite(f.minPrice);
+  const hasMax = Number.isFinite(f.maxPrice);
   if (hasMin || hasMax) {
-    const rawMin = hasMin ? (f.minPrice as number) : next.priceRange[0];
-    const rawMax = hasMax ? (f.maxPrice as number) : next.priceRange[1];
+    const rawMin = hasMin ? Number(f.minPrice) : next.priceRange[0];
+    const rawMax = hasMax ? Number(f.maxPrice) : next.priceRange[1];
     next.priceRange = [Math.max(0, rawMin), Math.max(0, rawMax)];
   }
 

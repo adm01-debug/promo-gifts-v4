@@ -220,4 +220,30 @@ describe('applyVoiceFilters — mapeamento de filtros de voz', () => {
     expect(next.priceRange[0]).toBe(0);
     expect(next.priceRange[1]).toBe(200); // max preservado
   });
+
+  // FIX-14 — Number.isFinite() guard: NaN/Infinity não corrompem priceRange
+  it('FIX-14: minPrice=NaN é ignorado (priceRange inalterado)', () => {
+    const prev = { ...base, priceRange: [10, 200] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: NaN });
+    expect(next.priceRange).toEqual([10, 200]);
+  });
+
+  it('FIX-14: maxPrice=Infinity é ignorado (priceRange inalterado)', () => {
+    const prev = { ...base, priceRange: [10, 200] as [number, number] };
+    const next = applyVoiceFilters(prev, { maxPrice: Infinity });
+    expect(next.priceRange).toEqual([10, 200]);
+  });
+
+  it('FIX-14: minPrice=NaN + maxPrice válido → só maxPrice aplica', () => {
+    const prev = { ...base, priceRange: [10, 200] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: NaN, maxPrice: 150 });
+    expect(next.priceRange[0]).toBe(10); // NaN ignorado → min preservado
+    expect(next.priceRange[1]).toBe(150);
+  });
+
+  it('FIX-14: minPrice=-Infinity é ignorado (não é finito)', () => {
+    const prev = { ...base, priceRange: [10, 200] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: -Infinity });
+    expect(next.priceRange).toEqual([10, 200]);
+  });
 });
