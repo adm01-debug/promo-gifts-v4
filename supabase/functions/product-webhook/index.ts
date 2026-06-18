@@ -364,7 +364,7 @@ Deno.serve(async (req) => {
           .in('external_id', externalIds);
         if (deleteError) throw deleteError;
         outcome = { ...outcome, processed: externalIds.length, db_roundtrips: 1 };
-        console.log(`[product-webhook] Soft-deleted ${count ?? externalIds.length} products via external_ids`);
+        console.log(`[product-webhook] Soft-deleted ${count ?? 0} products via external_ids`);
         break;
       }
 
@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
     }
 
     if (syncLogId) {
-      await archiveClient
+      const { error: logUpdateError } = await archiveClient
         .from('product_sync_logs')
         .update({
           status: outcome.failed > 0 ? 'partial' : 'completed',
@@ -391,6 +391,9 @@ Deno.serve(async (req) => {
           completed_at: new Date().toISOString(),
         })
         .eq('id', syncLogId);
+      if (logUpdateError) {
+        console.error('[product-webhook] Failed to update sync log:', logUpdateError.message);
+      }
     }
 
     return new Response(
