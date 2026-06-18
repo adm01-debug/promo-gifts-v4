@@ -109,7 +109,7 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
         {loading ? (
           <div className="space-y-2">
             <Skeleton className="h-16 w-full" />
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 4 }, (_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>

@@ -156,7 +156,7 @@ export function ProductKitComponentsSection({
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 3 }, (_, i) => (
           <Skeleton key={i} className="h-16 rounded-lg" />
         ))}
       </div>

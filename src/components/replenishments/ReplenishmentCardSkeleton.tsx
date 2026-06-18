@@ -71,7 +71,7 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
 
           {/* Swatches */}
           <div className="flex items-center gap-1.5">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 4 }, (_, i) => (
               <Skeleton key={i} className="h-4 w-4 rounded-full" />
             ))}
           </div>
@@ -81,7 +81,6 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
             <Skeleton className="mb-1 h-2 w-20" />
             <Skeleton className="h-8 w-full" />
           </div>
-
         </div>
       </CardContent>
     </Card>

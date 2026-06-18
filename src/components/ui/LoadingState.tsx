@@ -83,7 +83,7 @@ export function LoadingSkeleton({
   if (variant === 'text' && lines > 1) {
     return (
       <div className={cn('space-y-2', className)}>
-        {Array.from({ length: lines }).map((_, i) => (
+        {Array.from({ length: lines }, (_, i) => (
           <Skeleton
             key={i}
             className={cn(
@@ -143,15 +143,15 @@ export function LoadingTable({ rows = 5, columns = 4, className }: LoadingTableP
     <div className={cn('space-y-2', className)}>
       {/* Header */}
       <div className="flex gap-4 rounded-t-lg bg-muted/50 p-3">
-        {Array.from({ length: columns }).map((_, i) => (
+        {Array.from({ length: columns }, (_, i) => (
           <Skeleton key={i} className="h-4 flex-1" />
         ))}
       </div>
 
       {/* Rows */}
-      {Array.from({ length: rows }).map((_, rowIndex) => (
+      {Array.from({ length: rows }, (_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 border-b p-3 last:border-0">
-          {Array.from({ length: columns }).map((_, colIndex) => (
+          {Array.from({ length: columns }, (_, colIndex) => (
             <Skeleton
               key={colIndex}
               className={cn('h-4 flex-1', colIndex === 0 && 'w-1/4 flex-none')}

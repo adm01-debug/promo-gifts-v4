@@ -226,7 +226,7 @@ export function ReplenishmentProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 15 }).map((_, i) =>
+            {Array.from({ length: 15 }, (_, i) =>
               viewMode === 'list' ? (
                 <ProductCardSkeleton key={i} variant="compact" />
               ) : (

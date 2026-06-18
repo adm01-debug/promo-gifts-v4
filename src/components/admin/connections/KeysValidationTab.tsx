@@ -432,7 +432,7 @@ export function KeysValidationTab() {
       {/* Grupos */}
       {loading && evaluations.length === 0 ? (
         <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-32 w-full" />
           ))}
         </div>
