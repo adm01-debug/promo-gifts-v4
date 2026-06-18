@@ -84,7 +84,7 @@ describe('No Native Title Attributes', () => {
       </TooltipProvider>,
     );
     const dots = container.querySelectorAll('span');
-    for (const d of Array.from(dots)) {
+    for (const d of dots) {
       if (d.style.backgroundColor) {
         expect(d.getAttribute('title')).toBeNull();
       }

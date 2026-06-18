@@ -39,7 +39,7 @@ describe('ProductColorSelector Tooltip Requirements', () => {
 
     // CompactColorDots renders spans that act as triggers
     const dots = container.querySelectorAll('span');
-    for (const dot of Array.from(dots)) {
+    for (const dot of dots) {
       // Check if it's one of our color dots (they have a background color set)
       if (dot.style.backgroundColor) {
         expect(dot.getAttribute('title')).toBeNull();

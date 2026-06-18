@@ -66,7 +66,7 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
       const images = templateRef.current.querySelectorAll('img');
       if (images.length > 0) {
         await Promise.all(
-          Array.from(images).map((img) =>
+          [...images].map((img) =>
             img.complete
               ? Promise.resolve()
               : new Promise<void>((resolve) => {

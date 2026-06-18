@@ -424,7 +424,7 @@ describe('Estoque Futuro · agrupamento por cor', () => {
   it('preserva ordem das cores conforme a ordenação dos entries', () => {
     const variants = buildSnapshotFixture();
     const sorted = sortEntries(processStockEntries(variants), 'nearest');
-    const colorOrder = Array.from(new Set(sorted.map((e) => e.colorName)));
+    const colorOrder = [...new Set(sorted.map((e) => e.colorName))];
     expect(colorOrder[0]).toBe('Azul'); // 06/mar é a data mais próxima do fixture
   });
 

@@ -281,7 +281,7 @@ export function getAvailableColors(images: ProductImageMeta[]): string[] {
       colors.add(i.supplier_code);
     }
   });
-  return Array.from(colors).sort();
+  return [...colors].sort();
 }
 
 /**

@@ -144,7 +144,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         dailyMap.set(date, entry);
       }
 
-      const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const daily = [...dailyMap.values()].sort((a, b) => a.date.localeCompare(b.date));
 
       // Aggregate sellers
       const sellerMap = new Map<string, SellerRanking>();
@@ -183,7 +183,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         sellerMap.set(sellerId, s);
       }
 
-      const topSellers = Array.from(sellerMap.values())
+      const topSellers = [...sellerMap.values()]
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 5);
 

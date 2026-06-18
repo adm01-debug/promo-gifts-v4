@@ -19,7 +19,7 @@ describe('HighlightMatch', () => {
    */
   function getHighlightedParts(text: string, query: string): string[] {
     const { container } = render(<HighlightMatch text={text} query={query} />);
-    return Array.from(container.querySelectorAll('mark')).map((el) => el.textContent ?? '');
+    return [...container.querySelectorAll('mark')].map((el) => el.textContent ?? '');
   }
 
   // ──────────────────────────────────────────────────────

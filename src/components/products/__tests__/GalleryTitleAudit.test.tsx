@@ -18,14 +18,14 @@ describe('Gallery Components - Tooltip Regression Audit', () => {
     // 1. Check native title attribute on all images
     const allImages = container.querySelectorAll('img');
     expect(allImages.length).toBeGreaterThan(0);
-    for (const img of Array.from(allImages)) {
+    for (const img of allImages) {
       expect(img.getAttribute('title')).toBeFalsy();
     }
 
     // 2. Check for Radix Tooltip wrappers (TooltipTrigger/TooltipContent)
     // TooltipTrigger usually adds data-state or aria-describedby
     const tooltipTriggers = container.querySelectorAll('[data-state], [aria-describedby]');
-    for (const trigger of Array.from(tooltipTriggers)) {
+    for (const trigger of tooltipTriggers) {
       // If it's a trigger, it shouldn't be the image itself or wrap the image directly for title purposes
       const isImageRelated = trigger.tagName === 'IMG' || trigger.querySelector('img');
       if (isImageRelated) {

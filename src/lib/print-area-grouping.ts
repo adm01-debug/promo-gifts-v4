@@ -123,7 +123,7 @@ export function getUniqueTechniques(groups: GroupedPrintArea[]): string[] {
       }
     }
   }
-  return Array.from(set).sort();
+  return [...set].sort();
 }
 
 /**

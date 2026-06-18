@@ -111,13 +111,13 @@ export function ProductQuickActions({
     )
     .filter(([, items]) => items.length > 0);
 
-  const displayNiches = Array.from(
-    new Set(
+  const displayNiches = [
+    ...new Set(
       (niches ?? [])
         .map((niche) => niche?.trim())
         .filter((niche): niche is string => Boolean(niche)),
     ),
-  );
+  ];
 
   const isActionDisabled = (key: ActionKey) => {
     if (key === 'indicacao') {

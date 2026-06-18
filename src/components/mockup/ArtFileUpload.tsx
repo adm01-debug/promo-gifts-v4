@@ -69,7 +69,7 @@ export function ArtFileUpload({
         return;
       }
 
-      const list = Array.from(files);
+      const list = [...files];
       if (list.length === 0) return;
 
       setIsUploading(true);

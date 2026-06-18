@@ -105,7 +105,7 @@ describe('Admin Module Structural Comparison', () => {
 
     // Select the standardized inner container (div with max-w inside main)
     const findContainer = (root: HTMLElement) =>
-      Array.from(root.querySelectorAll('div')).find((d) => d.className.includes('max-w-'));
+      [...root.querySelectorAll('div')].find((d) => d.className.includes('max-w-'));
 
     const conexoesInner = findContainer(conexoes);
     const usuariosInner = findContainer(usuarios);

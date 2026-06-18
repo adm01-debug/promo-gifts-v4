@@ -63,7 +63,7 @@ export async function generateProposalPDFv2(
 
     // Wait for all images + Google Fonts in parallel
     const images = wrapper.querySelectorAll('img');
-    const imgPromises = Array.from(images).map(
+    const imgPromises = [...images].map(
       (img) =>
         new Promise<void>((resolve) => {
           // FIX: naturalWidth > 0 evita tratar img com src vazio como "carregada"
@@ -82,7 +82,7 @@ export async function generateProposalPDFv2(
 
     // Find all page elements
     const pageElements = wrapper.querySelectorAll('.proposal-page');
-    const pages = pageElements.length > 0 ? Array.from(pageElements) : [wrapper];
+    const pages = pageElements.length > 0 ? [...pageElements] : [wrapper];
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
