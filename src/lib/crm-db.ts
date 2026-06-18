@@ -78,7 +78,7 @@ function isRateLimited(): boolean {
 function activateRateLimitCooldown(): void {
   consecutiveRateLimitHits = Math.min(consecutiveRateLimitHits + 1, 4);
   const cooldownMs = Math.min(
-    RATE_LIMIT_COOLDOWN_BASE_MS * Math.pow(2, consecutiveRateLimitHits - 1),
+    RATE_LIMIT_COOLDOWN_BASE_MS * 2 ** (consecutiveRateLimitHits - 1),
     RATE_LIMIT_COOLDOWN_MAX_MS,
   );
   rateLimitedUntil = Date.now() + cooldownMs;
@@ -507,7 +507,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       }
 
       if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
-        const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        const delay = INITIAL_BACKOFF_MS * 2 ** attempt;
         logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
           requestId,
           message: safeCrmLogMessage(msg),

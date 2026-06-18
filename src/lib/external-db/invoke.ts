@@ -276,7 +276,7 @@ export async function invokeWithRetry(
     }
 
     if (attempt < retries && isRetryableError(msg)) {
-      const base = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      const base = INITIAL_BACKOFF_MS * 2 ** attempt;
       const jitter = Math.floor(Math.random() * 200);
       const delay = Math.min(base + jitter, 4000);
       logger.warn(
