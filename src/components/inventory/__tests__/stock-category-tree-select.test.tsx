@@ -35,9 +35,11 @@ const treeWithChildren: CategoryNode[] = [
   {
     id: 'cat-1',
     name: 'Brindes',
+    level: 0,
+    parent_id: null,
     children: [
-      { id: 'cat-1-1', name: 'Canetas', children: [], icon: '✏️' },
-      { id: 'cat-1-2', name: 'Cadernos', children: [] },
+      { id: 'cat-1-1', name: 'Canetas', children: [], icon: '✏️', level: 1, parent_id: 'cat-1' },
+      { id: 'cat-1-2', name: 'Cadernos', children: [], level: 1, parent_id: 'cat-1' },
     ],
     icon: '🎁',
   },
@@ -45,6 +47,8 @@ const treeWithChildren: CategoryNode[] = [
     id: 'cat-2',
     name: 'Vestuário',
     children: [],
+    level: 0,
+    parent_id: null,
   },
 ];
 

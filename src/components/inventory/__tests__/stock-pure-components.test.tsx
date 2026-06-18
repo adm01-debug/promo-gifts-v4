@@ -153,12 +153,13 @@ const makeAlert = (overrides: Partial<StockAlert> = {}): StockAlert => ({
   productName: 'Produto Teste',
   productSku: 'PT-001',
   variantId: 'v1',
+  title: 'Estoque crítico',
   message: 'Estoque crítico',
   severity: 'error',
-  type: 'critical_stock',
+  type: 'critical',
+  currentStock: 0,
+  threshold: 10,
   createdAt: '2026-06-01T00:00:00Z',
-  updatedAt: '2026-06-01T00:00:00Z',
-  isRead: false,
   ...overrides,
 });
 
@@ -286,11 +287,10 @@ const baseFilters: StockFilters = {
   colorName: undefined,
   minQuantityNeeded: undefined,
   showOnlyWithAlerts: false,
-  showOnlyAtRisk: false,
-  showOnlyFutureStock: false,
-  ruptureHorizonDays: 3,
+  showOnlyWithVariants: false,
   sortBy: 'name',
-  sortOrder: 'asc',
+  sortDirection: 'asc',
+  groupBy: 'none',
 };
 
 describe('StockEmptyFiltersHint', () => {
