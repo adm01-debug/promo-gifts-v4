@@ -28,9 +28,7 @@ import React from 'react';
 import { useOrgData, useOrgCreate, useOrgUpdate, useOrgDelete } from '../useOrgData';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
-const mockSingle = vi.fn();
 const mockSelect = vi.fn();
-const mockEq = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
@@ -58,18 +56,6 @@ vi.mock('sonner', () => ({
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn() },
 }));
-
-// Encadear eq, select, single: supabase.from().select().eq().eq()...
-function buildChain(finalResult: unknown) {
-  const chain: Record<string, unknown> = {};
-  const methods = ['select', 'eq', 'single', 'insert', 'update', 'delete'];
-  methods.forEach(m => {
-    chain[m] = vi.fn(() => chain);
-  });
-  // O método "terminal" retorna a promessa
-  (chain as Record<string, unknown>)['_resolve'] = () => finalResult;
-  return chain;
-}
 
 // ── Wrapper ────────────────────────────────────────────────────────────────────
 function makeWrapper() {
@@ -106,7 +92,7 @@ beforeEach(() => {
 // ── useOrgData ────────────────────────────────────────────────────────────────
 describe('useOrgData', () => {
   it('disabled quando currentOrg=null', () => {
-        useOrganization.mockReturnValueOnce({ currentOrg: null });
+        vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null });
     
     const { result } = renderHook(
       () => useOrgData('products'),
@@ -192,7 +178,7 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-        useOrganization.mockReturnValue({ currentOrg: null });
+        vi.mocked(useOrganization).mockReturnValue({ currentOrg: null });
     
     const { result } = renderHook(
       () => useOrgCreate('products'),
