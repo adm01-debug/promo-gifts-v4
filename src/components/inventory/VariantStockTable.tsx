@@ -13,7 +13,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
-import { useStockSelection } from './useStockSelection';
+import { useStockSelection, buildQuoteParam } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
 import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
 import { useSelectionShortcut } from './useSelectionShortcut';
