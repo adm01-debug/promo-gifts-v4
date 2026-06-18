@@ -299,7 +299,7 @@ export function generateBIDossierPDF(data: DossierData): Blob {
         p.product_name,
         '—',
         String(p.occurrences),
-        formatCurrency(Number(p.total_revenue) || 0),
+        formatCurrency(p.total_revenue || 0),
       ]),
       theme: 'striped',
       headStyles: { fillColor: PRIMARY, textColor: 255, fontSize: 8.5 },

@@ -143,8 +143,8 @@ export function useClientAffinity(clientId?: string) {
         for (const p of realProducts) {
           const cat = deriveCategoryFromName(p.product_name);
           const cur = byCategory.get(cat) ?? { count: 0, revenue: 0, products: [] };
-          cur.count += Number(p.occurrences) || 0;
-          cur.revenue += Number(p.total_revenue) || 0;
+          cur.count += p.occurrences || 0;
+          cur.revenue += p.total_revenue || 0;
           cur.products.push(p);
           byCategory.set(cat, cur);
         }

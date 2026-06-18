@@ -105,9 +105,9 @@ export function useIndustryTrends(ramoAtividade?: string | null) {
               productId: p.product_id,
               imageUrl: p.product_image_url,
               category: deriveCategory(p.product_name),
-              unitsSold: Number(p.total_quantity) || 0,
-              ordersCount: Number(p.unique_clients) || 0,
-              avgPrice: Number(p.avg_unit_price) || 0,
+              unitsSold: p.total_quantity || 0,
+              ordersCount: p.unique_clients || 0,
+              avgPrice: p.avg_unit_price || 0,
               trend: 'stable' as const,
             })),
           };
