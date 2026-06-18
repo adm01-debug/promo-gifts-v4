@@ -53,14 +53,20 @@ async function getButtonsInOrder(page: Page) {
   for (let i = 0; i < count; i++) {
     const btn = buttons.nth(i);
     const label = (await btn.getAttribute('aria-label')) ?? '';
+    // Ignora botões fora do conjunto de ações (ex: "Ver produto completo")
+    if (!EXPECTED_ORDER.some((l) => label.startsWith(l.split(' ')[0]) || label === l)) {
+      // Aceita variações dinâmicas: "Remover dos favoritos", "Remover da comparação"
+      const dynamicOk = /favorit|compara/i.test(label);
+      if (!dynamicOk) continue;
+    }
     const box = await btn.boundingBox();
     if (!box) continue;
     result.push({ label, box });
   }
-  // Garante ordem espacial (x crescente), independente da ordem do DOM.
   result.sort((a, b) => a.box.x - b.box.x);
   return result;
 }
+
 
 test.describe('QuickView • ordem e estados dos botões de ação', () => {
   for (const vp of VIEWPORTS) {
