@@ -51,7 +51,9 @@ async function verifyWebhookSignature(
   secret: string,
 ): Promise<boolean> {
   if (!signatureHeader) return false;
-  const provided = signatureHeader.startsWith('sha256=')
+  // Normaliza prefixo sha256= de forma case-insensitive (SHA256= de alguns emissores).
+  const sigLower = signatureHeader.toLowerCase();
+  const provided = sigLower.startsWith('sha256=')
     ? signatureHeader.slice(7).trim()
     : signatureHeader.trim();
   if (!provided) return false;
