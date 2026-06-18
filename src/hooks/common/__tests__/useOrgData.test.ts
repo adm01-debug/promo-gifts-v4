@@ -168,7 +168,7 @@ describe('useOrgCreate', () => {
   });
 
   it('lança erro quando currentOrg=null', async () => {
-    vi.mocked(useOrganization).mockReturnValue({ currentOrg: null } as never);
+    vi.mocked(useOrganization).mockReturnValueOnce({ currentOrg: null } as never);
 
     const { result } = renderHook(() => useOrgCreate('products'), { wrapper: makeWrapper() });
 
