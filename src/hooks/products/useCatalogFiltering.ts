@@ -173,7 +173,7 @@ export function useCatalogFiltering({
     // Business Logic - Do not change sorting behavior
     const skipSort = hasFuzzySearch && sortBy === 'name';
     // supplierSalesMap entries são SupplierSalesEntry (from useSupplierSalesRanking).
-    sortProducts(result, sortBy, {
+    result = sortProducts(result, sortBy, {
       promoSalesMap,
       supplierSalesMap,
       skipSort,
