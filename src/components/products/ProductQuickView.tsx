@@ -609,6 +609,7 @@ export const ProductQuickView = React.memo(
                     </Button>
                   )}
                 </div>
+                </TooltipProvider>
               </div>
 
               {/* Badges */}
