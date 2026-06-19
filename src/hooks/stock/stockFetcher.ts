@@ -276,6 +276,7 @@ export function buildFutureEntries(
   return entries;
 }
 
+/** Busca em paralelo todas as entidades do estoque e as processa em `productStocks`, `alerts` e `futureStock`. */
 export async function fetchAndProcessStockData(): Promise<{
   productStocks: ProductStockSummary[];
   alerts: StockAlert[];

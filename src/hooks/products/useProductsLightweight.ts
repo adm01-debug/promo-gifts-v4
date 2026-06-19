@@ -50,6 +50,7 @@ function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock
   return 'in-stock';
 }
 
+/** Converte um `LightweightProduct` (DB) em `Product` (UI), resolvendo categoria-folha e imagens. */
 export function mapLightweightToProduct(
   p: LightweightProduct,
   categoriesById?: ReadonlyMap<string, string>,
@@ -113,7 +114,9 @@ export function mapLightweightToProduct(
   };
 }
 
+/** Número de produtos por página nas queries do catálogo. */
 export const CATALOG_PAGE_SIZE = 500;
+/** Número de páginas buscadas em paralelo no primeiro load (burst inicial). */
 export const CATALOG_BATCH_PAGES = 4;
 
 /**
@@ -353,6 +356,7 @@ async function fetchCatalogPage(
   };
 }
 
+/** Busca lista mínima de produtos (sem enriquecimento) para seletores e catálogo de seleção rápida. */
 export function useProductsLightweight() {
   return useQuery<ProductLightweight[]>({
     queryKey: ['promobrind-products-lightweight', 'v3-page-100'],
@@ -372,6 +376,7 @@ export function useProductsLightweight() {
   });
 }
 
+/** Hook de catálogo paginado infinito com busca, filtros de categoria/fornecedor e sort server-side. */
 export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];
