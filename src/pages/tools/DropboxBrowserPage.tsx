@@ -87,7 +87,7 @@ export default function DropboxBrowserPage() {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => listFiles('/' + pathParts.slice(0, i + 1).join('/'))}
+                  onClick={() => listFiles(`/${pathParts.slice(0, i + 1).join('/')}`)}
                 >
                   {part}
                 </Button>

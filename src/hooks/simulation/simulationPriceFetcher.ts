@@ -179,7 +179,7 @@ export async function fetchOptionForTechnique(
     );
   }
 
-  const cobraPorCor = area.cobra_por_cor !== false;
+  const cobraPorCor = area.cobra_por_cor;
   const effectiveColors =
     !cobraPorCor || (area.max_colors ?? 0) <= 1 ? 1 : Math.max(1, settings.colors);
 

@@ -80,8 +80,8 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
     fetchTables();
   }, [techniqueCode]);
 
-  const hasPriceByColor = useMemo(() => tables.some((t) => t.price_by_color === true), [tables]);
-  const hasPriceByArea = useMemo(() => tables.some((t) => t.price_by_area === true), [tables]);
+  const hasPriceByColor = useMemo(() => tables.some((t) => t.price_by_color), [tables]);
+  const hasPriceByArea = useMemo(() => tables.some((t) => t.price_by_area), [tables]);
 
   const colorOptions = useMemo((): ColorOption[] => {
     if (!hasPriceByColor) return [];
@@ -180,8 +180,8 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
 
   const getPricingInfo = (code: string): Omit<TechniquePricingInfo, 'isLoading'> => {
     const tables = allTables[code] ?? [];
-    const hasPriceByColor = tables.some((t) => t.price_by_color === true);
-    const hasPriceByArea = tables.some((t) => t.price_by_area === true);
+    const hasPriceByColor = tables.some((t) => t.price_by_color);
+    const hasPriceByArea = tables.some((t) => t.price_by_area);
     const colorOptions: ColorOption[] = hasPriceByColor
       ? [...new Set(tables.filter(hasMaxColors).map((t) => t.max_colors))]
           .sort((a, b) => a - b)

@@ -110,6 +110,10 @@ export default [
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/prefer-string-starts-ends-with': 'error',
       '@typescript-eslint/unified-signatures': 'error',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/prefer-includes': 'error',
+      'prefer-template': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },

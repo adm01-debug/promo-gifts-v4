@@ -158,7 +158,7 @@ export function useMockupGenerator() {
         maxWidthCm: widths.length ? Math.max(...widths) : null,
         maxHeightCm: heights.length ? Math.max(...heights) : null,
         maxColors: colors.length ? Math.max(...colors) : null,
-        isCurved: opts.some((o: CustomizationOption) => o.is_curved === true),
+        isCurved: opts.some((o: CustomizationOption) => o.is_curved),
         techniquesAvailable: opts.length,
       };
     });
@@ -625,7 +625,7 @@ export function useMockupGenerator() {
   const handleShareMockup = useCallback((mockup: GeneratedMockup) => {
     const text = `Confira o mockup: ${mockup.product_name} com ${mockup.technique_name}`;
     window.open(
-      `https://wa.me/?text=${encodeURIComponent(text + '\n' + mockup.mockup_url)}`,
+      `https://wa.me/?text=${encodeURIComponent(`${text}\n${mockup.mockup_url}`)}`,
       '_blank',
     );
   }, []);

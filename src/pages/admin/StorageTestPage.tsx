@@ -86,7 +86,7 @@ export default function StorageTestPage() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = fileName;
 
       const { error } = await supabase.storage.from(bucketName).upload(filePath, file);
 

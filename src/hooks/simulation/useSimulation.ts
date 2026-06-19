@@ -123,7 +123,7 @@ export function useSimulation() {
     queryFn: async () => {
       const raw = await fetchPromobrindProducts({ limit: 500 });
       return raw
-        .filter((p) => p.active !== false && p.is_active !== false)
+        .filter((p) => p.active && p.is_active)
         .map((p) => ({
           id: p.id,
           name: p.name,

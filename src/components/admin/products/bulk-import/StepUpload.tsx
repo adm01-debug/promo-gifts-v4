@@ -138,7 +138,7 @@ export function StepUpload({ onFileProcessed }: StepUploadProps) {
   const downloadTemplateCSV = useCallback(() => {
     const labels = TARGET_FIELDS.map((f) => `${f.label}${f.required ? ' *' : ''}`);
     const example = TARGET_FIELDS.map((f) => TEMPLATE_EXAMPLES[f.key] ?? '');
-    const csv = '\uFEFF' + [labels.join(';'), example.join(';')].join('\n');
+    const csv = `\uFEFF${[labels.join(';'), example.join(';')].join('\n')}`;
     downloadBlob(csv, 'template_importacao_produtos.csv', 'text/csv;charset=utf-8;');
     toast.success('Template CSV baixado!');
   }, []);

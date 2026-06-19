@@ -38,13 +38,11 @@ export function useProductsByColor({
 
   const filterKey = useMemo(
     () =>
-      [...colorGroups].sort().join(',') +
-      '|' +
-      [...colorVariations].sort().join(',') +
-      '|' +
-      [...colorNuances].sort().join(',') +
-      '|' +
-      [...colors].sort().join(','),
+      `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[
+        ...colorNuances,
+      ]
+        .sort()
+        .join(',')}|${[...colors].sort().join(',')}`,
     [colorGroups, colorVariations, colorNuances, colors],
   );
 

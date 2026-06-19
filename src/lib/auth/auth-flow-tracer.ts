@@ -166,8 +166,9 @@ export class AuthFlowTracer {
     const icon = outcome === 'success' ? '✅' : outcome === 'failure' ? '❌' : '⏳';
     const title =
       `${FLOW_PREFIX} ${icon} flow=${this.flowId} ${outcome.toUpperCase()} ` +
-      `flow=${this.snapshot.flow} duration=${t}ms target=${target ?? '-'}` +
-      (failureReason ? ` reason="${failureReason}"` : '');
+      `flow=${this.snapshot.flow} duration=${t}ms target=${target ?? '-'}${
+        failureReason ? ` reason="${failureReason}"` : ''
+      }`;
 
     if (AUTH_FLOW_DEBUG_ENABLED) {
       const safeSnapshot = this.safeSnapshot();
