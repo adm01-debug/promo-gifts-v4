@@ -245,25 +245,36 @@ export async function fetchPromobrindProductById(
       return [] as Video[];
     });
 
+  // Schema validado: product_kit_components tem 26 campos (ver DOC_product_kit_components_COMPLETO.md).
+  // Para kits NATIVOS (component_product_id = NULL), TODOS os atributos vivem nesta tabela.
   type KitComponent = {
     id: string;
     component_name: string | null;
     component_code: string | null;
     component_product_id: string | null;
     component_sku: string | null;
+    component_description: string | null;
     quantity: number | null;
     display_order: number | null;
     is_optional: boolean | null;
     is_packaging: boolean | null;
     is_replaceable: boolean | null;
     allows_personalization: boolean | null;
+    personalization_notes: string | null;
     material: string | null;
+    color: string | null;
     primary_image_url: string | null;
     primary_image_fallback_url?: string | null;
+    images: unknown | null; // jsonb[] — galeria de fotos do componente
     height_mm: number | null;
     width_mm: number | null;
     length_mm: number | null;
+    diameter_mm: number | null;
+    circumference_mm: number | null;
     weight_g: number | null;
+    capacity_ml: number | null;
+    supplier_component_code: string | null;
+    component_type_code: string | null;
     notes: string | null;
   };
   const kitPromise: Promise<KitComponent[]> = product.is_kit
@@ -271,7 +282,7 @@ export async function fetchPromobrindProductById(
         table: 'product_kit_components',
         operation: 'select',
         select:
-          'id, component_name, component_code, component_product_id, component_sku, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, material, primary_image_url, height_mm, width_mm, length_mm, weight_g, notes',
+          'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, capacity_ml, supplier_component_code, component_type_code, notes',
         filters: { kit_product_id: productId },
         orderBy: { column: 'display_order', ascending: true },
         limit: 200,
@@ -282,6 +293,7 @@ export async function fetchPromobrindProductById(
           return [] as KitComponent[];
         })
     : Promise.resolve([]);
+
 
   // NOTA DE NEGÓCIO: kits nativos do fornecedor são vendidos como conjunto único.
   // Componentes NÃO são SKUs vendáveis avulsos — portanto não buscamos preço/estoque por componente.
