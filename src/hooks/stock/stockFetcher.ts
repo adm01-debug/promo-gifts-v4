@@ -120,6 +120,20 @@ export function buildVelocityIndex(rows: ExternalStockVelocity[]): Map<string, n
 // BUSCA PAGINADA
 // ============================================
 
+/**
+ * Colunas permitidas como filtros por tabela lógica (pré-GOLD_READ_ALIASES).
+ * Defesa em profundidade: impede que colunas arbitrárias sejam injetadas via
+ * parâmetro `filters` de fetchPaginatedFromBridge. Tabelas ausentes → sem restrição.
+ */
+// Inclui apenas tabelas chamadas com filtros em produção. Tabelas ausentes
+// (categories, suppliers, product_images, mv_stock_velocity) não recebem
+// filtros e portanto não precisam de restrição.
+export const ALLOWED_FILTER_KEYS: Readonly<Record<string, ReadonlySet<string>>> = {
+  products: new Set(['active', 'is_active', 'supplier_id', 'category_id', 'brand']),
+  product_variants: new Set(['is_active', 'product_id', 'color_id', 'supplier_id']),
+  variant_supplier_sources: new Set(['is_active', 'variant_id', 'supplier_id']),
+};
+
 /** Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação. */
 export async function fetchPaginatedFromBridge<T extends { id: string }>(
   table: string,
@@ -153,7 +167,14 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     );
 
     if (filters) {
+      const allowed = ALLOWED_FILTER_KEYS[table];
       for (const [col, val] of Object.entries(filters)) {
+        if (allowed !== undefined && !allowed.has(col)) {
+          logger.warn(
+            `[Stock] fetchPaginatedFromBridge: coluna de filtro não permitida "${col}" em "${table}" — ignorado`,
+          );
+          continue;
+        }
         if (val === null) query = query.is(col, null);
         else if (Array.isArray(val)) query = query.in(col, val);
         else query = query.eq(col, val);
