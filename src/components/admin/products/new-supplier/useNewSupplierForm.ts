@@ -254,6 +254,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       setLogoUrl(urlData.publicUrl);
       toast.success('Logo enviada');
     } catch (err: unknown) {
+      logger.error('Failed to upload supplier logo', err);
       toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
@@ -286,6 +287,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
+      logger.error('Failed to lookup supplier CNPJ', err);
       toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
@@ -516,6 +518,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         resetForm();
       }
     } catch (err: unknown) {
+      logger.error('Failed to create supplier', err);
       toast.error('Erro ao criar fornecedor');
     } finally {
       setSaving(false);

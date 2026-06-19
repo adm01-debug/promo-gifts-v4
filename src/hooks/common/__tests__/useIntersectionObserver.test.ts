@@ -58,7 +58,7 @@ describe('useIntersectionObserver', () => {
 
   it('chama observe no mount quando ref tem elemento', () => {
     const div = document.createElement('div');
-    const { result } = renderHook(() => {
+    renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
@@ -73,7 +73,9 @@ describe('useIntersectionObserver', () => {
       return useIntersectionObserver(ref as never);
     });
     const io = MockIntersectionObserver.instances[0];
-    act(() => { io?.simulateIntersecting(div, true); });
+    act(() => {
+      io?.simulateIntersecting(div, true);
+    });
     expect(result.current.isVisible).toBe(true);
   });
 
@@ -84,8 +86,12 @@ describe('useIntersectionObserver', () => {
       return useIntersectionObserver(ref as never);
     });
     const io = MockIntersectionObserver.instances[0];
-    act(() => { io?.simulateIntersecting(div, true); });
-    act(() => { io?.simulateIntersecting(div, false); });
+    act(() => {
+      io?.simulateIntersecting(div, true);
+    });
+    act(() => {
+      io?.simulateIntersecting(div, false);
+    });
     expect(result.current.isVisible).toBe(false);
   });
 
