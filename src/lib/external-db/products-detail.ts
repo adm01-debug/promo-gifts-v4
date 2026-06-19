@@ -283,13 +283,50 @@ export async function fetchPromobrindProductById(
         })
     : Promise.resolve([]);
 
-  const [allProductImages, enrichment, variants, videos, kitComponents] = await Promise.all([
+  // Enriquecimento opcional: preço/estoque por componente via view v_kit_component_enriched.
+  // Se a view ainda não existir no SSOT, o catch retorna [] e a UI degrada silenciosamente.
+  type KitEnrichment = {
+    id: string;
+    component_sale_price: number | null;
+    component_list_price: number | null;
+    component_stock_quantity: number | null;
+    component_stock_status: string | null;
+  };
+  const kitEnrichmentPromise: Promise<KitEnrichment[]> = product.is_kit
+    ? dbInvoke<KitEnrichment>({
+        table: 'v_kit_component_enriched',
+        operation: 'select',
+        select:
+          'id, component_sale_price, component_list_price, component_stock_quantity, component_stock_status',
+        filters: { kit_product_id: productId },
+        limit: 200,
+      })
+        .then((r) => r.records)
+        .catch(() => [] as KitEnrichment[])
+    : Promise.resolve([] as KitEnrichment[]);
+
+  const [allProductImages, enrichment, variants, videos, kitComponents, kitEnrichment] = await Promise.all([
     imagesPromise,
     enrichmentPromise,
     variantsPromise,
     videosPromise,
     kitPromise,
+    kitEnrichmentPromise,
   ]);
+
+  // Merge determinístico por id (O(n) via Map)
+  if (kitEnrichment.length > 0 && kitComponents.length > 0) {
+    const enrichMap = new Map(kitEnrichment.map((e) => [e.id, e]));
+    for (const c of kitComponents as Array<KitComponent & Partial<KitEnrichment>>) {
+      const e = enrichMap.get(c.id);
+      if (e) {
+        c.component_sale_price = e.component_sale_price;
+        c.component_list_price = e.component_list_price;
+        c.component_stock_quantity = e.component_stock_quantity;
+        c.component_stock_status = e.component_stock_status;
+      }
+    }
+  }
 
   let imagesAll: ProductImage[] = allProductImages;
   if (allProductImages.length === IMAGES_PAGE) {
