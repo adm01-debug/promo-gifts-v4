@@ -92,7 +92,7 @@ describe('user=null guard', () => {
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.loading).toBe(false);
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(_supabase.from).not.toHaveBeenCalled();
   });
 });
 

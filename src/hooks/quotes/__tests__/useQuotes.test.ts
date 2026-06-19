@@ -41,7 +41,7 @@ vi.mock('@/contexts/OrganizationContext', () => ({
   useOrganization: vi.fn(() => ({ currentOrg: { id: 'org-001' } })),
 }));
 
-vi.mock('@/hooks/common/useSalesScope', () => ({
+vi.mock('@/lib/auth/visibility-scope', () => ({
   useSalesScope: vi.fn(() => 'self'),
 }));
 
