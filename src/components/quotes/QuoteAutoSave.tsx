@@ -164,9 +164,12 @@ export function QuoteAutoSave({
       const versionKey = `${storageKey}_v${newDraft.version}`;
       localStorage.setItem(versionKey, JSON.stringify(newDraft));
 
-      // Limpar versões antigas (manter apenas MAX_VERSIONS)
+      // Limpar versões antigas (manter apenas MAX_VERSIONS).
+      // existingDrafts não inclui o newDraft recém-salvo, então o total após
+      // o save é existingDrafts.length + 1. Para manter MAX_VERSIONS no total,
+      // devemos manter apenas MAX_VERSIONS - 1 dos existentes.
       const sortedDrafts = [...existingDrafts].sort((a, b) => b.version - a.version);
-      sortedDrafts.slice(MAX_VERSIONS).forEach((draft) => {
+      sortedDrafts.slice(MAX_VERSIONS - 1).forEach((draft) => {
         localStorage.removeItem(`${storageKey}_v${draft.version}`);
       });
 

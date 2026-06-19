@@ -579,7 +579,12 @@ export function useSellerCarts() {
         notes: item.notes ?? null,
       }));
 
-      const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);
+      // Upsert instead of insert so that if the user added an item during the undo
+      // window (after clear, before undo), we restore the snapshot quantity rather
+      // than failing with 23505 (unique constraint on cart_id, product_id, color_name).
+      const { error } = await supabase
+        .from('seller_cart_items')
+        .upsert(itemsToInsert, { onConflict: 'cart_id,product_id,color_name' });
       if (error) throw error;
 
       // updated_at do carrinho-pai é propagado pelo trigger

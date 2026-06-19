@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTechniqueHandlers } from '@/pages/mockups/mockup-generator/MockupTechniqueHandlers';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
+import { toast } from 'sonner';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { LayoutCaptureRequest } from '@/components/mockup/approval/OffscreenLayoutCapture';
 
@@ -469,15 +470,20 @@ export default function MockupGenerator() {
                           colorsCount={mg.techniqueColorConfig?.colorCount}
                           onStaticGenerated={async (dataUrl, extra) => {
                             if (mg.activeArea) {
-                              const recordId = await mg.saveMockupToHistory(
-                                dataUrl,
-                                mg.activeArea,
-                                extra,
-                              );
-                              if (recordId) {
-                                mg.setLastSavedMockupUrl(dataUrl);
-                                mg.setLastSavedLayoutMode('static');
-                                mg.setLastSavedRecordId(recordId);
+                              try {
+                                const recordId = await mg.saveMockupToHistory(
+                                  dataUrl,
+                                  mg.activeArea,
+                                  extra,
+                                );
+                                if (recordId) {
+                                  mg.setLastSavedMockupUrl(dataUrl);
+                                  mg.setLastSavedLayoutMode('static');
+                                  mg.setLastSavedRecordId(recordId);
+                                }
+                              } catch (err) {
+                                toast.error('Erro ao salvar mockup no histórico');
+                                console.error('[MockupGenerator] saveMockupToHistory failed:', err);
                               }
                             }
                           }}
