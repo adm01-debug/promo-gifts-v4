@@ -308,6 +308,7 @@ export const NoveltyGridCard = memo(
             </div>
           ) : null}
         </div>
+      </div>
       </article>
     );
   },
