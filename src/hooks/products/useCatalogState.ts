@@ -540,6 +540,10 @@ export function useCatalogState() {
     // nunca contados no badge global "N filtros ativos".
     if (filters.minSupplierSales90d > 0) count += 1;
     if (filters.minPromoSales90d > 0) count += 1;
+    // BUG-MINSTOCK-COUNT FIX: minStock era filtrado no Super Filtro mas não contado aqui.
+    if (filters.minStock > 0) count += 1;
+    // BUG-TECHNIQUES-COUNT FIX: técnicas selecionadas não eram contadas no badge global.
+    if (filters.techniques?.length) count += filters.techniques.length;
     return count;
   }, [filters]);
 
