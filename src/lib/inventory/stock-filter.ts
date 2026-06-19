@@ -8,9 +8,12 @@
  *        → orquestrador (variant filter → status → search → produto → minQty → alerts → projeção → sort)
  *
  * Otimizações:
- *   - normalize() (lowercase + strip de acentos) memoizado por chamada
+ *   - normalize() memoizado: Map<string,string> de sessão (catálogos têm strings estáveis —
+ *     nomes de cor/categoria/fornecedor se repetem em N×M variações; após 1ª passagem
+ *     o hit ratio é ~100%, eliminando .toLowerCase()+NFD+replace+trim redundantes).
  *   - buildStockIndexes() pré-computa índices por cor/categoria/fornecedor/produto
- *     para reuso entre filtros e paginação (evita varrer N×M).
+ *     E armazena productNormals (nameN/skuN/categoryN/supplierN) para reuso O(1)
+ *     no loop de filtragem — sem recalcular normalize() por produto candidato.
  */
 import {
   aggregateVariantsToProduct,
@@ -23,12 +26,23 @@ import {
 
 // ---------- normalização ----------
 /** Normaliza string para comparação case-insensitive e sem acentos. */
-export const normalize = (s: string | undefined | null): string =>
-  (s ?? '')
+// Catálogos B2B têm strings de domínio limitadas (nomes de cor, categoria,
+// fornecedor, produto) que se repetem em milhares de variações. O cache converte
+// O(N×M) recálculos em O(1) lookups após a primeira passagem de filtro.
+const _normalizeCache = new Map<string, string>();
+
+export const normalize = (s: string | undefined | null): string => {
+  const key = s ?? '';
+  const hit = _normalizeCache.get(key);
+  if (hit !== undefined) return hit;
+  const val = key
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
+  _normalizeCache.set(key, val);
+  return val;
+};
 
 // ---------- contexto derivado dos filtros ----------
 /** Valores pré-computados derivados de `StockFilters` para evitar recálculos em loops. */
@@ -130,6 +144,15 @@ export function projectProduct(
 }
 
 // ---------- estágio 0: índices reutilizáveis ----------
+
+/** Strings normalizadas pré-computadas de um produto (usadas no loop de filtragem). */
+export interface ProductNormal {
+  nameN: string;
+  skuN: string;
+  categoryN: string;
+  supplierN: string;
+}
+
 /** Índices pré-computados para filtragem O(1) por cor, categoria, fornecedor e alertas. */
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
@@ -137,6 +160,10 @@ export interface StockIndexes {
   byCategoryN: Map<string, Set<string>>; // categoryN → productIds
   bySupplierN: Map<string, Set<string>>; // supplierN → productIds
   productsWithAlerts: Set<string>;
+  /** Strings normalizadas de produto: eliminam chamadas extras a normalize() no loop principal.
+   *  Strings de variação são cobertas pelo _normalizeCache module-level (colorName repete-se
+   *  em N×M variações; após a primeira passagem de buildStockIndexes o hit ratio é ~100%). */
+  productNormals: Map<string, ProductNormal>;
 }
 
 /** Pré-computa índices invertidos sobre a lista de produtos e alertas para reutilização entre chamadas. */
@@ -148,6 +175,8 @@ export function buildStockIndexes(
   const byColorGroupN = new Map<string, Set<string>>();
   const byCategoryN = new Map<string, Set<string>>();
   const bySupplierN = new Map<string, Set<string>>();
+  const productNormals = new Map<string, ProductNormal>();
+
   const addTo = (m: Map<string, Set<string>>, key: string, id: string) => {
     if (!key) return;
     let set = m.get(key);
@@ -157,19 +186,36 @@ export function buildStockIndexes(
     }
     set.add(id);
   };
+
   for (const p of products) {
     // Normalize categoryId (category name from tree select) for case/accent-insensitive index.
-    addTo(byCategoryN, normalize(p.categoryId ?? p.categoryName), p.productId);
-    addTo(bySupplierN, normalize(p.supplierName), p.productId);
+    const categoryN = normalize(p.categoryId ?? p.categoryName);
+    const supplierN = normalize(p.supplierName);
+    productNormals.set(p.productId, {
+      nameN: normalize(p.productName),
+      skuN: normalize(p.productSku),
+      categoryN,
+      supplierN,
+    });
+    addTo(byCategoryN, categoryN, p.productId);
+    addTo(bySupplierN, supplierN, p.productId);
     for (const v of p.variants) {
       const cn = normalize(v.colorName);
-      addTo(byColorNameN, cn, p.productId);
       const cg = normalize(v.colorGroup);
+      addTo(byColorNameN, cn, p.productId);
       if (cg) addTo(byColorGroupN, cg, p.productId);
     }
   }
+
   const productsWithAlerts = new Set(alerts.map((a) => a.productId));
-  return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
+  return {
+    byColorNameN,
+    byColorGroupN,
+    byCategoryN,
+    bySupplierN,
+    productsWithAlerts,
+    productNormals,
+  };
 }
 
 // ---------- predicados auxiliares ----------
@@ -201,19 +247,6 @@ function matchStatus(
   // impede que um futuro fallback por variante infle o filtro vs. o card.
   if (status === 'critical') return false;
   return product.variants.some((v) => v.status === status);
-}
-
-function matchSearch(
-  product: ProductStockSummary,
-  variantsForFilter: VariantStock[],
-  searchN: string,
-): boolean {
-  if (!searchN) return true;
-  if (normalize(product.productName).includes(searchN)) return true;
-  if (normalize(product.productSku).includes(searchN)) return true;
-  return variantsForFilter.some(
-    (v) => normalize(v.colorName).includes(searchN) || normalize(v.variantSku).includes(searchN),
-  );
 }
 
 function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
@@ -259,6 +292,29 @@ function matchMinQuantity(
     for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
   }
   return pool >= ctx.minQty;
+}
+
+// ---------- helpers indexados (privados) ----------
+
+/**
+ * Variante de matchSearch que usa productNormals pré-computados para evitar
+ * recalcular normalize(product.productName/SKU) por candidato.
+ * Strings de variação já são cobertas pelo _normalizeCache module-level.
+ */
+function matchSearchIdx(
+  product: ProductStockSummary,
+  variantsForFilter: VariantStock[],
+  searchN: string,
+  pNorm: ProductNormal | undefined,
+): boolean {
+  if (!searchN) return true;
+  const nameN = pNorm !== undefined ? pNorm.nameN : normalize(product.productName);
+  const skuN = pNorm !== undefined ? pNorm.skuN : normalize(product.productSku);
+  if (nameN.includes(searchN)) return true;
+  if (skuN.includes(searchN)) return true;
+  return variantsForFilter.some(
+    (v) => normalize(v.colorName).includes(searchN) || normalize(v.variantSku).includes(searchN),
+  );
 }
 
 // ---------- estágio 3: orquestrador ----------
@@ -315,13 +371,22 @@ export function applyStockFilters(
 
   const out: ProductStockSummary[] = [];
   for (const p of candidates) {
+    const pNorm = idx.productNormals.get(p.productId);
     const variantsForFilter = selectMatchingVariants(p, ctx);
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
     if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
-    if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
-    if (ctx.categoryN && normalize(p.categoryId ?? p.categoryName ?? '') !== ctx.categoryN)
+    if (!matchSearchIdx(p, variantsForFilter, ctx.searchN, pNorm)) continue;
+    if (
+      ctx.categoryN &&
+      (pNorm !== undefined ? pNorm.categoryN : normalize(p.categoryId ?? p.categoryName ?? '')) !==
+        ctx.categoryN
+    )
       continue;
-    if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
+    if (
+      ctx.supplierN &&
+      (pNorm !== undefined ? pNorm.supplierN : normalize(p.supplierName)) !== ctx.supplierN
+    )
+      continue;
     if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
