@@ -30,6 +30,7 @@ export interface ProductFilterContext {
   hasMaterialFilter: boolean;
   materialFilteredProductIds: Set<string>;
   isLoadingMaterialFilter: boolean;
+  materialFilterError?: unknown;
   /**
    * SF-E (sizes server-side). Quando `hasSizeFilter` é true, a filtragem por
    * tamanho usa o Set de product IDs vindo de product_variants (em vez da
@@ -76,6 +77,7 @@ export function applyProductFilters(
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
@@ -194,7 +196,13 @@ export function applyProductFilters(
   }
   if (hasMaterialFilter && materialFilteredProductIds.size > 0)
     result = result.filter((p) => materialFilteredProductIds.has(p.id));
-  else if (hasMaterialFilter && materialFilteredProductIds.size === 0 && !isLoadingMaterialFilter)
+  // FIX-22: guard !materialFilterError — RPC error must not zero the grid.
+  else if (
+    hasMaterialFilter &&
+    materialFilteredProductIds.size === 0 &&
+    !isLoadingMaterialFilter &&
+    !materialFilterError
+  )
     result = [];
   if (!hasMaterialFilter && filters.materiais.length > 0) {
     const materiaisLower = filters.materiais.map((m) => m.toLowerCase());

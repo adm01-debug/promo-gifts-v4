@@ -259,10 +259,23 @@ export function useFiltersPageState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
   });
+
+  const prevMaterialErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = materialFilterError ? String(materialFilterError) : null;
+    if (materialFilterError && msg !== prevMaterialErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de materiais', {
+        description: 'O filtro de Materiais falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMaterialErrorRef.current = msg;
+  }, [materialFilterError]);
+
   const {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
@@ -505,6 +518,7 @@ export function useFiltersPageState() {
         hasMaterialFilter,
         materialFilteredProductIds,
         isLoadingMaterialFilter,
+        materialFilterError,
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
@@ -527,6 +541,7 @@ export function useFiltersPageState() {
       hasMaterialFilter,
       materialFilteredProductIds,
       isLoadingMaterialFilter,
+      materialFilterError,
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,

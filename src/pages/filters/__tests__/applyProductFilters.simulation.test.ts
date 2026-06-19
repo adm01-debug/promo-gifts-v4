@@ -671,6 +671,41 @@ describe('SIM — error gates: falha de servidor nunca zera a grade', () => {
     expect(run(f(), ctx).length).toBe(CATALOG.length);
   });
 
+  // FIX-22: material filter error guard (mirrors FIX-21 for color)
+  it('FIX-22: materialFilterError: grade intacta quando query de material falha', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: new Error('material-rpc 503'),
+    });
+    expect(run(f({ materialTypes: ['algodao'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-22: material Set vazio + sem erro + sem loading = zera grade (comportamento correto)', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: undefined,
+    });
+    expect(run(f({ materialTypes: ['material-inexistente'] }), ctx).length).toBe(0);
+  });
+
+  it('FIX-22: color + material ambos em erro = grade intacta', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('color rpc down'),
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: new Error('material rpc down'),
+    });
+    expect(run(f({ colors: ['azul'], materiais: ['metal'] }), ctx).length).toBe(CATALOG.length);
+  });
+
   it('erro metadata + filtro local ativo: filtra local, NÃO server-side', () => {
     // metadata server falhou; filtro local featured deve ainda funcionar
     const ctx = baseCtx({
