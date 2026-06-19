@@ -28,6 +28,7 @@ import {
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { NoveltyCardSkeleton } from './NoveltyCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
@@ -287,15 +288,13 @@ export function NoveltyProductGrid() {
             )}
           >
             {Array.from({ length: 15 }).map((_, i) => (
-              <div
-                key={i}
-                data-testid="novelty-loading-card"
-                // Altura reservada idêntica ao card real (min-h-[420px]) para
-                // estabilizar o layout no swap skeleton→dados.
-                className={viewMode === 'list' ? '' : 'min-h-[420px]'}
-              >
-                <ProductCardSkeleton variant={viewMode === 'list' ? 'compact' : 'default'} />
-              </div>
+              viewMode === 'list' ? (
+                <div key={i} data-testid="novelty-loading-card">
+                  <ProductCardSkeleton variant="compact" />
+                </div>
+              ) : (
+                <NoveltyCardSkeleton key={i} />
+              )
             ))}
           </div>
         </div>
