@@ -86,7 +86,7 @@ describe('useIntersectionObserver', () => {
 
   it('retorna true quando IntersectionObserver dispara intersecao', () => {
     const div = document.createElement('div');
-    const { result: _result } = renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
@@ -98,7 +98,7 @@ describe('useIntersectionObserver', () => {
 
   it('retorna false quando IntersectionObserver sai do viewport (once=false)', () => {
     const div = document.createElement('div');
-    const { result: _result } = renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = { current: div };
       // once=false allows toggling visibility back to false
       return useIntersectionObserver(ref as never, { once: false });
