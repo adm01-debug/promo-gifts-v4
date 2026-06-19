@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Product } from '@/types/product-catalog';
 import { logger } from '@/lib/logger';
 
+/** Produto similar retornado pelo hook para exibição nos cards de relacionados. */
 export interface SimilarProductItem {
   id: string;
   name: string;
@@ -72,6 +73,7 @@ async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> 
   return (records || []).filter((p) => p.sale_price > 0).map(mapLightweightToSimilarItem);
 }
 
+/** Busca produtos similares via `product_relationships` → grupos → fornecedor/categoria (3 níveis). */
 export function useSimilarProducts(product: Product | null | undefined) {
   const productId = product?.id;
   const supplierId = product?.supplier?.id;

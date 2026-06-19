@@ -36,12 +36,14 @@ import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { showUndoToast } from '@/utils/undoToast';
 import { useState, useEffect } from 'react';
 
 export function CartHeaderButton() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Listen for FAB "open cart" event
   useEffect(() => {
@@ -96,6 +98,7 @@ export function CartHeaderButton() {
     removeItem,
     updateItemQuantity,
     clearCart,
+    restoreItems,
   } = cartContext;
 
   return (
@@ -132,7 +135,10 @@ export function CartHeaderButton() {
         className="w-[420px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
-        onCloseAutoFocus={() => setShowPicker(false)}
+        onCloseAutoFocus={() => {
+          setShowPicker(false);
+          setPendingDeleteId(null);
+        }}
       >
         {showPicker ? (
           <div className="animate-fade-in p-4">
@@ -258,7 +264,10 @@ export function CartHeaderButton() {
                               ? 'border-primary/30 bg-primary/5'
                               : 'border-border/40 hover:border-border/60 hover:bg-muted/30',
                           )}
-                          onClick={() => setActiveCartId(cart.id)}
+                          onClick={() => {
+                            setPendingDeleteId(null);
+                            setActiveCartId(cart.id);
+                          }}
                         >
                           {/* Cart header */}
                           <div className="flex items-center gap-2.5 px-3 py-2.5">
@@ -311,7 +320,7 @@ export function CartHeaderButton() {
                                   {cart.items.length} {cart.items.length === 1 ? 'item' : 'itens'}
                                 </span>
                               )}
-                              {/* Limpar carrinho */}
+                              {/* Limpar carrinho — com undo toast */}
                               {isActive && cart.items.length > 0 && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -319,7 +328,23 @@ export function CartHeaderButton() {
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        const snapshot = cart.items.map((item) => ({
+                                          product_id: item.product_id,
+                                          product_name: item.product_name,
+                                          product_sku: item.product_sku || undefined,
+                                          product_image_url: item.product_image_url || undefined,
+                                          product_price: item.product_price,
+                                          quantity: item.quantity,
+                                          color_name: item.color_name || undefined,
+                                          color_hex: item.color_hex || undefined,
+                                          notes: item.notes ?? undefined,
+                                        }));
                                         clearCart(cart.id);
+                                        showUndoToast({
+                                          title: 'Carrinho limpo',
+                                          description: `${snapshot.length} ${snapshot.length === 1 ? 'item removido' : 'itens removidos'}`,
+                                          onUndo: () => restoreItems(cart.id, snapshot),
+                                        });
                                       }}
                                     >
                                       <Eraser className="h-3.5 w-3.5" />
@@ -328,22 +353,49 @@ export function CartHeaderButton() {
                                   <TooltipContent side="top">Limpar itens</TooltipContent>
                                 </Tooltip>
                               )}
-                              {/* Excluir carrinho */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
+                              {/* Excluir carrinho — dois cliques para confirmar */}
+                              {pendingDeleteId === cart.id ? (
+                                <div
+                                  className="flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <button
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
-                                    style={{ opacity: isActive ? 1 : undefined }}
+                                    className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-destructive transition-colors hover:bg-destructive/10"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       deleteCart(cart.id);
+                                      setPendingDeleteId(null);
                                     }}
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Excluir
                                   </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">Excluir carrinho</TooltipContent>
-                              </Tooltip>
+                                  <button
+                                    className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted/60"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPendingDeleteId(null);
+                                    }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                                      style={{ opacity: isActive ? 1 : undefined }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPendingDeleteId(cart.id);
+                                      }}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Excluir carrinho</TooltipContent>
+                                </Tooltip>
+                              )}
                             </div>
                           </div>
 
@@ -435,9 +487,11 @@ export function CartHeaderButton() {
                                           {item.quantity}
                                         </span>
                                         <button
-                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                          disabled={item.quantity >= 999999}
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            if (item.quantity >= 999999) return;
                                             updateItemQuantity(item.id, item.quantity + 1);
                                           }}
                                         >

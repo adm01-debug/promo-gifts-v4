@@ -10,6 +10,7 @@ import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
 import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
+import { useProductsBySize } from '@/hooks/products/useProductsBySize';
 import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
 import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
 import type { Product } from '@/types/product-catalog';
@@ -30,6 +31,7 @@ import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useToast } from '@/hooks/ui/use-toast';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
 import { useCatalogPreferences } from '@/hooks/products/useCatalogPreferences';
 import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
@@ -150,6 +152,7 @@ export function useCatalogState() {
   );
   const { registerProducts } = useProductsContext();
   const { data: promoSalesMap } = usePromoSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { updatePreferences } = useCatalogPreferences();
   // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
@@ -262,6 +265,16 @@ export function useCatalogState() {
 
     setIsTransitioning(false);
   }, [sortBy, updatePreferences, navigate, trackSort]);
+
+  // BUG-SORTBY-SYNC FIX: When sortBy state changes via the CatalogToolbar sort
+  // dropdown (or URL navigation), sync it into filters.sortBy so that:
+  // 1. The FilterPanel ordenacao section shows the correct selected option.
+  // 2. sectionCounts.ordenacao badge lights up when sort ≠ 'newest'.
+  // No loop risk: setFilters does not update sortBy state.
+  useEffect(() => {
+    setFilters((prev) => (prev.sortBy !== sortBy ? { ...prev, sortBy } : prev));
+  }, [sortBy]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -369,6 +382,7 @@ export function useCatalogState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
@@ -378,6 +392,7 @@ export function useCatalogState() {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({
     categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
@@ -391,6 +406,7 @@ export function useCatalogState() {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -406,19 +422,37 @@ export function useCatalogState() {
     productIds: metadataFilteredProductIds,
     hasFilter: hasMetadataFilter,
     isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
   } = useProductsByMetadata({
     datas: filters.datasComemorativas,
     tags: filters.tags,
     ramos: filters.ramosAtividade,
     segmentos: filters.segmentosAtividade,
     publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing,
   });
+
+  // BUG-CATALOG-SIZES FIX: filtro de tamanho estava disponível no painel de
+  // filtros (seção Tamanhos) mas nunca era aplicado no catálogo principal —
+  // o hook useProductsBySize existia apenas para o Super Filtro (/filtros).
+  // Padrão idêntico a cor/categoria/material: query server-side em product_variants.
+  const {
+    productIds: sizeFilteredProductIds,
+    hasFilter: hasSizeFilter,
+    isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
+  } = useProductsBySize(filters.sizes || []);
 
   useExternalCategoriesQuery();
   const { data: realStats } = useCatalogRealStats();
 
   const isLoading =
-    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter || isLoadingMetadataFilter;
+    isLoadingProducts ||
+    isLoadingMaterialFilter ||
+    isLoadingCategoryFilter ||
+    isLoadingColorFilter ||
+    isLoadingMetadataFilter ||
+    isLoadingSizeFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
@@ -505,9 +539,26 @@ export function useCatalogState() {
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
     if (filters.featured) count += 1;
+    // BUG-COUNT-01 FIX: isNew, hasPersonalization, onSale, hasCommercialPackaging eram
+    // aplicados no pipeline de filtragem (useCatalogFiltering) mas nunca contados aqui,
+    // fazendo o badge de filtros ativos mostrar número menor que o real.
+    if (filters.isNew) count += 1;
+    if (filters.hasPersonalization) count += 1;
+    if (filters.onSale) count += 1;
+    if (filters.hasCommercialPackaging) count += 1;
     if (filters.gender?.length) count += filters.gender.length;
     // BUG-META-01 FIX: tags eram filtráveis via seção Tags mas não contadas aqui.
     if (filters.tags?.length) count += filters.tags.length;
+    // BUG-CATALOG-SIZES FIX: sizes era selecionável no painel mas não contado.
+    if (filters.sizes?.length) count += filters.sizes.length;
+    // BUG-VENDAS-COUNT-ACTIVE FIX: vendas thresholds eram mostrados no painel mas
+    // nunca contados no badge global "N filtros ativos".
+    if (filters.minSupplierSales90d > 0) count += 1;
+    if (filters.minPromoSales90d > 0) count += 1;
+    // BUG-MINSTOCK-COUNT FIX: minStock era filtrado no Super Filtro mas não contado aqui.
+    if (filters.minStock > 0) count += 1;
+    // BUG-TECHNIQUES-COUNT FIX: técnicas selecionadas não eram contadas no badge global.
+    if (filters.techniques?.length) count += filters.techniques.length;
     return count;
   }, [filters]);
 
@@ -526,17 +577,26 @@ export function useCatalogState() {
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    categoryFilterError,
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
+    hasSizeFilter,
+    sizeFilteredProductIds,
+    isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
-    supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
+    promoSales90dMap,
+    supplierSalesMap,
   });
 
   // Mantém filteredProductsRef sincronizado (consumido por setSortBy e pelo
@@ -561,10 +621,17 @@ export function useCatalogState() {
     ? lastNonTransitionedProductsRef.current
     : filteredProducts;
 
-  const rawPaginatedProducts = useMemo(
-    () => displayFilteredProducts.slice(0, displayCount),
-    [displayFilteredProducts, displayCount],
-  );
+  const rawPaginatedProducts = useMemo(() => {
+    // Deduplica por ID antes de fatiar — produtos duplicados podem surgir em
+    // páginas adjacentes quando o sort não tem tiebreaker único (ex: name + id).
+    const seen = new Set<string>();
+    const deduped = displayFilteredProducts.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+    return deduped.slice(0, displayCount);
+  }, [displayFilteredProducts, displayCount]);
 
   const hasColorFilterActive =
     (filters.colorGroups?.length || 0) > 0 || (filters.colorVariations?.length || 0) > 0;

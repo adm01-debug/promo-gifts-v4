@@ -303,7 +303,7 @@ export function MockupClientSelector({
                     ))}
                   </div>
                 )}
-                {hasNextPage && !searchQuery && (
+                {hasNextPage && (
                   <div className="flex justify-center border-t border-border/30 p-2">
                     <Button
                       variant="ghost"
@@ -317,6 +317,8 @@ export function MockupClientSelector({
                     >
                       {isFetchingNextPage ? (
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      ) : searchQuery ? (
+                        'Buscar em mais registros...'
                       ) : (
                         'Carregar mais empresas...'
                       )}

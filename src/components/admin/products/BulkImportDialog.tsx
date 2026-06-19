@@ -35,6 +35,7 @@ import { StepImporting, StepComplete } from './bulk-import/StepComplete';
 import { logger } from '@/lib/logger';
 
 const NUMERIC_FIELDS = [
+  'sale_price',
   'cost_price',
   'stock_quantity',
   'min_quantity',

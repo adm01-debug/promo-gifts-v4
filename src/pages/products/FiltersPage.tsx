@@ -46,6 +46,7 @@ import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
+import { applyVoiceFilters } from './applyVoiceFilters';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
@@ -137,27 +138,7 @@ export default function FiltersPage() {
 
       if (action.action === 'filter' && action.data.filters) {
         const f = action.data.filters;
-        state.setFilters((prev: FilterState) => {
-          const next = { ...prev };
-          // Dedup ao acumular — voz pode repetir o mesmo termo entre comandos.
-          if (f.color) next.colors = [...new Set([...prev.colors, f.color])];
-          if (f.category) next.categories = [...new Set([...prev.categories, f.category])];
-          if (f.material) next.materiais = [...new Set([...prev.materiais, f.material])];
-          // BUG-VOZ-PRICE FIX: aplicar min E max de forma acumulativa. Antes, quando
-          // ambos vinham no mesmo comando, a segunda atribuição lia prev.priceRange e
-          // descartava o valor recém-definido pela primeira (ex.: "entre 10 e 50" perdia o 50).
-          const hasMin = typeof f.minPrice === 'number';
-          const hasMax = typeof f.maxPrice === 'number';
-          if (hasMin || hasMax) {
-            next.priceRange = [
-              hasMin ? (f.minPrice as number) : next.priceRange[0],
-              hasMax ? (f.maxPrice as number) : next.priceRange[1],
-            ];
-          }
-          if (f.inStock) next.inStock = true;
-          if (f.isKit) next.isKit = true;
-          return next;
-        });
+        state.setFilters((prev: FilterState) => applyVoiceFilters(prev, f));
         toast.success(action.response);
       } else if (action.action === 'search' && action.data.query) {
         const query = action.data.query;
@@ -473,7 +454,7 @@ export default function FiltersPage() {
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -540,67 +521,68 @@ export default function FiltersPage() {
                       </TooltipTrigger>
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
-                    {/* Selection toggle & Layout */}
-                    <div
-                      data-testid="superfiltro-toolbar-actions"
-                      className="ml-auto flex items-center gap-2"
-                    >
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={state.selectionMode ? 'default' : 'outline'}
-                            size="sm"
-                            className={cn(
-                              'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
-                              state.selectionMode
-                                ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
-                                : 'hover:border-primary/50',
+                  </div>
+                  {/* Selection toggle & Layout — pinned right (full toolbar) */}
+                  <div
+                    data-testid="superfiltro-toolbar-actions"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={state.selectionMode ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            state.selectionMode
+                              ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                              : 'hover:border-primary/50',
+                          )}
+                          onClick={toggleSelectionMode}
+                          aria-label={
+                            state.selectionMode
+                              ? 'Cancelar seleção'
+                              : 'Ativar modo de seleção em massa'
+                          }
+                        >
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          <span className="hidden text-xs sm:inline">
+                            {state.selectionMode ? 'Cancelar' : 'Selecionar'}
+                          </span>
+                          <AnimatePresence>
+                            {state.selectionMode && sel.selectedCount > 0 && (
+                              <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                className="absolute -right-2 -top-2"
+                              >
+                                <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                                  {sel.selectedCount}
+                                </Badge>
+                              </motion.div>
                             )}
-                            onClick={toggleSelectionMode}
-                            aria-label={
-                              state.selectionMode
-                                ? 'Cancelar seleção'
-                                : 'Ativar modo de seleção em massa'
-                            }
-                          >
-                            <CheckSquare className="h-3.5 w-3.5" />
-                            <span className="hidden text-xs sm:inline">
-                              {state.selectionMode ? 'Cancelar' : 'Selecionar'}
-                            </span>
-                            <AnimatePresence>
-                              {state.selectionMode && sel.selectedCount > 0 && (
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0, opacity: 0 }}
-                                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                                  className="absolute -right-2 -top-2"
-                                >
-                                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                                    {sel.selectedCount}
-                                  </Badge>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {state.selectionMode
-                            ? 'Sair do modo de seleção'
-                            : 'Selecionar vários produtos para ações em massa'}
-                        </TooltipContent>
-                      </Tooltip>
+                          </AnimatePresence>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {state.selectionMode
+                          ? 'Sair do modo de seleção'
+                          : 'Selecionar vários produtos para ações em massa'}
+                      </TooltipContent>
+                    </Tooltip>
 
-                      <div className="shrink-0">
-                        <LayoutPopover
-                          viewMode={state.viewMode}
-                          setViewMode={state.setViewMode}
-                          gridColumns={state.gridColumns}
-                          setGridColumns={state.setGridColumns}
-                        />
-                      </div>
+                    <div className="shrink-0">
+                      <LayoutPopover
+                        viewMode={state.viewMode}
+                        setViewMode={state.setViewMode}
+                        gridColumns={state.gridColumns}
+                        setGridColumns={state.setGridColumns}
+                      />
                     </div>
                   </div>
+
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
                       {state.activeFiltersSummary.slice(0, 3).map((filter) => (

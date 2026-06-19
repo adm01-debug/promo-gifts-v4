@@ -32,6 +32,7 @@ interface CollectionsContextType {
     productId: string,
     collectionIds: string[],
     variant?: CollectionVariantInfo,
+    priceAtSave?: number | null,
   ) => void;
   restoreFromTrash: (collectionId: string, productId: string) => Promise<boolean>;
   reorderProducts: (collectionId: string, orderedProductIds: string[]) => void;

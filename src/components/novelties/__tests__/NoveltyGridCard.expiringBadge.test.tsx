@@ -19,6 +19,7 @@ vi.mock('@/components/products/HoverSetImage', () => ({ HoverSetImage: () => nul
 vi.mock('@/components/products/ProductColorSwatches', () => ({ ProductColorSwatches: () => null }));
 vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null }));
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {

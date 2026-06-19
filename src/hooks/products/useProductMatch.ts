@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import type { Product } from '@/types/product-catalog';
 
+/** Produto correspondente com pontuação de relevância e motivos do match. */
 export interface MatchResult {
   product: Product;
   score: number;
@@ -167,6 +168,7 @@ function getMatchType(
   return 'similar';
 }
 
+/** Filtros para limitar quais produtos correspondentes são retornados pelo hook. */
 export interface MatchFilters {
   minScore: number;
   matchTypes: MatchResult['matchType'][];
@@ -181,6 +183,7 @@ const DEFAULT_FILTERS: MatchFilters = {
   onlyInStock: false,
 };
 
+/** Retorna produtos similares/complementares ordenados por pontuação de relevância. */
 export function useProductMatch(
   sourceProduct: Product | null,
   allProducts: Product[],

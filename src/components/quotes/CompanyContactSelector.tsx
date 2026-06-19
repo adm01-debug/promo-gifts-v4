@@ -2,7 +2,7 @@
  * CompanyContactSelector — Orchestrator (refactored)
  * Sub-components in ./company-contact/
  */
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, User, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -123,20 +123,29 @@ export function CompanyContactSelector({
 
   const selectedCompany = useMemo(() => fetchedCompany || null, [fetchedCompany]);
 
+  // Propagate company info once the React Query result resolves (covers the case where
+  // fetchedCompany still held the previous company when handleSelectCompany fired).
+  useEffect(() => {
+    if (!fetchedCompany || !companyId) return;
+    if (fetchedCompany.id !== companyId) return;
+    onCompanyInfoChange?.({
+      id: fetchedCompany.id,
+      name: fetchedCompany.name,
+      cnpj: fetchedCompany.cnpj || undefined,
+      ramo_atividade: fetchedCompany.ramo_atividade || undefined,
+    });
+    // Only re-run when the resolved company data changes, not every render of onCompanyInfoChange
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchedCompany]);
+
   const handleSelectCompany = (id: string) => {
     onCompanyChange(id);
     onContactChange?.('');
     onContactInfoChange?.(null);
-    if (id && fetchedCompany?.id === id) {
-      onCompanyInfoChange?.({
-        id: fetchedCompany.id,
-        name: fetchedCompany.name,
-        cnpj: fetchedCompany.cnpj || undefined,
-        ramo_atividade: fetchedCompany.ramo_atividade || undefined,
-      });
-    } else if (!id) {
+    if (!id) {
       onCompanyInfoChange?.(null);
     }
+    // onCompanyInfoChange for a valid id is handled by the useEffect above
   };
 
   const handleClearCompany = () => {

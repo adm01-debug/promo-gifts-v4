@@ -241,17 +241,41 @@ export function useFiltersPageState() {
     if (filters.onSale) params.set('onSale', '1');
     if (filters.hasCommercialPackaging) params.set('hasCommercialPackaging', '1');
     if (filters.sortBy && filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
-    setSearchParams(params, { replace: true });
+    // FIX-13: use functional updater to preserve non-filter URL params (e.g. viewMode).
+    // Without this, switching filters wipes viewMode from the URL because the params
+    // object is built from scratch and setSearchParams(params) replaces the full URL.
+    // The standalone viewMode effect (below) does NOT re-run when only filters change.
+    setSearchParams(
+      (prev) => {
+        const vm = prev.get('viewMode');
+        if (vm && vm !== 'grid') params.set('viewMode', vm);
+        return params;
+      },
+      { replace: true },
+    );
   }, [filters, setSearchParams]);
 
   const {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
   });
+
+  const prevMaterialErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = materialFilterError ? String(materialFilterError) : null;
+    if (materialFilterError && msg !== prevMaterialErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de materiais', {
+        description: 'O filtro de Materiais falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMaterialErrorRef.current = msg;
+  }, [materialFilterError]);
+
   const {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
@@ -278,24 +302,50 @@ export function useFiltersPageState() {
     ramos: filters.ramosAtividade || [],
     segmentos: filters.segmentosAtividade || [],
     publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing || [],
   });
-  // BUG-METADATA-SILENT-FAIL: notifica o usuário quando a RPC fn_super_filtro_product_ids
-  // falha (antes: grade zerava silenciosamente sem nenhum feedback).
-  const prevMetadataErrorRef = useRef<unknown>(null);
+  // FIX-8: notifica erros de todas as RPCs de filtro server-side.
+  // FIX-19: compara mensagem (string) em vez de identidade de objeto — o hook de RPC pode
+  // recriar o objeto de erro a cada render com o mesmo conteúdo, disparando toast infinito.
+  const prevMetadataErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (metadataFilterError && metadataFilterError !== prevMetadataErrorRef.current) {
+    const msg = metadataFilterError ? String(metadataFilterError) : null;
+    if (metadataFilterError && msg !== prevMetadataErrorRef.current) {
       toast.error('Erro ao aplicar filtro de metadados', {
         description:
           'O filtro de Datas/Tags/Público/Nichos falhou temporariamente. Tente alterar o filtro.',
       });
     }
-    prevMetadataErrorRef.current = metadataFilterError;
+    prevMetadataErrorRef.current = msg;
   }, [metadataFilterError]);
+
+  const prevSizeErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = sizeFilterError ? String(sizeFilterError) : null;
+    if (sizeFilterError && msg !== prevSizeErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de tamanhos', {
+        description: 'O filtro de Tamanhos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevSizeErrorRef.current = msg;
+  }, [sizeFilterError]);
+
+  const prevCategoryErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = categoryFilterError ? String(categoryFilterError) : null;
+    if (categoryFilterError && msg !== prevCategoryErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de categorias', {
+        description: 'O filtro de Categorias falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevCategoryErrorRef.current = msg;
+  }, [categoryFilterError]);
 
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -303,8 +353,24 @@ export function useFiltersPageState() {
     colors: filters.colors,
   });
 
+  const prevColorErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = colorFilterError ? String(colorFilterError) : null;
+    if (colorFilterError && msg !== prevColorErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de cores', {
+        description: 'O filtro de Cores falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevColorErrorRef.current = msg;
+  }, [colorFilterError]);
+
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    const vm = searchParams.get('viewMode');
+    if (vm === 'list' || vm === 'table' || vm === 'grid') return vm;
+    return 'grid';
+  });
   const [selectionMode, setSelectionMode] = useState(false);
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
 
@@ -319,6 +385,20 @@ export function useFiltersPageState() {
     window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []); // empty deps — handler uses ref to avoid stale closure
+
+  // FIX-9: sincroniza viewMode com URL para preservar modo ao atualizar ou compartilhar link.
+  // Efeito separado do bloco principal (filters) porque viewMode é declarado depois.
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (viewMode !== 'grid') next.set('viewMode', viewMode);
+        else next.delete('viewMode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [viewMode, setSearchParams]);
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
   const [commandAction, setCommandAction] = useState<string | null>(null);
   // FIX-12: removido estado 'appliedFilters' — declarado mas nunca consumido (dead code).
@@ -430,6 +510,7 @@ export function useFiltersPageState() {
         hasColorFilter,
         colorFilteredProductIds,
         isLoadingColorFilter,
+        colorFilterError,
         hasCategoryFilter,
         categoryFilteredProductIds,
         isLoadingCategoryFilter,
@@ -437,6 +518,7 @@ export function useFiltersPageState() {
         hasMaterialFilter,
         materialFilteredProductIds,
         isLoadingMaterialFilter,
+        materialFilterError,
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
@@ -459,6 +541,7 @@ export function useFiltersPageState() {
       hasMaterialFilter,
       materialFilteredProductIds,
       isLoadingMaterialFilter,
+      materialFilterError,
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,
@@ -474,6 +557,7 @@ export function useFiltersPageState() {
       hasColorFilter,
       colorFilteredProductIds,
       isLoadingColorFilter,
+      colorFilterError,
       promoSalesMap,
       supplierSalesMap,
       promoSales90dMap,

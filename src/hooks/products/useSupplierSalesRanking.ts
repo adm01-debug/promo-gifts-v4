@@ -46,10 +46,14 @@ export function useSupplierSalesRanking() {
       try {
         // FIX BUG-A: usar RPC que retorna todas as 7 243+ linhas sem limite.
         // supabase.rpc() não é afetado por db-max-rows do PostgREST.
-        const { data, error } = await supabase.rpc('fn_get_product_intelligence_all');
+        // fn_get_product_intelligence_all é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
+        type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
+        const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+          'fn_get_product_intelligence_all',
+        );
 
         if (error) {
-          const msg = error.message ?? '';
+          const msg = (error as { message?: string }).message ?? '';
           if (
             msg.includes('not been populated') ||
             msg.includes('does not exist') ||
@@ -61,18 +65,18 @@ export function useSupplierSalesRanking() {
           throw error;
         }
 
-        const rows = (data ?? []) as ProductIntelligenceRanking[];
+        const rows = (data ?? []) as unknown as ProductIntelligenceRanking[];
         const map = new Map<string, SupplierSalesEntry>();
 
         for (const row of rows) {
           if (!row.product_id) continue;
           map.set(row.product_id, {
-            turnoverScore: row.turnover_score    || 0,
-            velocity7d:    row.avg_depletion_7d  || 0,
-            velocity30d:   row.avg_depletion_30d || 0,
-            abcClass:      row.abc_classification || 'C',
-            depleted30d:   row.total_depleted_30d || 0,
-            depleted90d:   row.total_depleted_90d || 0,
+            turnoverScore: row.turnover_score || 0,
+            velocity7d: row.avg_depletion_7d || 0,
+            velocity30d: row.avg_depletion_30d || 0,
+            abcClass: row.abc_classification || 'C',
+            depleted30d: row.total_depleted_30d || 0,
+            depleted90d: row.total_depleted_90d || 0,
           });
         }
 

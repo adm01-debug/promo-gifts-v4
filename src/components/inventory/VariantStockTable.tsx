@@ -13,7 +13,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
-import { useStockSelection } from './useStockSelection';
+import { useStockSelection, buildQuoteParam } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
 import { BulkAddToCollectionModal, type BulkCollectionRow } from './BulkAddToCollectionModal';
 import { useSelectionShortcut } from './useSelectionShortcut';
@@ -149,199 +149,198 @@ function FlatVariantRow({
 
   // Ações single-row do QuickView no /estoque (paridade com o catálogo).
   const [collectionOpen, setCollectionOpen] = useState(false);
-  const collectionRows: BulkCollectionRow[] = [
-    {
-      productId: product.productId,
-      productName: product.productName,
-      variant: {
-        color_name: variant.colorName,
-        color_hex: variant.colorHex,
-        size_code: variant.sizeCode,
-        variant_id: variant.variantId,
-        thumbnail: variant.imageUrl ?? product.productImageUrl,
+  const collectionRows = useMemo<BulkCollectionRow[]>(
+    () => [
+      {
+        productId: product.productId,
+        productName: product.productName,
+        variant: {
+          color_name: variant.colorName,
+          color_hex: variant.colorHex,
+          size_code: variant.sizeCode,
+          variant_id: variant.variantId,
+          thumbnail: variant.imageUrl ?? product.productImageUrl,
+        },
       },
-    },
-  ];
+    ],
+    [
+      product.productId,
+      product.productName,
+      product.productImageUrl,
+      variant.colorName,
+      variant.colorHex,
+      variant.sizeCode,
+      variant.variantId,
+      variant.imageUrl,
+    ],
+  );
   const handleAddToQuote = () => {
     try {
-      const param = `items[]=${encodeURIComponent(
-        JSON.stringify({
-          product_id: product.productId,
-          product_name: product.productName,
-          product_sku: variant.variantSku,
-          variant_id: variant.variantId,
-          quantity: variant.minStock || 1,
-          color_name: variant.colorName ?? null,
-          color_hex: variant.colorHex ?? null,
-          size_code: variant.sizeCode ?? null,
-          product_image: variant.imageUrl ?? product.productImageUrl ?? '',
-        }),
-      )}`;
-      navigate(`/orcamentos/novo?${param}`);
+      navigate(`/orcamentos/novo?${buildQuoteParam({ product, variant })}`);
     } catch {
       /* noop — toast já é tratado no fluxo de cotação */
     }
   };
   return (
     <>
-    <TableRow
-      className={cn('group hover:bg-muted/40', isSelected && 'bg-primary/5')}
-      data-testid="stock-row"
-      data-selected={isSelected ? 'true' : 'false'}
-    >
-      {selectionEnabled && (
-        <TableCell className="w-[40px] pr-0">
-          <input
-            type="checkbox"
-            className="h-4 w-4 cursor-pointer accent-primary"
-            checked={!!isSelected}
-            onChange={onToggleSelect}
-            aria-label={`Selecionar ${product.productName} ${variant.colorName ?? ''}`}
-            data-testid="stock-row-select"
-          />
-        </TableCell>
-      )}
-      <TableCell>
-        <div className="flex items-center gap-3">
-          <QuickViewThumb
-            productId={product.productId}
-            productName={product.productName}
-            testId="stock-table-row-thumb"
-            onAddToQuote={handleAddToQuote}
-            onAddToCollection={() => setCollectionOpen(true)}
-          >
-            <VariantThumb
-              imageUrl={variant.imageUrl || product.productImageUrl}
-              productName={product.productName}
-              colorName={variant.colorName}
-              colorHex={variant.colorHex}
-              size="md"
+      <TableRow
+        className={cn('group hover:bg-muted/40', isSelected && 'bg-primary/5')}
+        data-testid="stock-row"
+        data-selected={isSelected ? 'true' : 'false'}
+      >
+        {selectionEnabled && (
+          <TableCell className="w-[40px] pr-0">
+            <input
+              type="checkbox"
+              className="h-4 w-4 cursor-pointer accent-primary"
+              checked={!!isSelected}
+              onChange={onToggleSelect}
+              aria-label={`Selecionar ${product.productName} ${variant.colorName ?? ''}`}
+              data-testid="stock-row-select"
             />
-          </QuickViewThumb>
-          <div className="min-w-0">
-            <button
-              type="button"
-              onClick={() => navigate(`/produto/${product.productId}`)}
-              className="block max-w-[260px] truncate text-left font-medium text-foreground hover:text-primary"
+          </TableCell>
+        )}
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <QuickViewThumb
+              productId={product.productId}
+              productName={product.productName}
+              testId="stock-table-row-thumb"
+              onAddToQuote={handleAddToQuote}
+              onAddToCollection={() => setCollectionOpen(true)}
             >
-              {product.productName}
-            </button>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-              <span className="font-mono">{variant.variantSku}</span>
-              <span aria-hidden>·</span>
-              <RichColorSwatch
-                hex={variant.colorHex}
-                name={variant.colorName}
-                isOutOfStock={isOut}
+              <VariantThumb
+                imageUrl={variant.imageUrl || product.productImageUrl}
+                productName={product.productName}
+                colorName={variant.colorName}
+                colorHex={variant.colorHex}
+                size="md"
               />
+            </QuickViewThumb>
+            <div className="min-w-0">
+              <button
+                type="button"
+                onClick={() => navigate(`/produto/${product.productId}`)}
+                className="block max-w-[260px] truncate text-left font-medium text-foreground hover:text-primary"
+              >
+                {product.productName}
+              </button>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                <span className="font-mono">{variant.variantSku}</span>
+                <span aria-hidden>·</span>
+                <RichColorSwatch
+                  hex={variant.colorHex}
+                  name={variant.colorName}
+                  isOutOfStock={isOut}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {product.supplierName || product.categoryName ? (
-          <div className="flex flex-col items-start gap-1">
-            {product.supplierName ? (
-              <span
-                title={`Fornecedor: ${product.supplierName}`}
-                className={cn(
-                  'inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold',
-                  getSupplierBadgeClasses(product.supplierName),
-                )}
-              >
-                <Building2
-                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplierName).text)}
-                  aria-hidden="true"
-                />
-                <span className="truncate">{product.supplierName}</span>
-              </span>
-            ) : null}
-            {product.categoryName ? (
-              <span
-                title={`Categoria: ${product.categoryName}`}
-                className="inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
-              >
-                <Tag className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">{product.categoryName}</span>
-              </span>
-            ) : null}
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          {product.supplierName || product.categoryName ? (
+            <div className="flex flex-col items-start gap-1">
+              {product.supplierName ? (
+                <span
+                  title={`Fornecedor: ${product.supplierName}`}
+                  className={cn(
+                    'inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold',
+                    getSupplierBadgeClasses(product.supplierName),
+                  )}
+                >
+                  <Building2
+                    className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplierName).text)}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{product.supplierName}</span>
+                </span>
+              ) : null}
+              {product.categoryName ? (
+                <span
+                  title={`Categoria: ${product.categoryName}`}
+                  className="inline-flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
+                >
+                  <Tag className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{product.categoryName}</span>
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <EmptyCell />
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-baseline gap-1.5">
+            <span
+              className={cn(
+                'text-base font-semibold tabular-nums',
+                isOut ? 'text-destructive' : 'text-foreground',
+              )}
+            >
+              {variant.currentStock.toLocaleString('pt-BR')}
+            </span>
+            <span className="text-[10px] text-muted-foreground">un</span>
           </div>
-        ) : (
-          <EmptyCell />
-        )}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-baseline gap-1.5">
-          <span
-            className={cn(
-              'text-base font-semibold tabular-nums',
-              isOut ? 'text-destructive' : 'text-foreground',
-            )}
-          >
-            {variant.currentStock.toLocaleString('pt-BR')}
-          </span>
-          <span className="text-[10px] text-muted-foreground">un</span>
-        </div>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {variant.inTransitStock > 0 ? (
-          <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
-            <Truck className="h-3 w-3" />+{variant.inTransitStock}
-          </span>
-        ) : (
-          <EmptyCell />
-        )}
-      </TableCell>
-      <TableCell>
-        <StockStatusChip
-          status={effectiveStatus}
-          current={variant.currentStock}
-          min={variant.minStock}
-          reserved={variant.reservedStock}
-          inTransit={variant.inTransitStock}
-          projection={projection}
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          {variant.inTransitStock > 0 ? (
+            <span className="flex items-center gap-1 text-sm tabular-nums text-primary/80">
+              <Truck className="h-3 w-3" />+{variant.inTransitStock}
+            </span>
+          ) : (
+            <EmptyCell />
+          )}
+        </TableCell>
+        <TableCell>
+          <StockStatusChip
+            status={effectiveStatus}
+            current={variant.currentStock}
+            min={variant.minStock}
+            reserved={variant.reservedStock}
+            inTransit={variant.inTransitStock}
+            projection={projection}
+          />
+        </TableCell>
+        <TableCell className="hidden sm:table-cell">
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => {
+                void navigator.clipboard?.writeText(variant.variantSku).catch(() => {});
+              }}
+              aria-label={`Copiar SKU ${variant.variantSku}`}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() =>
+                navigate(
+                  `/orcamentos/novo?productId=${product.productId}&variantId=${variant.variantId}&productName=${encodeURIComponent(product.productName)}`,
+                )
+              }
+              aria-label={`Criar orçamento para ${product.productName} ${variant.colorName ?? ''}`}
+            >
+              <ShoppingCart className="h-3 w-3" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+      {collectionOpen && (
+        <BulkAddToCollectionModal
+          open={collectionOpen}
+          onOpenChange={setCollectionOpen}
+          rows={collectionRows}
+          onApplied={() => setCollectionOpen(false)}
         />
-      </TableCell>
-      <TableCell className="hidden sm:table-cell">
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => {
-              void navigator.clipboard?.writeText(variant.variantSku).catch(() => {});
-            }}
-            aria-label={`Copiar SKU ${variant.variantSku}`}
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() =>
-              navigate(
-                `/orcamentos/novo?productId=${product.productId}&variantId=${variant.variantId}&productName=${encodeURIComponent(product.productName)}`,
-              )
-            }
-            aria-label={`Criar orçamento para ${product.productName} ${variant.colorName ?? ''}`}
-          >
-            <ShoppingCart className="h-3 w-3" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-    {collectionOpen && (
-      <BulkAddToCollectionModal
-        open={collectionOpen}
-        onOpenChange={setCollectionOpen}
-        rows={collectionRows}
-      />
-    )}
+      )}
     </>
   );
 }
-
 
 // ============================================
 // PAGINAÇÃO
@@ -365,6 +364,7 @@ interface VariantStockTableProps {
   targetQuantity?: number;
 }
 
+/** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com paginação e seleção. */
 export function VariantStockTable({
   products,
   className,
@@ -692,7 +692,6 @@ export function VariantStockTable({
           </span>
         </div>
 
-
         {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
         <div
           className="flex flex-wrap items-center gap-1"
@@ -784,7 +783,7 @@ export function VariantStockTable({
                 const k = `${product.productId}::${variant.variantId}`;
                 return (
                   <FlatVariantRow
-                    key={`${product.productId}::${variant.id}`}
+                    key={`${product.productId}::${variant.variantId}`}
                     product={product}
                     variant={variant}
                     effectiveStatus={effectiveStatus}
@@ -797,7 +796,10 @@ export function VariantStockTable({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={selection.enabled ? 7 : 6}
+                  className="py-16 text-center text-muted-foreground"
+                >
                   <div className="flex flex-col items-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />

@@ -54,6 +54,7 @@ export interface Quote {
   id?: string;
   quote_number?: string;
   client_id?: string;
+  contact_id?: string;
   client_name?: string;
   client_email?: string;
   client_phone?: string;

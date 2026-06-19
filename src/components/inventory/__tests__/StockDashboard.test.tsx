@@ -235,20 +235,22 @@ describe('StockDashboard — render states', () => {
 
   it('renderiza visão geral, cartões e tabela quando carregado', () => {
     renderDashboard();
-    expect(screen.getByText('Visão Geral')).toBeInTheDocument();
     // StatCards expose unique aria-labels ("<title>: <value>. <hint>").
     expect(screen.getByRole('button', { name: /^Total de Produtos:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Em Estoque:/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estoque Baixo:/ })).toBeInTheDocument();
+    // "Crítico" replaced the defunct "Estoque Baixo" card (kpi-consistency.test.tsx).
+    expect(screen.getByRole('button', { name: /^Crítico:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Sem Estoque:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estoque Futuro:/ })).toBeInTheDocument();
     expect(screen.getByTestId('variant-stock-table')).toBeInTheDocument();
   });
 
-  it('exibe o badge de saúde do estoque', () => {
+  it('exibe o card "Estoque por Cor/Variação" com contagem de produtos', () => {
     renderDashboard();
-    const badge = screen.getByTestId('health-score-badge');
-    expect(badge).toHaveTextContent(/Saúde:/);
+    // CardTitle da seção de tabela — confirma que o dashboard está carregado
+    expect(screen.getByText('Estoque por Cor/Variação')).toBeInTheDocument();
+    // health-score-badge foi removido intencionalmente (regression test confirma)
+    expect(screen.queryByTestId('health-score-badge')).not.toBeInTheDocument();
   });
 });
 
@@ -291,7 +293,7 @@ describe('StockDashboard — stat card filters', () => {
 });
 
 describe('StockDashboard — critical alerts & active filter', () => {
-  it('mostra o badge de alertas críticos e abre o dialog ao clicar', async () => {
+  it('clica em "Sem Estoque" com alertas críticos → abre o OutOfStockDialog', async () => {
     const user = userEvent.setup();
     mockUseVariantStock.mockReturnValue(
       buildHookValue({
@@ -299,10 +301,11 @@ describe('StockDashboard — critical alerts & active filter', () => {
       }),
     );
     renderDashboard();
-    const badge = screen.getByTestId('critical-alerts-badge');
-    expect(badge).toHaveTextContent('1 alertas');
-    await user.click(badge);
-    // OutOfStockDialog opens
+    // critical-alerts-badge foi removido intencionalmente; o dialog ainda abre
+    // via clique no StatCard "Sem Estoque" quando há alertas críticos.
+    expect(screen.queryByTestId('critical-alerts-badge')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Sem Estoque:/ }));
+    expect(updateFilter).toHaveBeenCalledWith('status', 'out_of_stock');
     await waitFor(() => expect(screen.getByText('Crítico A')).toBeInTheDocument());
   });
 
@@ -322,11 +325,11 @@ describe('StockDashboard — critical alerts & active filter', () => {
 });
 
 describe('StockDashboard — health drawer & risk panel', () => {
-  it('abre o drawer de saúde ao clicar no badge', async () => {
-    const user = userEvent.setup();
+  it('health drawer começa fechado (sem trigger visível no header)', () => {
     renderDashboard();
-    await user.click(screen.getByTestId('health-score-badge'));
-    await waitFor(() => expect(screen.getByTestId('health-drawer')).toBeInTheDocument());
+    // health-score-badge foi removido; o drawer não é renderizado por padrão.
+    expect(screen.queryByTestId('health-score-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('health-drawer')).not.toBeInTheDocument();
   });
 
   it('exibe o painel de risco por padrão e permite recolher', async () => {

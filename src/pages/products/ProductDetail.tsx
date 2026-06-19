@@ -13,11 +13,6 @@ const SmartRecommendations = lazyWithRetry(() =>
     default: m.SmartRecommendations,
   })),
 );
-const SmartRecommendationsMock = lazyWithRetry(() =>
-  import('@/components/products/SmartRecommendationsMock').then((m) => ({
-    default: m.SmartRecommendationsMock,
-  })),
-);
 const StockHistoryChart = lazyWithRetry(() =>
   import('@/components/products/StockHistoryChart').then((m) => ({ default: m.StockHistoryChart })),
 );
@@ -140,11 +135,11 @@ export default function ProductDetail() {
       url: currentUrl,
       brand: {
         '@type': 'Brand',
-        name: product.supplier?.name || 'Promo Brindes',
+        name: product.supplier?.name || product.brand || 'Promo Gifts',
       },
       offers: {
         '@type': 'Offer',
-        price: product.price || 0,
+        price: product.price ?? 0,
         priceCurrency: 'BRL',
         priceValidUntil: nextYear.toISOString().split('T')[0],
         itemCondition: 'https://schema.org/NewCondition',
@@ -154,19 +149,11 @@ export default function ProductDetail() {
             : product.stockStatus === 'out-of-stock'
               ? 'https://schema.org/OutOfStock'
               : 'https://schema.org/LimitedAvailability',
-        seller: { '@type': 'Organization', name: 'Promo Brindes' },
+        seller: { '@type': 'Organization', name: 'Promo Gifts' },
         url: currentUrl,
       },
       category: product.category?.name,
       material: product.materials?.join(', '),
-      // Adicionando aggregateRating vazio para evitar avisos do Google se o sistema não tiver reviews reais
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '5',
-        reviewCount: '1',
-        bestRating: '5',
-        worstRating: '1',
-      },
     };
   }, [product]);
 
@@ -321,7 +308,7 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images[0] || ''
+          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images?.[0] || ''
         }
         ogType="product"
       />
@@ -370,7 +357,7 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        {product.sku === '09138' ? (
+        {aiCandidates.length > 0 && (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
             <Suspense
               fallback={
@@ -379,29 +366,15 @@ export default function ProductDetail() {
                 </div>
               }
             >
-              <SmartRecommendationsMock />
+              <SmartRecommendations
+                currentProductId={product.id}
+                candidateProducts={aiCandidates}
+                maxResults={6}
+                title="Recomendações inteligentes para este produto"
+                onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              />
             </Suspense>
           </div>
-        ) : (
-          aiCandidates.length > 0 && (
-            <div className="border-t border-border/60 pt-6 xl:pt-8">
-              <Suspense
-                fallback={
-                  <div className="flex h-48 items-center justify-center">
-                    <Skeleton className="h-full w-full" />
-                  </div>
-                }
-              >
-                <SmartRecommendations
-                  currentProductId={product.id}
-                  candidateProducts={aiCandidates}
-                  maxResults={6}
-                  title="Recomendações inteligentes para este produto"
-                  onProductClick={(pid) => navigate(`/produto/${pid}`)}
-                />
-              </Suspense>
-            </div>
-          )
         )}
 
         <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-2 xl:gap-6 xl:pt-8">

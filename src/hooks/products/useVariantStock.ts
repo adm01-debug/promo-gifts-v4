@@ -14,6 +14,7 @@ import {
 import { fetchAndProcessStockData } from '@/hooks/stock/stockFetcher';
 import { applyStockFilters, buildStockIndexes } from '@/lib/inventory/stock-filter';
 
+/** Hook principal do dashboard de estoque: busca dados, aplica filtros e expõe ações de refresh/dismiss. */
 export function useVariantStock() {
   const [filters, setFilters] = useState<StockFilters>(defaultStockFilters);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -66,8 +67,9 @@ export function useVariantStock() {
       switch (p.overallStatus) {
         case 'in_stock':
         case 'incoming':
-          // SSOT: produtos com reposição em trânsito ainda estão saudáveis no
-          // dashboard (estoque atual cobre a demanda); contar como "in stock"
+        case 'overstocked':
+          // SSOT: produtos com reposição em trânsito ou excesso de estoque
+          // ainda estão saudáveis no dashboard; contar como "in stock"
           // garante que os 4 buckets fechem com `totalProducts` (bug #2 —
           // 305 produtos ficavam fora dos 4 cartões).
           productsInStock++;
@@ -89,6 +91,8 @@ export function useVariantStock() {
         daysSum += v.daysUntilStockout || 0;
         switch (v.status) {
           case 'in_stock':
+          case 'incoming':
+          case 'overstocked':
             variantsInStock++;
             break;
           case 'low_stock':
@@ -263,6 +267,7 @@ export function useVariantStock() {
   };
 }
 
+/** Versão simplificada do hook de estoque escoped a um único produto. */
 export function useProductVariantStock(productId: string) {
   const {
     productStocks: _productStocks,

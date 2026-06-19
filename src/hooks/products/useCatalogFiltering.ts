@@ -3,6 +3,7 @@
  */
 import { useMemo } from 'react';
 import type { Product, SupplierSalesEntry } from '@/hooks/products';
+import type { ProductVariation } from '@/types/product-catalog';
 import type { FilterState } from '@/components/filters/FilterPanel';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import { sortProducts } from '@/utils/product-sorting';
@@ -25,11 +26,22 @@ interface CatalogFilteringOptions {
   hasColorFilter?: boolean;
   colorFilteredProductIds?: Set<string>;
   isLoadingColorFilter?: boolean;
+  // FIX-21/22 parity: quando a RPC falha, productIds.size === 0 mas é erro de rede/timeout,
+  // não "sem resultado real". O guard abaixo preserva a grade em vez de zerá-la.
+  colorFilterError?: unknown;
+  categoryFilterError?: unknown;
+  materialFilterError?: unknown;
   hasMetadataFilter?: boolean;
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
+  metadataFilterError?: unknown;
+  hasSizeFilter?: boolean;
+  sizeFilteredProductIds?: Set<string>;
+  isLoadingSizeFilter?: boolean;
+  sizeFilterError?: unknown;
   promoSalesMap?: Map<string, number>;
-  supplierSalesMap?: Map<string, number>;
+  promoSales90dMap?: Map<string, number>;
+  supplierSalesMap?: Map<string, SupplierSalesEntry>;
 }
 
 const EMPTY_ID_SET: ReadonlySet<string> = new Set<string>();
@@ -49,10 +61,19 @@ export function useCatalogFiltering({
   hasColorFilter = false,
   colorFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingColorFilter = false,
+  colorFilterError = undefined,
+  categoryFilterError = undefined,
+  materialFilterError = undefined,
   hasMetadataFilter = false,
   metadataFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingMetadataFilter = false,
+  metadataFilterError = undefined,
+  hasSizeFilter = false,
+  sizeFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingSizeFilter = false,
+  sizeFilterError = undefined,
   promoSalesMap,
+  promoSales90dMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
@@ -60,7 +81,11 @@ export function useCatalogFiltering({
     () => new Set(filters.categories.map(String)),
     [filters.categories],
   );
-  const supplierFilterSet = useMemo(() => new Set(filters.suppliers), [filters.suppliers]);
+  // FIX-17 parity: case-insensitive matching (applyProductFilters normalizes to lowercase).
+  const supplierFilterSet = useMemo(
+    () => new Set(filters.suppliers.map((s) => s.toLowerCase())),
+    [filters.suppliers],
+  );
   const genderFilterSet = useMemo(
     () => new Set(filters.gender?.map((g) => g.toLowerCase().trim())),
     [filters.gender],
@@ -77,7 +102,8 @@ export function useCatalogFiltering({
     if (hasCategoryFilter && !isLoadingCategoryFilter) {
       if (categoryFilteredProductIds.size > 0) {
         result = result.filter((p) => categoryFilteredProductIds.has(p.id));
-      } else {
+      } else if (!categoryFilterError) {
+        // FIX-21 parity: RPC error → preserve grid; genuine 0-matches → zero grid.
         return [];
       }
     } else if (categoryFilterSet.size > 0) {
@@ -89,7 +115,7 @@ export function useCatalogFiltering({
     if (hasMetadataFilter && !isLoadingMetadataFilter) {
       if (metadataFilteredProductIds.size > 0) {
         result = result.filter((p) => metadataFilteredProductIds.has(p.id));
-      } else {
+      } else if (!metadataFilterError) {
         return [];
       }
     }
@@ -103,23 +129,28 @@ export function useCatalogFiltering({
     if (hasColorFilter && !isLoadingColorFilter) {
       if (colorFilteredProductIds.size > 0) {
         result = result.filter((p) => colorFilteredProductIds.has(p.id));
-      } else {
+      } else if (!colorFilterError) {
+        // FIX-21 parity: guard !colorFilterError mirrors applyProductFilters (FIX-21).
         return [];
       }
     }
 
     if (result.length === 0) return result;
 
-    // BUG-SF-11 FIX: implementação era inconsistente com useFiltersPageState.
-    // useFiltersPageState usava supplier.id + supplier.name + supplier_reference.
-    // Aqui, padronizamos para verificar supplier.id (mais confiável) além de brand e supplier_reference.
+    // BUG-SF-11 / FIX-17 parity: case-insensitive, plus partial name match on supplier.name
+    // (applyProductFilters.ts FIX-17). Anterior: case-sensitive + só brand (sem supplier.name).
     if (supplierFilterSet.size > 0) {
-      result = result.filter(
-        (p) =>
-          supplierFilterSet.has(p.supplier?.id ?? '') ||
-          supplierFilterSet.has(p.brand || '') ||
-          supplierFilterSet.has(p.supplier_reference || ''),
-      );
+      const supplierArr = [...supplierFilterSet].filter((s) => s !== '');
+      result = result.filter((p) => {
+        const suppId = (p.supplier?.id ?? '').toLowerCase();
+        const suppRef = (p.supplier_reference ?? '').toLowerCase();
+        const suppName = (p.supplier?.name || p.brand || '').toLowerCase();
+        return (
+          (suppId !== '' && supplierFilterSet.has(suppId)) ||
+          (suppRef !== '' && supplierFilterSet.has(suppRef)) ||
+          supplierArr.some((s) => suppName.includes(s))
+        );
+      });
     }
 
     // BUG-21 FIX: era < 500, deve ser < 9999 para ativar filtro no range completo [0, 9999].
@@ -130,8 +161,14 @@ export function useCatalogFiltering({
       result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
     }
 
+    // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
+    // alinhando com applyProductFilters.ts (FIX-03) e com o bloco minStock abaixo.
     if (filters.inStock) {
-      result = result.filter((p) => (p.stock || 0) > 0);
+      result = result.filter((p) => {
+        if (p.variations && p.variations.length > 0)
+          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
+        return (p.stock || 0) > 0;
+      });
     }
 
     if (filters.hasCommercialPackaging) {
@@ -150,14 +187,77 @@ export function useCatalogFiltering({
     if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
     if (filters.onSale) result = result.filter((p) => p.onSale === true);
 
+    // FIX-16 parity: products without gender defined are neutral — included in any gender filter
+    // (applyProductFilters.ts FIX-16). Anterior: gender=null zerava o produto do resultado.
     if (genderFilterSet.size > 0) {
-      result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
+      result = result.filter((p) => {
+        const g = (p.gender ?? '').toLowerCase().trim();
+        return g === '' || genderFilterSet.has(g);
+      });
+    }
+
+    // BUG-CATALOG-SIZES FIX: tamanhos eram filtráveis no painel mas ignorados
+    // no pipeline do catálogo principal. useProductsBySize consulta product_variants
+    // server-side (mesmo padrão de cor/categoria/material).
+    if (hasSizeFilter && !isLoadingSizeFilter) {
+      if (sizeFilteredProductIds.size > 0) {
+        result = result.filter((p) => sizeFilteredProductIds.has(p.id));
+      } else if (!sizeFilterError) {
+        return [];
+      }
+    }
+
+    // BUG-VENDAS-FILTER-CATALOG FIX: minSupplierSales90d e minPromoSales90d eram
+    // mostrados no painel e aplicados no Super Filtro (/filtros) mas ignorados aqui.
+    // Usa supplierSalesMap.depleted90d (SupplierSalesEntry) e promoSales90dMap
+    // — mesmas fontes que applyProductFilters.ts usa. Guarda: só filtra se o mapa
+    // estiver disponível e não vazio (mapa ausente = dados ainda carregando → não filtra).
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales90d;
+      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted90d ?? 0) >= threshold);
+    }
+
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+      const threshold = filters.minPromoSales90d;
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
+    }
+
+    // BUG-MINSTOCK FIX: filtro de estoque mínimo era aplicado no Super Filtro (/filtros)
+    // mas ignorado no catálogo principal (/produtos). Variações têm precedência sobre
+    // estoque agregado do produto — some(v.stock >= threshold) OR product.stock >= threshold.
+    if (filters.minStock > 0) {
+      const threshold = filters.minStock;
+      result = result.filter((p) => {
+        if (p.variations && p.variations.length > 0)
+          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) >= threshold);
+        return (p.stock || 0) >= threshold;
+      });
+    }
+
+    // BUG-TECHNIQUES-FILTER FIX: técnicas eram filtráveis no painel mas ignoradas no
+    // catálogo. Graceful degradation: se nenhum produto tem metadata.techniques preenchido
+    // (catálogo leve não hidrata esse campo), o filtro é pulado para não zerar a grade.
+    if (filters.techniques?.length) {
+      const techSet = new Set(filters.techniques.map((t: string) => t.toLowerCase()));
+      const techniquesDataAvailable = result.some(
+        (p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0,
+      );
+      if (techniquesDataAvailable) {
+        result = result.filter((p) => {
+          const metaTechs: string[] = (p.metadata?.techniques as string[]) ?? [];
+          if (metaTechs.length > 0) {
+            return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
+          }
+          return true;
+        });
+      }
     }
 
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
-      } else {
+      } else if (!materialFilterError) {
+        // FIX-22 parity: guard !materialFilterError mirrors applyProductFilters (FIX-22).
         return [];
       }
     } else if (filters.materiais.length) {
@@ -172,11 +272,10 @@ export function useCatalogFiltering({
 
     // Business Logic - Do not change sorting behavior
     const skipSort = hasFuzzySearch && sortBy === 'name';
-    // supplierSalesMap arrives typed as Map<string, number> via an upstream cast,
-    // but its runtime entries are SupplierSalesEntry (from useSupplierSalesRanking).
-    sortProducts(result, sortBy, {
+    // supplierSalesMap entries são SupplierSalesEntry (from useSupplierSalesRanking).
+    result = sortProducts(result, sortBy, {
       promoSalesMap,
-      supplierSalesMap: supplierSalesMap as unknown as Map<string, SupplierSalesEntry> | undefined,
+      supplierSalesMap,
       skipSort,
     });
 
@@ -210,11 +309,24 @@ export function useCatalogFiltering({
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
+    categoryFilterError,
+    materialFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
+    hasSizeFilter,
+    sizeFilteredProductIds,
+    isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
+    promoSales90dMap,
     supplierSalesMap,
+    filters.minSupplierSales90d,
+    filters.minPromoSales90d,
+    filters.minStock,
+    filters.techniques,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,

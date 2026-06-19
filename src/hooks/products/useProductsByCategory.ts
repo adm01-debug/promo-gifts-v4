@@ -50,8 +50,12 @@ export function useProductsByCategory({
   }, [categoryIds.length]);
 
   const fetchProductIds = useCallback(async () => {
-    // Evitar chamadas duplicadas
-    if (lastFetchedKey.current === categoryIdsKey && productIds.size > 0) return;
+    // FIX BUG-CAT-01 (2026-06-18): guard usa apenas lastFetchedKey (useRef, sempre
+    // atual). Versão anterior usava `productIds.size > 0` (closure stale): para
+    // categorias com 0 produtos, re-fetch extra em cada render. Agora: lastFetchedKey
+    // sozinho é suficiente — muda após fetch bem-sucedido ou erro marcado.
+    // Forçar re-fetch explícito: chamar refetch(), que reseta lastFetchedKey.current.
+    if (lastFetchedKey.current === categoryIdsKey) return;
 
     if (!hasFilter || !enabled) {
       setProductIds(new Set());
@@ -118,16 +122,27 @@ export function useProductsByCategory({
     error,
     categoriesCount,
     source,
-    refetch: fetchProductIds,
+    // FIX BUG-CAT-01: refetch reseta a chave para forçar re-fetch mesmo da mesma categoria.
+    refetch: () => {
+      lastFetchedKey.current = '';
+      return fetchProductIds();
+    },
   };
 }
 
 /**
- * Hook auxiliar para buscar descendentes de categorias
+ * Hook auxiliar para buscar descendentes de categorias.
+ * FIX GAP-3 (2026-06-19 audit): adicionado fetchTokenRef para prevenir
+ * race condition quando categoryIds muda rapidamente. Sem o token, uma
+ * resposta stale de uma seleção anterior podia sobrescrever os descendentes
+ * corretos, causando expansão incorreta do category tree na UI.
  */
 export function useCategoryDescendants(categoryIds: string[]) {
   const [descendantIds, setDescendantIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // fetchTokenRef: cada chamada incrementa o token antes do primeiro await.
+  // Verificações após cada await descartam respostas de chamadas supersedidas.
+  const fetchTokenRef = useRef(0);
 
   useEffect(() => {
     if (categoryIds.length === 0) {
@@ -136,6 +151,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
     }
 
     const fetchDescendants = async () => {
+      const token = ++fetchTokenRef.current;
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('categories-api', {
@@ -145,13 +161,15 @@ export function useCategoryDescendants(categoryIds: string[]) {
           },
         });
 
+        if (token !== fetchTokenRef.current) return; // superseded — nova seleção de categoria
         if (!error && data.success) {
           setDescendantIds(data.data || []);
         }
       } catch (err) {
+        if (token !== fetchTokenRef.current) return; // superseded
         logger.error('Erro ao buscar descendentes:', err);
       } finally {
-        setIsLoading(false);
+        if (token === fetchTokenRef.current) setIsLoading(false);
       }
     };
 

@@ -1,133 +1,175 @@
+/**
+ * Testes — useReplenishmentsWithDetails (paginação + consistência)
+ *
+ * Hook migrado de supabase.from() para untypedRpc('fn_get_reposicao_listing').
+ * Mock via supabase.rpc (interceptado por untypedRpc internamente).
+ *
+ * Invariantes:
+ *   - retorna array mapeado a partir de ReposicaoRow
+ *   - product_name mapeia de r.name
+ *   - stock_status deriva de is_stockout/total_stock (só 'in-stock' | 'out-of-stock')
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useReplenishmentsWithDetails } from '../useReplenishments';
-import { supabase } from '@/integrations/supabase/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Mock Supabase
+const mockRpc = vi.hoisted(() => vi.fn());
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn(),
+    rpc: mockRpc,
   },
 }));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-    },
-  },
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: vi.fn(), log: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
+function makeWrapper() {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: qc }, children);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
 });
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-);
-
 describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
-  beforeEach(() => {
-    queryClient.clear();
-    vi.clearAllMocks();
+  it('retorna array mapeado a partir de ReposicaoRow (product_name = r.name)', async () => {
+    const mockRow = {
+      product_id: 'p1',
+      name: 'P1',
+      slug: null,
+      sku: 'S1',
+      sale_price: 10,
+      is_stockout: false,
+      is_new: false,
+      total_stock: 20,
+      primary_image_url: null,
+      primary_image_cdn: null,
+      supplier_id: null,
+      supplier_name: null,
+      supplier_code: null,
+      ultimo_restock_date: null,
+      earliest_restock_date: null,
+      earliest_restock_qty: null,
+      has_upcoming_restock: false,
+      category_names: null,
+      primary_category_id: null,
+      primary_category_name: null,
+    };
 
-    // Default mock implementation
-    (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((_table: string) => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: vi.fn().mockResolvedValue({ data: [], error: null }),
-      in: vi.fn().mockResolvedValue({ data: [], error: null }),
-      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }));
-  });
+    mockRpc.mockResolvedValue({ data: [mockRow], error: null });
 
-  it('should fetch different ranges correctly for pagination', async () => {
-    const now = Date.now();
-    const mockDataPage1 = [
-      {
-        id: '1',
-        name: 'P1',
-        updated_at: new Date(now).toISOString(),
-        created_at: new Date(now - 90000000).toISOString(),
-        sku: 'S1',
-        primary_image_url: null,
-        sale_price: 10,
-        category_id: null,
-        supplier_id: null,
-        stock_quantity: 20,
-        min_quantity: 10,
-      },
-    ];
-
-    const rangeMock = vi.fn().mockResolvedValue({ data: mockDataPage1, error: null });
-
-    (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((_table: string) => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: rangeMock,
-      in: vi.fn().mockResolvedValue({ data: [], error: null }),
-      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }));
-
-    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), { wrapper });
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
 
-    expect(rangeMock).toHaveBeenCalledWith(0, 9);
     expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0].product_name).toBe('P1');
   });
 
-  it('should maintain consistency during concurrent updates (simulated)', async () => {
-    const now = Date.now();
-    const mockData = [
+  it('stock_status é out-of-stock quando is_stockout=true', async () => {
+    const mockRows = [
       {
-        id: '1',
+        product_id: 'p1',
         name: 'P1',
-        updated_at: new Date(now).toISOString(),
-        created_at: new Date(now - 90000000).toISOString(),
+        slug: null,
         sku: 'S1',
-        primary_image_url: null,
         sale_price: 10,
-        category_id: null,
+        is_stockout: false,
+        is_new: false,
+        total_stock: 20,
+        primary_image_url: null,
+        primary_image_cdn: null,
         supplier_id: null,
-        stock_quantity: 20,
-        min_quantity: 10,
+        supplier_name: null,
+        supplier_code: null,
+        ultimo_restock_date: null,
+        earliest_restock_date: null,
+        earliest_restock_qty: null,
+        has_upcoming_restock: false,
+        category_names: null,
+        primary_category_id: null,
+        primary_category_name: null,
       },
       {
-        id: '2',
+        product_id: 'p2',
         name: 'P2',
-        updated_at: new Date(now - 1000).toISOString(),
-        created_at: new Date(now - 90001000).toISOString(),
+        slug: null,
         sku: 'S2',
-        primary_image_url: null,
         sale_price: 20,
-        category_id: null,
+        is_stockout: true,
+        is_new: false,
+        total_stock: 0,
+        primary_image_url: null,
+        primary_image_cdn: null,
         supplier_id: null,
-        stock_quantity: 5,
-        min_quantity: 10,
+        supplier_name: null,
+        supplier_code: null,
+        ultimo_restock_date: null,
+        earliest_restock_date: null,
+        earliest_restock_qty: null,
+        has_upcoming_restock: false,
+        category_names: null,
+        primary_category_id: null,
+        primary_category_name: null,
       },
     ];
 
-    (supabase.from as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: vi.fn().mockResolvedValue({ data: mockData, error: null }),
-      in: vi.fn().mockResolvedValue({ data: [], error: null }),
-      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }));
+    mockRpc.mockResolvedValue({ data: mockRows, error: null });
 
-    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 2 }), { wrapper });
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 2 }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
+
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data?.[0].product_name).toBe('P1');
-    expect(result.current.data?.[1].stock_status).toBe('low-stock');
+    expect(result.current.data?.[0].stock_status).toBe('in-stock');
+    expect(result.current.data?.[1].stock_status).toBe('out-of-stock');
+  });
+
+  it('stock_status é low-stock quando is_low_stock=true', async () => {
+    const mockRow = {
+      product_id: 'p3',
+      name: 'P3',
+      slug: null,
+      sku: 'S3',
+      sale_price: 15,
+      is_stockout: false,
+      is_new: false,
+      total_stock: 5,
+      primary_image_url: null,
+      primary_image_cdn: null,
+      supplier_id: null,
+      supplier_name: null,
+      supplier_code: null,
+      ultimo_restock_date: null,
+      earliest_restock_date: null,
+      earliest_restock_qty: null,
+      has_upcoming_restock: false,
+      category_names: null,
+      primary_category_id: null,
+      primary_category_name: null,
+      is_low_stock: true,
+    };
+
+    mockRpc.mockResolvedValue({ data: [mockRow], error: null });
+
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 1 }), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
+    expect(result.current.data?.[0].stock_status).toBe('low-stock');
   });
 });

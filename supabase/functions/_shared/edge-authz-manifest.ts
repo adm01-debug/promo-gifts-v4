@@ -147,4 +147,13 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "sync-external-db": { category: "service", rationale: "Sync DB externo — service_role_key server-to-server", enforcedBy: "custom" },
   "asia-ingestion": { category: "service", rationale: "Sync paginado catálogo ASIA — cron/service via x-cron-secret (ASIA_INGESTION_CRON_SECRET)", enforcedBy: "custom" },
   "backfill-image-dimensions": { category: "service", rationale: "Backfill dimensões product_images — cron via x-cron-secret (BACKFILL_DIM_CRON_SECRET)", enforcedBy: "custom" },
+  "generate-blurhashes": { category: "service", rationale: "Gera blurhashes — cron via authorizeCron (service_role + x-cron-secret)", enforcedBy: "custom" },
+  "hash-product-images": { category: "service", rationale: "Hash perceptual de imagens — cron via authorizeCron (service_role + x-cron-secret)", enforcedBy: "custom" },
+  "audit-suite": { category: "dev", rationale: "Suite de auditoria — service_role + has_role(dev) inline", enforcedBy: "custom" },
+  "word-magic": { category: "authenticated", rationale: "Geração de copy via IA — authenticateRequest (JWT obrigatório)", enforcedBy: "custom" },
+
+  // ---------------- Test CI edges (não-produção, Lovable 2026-06-19) ----------------
+  "test-cart-concurrency": { category: "dev", rationale: "Teste CI de concorrência de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-limit": { category: "dev", rationale: "Teste CI de limite de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-rls": { category: "dev", rationale: "Teste CI de RLS de carrinho — service_role interno", enforcedBy: "custom" },
 };

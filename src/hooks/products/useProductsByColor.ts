@@ -16,6 +16,7 @@ interface UseProductsByColorResult {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsByColor({
@@ -26,6 +27,7 @@ export function useProductsByColor({
 }: UseProductsByColorOptions): UseProductsByColorResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const hasFilter = useMemo(
     () =>
@@ -65,6 +67,7 @@ export function useProductsByColor({
 
     const token = ++fetchTokenRef.current;
     setIsLoading(true);
+    setError(null);
 
     try {
       const refQueries = [
@@ -156,24 +159,33 @@ export function useProductsByColor({
       const matchingProductIds = new Set<string>();
 
       if (colorIdArray.length > 0) {
+        // PERF-COLOR-01 (2026-06-18): chunks paralelos em vez de serial.
+        // Antes: loop com await serial → cada CHUNK = 1 round-trip sequential.
+        // Depois: Promise.all → todos os chunks em paralelo → até 3× mais rápido
+        // para filtros de cor com >50 color IDs (ex: grupo inteiro de cores).
+        // Edge: se 1 chunk falha, Promise.all rejeita → catch zera productIds (safe).
         const CHUNK = 50;
+        const chunks: string[][] = [];
         for (let i = 0; i < colorIdArray.length; i += CHUNK) {
-          const chunk = colorIdArray.slice(i, i + CHUNK);
-          const variantQueries = [
-            {
+          chunks.push(colorIdArray.slice(i, i + CHUNK));
+        }
+
+        const chunkResults = await Promise.all(
+          chunks.map((chunk) =>
+            dbInvoke<{ product_id: string }>({
               table: 'product_variants',
-              operation: 'select' as const,
+              operation: 'select',
               select: 'product_id',
               filters: { is_active: true, color_id: chunk },
               limit: 5000,
               offset: 0,
-            },
-          ];
+            }),
+          ),
+        );
 
-          const variantResults = await Promise.all(variantQueries.map((q) => dbInvoke(q)));
-          // FIX-CATALOG-01: dbInvoke returns InvokeResult { records, count }, not BatchResult { success, data }
-          if (variantResults[0]?.records) {
-            for (const r of variantResults[0].records as Array<{ product_id: string }>) {
+        for (const result of chunkResults) {
+          if (result?.records) {
+            for (const r of result.records) {
               matchingProductIds.add(r.product_id);
             }
           }
@@ -189,6 +201,7 @@ export function useProductsByColor({
     } catch (err) {
       if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
+      setError(err);
       setProductIds(new Set());
     } finally {
       if (token === fetchTokenRef.current) setIsLoading(false);
@@ -200,5 +213,5 @@ export function useProductsByColor({
     if (filterKey !== lastFetchedKey.current || !hasFilter) fetchProductIds();
   }, [filterKey, hasFilter, fetchProductIds]);
 
-  return { productIds, hasFilter, isLoading };
+  return { productIds, hasFilter, isLoading, error };
 }
