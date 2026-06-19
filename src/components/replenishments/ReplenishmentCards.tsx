@@ -13,7 +13,10 @@ import { Package } from 'lucide-react';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
-import { type ColorDotLike, ProductColorSwatches } from '@/components/products/ProductColorSwatches';
+import {
+  type ColorDotLike,
+  ProductColorSwatches,
+} from '@/components/products/ProductColorSwatches';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 
@@ -50,86 +53,87 @@ export interface ReplenishmentCardProps {
   readonly priority?: boolean;
 }
 
-export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
-  product,
-  onClick,
-  selectionMode,
-  isSelected,
-  onToggleSelect,
-  colors,
-  priority = false,
-}: ReplenishmentCardProps) {
-  const recent = isRecent(product.replenished_at);
+export const ReplenishmentGridCard = memo(
+  ({
+    product,
+    onClick,
+    selectionMode,
+    isSelected,
+    onToggleSelect,
+    colors,
+    priority = false,
+  }: ReplenishmentCardProps) => {
+    const recent = isRecent(product.replenished_at);
 
-  const handleClick = useCallback(() => {
-    if (selectionMode) onToggleSelect();
-    else onClick();
-  }, [selectionMode, onToggleSelect, onClick]);
+    const handleClick = useCallback(() => {
+      if (selectionMode) onToggleSelect();
+      else onClick();
+    }, [selectionMode, onToggleSelect, onClick]);
 
-  const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-  }, []);
+    const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
+      e.stopPropagation();
+    }, []);
 
-  return (
-    <BaseProductGridCard
-      testId="replenishment-grid-card"
-      thumbTestId="replenishment-grid-card-thumb"
-      footerTestId="replenishment-card-footer"
-      productId={product.product_id}
-      productName={product.product_name}
-      productSku={product.product_sku}
-      productImage={product.product_image}
-      productSetImage={product.product_set_image}
-      categoryId={product.category_id}
-      categoryName={product.category_name}
-      supplierName={product.supplier_name}
-      basePrice={product.base_price}
-      minQuantity={product.min_quantity}
-      stockStatus={product.stock_status}
-      stockQuantity={product.stock_quantity}
-      colors={colors}
-      selectionMode={selectionMode}
-      isSelected={isSelected}
-      onClick={handleClick}
-      priority={priority}
-      className={cn(recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]')}
-      renderImageOverlays={() => (
-        <>
-          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
-            <ReplenishmentBadge daysSince={product.days_since} size="sm" />
-          </div>
-          {selectionMode && (
-            <div
-              className="absolute right-2 top-2 z-10"
-              onClick={handleCheckboxClick}
-              role="group"
-              aria-label="Seleção"
-            >
-              <SelectionCheckbox
-                checked={isSelected}
-                onChange={onToggleSelect}
-                size="md"
-                animateEntry
-                aria-label={`Selecionar ${product.product_name}`}
-              />
+    return (
+      <BaseProductGridCard
+        testId="replenishment-grid-card"
+        thumbTestId="replenishment-grid-card-thumb"
+        footerTestId="replenishment-card-footer"
+        productId={product.product_id}
+        productName={product.product_name}
+        productSku={product.product_sku}
+        productImage={product.product_image}
+        productSetImage={product.product_set_image}
+        categoryId={product.category_id}
+        categoryName={product.category_name}
+        supplierName={product.supplier_name}
+        basePrice={product.base_price}
+        minQuantity={product.min_quantity}
+        stockStatus={product.stock_status}
+        stockQuantity={product.stock_quantity}
+        colors={colors}
+        selectionMode={selectionMode}
+        isSelected={isSelected}
+        onClick={handleClick}
+        priority={priority}
+        className={cn(recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]')}
+        renderImageOverlays={() => (
+          <>
+            <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+              <ReplenishmentBadge daysSince={product.days_since} size="sm" />
             </div>
-          )}
-        </>
-      )}
-      renderFooterExtras={() => (
-        <div className="border-t border-border/40 pt-1.5">
-          <div className="mb-0.5 flex items-center justify-between">
-            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-              Saídas 90d
-            </span>
+            {selectionMode && (
+              <div
+                className="absolute right-2 top-2 z-10"
+                onClick={handleCheckboxClick}
+                role="group"
+                aria-label="Seleção"
+              >
+                <SelectionCheckbox
+                  checked={isSelected}
+                  onChange={onToggleSelect}
+                  size="md"
+                  animateEntry
+                  aria-label={`Selecionar ${product.product_name}`}
+                />
+              </div>
+            )}
+          </>
+        )}
+        renderFooterExtras={() => (
+          <div className="border-t border-border/40 pt-1.5">
+            <div className="mb-0.5 flex items-center justify-between">
+              <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
+                Saídas 90d
+              </span>
+            </div>
+            <ProductSparkline productId={product.product_id} />
           </div>
-          <ProductSparkline productId={product.product_id} />
-        </div>
-      )}
-    />
-  );
-});
-
+        )}
+      />
+    );
+  },
+);
 
 // ─── Table View ──────────────────────────────────────────────────
 

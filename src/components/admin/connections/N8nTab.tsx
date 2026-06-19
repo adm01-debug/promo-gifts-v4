@@ -123,7 +123,11 @@ export function N8nTab() {
               open={timelineOpen}
               onOpenChange={setTimelineOpen}
             />
-            <RefreshFromDbButton onRefreshed={() => void list()} />
+            <RefreshFromDbButton
+              onRefreshed={() => {
+                list();
+              }}
+            />
             <RetestCooldownSelector className="ml-auto" />
           </div>
           <TestProgressIndicator

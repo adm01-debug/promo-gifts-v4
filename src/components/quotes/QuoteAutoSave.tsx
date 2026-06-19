@@ -140,7 +140,7 @@ export function QuoteAutoSave({
       }
       const existingDrafts: QuoteDraft[] = [];
       for (const key of allKeys) {
-        if (key.startsWith(storageKey + '_v')) {
+        if (key.startsWith(`${storageKey}_v`)) {
           try {
             existingDrafts.push(JSON.parse(localStorage.getItem(key) || '') as QuoteDraft);
           } catch {

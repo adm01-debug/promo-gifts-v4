@@ -37,6 +37,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
@@ -88,6 +89,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
   const [running, setRunning] = useState(false);
   const [preview, setPreview] = useState<RepairResult | null>(null);
   const [applied, setApplied] = useState<RepairResult | null>(null);
+  const [confirmRepairOpen, setConfirmRepairOpen] = useState(false);
 
   async function invoke(dryRun: boolean): Promise<RepairResult | null> {
     setRunning(true);
@@ -116,14 +118,12 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
     }
   }
 
-  async function applyRepair() {
+  function applyRepair() {
     if (!preview) return;
-    if (
-      !confirm(
-        'Confirma a aplicação do reparo? Esta ação modifica o banco e é registrada nos logs.',
-      )
-    )
-      return;
+    setConfirmRepairOpen(true);
+  }
+
+  async function executeRepair() {
     const r = await invoke(false);
     if (r) {
       setApplied(r);
@@ -142,170 +142,182 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
   const display = applied ?? preview;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" disabled={!hasIssues} className="gap-2">
-          <Wrench className="h-4 w-4" /> Reparar registros
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-primary" />
-            Reparo automático de órfãos
-          </DialogTitle>
-          <DialogDescription>
-            Tenta corrigir registros sem dono ou cujo dono não existe mais. Sempre execute a
-            <strong> simulação </strong> antes de aplicar. Cada execução é registrada em
-            <code className="text-xs"> ownership_repair_logs</code>.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Estratégia aplicada</AlertTitle>
-            <AlertDescription className="mt-2 space-y-1 text-xs">
-              <p>
-                • <strong>Apagar:</strong> apenas em tabelas seguras de logs/notificações
-                (workspace_notifications, rls_denial_log, mcp_audit_log…).
-              </p>
-              <p>
-                • <strong>Desativar:</strong> tabelas com coluna <code>is_active</code>,{' '}
-                <code>active</code> ou <code>status</code> recebem o registro marcado como inativo.
-              </p>
-              <p>
-                • <strong>Revisão manual:</strong> demais tabelas são apenas reportadas — nada é
-                alterado.
-              </p>
-            </AlertDescription>
-          </Alert>
-
-          {!display && (
-            <div className="text-sm text-muted-foreground">
-              Clique em <strong>Simular reparo</strong> para ver o que seria feito sem alterar
-              dados.
-            </div>
-          )}
-
-          {display && (
-            <>
-              <div className="grid grid-cols-3 gap-2">
-                <Stat
-                  label="Apagados"
-                  value={display.totals.deleted}
-                  icon={Trash2}
-                  tone="destructive"
-                />
-                <Stat
-                  label="Desativados"
-                  value={display.totals.deactivated}
-                  icon={PowerOff}
-                  tone="warning"
-                />
-                <Stat
-                  label="Revisão manual"
-                  value={display.totals.manual_review}
-                  icon={FileWarning}
-                  tone="muted"
-                />
-              </div>
-
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tabela</TableHead>
-                      <TableHead>Coluna</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Ação</TableHead>
-                      <TableHead className="text-right">Linhas</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {display.actions.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="py-6 text-center text-sm text-muted-foreground"
-                        >
-                          Nenhuma ação necessária.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      display.actions.map((a, i) => {
-                        const meta = ACTION_META[a.action];
-                        const Icon = meta.icon;
-                        return (
-                          <TableRow key={`${a.table}-${a.issue}-${i}`}>
-                            <TableCell className="font-mono text-xs">{a.table}</TableCell>
-                            <TableCell className="font-mono text-xs">{a.owner_column}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-[10px]">
-                                {a.issue === 'null_owner' ? 'sem dono' : 'órfão'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={meta.variant} className="gap-1 text-[10px]">
-                                <Icon className="h-3 w-3" /> {meta.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right text-xs">{a.rows_affected}</TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {applied && (
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <AlertTitle>Reparo aplicado</AlertTitle>
-                  <AlertDescription className="text-xs">
-                    Todas as ações foram gravadas em <code>ownership_repair_logs</code>. Rode uma
-                    nova auditoria para confirmar que as lacunas foram fechadas.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </>
-          )}
-        </div>
-
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Fechar
+    <>
+      <ConfirmDialog
+        open={confirmRepairOpen}
+        onOpenChange={setConfirmRepairOpen}
+        title="Confirmar reparo"
+        description="Confirma a aplicação do reparo? Esta ação modifica o banco e é registrada nos logs."
+        onConfirm={executeRepair}
+      />
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) reset();
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button variant="outline" disabled={!hasIssues} className="gap-2">
+            <Wrench className="h-4 w-4" /> Reparar registros
           </Button>
-          <Button variant="secondary" onClick={runDryRun} disabled={running} className="gap-2">
-            {running ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Wrench className="h-4 w-4" />
-            )}
-            Simular reparo
-          </Button>
-          <Button
-            onClick={applyRepair}
-            disabled={running || !preview || applied !== null || preview.actions.length === 0}
-            className="gap-2"
-          >
-            {running ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
+        </DialogTrigger>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-primary" />
+              Reparo automático de órfãos
+            </DialogTitle>
+            <DialogDescription>
+              Tenta corrigir registros sem dono ou cujo dono não existe mais. Sempre execute a
+              <strong> simulação </strong> antes de aplicar. Cada execução é registrada em
+              <code className="text-xs"> ownership_repair_logs</code>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Alert>
               <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Estratégia aplicada</AlertTitle>
+              <AlertDescription className="mt-2 space-y-1 text-xs">
+                <p>
+                  • <strong>Apagar:</strong> apenas em tabelas seguras de logs/notificações
+                  (workspace_notifications, rls_denial_log, mcp_audit_log…).
+                </p>
+                <p>
+                  • <strong>Desativar:</strong> tabelas com coluna <code>is_active</code>,{' '}
+                  <code>active</code> ou <code>status</code> recebem o registro marcado como
+                  inativo.
+                </p>
+                <p>
+                  • <strong>Revisão manual:</strong> demais tabelas são apenas reportadas — nada é
+                  alterado.
+                </p>
+              </AlertDescription>
+            </Alert>
+
+            {!display && (
+              <div className="text-sm text-muted-foreground">
+                Clique em <strong>Simular reparo</strong> para ver o que seria feito sem alterar
+                dados.
+              </div>
             )}
-            Aplicar reparo
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+            {display && (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  <Stat
+                    label="Apagados"
+                    value={display.totals.deleted}
+                    icon={Trash2}
+                    tone="destructive"
+                  />
+                  <Stat
+                    label="Desativados"
+                    value={display.totals.deactivated}
+                    icon={PowerOff}
+                    tone="warning"
+                  />
+                  <Stat
+                    label="Revisão manual"
+                    value={display.totals.manual_review}
+                    icon={FileWarning}
+                    tone="muted"
+                  />
+                </div>
+
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tabela</TableHead>
+                        <TableHead>Coluna</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Ação</TableHead>
+                        <TableHead className="text-right">Linhas</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {display.actions.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="py-6 text-center text-sm text-muted-foreground"
+                          >
+                            Nenhuma ação necessária.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        display.actions.map((a, i) => {
+                          const meta = ACTION_META[a.action];
+                          const Icon = meta.icon;
+                          return (
+                            <TableRow key={`${a.table}-${a.issue}-${i}`}>
+                              <TableCell className="font-mono text-xs">{a.table}</TableCell>
+                              <TableCell className="font-mono text-xs">{a.owner_column}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-[10px]">
+                                  {a.issue === 'null_owner' ? 'sem dono' : 'órfão'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={meta.variant} className="gap-1 text-[10px]">
+                                  <Icon className="h-3 w-3" /> {meta.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-xs">
+                                {a.rows_affected}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {applied && (
+                  <Alert>
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    <AlertTitle>Reparo aplicado</AlertTitle>
+                    <AlertDescription className="text-xs">
+                      Todas as ações foram gravadas em <code>ownership_repair_logs</code>. Rode uma
+                      nova auditoria para confirmar que as lacunas foram fechadas.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+            <Button variant="secondary" onClick={runDryRun} disabled={running} className="gap-2">
+              {running ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wrench className="h-4 w-4" />
+              )}
+              Simular reparo
+            </Button>
+            <Button
+              onClick={applyRepair}
+              disabled={running || !preview || applied !== null || preview.actions.length === 0}
+              className="gap-2"
+            >
+              {running ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              Aplicar reparo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

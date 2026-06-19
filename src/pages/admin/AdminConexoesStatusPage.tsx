@@ -154,7 +154,14 @@ export default function AdminConexoesStatusPage() {
               <code>integration_credentials</code> e <code>external_connections</code>.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              load();
+            }}
+            disabled={loading}
+          >
             <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
             <span className="ml-2">Atualizar</span>
           </Button>

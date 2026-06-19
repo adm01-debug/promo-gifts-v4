@@ -115,8 +115,7 @@ export const BaseProductGridCard = memo(function BaseProductGridCard({
 
   const hasValidPrice =
     typeof basePrice === 'number' && Number.isFinite(basePrice) && basePrice > 0;
-  const resolvedStockStatus =
-    stockStatus ?? getStockStatus(stockQuantity ?? 0, 10);
+  const resolvedStockStatus = stockStatus ?? getStockStatus(stockQuantity ?? 0, 10);
 
   return (
     <article

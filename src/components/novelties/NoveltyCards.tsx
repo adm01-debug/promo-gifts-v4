@@ -74,44 +74,145 @@ export function NoveltyListSkeleton({ count = 5 }: { count?: number }) {
 }
 
 // ── Grid Card ────────────────────────────────────────────────────────────────
-export const NoveltyGridCard = memo(function NoveltyGridCard({
-  product,
-  selectionMode = false,
-  isSelected = false,
-  onSelect,
-  onStatusClick,
-  colors,
-  isPriceStockLoading = false,
-  priority = false,
-}: NoveltyCardProps) {
-  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias).
-  const fresh = product.is_highlighted;
+export const NoveltyGridCard = memo(
+  ({
+    product,
+    selectionMode = false,
+    isSelected = false,
+    onSelect,
+    onStatusClick,
+    colors,
+    isPriceStockLoading = false,
+    priority = false,
+  }: NoveltyCardProps) => {
+    // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias).
+    const fresh = product.is_highlighted;
 
-  return (
-    <BaseProductGridCard
-      testId="novelty-grid-card"
-      thumbTestId="novelty-grid-card-thumb"
-      footerTestId="novelty-card-footer"
-      productId={product.product_id}
-      productName={product.product_name ?? ''}
-      productSku={product.product_sku}
-      productImage={product.product_image}
-      productSetImage={product.product_set_image}
-      categoryId={product.category_id}
-      categoryName={product.category_name}
-      supplierName={product.supplier_name}
-      basePrice={product.base_price}
-      minQuantity={product.min_quantity}
-      stockStatus={product.stock_status}
-      stockQuantity={product.stock_quantity}
-      colors={colors}
-      selectionMode={selectionMode}
-      isSelected={isSelected}
-      isPriceStockLoading={isPriceStockLoading}
-      priority={priority}
-      onClick={() => onSelect?.(product.product_id)}
-      renderSelectionIndicator={() =>
-        selectionMode ? (
+    return (
+      <BaseProductGridCard
+        testId="novelty-grid-card"
+        thumbTestId="novelty-grid-card-thumb"
+        footerTestId="novelty-card-footer"
+        productId={product.product_id}
+        productName={product.product_name ?? ''}
+        productSku={product.product_sku}
+        productImage={product.product_image}
+        productSetImage={product.product_set_image}
+        categoryId={product.category_id}
+        categoryName={product.category_name}
+        supplierName={product.supplier_name}
+        basePrice={product.base_price}
+        minQuantity={product.min_quantity}
+        stockStatus={product.stock_status}
+        stockQuantity={product.stock_quantity}
+        colors={colors}
+        selectionMode={selectionMode}
+        isSelected={isSelected}
+        isPriceStockLoading={isPriceStockLoading}
+        priority={priority}
+        onClick={() => onSelect?.(product.product_id)}
+        renderSelectionIndicator={() =>
+          selectionMode ? (
+            <div
+              className={cn(
+                'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+                isSelected
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-muted-foreground bg-card',
+              )}
+            >
+              {isSelected && (
+                <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
+                  <path
+                    d="M2 6L5 9L10 3"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+          ) : null
+        }
+        renderImageOverlays={() => (
+          <>
+            <div className="absolute left-2 top-2 flex flex-col gap-1">
+              <NoveltyBadge
+                daysRemaining={product.days_remaining}
+                daysElapsed={product.days_as_novelty}
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusClick?.('novelty');
+                }}
+              />
+            </div>
+            {fresh && !selectionMode && (
+              <div className="absolute right-2 top-2">
+                <ProductStatusBadge
+                  type="novelty"
+                  value="NEW"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatusClick?.('novelty');
+                  }}
+                />
+              </div>
+            )}
+            {product.status === 'expiring_soon' && !fresh && !selectionMode && (
+              <div className="absolute right-2 top-2">
+                <span
+                  data-testid="novelty-expiring-badge"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
+                >
+                  <Clock className="h-2.5 w-2.5" />
+                  {product.days_remaining <= 1
+                    ? 'Último dia'
+                    : `Últimos ${product.days_remaining}d`}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+      />
+    );
+  },
+);
+
+// ── List Card ────────────────────────────────────────────────────────────────
+export const NoveltyListCard = memo(
+  ({
+    product,
+    selectionMode = false,
+    isSelected = false,
+    onSelect,
+    onStatusClick,
+    colors,
+  }: NoveltyCardProps) => {
+    // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+    // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+    const fresh = product.is_highlighted;
+
+    // Mini-carrossel de variantes — mesmo comportamento do grid.
+    const [activeColorName, setActiveColorName] = useState<string | null>(null);
+    const activeImage = useMemo(() => {
+      if (!activeColorName || !colors?.length) return product.product_image;
+      const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+      return match?.image || product.product_image;
+    }, [activeColorName, colors, product.product_image]);
+
+    return (
+      <article
+        className={cn(
+          'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 transition-all',
+          'hover:border-primary/40 hover:shadow-sm',
+          isSelected && 'border-primary ring-2 ring-primary/20',
+        )}
+        onClick={() => onSelect?.(product.product_id)}
+      >
+        {selectionMode && (
           <div
             className={cn(
               'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
@@ -132,11 +233,38 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
               </svg>
             )}
           </div>
-        ) : null
-      }
-      renderImageOverlays={() => (
-        <>
-          <div className="absolute left-2 top-2 flex flex-col gap-1">
+        )}
+
+        {/* Thumbnail */}
+        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
+          <QuickViewThumb
+            productId={product.product_id}
+            productName={product.product_name ?? 'Produto'}
+            testId="novelty-list-card-thumb"
+            className="h-full w-full"
+          >
+            {activeImage ? (
+              <img
+                key={activeImage}
+                src={activeImage}
+                alt={product.product_name}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                }}
+                className="h-full w-full object-contain transition-opacity duration-200"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <Package className="h-5 w-5 text-muted-foreground/30" />
+              </div>
+            )}
+          </QuickViewThumb>
+        </div>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="mb-0.5 flex items-center gap-2">
             <NoveltyBadge
               daysRemaining={product.days_remaining}
               daysElapsed={product.days_as_novelty}
@@ -146,9 +274,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                 onStatusClick?.('novelty');
               }}
             />
-          </div>
-          {fresh && !selectionMode && (
-            <div className="absolute right-2 top-2">
+            {fresh && (
               <ProductStatusBadge
                 type="novelty"
                 value="NEW"
@@ -158,169 +284,48 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                   onStatusClick?.('novelty');
                 }}
               />
-            </div>
-          )}
-          {product.status === 'expiring_soon' && !fresh && !selectionMode && (
-            <div className="absolute right-2 top-2">
-              <span
-                data-testid="novelty-expiring-badge"
-                className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
-              >
-                <Clock className="h-2.5 w-2.5" />
-                {product.days_remaining <= 1 ? 'Último dia' : `Últimos ${product.days_remaining}d`}
-              </span>
-            </div>
-          )}
-        </>
-      )}
-    />
-  );
-});
-
-
-// ── List Card ────────────────────────────────────────────────────────────────
-export const NoveltyListCard = memo(function NoveltyListCard({
-  product,
-  selectionMode = false,
-  isSelected = false,
-  onSelect,
-  onStatusClick,
-  colors,
-}: NoveltyCardProps) {
-  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
-  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
-  const fresh = product.is_highlighted;
-
-  // Mini-carrossel de variantes — mesmo comportamento do grid.
-  const [activeColorName, setActiveColorName] = useState<string | null>(null);
-  const activeImage = useMemo(() => {
-    if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
-    return match?.image || product.product_image;
-  }, [activeColorName, colors, product.product_image]);
-
-  return (
-    <article
-      className={cn(
-        'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 transition-all',
-        'hover:border-primary/40 hover:shadow-sm',
-        isSelected && 'border-primary ring-2 ring-primary/20',
-      )}
-      onClick={() => onSelect?.(product.product_id)}
-    >
-      {selectionMode && (
-        <div
-          className={cn(
-            'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
-            isSelected
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-muted-foreground bg-card',
-          )}
-        >
-          {isSelected && (
-            <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
-              <path
-                d="M2 6L5 9L10 3"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </div>
-      )}
-
-      {/* Thumbnail */}
-      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        <QuickViewThumb
-          productId={product.product_id}
-          productName={product.product_name ?? 'Produto'}
-          testId="novelty-list-card-thumb"
-          className="h-full w-full"
-        >
-          {activeImage ? (
-            <img
-              key={activeImage}
-              src={activeImage}
-              alt={product.product_name}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-              }}
-              className="h-full w-full object-contain transition-opacity duration-200"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <Package className="h-5 w-5 text-muted-foreground/30" />
-            </div>
-          )}
-        </QuickViewThumb>
-      </div>
-
-      {/* Info */}
-      <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex items-center gap-2">
-          <NoveltyBadge
-            daysRemaining={product.days_remaining}
-            daysElapsed={product.days_as_novelty}
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStatusClick?.('novelty');
-            }}
-          />
-          {fresh && (
-            <ProductStatusBadge
-              type="novelty"
-              value="NEW"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStatusClick?.('novelty');
-              }}
-            />
-          )}
-        </div>
-        <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
-        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          {product.category_name && (
-            <span className="flex items-center gap-0.5">
-              <FolderTree className="h-3 w-3" />
-              {product.category_name}
-            </span>
-          )}
-          {product.supplier_name && (
-            <span className="flex items-center gap-0.5">
-              <Building2 className="h-3 w-3" />
-              {product.supplier_name}
-            </span>
-          )}
-          <ProductColorSwatches
-            colors={colors}
-            max={5}
-            size="xs"
-            hideWhenEmpty={false}
-            selectedName={activeColorName}
-            onSelect={(c) => setActiveColorName(c.name)}
-          />
-        </div>
-      </div>
-
-      {/* Price */}
-      {typeof product.base_price === 'number' &&
-        Number.isFinite(product.base_price) &&
-        product.base_price > 0 && (
-          <span className="flex-shrink-0 text-sm font-semibold text-primary">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              product.base_price,
             )}
-          </span>
-        )}
-    </article>
-  );
-});
+          </div>
+          <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
+          <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
+          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            {product.category_name && (
+              <span className="flex items-center gap-0.5">
+                <FolderTree className="h-3 w-3" />
+                {product.category_name}
+              </span>
+            )}
+            {product.supplier_name && (
+              <span className="flex items-center gap-0.5">
+                <Building2 className="h-3 w-3" />
+                {product.supplier_name}
+              </span>
+            )}
+            <ProductColorSwatches
+              colors={colors}
+              max={5}
+              size="xs"
+              hideWhenEmpty={false}
+              selectedName={activeColorName}
+              onSelect={(c) => setActiveColorName(c.name)}
+            />
+          </div>
+        </div>
+
+        {/* Price */}
+        {typeof product.base_price === 'number' &&
+          Number.isFinite(product.base_price) &&
+          product.base_price > 0 && (
+            <span className="flex-shrink-0 text-sm font-semibold text-primary">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                product.base_price,
+              )}
+            </span>
+          )}
+      </article>
+    );
+  },
+);
 
 // ── Table View ───────────────────────────────────────────────────────────────
 export function NoveltyTableView({

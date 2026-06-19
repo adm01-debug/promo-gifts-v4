@@ -9,7 +9,7 @@ import { DevOnly } from '@/components/dev/DevOnly';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const CloudStatusDotInner = memo(function CloudStatusDotInner() {
+const CloudStatusDotInner = memo(() => {
   const { status } = useCloudStatus();
 
   // Mostra apenas em estados saudáveis — banner já cobre os demais.
@@ -44,7 +44,7 @@ const CloudStatusDotInner = memo(function CloudStatusDotInner() {
   );
 });
 
-export const CloudStatusDot = memo(function CloudStatusDot() {
+export const CloudStatusDot = memo(() => {
   return (
     <DevOnly strict>
       <CloudStatusDotInner />

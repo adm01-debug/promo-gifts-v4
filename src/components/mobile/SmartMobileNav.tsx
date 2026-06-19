@@ -40,7 +40,7 @@ const quickActions: NavItem[] = [
   { icon: FolderOpen, label: 'Coleções', href: '/colecoes' },
 ];
 
-export const SmartMobileNav = forwardRef<HTMLDivElement>(function SmartMobileNav(_props, _ref) {
+export const SmartMobileNav = forwardRef<HTMLDivElement>((_props, _ref) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [fabOpen, setFabOpen] = useState(false);

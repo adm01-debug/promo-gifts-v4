@@ -36,7 +36,7 @@ interface MockupResultCardProps {
   annotations?: Annotation[];
 }
 
-export const MockupResultCard = memo(function MockupResultCard({
+export const MockupResultCard = memo(({
   generatedMockup,
   isLoading,
   onDownload,
@@ -47,7 +47,7 @@ export const MockupResultCard = memo(function MockupResultCard({
   beforeImage,
   onAnnotationsChange,
   annotations = [],
-}: MockupResultCardProps) {
+}: MockupResultCardProps) => {
   const [zoom, setZoom] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);

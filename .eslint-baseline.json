@@ -1,5 +1,17 @@
 {
-  "generatedAt": "2026-06-19T18:20:00.000000+00:00",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-19T19:47:24.929Z",
+  "totalErrors": 14,
+  "counts": {
+    "src/components/novelties/NoveltyCardSkeleton.tsx": {
+      "prefer-arrow-callback": 1
+    },
+    "src/components/novelties/NoveltyCards.tsx": {
+      "@typescript-eslint/no-unused-vars": 6,
+      "unused-imports/no-unused-imports": 6
+    },
+    "src/components/products/BaseProductGridCard.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1,
+      "prefer-arrow-callback": 1
+    }
+  }
 }

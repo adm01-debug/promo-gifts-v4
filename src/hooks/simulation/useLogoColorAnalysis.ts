@@ -47,11 +47,9 @@ export function useLogoColorAnalysis() {
               height *= MAX_SIZE / width;
               width = MAX_SIZE;
             }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
           }
 
           canvas.width = width;

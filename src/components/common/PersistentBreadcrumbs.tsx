@@ -54,10 +54,7 @@ interface PersistentBreadcrumbsProps {
 }
 
 export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrumbsProps>(
-  function PersistentBreadcrumbs(
-    { className, showHome = true, showBackButton = false, customItems },
-    ref,
-  ) {
+  ({ className, showHome = true, showBackButton = false, customItems }, ref) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { isDev, isAdmin } = useAuth();
