@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Package, Truck, ShoppingCart, Search, X, Copy, Building2, Tag } from 'lucide-react';
@@ -81,7 +81,7 @@ const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
   try {
-    return window.localStorage.getItem(key) ?? fallback;
+    return window.sessionStorage.getItem(key) ?? fallback;
   } catch {
     return fallback;
   }
@@ -89,7 +89,7 @@ function readStored(key: string, fallback = ''): string {
 function writeStored(key: string, value: string): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
   } catch {
     /* modo privado — ignora */
   }
@@ -366,6 +366,10 @@ export function VariantStockTable({
   const [inlineSearch, setInlineSearch] = useState<string>(() =>
     readStored(SEARCH_STORAGE_KEY, ''),
   );
+  // Defer the search computation so the controlled Input updates instantly while
+  // the expensive filter (potentially thousands of SKUs) runs at lower priority.
+  const deferredSearch = useDeferredValue(inlineSearch);
+  const isSearchStale = inlineSearch !== deferredSearch;
   const [searchParams] = useSearchParams();
 
   // Persiste busca inline
@@ -402,10 +406,12 @@ export function VariantStockTable({
     writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
   }, [ruptureHorizon]);
 
-  // Inline search filtering
+  // Inline search filtering — runs against deferredSearch so keystrokes never
+  // block the React render. The Input value (inlineSearch) updates immediately;
+  // the filtered list updates once React has capacity (useDeferredValue).
   const searchedProducts = useMemo(() => {
-    if (!inlineSearch.trim()) return products;
-    const q = inlineSearch.toLowerCase();
+    if (!deferredSearch.trim()) return products;
+    const q = deferredSearch.toLowerCase();
     return products.filter(
       (p) =>
         p.productName.toLowerCase().includes(q) ||
@@ -414,7 +420,7 @@ export function VariantStockTable({
           (v) => v.colorName?.toLowerCase().includes(q) || v.variantSku?.toLowerCase().includes(q),
         ),
     );
-  }, [products, inlineSearch]);
+  }, [products, deferredSearch]);
 
   /**
    * Contagem de variações (SKUs) por status — base para chips de filtro.
@@ -729,11 +735,15 @@ export function VariantStockTable({
         </div>
       </div>
 
-      {/* Container de scroll virtual — height limitado + overflow-y para o virtualizer operar. */}
+      {/* Container de scroll virtual — height limitado + overflow-y para o virtualizer operar.
+          opacity-60 durante isSearchStale sinalizaa o usuário que o filtro ainda está processando. */}
       <div
         ref={scrollContainerRef}
         data-testid="variant-stock-scroll"
-        className="overflow-x-auto overflow-y-auto rounded-lg border [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
+        className={cn(
+          'overflow-x-auto overflow-y-auto rounded-lg border [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]',
+          isSearchStale && 'opacity-60',
+        )}
         style={{ maxHeight: 'calc(100vh - 14rem)' }}
       >
         <Table className="min-w-[700px]">
