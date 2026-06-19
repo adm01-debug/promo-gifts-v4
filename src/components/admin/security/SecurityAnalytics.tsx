@@ -73,9 +73,13 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
       reasonMap.set(log.detection_reason, (reasonMap.get(log.detection_reason) || 0) + 1);
     }
 
-    const topIps = [...ipMap.values()].sort((a, b) => b.total - a.total).slice(0, 10);
-    const topEndpoints = [...epMap.values()].sort((a, b) => b.total - a.total).slice(0, 10);
-    const topReasons = [...reasonMap.entries()]
+    const innerTopIps = Array.from(ipMap.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+    const innerTopEndpoints = Array.from(epMap.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+    const innerTopReasons = Array.from(reasonMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([reason, count]) => ({ reason, count }));
@@ -103,7 +107,12 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
       }
     }
 
-    return { topIps, topEndpoints, timeline: buckets, topReasons };
+    return {
+      topIps: innerTopIps,
+      topEndpoints: innerTopEndpoints,
+      timeline: buckets,
+      topReasons: innerTopReasons,
+    };
   }, [botLogs]);
 
   return (
@@ -219,9 +228,9 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
                       </TableCell>
                       <TableCell
                         className="max-w-[160px] truncate text-xs text-muted-foreground"
-                        title={[...row.reasons].join(', ')}
+                        title={Array.from(row.reasons).join(', ')}
                       >
-                        {[...row.reasons].slice(0, 2).join(', ')}
+                        {Array.from(row.reasons).slice(0, 2).join(', ')}
                       </TableCell>
                       <TableCell>
                         <Button

@@ -19,7 +19,6 @@ import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
-import { cn } from '@/lib/utils';
 
 interface FailedDelivery {
   id: string;
@@ -53,9 +52,9 @@ export function FailedDeliveriesPanel() {
         .order('delivered_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
-      const { data, count, error } = await q;
+      const { data: deliveries, count, error } = await q;
       if (error) throw error;
-      return { rows: data ?? [], count: count ?? 0 };
+      return { rows: deliveries ?? [], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });
@@ -126,7 +125,7 @@ export function FailedDeliveriesPanel() {
               formats={['csv', 'json']}
             />
             <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
+              <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
@@ -134,7 +133,7 @@ export function FailedDeliveriesPanel() {
       <CardContent>
         {isLoading ? (
           <div className="space-y-2">
-            {Array.from({ length: 4 }, (_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-10 animate-pulse rounded bg-muted/30" />
             ))}
           </div>

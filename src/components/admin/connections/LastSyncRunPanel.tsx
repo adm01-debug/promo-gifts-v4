@@ -16,7 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { rpcAdminSyncExternalConnections } from '@/integrations/supabase/gold';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 type SyncLogRow = {
   id: string;
@@ -53,13 +52,13 @@ export function LastSyncRunPanel() {
 
   const load = useCallback(async () => {
     setError(null);
-    const { data, error } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('external_connections_sync_log')
       .select('*')
       .order('ran_at', { ascending: false })
       .limit(1);
-    if (error) {
-      setError(error.message);
+    if (fetchError) {
+      setError(fetchError.message);
       setLast(null);
       return;
     }
@@ -74,8 +73,8 @@ export function LastSyncRunPanel() {
     setRunning(true);
     // Wrapper admin-gated: a função original é SECURITY DEFINER sem checagem de
     // chamador e teve EXECUTE revogado de authenticated no hardening.
-    const { error } = await rpcAdminSyncExternalConnections();
-    if (error) {
+    const { error: syncError } = await rpcAdminSyncExternalConnections();
+    if (syncError) {
       toast.error('Falha ao executar sincronização');
     } else {
       toast.success('Sync executado');
@@ -112,11 +111,11 @@ export function LastSyncRunPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
             <Button size="sm" onClick={runManual} disabled={running}>
-              <Zap className={cn('mr-2 h-4 w-4', running && 'animate-pulse')} />
+              <Zap className={`mr-2 h-4 w-4 ${running ? 'animate-pulse' : ''}`} />
               {running ? 'Executando…' : 'Rodar agora'}
             </Button>
           </div>

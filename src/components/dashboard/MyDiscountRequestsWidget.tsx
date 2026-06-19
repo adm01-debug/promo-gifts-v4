@@ -58,9 +58,9 @@ export function MyDiscountRequestsWidget() {
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
       if (pageParam) q = q.lt('created_at', pageParam);
-      const { data, error } = await q;
+      const { data: rawData, error } = await q;
       if (error) throw error;
-      return data ?? [];
+      return rawData ?? [];
     },
     getNextPageParam: (last) =>
       last.length < PAGE_SIZE ? undefined : (last.at(-1)?.created_at ?? undefined),

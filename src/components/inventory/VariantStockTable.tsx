@@ -499,7 +499,7 @@ export function VariantStockTable({
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <div className="flex gap-1">
-                  {Array.from({ length: 3 }, (_, j) => (
+                  {Array.from({ length: 3 }, (_el, j) => (
                     <div key={j} className="h-5 w-5 animate-pulse rounded-full bg-muted" />
                   ))}
                 </div>

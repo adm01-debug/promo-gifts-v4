@@ -154,7 +154,9 @@ export function resolveColorStock(
     if (groupColors.length > 0) {
       let totalStock = 0;
       for (const gc of groupColors) {
-        const v = variations.find((v: ProductVariation) => v.color?.name === gc.name);
+        const v = variations.find(
+          (variation: ProductVariation) => variation.color?.name === gc.name,
+        );
         if (v) totalStock += v.stock ?? 0;
       }
       return { stock: totalStock };

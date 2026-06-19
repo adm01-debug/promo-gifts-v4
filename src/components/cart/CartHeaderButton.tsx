@@ -197,7 +197,7 @@ export function CartHeaderButton() {
 
             {isLoading ? (
               <div className="space-y-3 p-3">
-                {Array.from({ length: 2 }, (_, i) => (
+                {[...Array(2)].map((_, i) => (
                   <div
                     key={i}
                     className="animate-pulse space-y-4 rounded-xl border border-border/40 p-3"
@@ -211,7 +211,7 @@ export function CartHeaderButton() {
                     </div>
                     {i === 0 && (
                       <div className="space-y-2.5 border-t border-border/20 pt-2">
-                        {Array.from({ length: 2 }, (_, j) => (
+                        {[...Array(2)].map((_item, j) => (
                           <div key={j} className="flex items-center gap-2">
                             <Skeleton className="h-8 w-8 rounded-lg" />
                             <div className="flex-1 space-y-1.5">

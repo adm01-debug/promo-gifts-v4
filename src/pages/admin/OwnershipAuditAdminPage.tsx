@@ -112,7 +112,7 @@ export default function OwnershipAuditAdminPage() {
     }
   }
 
-  async function exportMatrix(format: 'csv' | 'pdf') {
+  async function exportMatrix(exportFormat: 'csv' | 'pdf') {
     try {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
@@ -120,7 +120,7 @@ export default function OwnershipAuditAdminPage() {
         toast.error('Sessão expirada — faça login novamente.');
         return;
       }
-      const url = `${SUPABASE_URL}/functions/v1/rls-matrix-export?format=${format}`;
+      const url = `${SUPABASE_URL}/functions/v1/rls-matrix-export?format=${exportFormat}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
         const msg = await res.text().catch(() => res.statusText);
@@ -128,7 +128,7 @@ export default function OwnershipAuditAdminPage() {
       }
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
-      if (format === 'pdf') {
+      if (exportFormat === 'pdf') {
         // HTML printável → abre em nova aba para Imprimir → Salvar como PDF
         window.open(objectUrl, '_blank', 'noopener,noreferrer');
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
@@ -141,7 +141,7 @@ export default function OwnershipAuditAdminPage() {
         a.remove();
         URL.revokeObjectURL(objectUrl);
       }
-      toast.success(`Matriz RLS exportada (${format.toUpperCase()}).`);
+      toast.success(`Matriz RLS exportada (${exportFormat.toUpperCase()}).`);
     } catch (e) {
       logger.error('RLS matrix export failed', e);
       toast.error(`Falha ao exportar matriz: ${toErrorMessage(e)}`);

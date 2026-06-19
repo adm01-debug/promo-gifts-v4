@@ -231,13 +231,13 @@ export function useWorkspaceNotifications() {
           const networkMs = Number(
             ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0).toFixed(2),
           );
-          const unread = items.filter((n) => !n.is_read).length;
+          const unreadFromFilter = items.filter((n) => !n.is_read).length;
           debugLog('badge-render', {
             source: 'network',
             elapsedMs: Number(elapsedMs.toFixed(2)),
             target: '<16ms',
             hit: elapsedMs < 16,
-            unreadCount: unread,
+            unreadCount: unreadFromFilter,
             networkMs,
           });
           notificationsMetrics.recordBadgeRender({
@@ -245,7 +245,7 @@ export function useWorkspaceNotifications() {
             elapsedMs: Number(elapsedMs.toFixed(2)),
             cacheAgeMs: null,
             networkMs,
-            unreadCount: unread,
+            unreadCount: unreadFromFilter,
             hit: elapsedMs < 16,
           });
         } else {

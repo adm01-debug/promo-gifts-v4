@@ -56,15 +56,15 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
         maxHeight: 50,
       };
     }
-    const anyUsaDimensao = techniques.some((t) => t.usaDimensao !== false);
-    const anyCobraPorCor = techniques.some((t) => t.cobraPorCor === true);
+    const innerAnyUsaDimensao = techniques.some((t) => t.usaDimensao !== false);
+    const innerAnyCobraPorCor = techniques.some((t) => t.cobraPorCor === true);
 
     const colorTechniques = techniques.filter((t) => t.cobraPorCor === true);
-    const maxColors =
+    const innerMaxColors =
       colorTechniques.length > 0 ? Math.max(...colorTechniques.map((t) => t.maxColors || 3)) : 1;
 
     const dimTechniques = techniques.filter((t) => t.usaDimensao !== false);
-    const maxWidth =
+    const innerMaxWidth =
       dimTechniques.length > 0
         ? Math.max(
             ...dimTechniques.map(
@@ -73,7 +73,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
           )
         : selectedLocation?.maxWidthCm || 50;
 
-    const maxHeight =
+    const innerMaxHeight =
       dimTechniques.length > 0
         ? Math.max(
             ...dimTechniques.map(
@@ -82,7 +82,13 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
           )
         : selectedLocation?.maxHeightCm || 50;
 
-    return { anyUsaDimensao, anyCobraPorCor, maxColors, maxWidth, maxHeight };
+    return {
+      anyUsaDimensao: innerAnyUsaDimensao,
+      anyCobraPorCor: innerAnyCobraPorCor,
+      maxColors: innerMaxColors,
+      maxWidth: innerMaxWidth,
+      maxHeight: innerMaxHeight,
+    };
   }, [techniques, selectedLocation]);
 
   const currentArea = engravingSpecs.width * engravingSpecs.height;
@@ -257,8 +263,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
                     value={engravingSpecs.width}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
-                      if (!Number.isNaN(v) && v >= 0.5 && v <= maxWidth)
-                        wizard.updateSpecs({ width: v });
+                      if (!isNaN(v) && v >= 0.5 && v <= maxWidth) wizard.updateSpecs({ width: v });
                     }}
                     min={0.5}
                     max={maxWidth}
@@ -312,7 +317,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
                     value={engravingSpecs.height}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
-                      if (!Number.isNaN(v) && v >= 0.5 && v <= maxHeight)
+                      if (!isNaN(v) && v >= 0.5 && v <= maxHeight)
                         wizard.updateSpecs({ height: v });
                     }}
                     min={0.5}

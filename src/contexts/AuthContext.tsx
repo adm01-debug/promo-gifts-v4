@@ -22,6 +22,7 @@ import { authService } from '@/services/authService';
 import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
+import { clearPostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import {
   attachSessionRevalidation,
@@ -181,20 +182,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      } = supabase.auth.onAuthStateChange((event, authSession) => {
+        setSession(authSession);
+        setUser(authSession?.user ?? null);
 
-        if (session?.user) {
+        if (authSession?.user) {
           if (event === 'SIGNED_IN') {
-            const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
+            const name = authSession.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
 
           // BUG-3 FIX: só rebuscar perfil/roles em eventos que efetivamente
           // alteram os dados do usuário. TOKEN_REFRESHED ocorre a cada ~5min e
           // troca apenas o JWT — não precisa rebater no banco toda vez.
-          const uid = session.user.id;
+          const uid = authSession.user.id;
           if (EVENTS_THAT_NEED_PROFILE_FETCH.has(event)) {
             initialFetchScheduled = true;
             // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
@@ -225,11 +226,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
         if (cancelled) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        if (initialSession?.user) {
           // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
           // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
           // recovery antes de hidratar dados/papéis com um token quebrado.
@@ -248,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // se o listener ainda não disparou (ex.: Supabase não emitiu
           // INITIAL_SESSION antes de getSession() resolver).
           if (!initialFetchScheduled) {
-            fetchUserData(session.user.id);
+            fetchUserData(initialSession.user.id);
             fetchAAL();
           }
         } else {
@@ -385,8 +386,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       clearProfileRoles();
       clearMFA();
-      // Reset de preferências de sessão (ex.: sort do catálogo) para garantir que
-      // o próximo login na mesma aba comece com o padrão "Mais Recentes".
+      clearPostLoginRedirect();
       try {
         window.sessionStorage.removeItem('catalog:sortBy');
       } catch {

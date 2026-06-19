@@ -231,7 +231,7 @@ export default function ProductDetail() {
     // 4. Tenta match por grupo
     if (!match && grupoParam && product.colors?.length) {
       const c = product.colors.find(
-        (c: { groupSlug?: string; name?: string }) => c.groupSlug === grupoParam,
+        (color: { groupSlug?: string; name?: string }) => color.groupSlug === grupoParam,
       );
       if (c) {
         match = product.variations.find(

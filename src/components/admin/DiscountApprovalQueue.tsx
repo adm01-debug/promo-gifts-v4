@@ -20,7 +20,7 @@ export function DiscountApprovalQueue() {
   const { data, isLoading } = useQuery({
     queryKey: ['discount-approval-queue'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: queueData, error } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select(
@@ -29,7 +29,7 @@ export function DiscountApprovalQueue() {
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return queueData || [];
     },
   });
 

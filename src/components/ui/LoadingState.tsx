@@ -151,7 +151,7 @@ export function LoadingTable({ rows = 5, columns = 4, className }: LoadingTableP
       {/* Rows */}
       {Array.from({ length: rows }, (_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 border-b p-3 last:border-0">
-          {Array.from({ length: columns }, (_, colIndex) => (
+          {Array.from({ length: columns }, (_c, colIndex) => (
             <Skeleton
               key={colIndex}
               className={cn('h-4 flex-1', colIndex === 0 && 'w-1/4 flex-none')}

@@ -64,15 +64,21 @@ export function VariantGridMatrix({
       if (v.size_code) sizeSet.add(v.size_code);
       allIds.push(v.id);
     }
-    const colors = [...colorMap.values()];
-    const sizes = [...sizeSet].sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
-    const matrix = new Map<string, Map<string, VariantGridItem>>();
+    const innerColors = Array.from(colorMap.values());
+    const innerSizes = Array.from(sizeSet).sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
+    const innerMatrix = new Map<string, Map<string, VariantGridItem>>();
     for (const v of variants) {
       const sk = v.size_code || '__none__';
-      if (!matrix.has(v.color_name)) matrix.set(v.color_name, new Map());
-      matrix.get(v.color_name)?.set(sk, v);
+      if (!innerMatrix.has(v.color_name)) innerMatrix.set(v.color_name, new Map());
+      innerMatrix.get(v.color_name)?.set(sk, v);
     }
-    return { colors, sizes, matrix, hasSizes: sizes.length > 0, allVariantIds: allIds };
+    return {
+      colors: innerColors,
+      sizes: innerSizes,
+      matrix: innerMatrix,
+      hasSizes: innerSizes.length > 0,
+      allVariantIds: allIds,
+    };
   }, [variants]);
 
   const toggleSelection = useCallback((id: string) => {
@@ -103,7 +109,7 @@ export function VariantGridMatrix({
       if (!onBulkAction || !selectedIds.size) return;
       await onBulkAction({
         type: 'toggle_active',
-        variantIds: [...selectedIds],
+        variantIds: Array.from(selectedIds),
         value: active,
       });
       setSelectedIds(new Set());
@@ -115,7 +121,7 @@ export function VariantGridMatrix({
       if (!onBulkAction || !selectedIds.size) return;
       await onBulkAction({
         type: 'update_stock',
-        variantIds: [...selectedIds],
+        variantIds: Array.from(selectedIds),
         value: stock,
       });
       setSelectedIds(new Set());

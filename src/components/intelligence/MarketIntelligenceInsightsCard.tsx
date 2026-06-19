@@ -54,17 +54,20 @@ export function MarketIntelligenceInsightsCard({
   const { data, isLoading, isError } = useQuery({
     queryKey: ['market-intelligence-insights', days, categoryId, supplierId, productId],
     queryFn: async (): Promise<InsightResponse> => {
-      const { data, error } = await supabase.functions.invoke('market-intelligence-insights', {
-        body: {
-          days,
-          categoryId,
-          supplierId,
-          productId,
-          categoryName,
-          supplierName,
-          productName,
+      const { data: rawData, error } = await supabase.functions.invoke(
+        'market-intelligence-insights',
+        {
+          body: {
+            days,
+            categoryId,
+            supplierId,
+            productId,
+            categoryName,
+            supplierName,
+            productName,
+          },
         },
-      });
+      );
       if (error) {
         if (error.message?.includes('429')) {
           toast({
@@ -81,7 +84,7 @@ export function MarketIntelligenceInsightsCard({
         }
         throw error;
       }
-      return data as InsightResponse;
+      return rawData as InsightResponse;
     },
     staleTime: 1000 * 60 * 5,
     retry: false,

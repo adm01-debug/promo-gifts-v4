@@ -12,7 +12,6 @@ import { Sparkles, Plus } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 
 import { logger } from '@/lib/logger';
-import { cn } from '@/lib/utils';
 type BundleSuggestion =
   Database['public']['Functions']['get_bundle_suggestions']['Returns'][number];
 
@@ -27,14 +26,14 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
     queryKey: ['bundle-suggestions', productId],
     enabled: !!productId,
     queryFn: async (): Promise<BundleSuggestion[]> => {
-      const { data, error } = await supabase.rpc('get_bundle_suggestions', {
+      const { data: suggestionsData, error } = await supabase.rpc('get_bundle_suggestions', {
         _product_id: productId,
       });
       if (error) {
         logger.warn('get_bundle_suggestions error:', error);
         return [];
       }
-      return data ?? [];
+      return suggestionsData ?? [];
     },
     staleTime: 1000 * 60 * 30,
   });
@@ -44,10 +43,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
 
   return (
     <Card
-      className={cn(
-        'border-primary/20 shadow-sm transition-shadow duration-300 animate-in zoom-in-95 hover:shadow-md',
-        className,
-      )}
+      className={`border-primary/20 shadow-sm transition-shadow duration-300 animate-in zoom-in-95 hover:shadow-md ${className ?? ''}`}
     >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
@@ -63,7 +59,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
       <CardContent className="space-y-2 p-3 pt-0">
         {isLoading ? (
           <div className="animate-pulse space-y-3">
-            {Array.from({ length: 3 }, (_, i) => (
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center gap-2.5 rounded-md p-2.5">
                 <Skeleton className="h-10 w-10 shrink-0 rounded-md opacity-20" />
                 <div className="flex-1 space-y-2">

@@ -211,6 +211,9 @@ export default [
       'use-isnan': 'error',
       'no-object-constructor': 'error',
       'no-unexpected-multiline': 'error',
+      // Batch 59: no-shadow — rename inner-scope variables to prevent shadowing (36 code fixes across 25 files)
+      'no-shadow': 'off',
+      '@typescript-eslint/no-shadow': 'error',
       // Batch 55: 30 zero-violation base ESLint rules (safety + best practices + cleanliness)
       'no-eval': 'error',
       'no-extend-native': 'error',
