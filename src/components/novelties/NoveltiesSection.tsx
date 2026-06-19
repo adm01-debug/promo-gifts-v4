@@ -20,11 +20,10 @@ import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-function formatDaysAgo(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days === 0) return 'Hoje!';
-  if (days === 1) return 'Ontem';
-  return `${days}d atrás`;
+function formatDaysAgo(daysElapsed: number): string {
+  if (daysElapsed === 0) return 'Hoje!';
+  if (daysElapsed === 1) return 'Ontem';
+  return `${daysElapsed}d atrás`;
 }
 
 export function NoveltiesSection() {
@@ -56,10 +55,7 @@ export function NoveltiesSection() {
 
     if (periodFilter !== 'all') {
       const maxDays = parseInt(periodFilter);
-      filtered = filtered.filter((p) => {
-        const elapsed = Math.floor((Date.now() - new Date(p.detected_at).getTime()) / 86400000);
-        return elapsed <= maxDays;
-      });
+      filtered = filtered.filter((p) => p.days_as_novelty <= maxDays);
     }
 
     if (selectedSupplier !== 'all') {
@@ -176,8 +172,7 @@ export function NoveltiesSection() {
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {novelties.map((item, index) => {
-                const fresh =
-                  Math.floor((Date.now() - new Date(item.detected_at).getTime()) / 86400000) <= 2;
+                const fresh = item.days_as_novelty <= 2;
                 return (
                   <Card
                     key={item.novelty_id}
@@ -230,7 +225,7 @@ export function NoveltiesSection() {
                         </h4>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className={cn(fresh ? 'font-medium text-brand-primary' : '')}>
-                            {formatDaysAgo(item.detected_at)}
+                            {formatDaysAgo(item.days_as_novelty)}
                           </span>
                           {item.supplier_name && (
                             <span className="ml-1 max-w-[80px] truncate">{item.supplier_name}</span>

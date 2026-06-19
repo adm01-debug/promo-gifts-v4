@@ -47,6 +47,11 @@ import { getGridColsClass, getGridGapClass } from '@/components/replenishments/g
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
+
+const CARD_MIN_HEIGHT_PX = 420;
+const SKELETON_GRID_ROWS = 3;
+const SKELETON_LIST_MIN_H = 600;
+
 type ViewMode = 'grid' | 'list' | 'table';
 
 export function NoveltyProductGrid() {
@@ -87,9 +92,6 @@ export function NoveltyProductGrid() {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
-          // Acelera até 85%, depois rasteja até 99% em passos mínimos para
-          // evitar que a barra "congele" visivelmente antes do carregamento
-          // terminar (o valor nunca chega a 100 — isso só ocorre ao concluir).
           if (prev >= 99) return 99;
           if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
@@ -132,7 +134,9 @@ export function NoveltyProductGrid() {
     let filtered = [...products];
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (novidades-search-accent): normaliza acento em ambos os lados
-      // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
+      // antes de comparar — espelha o stripAccents de postgrest.ts (PR #750).
+      // Se search-server-side for adicionado futuramente, DEVE usar normalização
+      // idêntica (mesma função stripAccents), senão os resultados divergem.
       // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
       const norm = (s: string) =>
         s
@@ -173,6 +177,8 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
+    // sel is derived from filteredProducts (already a dep); adding sel would
+    // create a circular update loop (sel → filteredProducts → sel → …).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
@@ -279,7 +285,10 @@ export function NoveltyProductGrid() {
             // Reserva altura mínima do bloco da lista durante o loading para que
             // a transição skeleton→cards não cause oscilação na medição do
             // virtualizer.
-            style={{ minHeight: viewMode === 'list' ? 600 : 1260 }}
+            style={{
+              minHeight:
+                viewMode === 'list' ? SKELETON_LIST_MIN_H : CARD_MIN_HEIGHT_PX * SKELETON_GRID_ROWS,
+            }}
             className={cn(
               'grid',
               viewMode === 'list'
@@ -400,7 +409,7 @@ export function NoveltyProductGrid() {
                       isInCompare={isInCompare(novelty.product_id)}
                       onToggleCompare={onToggleCompare}
                       canAddToCompare={canAddToCompare}
-                      isNovelty={true}
+                      isNovelty={novelty.is_active && novelty.days_remaining > 0}
                       noveltyDaysRemaining={novelty.days_remaining}
                       priority={index < 6}
                     />
