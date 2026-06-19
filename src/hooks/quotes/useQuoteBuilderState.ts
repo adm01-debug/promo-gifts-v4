@@ -484,50 +484,22 @@ export function useQuoteBuilderState() {
     setLoadingQuote(true);
     fetchQuote(quoteId)
       .then((quote) => {
-      if (!isMounted) return;
-      if (quote) {
-        setClientId(quote.client_id || '');
-        setContactId(quote.contact_id || '');
-        setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-        setNotes(quote.notes || '');
-        setInternalNotes(quote.internal_notes || '');
-        setQuoteNumber(quote.quote_number || '');
-        setCurrentStatus(quote.status);
-        if (quote.client_name) {
-          setContactInfo({
-            id: '',
-            name: quote.client_name,
-            email: quote.client_email || undefined,
-            phone: quote.client_phone || undefined,
-          });
-        }
-        if (quote.client_company) {
-          setCompanyInfo({
-            id: quote.client_id || '',
-            name: quote.client_company,
-            cnpj: quote.client_cnpj || undefined,
-            ramo_atividade: undefined,
-          });
-        }
-        if (quote.discount_percent && quote.discount_percent > 0) {
-          setDiscountType('percent');
-          setDiscountValue(quote.discount_percent);
-        } else if (quote.discount_amount && quote.discount_amount > 0) {
-          setDiscountType('amount');
-          setDiscountValue(quote.discount_amount);
-        }
-        if (typeof quote.negotiation_markup_percent === 'number')
-          setNegotiationMarkup(quote.negotiation_markup_percent);
-        if (quote.payment_method) setPaymentMethod(quote.payment_method);
-        if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
-        if (quote.shipping_type) setShippingType(quote.shipping_type);
-        if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
-        if (quote.delivery_time) {
-          if (quote.delivery_time.startsWith('date:')) {
-            setDeliveryMode('data');
-            setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
-          } else {
-            setDeliveryMode('prazo');
+        if (!isMounted) return;
+        if (quote) {
+          setClientId(quote.client_id || '');
+          setContactId(quote.contact_id || '');
+          setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+          setNotes(quote.notes || '');
+          setInternalNotes(quote.internal_notes || '');
+          setQuoteNumber(quote.quote_number || '');
+          setCurrentStatus(quote.status);
+          if (quote.client_name) {
+            setContactInfo({
+              id: '',
+              name: quote.client_name,
+              email: quote.client_email || undefined,
+              phone: quote.client_phone || undefined,
+            });
           }
           if (quote.client_company) {
             setCompanyInfo({
@@ -563,12 +535,8 @@ export function useQuoteBuilderState() {
           // Salva o updated_at como baseline para detecção de conflito
           baselineUpdatedAtRef.current = quote.updated_at ?? null;
         }
-        if (quote.items) setItems(quote.items);
-        // Salva o updated_at como baseline para detecção de conflito
-        baselineUpdatedAtRef.current = quote.updated_at ?? null;
-      }
-      setLoadingQuote(false);
-    })
+        setLoadingQuote(false);
+      })
       .catch((err) => {
         if (!isMounted) return;
         logger.error('[useQuoteBuilderState] fetchQuote failed:', err);
