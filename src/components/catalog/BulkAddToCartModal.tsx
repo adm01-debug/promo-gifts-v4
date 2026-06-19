@@ -2,7 +2,7 @@
  * BulkAddToCartModal — Modal para adicionar múltiplos produtos ao carrinho.
  * Aceita seleções de variantes do BulkVariantWizard.
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Check, ShoppingBag, Loader2 } from 'lucide-react';
@@ -30,6 +30,16 @@ export function BulkAddToCartModal({
   const { activeCart, addToActiveCart } = useSellerCartContext();
   const [adding, setAdding] = useState(false);
   const [done, setDone] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -68,21 +78,23 @@ export function BulkAddToCartModal({
           { silent: true },
         );
       }
-      setDone(true);
+      if (mountedRef.current) setDone(true);
       toast.success(
         `${items.length} produto${items.length > 1 ? 's' : ''} adicionado${items.length > 1 ? 's' : ''} ao carrinho`,
         {
           description: activeCart.company_name,
         },
       );
-      setTimeout(() => {
-        onOpenChange(false);
-        onDone?.();
+      closeTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) {
+          onOpenChange(false);
+          onDone?.();
+        }
       }, 1000);
     } catch {
       toast.error('Erro ao adicionar produtos ao carrinho');
     } finally {
-      setAdding(false);
+      if (mountedRef.current) setAdding(false);
     }
   }, [activeCart, products, variantSelections, addToActiveCart, onOpenChange, onDone]);
 
@@ -111,8 +123,8 @@ export function BulkAddToCartModal({
             {/* Show variant selections summary */}
             {variantSelections && variantSelections.some((s) => s.variant) && (
               <div className="max-h-32 space-y-1 overflow-y-auto">
-                {variantSelections.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                {variantSelections.map((s) => (
+                  <div key={s.product.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="flex-1 truncate">{s.product.name}</span>
                     {s.variant ? (
                       <span className="shrink-0 font-medium text-foreground">

@@ -36,7 +36,7 @@ export function formatResponseTime(hours: number) {
 }
 
 export function useQuotesDashboard() {
-  const { quotes, isLoading } = useQuotes();
+  const { quotes, isLoading, error } = useQuotes();
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('month');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [clients, setClients] = useState<Client[]>([]);
@@ -299,6 +299,7 @@ export function useQuotesDashboard() {
   return {
     quotes,
     isLoading,
+    error,
     selectedPeriod,
     setSelectedPeriod,
     selectedClientId,
