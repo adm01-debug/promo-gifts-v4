@@ -407,7 +407,7 @@ export function NoveltyProductGrid() {
                       isInCompare={isInCompare(novelty.product_id)}
                       onToggleCompare={onToggleCompare}
                       canAddToCompare={canAddToCompare}
-                      isNovelty={true}
+                      isNovelty={novelty.is_active && novelty.days_remaining > 0}
                       noveltyDaysRemaining={novelty.days_remaining}
                       priority={index < 6}
                     />
