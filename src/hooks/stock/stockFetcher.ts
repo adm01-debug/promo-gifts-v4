@@ -49,6 +49,7 @@ interface ExternalVariantStock {
   updated_at?: string;
 }
 
+/** Linha de `variant_supplier_sources` (Ouro) com quantidades futuras por fonte de fornecedor. */
 export interface ExternalSupplierSource {
   id: string;
   variant_id: string;
@@ -119,6 +120,7 @@ export function buildVelocityIndex(rows: ExternalStockVelocity[]): Map<string, n
 // BUSCA PAGINADA
 // ============================================
 
+/** Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação. */
 export async function fetchPaginatedFromBridge<T extends { id: string }>(
   table: string,
   select: string,

@@ -379,6 +379,7 @@ export interface StockDashboardSummary {
 // HELPERS DE CÁLCULO
 // ============================================
 
+/** Classifica o status de estoque de uma variação com base em estoque atual, máximo e em trânsito. */
 export function calculateStockStatus(
   current: number,
   _min: number,
@@ -398,6 +399,7 @@ export function calculateStockStatus(
   return 'in_stock';
 }
 
+/** Estima dias até o esgotamento com base no estoque atual e na média diária de vendas. */
 export function calculateDaysUntilStockout(
   currentStock: number,
   avgDailySales: number = 2,
@@ -408,10 +410,12 @@ export function calculateDaysUntilStockout(
   return Math.floor(currentStock / avgDailySales);
 }
 
+/** Retorna o estoque disponível (atual menos reservado, mínimo 0). */
 export function calculateAvailableStock(currentStock: number, reservedStock: number = 0): number {
   return Math.max(0, currentStock - reservedStock);
 }
 
+/** Agrega múltiplas variações em totais consolidados de produto (sem metadados de identificação). */
 export function aggregateVariantsToProduct(
   variants: VariantStock[],
 ): Omit<
