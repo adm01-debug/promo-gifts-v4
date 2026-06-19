@@ -312,3 +312,120 @@ describe('useCatalogFiltering — FIX-17 supplier parity', () => {
     expect(result).not.toContain('no-match');
   });
 });
+
+// FIX-21/FIX-22 parity — Error guard: RPC failure must not zero the grid
+// (useCatalogFiltering anterior retornava [] incondicionalmente quando productIds.size===0,
+// mesmo quando a causa era timeout/erro de rede — zerando a grade sem razão válida).
+// applyProductFilters.ts resolve isso via guards !colorFilterError / !materialFilterError.
+describe('useCatalogFiltering — FIX-21/FIX-22 error guard parity', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const catalog = [makeP('p1'), makeP('p2'), makeP('p3')];
+
+  const baseArgs = {
+    realProducts: catalog,
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  it('preserva grade quando categoryFilterError ocorre (RPC falhou)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+        categoryFilterError: new Error('RPC timeout'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('retorna [] quando category RPC retorna 0 resultados sem erro (filtro legítimo)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
+    expect(result.current).toHaveLength(0);
+  });
+
+  it('preserva grade quando colorFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(),
+        isLoadingColorFilter: false,
+        colorFilterError: new Error('network error'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando materialFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasMaterialFilter: true,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        materialFilterError: new Error('RPC failed'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando metadataFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasMetadataFilter: true,
+        metadataFilteredProductIds: new Set(),
+        isLoadingMetadataFilter: false,
+        metadataFilterError: new Error('fn_super_filtro_product_ids falhou'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando sizeFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasSizeFilter: true,
+        sizeFilteredProductIds: new Set(),
+        isLoadingSizeFilter: false,
+        sizeFilterError: new Error('product_variants query failed'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+});

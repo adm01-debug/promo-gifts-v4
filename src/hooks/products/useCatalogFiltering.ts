@@ -26,12 +26,19 @@ interface CatalogFilteringOptions {
   hasColorFilter?: boolean;
   colorFilteredProductIds?: Set<string>;
   isLoadingColorFilter?: boolean;
+  // FIX-21/22 parity: quando a RPC falha, productIds.size === 0 mas é erro de rede/timeout,
+  // não "sem resultado real". O guard abaixo preserva a grade em vez de zerá-la.
+  colorFilterError?: unknown;
+  categoryFilterError?: unknown;
+  materialFilterError?: unknown;
   hasMetadataFilter?: boolean;
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
+  metadataFilterError?: unknown;
   hasSizeFilter?: boolean;
   sizeFilteredProductIds?: Set<string>;
   isLoadingSizeFilter?: boolean;
+  sizeFilterError?: unknown;
   promoSalesMap?: Map<string, number>;
   promoSales90dMap?: Map<string, number>;
   supplierSalesMap?: Map<string, SupplierSalesEntry>;
@@ -54,12 +61,17 @@ export function useCatalogFiltering({
   hasColorFilter = false,
   colorFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingColorFilter = false,
+  colorFilterError = undefined,
+  categoryFilterError = undefined,
+  materialFilterError = undefined,
   hasMetadataFilter = false,
   metadataFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingMetadataFilter = false,
+  metadataFilterError = undefined,
   hasSizeFilter = false,
   sizeFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingSizeFilter = false,
+  sizeFilterError = undefined,
   promoSalesMap,
   promoSales90dMap,
   supplierSalesMap,
@@ -90,7 +102,8 @@ export function useCatalogFiltering({
     if (hasCategoryFilter && !isLoadingCategoryFilter) {
       if (categoryFilteredProductIds.size > 0) {
         result = result.filter((p) => categoryFilteredProductIds.has(p.id));
-      } else {
+      } else if (!categoryFilterError) {
+        // FIX-21 parity: RPC error → preserve grid; genuine 0-matches → zero grid.
         return [];
       }
     } else if (categoryFilterSet.size > 0) {
@@ -102,7 +115,7 @@ export function useCatalogFiltering({
     if (hasMetadataFilter && !isLoadingMetadataFilter) {
       if (metadataFilteredProductIds.size > 0) {
         result = result.filter((p) => metadataFilteredProductIds.has(p.id));
-      } else {
+      } else if (!metadataFilterError) {
         return [];
       }
     }
@@ -116,7 +129,8 @@ export function useCatalogFiltering({
     if (hasColorFilter && !isLoadingColorFilter) {
       if (colorFilteredProductIds.size > 0) {
         result = result.filter((p) => colorFilteredProductIds.has(p.id));
-      } else {
+      } else if (!colorFilterError) {
+        // FIX-21 parity: guard !colorFilterError mirrors applyProductFilters (FIX-21).
         return [];
       }
     }
@@ -188,7 +202,7 @@ export function useCatalogFiltering({
     if (hasSizeFilter && !isLoadingSizeFilter) {
       if (sizeFilteredProductIds.size > 0) {
         result = result.filter((p) => sizeFilteredProductIds.has(p.id));
-      } else {
+      } else if (!sizeFilterError) {
         return [];
       }
     }
@@ -242,7 +256,8 @@ export function useCatalogFiltering({
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
-      } else {
+      } else if (!materialFilterError) {
+        // FIX-22 parity: guard !materialFilterError mirrors applyProductFilters (FIX-22).
         return [];
       }
     } else if (filters.materiais.length) {
@@ -294,12 +309,17 @@ export function useCatalogFiltering({
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
+    categoryFilterError,
+    materialFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
     promoSales90dMap,
     supplierSalesMap,
