@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback } from 'react';
 
 import {
   Table,
@@ -8,24 +8,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2 } from 'lucide-react';
+import { Package } from 'lucide-react';
 
-import { StockBadge } from '@/components/inventory/StockBadge';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
-import {
-  ProductColorSwatches,
-  type ColorDotLike,
-} from '@/components/products/ProductColorSwatches';
+import { type ColorDotLike, ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 
-import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
-import { HoverSetImage } from '@/components/products/HoverSetImage';
-import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
-import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -36,7 +29,6 @@ function isRecent(replenishedAt: string): boolean {
 function formatPrice(price: number): string {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
-
 
 const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobileIcon: string }> =
   {
@@ -68,17 +60,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   priority = false,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
-  const stockQty = product.stock_quantity;
-  const stockConfig = STOCK_CONFIG[product.stock_status];
-
-  // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
-  // num swatch troca a foto principal pela imagem da variante selecionada.
-  const [activeColorName, setActiveColorName] = useState<string | null>(null);
-  const activeImage = useMemo(() => {
-    if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
-    return match?.image || product.product_image;
-  }, [activeColorName, colors, product.product_image]);
 
   const handleClick = useCallback(() => {
     if (selectionMode) onToggleSelect();
@@ -89,169 +70,53 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     e.stopPropagation();
   }, []);
 
-
-
   return (
-    <article
-      data-testid="replenishment-grid-card"
-      className={cn(
-        'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
-        'hover:border-primary/40 hover:shadow-md',
-        'min-h-[420px]',
-        recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
-        isSelected && 'border-primary ring-2 ring-primary/20',
-      )}
+    <BaseProductGridCard
+      testId="replenishment-grid-card"
+      thumbTestId="replenishment-grid-card-thumb"
+      footerTestId="replenishment-card-footer"
+      productId={product.product_id}
+      productName={product.product_name}
+      productSku={product.product_sku}
+      productImage={product.product_image}
+      productSetImage={product.product_set_image}
+      categoryId={product.category_id}
+      categoryName={product.category_name}
+      supplierName={product.supplier_name}
+      basePrice={product.base_price}
+      minQuantity={product.min_quantity}
+      stockStatus={product.stock_status}
+      stockQuantity={product.stock_quantity}
+      colors={colors}
+      selectionMode={selectionMode}
+      isSelected={isSelected}
       onClick={handleClick}
-      role="article"
-      aria-label={`${product.product_name} — ${stockConfig.label}, ${formatPrice(product.base_price ?? 0)}`}
-      aria-selected={selectionMode ? isSelected : undefined}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-    >
-      {/* FAB "+" — paridade total com ProductCard */}
-      {!selectionMode && (
-        <ProductQuickActionsFAB
-          productId={product.product_id}
-          productName={product.product_name}
-          productSku={product.product_sku}
-          productImageUrl={activeImage}
-          productPrice={product.base_price ?? 0}
-          productMinQuantity={product.min_quantity || 1}
-          isOutOfStock={product.stock_status === 'out-of-stock'}
-        />
-      )}
-
-      {/* Image — mesmo padrão do NoveltyGridCard (aspect-square + rounded-lg) */}
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
-        <QuickViewThumb
-          productId={product.product_id}
-          productName={product.product_name}
-          testId="replenishment-grid-card-thumb"
-          className="h-full w-full"
-        >
-          <HoverSetImage
-            key={activeImage ?? product.product_image ?? 'placeholder'}
-            primary={activeImage}
-            set={activeColorName ? null : product.product_set_image}
-            alt={`Foto de ${product.product_name}`}
-            fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
-            priority={priority}
-          />
-        </QuickViewThumb>
-
-        {/* Badge superior esquerdo — Reposição */}
-        <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
-          <ReplenishmentBadge daysSince={product.days_since} size="sm" />
-        </div>
-
-        {/* Checkbox de seleção em massa */}
-        {selectionMode && (
-          <div
-            className="absolute right-2 top-2 z-10"
-            onClick={handleCheckboxClick}
-            role="group"
-            aria-label="Seleção"
-          >
-            <SelectionCheckbox
-              checked={isSelected}
-              onChange={onToggleSelect}
-              size="md"
-              animateEntry
-              aria-label={`Selecionar ${product.product_name}`}
-            />
+      priority={priority}
+      className={cn(recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]')}
+      renderImageOverlays={() => (
+        <>
+          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+            <ReplenishmentBadge daysSince={product.days_since} size="sm" />
           </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-1 flex-col gap-1">
-        {/* 1 — Categoria */}
-        {product.category_id && product.category_name && (
-          <ProductCategoryBadges
-            category={{ id: product.category_id, name: product.category_name }}
-            categoryUuid={product.category_id}
-            className="flex-wrap"
-          />
-        )}
-
-        {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
-        {(product.supplier_name || product.product_sku) && (
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            {product.supplier_name ? (
-              <span
-                className="flex min-w-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
-                title={`Fornecedor: ${product.supplier_name}`}
-              >
-                <Building2
-                  className={cn('h-3 w-3 shrink-0', getSupplierColors(product.supplier_name).text)}
-                  aria-hidden="true"
-                />
-                <span className="truncate">{product.supplier_name}</span>
-              </span>
-            ) : (
-              <span />
-            )}
-            {product.product_sku && (
-              <span
-                className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
-                aria-label={`Código do produto: ${product.product_sku}`}
-              >
-                {product.product_sku}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* 4 — Nome do produto */}
-        <p
-          className="line-clamp-2 min-h-[2.5rem] break-words text-sm font-medium leading-tight"
-          title={product.product_name ?? undefined}
-        >
-          {product.product_name ?? '—'}
-        </p>
-
-        {/* 5 — Bolinhas de cores */}
-        <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
-          <ProductColorSwatches
-            colors={colors}
-            max={5}
-            size="sm"
-            hideWhenEmpty={false}
-            selectedName={activeColorName}
-            onSelect={(c) => setActiveColorName(c.name)}
-          />
-        </div>
-
-        {/* 6 — Preço + Tiragem (estoque) ancorados ao final */}
-        <div
-          data-testid="replenishment-card-footer"
-          className="mt-auto flex min-h-[2.75rem] items-end justify-between gap-2 pt-2"
-        >
-          {product.base_price !== null && product.base_price > 0 ? (
-            <div className="flex min-w-0 flex-col leading-tight">
-              <span className="text-[10px] font-medium text-muted-foreground">A partir de</span>
-              <p className="truncate text-sm font-semibold text-primary">
-                {formatPrice(product.base_price)}
-              </p>
+          {selectionMode && (
+            <div
+              className="absolute right-2 top-2 z-10"
+              onClick={handleCheckboxClick}
+              role="group"
+              aria-label="Seleção"
+            >
+              <SelectionCheckbox
+                checked={isSelected}
+                onChange={onToggleSelect}
+                size="md"
+                animateEntry
+                aria-label={`Selecionar ${product.product_name}`}
+              />
             </div>
-          ) : (
-            <span className="text-xs italic text-muted-foreground">Sob consulta</span>
           )}
-
-          <StockBadge
-            status={product.stock_status}
-            quantity={stockQty}
-            showQuantity
-            size="sm"
-          />
-        </div>
-
-        {/* Sparkline — específico de Reposição (mantido p/ contexto de saídas) */}
+        </>
+      )}
+      renderFooterExtras={() => (
         <div className="border-t border-border/40 pt-1.5">
           <div className="mb-0.5 flex items-center justify-between">
             <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
@@ -260,10 +125,11 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           </div>
           <ProductSparkline productId={product.product_id} />
         </div>
-      </div>
-    </article>
+      )}
+    />
   );
 });
+
 
 // ─── Table View ──────────────────────────────────────────────────
 
