@@ -167,14 +167,18 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
   const { userId, product, technique, client, area, mockupUrl, annotations, extra } = params;
 
   try {
-    let logoUrl = area.logoPreview || '';
+    // BUG-7 FIX: was `|| ''` which stored empty string when upload fails or preview is
+    // absent. Use null so the column receives a proper SQL NULL instead of a
+    // semantically-invalid empty string for a URL field.
+    let logoUrl: string | null = area.logoPreview?.startsWith('data:')
+      ? null
+      : (area.logoPreview ?? null);
     if (area.logoPreview?.startsWith('data:')) {
-      const uploadedUrl = await uploadLogoToStorage(
+      logoUrl = await uploadLogoToStorage(
         userId,
         area.logoPreview,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
-      logoUrl = uploadedUrl || '';
     }
 
     let safeProductId: string | null = null;
@@ -366,16 +370,23 @@ export async function generateMockupApi(
     return { singleUrl: url, batchResults: [] };
   }
 
-  // BATCH: one invocation per area; keep the successes, warn about partial failures.
+  // BATCH: one invocation per area — run all concurrently (BUG-2 FIX: was sequential
+  // for-loop which wasted N×latency for N areas; Promise.allSettled lets them run in
+  // parallel while still collecting partial failures without short-circuiting on the
+  // first error).
+  const settled = await Promise.allSettled(
+    areasWithLogos.map((area) =>
+      invokeMockupForArea(params, area).then((url) => ({ url, areaName: area.name })),
+    ),
+  );
   const batchResults: { url: string; areaName: string }[] = [];
   let failures = 0;
-  for (const area of areasWithLogos) {
-    try {
-      const url = await invokeMockupForArea(params, area);
-      batchResults.push({ url, areaName: area.name });
-    } catch (err) {
+  for (const result of settled) {
+    if (result.status === 'fulfilled') {
+      batchResults.push(result.value);
+    } else {
       failures += 1;
-      logger.error(`[generateMockupApi] área "${area.name}" falhou:`, err);
+      logger.error('[generateMockupApi] área falhou:', result.reason);
     }
   }
 

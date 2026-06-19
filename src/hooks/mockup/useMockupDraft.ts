@@ -257,6 +257,14 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   }, [loadFromLocal, loadFromBackend]);
 
   const clearDraft = useCallback(async () => {
+    // BUG-1 FIX: cancel pending debounced save BEFORE clearing storage — otherwise
+    // a 2s timer started by the last saveDraft() call would re-create the draft
+    // row/localStorage entry immediately after we delete it (race condition).
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
     try {
       const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
       localStorage.removeItem(key);

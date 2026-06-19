@@ -578,6 +578,9 @@ export function useMockupGenerator() {
         setGeneratedBatchMockups(result.batchResults);
         toast.success(`${result.batchResults.length} mockups gerados com sucesso!`);
       }
+      // BUG-3 FIX: history panel was stale after generation because fetchHistory() was
+      // only called once on mount. Refresh it now so the new record appears immediately.
+      fetchHistory();
     } catch (error: unknown) {
       logger.error('Error generating mockup:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao gerar mockup';
@@ -595,6 +598,7 @@ export function useMockupGenerator() {
     saveMockupToHistory,
     selectedProduct,
     downloadMockup,
+    fetchHistory,
   ]);
 
   const deleteMockup = useCallback(async () => {
