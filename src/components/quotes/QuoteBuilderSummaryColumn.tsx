@@ -433,7 +433,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Discount */}
           {items.length > 0 && (
             <div className="space-y-2.5 px-4 pt-3">
-              {maxDiscountPercent != null && (
+              {maxDiscountPercent !== null && maxDiscountPercent !== undefined && (
                 <div
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors',

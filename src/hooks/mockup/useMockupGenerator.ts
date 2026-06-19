@@ -657,7 +657,7 @@ export function useMockupGenerator() {
         (mockup.technique_id && techniques.find((t) => t.id === mockup.technique_id)) ||
         (mockup.technique_name &&
           techniques.find(
-            (t) => t.name.toLowerCase() === mockup.technique_name!.toLowerCase(),
+            (t) => t.name.toLowerCase() === mockup.technique_name.toLowerCase(),
           )) ||
         null;
       if (product)

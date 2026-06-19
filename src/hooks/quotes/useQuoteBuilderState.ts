@@ -1040,6 +1040,7 @@ export function useQuoteBuilderState() {
       isFormValid,
       validationErrors,
       clientId,
+      contactId,
       contactInfo,
       companyInfo,
       discountType,
