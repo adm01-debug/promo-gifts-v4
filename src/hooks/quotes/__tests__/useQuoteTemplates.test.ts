@@ -14,6 +14,7 @@
  */
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuoteTemplates } from '../useQuoteTemplates';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -57,6 +58,8 @@ beforeEach(() => {
     limit: vi.fn().mockResolvedValue({ data: [], error: null }),
   });
   mockSelect.mockReturnValue({ order: orderFn });
+  // Restore default user — vi.clearAllMocks() preserves mockReturnValue overrides
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 });
 
 // ── Estado inicial ─────────────────────────────────────────────────────────
@@ -83,7 +86,7 @@ describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase: _supabase } = await import('@/integrations/supabase/client');
+    const { supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {

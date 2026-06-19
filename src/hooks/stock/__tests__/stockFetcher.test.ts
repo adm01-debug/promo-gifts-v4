@@ -35,7 +35,21 @@ vi.mock('@/lib/supabase-untyped', () => {
         calls.push({ table, method, args });
         return q;
       });
-    for (const m of ['select', 'is', 'in', 'eq', 'range', 'order', 'limit', 'gt']) {
+    for (const m of [
+      'select',
+      'is',
+      'in',
+      'eq',
+      'range',
+      'order',
+      'limit',
+      'gt',
+      'lt',
+      'gte',
+      'lte',
+      'neq',
+      'not',
+    ]) {
       q[m] = chain(m);
     }
     (q as { then?: unknown }).then = (
@@ -147,10 +161,13 @@ describe('fetchPaginatedFromBridge', () => {
       'categories',
       { data: page1, error: null, count: 4 },
       { data: page2, error: null, count: 4 },
+      // Keyset pagination: 3rd call confirms no more data (empty page)
+      { data: [], error: null, count: 0 },
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
     expect(rows.map((r) => r.id)).toEqual(['a0', 'a1', 'b0', 'b1']);
-    expect(calls.filter((c) => c.method === 'select')).toHaveLength(2);
+    // Keyset pagination always issues one extra round-trip to confirm end of data.
+    expect(calls.filter((c) => c.method === 'select')).toHaveLength(3);
   });
 
   it('breaks early on an empty page', async () => {
@@ -167,16 +184,17 @@ describe('fetchPaginatedFromBridge', () => {
     expect(calls.filter((c) => c.method === 'select')).toHaveLength(1);
   });
 
-  it('guards against a non-advancing cursor (same last id twice) and stops', async () => {
-    // Page 2 ends with the same last id as page 1 → cursor stuck → guard fires.
+  it('guards against a non-advancing cursor (same last id) and stops', async () => {
+    // Keyset guard: if nextCursor (last id of the page) equals lastId (previous cursor) → break.
+    // This simulates a case where the DB returns the same last row repeatedly.
     queue(
       'categories',
-      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 },
-      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 }, // exact same page
+      { data: [{ id: 'x1' }, { id: 'stuck' }], error: null, count: 999 },
+      { data: [{ id: 'x2' }, { id: 'stuck' }], error: null, count: 999 },
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
-    // seen-set deduplicates, cursor ('a2') === lastId ('a2') → break after 2nd page.
-    expect(rows.map((r) => r.id)).toEqual(['a1', 'a2']);
+    // Page 1 accepted; page 2's last id === lastId ('stuck') → cursor didn't advance → break.
+    expect(rows.map((r) => r.id)).toEqual(['x1', 'stuck', 'x2']);
     expect(logger.warn).toHaveBeenCalled();
   });
 
@@ -221,17 +239,16 @@ describe('fetchPaginatedFromBridge', () => {
     expect(eqCall!.args).toEqual(['active', true]);
   });
 
-  it('uses keyset cursor pagination (order + limit, not range)', async () => {
+  it('uses keyset pagination: order by id + limit (not range)', async () => {
+    // Keyset pagination replaced offset-based .range() — verify .order() and .limit() are called.
     queue('categories', { data: [{ id: 'c1' }], error: null, count: 1 });
     await fetchPaginatedFromBridge('categories', 'id', 500);
     const orderCall = calls.find((c) => c.method === 'order');
     const limitCall = calls.find((c) => c.method === 'limit');
-    const rangeCall = calls.find((c) => c.method === 'range');
-    expect(orderCall).toBeDefined();
-    expect(orderCall!.args[0]).toBe('id');
-    expect(limitCall).toBeDefined();
-    expect(limitCall!.args[0]).toBe(500);
-    expect(rangeCall).toBeUndefined();
+    expect(orderCall?.args).toEqual(['id', { ascending: true }]);
+    expect(limitCall?.args).toEqual([500]);
+    // range() must NOT be called (keyset replaced it — BUG-STOCK-04 FIX)
+    expect(calls.find((c) => c.method === 'range')).toBeUndefined();
   });
 
   it('410 mid-pagination: returns page-1 data and does not throw', async () => {
@@ -338,8 +355,7 @@ describe('fetchAndProcessStockData', () => {
     const v = ps.variants[0];
     // supplier source quantity (12) wins over variant stock_quantity (8)
     expect(v.currentStock).toBe(12);
-    // Gold layer (variant_supplier_sources) has no reserved_quantity column —
-    // reservations are not tracked here; reservedStock is always 0.
+    // Gold layer has no reserved_quantity column — reservedStock is always 0 (line ~422 in stockFetcher)
     expect(v.reservedStock).toBe(0);
     expect(v.availableStock).toBe(12); // 12 - 0
     expect(v.minStock).toBe(5);

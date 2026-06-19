@@ -69,47 +69,14 @@ vi.mock('@/lib/security/rls-denial-logger', () => ({
  * 6. profiles.select.eq.maybeSingle (seller name)
  */
 function setupInsertSuccess() {
-  vi.mocked(supabase.from).mockImplementation((table: string) => {
-    if (table === 'discount_approval_requests') {
-      return { insert: mockInsert } as never;
-    }
-    if (table === 'quotes') {
-      return {
-        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: {
-                negotiation_markup_percent: 0,
-                discount_percent: 0,
-                real_discount_percent: 0,
-              },
-              error: null,
-            }),
-          }),
-        }),
-      } as never;
-    }
-    if (table === 'user_roles') {
-      return {
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }),
-      } as never;
-    }
-    if (table === 'profiles') {
-      return {
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-        }),
-      } as never;
-    }
-    // quote_history, admin_audit_log, workspace_notifications
-    return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+  mockInsert.mockReturnValue({ error: null });
+  mockUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) });
+  // requestApproval calls .select() on quotes (context), user_roles, and profiles.
+  // Provide a chain that handles .eq().maybeSingle() and .eq() awaited directly.
+  const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
+  mockSelect.mockReturnValue({
+    eq: vi.fn().mockReturnValue({ error: null, maybeSingle: maybeSingleFn }),
   });
-  mockInsert.mockResolvedValue({ error: null });
 }
 
 function setupInsertError(msg = 'RLS denied') {
@@ -194,20 +161,23 @@ describe('respondToApproval', () => {
    * 3. workspace_notifications.insert
    */
   function setupRespondSuccess() {
-    const mockReq: DiscountApprovalRequest = {
+    // Hook calls: .update().eq().select().single() to get the request back
+    const fakeRequest = {
       id: 'req-1',
-      quote_id: 'q-1',
+      quote_id: 'q-test',
       seller_id: 'seller-001',
-      requested_discount_percent: 15,
-      max_allowed_percent: 10,
-      status: 'pending',
-      admin_id: null,
-      admin_notes: null,
-      seller_notes: null,
-      responded_at: null,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      requested_discount_percent: 20,
+      max_allowed_percent: 15,
     };
+    const singleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
+    const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
+    const eqUpdate = vi.fn().mockReturnValue({ select: selectAfterEq });
+    const chainUpdate = { update: vi.fn().mockReturnValue({ eq: eqUpdate }) };
+    // Quote status update
+    const eqQuote = vi.fn().mockReturnValue({ error: null });
+    const chainQuote = { update: vi.fn().mockReturnValue({ eq: eqQuote }) };
+    // Activity log insert + workspace_notifications insert
+    const chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'discount_approval_requests') {
@@ -252,22 +222,22 @@ describe('respondToApproval', () => {
 });
 
 // ── getApprovalStatus ─────────────────────────────────────────────────────────
+// getApprovalStatus is async: queries DB directly via .select().eq().order().limit().maybeSingle()
 describe('getApprovalStatus', () => {
-  function setupGetApprovalMock(data: unknown) {
+  function buildGetStatusChain(data: unknown) {
     const maybeSingleFn = vi.fn().mockResolvedValue({ data, error: null });
     const limitFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
     const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
     const eqFn = vi.fn().mockReturnValue({ order: orderFn });
-    vi.mocked(supabase.from).mockReturnValue({
-      select: vi.fn().mockReturnValue({ eq: eqFn }),
-    } as never);
+    return { select: vi.fn().mockReturnValue({ eq: eqFn }) };
   }
 
-  it('retorna null quando nenhum request encontrado', async () => {
-    setupGetApprovalMock(null);
+  it('retorna null quando nao encontrado no DB', async () => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(null) as never);
 
     const { result } = renderHook(() => useDiscountApproval());
-    let status: DiscountApprovalRequest | null | undefined;
+    let status: unknown;
     await act(async () => {
       status = await result.current.getApprovalStatus('q-qualquer');
     });
@@ -281,15 +251,16 @@ describe('getApprovalStatus', () => {
       status: 'pending',
       requested_discount_percent: 20,
     };
-    setupGetApprovalMock(fakeRequest);
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(fakeRequest) as never);
 
     const { result } = renderHook(() => useDiscountApproval());
-    let found: DiscountApprovalRequest | null | undefined;
+    let found: unknown;
     await act(async () => {
       found = await result.current.getApprovalStatus('q-target');
     });
     expect(found).not.toBeNull();
-    expect(found?.quote_id).toBe('q-target');
+    expect((found as { quote_id: string })?.quote_id).toBe('q-target');
   });
 });
 

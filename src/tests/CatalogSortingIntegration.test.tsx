@@ -137,6 +137,10 @@ describe('Catalog Sorting E2E Integration', () => {
   beforeEach(() => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    // Radix UI Select requires PointerCapture API which jsdom doesn't implement
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+    window.HTMLElement.prototype.setPointerCapture = vi.fn();
+    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
   });
 
   it('should reorder products when selecting different sort options', async () => {
@@ -155,10 +159,12 @@ describe('Catalog Sorting E2E Integration', () => {
 
     await waitFor(() => expect(screen.getByText('Cheap Product')).toBeDefined());
 
-    const sortTrigger = screen.getByLabelText(/ordenar por/i);
+    const sortTrigger = screen.getByTestId('catalog-sort-trigger');
     await user.click(sortTrigger);
 
-    await user.click(screen.getByText('Menor Preço'));
+    // label: 'Preço (Menor → Maior)' — value: 'price-asc'
+    await waitFor(() => expect(screen.getByTestId('catalog-sort-item-price-asc')).toBeDefined());
+    await user.click(screen.getByTestId('catalog-sort-item-price-asc'));
 
     await waitFor(() => {
       const items = screen.getAllByTestId('product-item').map((i) => i.textContent);
@@ -167,8 +173,10 @@ describe('Catalog Sorting E2E Integration', () => {
       expect(items[2]).toBe('Expensive Product');
     });
 
-    await user.click(screen.getByLabelText(/ordenar por/i));
-    await user.click(screen.getByText('Maior Preço'));
+    await user.click(screen.getByTestId('catalog-sort-trigger'));
+    // label: 'Preço (Maior → Menor)' — value: 'price-desc'
+    await waitFor(() => expect(screen.getByTestId('catalog-sort-item-price-desc')).toBeDefined());
+    await user.click(screen.getByTestId('catalog-sort-item-price-desc'));
 
     await waitFor(() => {
       const items = screen.getAllByTestId('product-item').map((i) => i.textContent);

@@ -61,11 +61,11 @@ describe("StockFilterToolbar", () => {
     expect(screen.getByPlaceholderText("Preciso de X un...")).toBeInTheDocument();
   });
 
-  it("commits search on Enter (sem debounce — Enter ou botão Busca)", () => {
+  it("commits search on Enter (sem debounce — commit-on-Enter)", () => {
     render(<StockFilterToolbar {...defaultProps} />);
     const input = screen.getByPlaceholderText("Buscar no Estoque (Nome, SKU ou Cor)...");
     fireEvent.change(input, { target: { value: "caneta" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    fireEvent.keyDown(input, { key: "Enter" });
     expect(defaultProps.onUpdateFilter).toHaveBeenCalledWith("search", "caneta");
   });
 

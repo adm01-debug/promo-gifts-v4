@@ -47,7 +47,7 @@ vi.mock('react-router-dom', () => ({
   Link: (p: { children: React.ReactNode }) => p.children,
 }));
 vi.mock('@/components/products/QuickViewThumb', () => ({
-  QuickViewThumb: () => null,
+  QuickViewThumb: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const mkVariant = (i: number): VariantStock =>

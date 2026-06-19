@@ -220,8 +220,10 @@ describe('removeItem', () => {
     act(() => {
       result.current.addProductWithColor({ ...P1, id: 'p3' }, null);
     });
-    // addProductWithColor auto-expands each item; use setExpandedItems to set
-    // the desired initial state: items 1 and 2 expanded, 0 not.
+    // addProductWithColor auto-expands each item → {0,1,2}; reset before test scenario
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.setExpandedItems(new Set([1, 2]));
     });
@@ -245,7 +247,10 @@ describe('removeItem', () => {
     act(() => {
       result.current.addProductWithColor({ ...P1, id: 'p3' }, null);
     });
-    // Only item 0 expanded; setExpandedItems directly to avoid auto-expand side-effects.
+    // addProductWithColor auto-expands each item → {0,1,2}; reset before test scenario
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.setExpandedItems(new Set([0]));
     });
@@ -260,7 +265,13 @@ describe('removeItem', () => {
 describe('toggleExpanded', () => {
   it('adiciona ao Set quando fechado', () => {
     const { result } = renderHook(() => useQuoteItems());
-    // expandedItems starts empty — test toggle without adding items
+    act(() => {
+      result.current.addProductWithColor(P1, null);
+    });
+    // addProductWithColor auto-expands index 0; reset to test toggle-open from closed state
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.toggleExpanded(0);
     });
@@ -269,6 +280,13 @@ describe('toggleExpanded', () => {
 
   it('remove do Set quando aberto (toggle off)', () => {
     const { result } = renderHook(() => useQuoteItems());
+    act(() => {
+      result.current.toggleExpanded(0); // open
+    });
+    // addProductWithColor auto-expands index 0; reset then open explicitly
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.toggleExpanded(0); // open
     });
