@@ -33,6 +33,8 @@ vi.mock('@/hooks/intelligence/useExternalDatabase', () => ({
 
 vi.mock('@/hooks/products/useMaterialTypes', () => ({
   useMaterialTypes: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
+}));
+
 vi.mock('@/lib/logger', () => ({
   logger: { warn: vi.fn(), log: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));

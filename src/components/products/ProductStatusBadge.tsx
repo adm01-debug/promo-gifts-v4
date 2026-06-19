@@ -132,16 +132,15 @@ export function ProductStatusBadge({
           return 'bg-[#FF1493] text-white font-bold shadow-[0_2px_8px_rgba(255,20,147,0.4)] ring-1 ring-white/20';
         }
         // Badge "Novidade X dias" (canto esquerdo) — cor por faixa, sempre legível
-        const daysElapsed = resolvedNoveltyElapsed;
-        if (daysElapsed <= 5) {
+        if (resolvedNoveltyElapsed <= 5) {
           // Recém-chegado — azul vívido
           return 'bg-[#2563EB] text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]';
         }
-        if (daysElapsed <= 15) {
+        if (resolvedNoveltyElapsed <= 15) {
           // Ainda fresco — roxo
           return 'bg-[#7C3AED] text-white font-semibold shadow-[0_2px_8px_rgba(124,58,237,0.35)]';
         }
-        if (daysElapsed <= 23) {
+        if (resolvedNoveltyElapsed <= 23) {
           // Meio da janela — âmbar com texto escuro p/ contraste
           return 'bg-[#F59E0B] text-[#1F1300] font-bold shadow-[0_2px_8px_rgba(245,158,11,0.35)]';
         }
@@ -206,11 +205,10 @@ export function ProductStatusBadge({
           </>
         );
       case 'novelty': {
-        const daysElapsed = resolvedNoveltyElapsed;
-        const label = noveltyBadgeLabelFromElapsed(daysElapsed);
+        const label = noveltyBadgeLabelFromElapsed(resolvedNoveltyElapsed);
         return (
           <>
-            {daysElapsed <= 5 && <Sparkles className={iconSize} />}
+            {resolvedNoveltyElapsed <= 5 && <Sparkles className={iconSize} />}
             <span>{value || label}</span>
           </>
         );
@@ -247,12 +245,13 @@ export function ProductStatusBadge({
   const getTooltipContent = () => {
     switch (type) {
       case 'novelty': {
-        const daysElapsed = resolvedNoveltyElapsed;
         return (
           <div className="text-sm">
             <p className="font-semibold">🆕 Produto Novidade</p>
             <p className="text-muted-foreground">
-              {daysElapsed === 0 ? 'Adicionado hoje!' : `Adicionado há ${daysElapsed} dias`}
+              {resolvedNoveltyElapsed === 0
+                ? 'Adicionado hoje!'
+                : `Adicionado há ${resolvedNoveltyElapsed} dias`}
             </p>
             {daysRemaining !== undefined && (
               <p className="mt-0.5 text-xs text-muted-foreground">

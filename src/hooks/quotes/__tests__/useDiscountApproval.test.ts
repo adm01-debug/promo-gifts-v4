@@ -17,7 +17,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
-import { useDiscountApproval, type DiscountApprovalRequest } from '../useDiscountApproval';
+import { useDiscountApproval } from '../useDiscountApproval';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockInsert = vi.fn();
@@ -172,18 +172,18 @@ describe('respondToApproval', () => {
     const singleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
     const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
     const eqUpdate = vi.fn().mockReturnValue({ select: selectAfterEq });
-    const chainUpdate = { update: vi.fn().mockReturnValue({ eq: eqUpdate }) };
+    const _chainUpdate = { update: vi.fn().mockReturnValue({ eq: eqUpdate }) };
     // Quote status update
     const eqQuote = vi.fn().mockReturnValue({ error: null });
-    const chainQuote = { update: vi.fn().mockReturnValue({ eq: eqQuote }) };
+    const _chainQuote = { update: vi.fn().mockReturnValue({ eq: eqQuote }) };
     // Activity log insert + workspace_notifications insert
-    const chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
+    const _chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'discount_approval_requests') {
-        const singleFn = vi.fn().mockResolvedValue({ data: mockReq, error: null });
-        const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
-        const eqFn = vi.fn().mockReturnValue({ select: selectAfterEq });
+        const innerSingleFn = vi.fn().mockResolvedValue({ data: mockReq, error: null });
+        const innerSelectAfterEq = vi.fn().mockReturnValue({ single: innerSingleFn });
+        const eqFn = vi.fn().mockReturnValue({ select: innerSelectAfterEq });
         return { update: vi.fn().mockReturnValue({ eq: eqFn }) } as never;
       }
       if (table === 'quotes') {
@@ -233,8 +233,8 @@ describe('getApprovalStatus', () => {
   }
 
   it('retorna null quando nao encontrado no DB', async () => {
-    const { supabase } = await import('@/integrations/supabase/client');
-    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(null) as never);
+    const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+    vi.mocked(supabaseClient.from).mockReturnValue(buildGetStatusChain(null) as never);
 
     const { result } = renderHook(() => useDiscountApproval());
     let status: unknown;
@@ -251,8 +251,8 @@ describe('getApprovalStatus', () => {
       status: 'pending',
       requested_discount_percent: 20,
     };
-    const { supabase } = await import('@/integrations/supabase/client');
-    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(fakeRequest) as never);
+    const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+    vi.mocked(supabaseClient.from).mockReturnValue(buildGetStatusChain(fakeRequest) as never);
 
     const { result } = renderHook(() => useDiscountApproval());
     let found: unknown;

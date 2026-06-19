@@ -73,13 +73,13 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
       reasonMap.set(log.detection_reason, (reasonMap.get(log.detection_reason) || 0) + 1);
     }
 
-    const topIps = Array.from(ipMap.values())
+    const computedTopIps = Array.from(ipMap.values())
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
-    const topEndpoints = Array.from(epMap.values())
+    const computedTopEndpoints = Array.from(epMap.values())
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
-    const topReasons = Array.from(reasonMap.entries())
+    const computedTopReasons = Array.from(reasonMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([reason, count]) => ({ reason, count }));
@@ -107,7 +107,12 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
       }
     }
 
-    return { topIps, topEndpoints, timeline: buckets, topReasons };
+    return {
+      topIps: computedTopIps,
+      topEndpoints: computedTopEndpoints,
+      timeline: buckets,
+      topReasons: computedTopReasons,
+    };
   }, [botLogs]);
 
   return (

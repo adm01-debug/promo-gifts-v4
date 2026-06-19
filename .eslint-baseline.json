@@ -1,12 +1,5 @@
 {
-  "generatedAt": "2026-06-19T18:10:00.000000+00:00",
-  "totalErrors": 2,
-  "counts": {
-    "src/components/mockup/MockupHistoryPanel.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/hooks/products/__tests__/useAdvancedFilters.test.ts": {
-      "<no-rule>": 1
-    }
-  }
+  "generatedAt": "2026-06-19T18:20:00.000000+00:00",
+  "totalErrors": 0,
+  "counts": {}
 }
