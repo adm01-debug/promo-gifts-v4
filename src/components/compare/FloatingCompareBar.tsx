@@ -64,7 +64,7 @@ export const FloatingCompareBar = React.forwardRef<HTMLDivElement>(
                 <TooltipTrigger asChild>
                   <div className="h-12 w-12 cursor-pointer overflow-hidden rounded-lg border-2 border-border/50 bg-muted transition-colors hover:border-primary/50">
                     <img
-                      src={entry.product.images[0]}
+                      src={entry.product.images[0] || '/placeholder.svg'}
                       alt={entry.product.name}
                       className="h-full w-full object-cover"
                       loading="lazy"
