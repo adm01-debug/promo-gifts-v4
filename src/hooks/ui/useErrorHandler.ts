@@ -126,7 +126,7 @@ export function lazyWithRetry<T>(importFn: () => Promise<T>, retries = 1): () =>
       await new Promise((resolve) => {
         setTimeout(resolve, 800);
       });
-      return await importFn();
+      return importFn();
     }
   };
 }

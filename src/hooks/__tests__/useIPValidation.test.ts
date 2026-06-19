@@ -218,7 +218,7 @@ describe('useIPValidation', () => {
 
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        return await invokePromise;
+        return invokePromise;
       });
 
       const { result } = renderHook(() => useIPValidation());

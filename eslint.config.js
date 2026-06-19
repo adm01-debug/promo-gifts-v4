@@ -148,6 +148,11 @@ export default [
       '@typescript-eslint/adjacent-overload-signatures': 'error',
       '@typescript-eslint/prefer-ts-expect-error': 'error',
       '@typescript-eslint/no-unnecessary-type-arguments': 'error',
+      // Batch 49: async safety rules
+      '@typescript-eslint/return-await': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/consistent-type-assertions': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },

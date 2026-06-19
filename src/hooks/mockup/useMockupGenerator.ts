@@ -491,7 +491,7 @@ export function useMockupGenerator() {
     async (url?: string) => {
       const mockupUrl = url || generatedMockup;
       if (!mockupUrl) return;
-      await downloadMockupAsPdf(
+      downloadMockupAsPdf(
         mockupUrl,
         { sku: selectedProduct?.sku ?? null },
         selectedTechnique as Technique,
