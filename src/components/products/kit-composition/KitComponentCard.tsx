@@ -340,6 +340,26 @@ export function KitComponentCard({
                 </span>
               </div>
             )}
+            {(item.diameterMm ?? 0) > 0 && (
+              <div className="flex min-w-0 items-center gap-1 px-2 py-0.5">
+                <Circle className="h-3 w-3 shrink-0 text-primary" />
+                <span className="text-[10px] text-muted-foreground">Diâm.</span>
+                <span className="text-[11px] font-bold tabular-nums text-foreground">
+                  {item.diameterMm}
+                  <span className="ml-0.5 text-[9px] font-normal text-muted-foreground">mm</span>
+                </span>
+              </div>
+            )}
+            {(item.circumferenceMm ?? 0) > 0 && (item.diameterMm ?? 0) === 0 && (
+              <div className="flex min-w-0 items-center gap-1 px-2 py-0.5">
+                <Circle className="h-3 w-3 shrink-0 text-primary" />
+                <span className="text-[10px] text-muted-foreground">Circ.</span>
+                <span className="text-[11px] font-bold tabular-nums text-foreground">
+                  {item.circumferenceMm}
+                  <span className="ml-0.5 text-[9px] font-normal text-muted-foreground">mm</span>
+                </span>
+              </div>
+            )}
             {(item.weightG ?? 0) > 0 && (
               <div className="flex min-w-0 items-center gap-1 px-2 py-0.5">
                 <Weight className="h-3 w-3 shrink-0 text-primary" />
