@@ -131,6 +131,8 @@ export function summarizeFilters(filters: FilterState): string {
   if (filters.featured) parts.push('destaques');
   if (filters.isNew) parts.push('novidades');
   if (filters.hasPersonalization) parts.push('personalizável');
+  // BUG-SUMMARY-ONSALE FIX: onSale era contado em countActiveFilters mas ausente do resumo.
+  if (filters.onSale) parts.push('em oferta');
   if (filters.hasCommercialPackaging) parts.push('embalagem nativa');
   if (filters.sortBy && filters.sortBy !== 'newest') parts.push(`ordenado por ${filters.sortBy}`);
   return parts.length > 0 ? parts.join(' · ') : 'Sem filtros';
