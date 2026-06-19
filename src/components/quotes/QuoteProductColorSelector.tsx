@@ -4,7 +4,7 @@
  * Inclui suporte a size_code quando disponível.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -46,6 +46,14 @@ export function QuoteProductColorSelector({
     return sortedVariants.reduce((sum, v) => sum + (v.stock_quantity ?? 0), 0);
   }, [sortedVariants]);
 
+  // Calling onSelect during render violates React rules (StrictMode crash).
+  // Use an effect to notify parent when the loaded product has no variants.
+  useEffect(() => {
+    if (!isLoading && variants !== undefined && sortedVariants.length === 0) {
+      onSelect(null);
+    }
+  }, [isLoading, variants, sortedVariants.length, onSelect]);
+
   const formatStock = (qty: number) => {
     if (qty >= 1000) return `${(qty / 1000).toFixed(1)}k`;
     return qty.toString();
@@ -68,9 +76,8 @@ export function QuoteProductColorSelector({
     );
   }
 
-  // Sem variantes = adicionar sem cor
-  if (!sortedVariants.length) {
-    onSelect(null);
+  // Sem variantes — useEffect notifies parent; return null to unmount
+  if (!isLoading && !sortedVariants.length) {
     return null;
   }
 
