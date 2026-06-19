@@ -170,7 +170,7 @@ export function playTtsAudio(
         })
         .catch((err) => {
           cleanup();
-          reject(err);
+          reject(err instanceof Error ? err : new Error(String(err)));
         });
     });
   })();

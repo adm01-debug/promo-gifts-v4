@@ -241,7 +241,7 @@ function loadImageCors(url: string): Promise<HTMLImageElement> {
         };
         img2.src = blobUrl;
       } catch (e) {
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       }
     };
     img.src = url;

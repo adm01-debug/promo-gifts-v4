@@ -13,7 +13,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 // Re-exportar tudo dos módulos para manter compatibilidade de imports
-export * from '@/lib/external-db/types';
+export type * from '@/lib/external-db/types';
 export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 export type { ExternalTable } from '@/lib/external-db/rest-native';
 
