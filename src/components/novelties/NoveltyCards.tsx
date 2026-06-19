@@ -563,7 +563,10 @@ export function NoveltyTableView({
                         )}
                       </QuickViewThumb>
                     </div>
-                    <span className="line-clamp-1 text-sm font-medium">
+                    <span
+                      className="line-clamp-1 text-sm font-medium"
+                      title={product.product_name ?? undefined}
+                    >
                       {product.product_name ?? '—'}
                     </span>
                   </div>
