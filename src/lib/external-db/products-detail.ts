@@ -303,52 +303,19 @@ export async function fetchPromobrindProductById(
     }).then((r) => r.records);
 
   // Campos críticos auditados em todo fetch de kit (view OU base).
-  // Reportamos cobertura (% de linhas com valor != null) por campo, ajudando
-  // a distinguir "gap de ETL no SSOT" de "gap de fetch/view".
-  const KIT_AUDITED_FIELDS = [
-    'component_name',
-    'component_description',
-    'material',
-    'color',
-    'primary_image_url',
-    'images',
-    'height_mm',
-    'width_mm',
-    'length_mm',
-    'diameter_mm',
-    'circumference_mm',
-    'weight_g',
-    'capacity_ml',
-    'component_type_code',
-    'supplier_component_code',
-    'personalization_notes',
-  ] as const;
-
+  // Lógica pura extraída para `./kit-coverage.ts` (testável sem rede/bridge).
   const auditKitFields = (source: 'view' | 'base', rows: KitComponent[]): void => {
     if (rows.length === 0) return;
-    const coverage: Record<string, { filled: number; total: number; pct: number }> = {};
-    const fullyNullFields: string[] = [];
-    for (const field of KIT_AUDITED_FIELDS) {
-      const filled = rows.filter((r) => {
-        const v = (r as unknown as Record<string, unknown>)[field];
-        if (v === null || v === undefined) return false;
-        if (Array.isArray(v) && v.length === 0) return false;
-        if (typeof v === 'string' && v.trim() === '') return false;
-        return true;
-      }).length;
-      const pct = Math.round((filled / rows.length) * 100);
-      coverage[field] = { filled, total: rows.length, pct };
-      if (filled === 0) fullyNullFields.push(field);
-    }
+    const report = computeKitCoverage(rows as unknown as Array<Record<string, unknown>>);
     logger.info(
-      `[product:${productId}] kit-components source=${source} rows=${rows.length} ` +
-        `fully_null=[${fullyNullFields.join(',') || '—'}]`,
-      { coverage },
+      `[product:${productId}] kit-components source=${source} rows=${report.rows} ` +
+        `avg=${report.avgPct}% fully_null=[${report.fullyNullFields.join(',') || '—'}]`,
+      { coverage: report.coverage },
     );
-    if (fullyNullFields.length > 0) {
+    if (report.fullyNullFields.length > 0) {
       logger.warn(
-        `[product:${productId}] kit-components source=${source} — ${fullyNullFields.length} ` +
-          `campo(s) 100% null: ${fullyNullFields.join(', ')}. ` +
+        `[product:${productId}] kit-components source=${source} — ${report.fullyNullFields.length} ` +
+          `campo(s) 100% null: ${report.fullyNullFields.join(', ')}. ` +
           `Provável gap de ETL no SSOT (não de fetch).`,
       );
     }
