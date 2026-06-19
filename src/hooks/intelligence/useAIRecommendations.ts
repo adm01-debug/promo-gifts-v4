@@ -157,7 +157,7 @@ export function useAIRecommendations() {
 
           try {
             // Usa supabase.functions.invoke para garantir que a URL e o token
-            // pertencem ao MESMO projeto (canônico pqpdolkaeqlyzpdpbizo). Se
+            // pertencem ao MESMO projeto (canônico doufsxqlfjyuvxuezpln). Se
             // usássemos VITE_SUPABASE_URL diretamente, um .env regenerado
             // poderia apontar para outro projeto e invalidar o JWT (401
             // "Token inválido ou expirado").
