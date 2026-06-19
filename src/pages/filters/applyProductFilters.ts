@@ -26,7 +26,7 @@ export interface ProductFilterContext {
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
-  categoryFilterError: unknown;
+  categoryFilterError?: unknown;
   hasMaterialFilter: boolean;
   materialFilteredProductIds: Set<string>;
   isLoadingMaterialFilter: boolean;
