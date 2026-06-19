@@ -245,7 +245,7 @@ export const BaseProductGridCard = memo(function BaseProductGridCard({
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="text-[10px] font-medium text-muted-foreground">A partir de</span>
               <p className="truncate text-sm font-semibold text-primary">
-                {formatPrice(basePrice!)}
+                {formatPrice(basePrice ?? 0)}
               </p>
             </div>
           ) : (
