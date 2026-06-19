@@ -42,33 +42,11 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { NoveltyTableView } from './NoveltyCards';
 import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
+import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
 type ViewMode = 'grid' | 'list' | 'table';
-
-function getGridColsClass(cols: ColumnCount): string {
-  switch (cols) {
-    case 3:
-      return 'grid-cols-2 sm:grid-cols-3';
-    case 4:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
-    case 5:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-    case 6:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
-    case 8:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
-    default:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-  }
-}
-
-function getGridGapClass(cols: ColumnCount): string {
-  if (cols >= 8) return 'gap-x-4 gap-y-8';
-  if (cols >= 6) return 'gap-x-6 gap-y-8';
-  return 'gap-x-8 gap-y-8';
-}
 
 export function NoveltyProductGrid() {
   const navigate = useNavigate();

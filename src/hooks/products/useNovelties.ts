@@ -258,8 +258,9 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
 }
 
 /**
- * Ordena novidades pelos campos REAIS de NoveltyWithDetails (mutação in-place,
- * espelhando a semântica de `sortProducts`).
+ * Ordena novidades pelos campos REAIS de NoveltyWithDetails (mutação in-place).
+ * Nota: diferente de sortProducts (não-mutante desde PR #915), sortNovelties
+ * modifica o array passado diretamente e o retorna.
  *
  * FIX (auditoria Novidades 2026-06-18, P1): o grid antes fazia
  * `sortProducts(novelties as unknown as Product[])`, mas as formas divergem
