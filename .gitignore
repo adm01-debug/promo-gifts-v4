@@ -68,3 +68,6 @@ theme-validation-output/
 /replenishment-perf-report.json
 /vitest-report.json
 /load-test-report.json
+
+# Claude Code agent worktrees (temporary files created by Claude Code agents)
+.claude/
