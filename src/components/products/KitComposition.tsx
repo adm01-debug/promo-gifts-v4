@@ -166,6 +166,20 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
                   {formatWeight(stats.totalWeight)} total
                 </Badge>
               )}
+              {stats.hasComponentPricing && (
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-success/30 px-2.5 py-1 text-xs text-success"
+                  title={`Soma de ${Math.round(stats.pricedCoverage * 100)}% dos componentes (referência).`}
+                >
+                  <DollarSign className="h-3 w-3" />
+                  Σ componentes:{' '}
+                  {stats.componentsSum.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })}
+                </Badge>
+              )}
             </div>
           </DialogHeader>
 
