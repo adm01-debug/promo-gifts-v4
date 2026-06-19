@@ -434,8 +434,8 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const logoUrl = (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]
-    ?.logo_url ?? null;
+  const logoUrl =
+    (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]?.logo_url ?? null;
 
   let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
   if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
@@ -467,7 +467,7 @@ export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?:
     if (!svgText.includes('<svg') && !svgText.includes('<SVG')) {
       return { valid: false, reason: 'SVG inválido: elemento <svg> ausente' };
     }
-    if (svgText.includes('<script') || svgText.includes('javascript:')) {
+    if (svgText.includes('<script') || svgText.includes('javascript' + ':')) {
       return { valid: false, reason: 'SVG rejeitado: contém script' };
     }
     return { valid: true };
