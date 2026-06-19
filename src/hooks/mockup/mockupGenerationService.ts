@@ -467,7 +467,8 @@ export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?:
     if (!svgText.includes('<svg') && !svgText.includes('<SVG')) {
       return { valid: false, reason: 'SVG inválido: elemento <svg> ausente' };
     }
-    if (svgText.includes('<script') || svgText.includes('javascript' + ':')) {
+    // eslint-disable-next-line no-script-url -- security validation string, not a navigable URL
+    if (svgText.includes('<script') || svgText.includes('javascript:')) {
       return { valid: false, reason: 'SVG rejeitado: contém script' };
     }
     return { valid: true };

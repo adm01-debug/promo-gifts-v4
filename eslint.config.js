@@ -168,6 +168,10 @@ export default [
       'no-throw-literal': 'error',
       'no-useless-catch': 'error',
       'prefer-const': 'error',
+      // Batch 69: 3 rules — no-useless-concat (1 fix), no-var (1 fix), no-useless-return (4 fixes)
+      'no-useless-concat': 'error',
+      'no-var': 'error',
+      'no-useless-return': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
