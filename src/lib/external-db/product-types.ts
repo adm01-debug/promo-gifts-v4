@@ -106,6 +106,11 @@ export interface PromobrindProduct {
     component_description?: string | null;
     personalization_notes?: string | null;
     color?: string | null;
+    // Galeria + dimensões circulares (kits nativos do fornecedor).
+    images?: unknown | null; // jsonb[] heterogêneo — normalizado no mapper
+    diameter_mm?: number | null;
+    circumference_mm?: number | null;
+    capacity_ml?: number | null;
   }> | null;
 
   // ------------------------------------------------------------------
