@@ -69,7 +69,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 /**
  * Dados de formulário para criar/editar uma técnica de gravação.
  *
- * Tabela alvo: tabela_preco_gravacao_oficial (pqpdolkaeqlyzpdpbizo)
+ * Tabela alvo: tabela_preco_gravacao_oficial (doufsxqlfjyuvxuezpln)
  *
  * Campos com ? são legados do sistema anterior (tecnica_gravacao) e não
  * existem em tabela_preco_gravacao_oficial. O PostgREST ignora campos
