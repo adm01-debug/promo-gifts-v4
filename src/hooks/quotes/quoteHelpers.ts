@@ -100,7 +100,9 @@ export function buildInsertPayload(
   totals: { subtotal: number; discountAmount: number; total: number },
 ): TablesInsert<'quotes'> {
   validateDiscount(quote, totals);
-  return {
+  // contact_id exists in the DB but is absent from generated types (schema drift).
+  // The cast is safe — the column is defined in the quotes table.
+  const payload = {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
     contact_id: quote.contact_id || null,
@@ -125,6 +127,7 @@ export function buildInsertPayload(
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,
   };
+  return payload as unknown as TablesInsert<'quotes'>;
 }
 
 export function buildUpdatePayload(
@@ -132,7 +135,7 @@ export function buildUpdatePayload(
   totals: { subtotal: number; discountAmount: number; total: number },
 ): TablesUpdate<'quotes'> {
   validateDiscount(quote, totals);
-  return {
+  const updatePayload = {
     client_id: quote.client_id || null,
     contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
@@ -155,6 +158,7 @@ export function buildUpdatePayload(
     valid_until: quote.valid_until || null,
     updated_at: new Date().toISOString(),
   };
+  return updatePayload as unknown as TablesUpdate<'quotes'>;
 }
 
 export function buildItemsInsertPayload(
@@ -221,14 +225,14 @@ export function buildPersonalizationsInsertPayload(
  * fazendo a UI exibir o valor cru do banco para esses status.
  */
 export const STATUS_LABELS: Record<string, string> = {
-  draft:            'Rascunho',
-  pending:          'Pendente',
+  draft: 'Rascunho',
+  pending: 'Pendente',
   pending_approval: 'Aguardando Aprovação',
-  sent:             'Enviado',
-  viewed:           'Visualizado',
-  approved:         'Aprovado',
-  converted:        'Convertido',
-  rejected:         'Rejeitado',
-  expired:          'Expirado',
-  cancelled:        'Cancelado',
+  sent: 'Enviado',
+  viewed: 'Visualizado',
+  approved: 'Aprovado',
+  converted: 'Convertido',
+  rejected: 'Rejeitado',
+  expired: 'Expirado',
+  cancelled: 'Cancelado',
 };
