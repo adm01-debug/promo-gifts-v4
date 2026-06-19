@@ -140,6 +140,19 @@ export default [
       'react/no-danger': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+
+      // ── ESLint Batches 59-64: zero-violation quality rules ──────────────
+      // Batch 64: 7 zero-violation base ESLint rules
+      'no-lone-blocks': 'error',
+      'no-label-var': 'error',
+      'no-labels': 'error',
+      'no-unused-expressions': ['error', { allowShortCircuit: true, allowTernary: true, allowTaggedTemplates: true }],
+      'no-floating-decimal': 'error',
+      'no-multi-str': 'error',
+      'no-extra-label': 'error',
+      // Batch 59: inner-scope shadowing
+      'no-shadow': 'off',
+      '@typescript-eslint/no-shadow': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
