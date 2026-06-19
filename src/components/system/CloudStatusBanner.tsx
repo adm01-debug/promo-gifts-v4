@@ -48,7 +48,7 @@ const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVaria
   },
 };
 
-const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
+const CloudStatusBannerInner = memo(() => {
   const { status, snapshot, retry, isChecking } = useCloudStatus();
   const { isAllowed } = useDevGate();
   const [showDebug, setShowDebug] = useState(false);
@@ -211,7 +211,7 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
   );
 });
 
-export const CloudStatusBanner = memo(function CloudStatusBanner() {
+export const CloudStatusBanner = memo(() => {
   // Gating de visibilidade (crítico vs técnico) é feito dentro do Inner para
   // permitir que falhas críticas alcancem TODOS os usuários, não só devs.
   return <CloudStatusBannerInner />;

@@ -60,132 +60,134 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
   md: 'h-[var(--swatch-size-md)] w-[var(--swatch-size-md)]',
 };
 
-export const ProductColorSwatches = memo(function ProductColorSwatches({
-  colors,
-  // `max` permanece na interface (API pública) mas não é mais consumido —
-  // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
-  size = 'sm',
-  className,
-  hideWhenEmpty = true,
-  onSelect,
-  selectedName,
-}: ProductColorSwatchesProps) {
-  const idPrefix = useId();
+export const ProductColorSwatches = memo(
+  ({
+    colors,
+    // `max` permanece na interface (API pública) mas não é mais consumido —
+    // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
+    size = 'sm',
+    className,
+    hideWhenEmpty = true,
+    onSelect,
+    selectedName,
+  }: ProductColorSwatchesProps) => {
+    const idPrefix = useId();
 
-  if (colors === undefined) {
+    if (colors === undefined) {
+      return (
+        <div
+          className={cn(
+            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+            className,
+          )}
+          aria-busy="true"
+          aria-label="Carregando opções de cores"
+          data-testid="colors-loading-skeleton"
+        >
+          {Array.from({ length: 6 }, (_, i) => (
+            <div
+              key={i}
+              className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
+              data-testid="color-skeleton-dot"
+            />
+          ))}
+        </div>
+      );
+    }
+
+    if (colors.length === 0) {
+      if (hideWhenEmpty) {
+        return (
+          <div
+            className={cn('min-h-[var(--swatch-size-sm)]', className)}
+            data-testid="colors-empty-hidden"
+          />
+        );
+      }
+      return (
+        <div
+          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
+          role="status"
+          aria-live="polite"
+          data-testid="colors-unavailable"
+        >
+          <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
+          <span className="text-[9px] font-medium tracking-tight">N/A</span>
+        </div>
+      );
+    }
+
+    const visible = colors;
+    // Resolve o estado selecionado o mais cedo possível
+    const queryParams =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
+    const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
+
     return (
       <div
         className={cn(
-          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
           className,
         )}
-        aria-busy="true"
-        aria-label="Carregando opções de cores"
-        data-testid="colors-loading-skeleton"
-      >
-        {Array.from({ length: 6 }, (_, i) => (
-          <div
-            key={i}
-            className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
-            data-testid="color-skeleton-dot"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (colors.length === 0) {
-    if (hideWhenEmpty) {
-      return (
-        <div
-          className={cn('min-h-[var(--swatch-size-sm)]', className)}
-          data-testid="colors-empty-hidden"
-        />
-      );
-    }
-    return (
-      <div
-        className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
-        role="status"
+        role="radiogroup"
         aria-live="polite"
-        data-testid="colors-unavailable"
+        aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
+          colors.length === 1 ? 'el' : 'eis'
+        }`}
+        data-testid="product-colors-container"
       >
-        <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
-        <span className="text-[9px] font-medium tracking-tight">N/A</span>
-      </div>
-    );
-  }
-
-  const visible = colors;
-  // Resolve o estado selecionado o mais cedo possível
-  const queryParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
-  const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
-
-  return (
-    <div
-      className={cn(
-        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
-        className,
-      )}
-      role="radiogroup"
-      aria-live="polite"
-      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
-        colors.length === 1 ? 'el' : 'eis'
-      }`}
-      data-testid="product-colors-container"
-    >
-      {visible.map((c, idx) => {
-        const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
-        const isSelected =
-          normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
-        return (
-          <Tooltip key={`${c.name}-${idx}`}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                role="radio"
-                className={cn(
-                  'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  isSelected
-                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
-                    : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
-                  SIZE_CLASS[size],
-                )}
-                style={{ backgroundColor: c.hex || 'transparent' }}
-                aria-label={`Opção de cor: ${c.name}`}
-                aria-describedby={tooltipId}
-                aria-checked={isSelected}
-                data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
-                data-color-name={c.name}
-                onClick={(e) => {
-                  if (!onSelect) return;
-                  e.stopPropagation();
-                  onSelect(c, idx);
-                }}
-                onKeyDown={(e) => {
-                  if (!onSelect) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+        {visible.map((c, idx) => {
+          const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
+          const isSelected =
+            normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
+          return (
+            <Tooltip key={`${c.name}-${idx}`}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  role="radio"
+                  className={cn(
+                    'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                    isSelected
+                      ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
+                      : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+                    SIZE_CLASS[size],
+                  )}
+                  style={{ backgroundColor: c.hex || 'transparent' }}
+                  aria-label={`Opção de cor: ${c.name}`}
+                  aria-describedby={tooltipId}
+                  aria-checked={isSelected}
+                  data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  data-color-name={c.name}
+                  onClick={(e) => {
+                    if (!onSelect) return;
                     e.stopPropagation();
                     onSelect(c, idx);
-                  }
-                }}
-              />
-            </TooltipTrigger>
-            <TooltipContent
-              id={tooltipId}
-              side="top"
-              className="p-2 text-xs"
-              role="tooltip"
-              data-testid="color-tooltip-content"
-            >
-              <span className="font-bold">{c.name}</span>
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-});
+                  }}
+                  onKeyDown={(e) => {
+                    if (!onSelect) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSelect(c, idx);
+                    }
+                  }}
+                />
+              </TooltipTrigger>
+              <TooltipContent
+                id={tooltipId}
+                side="top"
+                className="p-2 text-xs"
+                role="tooltip"
+                data-testid="color-tooltip-content"
+              >
+                <span className="font-bold">{c.name}</span>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
+  },
+);
