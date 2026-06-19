@@ -224,12 +224,6 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           description: (ck.component_description ?? null) as string | null,
           personalizationNotes: (ck.personalization_notes ?? null) as string | null,
           color: (ck.color ?? null) as string | null,
-          salePrice:
-            (ck.component_sale_price as number | null | undefined) ??
-            (ck.component_list_price as number | null | undefined) ??
-            null,
-          stockQuantity: (ck.component_stock_quantity as number | null | undefined) ?? null,
-          stockStatus: (ck.component_stock_status as string | null | undefined) ?? null,
         };
       }) || undefined,
     // Word Magic — campos gerados por IA
