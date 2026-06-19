@@ -217,7 +217,7 @@ export function CartHeaderButton() {
                     </div>
                     {i === 0 && (
                       <div className="space-y-2.5 border-t border-border/20 pt-2">
-                        {Array.from({ length: 2 }, (_, j) => (
+                        {Array.from({ length: 2 }, (_el, j) => (
                           <div key={j} className="flex items-center gap-2">
                             <Skeleton className="h-8 w-8 rounded-lg" />
                             <div className="flex-1 space-y-1.5">

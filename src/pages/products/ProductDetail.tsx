@@ -218,7 +218,7 @@ export default function ProductDetail() {
     // 4. Tenta match por grupo
     if (!match && grupoParam && product.colors?.length) {
       const c = product.colors.find(
-        (c: { groupSlug?: string; name?: string }) => c.groupSlug === grupoParam,
+        (colorItem: { groupSlug?: string; name?: string }) => colorItem.groupSlug === grupoParam,
       );
       if (c) {
         match = product.variations.find(
@@ -308,7 +308,9 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images?.[0] || ''
+          product.og_image_url
+            ? getCdnUrl(product.og_image_url, 'large')
+            : product.images?.[0] || ''
         }
         ogType="product"
       />

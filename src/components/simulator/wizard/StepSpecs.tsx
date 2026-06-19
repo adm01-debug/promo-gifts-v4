@@ -56,15 +56,15 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
         maxHeight: 50,
       };
     }
-    const anyUsaDimensao = techniques.some((t) => t.usaDimensao !== false);
-    const anyCobraPorCor = techniques.some((t) => t.cobraPorCor === true);
+    const computedAnyUsaDimensao = techniques.some((t) => t.usaDimensao !== false);
+    const computedAnyCobraPorCor = techniques.some((t) => t.cobraPorCor === true);
 
     const colorTechniques = techniques.filter((t) => t.cobraPorCor === true);
-    const maxColors =
+    const computedMaxColors =
       colorTechniques.length > 0 ? Math.max(...colorTechniques.map((t) => t.maxColors || 3)) : 1;
 
     const dimTechniques = techniques.filter((t) => t.usaDimensao !== false);
-    const maxWidth =
+    const computedMaxWidth =
       dimTechniques.length > 0
         ? Math.max(
             ...dimTechniques.map(
@@ -73,7 +73,7 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
           )
         : selectedLocation?.maxWidthCm || 50;
 
-    const maxHeight =
+    const computedMaxHeight =
       dimTechniques.length > 0
         ? Math.max(
             ...dimTechniques.map(
@@ -82,7 +82,13 @@ export function StepSpecs({ wizard }: StepSpecsProps) {
           )
         : selectedLocation?.maxHeightCm || 50;
 
-    return { anyUsaDimensao, anyCobraPorCor, maxColors, maxWidth, maxHeight };
+    return {
+      anyUsaDimensao: computedAnyUsaDimensao,
+      anyCobraPorCor: computedAnyCobraPorCor,
+      maxColors: computedMaxColors,
+      maxWidth: computedMaxWidth,
+      maxHeight: computedMaxHeight,
+    };
   }, [techniques, selectedLocation]);
 
   const currentArea = engravingSpecs.width * engravingSpecs.height;

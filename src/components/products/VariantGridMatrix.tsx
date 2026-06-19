@@ -64,15 +64,21 @@ export function VariantGridMatrix({
       if (v.size_code) sizeSet.add(v.size_code);
       allIds.push(v.id);
     }
-    const colors = Array.from(colorMap.values());
-    const sizes = Array.from(sizeSet).sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
-    const matrix = new Map<string, Map<string, VariantGridItem>>();
+    const computedColors = Array.from(colorMap.values());
+    const computedSizes = Array.from(sizeSet).sort((a, b) => getSizeOrder(a) - getSizeOrder(b));
+    const computedMatrix = new Map<string, Map<string, VariantGridItem>>();
     for (const v of variants) {
       const sk = v.size_code || '__none__';
-      if (!matrix.has(v.color_name)) matrix.set(v.color_name, new Map());
-      matrix.get(v.color_name)?.set(sk, v);
+      if (!computedMatrix.has(v.color_name)) computedMatrix.set(v.color_name, new Map());
+      computedMatrix.get(v.color_name)?.set(sk, v);
     }
-    return { colors, sizes, matrix, hasSizes: sizes.length > 0, allVariantIds: allIds };
+    return {
+      colors: computedColors,
+      sizes: computedSizes,
+      matrix: computedMatrix,
+      hasSizes: computedSizes.length > 0,
+      allVariantIds: allIds,
+    };
   }, [variants]);
 
   const toggleSelection = useCallback((id: string) => {
@@ -190,7 +196,9 @@ export function VariantGridMatrix({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {variant.sku && <p className="font-mono text-xs opacity-70 mb-1">{variant.sku}</p>}
+                  {variant.sku && (
+                    <p className="mb-1 font-mono text-xs opacity-70">{variant.sku}</p>
+                  )}
                   <p>{stock} un. em estoque</p>
                   {isAdmin && (
                     <p className="text-xs text-muted-foreground">Clique para selecionar</p>
@@ -395,7 +403,9 @@ export function VariantGridMatrix({
                                 {color.name} — {size}
                               </p>
                               {variant.sku && (
-                                <p className="font-mono text-[10px] opacity-70 mb-0.5">{variant.sku}</p>
+                                <p className="mb-0.5 font-mono text-[10px] opacity-70">
+                                  {variant.sku}
+                                </p>
                               )}
                               {typeof variant.price === 'number' && (
                                 <p className="font-medium text-primary">

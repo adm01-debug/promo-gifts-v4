@@ -117,8 +117,8 @@ describe('estado inicial com usuario autenticado', () => {
 // ── user=null ─────────────────────────────────────────────────────────────────
 describe('user=null — queries desabilitadas', () => {
   it('nao inicia Realtime subscription quando user=null', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: null } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null } as never);
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });

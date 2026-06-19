@@ -66,10 +66,10 @@ export default function MockupHistoryPage() {
         );
       }
 
-      const { data, error, count } = await query;
+      const { data: queryData, error, count } = await query;
       if (error) throw error;
       // Map area_config JSONB fields into the flat shape the component uses.
-      const mockups = (data ?? []).map((row) => {
+      const mockups = (queryData ?? []).map((row) => {
         const cfg = (row.area_config ?? {}) as Record<string, unknown>;
         return {
           ...row,

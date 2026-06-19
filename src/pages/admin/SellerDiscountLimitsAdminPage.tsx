@@ -83,10 +83,10 @@ export default function SellerDiscountLimitsAdminPage() {
         .order('full_name');
       if (pErr) throw pErr;
 
-      const sellers = (profiles ?? []).filter(
+      const sellerProfiles = (profiles ?? []).filter(
         (p): p is typeof p & { user_id: string } => p.user_id !== null,
       );
-      const ids = sellers.map((p) => p.user_id);
+      const ids = sellerProfiles.map((p) => p.user_id);
       if (!ids.length) return [];
 
       const { data: limits } = await supabase
@@ -101,7 +101,7 @@ export default function SellerDiscountLimitsAdminPage() {
         ]),
       );
 
-      return sellers.map((p) => {
+      return sellerProfiles.map((p) => {
         const lim = byId.get(p.user_id);
         return {
           user_id: p.user_id,
