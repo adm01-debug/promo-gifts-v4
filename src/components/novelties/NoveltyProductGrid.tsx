@@ -28,6 +28,7 @@ import {
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { NoveltyCardSkeleton } from './NoveltyCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
