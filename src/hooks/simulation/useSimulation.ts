@@ -457,7 +457,7 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation<void>({
+  const saveSimulationMutation = useMutation({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
@@ -488,7 +488,7 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation<void, Error, string>({
+  const deleteSimulationMutation = useMutation<undefined, Error, string>({
     mutationFn: async (id: string) => {
       const { error } = await untypedFrom('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
