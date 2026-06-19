@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
         generation_ms:  generationMs,
         total_ms:       totalMs,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
     );
 
   } catch (e) {
@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
     console.error('[word-magic] unhandled_error', safeErrorFields(e));
     return new Response(
       JSON.stringify({ error: 'Erro interno. Tente novamente em instantes.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
     );
   }
 });

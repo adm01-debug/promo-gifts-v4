@@ -229,13 +229,13 @@ Deno.serve(async (req) => {
     }
     
     return new Response(JSON.stringify(report), {
-      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 400,
     });
   }

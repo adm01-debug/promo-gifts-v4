@@ -249,6 +249,6 @@ Deno.serve(async (req: Request) => {
       webp_gif_attempted: altFormatImages.length,
       remaining: remaining ?? 'unknown',
     }),
-    { headers: { 'Content-Type': 'application/json' } }
+    { headers: { 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
   )
 })
