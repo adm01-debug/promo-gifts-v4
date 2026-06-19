@@ -87,6 +87,7 @@ interface ProductImageRecord {
 // FUNÇÕES AUXILIARES
 // ============================================
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 async function dbInvokeLocal<T>(
   table: string,
   operation: 'select',

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
-export function useBulkSelection<T extends { id: string }>(items: T[]) {
+export function useBulkSelection(items: Array<{ id: string }>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleItem = useCallback((id: string) => {

@@ -40,6 +40,7 @@ type AnyClient = SupabaseClient<any, any, any>;
  * Pass the row shape as `T` to recover typing on `.select()`, `.insert()`, and
  * `.update()`. Without `T`, this falls back to `Record<string, unknown>`.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function untypedFrom<T = Record<string, unknown>>(table: string) {
   return (supabase as unknown as AnyClient).from(table) as ReturnType<AnyClient['from']> & {
     _row?: T;

@@ -26,6 +26,7 @@ type SelectParams = {
 };
 
 class RamoAtividadeService {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private async select<T>(
     table: string,
     params: SelectParams = {},
@@ -219,9 +220,7 @@ class RamoAtividadeService {
   // ASSOCIACOES PRODUTO <-> RAMO DE ATIVIDADE
   // ============================================================
 
-  async getRamosDoProduto(
-    produtoId: string,
-  ): Promise<{
+  async getRamosDoProduto(produtoId: string): Promise<{
     associacoes: Array<{ id: string; ramo_atividade_filho_id: string }>;
     count: number;
   }> {

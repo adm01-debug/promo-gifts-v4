@@ -70,7 +70,7 @@ function leadTimeLabel(status: string | undefined): string {
   }
 }
 
-function allEqual<T>(arr: T[]): boolean {
+function allEqual(arr: unknown[]): boolean {
   if (arr.length < 2) return true;
   const first = JSON.stringify(arr[0]);
   return arr.every((v) => JSON.stringify(v) === first);

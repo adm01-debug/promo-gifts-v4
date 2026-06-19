@@ -17,8 +17,8 @@ type OrgScopedUpdate<T extends TableName> = Omit<TableUpdate<T>, 'organization_i
  * Hook to fetch generic data scoped to the current organization.
  * Automatically adds organization_id filter if currentOrg is available.
  */
-export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName>(
-  tableName: TTable,
+export function useOrgData<T>(
+  tableName: DynamicTableName,
   options: {
     enabled?: boolean;
     select?: string;
@@ -136,7 +136,7 @@ export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable)
 /**
  * Hook to delete data. RLS will handle organization check.
  */
-export function useOrgDelete<TTable extends DynamicTableName>(tableName: TTable) {
+export function useOrgDelete(tableName: DynamicTableName) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 

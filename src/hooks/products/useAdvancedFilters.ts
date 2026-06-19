@@ -213,18 +213,15 @@ export function useAdvancedFilters() {
     [],
   );
 
-  const toggleArrayFilter = useCallback(
-    <K extends keyof AdvancedFilterState>(key: K, value: string) => {
-      setFilters((prev) => {
-        const currentValues = prev[key] as string[];
-        const newValues = currentValues.includes(value)
-          ? currentValues.filter((v) => v !== value)
-          : [...currentValues, value];
-        return { ...prev, [key]: newValues };
-      });
-    },
-    [],
-  );
+  const toggleArrayFilter = useCallback((key: keyof AdvancedFilterState, value: string) => {
+    setFilters((prev) => {
+      const currentValues = prev[key] as string[];
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter((v) => v !== value)
+        : [...currentValues, value];
+      return { ...prev, [key]: newValues };
+    });
+  }, []);
 
   const resetFilters = useCallback(() => {
     setFilters(defaultAdvancedFilters);

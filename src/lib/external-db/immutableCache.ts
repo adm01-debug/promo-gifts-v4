@@ -49,6 +49,7 @@ function now() {
   return Date.now();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function getFresh<T extends { id: string; name: string; code?: string }>(
   entity: Entity,
   id: string,
@@ -194,6 +195,7 @@ export function invalidateImmutableCache(entity?: Entity) {
 }
 
 /** Synchronous cache peek (no fetch). Returns undefined if missing or stale. */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function getFreshFromCacheSafe<T extends { id: string; name: string; code?: string }>(
   entity: Entity,
   id: string,

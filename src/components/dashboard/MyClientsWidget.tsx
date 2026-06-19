@@ -151,7 +151,9 @@ export function MyClientsWidget() {
       const more = last.quotes.length >= PAGE_SIZE || last.orders.length >= PAGE_SIZE;
       if (!more) return undefined;
       // Cursor = o mais antigo entre os dois lotes para garantir cobertura.
-      const cursor = [lastQ, lastO].filter(Boolean).sort()[0];
+      const cursor = [lastQ, lastO]
+        .filter((v): v is string => Boolean(v))
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
       return cursor ?? undefined;
     },
   });

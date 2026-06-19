@@ -61,7 +61,7 @@ function getNormalizedValue(value: unknown): string {
   return typeof value === 'string' ? normalizeProductSearch(value) : '';
 }
 
-function getBestFieldPosition<T extends SearchableProductLike>(product: T, query: string) {
+function getBestFieldPosition(product: SearchableProductLike, query: string) {
   const fields = [
     product.name,
     product.sku,

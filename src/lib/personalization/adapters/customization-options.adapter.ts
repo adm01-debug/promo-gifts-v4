@@ -28,6 +28,7 @@ import { OPTIONS_CONTRACT } from '@/lib/personalization/rpc-contracts';
 
 type Raw = Record<string, unknown>;
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
   for (const k of keys) {
     const v = obj[k];

@@ -86,7 +86,7 @@ export function bucketByStatus(products: readonly ProductStockSummary[]): Produc
 }
 
 /** Conta `severity === 'error'` (alertas críticos exibidos no badge). */
-export function countCriticalAlerts<T extends { severity: string }>(alerts: readonly T[]): number {
+export function countCriticalAlerts(alerts: ReadonlyArray<{ severity: string }>): number {
   let n = 0;
   for (const a of alerts) if (a.severity === 'error') n++;
   return n;

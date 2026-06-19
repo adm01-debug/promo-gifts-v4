@@ -26,6 +26,7 @@ export interface NormalizedPrintAreaRow {
   tabela_preco_id: string | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
   for (const k of keys) {
     const v = obj[k];

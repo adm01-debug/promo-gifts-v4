@@ -31,7 +31,7 @@ export interface NavRoles {
   isAdmin: boolean;
 }
 
-export function isItemVisibleForRoles<T extends NavFlagItem>(item: T, roles: NavRoles): boolean {
+export function isItemVisibleForRoles(item: NavFlagItem, roles: NavRoles): boolean {
   if (item.devOnly && !roles.isDev) return false;
   if (item.adminOnly && !roles.isAdmin) return false;
   if (item.href && isDevOnlyPath(item.href) && !roles.isDev) return false;
