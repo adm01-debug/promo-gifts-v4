@@ -85,6 +85,7 @@ export function BulkAddToCartModal({
           description: activeCart.company_name,
         },
       );
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       closeTimerRef.current = setTimeout(() => {
         if (mountedRef.current) {
           onOpenChange(false);
