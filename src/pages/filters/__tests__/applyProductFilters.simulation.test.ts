@@ -955,6 +955,60 @@ describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva'
     expect(out.map((p) => p.id)).not.toContain('ref-p');
   });
 
+  // ---------------------------------------------------------------------------
+  // FIX-17: SUPPLIER-CASE-SENSITIVITY — todas as 3 vias normalizadas para lowercase
+  // ---------------------------------------------------------------------------
+  describe('FIX-17: supplier filter — match case-insensitivo em id, reference e name', () => {
+    const pUpperId = makeProduct({
+      id: 'sup-upper-id',
+      supplier: { id: 'SUP-ABC', name: 'Fornecedor X' } as never,
+    });
+    const pLowerId = makeProduct({
+      id: 'sup-lower-id',
+      supplier: { id: 'sup-abc', name: 'Fornecedor Y' } as never,
+    });
+    const pUpperRef = makeProduct({ id: 'sup-upper-ref', supplier_reference: 'REF-XYZ' });
+    const pLowerRef = makeProduct({ id: 'sup-lower-ref', supplier_reference: 'ref-xyz' });
+    const pUpperName = makeProduct({
+      id: 'sup-upper-name',
+      supplier: { id: 'sup-zz', name: 'ACMECO' } as never,
+    });
+    const catalogSup = [pUpperId, pLowerId, pUpperRef, pLowerRef, pUpperName];
+    const runSup = (filters: FilterState) =>
+      applyProductFilters(catalogSup, filters, filters.sortBy, baseCtx());
+
+    it('filtro "sup-abc" (lower) deve casar supplier.id "SUP-ABC" (upper)', () => {
+      const out = runSup(f({ suppliers: ['sup-abc'] }));
+      expect(ids(out)).toContain('sup-upper-id');
+    });
+
+    it('filtro "SUP-ABC" (upper) deve casar supplier.id "sup-abc" (lower)', () => {
+      const out = runSup(f({ suppliers: ['SUP-ABC'] }));
+      expect(ids(out)).toContain('sup-lower-id');
+    });
+
+    it('filtro "ref-xyz" (lower) deve casar supplier_reference "REF-XYZ" (upper)', () => {
+      const out = runSup(f({ suppliers: ['ref-xyz'] }));
+      expect(ids(out)).toContain('sup-upper-ref');
+    });
+
+    it('filtro "REF-XYZ" (upper) deve casar supplier_reference "ref-xyz" (lower)', () => {
+      const out = runSup(f({ suppliers: ['REF-XYZ'] }));
+      expect(ids(out)).toContain('sup-lower-ref');
+    });
+
+    it('filtro "acmeco" (lower) deve casar supplier.name "ACMECO" (upper)', () => {
+      const out = runSup(f({ suppliers: ['acmeco'] }));
+      expect(ids(out)).toContain('sup-upper-name');
+    });
+
+    it('supplier com id diferente não deve casar mesmo com casing alterado', () => {
+      const out = runSup(f({ suppliers: ['sup-xyz'] }));
+      expect(ids(out)).not.toContain('sup-upper-id');
+      expect(ids(out)).not.toContain('sup-lower-id');
+    });
+  });
+
   // 6. Limites de preço fracionários — inclusão exata nos extremos
   it('priceRange [9.9, 49.9]: inclui produtos exatamente nos limites (R$9.9 e R$49.9)', () => {
     // produto 1 = R$9.9 (no limite inferior), produto 2 = R$49.9 (no limite superior)

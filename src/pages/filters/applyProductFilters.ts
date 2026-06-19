@@ -113,13 +113,19 @@ export function applyProductFilters(
   )
     result = [];
   if (filters.suppliers.length > 0) {
-    const supplierIdSet = new Set(filters.suppliers);
-    const supplierLowerArr = filters.suppliers.map((s) => s.toLowerCase());
+    // FIX-17: normaliza todas as 3 vias (id, reference, name) para lowercase.
+    // Original: id/reference eram case-sensitive; name era case-insensitive → inconsistente.
+    const supplierLowerSet = new Set(filters.suppliers.map((s) => s.toLowerCase()));
+    const supplierLowerArr = [...supplierLowerSet].filter((s) => s !== '');
     result = result.filter((product) => {
-      if (supplierIdSet.has(product.supplier?.id ?? '')) return true;
-      if (supplierIdSet.has(product.supplier_reference || '')) return true;
-      const sName = (product.supplier?.name || product.brand || '').toLowerCase();
-      return supplierLowerArr.some((s) => sName.includes(s));
+      const suppId = (product.supplier?.id ?? '').toLowerCase();
+      const suppRef = (product.supplier_reference ?? '').toLowerCase();
+      const suppName = (product.supplier?.name || product.brand || '').toLowerCase();
+      return (
+        (suppId !== '' && supplierLowerSet.has(suppId)) ||
+        (suppRef !== '' && supplierLowerSet.has(suppRef)) ||
+        supplierLowerArr.some((s) => suppName.includes(s))
+      );
     });
   }
   // BUG-DB-02: metadados server-side (datas/tags/ramos/segmentos/público) via RPC.
