@@ -7,6 +7,7 @@
 // ESTOQUE POR VARIAÇÃO
 // ============================================
 
+/** Dados de estoque granular por variação (cor/tamanho/SKU). */
 export interface VariantStock {
   id: string;
   productId: string;
@@ -72,6 +73,7 @@ export interface VariantStock {
   notes?: string;
 }
 
+/** Status de disponibilidade de uma variação de estoque. */
 export type StockStatus =
   | 'in_stock' // Estoque OK
   | 'low_stock' // Abaixo do mínimo
@@ -84,6 +86,7 @@ export type StockStatus =
 // PRODUTO COM ESTOQUE DETALHADO
 // ============================================
 
+/** Resumo de estoque de um produto com todas as suas variações agregadas. */
 export interface ProductStockSummary {
   productId: string;
   productName: string;
@@ -123,6 +126,7 @@ export interface ProductStockSummary {
   daysUntilFullStockout?: number;
 }
 
+/** Disponibilidade de estoque para uma cor específica do produto. */
 export interface ColorStockInfo {
   colorId?: string;
   colorName: string;
@@ -137,6 +141,7 @@ export interface ColorStockInfo {
 // ESTOQUE FUTURO / PREVISÃO
 // ============================================
 
+/** Previsão de chegada de estoque futuro (pedido de compra, produção ou transferência). */
 export interface FutureStockEntry {
   id: string;
   productId: string;
@@ -174,6 +179,7 @@ export interface FutureStockEntry {
 // MOVIMENTAÇÕES DE ESTOQUE
 // ============================================
 
+/** Registro de movimentação de estoque (entrada, saída, ajuste, transferência). */
 export interface StockMovement {
   id: string;
   productId: string;
@@ -201,6 +207,7 @@ export interface StockMovement {
   createdByName?: string;
 }
 
+/** Categoria de movimentação de estoque. */
 export type StockMovementType =
   | 'in' // Entrada
   | 'out' // Saída (venda)
@@ -214,6 +221,7 @@ export type StockMovementType =
 // ALERTAS DE ESTOQUE
 // ============================================
 
+/** Alerta de estoque gerado quando um produto atinge um limiar crítico. */
 export interface StockAlert {
   id: string;
   type: StockAlertType;
@@ -244,6 +252,7 @@ export interface StockAlert {
   dismissedBy?: string;
 }
 
+/** Categoria de alerta de estoque. */
 export type StockAlertType =
   | 'out_of_stock'
   | 'critical'
@@ -257,6 +266,7 @@ export type StockAlertType =
 // FILTROS E ORDENAÇÃO
 // ============================================
 
+/** Critérios de filtro, ordenação e agrupamento do dashboard de estoque. */
 export interface StockFilters {
   // Filtros de status
   status: StockStatus | 'all';
@@ -295,6 +305,7 @@ export interface StockFilters {
   showOnlyWithAlerts: boolean;
 }
 
+/** Critérios de ordenação disponíveis no dashboard de estoque. */
 export type StockSortOption =
   | 'name'
   | 'sku'
@@ -302,6 +313,7 @@ export type StockSortOption =
   | 'available_stock'
   | 'days_remaining';
 
+/** Opções de agrupamento de produtos no dashboard de estoque. */
 export type StockGroupOption =
   | 'none'
   | 'product'
@@ -311,6 +323,7 @@ export type StockGroupOption =
   | 'category'
   | 'supplier';
 
+/** Filtros padrão aplicados ao abrir o dashboard de estoque. */
 export const defaultStockFilters: StockFilters = {
   status: 'all',
   search: '',
@@ -327,6 +340,7 @@ export const defaultStockFilters: StockFilters = {
 // RESUMO GERAL DE ESTOQUE
 // ============================================
 
+/** Totais agregados exibidos nos cards do dashboard de estoque. */
 export interface StockDashboardSummary {
   // Contagens
   totalProducts: number;

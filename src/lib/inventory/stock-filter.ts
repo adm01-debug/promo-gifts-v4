@@ -22,6 +22,7 @@ import {
 } from '@/types/stock';
 
 // ---------- normalização ----------
+/** Normaliza string para comparação case-insensitive e sem acentos. */
 export const normalize = (s: string | undefined | null): string =>
   (s ?? '')
     .toLowerCase()
@@ -30,6 +31,7 @@ export const normalize = (s: string | undefined | null): string =>
     .trim();
 
 // ---------- contexto derivado dos filtros ----------
+/** Valores pré-computados derivados de `StockFilters` para evitar recálculos em loops. */
 export interface FilterContext {
   searchN: string;
   colorName?: string;
@@ -44,6 +46,7 @@ export interface FilterContext {
   minQtyIncludesFutureStock: boolean;
 }
 
+/** Deriva o contexto de filtragem a partir dos filtros brutos, normalizando strings uma única vez. */
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
@@ -67,6 +70,7 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
 }
 
 // ---------- estágio 1: seleção de variações ----------
+/** Retorna apenas as variações do produto que casam com o filtro de cor/grupo (estágio 1). */
 export function selectMatchingVariants(
   product: ProductStockSummary,
   ctx: FilterContext,
@@ -83,6 +87,7 @@ export function selectMatchingVariants(
 }
 
 // ---------- estágio 2: agregação ----------
+/** Totais somados de um subconjunto de variações (resultado do estágio 2). */
 export interface VariantTotals {
   totalVariants: number;
   totalCurrentStock: number;
@@ -92,6 +97,7 @@ export interface VariantTotals {
   totalAvailableStock: number;
 }
 
+/** Soma os campos de estoque de um array de variações em um único `VariantTotals`. */
 export function aggregateVariantTotals(variants: VariantStock[]): VariantTotals {
   return variants.reduce<VariantTotals>(
     (acc, v) => {
@@ -114,6 +120,7 @@ export function aggregateVariantTotals(variants: VariantStock[]): VariantTotals 
   );
 }
 
+/** Reconstrói um `ProductStockSummary` com os totais recalculados a partir de um subconjunto de variações. */
 export function projectProduct(
   product: ProductStockSummary,
   variants: VariantStock[],
@@ -123,6 +130,7 @@ export function projectProduct(
 }
 
 // ---------- estágio 0: índices reutilizáveis ----------
+/** Índices pré-computados para filtragem O(1) por cor, categoria, fornecedor e alertas. */
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
   byColorGroupN: Map<string, Set<string>>; // tokens da cor → productIds (inclui substrings de colorGroup)
@@ -131,6 +139,7 @@ export interface StockIndexes {
   productsWithAlerts: Set<string>;
 }
 
+/** Pré-computa índices invertidos sobre a lista de produtos e alertas para reutilização entre chamadas. */
 export function buildStockIndexes(
   products: ProductStockSummary[],
   alerts: StockAlert[],
@@ -253,6 +262,10 @@ function matchMinQuantity(
 }
 
 // ---------- estágio 3: orquestrador ----------
+/**
+ * Pipeline completo de filtragem: índice → variantes → status → busca → categoria →
+ * fornecedor → quantidade mínima → alertas → projeção → ordenação.
+ */
 export function applyStockFilters(
   products: ProductStockSummary[],
   filters: StockFilters,
@@ -318,6 +331,7 @@ export function applyStockFilters(
 }
 
 // ---------- ordenação ----------
+/** Ordena os produtos filtrados pelo critério e direção configurados nos filtros. */
 export function sortProducts(
   items: ProductStockSummary[],
   filters: Pick<StockFilters, 'sortBy' | 'sortDirection'>,

@@ -8,20 +8,26 @@
  */
 import { useEffect, useRef } from 'react';
 
+/** Chave de localStorage onde a preferência de estoque futuro é persistida. */
 export const FUTURE_STOCK_STORAGE_KEY = 'stock-filter:future-stock-pref:v1';
+/** Janelas de dias válidas para o filtro de estoque futuro. */
 export const FUTURE_STOCK_WINDOWS = [7, 15, 30] as const;
+/** Número de dias da janela de estoque futuro — restrito aos valores em `FUTURE_STOCK_WINDOWS`. */
 export type FutureStockWindow = (typeof FUTURE_STOCK_WINDOWS)[number];
 
+/** Preferência persistida do usuário para o toggle de estoque futuro e sua janela de dias. */
 export interface FutureStockPreference {
   includeFutureStock: boolean;
   futureStockWindowDays: FutureStockWindow;
 }
 
+/** Valor padrão quando não há preferência salva ou o valor armazenado é inválido. */
 export const DEFAULT_FUTURE_STOCK_PREFERENCE: FutureStockPreference = {
   includeFutureStock: false,
   futureStockWindowDays: 15,
 };
 
+/** Lê e valida a preferência de estoque futuro do localStorage; retorna o padrão em caso de ausência ou erro. */
 export function readFutureStockPreference(): FutureStockPreference {
   if (typeof window === 'undefined') return DEFAULT_FUTURE_STOCK_PREFERENCE;
   try {
@@ -41,6 +47,7 @@ export function readFutureStockPreference(): FutureStockPreference {
   }
 }
 
+/** Serializa e persiste a preferência de estoque futuro no localStorage; silencia erros de quota/privacidade. */
 export function writeFutureStockPreference(pref: FutureStockPreference): void {
   if (typeof window === 'undefined') return;
   try {

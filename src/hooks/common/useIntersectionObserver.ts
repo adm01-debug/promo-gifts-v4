@@ -12,7 +12,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 
-interface UseIntersectionObserverOptions {
+/** Opções de configuração do hook `useIntersectionObserver`. */
+export interface UseIntersectionObserverOptions {
   rootMargin?: string;
   threshold?: number | number[];
   /** Quando true, para de observar após a primeira intersecção (one-shot) */
@@ -69,6 +70,10 @@ function getSharedObserver(
   return observer;
 }
 
+/**
+ * Detecta a visibilidade de um elemento DOM via IntersectionObserver compartilhado.
+ * @returns `true` quando o elemento entra no viewport; `false` caso contrário.
+ */
 export function useIntersectionObserver(
   ref: React.RefObject<Element | null>,
   {

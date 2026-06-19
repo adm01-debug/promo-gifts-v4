@@ -364,6 +364,7 @@ interface VariantStockTableProps {
   targetQuantity?: number;
 }
 
+/** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com paginação e seleção. */
 export function VariantStockTable({
   products,
   className,

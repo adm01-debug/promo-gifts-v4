@@ -14,6 +14,7 @@ import {
 import { fetchAndProcessStockData } from '@/hooks/stock/stockFetcher';
 import { applyStockFilters, buildStockIndexes } from '@/lib/inventory/stock-filter';
 
+/** Hook principal do dashboard de estoque: busca dados, aplica filtros e expõe ações de refresh/dismiss. */
 export function useVariantStock() {
   const [filters, setFilters] = useState<StockFilters>(defaultStockFilters);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -266,6 +267,7 @@ export function useVariantStock() {
   };
 }
 
+/** Versão simplificada do hook de estoque escoped a um único produto. */
 export function useProductVariantStock(productId: string) {
   const {
     productStocks: _productStocks,

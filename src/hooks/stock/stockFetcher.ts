@@ -86,6 +86,7 @@ export interface ExternalStockVelocity {
   avg_daily_depletion_30d: number | null;
 }
 
+/** Converte qualquer valor para número finito, retornando `fallback` (padrão 0) em caso de NaN ou Infinity. */
 export function toNumber(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -239,6 +240,7 @@ export function nextStockPairs(s: ExternalSupplierSource): Array<{
   ];
 }
 
+/** Converte os campos next_quantity_N/next_date_N de uma source em entradas de estoque futuro. */
 export function buildFutureEntries(
   supplierSource: ExternalSupplierSource,
   productId: string,
