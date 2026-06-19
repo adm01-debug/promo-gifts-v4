@@ -1,0 +1,39 @@
+name: Kit Coverage — Integration
+
+# Roda contra o SSOT real (v_kit_component_complete vs product_kit_components).
+# - Nightly às 03:00 UTC para detectar regressão da view sem bloquear PRs
+# - On-demand via workflow_dispatch (com KIT_FIXTURE_ID opcional)
+# NÃO roda em push/PR — exige credenciais do SSOT.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      kit_fixture_id:
+        description: 'UUID de um kit específico (vazio = descobre o primeiro)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  kit-coverage-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+      RUN_INTEGRATION_TESTS: '1'
+      KIT_FIXTURE_ID: ${{ inputs.kit_fixture_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run kit-coverage integration test
+        run: npm run test:kit-coverage:integration
