@@ -65,6 +65,8 @@ export interface GeneratedMockup {
   position_y: number | null;
   logo_width_cm: number | null;
   logo_height_cm: number | null;
+  logo_rotation?: number | null;
+  logo_scale?: number | null;
   location_name?: string | null;
   colors_count?: number | null;
   annotations?: Array<Record<string, unknown>> | null;
@@ -137,6 +139,8 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
         (row.logo_width_cm as number | null) ?? (cfg.logoWidth as number | null) ?? null,
       logo_height_cm:
         (row.logo_height_cm as number | null) ?? (cfg.logoHeight as number | null) ?? null,
+      logo_rotation: (cfg.logoRotation as number | null) ?? null,
+      logo_scale: (cfg.logoScale as number | null) ?? null,
       client_id: null,
       client_name: (cfg.clientName as string | null) ?? null,
       location_name: (row.area_name as string | null) ?? null,
