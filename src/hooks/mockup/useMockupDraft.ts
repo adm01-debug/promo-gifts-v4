@@ -108,23 +108,28 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
               techniqueId: safeTechniqueId,
               clientId: safeClientId,
             });
+            // BUG-17 FIX: was `.update()` — silently wrote 0 rows on first-ever
+            // save (no row exists yet), while still calling setLastSaved and
+            // returning true. Using `.upsert()` guarantees the row is created
+            // even when the FK-violating draft has never been persisted before.
             const { error: updateError } = await supabase
               .from('mockup_drafts')
-              .update({
-                user_id: payload.user_id,
-                draft_key: payload.draft_key,
-                product_name: payload.product_name,
-                technique_name: payload.technique_name,
-                client_name: payload.client_name,
-                personalization_areas: payload.personalization_areas,
-                logo_data: payload.logo_data,
-                updated_at: payload.updated_at,
-                product_id: null,
-                technique_id: null,
-                client_id: null,
-              })
-              .eq('user_id', user.id)
-              .eq('draft_key', draftKey);
+              .upsert(
+                {
+                  user_id: payload.user_id,
+                  draft_key: payload.draft_key,
+                  product_name: payload.product_name,
+                  technique_name: payload.technique_name,
+                  client_name: payload.client_name,
+                  personalization_areas: payload.personalization_areas,
+                  logo_data: payload.logo_data,
+                  updated_at: payload.updated_at,
+                  product_id: null,
+                  technique_id: null,
+                  client_id: null,
+                },
+                { onConflict: 'user_id,draft_key' },
+              );
 
             if (updateError) throw updateError;
           } else {
