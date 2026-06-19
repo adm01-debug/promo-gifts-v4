@@ -359,9 +359,8 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         const rows = (data ?? []) as unknown as RawProduct[];
         records.push(...rows);
         from += rows.length;
-        // HARDENING: para só em página vazia (robusto a db-max-rows < PAGE);
-        // o teto opcional `limit` é respeitado pelo guard `want <= 0` no topo.
-        if (rows.length === 0) break;
+        // Para em página vazia OU página incompleta (ambos indicam fim dos dados).
+        if (rows.length < want) break;
       }
 
       let novelties = records.map(toNovelty).filter((n) => n.is_active);
@@ -387,16 +386,33 @@ export function useExpiringNovelties(maxDays: number = 7) {
     queryFn: async () => {
       const nowIso = new Date().toISOString();
 
-      const { data, error } = await applyNoveltyPredicate(
-        fromTable('products').select(NOVELTY_SELECT),
-        nowIso,
-      )
-        .order('novelty_expires_at', { ascending: true })
-        .order('id', { ascending: true })
-        .range(0, 199);
-      if (error) return handleQueryError('useNovelties', 'products', error);
+      // Busca paginada — sem hardcap para não perder produtos expirando
+      const PAGE_SIZE = 500;
+      const allRaw: RawProduct[] = [];
+      let offset = 0;
+      while (true) {
+        const { data, error } = await applyNoveltyPredicate(
+          fromTable('products').select(NOVELTY_SELECT),
+          nowIso,
+        )
+          .order('novelty_expires_at', { ascending: true })
+          .order('id', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error) return handleQueryError('useNovelties', 'products', error);
+        const rows = (data ?? []) as unknown as RawProduct[];
+        allRaw.push(...rows);
+        if (rows.length < PAGE_SIZE) break;
+        // early exit: todos os restantes têm novelty_expires_at além de maxDays
+        const lastRow = rows[rows.length - 1] as RawProduct & { novelty_expires_at?: string };
+        if (lastRow?.novelty_expires_at) {
+          const daysLeft =
+            (new Date(lastRow.novelty_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+          if (daysLeft > maxDays) break;
+        }
+        offset += PAGE_SIZE;
+      }
 
-      return ((data ?? []) as unknown as RawProduct[])
+      return allRaw
         .map(toNovelty)
         .filter((n) => n.is_active && n.days_remaining <= maxDays)
         .sort((a, b) => a.days_remaining - b.days_remaining);
