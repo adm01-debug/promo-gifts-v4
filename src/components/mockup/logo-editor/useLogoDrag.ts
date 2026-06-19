@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { clamp } from './logoTechniqueFilters';
 
 export function useLogoDrag(
@@ -15,6 +15,13 @@ export function useLogoDrag(
   } | null>(null);
 
   const rafRef = useRef<number | null>(null);
+
+  // BUG-DRAG1 FIX: track the exact function references added to window so
+  // the unmount cleanup can remove them even if the callbacks were recreated.
+  const activeListenersRef = useRef<{
+    move: (e: PointerEvent) => void;
+    up: () => void;
+  } | null>(null);
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
@@ -40,6 +47,7 @@ export function useLogoDrag(
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = null;
+    activeListenersRef.current = null;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     window.removeEventListener('pointermove', handlePointerMove);
     window.removeEventListener('pointerup', handlePointerUp);
@@ -57,11 +65,26 @@ export function useLogoDrag(
         startPosY: positionY,
       };
 
+      activeListenersRef.current = { move: handlePointerMove, up: handlePointerUp };
       window.addEventListener('pointermove', handlePointerMove);
       window.addEventListener('pointerup', handlePointerUp, { once: true });
     },
     [positionX, positionY, handlePointerMove, handlePointerUp],
   );
+
+  // BUG-DRAG1 FIX: clean up window listeners if component unmounts mid-drag
+  useEffect(() => {
+    return () => {
+      const listeners = activeListenersRef.current;
+      if (listeners) {
+        window.removeEventListener('pointermove', listeners.move);
+        window.removeEventListener('pointerup', listeners.up);
+      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      draggingRef.current = null;
+      activeListenersRef.current = null;
+    };
+  }, []);
 
   return { handlePointerDown };
 }
