@@ -53,6 +53,7 @@ interface SpeechRecognition extends EventTarget {
   onspeechend: (() => void) | null;
 }
 
+// eslint-disable-next-line no-var -- declare var is correct syntax for ambient global declarations in .d.ts files
 declare var SpeechRecognition: {
   prototype: SpeechRecognition;
   new (): SpeechRecognition;
