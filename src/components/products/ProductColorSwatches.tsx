@@ -33,6 +33,13 @@ export interface ColorDotLike {
   /** Imagem específica desta variante (opcional). Quando presente, módulos como
    *  Novidades/Reposição usam para trocar a foto principal ao clicar no swatch. */
   image?: string | null;
+  /** Onda 1 Reposição (opcional): estoque atual desta variante. Quando definido,
+   *  o swatch aplica overlay visual ("esgotado" / "previsto") e tooltip enriquecido.
+   *  Outros callers (Catálogo, Novidades) não passam estes campos — comportamento intacto. */
+  stockQty?: number;
+  hasUpcomingRestock?: boolean;
+  /** ISO date (YYYY-MM-DD) ou null. Mostrado no tooltip quando há reposição prevista. */
+  nextRestockDate?: string | null;
 }
 
 interface ProductColorSwatchesProps {
