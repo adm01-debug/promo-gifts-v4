@@ -250,7 +250,11 @@ export function FilterPanel({
       />
     ),
     'opcoes-rapidas': () => (
-      <QuickOptionsFilter filters={filters} toggleBooleanFilter={state.toggleBooleanFilter} />
+      <QuickOptionsFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+        onMinStockChange={(v) => onFilterChange({ ...filters, minStock: v })}
+      />
     ),
     ordenacao: () => (
       <Select
