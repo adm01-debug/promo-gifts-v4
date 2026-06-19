@@ -432,7 +432,12 @@ export function useCatalogState() {
   const { data: realStats } = useCatalogRealStats();
 
   const isLoading =
-    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter || isLoadingMetadataFilter || isLoadingSizeFilter;
+    isLoadingProducts ||
+    isLoadingMaterialFilter ||
+    isLoadingCategoryFilter ||
+    isLoadingColorFilter ||
+    isLoadingMetadataFilter ||
+    isLoadingSizeFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 

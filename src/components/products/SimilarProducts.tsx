@@ -75,7 +75,10 @@ const SimilarProductCard = forwardRef<
         </h4>
         <div className="flex items-center justify-between gap-2 pt-0.5">
           <span className="truncate font-display text-sm font-bold text-foreground xl:text-base">
-            R$ {item.price != null ? item.price.toFixed(2).replace('.', ',') : '—'}
+            R${' '}
+            {item.price !== null && item.price !== undefined
+              ? item.price.toFixed(2).replace('.', ',')
+              : '—'}
           </span>
           {item.colors_count && item.colors_count > 0 && (
             <span className="shrink-0 text-[10px] text-muted-foreground xl:text-xs">

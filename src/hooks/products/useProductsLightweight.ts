@@ -58,6 +58,7 @@ function getStockStatus(
   return 'in-stock';
 }
 
+/** Converte um `LightweightProduct` (DB) em `Product` (UI), resolvendo categoria-folha e imagens. */
 export function mapLightweightToProduct(
   p: LightweightProduct,
   categoriesById?: ReadonlyMap<string, string>,
@@ -66,11 +67,10 @@ export function mapLightweightToProduct(
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
   // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda).
-  const resolvedCategoryId = (p.leaf_category_id as string | undefined)
-    || p.category_id
-    || p.main_category_id;
-  const resolvedCategoryName = (p.leaf_category_name as string | undefined)
-    || (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
+  const resolvedCategoryId = p.leaf_category_id || p.category_id || p.main_category_id;
+  const resolvedCategoryName =
+    p.leaf_category_name ||
+    (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
 
   // set_image_url: URL da imagem "set" (todas as cores juntas).
   // null = produto não tem set → card mostra imagem estática sem hover.
@@ -122,7 +122,9 @@ export function mapLightweightToProduct(
   };
 }
 
+/** Número de produtos por página nas queries do catálogo. */
 export const CATALOG_PAGE_SIZE = 500;
+/** Número de páginas buscadas em paralelo no primeiro load (burst inicial). */
 export const CATALOG_BATCH_PAGES = 4;
 
 /**
@@ -181,20 +183,20 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
  * Usada apenas no caminho SEM busca/filtros; com filtros o ranking permanece
  * client-side sobre o conjunto (menor) filtrado.
  */
-async function fetchBestSellerCatalogPage(
-  offset: number,
-  sortBy: string,
-): Promise<CatalogPage> {
+async function fetchBestSellerCatalogPage(offset: number, sortBy: string): Promise<CatalogPage> {
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
   const span = CATALOG_PAGE_SIZE * pagesToFetch;
 
   // RPC fora dos tipos gerados -> cast `as never` (padrão do projeto).
-  const { data, error } = await supabase.rpc('get_catalog_bestseller_page' as never, {
-    p_sort: sortBy,
-    p_limit: span,
-    p_offset: offset,
-  } as never);
+  const { data, error } = await supabase.rpc(
+    'get_catalog_bestseller_page' as never,
+    {
+      p_sort: sortBy,
+      p_limit: span,
+      p_offset: offset,
+    } as never,
+  );
   if (error) throw error;
 
   const rows = (data as unknown as LightweightProduct[] | null) ?? [];
@@ -231,9 +233,7 @@ async function fetchCatalogPage(
   // Fallback gracioso: qualquer erro cai no fluxo padrão (name + re-sort client-side).
   const isBestSeller = sortBy === 'best-seller-supplier' || sortBy === 'best-seller-promo';
   const hasNoConstraints =
-    !search &&
-    (!categories || categories.length === 0) &&
-    (!suppliers || suppliers.length === 0);
+    !search && (!categories || categories.length === 0) && (!suppliers || suppliers.length === 0);
   if (isBestSeller && hasNoConstraints) {
     try {
       return await fetchBestSellerCatalogPage(offset, sortBy as string);
@@ -364,6 +364,7 @@ async function fetchCatalogPage(
   };
 }
 
+/** Busca lista mínima de produtos (sem enriquecimento) para seletores e catálogo de seleção rápida. */
 export function useProductsLightweight() {
   return useQuery<ProductLightweight[]>({
     queryKey: ['promobrind-products-lightweight', 'v3-page-100'],
@@ -383,6 +384,7 @@ export function useProductsLightweight() {
   });
 }
 
+/** Hook de catálogo paginado infinito com busca, filtros de categoria/fornecedor e sort server-side. */
 export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];

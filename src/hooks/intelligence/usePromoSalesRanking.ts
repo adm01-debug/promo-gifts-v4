@@ -23,9 +23,11 @@ export function usePromoSalesRanking() {
     queryKey: ['promo-sales-ranking-v2'],
     queryFn: async (): Promise<Map<string, number>> => {
       try {
-        const { data, error } = await (supabase as unknown as {
-          rpc: (name: string) => Promise<{ data: unknown; error: unknown }>;
-        }).rpc('get_promo_sales_ranking');
+        const { data, error } = await (
+          supabase as unknown as {
+            rpc: (name: string) => Promise<{ data: unknown; error: unknown }>;
+          }
+        ).rpc('get_promo_sales_ranking');
 
         if (error) {
           logger.warn('[PromoSalesRanking] RPC error, returning empty map:', error);

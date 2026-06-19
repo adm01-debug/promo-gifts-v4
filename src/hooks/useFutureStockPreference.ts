@@ -8,21 +8,28 @@
  */
 import { useEffect, useRef } from 'react';
 
+/** Chave de localStorage onde a preferência de estoque futuro é persistida. */
 export const FUTURE_STOCK_STORAGE_KEY = 'stock-filter:future-stock-pref:v1';
+/** Janelas de dias válidas para o filtro de estoque futuro. */
 export const FUTURE_STOCK_WINDOWS = [7, 15, 30] as const;
+/** Número de dias da janela de estoque futuro — restrito aos valores em `FUTURE_STOCK_WINDOWS`. */
 export type FutureStockWindow = (typeof FUTURE_STOCK_WINDOWS)[number];
 
+/** Preferência persistida do usuário para o toggle de estoque futuro e sua janela de dias. */
 export interface FutureStockPreference {
   includeFutureStock: boolean;
   futureStockWindowDays: FutureStockWindow;
 }
 
+/** Valor padrão quando não há preferência salva ou o valor armazenado é inválido. */
 export const DEFAULT_FUTURE_STOCK_PREFERENCE: FutureStockPreference = {
   includeFutureStock: false,
   futureStockWindowDays: 15,
 };
 
+/** Lê e valida a preferência de estoque futuro do localStorage; retorna o padrão em caso de ausência ou erro. */
 export function readFutureStockPreference(): FutureStockPreference {
+  /* v8 ignore next -- SSR guard; window never undefined in jsdom/browser */
   if (typeof window === 'undefined') return DEFAULT_FUTURE_STOCK_PREFERENCE;
   try {
     const raw = window.localStorage.getItem(FUTURE_STOCK_STORAGE_KEY);
@@ -41,7 +48,9 @@ export function readFutureStockPreference(): FutureStockPreference {
   }
 }
 
+/** Serializa e persiste a preferência de estoque futuro no localStorage; silencia erros de quota/privacidade. */
 export function writeFutureStockPreference(pref: FutureStockPreference): void {
+  /* v8 ignore next -- SSR guard; window never undefined in jsdom/browser */
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(FUTURE_STOCK_STORAGE_KEY, JSON.stringify(pref));
@@ -65,6 +74,7 @@ export function useFutureStockPreference(
   const hydratedRef = useRef(false);
 
   useEffect(() => {
+    /* v8 ignore next -- React Strict Mode re-mount guard; hydratedRef persists across unmount/remount */
     if (hydratedRef.current) return;
     hydratedRef.current = true;
     const stored = readFutureStockPreference();
@@ -78,9 +88,14 @@ export function useFutureStockPreference(
   }, []);
 
   useEffect(() => {
+    /* v8 ignore next -- effect 1 always runs first; hydratedRef is always true here */
     if (!hydratedRef.current) return;
     writeFutureStockPreference(current);
-  }, [current]);
+    // BUG-I FIX: depend on primitive values, not the object reference.
+    // The caller creates a new object each render, so `[current]` would
+    // trigger a localStorage write every render even when values are identical.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current.includeFutureStock, current.futureStockWindowDays]);
 }
 
 /**
@@ -93,12 +108,14 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
   toggleRef.current = toggle;
 
   useEffect(() => {
+    /* v8 ignore next -- SSR half of this guard; the !enabled path is tested separately */
     if (!enabled || typeof window === 'undefined') return;
     const handler = (e: KeyboardEvent) => {
       // Shift+F (sem Ctrl/Meta/Alt) — não captura atalhos do navegador.
       if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key !== 'F' && e.key !== 'f') return;
       const target = e.target as HTMLElement | null;
+      /* v8 ignore next -- target is always non-null for window keydown events */
       if (target) {
         const tag = target.tagName;
         const ceAttr = target.getAttribute?.('contenteditable');
@@ -107,12 +124,7 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
           ceAttr === '' ||
           ceAttr === 'true' ||
           ceAttr === 'plaintext-only';
-        if (
-          tag === 'INPUT' ||
-          tag === 'TEXTAREA' ||
-          tag === 'SELECT' ||
-          isCE
-        ) {
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || isCE) {
           return;
         }
       }

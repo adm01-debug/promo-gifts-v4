@@ -41,7 +41,7 @@ vi.mock('@/contexts/OrganizationContext', () => ({
   useOrganization: vi.fn(() => ({ currentOrg: { id: 'org-001' } })),
 }));
 
-vi.mock('@/hooks/common/useSalesScope', () => ({
+vi.mock('@/lib/auth/visibility-scope', () => ({
   useSalesScope: vi.fn(() => 'self'),
 }));
 
@@ -74,7 +74,11 @@ function makeWrapper() {
     React.createElement(QueryClientProvider, { client: qc }, children);
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Restore default: user=null tests override this; clearAllMocks does not reset implementations
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser } as never);
+});
 
 // ── Estado inicial ────────────────────────────────────────────────────────────
 describe('estado inicial com usuario autenticado', () => {

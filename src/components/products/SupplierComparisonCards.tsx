@@ -68,7 +68,9 @@ export function SupplierComparisonCards({
               <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                 <div>
                   <p className="text-muted-foreground">Saída/dia</p>
-                  <p className="font-bold text-foreground">{v.avg_daily_depletion_7d?.toFixed(1) ?? '—'}</p>
+                  <p className="font-bold text-foreground">
+                    {v.avg_daily_depletion_7d?.toFixed(1) ?? '—'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Estoque</p>

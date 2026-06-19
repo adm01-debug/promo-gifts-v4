@@ -222,7 +222,8 @@ export async function authorizeDispatcher(
   // Antes aceitávamos chamada anônima como retrocompat ("legacy_no_auth"),
   // o que abria webhook-dispatcher para qualquer caller quando o secret
   // não estava configurado (clones de staging/dev, vault revogado, etc.).
-  // Agora devolvemos 503 explícito — exige configuração para operar.
+  // Retornamos 401 (não 503): a causa é ausência de credencial configurada,
+  // não indisponibilidade do serviço. Fail-closed é mantido.
   if (!expectedSecret) {
     logAuthEvent({
       outcome: "denied",
@@ -236,7 +237,7 @@ export async function authorizeDispatcher(
           error: "service_misconfigured",
           message: "WEBHOOK_DISPATCHER_SECRET não configurado. Configure no vault (integration_credentials) ou env antes de invocar.",
         },
-        503,
+        401,
         corsHeaders,
       ),
     };
@@ -275,7 +276,9 @@ export async function authorizeCron(
 
   // Fail-closed: secret obrigatório (auditoria SEC-003). Antes aceitávamos
   // crons anônimos como retrocompat — risco de qualquer caller acionar jobs
-  // quando o secret não estivesse setado no vault E no env. Agora 503.
+  // quando o secret não estivesse setado no vault E no env.
+  // Retornamos 401 (não 503): ausência de credencial configurada é falha de
+  // autorização, não indisponibilidade de serviço. Fail-closed é mantido.
   if (!expectedSecret) {
     logAuthEvent({
       outcome: "denied",
@@ -289,7 +292,7 @@ export async function authorizeCron(
           error: "service_misconfigured",
           message: `${secretEnvName} não configurado em vault nem env. Configure antes de invocar este cron.`,
         },
-        503,
+        401,
         corsHeaders,
       ),
     };

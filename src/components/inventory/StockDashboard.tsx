@@ -41,6 +41,7 @@ import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
 
+/** Lê do localStorage se o painel de risco estava aberto na última sessão. */
 function readRiskPanelPref(): boolean {
   if (typeof window === 'undefined') return true;
   try {
@@ -65,6 +66,7 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
+/** Portal que projeta controles de cabeçalho no slot `#stock-header-slot` da página. */
 function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
@@ -74,6 +76,7 @@ function HeaderSlotPortal({ children }: { children: ReactNode }) {
   return createPortal(children, slot);
 }
 
+/** Dashboard completo de gestão de estoque: cards de KPI, tabela de variações e painel de risco. */
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
@@ -180,6 +183,8 @@ export function StockDashboard() {
         return 'Sem Estoque';
       case 'incoming':
         return 'Estoque Futuro';
+      case 'overstocked':
+        return 'Excesso de Estoque';
       default:
         return null;
     }

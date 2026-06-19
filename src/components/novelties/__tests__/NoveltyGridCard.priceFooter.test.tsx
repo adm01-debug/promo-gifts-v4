@@ -32,6 +32,7 @@ vi.mock('@/components/products/NoveltyBadge', () => ({
 vi.mock('@/components/products/ProductStatusBadge', () => ({
   ProductStatusBadge: () => null,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
