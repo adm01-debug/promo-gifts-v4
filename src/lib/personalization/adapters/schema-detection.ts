@@ -92,7 +92,7 @@ export function getContractMismatches(): Readonly<Record<string, number>> {
   return { ...contractMismatches };
 }
 
-export function getRecentMismatches(): ReadonlyArray<ContractMismatchEntry> {
+export function getRecentMismatches(): readonly ContractMismatchEntry[] {
   return [...recentMismatches];
 }
 

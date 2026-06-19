@@ -54,14 +54,14 @@ export interface SavedFiltersProps<T = Record<string, unknown>> {
 // ============================================================================
 
 export function useSavedFilters<T = Record<string, unknown>>(storageKey: string) {
-  const [savedFilters, setSavedFilters] = React.useState<SavedFilter<T>[]>([]);
+  const [savedFilters, setSavedFilters] = React.useState<Array<SavedFilter<T>>>([]);
 
   // Load from localStorage on mount
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(`filters_${storageKey}`);
       if (stored) {
-        const parsed = JSON.parse(stored) as SavedFilter<T>[];
+        const parsed = JSON.parse(stored) as Array<SavedFilter<T>>;
         // Convert date strings back to Date objects
         setSavedFilters(
           parsed.map((f) => ({
@@ -78,7 +78,7 @@ export function useSavedFilters<T = Record<string, unknown>>(storageKey: string)
 
   // Save to localStorage whenever filters change
   const persistFilters = React.useCallback(
-    (filters: SavedFilter<T>[]) => {
+    (filters: Array<SavedFilter<T>>) => {
       try {
         localStorage.setItem(`filters_${storageKey}`, JSON.stringify(filters));
       } catch (e) {

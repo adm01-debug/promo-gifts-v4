@@ -75,7 +75,7 @@ export interface EnrichedArea extends PrintAreaTechnique {
 
 export type WizardStep = 'list' | 'component' | 'location' | 'technique' | 'details';
 
-export const WIZARD_STEPS: { id: WizardStep; label: string; icon: React.ElementType }[] = [
+export const WIZARD_STEPS: Array<{ id: WizardStep; label: string; icon: React.ElementType }> = [
   { id: 'component', label: 'Componente', icon: Layers },
   { id: 'location', label: 'Local', icon: MapPin },
   { id: 'technique', label: 'Técnica', icon: Paintbrush },

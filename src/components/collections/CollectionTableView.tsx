@@ -76,13 +76,13 @@ function SortHeader({
 
 interface CollectionTableRowProps {
   collection: Collection;
-  products: {
+  products: Array<{
     id: string;
     name: string;
     image_url?: string | null;
     sku?: string;
     price?: number | null;
-  }[];
+  }>;
   isSelected: boolean;
   isSelectionMode: boolean;
   onToggleSelect: () => void;
@@ -317,13 +317,13 @@ export function CollectionTableView({
                     key={collection.id}
                     collection={collection}
                     products={
-                      getCollectionProducts(collection.id) as {
+                      getCollectionProducts(collection.id) as Array<{
                         id: string;
                         name: string;
                         image_url?: string | null;
                         sku?: string;
                         price?: number | null;
-                      }[]
+                      }>
                     }
                     isSelected={selectedCollectionIds.has(collection.id)}
                     isSelectionMode={isSelectionMode}

@@ -248,8 +248,8 @@ export function useClientSeasonality(
               select: 'id',
               filters: { ramo_atividade: ramoAtividade, deleted_at: null },
               limit: 500,
-            }).catch((): { id: string }[] => [])
-          : Promise.resolve([] as { id: string }[]),
+            }).catch((): Array<{ id: string }> => [])
+          : Promise.resolve([] as Array<{ id: string }>),
       ]);
       if (clientErr) throw clientErr;
       const clientRows = (clientData ?? []) as ClientRow[];

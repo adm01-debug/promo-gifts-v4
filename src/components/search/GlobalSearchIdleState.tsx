@@ -26,7 +26,7 @@ interface GlobalSearchIdleStateProps {
   contextualSuggestions: Array<{ id: string; text: string; icon?: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;
   routeContext: { section: string };
-  quickActionsData: Array<QuickAction>;
+  quickActionsData: QuickAction[];
   onSuggestionClick: (text: string) => void;
   onSelect: (href: string, addToHistory?: boolean) => void;
   onRemoveFromHistory: (e: React.MouseEvent, term: string) => void;

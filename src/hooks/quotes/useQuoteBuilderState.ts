@@ -50,7 +50,7 @@ interface Product {
   sku: string;
   price: number;
   images: string[] | null;
-  colors?: { name: string; hex?: string; stock?: number }[];
+  colors?: Array<{ name: string; hex?: string; stock?: number }>;
   minQuantity?: number;
   totalStock?: number;
 }

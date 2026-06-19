@@ -66,7 +66,7 @@ function normalizeHigherBetter(value: number, min: number, max: number): number 
 }
 
 export function useComparisonScore(
-  products: {
+  products: Array<{
     id?: string | number;
     price?: number | null;
     stock?: number | null;
@@ -77,7 +77,7 @@ export function useComparisonScore(
     stockStatus?: string | null;
     variations?: unknown[];
     supplier?: { verified?: boolean; isVerified?: boolean; name?: string } | null;
-  }[],
+  }>,
   weights: ComparisonScoreWeights = DEFAULT_SCORE_WEIGHTS,
 ): ProductScore[] {
   return useMemo(() => {

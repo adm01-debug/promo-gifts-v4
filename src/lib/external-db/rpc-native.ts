@@ -104,7 +104,7 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
             eq(
               col: string,
               val: unknown,
-            ): { limit(n: number): Promise<{ data: Record<string, unknown>[] | null }> };
+            ): { limit(n: number): Promise<{ data: Array<Record<string, unknown>> | null }> };
           };
         };
       };

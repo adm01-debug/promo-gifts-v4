@@ -22,7 +22,7 @@ export interface StepDef {
   label: string;
   description: string;
   icon: React.ElementType;
-  requiredFields: (keyof ProductFormData)[];
+  requiredFields: Array<keyof ProductFormData>;
   fieldLabels: Record<string, string>;
 }
 

@@ -181,13 +181,13 @@ export function LoadTemplateDialog({
   onLoad,
   onDelete,
 }: {
-  templates: {
+  templates: Array<{
     id: string;
     name: string;
     description: string | null;
     items: CartTemplateItem[];
     created_at: string;
-  }[];
+  }>;
   onLoad: (items: CartTemplateItem[]) => void;
   onDelete: (id: string) => void;
 }) {

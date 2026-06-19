@@ -91,12 +91,12 @@ const CATEGORY_COLORS: Record<CategoryKey, string> = {
   endomarketing: '#8B5CF6',
 };
 
-const CATEGORIES: {
+const CATEGORIES: Array<{
   key: CategoryKey;
   label: string;
   icon: React.ElementType;
   options: string[];
-}[] = [
+}> = [
   {
     key: 'publicoAlvo',
     label: 'Público-Alvo',

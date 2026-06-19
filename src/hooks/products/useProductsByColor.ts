@@ -85,8 +85,8 @@ export function useProductsByColor({
 
       const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
 
-      const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
-      const variationsData = (refResults[1]?.records ?? []) as Record<string, unknown>[];
+      const groupsData = (refResults[0]?.records ?? []) as Array<Record<string, unknown>>;
+      const variationsData = (refResults[1]?.records ?? []) as Array<Record<string, unknown>>;
 
       const groupsBySlug = new Map(groupsData.map((g) => [g.slug as string, g.id as string]));
       const variationsBySlug = new Map(variationsData.map((v) => [v.slug as string, v]));

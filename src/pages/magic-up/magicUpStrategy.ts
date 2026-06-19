@@ -249,7 +249,7 @@ export const NEGATIVE_PROMPTS = [
   'Sem rosto em destaque',
   'Sem aparência artificial',
 ];
-export const BRAND_LOGO_VARIANTS: MagicUpBrandLogo['variant'][] = [
+export const BRAND_LOGO_VARIANTS: Array<MagicUpBrandLogo['variant']> = [
   'principal',
   'colorida',
   'branca',

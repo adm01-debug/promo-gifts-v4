@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 export type CartTableColumnKey = 'color' | 'quantity' | 'price' | 'total' | 'actions';
 export type CartTableDensity = 'compact' | 'comfortable';
 
-export const ALL_COLUMNS: { key: CartTableColumnKey; label: string; required?: boolean }[] = [
+export const ALL_COLUMNS: Array<{ key: CartTableColumnKey; label: string; required?: boolean }> = [
   { key: 'color', label: 'Cor' },
   { key: 'quantity', label: 'Quantidade', required: true },
   { key: 'price', label: 'Preço unitário' },
@@ -55,7 +55,7 @@ export function CartTablePreferences({
         </TooltipTrigger>
         <TooltipContent>Colunas visíveis e densidade da tabela</TooltipContent>
       </Tooltip>
-      <PopoverContent align="end" className="w-64 p-4 shadow-2xl border-primary/10" sideOffset={8}>
+      <PopoverContent align="end" className="w-64 border-primary/10 p-4 shadow-2xl" sideOffset={8}>
         <div className="space-y-4">
           <div>
             <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

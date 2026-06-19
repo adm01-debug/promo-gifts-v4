@@ -88,8 +88,9 @@ export function useRoleMigration() {
         const { data, error } = await supabase.rpc('execute_role_migration_batch', {
           _label: params.label,
           _reason: params.reason,
-          _items:
-            params.items as unknown as Database['public']['Tables']['role_migration_items']['Row'][],
+          _items: params.items as unknown as Array<
+            Database['public']['Tables']['role_migration_items']['Row']
+          >,
           _dry_run: params.dryRun,
         });
         if (error) throw error;

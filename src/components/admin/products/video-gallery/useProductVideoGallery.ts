@@ -65,7 +65,7 @@ export function useProductVideoGallery(productId?: string) {
   const { data: variants = [] } = useQuery<VideoVariant[]>({
     queryKey: ['product-variants-for-videos', productId],
     queryFn: async () => {
-      let records: Record<string, unknown>[] = [];
+      let records: Array<Record<string, unknown>> = [];
       try {
         const result = await dbInvoke<Record<string, unknown>>({
           table: 'product_variants',

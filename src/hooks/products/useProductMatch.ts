@@ -19,7 +19,7 @@ export interface MatchResult {
 }
 
 // Complementary product keyword pairs (Portuguese)
-const COMPLEMENTARY_PAIRS: [string[], string[]][] = [
+const COMPLEMENTARY_PAIRS: Array<[string[], string[]]> = [
   [
     ['tábua', 'tabua'],
     ['faca', 'garfo', 'espeto', 'pegador'],
@@ -100,7 +100,7 @@ function calculateMatchScore(
   }
 
   // Shared tags
-  const tagCategories: (keyof Product['tags'])[] = [
+  const tagCategories: Array<keyof Product['tags']> = [
     'publicoAlvo',
     'datasComemorativas',
     'endomarketing',
@@ -169,7 +169,7 @@ function getMatchType(
 
 export interface MatchFilters {
   minScore: number;
-  matchTypes: MatchResult['matchType'][];
+  matchTypes: Array<MatchResult['matchType']>;
   categoryFilter?: string;
   supplierFilter?: string;
   onlyInStock: boolean;

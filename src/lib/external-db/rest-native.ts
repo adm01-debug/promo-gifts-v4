@@ -384,10 +384,10 @@ const sleep = (ms: number) =>
 
 // ── Concurrency limiter ───────────────────────────────────────────────────────────
 export async function runWithConcurrency<T>(
-  tasks: (() => Promise<T>)[],
+  tasks: Array<() => Promise<T>>,
   limit = 6,
-): Promise<PromiseSettledResult<T>[]> {
-  const results: PromiseSettledResult<T>[] = new Array(tasks.length);
+): Promise<Array<PromiseSettledResult<T>>> {
+  const results = new Array<PromiseSettledResult<T>>(tasks.length);
   let nextIndex = 0;
   async function worker() {
     while (nextIndex < tasks.length) {
@@ -408,7 +408,7 @@ const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 type RestError = { message: string };
 type RestCountMode = 'exact' | 'planned' | 'estimated';
 type RestQueryResult = {
-  data: Record<string, unknown>[] | null;
+  data: Array<Record<string, unknown>> | null;
   error: RestError | null;
   count: number | null;
 };
@@ -742,7 +742,7 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
   };
   const payloadOf = (d: unknown): unknown =>
     Array.isArray(d)
-      ? (d as Record<string, unknown>[]).map((row) => remapData(table, row))
+      ? (d as Array<Record<string, unknown>>).map((row) => remapData(table, row))
       : remapData(table, (d ?? {}) as Record<string, unknown>);
   let builder: RestWriteBuilder;
   switch (options.operation) {

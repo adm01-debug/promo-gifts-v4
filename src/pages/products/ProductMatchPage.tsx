@@ -197,17 +197,17 @@ export default function ProductMatchPage() {
 
                   {/* Stats */}
                   <div className="ml-auto flex items-center gap-2">
-                    {(['identical', 'similar', 'complementary'] as MatchResult['matchType'][]).map(
-                      (type) => (
-                        <Badge
-                          key={type}
-                          variant="outline"
-                          className={cn('text-[10px]', MATCH_COLOR_CLASSES[type])}
-                        >
-                          {MATCH_LABELS[type]}: {stats[type]}
-                        </Badge>
-                      ),
-                    )}
+                    {(
+                      ['identical', 'similar', 'complementary'] as Array<MatchResult['matchType']>
+                    ).map((type) => (
+                      <Badge
+                        key={type}
+                        variant="outline"
+                        className={cn('text-[10px]', MATCH_COLOR_CLASSES[type])}
+                      >
+                        {MATCH_LABELS[type]}: {stats[type]}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
 

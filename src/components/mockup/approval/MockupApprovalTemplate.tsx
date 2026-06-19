@@ -599,7 +599,7 @@ function ApprovalFooter({
 
 /* ─── Product Specs Strip — horizontal with SVG icons ─── */
 function ProductSpecsStrip({ product }: { product: MockupApprovalData['product'] }) {
-  const specs: { icon: string; label: string; value: string }[] = [];
+  const specs: Array<{ icon: string; label: string; value: string }> = [];
   if (product.material) specs.push({ icon: '◆', label: 'Material', value: product.material });
   if (product.diameterCm)
     specs.push({ icon: '⊙', label: 'Diâmetro', value: `${product.diameterCm} cm` });

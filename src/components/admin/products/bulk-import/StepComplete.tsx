@@ -51,7 +51,7 @@ interface StepCompleteProps {
   importMode: string;
   invalidCount: number;
   validationResults: ValidationResult[];
-  rawData: Record<string, unknown>[];
+  rawData: Array<Record<string, unknown>>;
   onReset: () => void;
   onClose: () => void;
 }

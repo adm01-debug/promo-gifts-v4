@@ -99,7 +99,7 @@ describe('formatPaymentMethod', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('formatPaymentTerms', () => {
-  const cases: [string, string][] = [
+  const cases: Array<[string, string]> = [
     ['7_dias', '7 dias a partir da entrega'],
     ['14_dias', '14 dias a partir da entrega'],
     ['21_dias', '21 dias a partir da entrega'],
@@ -146,7 +146,7 @@ describe('formatDeliveryTime', () => {
     expect(formatDeliveryTime('date:2026-12')).toBe('date:2026-12');
   });
 
-  const cases: [string, string][] = [
+  const cases: Array<[string, string]> = [
     ['7_dias', '7 dias após aprovação'],
     ['14_dias', '14 dias após aprovação'],
     ['21_dias', '21 dias após aprovação'],

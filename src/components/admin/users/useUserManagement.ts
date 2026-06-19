@@ -24,7 +24,7 @@ type ProfileWithRoles = {
   avatar_url: string | null;
   is_active: boolean | null;
   created_at: string;
-  user_roles: { role: string }[] | null;
+  user_roles: Array<{ role: string }> | null;
 };
 
 export function useUserManagement() {

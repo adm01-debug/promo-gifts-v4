@@ -33,7 +33,7 @@ interface SellerCartContextType {
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
-  updateItemSortOrder: (items: { id: string; sort_order: number }[]) => void;
+  updateItemSortOrder: (items: Array<{ id: string; sort_order: number }>) => void;
   updateCartNotes: (cartId: string, notes: string) => void;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
   duplicateCart: (cartId: string) => void;
@@ -178,7 +178,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const updateItemSortOrder = useCallback(
-    (items: { id: string; sort_order: number }[]) => {
+    (items: Array<{ id: string; sort_order: number }>) => {
       updateSortMutation.mutate(items);
     },
     [updateSortMutation],

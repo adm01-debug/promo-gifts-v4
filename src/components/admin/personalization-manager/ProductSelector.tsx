@@ -19,7 +19,7 @@ interface ProductSelectorProps {
   productsLoading: boolean;
   filteredProducts: Product[];
   totalProducts: number;
-  allMemberships?: { product_id: string; product_group_id: string }[];
+  allMemberships?: Array<{ product_id: string; product_group_id: string }>;
   productGroups?: ProductGroup[];
 }
 

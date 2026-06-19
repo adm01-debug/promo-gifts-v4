@@ -71,7 +71,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   // Extrair imagens
   let images: string[] = [];
   if (p.images && Array.isArray(p.images)) {
-    images = (p.images as (string | Record<string, string>)[])
+    images = (p.images as Array<string | Record<string, string>>)
       .map((img) => {
         if (typeof img === 'string') return img;
         return img.url || img.src || (img.image_url ?? '');

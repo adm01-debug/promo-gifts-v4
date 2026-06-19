@@ -30,7 +30,7 @@ type FuzzyKeyConfig<T> = keyof T | FuzzyKey<T>;
 export function useGenericFuzzySearch<T>(
   items: T[],
   query: string,
-  keys: FuzzyKeyConfig<T>[],
+  keys: Array<FuzzyKeyConfig<T>>,
   options: FuzzySearchOptions = {},
 ): { results: T[]; hasSearch: boolean; totalMatches: number } {
   const { threshold = 0.35, minChars = 2, maxResults, sortByScore = true } = options;

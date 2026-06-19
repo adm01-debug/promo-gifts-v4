@@ -3,7 +3,7 @@ import { type QuoteTemplate } from '@/hooks/quotes';
 export interface ExportedTemplate {
   version: string;
   exportedAt: string;
-  templates: Omit<QuoteTemplate, 'id' | 'seller_id' | 'created_at' | 'updated_at'>[];
+  templates: Array<Omit<QuoteTemplate, 'id' | 'seller_id' | 'created_at' | 'updated_at'>>;
 }
 
 /**

@@ -77,8 +77,10 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
   const colSpan = hasAnyImage ? 5 : 4;
 
   // Group items by kit_group_id
-  const groups: { kitName: string | null; items: { item: ProposalItem; globalIdx: number }[] }[] =
-    [];
+  const groups: Array<{
+    kitName: string | null;
+    items: Array<{ item: ProposalItem; globalIdx: number }>;
+  }> = [];
   let currentGroupId: string | null | undefined = undefined;
 
   items.forEach((item, idx) => {

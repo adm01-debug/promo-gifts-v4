@@ -46,7 +46,7 @@ function packItems(
   boxW: number,
   boxH: number,
   boxD: number,
-  items: { id: string; name: string; w: number; h: number; d: number; quantity: number }[],
+  items: Array<{ id: string; name: string; w: number; h: number; d: number; quantity: number }>,
 ): PlacedItem[] {
   const placed: PlacedItem[] = [];
   let cursorX = 0;
@@ -172,7 +172,7 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
           : 'Sobra espaço';
 
   // Helpers para faces de cubo
-  const facePath = (pts: { px: number; py: number }[]) =>
+  const facePath = (pts: Array<{ px: number; py: number }>) =>
     `${pts
       .map((p, i) => `${i === 0 ? 'M' : 'L'}${(p.px + tx).toFixed(1)},${(p.py + ty).toFixed(1)}`)
       .join(' ')} Z`;

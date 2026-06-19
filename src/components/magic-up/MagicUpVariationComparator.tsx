@@ -20,7 +20,7 @@ export function MagicUpVariationComparator({
   onSelectWinner,
   loadingWinnerIndex = null,
 }: MagicUpVariationComparatorProps) {
-  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const cardRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   if (variations.length < 2) return null;
   // Resolve score explicitamente: number (incluindo 0) ou null (ausente).

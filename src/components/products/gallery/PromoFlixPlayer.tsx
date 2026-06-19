@@ -135,7 +135,7 @@ export function PromoFlixPlayer({
   const [showRaioXPanel, setShowRaioXPanel] = useState(false);
   const [selectedHotspot, setSelectedHotspot] = useState<number | null>(null);
   const [hoverSeekPct, setHoverSeekPct] = useState<number | null>(null);
-  const [qualities, setQualities] = useState<{ id: number; label: string }[]>([]);
+  const [qualities, setQualities] = useState<Array<{ id: number; label: string }>>([]);
   const [currentQuality, setCurrentQuality] = useState<number>(-1);
 
   const hotspots = useMemo(

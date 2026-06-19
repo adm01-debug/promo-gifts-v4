@@ -221,7 +221,10 @@ class RamoAtividadeService {
 
   async getRamosDoProduto(
     produtoId: string,
-  ): Promise<{ associacoes: { id: string; ramo_atividade_filho_id: string }[]; count: number }> {
+  ): Promise<{
+    associacoes: Array<{ id: string; ramo_atividade_filho_id: string }>;
+    count: number;
+  }> {
     const { records, count } = await this.select<{
       id: string;
       ramo_atividade_filho_id: string;

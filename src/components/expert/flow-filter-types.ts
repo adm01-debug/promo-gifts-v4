@@ -68,8 +68,8 @@ export function countActiveFilters(f: FlowFilterState): number {
 
 export function getActiveFilterLabels(
   f: FlowFilterState,
-): { label: string; key: string; value?: string }[] {
-  const labels: { label: string; key: string; value?: string }[] = [];
+): Array<{ label: string; key: string; value?: string }> {
+  const labels: Array<{ label: string; key: string; value?: string }> = [];
   if (f.priceMin || f.priceMax) {
     const l =
       f.priceMin && f.priceMax
@@ -79,7 +79,7 @@ export function getActiveFilterLabels(
           : `Até R$${f.priceMax}`;
     labels.push({ label: l, key: 'price' });
   }
-  const arrayKeys: [keyof FlowFilterState, string][] = [
+  const arrayKeys: Array<[keyof FlowFilterState, string]> = [
     ['selectedCategories', 'selectedCategories'],
     ['selectedColors', 'selectedColors'],
     ['selectedMaterials', 'selectedMaterials'],

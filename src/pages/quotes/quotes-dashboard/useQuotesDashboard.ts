@@ -87,15 +87,15 @@ export function useQuotesDashboard() {
         averageResponseTime: 0,
         averageValue: 0,
         pendingQuotes: 0,
-        statusDistribution: [] as { name: string; value: number; color: string }[],
-        monthlyData: [] as {
+        statusDistribution: [] as Array<{ name: string; value: number; color: string }>,
+        monthlyData: [] as Array<{
           month: string;
           total: number;
           approved: number;
           rejected: number;
           value: number;
-        }[],
-        conversionFunnel: [] as { stage: string; count: number; fill: string }[],
+        }>,
+        conversionFunnel: [] as Array<{ stage: string; count: number; fill: string }>,
       };
 
     const now = new Date();

@@ -182,7 +182,7 @@ export function CategoryRanking({
     payload,
   }: {
     active?: boolean;
-    payload?: { payload: PieDatum }[];
+    payload?: Array<{ payload: PieDatum }>;
   }) => {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload;

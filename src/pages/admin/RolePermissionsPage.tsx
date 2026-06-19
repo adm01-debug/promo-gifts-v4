@@ -30,20 +30,21 @@ interface RolePermission {
   permission_code: string;
 }
 
-const ROLES: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
-  {
-    value: 'supervisor',
-    label: 'Supervisor',
-    description: 'Gestão comercial, descontos e cadastros',
-    icon: <Shield className="h-5 w-5 text-primary" />,
-  },
-  {
-    value: 'vendedor',
-    label: 'Agente',
-    description: 'Acesso somente aos próprios dados',
-    icon: <Users className="h-5 w-5 text-primary" />,
-  },
-];
+const ROLES: Array<{ value: AppRole; label: string; description: string; icon: React.ReactNode }> =
+  [
+    {
+      value: 'supervisor',
+      label: 'Supervisor',
+      description: 'Gestão comercial, descontos e cadastros',
+      icon: <Shield className="h-5 w-5 text-primary" />,
+    },
+    {
+      value: 'vendedor',
+      label: 'Agente',
+      description: 'Acesso somente aos próprios dados',
+      icon: <Users className="h-5 w-5 text-primary" />,
+    },
+  ];
 
 export default function RolePermissionsPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -123,8 +124,8 @@ export default function RolePermissionsPage() {
 
     setIsSaving(true);
     try {
-      const toAdd: { role: AppRole; permission_code: string }[] = [];
-      const toRemove: { role: AppRole; permission_code: string }[] = [];
+      const toAdd: Array<{ role: AppRole; permission_code: string }> = [];
+      const toRemove: Array<{ role: AppRole; permission_code: string }> = [];
 
       pendingChanges.forEach((shouldHave, key) => {
         const [role, permissionId] = key.split('-') as [AppRole, string];

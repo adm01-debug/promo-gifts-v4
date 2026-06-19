@@ -30,7 +30,7 @@ import { getCdnUrl } from '@/utils/image-utils';
 
 interface CollectionGridCardProps {
   collection: Collection;
-  products: { images: string[] }[];
+  products: Array<{ images: string[] }>;
   isSelected: boolean;
   isSelectionMode: boolean;
   onToggleSelect: () => void;

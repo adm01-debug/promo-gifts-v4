@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 
 export interface ZoneRefreshButtonProps {
   /** Lista de queryKeys (prefix match) que serão invalidadas */
-  queryKeys: readonly (readonly unknown[])[];
+  queryKeys: ReadonlyArray<readonly unknown[]>;
   /** Texto curto do tooltip (ex: "Atualizar zona Saúde") */
   label: string;
   /** Disparado depois da invalidação — útil para bumpar signals locais */

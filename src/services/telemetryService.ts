@@ -44,7 +44,7 @@ interface BufferedEvent {
 }
 
 class TelemetryService {
-  private sessionId: string;
+  private readonly sessionId: string;
   private buffer: BufferedEvent[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private flushing = false;

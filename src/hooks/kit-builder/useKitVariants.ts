@@ -14,7 +14,7 @@ export interface KitVariantRow {
   label: string;
   sort_order: number;
   box_data: Record<string, unknown> | null;
-  items_data: Record<string, unknown>[];
+  items_data: Array<Record<string, unknown>>;
   personalization_data: Record<string, unknown>;
   kit_quantity: number;
   total_price: number;

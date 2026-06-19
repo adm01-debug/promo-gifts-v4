@@ -16,7 +16,7 @@ interface ProductSelectorProps {
   products: Product[] | undefined;
   productsLoading: boolean;
   productGroups: ProductGroup[] | undefined;
-  allMemberships: { product_id: string; product_group_id: string }[] | undefined;
+  allMemberships: Array<{ product_id: string; product_group_id: string }> | undefined;
   selectedProduct: string | null;
   onSelectProduct: (id: string) => void;
 }

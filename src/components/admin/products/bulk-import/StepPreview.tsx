@@ -19,7 +19,7 @@ import type { ValidationResult, ColumnMapping } from './types';
 
 interface StepPreviewProps {
   validationResults: ValidationResult[];
-  rawData: Record<string, unknown>[];
+  rawData: Array<Record<string, unknown>>;
   mapping: ColumnMapping;
   importMode: ImportMode;
   setImportMode: (mode: ImportMode) => void;

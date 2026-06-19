@@ -116,6 +116,9 @@ export default [
       '@typescript-eslint/no-unnecessary-template-expression': 'error',
       '@typescript-eslint/prefer-includes': 'error',
       'prefer-template': 'error',
+      '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },

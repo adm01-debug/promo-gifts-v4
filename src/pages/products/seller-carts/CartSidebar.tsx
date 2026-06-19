@@ -41,13 +41,13 @@ interface CartSidebarProps {
   weightVolume: { weightKg: number; volumeM3: number; volumeCm3: number } | null;
   allProducts: Product[];
   isLoadingProducts?: boolean;
-  templates: {
+  templates: Array<{
     id: string;
     name: string;
     description?: string | null;
     items: CartTemplateItem[];
     created_at?: string;
-  }[];
+  }>;
   canCreateCart: boolean;
   onGenerateQuote: (cart: SellerCart) => void;
   onShareCart: (cartId: string) => void;

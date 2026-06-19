@@ -74,7 +74,7 @@ interface MockupConfigPanelProps {
   onLogoUpload: (areaId: string, file: File) => void;
   onLogoRemove?: (areaId: string) => void;
   /** Real product locations from DB — if provided, locks areas to these */
-  productLocations: { code: string; name: string; order: number }[] | null;
+  productLocations: Array<{ code: string; name: string; order: number }> | null;
   /** Logo color analysis */
   logoColorAnalysis?: {
     colors: DetectedColor[];

@@ -37,7 +37,7 @@ export async function fetchPromobrindPriceTables(options?: {
   if (options?.techniqueName) filters.customization_type_name = options.techniqueName;
   if (options?.techniqueCode) filters.table_code = options.techniqueCode;
 
-  let result: { records: Record<string, unknown>[] };
+  let result: { records: Array<Record<string, unknown>> };
   try {
     result = await dbInvoke<Record<string, unknown>>({
       table: 'customization_price_tables',

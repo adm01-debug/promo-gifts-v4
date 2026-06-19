@@ -98,7 +98,7 @@ export interface ThemeModeColors {
   'chart-1': string;
 }
 
-export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
+export const CSS_VARS_TO_APPLY: Array<keyof ThemeModeColors> = [
   'background',
   'foreground',
   'card',

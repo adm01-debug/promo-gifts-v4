@@ -177,7 +177,7 @@ export function SalesOverviewChart({ days = 30 }: Props) {
                 content={(props) => (
                   <SalesMacroTooltip
                     active={props.active}
-                    payload={props.payload as { payload: SalesDataPoint }[] | undefined}
+                    payload={props.payload as Array<{ payload: SalesDataPoint }> | undefined}
                   />
                 )}
               />
@@ -235,7 +235,7 @@ function SalesMacroTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: SalesDataPoint }[];
+  payload?: Array<{ payload: SalesDataPoint }>;
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

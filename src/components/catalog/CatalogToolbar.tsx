@@ -47,7 +47,7 @@ interface CatalogToolbarProps {
   resetFilters: () => void;
   sortBy: SortOption;
   setSortBy: (s: SortOption) => void;
-  statBadges: { id: string; label: string; value: number; icon: React.ReactNode }[];
+  statBadges: Array<{ id: string; label: string; value: number; icon: React.ReactNode }>;
   viewMode: ViewMode;
   setViewMode: (m: ViewMode) => void;
   gridColumns: ColumnCount;

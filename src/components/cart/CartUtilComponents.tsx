@@ -197,7 +197,7 @@ export function SmartSuggestions({
   isLoading?: boolean;
 }) {
   const suggestions = useMemo(() => {
-    const tips: { icon: typeof Lightbulb; text: string }[] = [];
+    const tips: Array<{ icon: typeof Lightbulb; text: string }> = [];
     const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
     const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
 

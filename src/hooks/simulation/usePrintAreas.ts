@@ -81,7 +81,7 @@ export function usePrintAreas(productId: string | null) {
       return areas.map((area, idx) => {
         const techId = area.price_table_id ?? area.tabela_preco_id ?? null;
         const tech = techId ? techById.get(techId) : null;
-        const techniques: { id: string; nome: string; codigo: string }[] = [];
+        const techniques: Array<{ id: string; nome: string; codigo: string }> = [];
 
         if (tech) {
           techniques.push({

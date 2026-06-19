@@ -53,11 +53,11 @@ function shortTechniqueName(name: string): { group: string; variation?: string }
 
 /** Agrupa personalizações por locationName */
 function groupByLocation(personalizations: Personalization[]) {
-  const groups: {
+  const groups: Array<{
     locationName: string;
     componentName: string;
-    items: { pers: Personalization; originalIndex: number }[];
-  }[] = [];
+    items: Array<{ pers: Personalization; originalIndex: number }>;
+  }> = [];
 
   personalizations.forEach((pers, idx) => {
     const key = pers.location.locationName;
@@ -297,7 +297,7 @@ interface PersonalizationRowProps {
   showLocation: boolean;
   locationName: string;
   componentName: string;
-  unusedLocations: { id: string; locationName: string }[];
+  unusedLocations: Array<{ id: string; locationName: string }>;
   onEdit: () => void;
   onDuplicate: (locationId: string) => void;
   onRemove: () => void;

@@ -175,7 +175,7 @@ export function TechniqueColorConfigDialog({
                 onValueChange={(v) => setLaserTone(v as LaserTone)}
                 className="grid grid-cols-2 gap-3"
               >
-                {(Object.entries(LASER_TONES) as [LaserTone, typeof LASER_TONES.claro][]).map(
+                {(Object.entries(LASER_TONES) as Array<[LaserTone, typeof LASER_TONES.claro]>).map(
                   ([key, tone]) => (
                     <label
                       key={key}

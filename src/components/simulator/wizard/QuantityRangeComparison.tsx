@@ -25,7 +25,7 @@ interface QuantityRangeComparisonProps {
 
 interface QuantityResult {
   quantity: number;
-  persPrices: { persId: string; unitPrice: number; totalPrice: number }[];
+  persPrices: Array<{ persId: string; unitPrice: number; totalPrice: number }>;
   grandTotal: number;
   grandPerUnit: number;
   isLoading: boolean;

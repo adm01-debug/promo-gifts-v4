@@ -92,7 +92,7 @@ export async function exportProductPdf({
   };
 
   // Helper to add a table section
-  const addTable = (rows: [string, string][]) => {
+  const addTable = (rows: Array<[string, string]>) => {
     const filteredRows = rows.filter(([, v]) => v !== '—');
     if (filteredRows.length === 0) return;
 
@@ -165,7 +165,7 @@ export async function exportProductPdf({
     ['Têxtil', formatBool(formData.is_textil)],
     ['Térmico', formatBool(formData.is_thermal)],
     ['Personalização', formatBool(formData.allows_personalization)],
-  ] as [string, string][];
+  ] as Array<[string, string]>;
   addTable(flags);
 
   // ====== DIMENSÕES ======

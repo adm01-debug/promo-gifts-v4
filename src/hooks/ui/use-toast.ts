@@ -152,7 +152,7 @@ function useToast() {
     () => ({
       toast,
       dismiss: (toastId?: string | number) => sonnerToast.dismiss(toastId),
-      toasts: [] as Array<never>,
+      toasts: [] as never[],
     }),
     [],
   );

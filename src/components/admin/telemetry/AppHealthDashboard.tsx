@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 // • Lookup por X-Request-Id → timeline cross-camada
 // ============================================================================
 
-const WINDOW_OPTIONS: { value: HealthWindow; label: string }[] = [
+const WINDOW_OPTIONS: Array<{ value: HealthWindow; label: string }> = [
   { value: 15, label: '15min' },
   { value: 60, label: '1h' },
   { value: 360, label: '6h' },

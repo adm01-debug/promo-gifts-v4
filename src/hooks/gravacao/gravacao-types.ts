@@ -149,9 +149,9 @@ export interface PrintAreaWithTechniques {
   display_order: number;
   customization_price_table_id?: string | null;
   technique_id?: string | null;
-  techniques: {
+  techniques: Array<{
     id: string;
     nome: string;
     codigo: string;
-  }[];
+  }>;
 }

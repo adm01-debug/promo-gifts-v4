@@ -87,7 +87,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 global.IntersectionObserver = class IntersectionObserver {
   readonly root: Element | Document | null = null;
   readonly rootMargin: string = '';
-  readonly thresholds: ReadonlyArray<number> = [];
+  readonly thresholds: readonly number[] = [];
   constructor(_callback?: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
   disconnect() {}
   observe() {}

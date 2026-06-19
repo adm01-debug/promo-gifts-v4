@@ -72,7 +72,7 @@ interface BulkImportDialogProps {
 
 export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportDialogProps) {
   const [step, setStep] = useState<Step>('upload');
-  const [rawData, setRawData] = useState<Record<string, unknown>[]>([]);
+  const [rawData, setRawData] = useState<Array<Record<string, unknown>>>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fileName, setFileName] = useState('');
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -98,7 +98,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
 
   // ── Upload complete handler ──
   const handleFileProcessed = useCallback(
-    (h: string[], rows: Record<string, unknown>[], name: string, m: ColumnMapping) => {
+    (h: string[], rows: Array<Record<string, unknown>>, name: string, m: ColumnMapping) => {
       setHeaders(h);
       setRawData(rows);
       setFileName(name);

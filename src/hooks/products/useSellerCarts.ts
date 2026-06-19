@@ -300,7 +300,7 @@ export function useSellerCarts() {
 
   // Update item sort order
   const updateItemSortOrder = useMutation({
-    mutationFn: async (items: { id: string; sort_order: number }[]) => {
+    mutationFn: async (items: Array<{ id: string; sort_order: number }>) => {
       // Aplica em série e aborta no primeiro erro: evita reordenação parcial
       // silenciosa (Promise.all engolia falhas individuais sem propagar).
       for (const { id, sort_order } of items) {

@@ -230,7 +230,7 @@ export function useAdvancedFilters() {
     setFilters(defaultAdvancedFilters);
   }, []);
 
-  const resetFilterGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
+  const resetFilterGroup = useCallback((keys: Array<keyof AdvancedFilterState>) => {
     setFilters((prev) => {
       const updates: Partial<AdvancedFilterState> = {};
       keys.forEach((key) => {
@@ -273,7 +273,7 @@ export function useAdvancedFilters() {
 
   // Verificar se ha filtros ativos em um grupo especifico
   const hasActiveFiltersInGroup = useCallback(
-    (keys: (keyof AdvancedFilterState)[]) => {
+    (keys: Array<keyof AdvancedFilterState>) => {
       return keys.some((key) => {
         const value = filters[key];
         const defaultValue = defaultAdvancedFilters[key];

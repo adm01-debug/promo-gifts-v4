@@ -68,7 +68,7 @@ export function useKitBuilderQuote() {
       if (!quote) throw new Error('Failed to create quote');
 
       const kitGroupId = crypto.randomUUID();
-      const quoteItems: TablesInsert<'quote_items'>[] = [];
+      const quoteItems: Array<TablesInsert<'quote_items'>> = [];
 
       // Add box if present
       if (boxRef) {
@@ -120,7 +120,7 @@ export function useKitBuilderQuote() {
 
         // Personalizations
         if (insertedItems) {
-          const personalizations: TablesInsert<'quote_item_personalizations'>[] = [];
+          const personalizations: Array<TablesInsert<'quote_item_personalizations'>> = [];
 
           if (personRef.box.enabled && boxRef) {
             const boxId = boxRef.id;

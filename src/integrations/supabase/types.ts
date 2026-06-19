@@ -7218,21 +7218,21 @@ export type Database = {
       audit_rls_matrix: { Args: never; Returns: Json }
       audit_security_definer_acl: {
         Args: never
-        Returns: {
+        Returns: Array<{
           arguments: string
           function_name: string
           granted_to: string
           problem: string
-        }[]
+        }>
       }
       auto_block_extreme_offenders: { Args: never; Returns: Json }
       auto_revoke_orphan_full_keys: {
         Args: { _source?: string }
-        Returns: {
+        Returns: Array<{
           created_by: string
           key_id: string
           revoked_at: string
-        }[]
+        }>
       }
       can_approve_discount: { Args: { _user_id?: string }; Returns: boolean }
       can_grant_mcp_full: { Args: { _user_id: string }; Returns: boolean }
@@ -7246,18 +7246,18 @@ export type Database = {
       check_auth_config_status: { Args: never; Returns: Json }
       check_auth_throttling: {
         Args: { _email: string; _ip: string }
-        Returns: {
+        Returns: Array<{
           allowed: boolean
           remaining_seconds: number
-        }[]
+        }>
       }
       check_edge_rate_limit: {
         Args: { p_key: string; p_max_requests: number; p_window_ms: number }
-        Returns: {
+        Returns: Array<{
           allowed: boolean
           remaining: number
           reset_at: string
-        }[]
+        }>
       }
       check_hardening_status: { Args: never; Returns: Json }
       check_ip_access: { Args: { _ip: string }; Returns: string }
@@ -7381,11 +7381,11 @@ export type Database = {
       }
       e2e_cleanup_check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
-        Returns: {
+        Returns: Array<{
           allowed: boolean
           current_count: number
           reset_in_seconds: number
-        }[]
+        }>
       }
       enqueue_optimization: {
         Args: {
@@ -7425,7 +7425,7 @@ export type Database = {
       get_app_health_summary: { Args: { _minutes?: number }; Returns: Json }
       get_auto_test_job_status: {
         Args: { _limit?: number }
-        Returns: {
+        Returns: Array<{
           avg_latency_ms: number
           duration_ms: number
           fail_count: number
@@ -7434,31 +7434,31 @@ export type Database = {
           run_ended_at: string
           run_started_at: string
           total_tested: number
-        }[]
+        }>
       }
       get_bundle_suggestions: {
         Args: { _product_id: string }
-        Returns: {
+        Returns: Array<{
           cooccurrence_count: number
           frequency_percent: number
           product_id: string
           product_image_url: string
           product_name: string
-        }[]
+        }>
       }
       get_client_seasonality: {
         Args: { _client_id: string; _months?: number }
-        Returns: {
+        Returns: Array<{
           avg_ticket: number
           month: number
           quotes_count: number
           total_revenue: number
           year: number
-        }[]
+        }>
       }
       get_client_top_products: {
         Args: { _client_id: string; _limit?: number }
-        Returns: {
+        Returns: Array<{
           avg_unit_price: number
           last_quoted_at: string
           occurrences: number
@@ -7467,28 +7467,28 @@ export type Database = {
           product_name: string
           total_quantity: number
           total_revenue: number
-        }[]
+        }>
       }
       get_collections_weekly_count: {
         Args: { _weeks?: number }
-        Returns: {
+        Returns: Array<{
           item_count: number
           week_start: string
-        }[]
+        }>
       }
       get_connection_failure_window_minutes: { Args: never; Returns: number }
       get_connections_auto_test_interval: { Args: never; Returns: number }
       get_edge_function_secret: { Args: { _name: string }; Returns: string }
       get_favorites_weekly_count: {
         Args: { _weeks?: number }
-        Returns: {
+        Returns: Array<{
           item_count: number
           week_start: string
-        }[]
+        }>
       }
       get_industry_benchmark_stats: {
         Args: { _company_ids: string[]; _days?: number }
-        Returns: {
+        Returns: Array<{
           avg_items_per_quote: number
           avg_ltv: number
           avg_quotes_per_client: number
@@ -7496,21 +7496,21 @@ export type Database = {
           top_product_name: string
           total_clients_sampled: number
           total_revenue: number
-        }[]
+        }>
       }
       get_industry_seasonality: {
         Args: { _company_ids: string[]; _months?: number }
-        Returns: {
+        Returns: Array<{
           avg_quotes_per_company: number
           avg_revenue_per_company: number
           companies_active: number
           month: number
           year: number
-        }[]
+        }>
       }
       get_industry_top_products: {
         Args: { _company_ids: string[]; _days?: number; _limit?: number }
-        Returns: {
+        Returns: Array<{
           avg_unit_price: number
           product_id: string
           product_image_url: string
@@ -7519,7 +7519,7 @@ export type Database = {
           total_revenue: number
           unique_clients: number
           unique_sellers: number
-        }[]
+        }>
       }
       get_platform_failure_metrics: {
         Args: { window_minutes?: number }
@@ -7528,7 +7528,7 @@ export type Database = {
       get_public_schema_signatures: { Args: never; Returns: Json }
       get_quote_token_by_value: {
         Args: { _token: string }
-        Returns: {
+        Returns: Array<{
           client_email: string | null
           client_name: string | null
           created_at: string
@@ -7549,7 +7549,7 @@ export type Database = {
           token: string
           updated_at: string
           viewed_at: string | null
-        }[]
+        }>
         SetofOptions: {
           from: "*"
           to: "quote_approval_tokens"
@@ -7559,46 +7559,46 @@ export type Database = {
       }
       get_top_collected_products: {
         Args: { _days?: number; _limit?: number }
-        Returns: {
+        Returns: Array<{
           col_count: number
           product_id: string
-        }[]
+        }>
       }
       get_top_compared_products: {
         Args: { p_limit?: number }
-        Returns: {
+        Returns: Array<{
           comparison_count: number
           product_id: string
-        }[]
+        }>
       }
       get_top_favorited_products: {
         Args: { _days?: number; _limit?: number }
-        Returns: {
+        Returns: Array<{
           fav_count: number
           product_id: string
-        }[]
+        }>
       }
       get_unread_count: { Args: never; Returns: number }
       get_user_org_ids: {
         Args: { _user_id: string }
-        Returns: {
+        Returns: Array<{
           organization_id: string
-        }[]
+        }>
       }
       get_user_recent_comparisons: {
         Args: { p_limit?: number }
-        Returns: {
+        Returns: Array<{
           client_name: string
           id: string
           item_count: number
           items: Json
           name: string
           updated_at: string
-        }[]
+        }>
       }
       get_webhook_delivery_summary: {
         Args: { _minutes?: number }
-        Returns: {
+        Returns: Array<{
           direction: string
           failures: number
           last_failure_at: string
@@ -7606,7 +7606,7 @@ export type Database = {
           source: string
           status_class: string
           total: number
-        }[]
+        }>
       }
       has_org_role: {
         Args: {
@@ -7713,10 +7713,10 @@ export type Database = {
           _challenge_grace_minutes?: number
           _token_grace_minutes?: number
         }
-        Returns: {
+        Returns: Array<{
           challenges_deleted: number
           tokens_deleted: number
-        }[]
+        }>
       }
       purge_old_audit_logs: { Args: never; Returns: undefined }
       record_app_vital:
@@ -7817,11 +7817,11 @@ export type Database = {
           _target_ref?: string
           _user_agent?: string
         }
-        Returns: {
+        Returns: Array<{
           challenge_id: string
           expires_at: string
           otp_plain: string
-        }[]
+        }>
       }
       reset_optimization_queue: {
         Args: { _only_running?: boolean }
@@ -7831,19 +7831,19 @@ export type Database = {
       revoke_all_user_tokens: { Args: { _user_id: string }; Returns: undefined }
       search_products_semantic: {
         Args: { _limit?: number; _products: Json; _query: string }
-        Returns: {
+        Returns: Array<{
           matched_field: string
           product_id: string
           score: number
-        }[]
+        }>
       }
       search_records_rerank: {
         Args: { _candidates: Json; _query: string }
-        Returns: {
+        Returns: Array<{
           id: string
           matched_field: string
           score: number
-        }[]
+        }>
       }
       seed_discount_test_users: { Args: never; Returns: Json }
       set_connection_failure_window_minutes: {
@@ -7875,12 +7875,12 @@ export type Database = {
           }
       validate_mcp_key: {
         Args: { _key_plain: string }
-        Returns: {
+        Returns: Array<{
           block_reason: string
           created_by: string
           key_id: string
           scopes: string[]
-        }[]
+        }>
       }
       verify_step_up_otp: {
         Args: { _challenge_id: string; _otp_attempt: string }

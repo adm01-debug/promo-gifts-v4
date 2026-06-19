@@ -106,7 +106,7 @@ function makeFilters(rnd: () => number): StockFilters {
 function naiveFilter(
   products: ProductStockSummary[],
   f: StockFilters,
-): { productId: string; totalVariants: number; totalCurrentStock: number }[] {
+): Array<{ productId: string; totalVariants: number; totalCurrentStock: number }> {
   const catN = normalize(f.categoryId);
   const supN = normalize(f.supplierId);
   const colN = normalize(f.colorName);

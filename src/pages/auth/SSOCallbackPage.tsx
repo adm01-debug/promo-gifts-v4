@@ -346,7 +346,7 @@ function StatusIcon({ status }: { status: CallbackStatus }) {
 }
 
 function StatusSteps({ status }: { status: CallbackStatus }) {
-  const steps: { key: CallbackStatus; label: string }[] = [
+  const steps: Array<{ key: CallbackStatus; label: string }> = [
     { key: 'processing', label: 'Recebendo' },
     { key: 'confirming', label: 'Atualizando' },
     { key: 'confirmed', label: 'Pronto' },

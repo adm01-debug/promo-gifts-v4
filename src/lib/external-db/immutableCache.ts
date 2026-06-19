@@ -98,7 +98,7 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
   }
 
   // Reaproveita promises por id em voo (sem disparar rede).
-  const piggybackPromises: Promise<void>[] = [];
+  const piggybackPromises: Array<Promise<void>> = [];
   for (const id of awaitedFromOthers) {
     const p = INFLIGHT_BY_ID[entity].get(id);
     if (!p) {

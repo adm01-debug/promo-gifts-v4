@@ -40,7 +40,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const [techSearch, setTechSearch] = useState('');
   const [detailForm, setDetailForm] = useState<DetailFormState>(DEFAULT_DETAIL_FORM);
   const [localAreas, setLocalAreas] = useState<
-    (PrintAreaTechnique & { _techData?: ExternalTechnique })[]
+    Array<PrintAreaTechnique & { _techData?: ExternalTechnique }>
   >([]);
 
   // BUG-05 FIX: state-based delete confirmation for areas — no more confirm()

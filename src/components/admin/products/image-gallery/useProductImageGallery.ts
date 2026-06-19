@@ -80,7 +80,7 @@ export function useProductImageGallery({
   const { data: variants = [] } = useQuery<VariantInfo[]>({
     queryKey: ['product-variants-for-gallery', productId],
     queryFn: async () => {
-      let records: Record<string, unknown>[] = [];
+      let records: Array<Record<string, unknown>> = [];
       try {
         const result = await dbInvoke<Record<string, unknown>>({
           table: 'product_variants',

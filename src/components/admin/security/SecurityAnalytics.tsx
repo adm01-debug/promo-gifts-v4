@@ -82,7 +82,7 @@ export function SecurityAnalytics({ botLogs, onBlockIp }: Props) {
 
     // Timeline: last 24h bucketed per hour
     const now = Date.now();
-    const buckets: { hour: string; total: number; blocked: number; ts: number }[] = [];
+    const buckets: Array<{ hour: string; total: number; blocked: number; ts: number }> = [];
     for (let i = 23; i >= 0; i--) {
       const ts = now - i * 3600_000;
       const d = new Date(ts);

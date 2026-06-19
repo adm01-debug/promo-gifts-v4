@@ -22,7 +22,7 @@ export interface CustomKitRow {
   name: string;
   status: string;
   box_data: Record<string, unknown> | null;
-  items_data: Record<string, unknown>[];
+  items_data: Array<Record<string, unknown>>;
   personalization_data: Record<string, unknown>;
   kit_quantity: number;
   box_price: number;

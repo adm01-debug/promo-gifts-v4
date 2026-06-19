@@ -17,13 +17,13 @@ interface MagicUpResultPanelProps {
 }
 
 export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
-  const dotRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const dotRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const handleArrowKey = (
     e: React.KeyboardEvent<HTMLButtonElement>,
     currentIndex: number,
-    refs: React.MutableRefObject<(HTMLButtonElement | null)[]>,
+    refs: React.MutableRefObject<Array<HTMLButtonElement | null>>,
   ) => {
     const total = m.variations.length;
     if (total < 2) return;

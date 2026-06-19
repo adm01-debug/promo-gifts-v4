@@ -64,13 +64,13 @@ type ExpiryKey =
   | 'is_new_expires_at'
   | 'is_on_sale_expires_at';
 
-const FLAG_CONFIG: {
+const FLAG_CONFIG: Array<{
   key: keyof ProductFormData;
   label: string;
   hint: string;
   expiryKey?: ExpiryKey;
   activeClass?: string;
-}[] = [
+}> = [
   {
     key: 'is_active',
     label: 'Produto Ativo',

@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger';
 interface StepUploadProps {
   onFileProcessed: (
     headers: string[],
-    rows: Record<string, unknown>[],
+    rows: Array<Record<string, unknown>>,
     fileName: string,
     mapping: ColumnMapping,
   ) => void;
@@ -45,7 +45,7 @@ function parseCSVLine(line: string, delimiter: string): string[] {
   return result;
 }
 
-function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+function parseCSV(text: string): { headers: string[]; rows: Array<Record<string, string>> } {
   const firstLine = text.split('\n')[0];
   const delimiter = firstLine.includes(';') ? ';' : firstLine.includes('\t') ? '\t' : ',';
   const lines = text
@@ -83,7 +83,7 @@ export function StepUpload({ onFileProcessed }: StepUploadProps) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       try {
         let parsedHeaders: string[] = [];
-        let parsedRows: Record<string, unknown>[] = [];
+        let parsedRows: Array<Record<string, unknown>> = [];
 
         if (ext === 'csv') {
           const text = await file.text();

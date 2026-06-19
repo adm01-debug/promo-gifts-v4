@@ -31,7 +31,7 @@ export interface CrmQuery {
   offset?: number;
   search?: { column: string; term: string };
   relations?: string;
-  data?: Record<string, unknown> | Record<string, unknown>[];
+  data?: Record<string, unknown> | Array<Record<string, unknown>>;
   returning?: string;
 }
 
@@ -611,7 +611,7 @@ export async function searchCrm<T>(
  */
 export async function insertCrm<T>(
   table: string,
-  data: Record<string, unknown> | Record<string, unknown>[],
+  data: Record<string, unknown> | Array<Record<string, unknown>>,
   returning?: string,
 ): Promise<T[]> {
   const result = await invokeCrmDb<T[]>({

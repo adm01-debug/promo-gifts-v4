@@ -122,7 +122,7 @@ export async function processLogoForLaser(
  */
 export async function processLogoForSerigrafia(
   imageUrl: string,
-  selectedColors: { hex: string; pantoneCode: string }[],
+  selectedColors: Array<{ hex: string; pantoneCode: string }>,
 ): Promise<string> {
   if (selectedColors.length === 0) {
     // No colors selected — return original

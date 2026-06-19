@@ -31,7 +31,7 @@ const CHUNK_RELOAD_MAX = 1;
 const CHUNK_RELOAD_DELAY_MS = 1500;
 const CHUNK_RELOAD_CLEAR_MS = 5000;
 
-const CHUNK_ERROR_PATTERNS: ReadonlyArray<RegExp> = [
+const CHUNK_ERROR_PATTERNS: readonly RegExp[] = [
   /Failed to fetch dynamically imported module/i,
   /Failed to load module script/i,
   /error loading dynamically imported module/i,

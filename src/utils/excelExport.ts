@@ -15,7 +15,7 @@ export interface ExcelExportConfig {
   /** Colunas a exportar */
   columns: ExcelColumn[];
   /** Dados a exportar */
-  data: Record<string, unknown>[];
+  data: Array<Record<string, unknown>>;
   /** Incluir timestamp no nome do arquivo */
   includeTimestamp?: boolean;
 }
@@ -107,7 +107,7 @@ export async function exportMultipleSheets(
   sheets: Array<{
     sheetName: string;
     columns: ExcelColumn[];
-    data: Record<string, unknown>[];
+    data: Array<Record<string, unknown>>;
   }>,
   includeTimestamp = true,
 ): Promise<void> {

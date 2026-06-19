@@ -170,7 +170,7 @@ describe('SidebarNavGroup — sem flicker durante Suspense (rota lazy)', () => {
     const { router, resolve } = setupRouterWithSuspense('/dashboard', '/orcamentos/novo');
 
     // Snapshot do aria-expanded em cada fase do ciclo.
-    const phases: { label: string; expanded: string | null }[] = [];
+    const phases: Array<{ label: string; expanded: string | null }> = [];
 
     phases.push({ label: 'antes', expanded: getHeader().getAttribute('aria-expanded') });
 

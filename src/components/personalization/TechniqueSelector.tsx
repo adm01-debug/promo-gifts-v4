@@ -47,12 +47,12 @@ interface TechniqueSelectorProps {
 
 type SLAFilter = 'all' | 'express' | 'standard' | 'extended';
 
-const SLA_OPTIONS: {
+const SLA_OPTIONS: Array<{
   value: SLAFilter;
   label: string;
   maxDays: number | null;
   icon: React.ReactNode;
-}[] = [
+}> = [
   { value: 'all', label: 'Todos', maxDays: null, icon: <Palette className="h-3 w-3" /> },
   { value: 'express', label: 'Express (≤3 dias)', maxDays: 3, icon: <Zap className="h-3 w-3" /> },
   {

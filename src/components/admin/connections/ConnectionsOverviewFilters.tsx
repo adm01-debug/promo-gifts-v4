@@ -27,7 +27,7 @@ import type {
   OverviewWindowFilter,
 } from '@/hooks/intelligence';
 
-const TYPE_OPTIONS: { value: string; label: string; icon: typeof Database }[] = [
+const TYPE_OPTIONS: Array<{ value: string; label: string; icon: typeof Database }> = [
   { value: 'supabase', label: 'Supabase', icon: Database },
   { value: 'bitrix24', label: 'Bitrix24', icon: Briefcase },
   { value: 'n8n', label: 'n8n', icon: Workflow },
@@ -35,13 +35,13 @@ const TYPE_OPTIONS: { value: string; label: string; icon: typeof Database }[] = 
   { value: 'webhook_outbound', label: 'Webhook Outbound', icon: Webhook },
 ];
 
-const STATUS_OPTIONS: { value: OverviewStatusFilter; label: string }[] = [
+const STATUS_OPTIONS: Array<{ value: OverviewStatusFilter; label: string }> = [
   { value: 'all', label: 'Todos' },
   { value: 'ok', label: 'OK' },
   { value: 'fail', label: 'Falha' },
 ];
 
-const WINDOW_OPTIONS: { value: OverviewWindowFilter; label: string }[] = [
+const WINDOW_OPTIONS: Array<{ value: OverviewWindowFilter; label: string }> = [
   { value: 'any', label: 'Qualquer momento' },
   { value: '5m', label: 'Últimos 5 min' },
   { value: '1h', label: 'Última hora' },

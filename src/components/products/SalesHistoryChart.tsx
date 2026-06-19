@@ -385,7 +385,7 @@ function SalesTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: ChartDayPayload }[];
+  payload?: Array<{ payload: ChartDayPayload }>;
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

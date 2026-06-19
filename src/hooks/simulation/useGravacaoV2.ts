@@ -61,7 +61,7 @@ export function useProductPrintAreas(productId: string | null) {
       const techById = new Map((techData ?? []).map((t) => [t.id, t]));
 
       return areas.map((area) => {
-        const techniques: { id: string; nome: string; codigo: string }[] = [];
+        const techniques: Array<{ id: string; nome: string; codigo: string }> = [];
         for (const tid of area.allowed_technique_ids ?? []) {
           const tech = techById.get(tid);
           if (tech)

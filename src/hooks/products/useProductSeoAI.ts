@@ -15,7 +15,7 @@ interface SeoAIResult {
   use_cases: string;
 }
 
-const SEO_FIELDS: (keyof SeoAIResult)[] = [
+const SEO_FIELDS: Array<keyof SeoAIResult> = [
   'meta_title',
   'meta_description',
   'meta_keywords',

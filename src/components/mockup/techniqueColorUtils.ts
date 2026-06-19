@@ -12,7 +12,7 @@ export interface TechniqueColorConfig {
   laserTone?: LaserTone;
   colorCount?: number;
   selectedPantoneIndices?: number[];
-  selectedColors?: { hex: string; pantoneCode: string }[];
+  selectedColors?: Array<{ hex: string; pantoneCode: string }>;
   isFullColor?: boolean;
 }
 

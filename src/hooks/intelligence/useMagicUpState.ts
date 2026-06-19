@@ -204,7 +204,7 @@ export function useMagicUpState() {
         .order('updated_at', { ascending: false })
         .limit(30);
       if (error) throw error;
-      return ((data ?? []) as Tables<'magic_up_campaigns'>[]).map((row) => ({
+      return ((data ?? []) as Array<Tables<'magic_up_campaigns'>>).map((row) => ({
         id: row.id,
         title: row.title,
         status: row.status as MagicUpCampaignStatus,

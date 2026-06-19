@@ -236,7 +236,7 @@ export function applyStockFilters(
   // Pré-seleção via interseção de índices (fast path). Aplica todos os filtros
   // discretos disponíveis (cor exata, grupo de cor, categoria, fornecedor) antes
   // de varrer linearmente — mantém O(min(idx)) em vez de O(N).
-  const idSets: Set<string>[] = [];
+  const idSets: Array<Set<string>> = [];
   if (ctx.colorNameN) {
     const s = idx.byColorNameN.get(ctx.colorNameN);
     if (!s || s.size === 0) return [];

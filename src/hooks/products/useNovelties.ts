@@ -361,7 +361,7 @@ export function useNoveltyStats() {
 
       const supplierRows =
         !supplierRes.error && supplierRes.data
-          ? (supplierRes.data as unknown as { supplier_id: string | null }[])
+          ? (supplierRes.data as unknown as Array<{ supplier_id: string | null }>)
           : [];
 
       const supplierCounts = new Map<string, number>();
@@ -515,7 +515,7 @@ export function useIsProductNovelty(productId: string) {
         return { isNovelty: false, daysRemaining: null };
       }
 
-      const rows = (data ?? []) as unknown as { id: string; created_at: string }[];
+      const rows = (data ?? []) as unknown as Array<{ id: string; created_at: string }>;
       if (rows.length === 0) {
         return { isNovelty: false, daysRemaining: null };
       }
@@ -563,7 +563,7 @@ export function useNoveltyProductIds() {
           handleQueryError('useNovelties', 'products', error);
           break;
         }
-        const rows = (data ?? []) as unknown as { id: string }[];
+        const rows = (data ?? []) as unknown as Array<{ id: string }>;
         for (const r of rows) ids.add(r.id);
         from += rows.length;
         if (rows.length === 0) break; // fim dos resultados

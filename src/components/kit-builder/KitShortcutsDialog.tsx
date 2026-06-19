@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Keyboard } from 'lucide-react';
 
-const SHORTCUTS: { keys: string[]; label: string; section: string }[] = [
+const SHORTCUTS: Array<{ keys: string[]; label: string; section: string }> = [
   { keys: ['←', '→'], label: 'Navegar entre etapas', section: 'Wizard' },
   { keys: ['1', '2', '3', '4'], label: 'Pular para etapa específica', section: 'Wizard' },
   { keys: ['Ctrl', 'Z'], label: 'Desfazer', section: 'Edição' },

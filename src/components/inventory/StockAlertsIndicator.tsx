@@ -41,7 +41,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type DatePeriod = 'today' | '7d' | '30d' | 'all';
 
-const PERIODS: { key: DatePeriod; label: string }[] = [
+const PERIODS: Array<{ key: DatePeriod; label: string }> = [
   { key: 'today', label: 'Hoje' },
   { key: '7d', label: '7 dias' },
   { key: '30d', label: '30 dias' },

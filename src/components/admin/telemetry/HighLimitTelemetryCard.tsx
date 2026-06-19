@@ -47,7 +47,7 @@ function formatTick(iso: string, bucketMs: number): string {
   return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
 }
 
-const ERROR_KINDS_FOR_STACK: Exclude<ErrorKindFilter, 'all'>[] = [
+const ERROR_KINDS_FOR_STACK: Array<Exclude<ErrorKindFilter, 'all'>> = [
   'timeout',
   'postgrest_error',
   'validation',

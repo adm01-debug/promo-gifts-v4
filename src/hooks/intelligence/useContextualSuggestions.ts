@@ -109,7 +109,7 @@ export function useContextualSuggestions({
       });
     }
 
-    (Object.entries(activeFilters) as [keyof AdvancedFilterState, unknown][]).forEach(
+    (Object.entries(activeFilters) as Array<[keyof AdvancedFilterState, unknown]>).forEach(
       ([key, value]) => {
         if (isActiveValue(value)) {
           out.push({

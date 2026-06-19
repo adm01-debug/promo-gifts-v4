@@ -108,10 +108,10 @@ export interface PrintAreaWithTechniques {
 export interface GroupedPrintArea {
   componentName: string;
   componentCode: string;
-  locations: {
+  locations: Array<{
     locationName: string;
     locationCode: string;
-    techniques: {
+    techniques: Array<{
       id: string;
       areaName: string;
       techniqueCode: string;
@@ -122,8 +122,8 @@ export interface GroupedPrintArea {
       isCurved: boolean;
       isPrimary: boolean;
       servCode: string | null;
-    }[];
-  }[];
+    }>;
+  }>;
 }
 
 // ============================================

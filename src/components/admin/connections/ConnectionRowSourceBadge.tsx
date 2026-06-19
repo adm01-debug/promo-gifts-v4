@@ -12,7 +12,7 @@ function aggregateSource(
   secrets: SecretStatus[],
 ): {
   state: Aggregate;
-  per: { name: string; source: SecretStatus['source'] | 'missing'; hasValue: boolean }[];
+  per: Array<{ name: string; source: SecretStatus['source'] | 'missing'; hasValue: boolean }>;
 } {
   const per = SUFFIXES.map((suf) => {
     const name = `EXTERNAL_${envKey.toUpperCase()}_${suf}`;

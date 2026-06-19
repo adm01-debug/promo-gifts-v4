@@ -51,7 +51,7 @@ interface TrendSearch {
 }
 
 interface ActivityChartProps {
-  dailyTrends: Record<string, unknown>[] | undefined;
+  dailyTrends: Array<Record<string, unknown>> | undefined;
   isLoading: boolean;
 }
 

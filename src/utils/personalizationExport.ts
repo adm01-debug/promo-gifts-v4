@@ -39,7 +39,7 @@ interface ExportData {
 // Excel export
 export async function exportToExcel(data: ExportData) {
   const XLSX = await getXLSX();
-  const rows: Record<string, string>[] = [];
+  const rows: Array<Record<string, string>> = [];
 
   data.components.forEach((component) => {
     if (!component.isPersonalizable) return;

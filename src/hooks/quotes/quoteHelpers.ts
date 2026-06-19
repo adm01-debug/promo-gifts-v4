@@ -146,7 +146,7 @@ export function buildUpdatePayload(
 export function buildItemsInsertPayload(
   items: QuoteItem[],
   quoteId: string,
-): TablesInsert<'quote_items'>[] {
+): Array<TablesInsert<'quote_items'>> {
   return items.map((item, index) => ({
     quote_id: quoteId,
     product_id: item.product_id,
@@ -171,7 +171,7 @@ export function buildItemsInsertPayload(
 export function buildPersonalizationsInsertPayload(
   personalizations: NonNullable<QuoteItem['personalizations']>,
   quoteItemId: string,
-): TablesInsert<'quote_item_personalizations'>[] {
+): Array<TablesInsert<'quote_item_personalizations'>> {
   return personalizations.map((p) => ({
     quote_item_id: quoteItemId,
     technique_id: p.technique_id || null,

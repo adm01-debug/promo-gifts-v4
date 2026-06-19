@@ -476,7 +476,7 @@ export function useGlobalSearch() {
                 .ilike('title', `%${term}%`)
                 .order('updated_at', { ascending: false });
             const { data } = await builder.limit(5);
-            ((data ?? []) as unknown as Record<string, unknown>[]).forEach((row) => {
+            ((data ?? []) as unknown as Array<Record<string, unknown>>).forEach((row) => {
               const id = row.id as string;
               allResults.push({
                 id,

@@ -48,7 +48,7 @@ export interface MaterialComplete {
 
 // Service para chamadas à API de materiais
 class MaterialService {
-  private baseUrl: string;
+  private readonly baseUrl: string;
 
   constructor() {
     // URL canonica resolvida (com fallback) — evita `undefined/functions/v1/...`
@@ -94,7 +94,9 @@ class MaterialService {
 
   // Buscar todos os grupos de materiais com estatísticas
   async getGroups(): Promise<{ groups: MaterialGroup[]; count: number }> {
-    const res = await this.callApi<{ groups: Record<string, unknown>[]; count?: number }>('groups');
+    const res = await this.callApi<{ groups: Array<Record<string, unknown>>; count?: number }>(
+      'groups',
+    );
 
     const groups: MaterialGroup[] = (res.groups ?? []).map((g) => ({
       group_id: g.group_id ?? g.id ?? '',
@@ -113,7 +115,9 @@ class MaterialService {
 
   // Buscar todos os tipos de materiais
   async getTypes(): Promise<{ types: MaterialType[]; count: number }> {
-    const res = await this.callApi<{ types: Record<string, unknown>[]; count?: number }>('types');
+    const res = await this.callApi<{ types: Array<Record<string, unknown>>; count?: number }>(
+      'types',
+    );
 
     const types: MaterialType[] = (res.types ?? []).map((t) => ({
       id: t.id ?? t.material_id ?? '',
@@ -135,7 +139,7 @@ class MaterialService {
   async getTypesByGroupSlug(
     groupSlug: string,
   ): Promise<{ types: MaterialType[]; count: number; groupSlug: string }> {
-    const res = await this.callApi<{ types: Record<string, unknown>[]; count?: number }>(
+    const res = await this.callApi<{ types: Array<Record<string, unknown>>; count?: number }>(
       'types_by_group',
       { groupId: groupSlug },
     );
@@ -158,7 +162,7 @@ class MaterialService {
 
   // Buscar materiais completos (tipos + grupos)
   async getComplete(): Promise<{ materials: MaterialComplete[]; count: number }> {
-    const res = await this.callApi<{ materials: Record<string, unknown>[]; count?: number }>(
+    const res = await this.callApi<{ materials: Array<Record<string, unknown>>; count?: number }>(
       'complete',
     );
 
@@ -199,7 +203,7 @@ class MaterialService {
   // Buscar materiais de um produto específico
   async getProductMaterials(
     productId: string,
-  ): Promise<{ materials: Record<string, unknown>[]; count: number; productId: string }> {
+  ): Promise<{ materials: Array<Record<string, unknown>>; count: number; productId: string }> {
     return this.callApi('product_materials', { productId });
   }
 

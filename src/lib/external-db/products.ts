@@ -338,7 +338,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   }
 
-  let batchResults: InvokeResult<unknown>[] = [];
+  let batchResults: Array<InvokeResult<unknown>> = [];
   try {
     batchResults = await Promise.all(batchQueries.map((q) => dbInvoke(q)));
   } catch (err) {

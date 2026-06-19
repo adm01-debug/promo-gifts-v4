@@ -132,7 +132,10 @@ export function useExternalCollectionProductCounts(collectionIds: string[]) {
       }
 
       const counts = new Map<string, number>();
-      for (const r of (data ?? []) as unknown as { collection_id: string; product_id: string }[]) {
+      for (const r of (data ?? []) as unknown as Array<{
+        collection_id: string;
+        product_id: string;
+      }>) {
         counts.set(r.collection_id, (counts.get(r.collection_id) || 0) + 1);
       }
       return counts;

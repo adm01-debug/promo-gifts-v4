@@ -40,7 +40,7 @@ interface MultiAreaManagerProps {
   onActiveAreaChange: (areaId: string | null) => void;
   onLogoUpload: (areaId: string, file: File) => void;
   onLogoRemove?: (areaId: string) => void;
-  productLocations?: { code: string; name: string; order: number }[] | null;
+  productLocations?: Array<{ code: string; name: string; order: number }> | null;
 }
 
 export function MultiAreaManager({

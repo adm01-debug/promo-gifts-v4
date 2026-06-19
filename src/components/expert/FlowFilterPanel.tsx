@@ -48,11 +48,11 @@ export {
 };
 
 // ─── Section definitions ────────────────────────────────
-const SECTION_GROUPS: {
+const SECTION_GROUPS: Array<{
   label: string;
   icon: React.ElementType;
-  sections: { id: string; label: string; icon: React.ElementType }[];
-}[] = [
+  sections: Array<{ id: string; label: string; icon: React.ElementType }>;
+}> = [
   {
     label: 'PRODUTO',
     icon: Package,

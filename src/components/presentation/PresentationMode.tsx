@@ -13,7 +13,7 @@ export interface PresentationSlide {
   subtitle?: string;
   imageUrl?: string | null;
   description?: string | null;
-  details?: { label: string; value: string }[];
+  details?: Array<{ label: string; value: string }>;
   badge?: string | null;
 }
 

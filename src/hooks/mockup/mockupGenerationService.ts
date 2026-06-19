@@ -119,7 +119,7 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data as unknown as Record<string, unknown>[] | null) ?? []).map((row) => {
+  return ((data as unknown as Array<Record<string, unknown>> | null) ?? []).map((row) => {
     const cfg = (row.area_config ?? {}) as Record<string, unknown>;
     return {
       id: row.id as string,
@@ -154,7 +154,7 @@ export interface SaveMockupParams {
   client: { id?: string; name?: string; nome_fantasia?: string; razao_social?: string } | null;
   area: PersonalizationArea;
   mockupUrl: string;
-  annotations?: { id: string; x: number; y: number; text: string }[];
+  annotations?: Array<{ id: string; x: number; y: number; text: string }>;
   extra?: { layoutUrl?: string; locationName?: string; colorsCount?: number };
 }
 
@@ -242,7 +242,7 @@ export interface GenerateMockupParams {
 export interface GenerateMockupResult {
   mockupUrl?: string;
   singleUrl?: string | null;
-  batchResults: { url: string; areaName: string }[];
+  batchResults: Array<{ url: string; areaName: string }>;
   jobId?: string;
   revisionsLeft?: number;
 }
@@ -336,7 +336,7 @@ export async function generateMockupApi(
   }
 
   // BATCH: one invocation per area; keep the successes, warn about partial failures.
-  const batchResults: { url: string; areaName: string }[] = [];
+  const batchResults: Array<{ url: string; areaName: string }> = [];
   let failures = 0;
   for (const area of areasWithLogos) {
     try {

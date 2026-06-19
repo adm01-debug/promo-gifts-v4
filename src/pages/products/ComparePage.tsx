@@ -95,7 +95,7 @@ export default function ComparePage() {
           : product;
         return { product: displayProduct, variant: item.variant, index };
       })
-      .filter(Boolean) as { product: Product; variant?: CompareVariantInfo; index: number }[];
+      .filter(Boolean) as Array<{ product: Product; variant?: CompareVariantInfo; index: number }>;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareItems, getProductsByIds, _cacheSignal]);
 

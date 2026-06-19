@@ -97,7 +97,7 @@ function findGhostOverlay(): HTMLElement | null {
   const root = document.getElementById('root');
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const points: [number, number][] = [
+  const points: Array<[number, number]> = [
     [w / 2, h / 2],
     [w * 0.25, h * 0.35],
     [w * 0.75, h * 0.65],

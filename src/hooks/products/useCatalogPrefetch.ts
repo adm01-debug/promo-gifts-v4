@@ -26,10 +26,10 @@ export function prefetchCatalog(queryClient: QueryClient) {
       }));
       const [batchResults, categoriesRaw] = await Promise.all([
         Promise.all(batchQueries.map((q) => dbInvoke(q))),
-        fetchPromobrindCategories().catch(() => [] as { id: string; name: string }[]),
+        fetchPromobrindCategories().catch(() => [] as Array<{ id: string; name: string }>),
       ]);
       const categoriesById = new Map(categoriesRaw.map((c) => [String(c.id), c.name]));
-      const products: ReturnType<typeof mapLightweightToProduct>[] = [];
+      const products: Array<ReturnType<typeof mapLightweightToProduct>> = [];
       let totalEstimate: number | null = null;
       let lastPageSize = 0;
 

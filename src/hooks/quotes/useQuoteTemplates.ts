@@ -20,14 +20,14 @@ export interface QuoteTemplateItem {
   unitPrice: number;
   colorName?: string;
   colorHex?: string;
-  personalizations?: {
+  personalizations?: Array<{
     techniqueId: string;
     techniqueName: string;
     colorsCount?: number;
     positionsCount?: number;
     unitCost?: number;
     setupCost?: number;
-  }[];
+  }>;
 }
 
 export interface QuoteTemplate {
@@ -85,9 +85,9 @@ function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
 export function useQuoteTemplates() {
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [allTemplates, setAllTemplates] = useState<QuoteTemplate[]>([]);
-  const [sellers, setSellers] = useState<{ id: string; full_name: string | null; email: string }[]>(
-    [],
-  );
+  const [sellers, setSellers] = useState<
+    Array<{ id: string; full_name: string | null; email: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, isAdmin } = useAuth();

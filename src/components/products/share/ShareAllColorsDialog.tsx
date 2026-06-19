@@ -121,7 +121,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
 
   // Group colors by group name
   const groupedColors = useMemo(() => {
-    const groups = new Map<string, { color: ProductColor; index: number }[]>();
+    const groups = new Map<string, Array<{ color: ProductColor; index: number }>>();
     product.colors.forEach((color, index) => {
       const group = color.group || 'Outras';
       if (!groups.has(group)) groups.set(group, []);

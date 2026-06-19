@@ -242,7 +242,7 @@ export interface PreflightIssue {
  */
 export function getPreflightIssues(
   secrets: SecretStatus[],
-  required: { name: string; label: string }[],
+  required: Array<{ name: string; label: string }>,
 ): PreflightIssue[] {
   const issues: PreflightIssue[] = [];
   for (const { name, label } of required) {

@@ -69,13 +69,13 @@ export function useMockupGenerator() {
   const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
   const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
   const [generatedBatchMockups, setGeneratedBatchMockups] = useState<
-    { areaName: string; url: string }[]
+    Array<{ areaName: string; url: string }>
   >([]);
   const [artAttachments, setArtAttachments] = useState<ArtFileAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [mockupAnnotations, setMockupAnnotations] = useState<
-    { id: string; x: number; y: number; text: string }[]
+    Array<{ id: string; x: number; y: number; text: string }>
   >([]);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [techniqueColorConfig, setTechniqueColorConfig] = useState<TechniqueColorConfig | null>(

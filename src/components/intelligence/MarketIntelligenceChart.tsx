@@ -469,7 +469,7 @@ export function MarketIntelligenceChart({
                   content={(props) => (
                     <MarketMacroTooltip
                       active={props.active}
-                      payload={props.payload as { payload: MarketDataPoint }[] | undefined}
+                      payload={props.payload as Array<{ payload: MarketDataPoint }> | undefined}
                     />
                   )}
                 />
@@ -658,7 +658,7 @@ function MarketMacroTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: MarketDataPoint }[];
+  payload?: Array<{ payload: MarketDataPoint }>;
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

@@ -36,7 +36,7 @@ export function useProductFormDraft(
         localStorage.removeItem(DRAFT_KEY);
         return;
       }
-      const keys = Object.keys(draft.formData) as (keyof ProductFormData)[];
+      const keys = Object.keys(draft.formData) as Array<keyof ProductFormData>;
       keys.forEach((key) => {
         const val = draft.formData[key];
         if (val !== undefined) {

@@ -70,7 +70,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     depthProfile: 1.0,
     showControls: false,
     reducedMotion: false,
-    individualAstronauts: [] as { id: number; scale: number; opacity: number }[],
+    individualAstronauts: [] as Array<{ id: number; scale: number; opacity: number }>,
   });
 
   const nextIdRef = useRef(0);

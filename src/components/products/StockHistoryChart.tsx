@@ -446,7 +446,7 @@ function MarketTooltip({
   showCost,
 }: {
   active?: boolean;
-  payload?: { payload: Record<string, number> }[];
+  payload?: Array<{ payload: Record<string, number> }>;
   showCost: boolean;
 }) {
   if (!active || !payload?.length) return null;

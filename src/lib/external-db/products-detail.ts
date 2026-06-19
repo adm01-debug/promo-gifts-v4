@@ -30,14 +30,14 @@ async function fetchProductWithRetry(
     PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   ];
   let lastError: unknown;
-  for (let selectIdx = 0; selectIdx < selectFields.length; selectIdx++) {
+  for (const selectField of selectFields) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters: { id: productId },
-          select: selectFields[selectIdx],
+          select: selectField,
           limit: 1,
         });
       } catch (err) {
@@ -474,7 +474,7 @@ export async function fetchPromobrindProductBySku(sku: string): Promise<Promobri
   throw lastError;
 }
 
-export async function fetchPromobrindCategories(): Promise<{ id: string; name: string }[]> {
+export async function fetchPromobrindCategories(): Promise<Array<{ id: string; name: string }>> {
   try {
     const result = await dbInvoke<{ id: string; name: string }>({
       table: 'categories',
@@ -510,7 +510,7 @@ export async function fetchPromobrindCategories(): Promise<{ id: string; name: s
 }
 
 export async function fetchPromobrindColors(): Promise<
-  { name: string; hex: string; group?: string }[]
+  Array<{ name: string; hex: string; group?: string }>
 > {
   try {
     const result = await dbInvoke<{

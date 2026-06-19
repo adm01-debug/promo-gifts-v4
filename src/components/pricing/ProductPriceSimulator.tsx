@@ -33,7 +33,7 @@ function StepProgressBar({
   steps,
   currentStep,
 }: {
-  steps: { number: number; label: string; icon: React.ElementType }[];
+  steps: Array<{ number: number; label: string; icon: React.ElementType }>;
   currentStep: number;
 }) {
   return (

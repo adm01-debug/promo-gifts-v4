@@ -6,7 +6,7 @@ import { useQuoteFunnel, useQuotes } from '@/hooks/quotes';
 
 export type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'expiring';
 
-export const sortOptions: { value: SortOption; label: string }[] = [
+export const sortOptions: Array<{ value: SortOption; label: string }> = [
   { value: 'newest', label: 'Mais recentes' },
   { value: 'oldest', label: 'Mais antigos' },
   { value: 'highest', label: 'Maior valor' },

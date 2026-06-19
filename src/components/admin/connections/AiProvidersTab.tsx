@@ -52,7 +52,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const API_FORMATS: { value: AiApiFormat; label: string; help: string }[] = [
+const API_FORMATS: Array<{ value: AiApiFormat; label: string; help: string }> = [
   {
     value: 'openai_compatible',
     label: 'OpenAI-compatible',

@@ -14,13 +14,13 @@ interface WizardStepsProps {
   kitState?: KitState;
 }
 
-const STEPS: {
+const STEPS: Array<{
   id: KitBuilderStep;
   label: string;
   ordinal: string;
   icon: typeof Package;
   tagline: string;
-}[] = [
+}> = [
   { id: 'box', label: 'Caixa', ordinal: '01', icon: Package, tagline: 'A primeira impressão' },
   { id: 'items', label: 'Itens', ordinal: '02', icon: Gift, tagline: 'O coração do kit' },
   {

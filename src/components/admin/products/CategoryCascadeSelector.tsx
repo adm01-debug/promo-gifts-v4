@@ -99,7 +99,7 @@ function CascadeSelects({
   }, [value, nodeMap]);
 
   const levels = useMemo(() => {
-    const result: { items: CatNode[]; selectedId: string }[] = [];
+    const result: Array<{ items: CatNode[]; selectedId: string }> = [];
     result.push({ items: roots, selectedId: selectedChain[0] ?? '' });
     for (let i = 0; i < selectedChain.length; i++) {
       const node = nodeMap.get(selectedChain[i]);

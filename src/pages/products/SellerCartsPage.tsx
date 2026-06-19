@@ -479,10 +479,9 @@ function SellerCartsContent() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl p-1">
                     {(
-                      Object.entries(STATUS_CONFIG) as [
-                        CartStatus,
-                        (typeof STATUS_CONFIG)[CartStatus],
-                      ][]
+                      Object.entries(STATUS_CONFIG) as Array<
+                        [CartStatus, (typeof STATUS_CONFIG)[CartStatus]]
+                      >
                     ).map(([key, cfg]) => (
                       <SelectItem key={key} value={key} className="rounded-lg py-2">
                         <span className="flex items-center gap-2.5">
@@ -535,12 +534,12 @@ function SellerCartsContent() {
               <CartEmptyStateSmart
                 activeCart={s.activeCart}
                 templates={
-                  s.templates as {
+                  s.templates as Array<{
                     id: string;
                     name: string;
                     description?: string;
                     items: CartTemplateItem[];
-                  }[]
+                  }>
                 }
                 otherCarts={s.otherCarts}
                 onApplyTemplate={s.handleLoadTemplate}

@@ -113,7 +113,7 @@ export function ScheduledReportsManager() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.entries(REPORT_TYPE_LABELS) as [ReportType, string][]).map(
+                      {(Object.entries(REPORT_TYPE_LABELS) as Array<[ReportType, string]>).map(
                         ([k, v]) => (
                           <SelectItem key={k} value={k}>
                             {v}
@@ -134,7 +134,7 @@ export function ScheduledReportsManager() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.entries(FREQUENCY_LABELS) as [ReportFrequency, string][]).map(
+                      {(Object.entries(FREQUENCY_LABELS) as Array<[ReportFrequency, string]>).map(
                         ([k, v]) => (
                           <SelectItem key={k} value={k}>
                             {v}

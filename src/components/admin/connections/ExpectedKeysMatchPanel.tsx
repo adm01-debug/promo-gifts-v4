@@ -40,7 +40,7 @@ export type ExpectedKeysMatchPanelProps = {
 type EnvDiagnosis = {
   envKey: string;
   label: string;
-  expectedSecrets: { name: string; present: boolean; hasValue: boolean }[];
+  expectedSecrets: Array<{ name: string; present: boolean; hasValue: boolean }>;
   hasExtConn: boolean;
   extName: string | null;
   ok: boolean;

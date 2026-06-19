@@ -656,7 +656,7 @@ export function useFiltersPageState() {
   // isNew, hasPersonalization, hasCommercialPackaging, search, techniques, tags).
   // Chips removíveis no cabeçalho não apareciam para esses filtros.
   const activeFiltersSummary = useMemo(() => {
-    const summary: { label: string; value: string; key: keyof FilterState }[] = [];
+    const summary: Array<{ label: string; value: string; key: keyof FilterState }> = [];
     const totalCores =
       (filters.colorGroups?.length ?? 0) +
       (filters.colorVariations?.length ?? 0) +

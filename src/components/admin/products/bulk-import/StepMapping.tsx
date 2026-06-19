@@ -13,7 +13,7 @@ import { TARGET_FIELDS, type ColumnMapping, type TargetFieldKey } from './types'
 
 interface StepMappingProps {
   headers: string[];
-  rawData: Record<string, unknown>[];
+  rawData: Array<Record<string, unknown>>;
   mapping: ColumnMapping;
   setMapping: (fn: (prev: ColumnMapping) => ColumnMapping) => void;
   requiredMapped: boolean;

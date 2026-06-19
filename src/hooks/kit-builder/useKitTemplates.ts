@@ -19,7 +19,7 @@ export interface KitTemplateRow {
   tag: string | null;
   cover_image_url: string | null;
   box_data: Record<string, unknown> | null;
-  items_data: Record<string, unknown>[];
+  items_data: Array<Record<string, unknown>>;
   personalization_data: Record<string, unknown>;
   total_price: number;
   volume_usage_percent: number;
