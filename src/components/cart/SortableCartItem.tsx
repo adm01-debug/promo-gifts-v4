@@ -79,13 +79,19 @@ export const SortableCartItem = memo(function SortableCartItem({
     setQtyDraft(String(item.quantity));
   }, [item.quantity]);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const commitQty = () => {
     const val = parseInt(qtyDraft, 10);
     if (isNaN(val) || val < 1) {
       setQtyDraft(String(item.quantity)); // reverte entrada vazia/invalida
       return;
     }
-    const clamped = Math.min(val, 100000);
+    const clamped = Math.min(val, 999999);
     if (clamped !== item.quantity) onUpdateQuantity(item.id, clamped);
     setQtyDraft(String(clamped));
   };
