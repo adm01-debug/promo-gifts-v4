@@ -1,12 +1,184 @@
 {
-  "generatedAt": "2026-06-19T18:10:00.000000+00:00",
-  "totalErrors": 2,
+  "generatedAt": "2026-06-19T18:30:50.914Z",
+  "totalErrors": 86,
   "counts": {
+    "src/components/admin/DiscountApprovalHeaderBadge.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/admin/DiscountApprovalQueue.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/admin/connections/ConnectionDetailsDialog.tsx": {
+      "@typescript-eslint/no-shadow": 2
+    },
+    "src/components/admin/connections/FailedDeliveriesPanel.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/admin/connections/LastSyncRunPanel.tsx": {
+      "@typescript-eslint/no-shadow": 2
+    },
+    "src/components/admin/hooks/useGroupPersonalization.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/admin/security/SecurityAnalytics.tsx": {
+      "@typescript-eslint/no-shadow": 3
+    },
+    "src/components/bi/BundleSuggestions.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/bi/ClientLookalikes.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/cart/BundleSuggestionCard.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/cart/CartHeaderButton.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/collections/CollectionsHeatmap.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/dashboard/MyDiscountRequestsWidget.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/dashboard/MyRecentQuotesWidget.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/favorites/FavoritesHeatmap.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/intelligence/MarketIntelligenceInsightsCard.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/intelligence/TopCategoriesCard.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/intelligence/TrendsInsightsCard.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/inventory/VariantStockTable.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
     "src/components/mockup/MockupHistoryPanel.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
+    "src/components/products/ProductStatusBadge.tsx": {
+      "@typescript-eslint/no-shadow": 3
+    },
+    "src/components/products/VariantGridMatrix.tsx": {
+      "@typescript-eslint/no-shadow": 3
+    },
+    "src/components/quotes/QuoteKanbanBoard.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/quotes/QuoteTemplatePicker.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/simulator/wizard/StepSpecs.tsx": {
+      "@typescript-eslint/no-shadow": 5
+    },
+    "src/components/ui/LoadingState.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/ui/carousel.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/ui/chart.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/components/ui/sidebar.tsx": {
+      "@typescript-eslint/no-shadow": 2
+    },
+    "src/contexts/AuthContext.tsx": {
+      "@typescript-eslint/no-shadow": 2
+    },
+    "src/hooks/admin/useIPValidation.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/crm/useRamoAtividadeFilter.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/kit-builder/useKitWizardShortcuts.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/mockup/__tests__/useMockupDraft.test.ts": {
+      "@typescript-eslint/no-shadow": 6
+    },
     "src/hooks/products/__tests__/useAdvancedFilters.test.ts": {
       "<no-rule>": 1
+    },
+    "src/hooks/products/useCategoriesTree.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/products/useProductLeafCategories.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/products/useProductRecommendations.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/products/useProductsByMetadata.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/products/useProductsColorsBatch.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/quotes/__tests__/useDiscountApproval.test.ts": {
+      "@typescript-eslint/no-shadow": 4,
+      "@typescript-eslint/no-unused-vars": 4,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/quotes/__tests__/useQuoteConcurrencyGuard.test.ts": {
+      "@typescript-eslint/no-shadow": 4
+    },
+    "src/hooks/quotes/__tests__/useQuoteTemplates.test.ts": {
+      "@typescript-eslint/no-shadow": 3,
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-duplicate-imports": 1
+    },
+    "src/hooks/quotes/__tests__/useQuotes.test.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/hooks/ui/useWorkspaceNotifications.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/lib/external-rpc.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/pages/admin/AdminExternalDbPage.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/admin/OwnershipAuditAdminPage.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/admin/RlsDenialsAdminPage.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/admin/SellerDiscountLimitsAdminPage.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/admin/ai-usage/AiQuotaManager.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/admin/telemetry/useRegressionGuardrail.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/mockups/MockupHistoryPage.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/products/ProductDetail.tsx": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/pages/trends/trends-mock.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/stores/__tests__/useComparisonStore.removeFromCompare.test.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/utils/color-image-resolver.ts": {
+      "@typescript-eslint/no-shadow": 1
+    },
+    "src/utils/color-matching.ts": {
+      "@typescript-eslint/no-shadow": 1
     }
   }
 }
