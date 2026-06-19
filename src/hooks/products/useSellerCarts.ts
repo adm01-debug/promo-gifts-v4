@@ -573,7 +573,7 @@ export function useSellerCarts() {
         product_sku: item.product_sku || null,
         product_image_url: item.product_image_url || null,
         product_price: item.product_price,
-        quantity: item.quantity || 1,
+        quantity: clampQuantity(item.quantity || 1),
         color_name: item.color_name || null,
         color_hex: item.color_hex || null,
         notes: item.notes ?? null,

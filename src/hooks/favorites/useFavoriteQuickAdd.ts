@@ -105,18 +105,20 @@ export function useFavoriteQuickAdd() {
     async (productId: string) => {
       if (!user) return;
       try {
-        await supabase
+        const { error } = await supabase
           .from('favorite_items')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
+        if (error) throw error;
         if (isFavorite(productId)) toggleFavorite(productId);
         qc.invalidateQueries({ queryKey: ['favorite-membership'] });
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
       } catch (e) {
         logger.warn('[favoriteQuickAdd] remove failed', e);
-        if (isFavorite(productId)) toggleFavorite(productId);
+        toast.error('Não foi possível remover dos favoritos');
+        // Do NOT toggle — deletion failed, keep local state consistent with DB
       }
     },
     [user, qc, isFavorite, toggleFavorite],
