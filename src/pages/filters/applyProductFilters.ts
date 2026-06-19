@@ -22,6 +22,7 @@ export interface ProductFilterContext {
   hasColorFilter: boolean;
   colorFilteredProductIds: Set<string>;
   isLoadingColorFilter: boolean;
+  colorFilterError?: unknown;
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
@@ -67,6 +68,7 @@ export function applyProductFilters(
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
@@ -101,7 +103,13 @@ export function applyProductFilters(
   }
   if (hasColorFilter && colorFilteredProductIds.size > 0)
     result = result.filter((p) => colorFilteredProductIds.has(p.id));
-  else if (hasColorFilter && colorFilteredProductIds.size === 0 && !isLoadingColorFilter)
+  // FIX-21: guard !colorFilterError mirrors category filter — RPC error must not zero the grid.
+  else if (
+    hasColorFilter &&
+    colorFilteredProductIds.size === 0 &&
+    !isLoadingColorFilter &&
+    !colorFilterError
+  )
     result = [];
   if (hasCategoryFilter && categoryFilteredProductIds.size > 0)
     result = result.filter((p) => categoryFilteredProductIds.has(p.id));

@@ -332,12 +332,24 @@ export function useFiltersPageState() {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
     colors: filters.colors,
   });
+
+  const prevColorErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = colorFilterError ? String(colorFilterError) : null;
+    if (colorFilterError && msg !== prevColorErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de cores', {
+        description: 'O filtro de Cores falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevColorErrorRef.current = msg;
+  }, [colorFilterError]);
 
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
@@ -485,6 +497,7 @@ export function useFiltersPageState() {
         hasColorFilter,
         colorFilteredProductIds,
         isLoadingColorFilter,
+        colorFilterError,
         hasCategoryFilter,
         categoryFilteredProductIds,
         isLoadingCategoryFilter,
@@ -529,6 +542,7 @@ export function useFiltersPageState() {
       hasColorFilter,
       colorFilteredProductIds,
       isLoadingColorFilter,
+      colorFilterError,
       promoSalesMap,
       supplierSalesMap,
       promoSales90dMap,

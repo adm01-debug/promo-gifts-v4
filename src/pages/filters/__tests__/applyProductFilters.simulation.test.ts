@@ -594,6 +594,65 @@ describe('SIM — error gates: falha de servidor nunca zera a grade', () => {
     expect(run(f(), ctx).length).toBe(CATALOG.length);
   });
 
+  // FIX-21: color filter error guard (mirrors categoryFilterError behavior)
+  it('FIX-21: colorFilterError: grade intacta quando RPC de cor falha', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('color-rpc timeout'),
+    });
+    expect(run(f({ colors: ['azul'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-21: colorFilterError: string error também preserva a grade', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: 'network error',
+    });
+    expect(run(f({ colorGroups: ['azuis'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-21: cor Set vazio + sem erro + sem loading = zera grade (comportamento correto)', () => {
+    // Sem erro e sem loading, Set vazio significa "nenhum produto desta cor" → grade zerada
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: undefined,
+    });
+    expect(run(f({ colors: ['cor-inexistente'] }), ctx).length).toBe(0);
+  });
+
+  it('FIX-21: cor Set não vazio + erro = filtra normalmente (Set parcial disponível)', () => {
+    // Erro APÓS resultado parcial: usa o Set disponível, não zera
+    const colorIds = new Set(['1', '2']);
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: colorIds,
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('partial failure'),
+    });
+    const out = run(f({ colors: ['azul'] }), ctx);
+    expect(out.length).toBe(2);
+    expect(ids(out)).toEqual(expect.arrayContaining(['1', '2']));
+  });
+
+  it('FIX-21: cor error + filtro local price ativo = price ainda filtra', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('rpc error'),
+    });
+    // priceRange [0, 10] deve filtrar por preço mesmo com color error
+    const out = run(f({ priceRange: [0, 10] as [number, number] }), ctx);
+    expect(out.every((p) => p.price <= 10)).toBe(true);
+    expect(out.length).toBeGreaterThan(0);
+  });
+
   it('cor: Set vazio + carregando = mantém (loading gate)', () => {
     const ctx = baseCtx({
       hasColorFilter: true,
