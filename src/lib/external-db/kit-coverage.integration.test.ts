@@ -31,11 +31,37 @@ describe.skipIf(!INTEGRATION_ENABLED)(
     let kitId: string;
 
     beforeAll(async () => {
-      const pinned = process.env.KIT_FIXTURE_ID;
+      const pinned = process.env.KIT_FIXTURE_ID?.trim();
       if (pinned) {
+        // Valida formato UUID v4 para falhar rápido se a var estiver corrompida
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!UUID_RE.test(pinned)) {
+          throw new Error(
+            `KIT_FIXTURE_ID inválido: "${pinned}" não é um UUID. ` +
+              `Corrija em GitHub → Settings → Variables → KIT_FIXTURE_ID.`,
+          );
+        }
+        // Confirma que o kit existe e tem componentes (evita fixture morto silencioso)
+        const { records: comps } = await dbInvoke<{ id: string }>({
+          table: 'product_kit_components',
+          operation: 'select',
+          select: 'id',
+          filters: { kit_product_id: pinned },
+          limit: 1,
+        });
+        if (comps.length === 0) {
+          throw new Error(
+            `KIT_FIXTURE_ID=${pinned} não tem componentes em product_kit_components. ` +
+              `Fixture morto — escolha outro kit ou rode descoberta dinâmica (var vazia).`,
+          );
+        }
         kitId = pinned;
+        // eslint-disable-next-line no-console
+        console.log(`[kit-coverage] usando fixture fixo: ${kitId}`);
         return;
       }
+      // eslint-disable-next-line no-console
+      console.log('[kit-coverage] KIT_FIXTURE_ID vazio — descoberta dinâmica');
       // Descobre primeiro produto kit com componentes
       const { records } = await dbInvoke<{ id: string }>({
         table: 'products',
