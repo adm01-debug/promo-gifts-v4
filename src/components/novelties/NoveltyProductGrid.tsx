@@ -80,6 +80,7 @@ export function NoveltyProductGrid() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
+  const [scrollToken, setScrollToken] = useState(0);
   const pageSize = 20;
   // BUG-SCROLL-03 FIX: guard local para evitar que o IntersectionObserver
   // do sentinel dispare múltiplos setVisibleCount antes do re-render React.
@@ -178,6 +179,7 @@ export function NoveltyProductGrid() {
   // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(40);
+    setScrollToken((prev) => prev + 1);
     // GAP-11 FIX: libera o guard ao trocar de filtro para que o primeiro
     // load-more do novo conjunto não fique bloqueado pelos 150ms residuais.
     if (guardTimerRef.current) {
@@ -189,7 +191,7 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
@@ -443,6 +445,7 @@ export function NoveltyProductGrid() {
         hasMore={hasMore}
         isLoadingMore={isFetching}
         onLoadMore={handleLoadMore}
+        scrollToTopToken={scrollToken}
         onStatusClick={(type) => {
           if (type === 'novelty') return;
           if (type === 'promotion') navigate('/filtros?onSale=1');
