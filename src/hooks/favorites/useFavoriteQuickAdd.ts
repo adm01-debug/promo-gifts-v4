@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,12 +70,12 @@ export function useFavoriteQuickAdd() {
             variant_id: variant?.variant_id ?? null,
             variant_info: (variant ?? null) as never,
             // Snapshot the effective selling price (sale_price when available, otherwise price)
-        price_at_save:
-          typeof (product as { sale_price?: number }).sale_price === 'number'
-            ? (product as { sale_price?: number }).sale_price!
-            : typeof product.price === 'number'
-              ? product.price
-              : null,
+            price_at_save:
+              typeof (product as { sale_price?: number }).sale_price === 'number'
+                ? ((product as { sale_price?: number }).sale_price ?? null)
+                : typeof product.price === 'number'
+                  ? product.price
+                  : null,
           },
           { onConflict: 'list_id,product_id,variant_id', ignoreDuplicates: false },
         );
@@ -176,7 +176,7 @@ export function useFavoriteQuickAdd() {
       user,
       isFavorite,
       hasMultipleLists,
-      lastUsedListId,
+      getLastUsedListId,
       defaultList,
       lists,
       toggleFavorite,

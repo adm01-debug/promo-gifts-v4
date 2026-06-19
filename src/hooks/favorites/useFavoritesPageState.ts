@@ -192,20 +192,22 @@ export function useFavoritesPageState() {
   const filteredProducts = useMemo(() => {
     let list = [...productsWithVariant];
     if (searchQuery.trim()) {
-      const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
           norm(p.name).includes(q) ||
           (p.sku && norm(p.sku).includes(q)) ||
-          ((p as { brand?: string }).brand && norm((p as { brand?: string }).brand!).includes(q)),
+          ((p as { brand?: string }).brand &&
+            norm((p as { brand?: string }).brand ?? '').includes(q)),
       );
     }
     if (onlyPriceDrops && isRemoteListView) {
       list = list.filter((p) => {
         const meta = enrichedMetaMap.get(p.id);
-        return meta?.priceDiffPct !== null && meta?.priceDiffPct !== undefined && meta.priceDiffPct < -2;
+        return (
+          meta?.priceDiffPct !== null && meta?.priceDiffPct !== undefined && meta.priceDiffPct < -2
+        );
       });
     }
     const sorted = [...list];
