@@ -155,7 +155,7 @@ export const ProductCardImage = memo(function ProductCardImage({
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
-      {/* Loading overlay for color change / Skeleton transition */}
+      {/* Loading overlay for color change / skeleton transition */}
       {isUpdatingColor && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 duration-200 animate-in fade-in">
           <div className="flex h-full w-full animate-pulse items-center justify-center bg-muted/30">
