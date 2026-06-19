@@ -287,7 +287,7 @@ describe('fetchAndProcessStockData', () => {
   it('returns empty results when there are no products', async () => {
     seedAll({ products: [] });
     const res = await fetchAndProcessStockData();
-    expect(res).toEqual({ productStocks: [], alerts: [], futureStock: [] });
+    expect(res).toEqual({ productStocks: [], alerts: [], futureStock: [], degradedTables: [] });
   });
 
   it('builds a product summary from its variants + supplier source', async () => {
@@ -583,6 +583,28 @@ describe('fetchAndProcessStockData', () => {
     // currentStock 0, no in-transit -> out_of_stock -> at least one alert
     expect(res.alerts.length).toBeGreaterThan(0);
     expect(res.alerts.some((a) => a.type === 'out_of_stock')).toBe(true);
+  });
+
+  it('gracefully degrades when categories table fails — products returned, degradedTables populated', async () => {
+    // When categories fails, products should still appear but without categoryName.
+    // degradedTables must list 'categories' so the UI can surface a partial-data banner.
+    seedAll({
+      products: [{ id: 'p1', name: 'Caneca', sku: 'CAN', category_id: 'cat1' }],
+      variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 5, is_active: true }],
+    });
+    // Override categories queue with a non-410 fatal error; graceful() catches it.
+    queue('categories', { data: null, error: { message: 'connection timeout' } });
+
+    const res = await fetchAndProcessStockData();
+
+    expect(res.productStocks).toHaveLength(1);
+    expect(res.productStocks[0].productName).toBe('Caneca');
+    // No category data available — categoryName falls back to undefined.
+    expect(res.productStocks[0].categoryName).toBeUndefined();
+    // degradedTables must report the failed table.
+    expect(res.degradedTables).toContain('categories');
+    // Other tables unaffected — variant stock is still computed.
+    expect(res.productStocks[0].variants[0].currentStock).toBe(5);
   });
 
   it('aggregates currentStock and inTransitStock from 6 sources across different suppliers', async () => {

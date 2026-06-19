@@ -297,12 +297,37 @@ export function buildFutureEntries(
   return entries;
 }
 
-/** Busca em paralelo todas as entidades do estoque e as processa em `productStocks`, `alerts` e `futureStock`. */
+/**
+ * Busca em paralelo todas as entidades do estoque e as processa em
+ * `productStocks`, `alerts` e `futureStock`.
+ *
+ * Tolerância a falhas por tabela:
+ *  - `products` / `product_variants` — críticas: se falharem, a Promise rejeita.
+ *  - `variant_supplier_sources` — semi-crítica: se falhar, usa stock_quantity
+ *    das variações diretamente (sem agregação multi-fornecedor).
+ *  - `categories` / `suppliers` — opcionais: se falharem, exibe produtos sem
+ *    nomes de categoria/fornecedor.
+ *  - `product_images` / `mv_stock_velocity` — já possuem fallback interno.
+ * Tabelas degradadas são listadas em `degradedTables` no retorno.
+ */
 export async function fetchAndProcessStockData(): Promise<{
   productStocks: ProductStockSummary[];
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
+  degradedTables: string[];
 }> {
+  const degradedTables: string[] = [];
+  const graceful =
+    <T>(table: string) =>
+    (err: unknown): T[] => {
+      logger.warn(
+        `[Stock] ${table}: falha parcial — degradado, continuando sem dados desta tabela.`,
+        err,
+      );
+      degradedTables.push(table);
+      return [];
+    };
+
   const [
     allProducts,
     allVariants,
@@ -332,14 +357,19 @@ export async function fetchAndProcessStockData(): Promise<{
       1000,
       100000,
       { is_active: true },
-    ),
-    fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+    ).catch(graceful<ExternalSupplierSource>('variant_supplier_sources')),
+    fetchPaginatedFromBridge<{ id: string; name: string }>(
+      'categories',
+      'id,name',
+      1000,
+      100000,
+    ).catch(graceful<{ id: string; name: string }>('categories')),
     fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
       'suppliers',
       'id,name,code',
       1000,
       100000,
-    ),
+    ).catch(graceful<{ id: string; name: string; code?: string }>('suppliers')),
     // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
     // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
     fetchPaginatedFromBridge<{
@@ -459,7 +489,7 @@ export async function fetchAndProcessStockData(): Promise<{
   const futureEntries: FutureStockEntry[] = [];
 
   if (allProducts.length === 0) {
-    return { productStocks: [], alerts: [], futureStock: [] };
+    return { productStocks: [], alerts: [], futureStock: [], degradedTables };
   }
 
   const summaries: ProductStockSummary[] = allProducts.map((product) => {
@@ -637,5 +667,5 @@ export async function fetchAndProcessStockData(): Promise<{
   logger.log(
     `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsoes`,
   );
-  return { productStocks: summaries, alerts, futureStock: futureEntries };
+  return { productStocks: summaries, alerts, futureStock: futureEntries, degradedTables };
 }

@@ -34,6 +34,8 @@ export function useVariantStock() {
   const productStocks = useMemo(() => data?.productStocks ?? [], [data?.productStocks]);
   const rawAlerts = useMemo(() => data?.alerts ?? [], [data?.alerts]);
   const futureStock = useMemo(() => data?.futureStock ?? [], [data?.futureStock]);
+  const degradedTables = useMemo(() => data?.degradedTables ?? [], [data?.degradedTables]);
+  const isDegraded = degradedTables.length > 0;
 
   const alerts = useMemo(() => {
     if (dismissedAlerts.size === 0) return rawAlerts;
@@ -249,6 +251,8 @@ export function useVariantStock() {
     dismissAllAlerts,
     dismissAlertsBySeverity,
     error,
+    isDegraded,
+    degradedTables,
     setFilters,
     getProductStock,
     getColorStock,
