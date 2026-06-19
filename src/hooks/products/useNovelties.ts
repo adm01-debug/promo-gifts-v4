@@ -546,7 +546,7 @@ export function useNoveltyStats() {
             }
           }
           supFrom += rows.length;
-          if (rows.length === 0) break; // robusto a db-max-rows < SUP_PAGE
+          if (rows.length < SUP_PAGE) break; // última página
         }
       }
 
