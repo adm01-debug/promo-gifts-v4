@@ -45,7 +45,9 @@ export function useFavoriteQuickAdd() {
     staleTime: 30_000,
   });
 
-  const lastUsedListId = useMemo(() => {
+  // Intentionally NOT memoised — must read fresh on every click so that
+  // a Shift+click immediately after a regular-click uses the updated list.
+  const getLastUsedListId = useCallback((): string | null => {
     try {
       return localStorage.getItem(LAST_LIST_KEY);
     } catch {
@@ -67,7 +69,13 @@ export function useFavoriteQuickAdd() {
             product_id: product.id,
             variant_id: variant?.variant_id ?? null,
             variant_info: (variant ?? null) as never,
-            price_at_save: typeof product.price === 'number' ? product.price : null,
+            // Snapshot the effective selling price (sale_price when available, otherwise price)
+        price_at_save:
+          typeof (product as { sale_price?: number }).sale_price === 'number'
+            ? (product as { sale_price?: number }).sale_price!
+            : typeof product.price === 'number'
+              ? product.price
+              : null,
           },
           { onConflict: 'list_id,product_id,variant_id', ignoreDuplicates: false },
         );
@@ -150,6 +158,7 @@ export function useFavoriteQuickAdd() {
       }
       // Sem múltiplas listas OU shift pressionado → vai para a default
       if (!hasMultipleLists || opts?.shiftKey) {
+        const lastUsedListId = getLastUsedListId();
         const target =
           (lastUsedListId && lists.find((l) => l.id === lastUsedListId)) || defaultList;
         if (target) {
