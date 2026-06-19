@@ -417,7 +417,9 @@ export function RoleMigrationPanel() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => void refreshBatches()}
+              onClick={() => {
+                refreshBatches();
+              }}
               disabled={loadingBatches}
             >
               {loadingBatches && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -437,7 +439,9 @@ export function RoleMigrationPanel() {
                 return (
                   <button
                     key={b.id}
-                    onClick={() => void drillDown(b)}
+                    onClick={() => {
+                      drillDown(b);
+                    }}
                     className="flex w-full items-center gap-3 rounded-lg border p-3 text-left hover:bg-muted/40"
                   >
                     <div className="min-w-0 flex-1">

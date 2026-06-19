@@ -152,8 +152,8 @@ export function attachSessionRevalidation(): () => void {
     try {
       const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
-      
-      // BUG-FIX: Se detectarmos que não há sessão mas o localStorage tem resquícios, 
+
+      // BUG-FIX: Se detectarmos que não há sessão mas o localStorage tem resquícios,
       // ou se o token atual falhar na validação getUser(), forçamos recuperação.
       if (!sessionData?.session) {
         // Se houver flags de autenticação no cache mas sem sessão real, pode ser um estado zumbi
@@ -165,7 +165,7 @@ export function attachSessionRevalidation(): () => void {
         await recoverSession(`revalidate:${reason}`);
       }
     } catch (err) {
-      // Se falhar por rede (ex: reconexão lenta), não faz nada. 
+      // Se falhar por rede (ex: reconexão lenta), não faz nada.
       // Se for erro de auth explícito, loga.
       if (isBadJwtError(err)) {
         await recoverSession(`revalidate:catch:${reason}`);
@@ -175,8 +175,12 @@ export function attachSessionRevalidation(): () => void {
     }
   };
 
-  const onFocus = () => void revalidate('focus');
-  const onOnline = () => void revalidate('online');
+  const onFocus = () => {
+    revalidate('focus');
+  };
+  const onOnline = () => {
+    revalidate('online');
+  };
   const onVisibility = () => {
     if (document.visibilityState === 'visible') void revalidate('visibility');
   };
