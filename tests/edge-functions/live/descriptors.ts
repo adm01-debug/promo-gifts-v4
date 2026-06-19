@@ -148,6 +148,13 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
     invalidInputs: [],
   },
 
+  // ---------------- Funções de teste internas (utilitários de QA) ----------------
+  // Usam SERVICE_ROLE_KEY internamente; não expõem ação pública.
+  // Sem happy-path: executar geraria efeitos colaterais no DB (carts/itens).
+  "test-cart-concurrency": { invalidInputs: [] },
+  "test-cart-limit": { invalidInputs: [] },
+  "test-cart-rls": { invalidInputs: [] },
+
   // ---------------- Geração de IA cara (gate COSTLY) ----------------
   "word-magic": {
     // Copywriting B2B via DeepSeek — escreve em ai_enrichment_queue/products e
