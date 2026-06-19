@@ -28,6 +28,7 @@ import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
