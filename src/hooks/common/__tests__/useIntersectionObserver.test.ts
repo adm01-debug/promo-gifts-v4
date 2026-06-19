@@ -5,9 +5,9 @@
  * Usa cache singleton por rootMargin/threshold para eficiência.
  *
  * Invariantes:
- *   - retorna isVisible=false inicialmente
+ *   - retorna false inicialmente
  *   - registra observe() no mount quando ref.current existe
- *   - retorna isVisible=true quando IntersectionObserver dispara
+ *   - retorna true quando IntersectionObserver dispara
  *   - cleanup: chama unobserve ao desmontar
  *   - triggerOnce: para de observar após primeira interseção
  *   - sem IntersectionObserver (SSR): retorna null, isVisible=false
@@ -15,7 +15,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useRef } from 'react';
-import { useIntersectionObserver } from '../useIntersectionObserver';
+import { useIntersectionObserver, clearObserverCacheForTest } from '../useIntersectionObserver';
 
 // Mock IntersectionObserver
 type IOCallback = (entries: IntersectionObserverEntry[]) => void;
@@ -41,24 +41,28 @@ class MockIntersectionObserver {
 beforeEach(() => {
   MockIntersectionObserver.instances = [];
   vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  // Limpa o cache singleton para cada teste ter um observer fresco
+  clearObserverCacheForTest();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clearObserverCacheForTest();
 });
 
 describe('useIntersectionObserver', () => {
-  it('isVisible=false inicialmente', () => {
-    const { result: _result } = renderHook(() => {
+  it('retorna false inicialmente', () => {
+    const { result } = renderHook(() => {
       const ref = useRef<HTMLDivElement>(null);
       return useIntersectionObserver(ref);
     });
-    expect(result.current.isVisible).toBe(false);
+    // Hook retorna boolean diretamente
+    expect(result.current).toBe(false);
   });
 
   it('chama observe no mount quando ref tem elemento', () => {
     const div = document.createElement('div');
-    const { result: _result } = renderHook(() => {
+    renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
@@ -66,9 +70,9 @@ describe('useIntersectionObserver', () => {
     expect(io?.observe).toHaveBeenCalledWith(div);
   });
 
-  it('isVisible=true quando IntersectionObserver dispara intersecao', () => {
+  it('retorna true quando IntersectionObserver dispara intersecao', () => {
     const div = document.createElement('div');
-    const { result: _result } = renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = { current: div };
       return useIntersectionObserver(ref as never);
     });
@@ -76,14 +80,14 @@ describe('useIntersectionObserver', () => {
     act(() => {
       io?.simulateIntersecting(div, true);
     });
-    expect(result.current.isVisible).toBe(true);
+    expect(result.current).toBe(true);
   });
 
-  it('isVisible=false quando IntersectionObserver dispara sem intersecao', () => {
+  it('retorna false quando IntersectionObserver dispara sem intersecao (once=false)', () => {
     const div = document.createElement('div');
-    const { result: _result } = renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = { current: div };
-      return useIntersectionObserver(ref as never);
+      return useIntersectionObserver(ref as never, { once: false });
     });
     const io = MockIntersectionObserver.instances[0];
     act(() => {
@@ -92,7 +96,7 @@ describe('useIntersectionObserver', () => {
     act(() => {
       io?.simulateIntersecting(div, false);
     });
-    expect(result.current.isVisible).toBe(false);
+    expect(result.current).toBe(false);
   });
 
   it('cleanup: chama unobserve ao desmontar', () => {
@@ -107,11 +111,11 @@ describe('useIntersectionObserver', () => {
   });
 
   it('nao registra observer quando ref.current=null', () => {
-    const { result: _result } = renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = { current: null };
       return useIntersectionObserver(ref as never);
     });
     expect(MockIntersectionObserver.instances).toHaveLength(0);
-    expect(result.current.isVisible).toBe(false);
+    expect(result.current).toBe(false);
   });
 });

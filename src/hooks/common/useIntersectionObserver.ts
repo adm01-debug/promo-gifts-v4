@@ -26,6 +26,12 @@ const observerCache = new Map<string, IntersectionObserver>();
 // Map de callbacks por elemento
 const callbackMap = new WeakMap<Element, (isIntersecting: boolean) => void>();
 
+/** @internal Limpa o cache singleton — use APENAS em testes (beforeEach/afterEach). */
+export function clearObserverCacheForTest(): void {
+  observerCache.forEach((o) => o.disconnect());
+  observerCache.clear();
+}
+
 // BUG-I FIX (2026-06-15): disconnect all shared observers on Vite HMR to prevent
 // module-level singletons from accumulating across hot-reloads in development.
 // In production import.meta.hot is undefined so this is a no-op.

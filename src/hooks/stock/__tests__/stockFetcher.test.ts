@@ -223,9 +223,12 @@ describe('fetchPaginatedFromBridge', () => {
     await fetchPaginatedFromBridge('categories', 'id', 500);
     const orderCall = calls.find((c) => c.method === 'order');
     const limitCall = calls.find((c) => c.method === 'limit');
+    const rangeCall = calls.find((c) => c.method === 'range');
     expect(orderCall).toBeDefined();
     expect(orderCall!.args[0]).toBe('id');
+    expect(limitCall).toBeDefined();
     expect(limitCall!.args[0]).toBe(500);
+    expect(rangeCall).toBeUndefined();
   });
 });
 
