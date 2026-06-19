@@ -373,13 +373,28 @@ export const NoveltyListCard = memo(
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <Package className="h-5 w-5 text-muted-foreground/30" />
-              </div>
-            )}
-          </QuickViewThumb>
+            </svg>
+          )}
         </div>
+      )}
+
+      {/* Image */}
+      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted/20">
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-list-card-thumb"
+          className="h-full w-full"
+        >
+          <HoverSetImage
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            set={activeColorName ? null : product.product_set_image}
+            alt={product.product_name}
+            fallbackIconClassName="h-5 w-5 text-muted-foreground/30"
+          />
+        </QuickViewThumb>
+      </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
