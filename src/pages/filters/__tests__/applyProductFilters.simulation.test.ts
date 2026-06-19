@@ -345,6 +345,61 @@ describe('SIM — filtros server-side por Set de IDs', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// FIX-20: gaps de cobertura — minStock boundary, sort stability, three-way AND
+// ---------------------------------------------------------------------------
+describe('FIX-20: cobertura de gaps — minStock=0, sort stability, three-way AND', () => {
+  // minStock boundary
+  it('minStock=0 não filtra nada (equivalente a sem filtro)', () => {
+    expect(run(f({ minStock: 0 })).length).toBe(CATALOG.length);
+  });
+
+  it('minStock=1: exclui produtos sem stock e sem variação com stock', () => {
+    // produto 2 (stock=0, sem variações), produto 7 (stock=0, variação G=3 → passa),
+    // produto 6 (stock=1 → inclui). Produto 7 tem variação G=3 ≥ 1 → inclui.
+    const out = run(f({ minStock: 1 }));
+    expect(ids(out)).not.toContain('2'); // stock=0, sem variações
+    expect(ids(out)).toContain('6'); // stock=1 → incluído
+    expect(ids(out)).toContain('7'); // stock=0 mas variação G=3 ≥ 1 → incluído
+  });
+
+  // sort stability: mesmos inputs → mesma ordem
+  it('sort stability: aplicar o mesmo sort 10x consecutivas dá sempre a mesma ordem', () => {
+    const first = run(f({ sortBy: 'price-asc' })).map((p) => p.id);
+    for (let i = 0; i < 9; i++) {
+      expect(run(f({ sortBy: 'price-asc' })).map((p) => p.id)).toEqual(first);
+    }
+  });
+
+  it('sort stability: name_asc tem ordem determinística em múltiplas chamadas', () => {
+    const first = run(f({ sortBy: 'name_asc' })).map((p) => p.id);
+    expect(run(f({ sortBy: 'name_asc' })).map((p) => p.id)).toEqual(first);
+  });
+
+  // three-way AND: material + priceRange + featured
+  it('three-way AND: material+preço+featured retorna interseção correta', () => {
+    // Produto 1: plastico, R$9.9, featured=true → único match
+    // Produto 4: couro, R$250, featured=true → fora do priceRange
+    const out = run(f({ materiais: ['plastico'], priceRange: [0, 50], featured: true }));
+    expect(ids(out)).toEqual(['1']);
+  });
+
+  it('three-way AND: material+inStock+isNew — nenhum produto atende os 3', () => {
+    // inox → produto 2 (sem stock), papel → produto 7 (sem stock, newArrival=true)
+    // buscar nylon(produto5) + inStock + isNew → produto5 (stock=2, newArrival=false) → excluído
+    const out = run(f({ materiais: ['nylon'], inStock: true, isNew: true }));
+    expect(out).toHaveLength(0);
+  });
+
+  it('three-way AND: material+preço+inStock — produto 1 (plastico, R$9.9, stock=100)', () => {
+    const out = run(f({ materiais: ['plastico'], priceRange: [5, 20], inStock: true }));
+    expect(ids(out)).toContain('1');
+    expect(ids(out)).not.toContain('2'); // inox, não plastico
+    expect(ids(out)).not.toContain('4'); // couro, fora do range
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Fuzzy + ordenação
 // ---------------------------------------------------------------------------
 describe('SIM — fuzzy search e ordenação', () => {
