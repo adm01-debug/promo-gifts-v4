@@ -44,6 +44,7 @@ const SIZE_MAP = {
   lg: 'h-[5.75rem] w-[5.75rem] rounded-xl',
 } as const;
 
+/** Miniatura da variação com fallback de iniciais, ring colorido e lazy-load. */
 export function VariantThumb({
   imageUrl,
   productName,
@@ -112,6 +113,7 @@ interface RichColorSwatchProps {
   isActive?: boolean;
 }
 
+/** Swatch de cor enriquecido: gradiente para cores mistas, indicador de esgotado e estado ativo. */
 export function RichColorSwatch({
   hex,
   name,
@@ -119,7 +121,7 @@ export function RichColorSwatch({
   isActive = false,
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
-  // "Colorido"/"Sortido" — usa gradiente conic; "Padrao" — neutro.
+  // "Colorido"/"Sortido" — usa gradiente conic; "Padrão" — neutro.
   const isMixed = MIXED_COLOR_RE.test(label);
   const bg = hex
     ? hex
@@ -190,6 +192,7 @@ const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: R
     },
   };
 
+/** Chip colorido que exibe o status de estoque de uma variação com tooltip de detalhes. */
 export function StockStatusChip({
   status,
   current,
@@ -270,6 +273,7 @@ export function StockStatusChip({
 // StockProgressBar — barra de progresso com tooltip de detalhe
 // ============================================
 
+/** Barra de progresso de estoque com cor semântica e tooltip de percentual. */
 export function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
   const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
 

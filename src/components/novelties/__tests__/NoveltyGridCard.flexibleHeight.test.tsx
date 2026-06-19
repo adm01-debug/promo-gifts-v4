@@ -25,6 +25,7 @@ vi.mock('@/components/inventory/StockBadge', () => ({
   StockBadge: () => null,
   getStockStatus: () => 'in-stock' as const,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';

@@ -2,8 +2,8 @@
  * Testes — useSupplierSalesRanking
  * Invariantes: avg_depletion_7d→velocity7d, graceful fallback, RPC fn_get_product_intelligence_all
  *
- * NOTA: o hook foi migrado de dbInvoke para supabase.rpc() (BUG-A fix).
- * O mock correto é @/integrations/supabase/client, não @/lib/db/postgrest.
+ * FIX BUG-A: hook migrado de dbInvoke (limitado a 1000 rows por PostgREST max_rows)
+ * para supabase.rpc() que bypassa o limite e retorna todas as 7 243+ linhas.
  */
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -12,11 +12,11 @@ import React from 'react';
 import { useSupplierSalesRanking } from '../useSupplierSalesRanking';
 import { logger } from '@/lib/logger';
 
-const mockRpc = vi.fn();
+const mockRpc = vi.hoisted(() => vi.fn());
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    rpc: (...args: unknown[]) => mockRpc(...args),
+    rpc: mockRpc,
   },
 }));
 
@@ -145,7 +145,7 @@ describe('defaults e limpeza', () => {
 
 describe('graceful fallback MV nao populada', () => {
   it.each([['not been populated'], ['não mapeada'], ['does not exist']])(
-    'retorna Map vazia quando erro: %s',
+    'retorna Map vazia quando erro RPC: %s',
     async (errMsg) => {
       mockRpc.mockResolvedValue({ data: null, error: { message: errMsg } });
       const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
@@ -156,22 +156,22 @@ describe('graceful fallback MV nao populada', () => {
   );
 
   it('re-lanca erros nao relacionados MV', async () => {
-    mockRpc.mockResolvedValue({ data: null, error: { message: 'connection timeout' } });
+    mockRpc.mockRejectedValue(new Error('connection timeout'));
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 });
-    expect((result.current.error as { message: string }).message).toBe('connection timeout');
+    expect((result.current.error as Error).message).toBe('connection timeout');
   });
 });
 
-describe('invariantes de chamada ao supabase.rpc', () => {
-  it('chama fn_get_product_intelligence_all (RPC bypassa max_rows=1000 do PostgREST)', async () => {
+describe('invariantes de chamada via RPC (fix BUG-A)', () => {
+  it('chama fn_get_product_intelligence_all — bypassa max_rows do PostgREST', async () => {
     mockRpc.mockResolvedValue({ data: [], error: null });
     renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
     expect(mockRpc.mock.calls[0][0]).toBe('fn_get_product_intelligence_all');
   });
 
-  it('retorna Map vazia quando data vazio', async () => {
+  it('retorna Map vazia quando data vazia', async () => {
     mockRpc.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

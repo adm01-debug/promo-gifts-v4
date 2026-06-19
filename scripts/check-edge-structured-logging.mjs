@@ -49,9 +49,13 @@ const LEGACY_ALLOWLIST = new Set([
   "send-transactional-email","step-up-verify","sync-quote-bitrix","tests",
   "trends-insights","validate-access","verify-email","visual-search",
   "voice-agent","webhook-dispatcher","webhook-inbound",
+  // ── Test CI edges (Lovable, não-produção, 2026-06-19) — logger overhead desnecessário ──
+  'test-cart-concurrency',
+  'test-cart-limit',
+  'test-cart-rls',
 ]);
 
-const SNAPSHOT_SIZE = 78;
+const SNAPSHOT_SIZE = 81; // +3: test-cart-concurrency/limit/rls (CI test edges, Lovable 2026-06-19)
 
 function listEdgeFunctions() {
   return readdirSync(FN_ROOT)

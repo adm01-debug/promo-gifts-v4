@@ -22,8 +22,9 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(), vi.fn()],
   Link: (p: { children: React.ReactNode }) => p.children,
 }));
+// QuickViewThumb calls useQuery internally — stub to avoid needing QueryClientProvider.
 vi.mock('@/components/products/QuickViewThumb', () => ({
-  QuickViewThumb: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  QuickViewThumb: () => null,
 }));
 
 const mkVariant = (i: number): VariantStock =>

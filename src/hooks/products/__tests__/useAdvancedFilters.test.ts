@@ -23,7 +23,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { useAdvancedFilters } from '../useAdvancedFilters';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
-// Mocks para os hooks externos — caminho correto: @/hooks/intelligence/useExternalDatabase
+// Mocks para os hooks externos importados em useAdvancedFilters
 vi.mock('@/hooks/intelligence/useExternalDatabase', () => ({
   useExternalCategories: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
   useExternalTechniques: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
@@ -31,14 +31,16 @@ vi.mock('@/hooks/intelligence/useExternalDatabase', () => ({
   useExternalDatabase: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: vi.fn(), log: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 describe('useAdvancedFilters', () => {
   // ── Estado inicial ─────────────────────────────────────────────────────────
   describe('estado inicial', () => {
     it('BUG-LOADING-01: isLoading inicia false (sem flash de skeleton)', async () => {
       const { result } = renderHook(() => useAdvancedFilters());
-      // The initial fetch sets isLoading=true synchronously then resolves immediately.
-      // Flush all pending microtasks so the finally-block sets isLoading back to false.
-      await act(async () => {});
+      await act(async () => {}); // flush loadFilterOptions microtasks
       expect(result.current.isLoading).toBe(false);
     });
 

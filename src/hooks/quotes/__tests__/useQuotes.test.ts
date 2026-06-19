@@ -76,8 +76,8 @@ function makeWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Restore default user after tests that override with null (clearAllMocks keeps mockReturnValue overrides)
-  vi.mocked(useAuth).mockReturnValue({ user: mockUser });
+  // Restore default: user=null tests override this; clearAllMocks does not reset implementations
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser } as never);
 });
 
 // ── Estado inicial ────────────────────────────────────────────────────────────

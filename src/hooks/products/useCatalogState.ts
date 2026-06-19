@@ -31,6 +31,7 @@ import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useToast } from '@/hooks/ui/use-toast';
 import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
 import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
 import { useCatalogPreferences } from '@/hooks/products/useCatalogPreferences';
 import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
@@ -151,6 +152,7 @@ export function useCatalogState() {
   );
   const { registerProducts } = useProductsContext();
   const { data: promoSalesMap } = usePromoSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { updatePreferences } = useCatalogPreferences();
   // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
@@ -430,7 +432,12 @@ export function useCatalogState() {
   const { data: realStats } = useCatalogRealStats();
 
   const isLoading =
-    isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter || isLoadingColorFilter || isLoadingMetadataFilter || isLoadingSizeFilter;
+    isLoadingProducts ||
+    isLoadingMaterialFilter ||
+    isLoadingCategoryFilter ||
+    isLoadingColorFilter ||
+    isLoadingMetadataFilter ||
+    isLoadingSizeFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
@@ -529,6 +536,10 @@ export function useCatalogState() {
     if (filters.tags?.length) count += filters.tags.length;
     // BUG-CATALOG-SIZES FIX: sizes era selecionável no painel mas não contado.
     if (filters.sizes?.length) count += filters.sizes.length;
+    // BUG-VENDAS-COUNT-ACTIVE FIX: vendas thresholds eram mostrados no painel mas
+    // nunca contados no badge global "N filtros ativos".
+    if (filters.minSupplierSales90d > 0) count += 1;
+    if (filters.minPromoSales90d > 0) count += 1;
     return count;
   }, [filters]);
 
@@ -560,6 +571,7 @@ export function useCatalogState() {
     sizeFilteredProductIds,
     isLoadingSizeFilter,
     promoSalesMap,
+    promoSales90dMap,
     supplierSalesMap,
   });
 
