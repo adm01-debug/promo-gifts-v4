@@ -178,6 +178,9 @@ export default [
       'prefer-arrow-callback': 'error',
       // Batch 72: 1 rule — no-void allowAsStatement (24 fixes in 17 files)
       'no-void': ['error', { allowAsStatement: true }],
+      // Batch 73: 2 rules — no-lonely-if (5 fixes in 4 files), object-shorthand (1 fix)
+      'no-lonely-if': 'error',
+      'object-shorthand': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
