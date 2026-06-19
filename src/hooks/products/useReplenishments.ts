@@ -217,7 +217,7 @@ export interface UseReplenishmentsOptions {
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
   const { limit = 200, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[], Error>({
+  return useQuery<ReplenishmentWithDetails[]>({
     queryKey: ['replenishments-details', limit, onlyHighlighted],
     queryFn: async () => {
       const cutoff = getCutoffDate();
@@ -277,7 +277,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
 // Migrar para supabase.rpc() após rerun do types.ts.
 
 export function useReplenishmentStats() {
-  return useQuery<ReplenishmentStatsDisplay, Error>({
+  return useQuery<ReplenishmentStatsDisplay>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
       const { data: rawData, error } = await untypedRpc('fn_get_replenishment_stats');
@@ -329,7 +329,7 @@ export function useReplenishmentStats() {
 }
 
 export function useReplenishmentCount() {
-  return useQuery<number, Error>({
+  return useQuery<number>({
     queryKey: ['replenishment-count'],
     queryFn: async () => {
       const cutoff = getCutoffDate();

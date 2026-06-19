@@ -84,7 +84,7 @@ export function MyDiscountRequestsWidget() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sentinelRef = useInfiniteScroll<HTMLDivElement>(handleLoadMore, {
+  const sentinelRef = useInfiniteScroll(handleLoadMore, {
     enabled: !!hasNextPage,
   });
 

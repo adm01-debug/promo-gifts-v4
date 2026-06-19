@@ -111,7 +111,7 @@ const MOCKUP_HISTORY_COLUMNS =
   'logo_width_cm, logo_height_cm, area_name, area_config, created_at';
 
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
-  let query = untypedFrom<Record<string, unknown>>('generated_mockups')
+  let query = untypedFrom('generated_mockups')
     .select(MOCKUP_HISTORY_COLUMNS)
     .order('created_at', { ascending: false })
     .limit(200);

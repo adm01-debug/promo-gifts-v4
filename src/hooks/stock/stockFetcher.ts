@@ -89,7 +89,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   const resolvedTable = (GOLD_READ_ALIASES as Record<string, string>)[table] ?? table;
 
   while (all.length < maxRecords) {
-    let query = untypedFrom<Record<string, unknown>>(resolvedTable).select(
+    let query = untypedFrom(resolvedTable).select(
       select,
       offset === 0 ? { count: 'exact' } : undefined,
     );
