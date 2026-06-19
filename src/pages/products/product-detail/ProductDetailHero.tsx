@@ -614,7 +614,16 @@ export function ProductDetailHero({
         </div>
 
         {/* Kit Composition */}
-        {product.isKit && product.kitItems && <KitComposition items={product.kitItems} />}
+        {product.isKit && product.kitItems && (
+          <KitComposition
+            items={product.kitItems}
+            onViewProduct={(componentProductId) => {
+              if (componentProductId && componentProductId !== product.id) {
+                navigate(`/produto/${componentProductId}`);
+              }
+            }}
+          />
+        )}
 
         {/* Quick Actions */}
         <div className="mt-auto">
