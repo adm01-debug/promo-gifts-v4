@@ -277,20 +277,45 @@ export async function fetchPromobrindProductById(
     component_type_code: string | null;
     notes: string | null;
   };
+  // Estratégia: tenta `v_kit_component_complete` (view enriquecida com JOINs de
+  // enrichment_raw + media_public + typical_dims + types). Se vazia ou falhar,
+  // cai para a tabela base `product_kit_components` (26 campos crus).
+  const fetchKitFromView = (): Promise<KitComponent[]> =>
+    dbInvoke<KitComponent>({
+      table: 'v_kit_component_complete',
+      operation: 'select',
+      select: '*',
+      filters: { kit_product_id: productId },
+      orderBy: { column: 'display_order', ascending: true },
+      limit: 200,
+    }).then((r) => r.records);
+
+  const fetchKitFromBase = (): Promise<KitComponent[]> =>
+    dbInvoke<KitComponent>({
+      table: 'product_kit_components',
+      operation: 'select',
+      select:
+        'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, capacity_ml, supplier_component_code, component_type_code, notes',
+      filters: { kit_product_id: productId },
+      orderBy: { column: 'display_order', ascending: true },
+      limit: 200,
+    }).then((r) => r.records);
+
   const kitPromise: Promise<KitComponent[]> = product.is_kit
-    ? dbInvoke<KitComponent>({
-        table: 'product_kit_components',
-        operation: 'select',
-        select:
-          'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, capacity_ml, supplier_component_code, component_type_code, notes',
-        filters: { kit_product_id: productId },
-        orderBy: { column: 'display_order', ascending: true },
-        limit: 200,
-      })
-        .then((r) => r.records)
-        .catch((err) => {
-          logger.warn(`[product:${productId}] Não foi possível buscar componentes do kit:`, err);
-          return [] as KitComponent[];
+    ? fetchKitFromView()
+        .then(async (rows) => {
+          if (rows.length > 0) return rows;
+          logger.info(`[product:${productId}] view v_kit_component_complete vazia — fallback para tabela base`);
+          return fetchKitFromBase();
+        })
+        .catch(async (err) => {
+          logger.warn(`[product:${productId}] view v_kit_component_complete falhou, fallback para tabela base:`, err);
+          try {
+            return await fetchKitFromBase();
+          } catch (err2) {
+            logger.warn(`[product:${productId}] Não foi possível buscar componentes do kit:`, err2);
+            return [] as KitComponent[];
+          }
         })
     : Promise.resolve([]);
 
