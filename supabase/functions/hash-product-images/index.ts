@@ -151,6 +151,6 @@ Deno.serve(async (req: Request) => {
       failed: images.length - hashed.length,
       remaining: remaining ?? 'unknown',
     }),
-    { headers: { 'Content-Type': 'application/json' } }
+    { headers: { 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
   )
 })

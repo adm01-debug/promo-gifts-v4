@@ -62,7 +62,9 @@ export function MultiAreaManager({
       toast.error('Selecione uma área com logo primeiro');
       return;
     }
-    onAreasChange(areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview })));
+    onAreasChange(
+      areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview, logoFile: activeArea.logoFile ?? null })),
+    );
     toast.success(`Logo aplicado em ${areas.length} áreas`);
   };
 
@@ -140,7 +142,7 @@ export function MultiAreaManager({
                   onLogoUpload={(file) => onLogoUpload(area.id, file)}
                   onLogoRemove={() => {
                     const updated = areas.map((a) =>
-                      a.id === area.id ? { ...a, logoData: null, logoPreview: null } : a,
+                      a.id === area.id ? { ...a, logoPreview: null, logoFile: null } : a,
                     );
                     onAreasChange(updated);
                     onLogoRemove?.(area.id);

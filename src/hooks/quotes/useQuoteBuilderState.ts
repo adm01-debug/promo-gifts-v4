@@ -477,19 +477,12 @@ export function useQuoteBuilderState() {
      */
     let isMounted = true;
     setLoadingQuote(true);
-    fetchQuote(quoteId).then((quote) => {
+    fetchQuote(quoteId)
+      .then((quote) => {
       if (!isMounted) return;
       if (quote) {
         setClientId(quote.client_id || '');
-        /**
-         * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
-         *
-         * PROBLEMA ORIGINAL: setContactId recebia quote.client_id, ou seja, o ID da
-         * empresa. Isso fazia a validação do step 'client' passar (ambos clientId e
-         * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
-         * da pessoa de contato, não da empresa.
-         */
-        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
+        setContactId(quote.contact_id || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');
@@ -538,7 +531,12 @@ export function useQuoteBuilderState() {
         baselineUpdatedAtRef.current = quote.updated_at ?? null;
       }
       setLoadingQuote(false);
-    });
+    })
+      .catch((err) => {
+        if (!isMounted) return;
+        logger.error('[useQuoteBuilderState] fetchQuote failed:', err);
+        setLoadingQuote(false);
+      });
     return () => {
       isMounted = false;
     };
@@ -690,7 +688,7 @@ export function useQuoteBuilderState() {
             product_sku: p.product_sku || '',
             product_image_url: p.product_image || undefined,
             quantity: Math.max(1, p.quantity || 1),
-            unit_price: parseFloat(p.product_price || '0'),
+            unit_price: parseFloat(p.product_price) || 0,
             color_name: p.color_name || undefined,
             color_hex: p.color_hex || undefined,
             personalizations: [],
@@ -722,7 +720,7 @@ export function useQuoteBuilderState() {
       product_sku: searchParams.get('product_sku') || '',
       product_image_url: searchParams.get('product_image') || undefined,
       quantity: Math.max(1, parseInt(searchParams.get('min_quantity') || '1', 10)),
-      unit_price: parseFloat(searchParams.get('product_price') || '0'),
+      unit_price: parseFloat(searchParams.get('product_price') ?? '') || 0,
       color_name: colorName,
       color_hex: colorHex,
       personalizations: [],
@@ -974,6 +972,7 @@ export function useQuoteBuilderState() {
 
       const quoteData: Partial<Quote> = {
         client_id: clientId || undefined,
+        contact_id: contactId || undefined,
         client_name: contactInfo?.name || undefined,
         client_company: companyInfo?.name || undefined,
         client_cnpj: companyInfo?.cnpj || undefined,
@@ -1185,8 +1184,10 @@ export function useQuoteBuilderState() {
       const sellerNotes =
         effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
-      baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
+      // Reset baseline AFTER save — resetting before could allow another concurrent save
+      // to pass undetected if the save itself fails.
       await handleSaveQuote(effectiveStatus, sellerNotes);
+      baselineUpdatedAtRef.current = new Date().toISOString();
     },
   };
 }

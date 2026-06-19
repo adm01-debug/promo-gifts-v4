@@ -79,13 +79,19 @@ export const SortableCartItem = memo(function SortableCartItem({
     setQtyDraft(String(item.quantity));
   }, [item.quantity]);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const commitQty = () => {
     const val = parseInt(qtyDraft, 10);
     if (isNaN(val) || val < 1) {
       setQtyDraft(String(item.quantity)); // reverte entrada vazia/invalida
       return;
     }
-    const clamped = Math.min(val, 100000);
+    const clamped = Math.min(val, 999999);
     if (clamped !== item.quantity) onUpdateQuantity(item.id, clamped);
     setQtyDraft(String(clamped));
   };
@@ -394,8 +400,12 @@ export const SortableCartItem = memo(function SortableCartItem({
               <button
                 data-testid="cart-qty-increment"
                 aria-label="Aumentar quantidade"
-                className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90 active:bg-muted/80"
-                onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                disabled={item.quantity >= 999999}
+                className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90 active:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => {
+                  if (item.quantity >= 999999) return;
+                  onUpdateQuantity(item.id, item.quantity + 1);
+                }}
               >
                 <Plus className="h-4 w-4" />
               </button>

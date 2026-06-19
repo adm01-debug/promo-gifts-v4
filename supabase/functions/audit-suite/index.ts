@@ -131,12 +131,12 @@ Deno.serve(async (req) => {
       status: results.every(r => r.passed) ? "PASSED" : "FAILED",
       timestamp: new Date().toISOString(),
       results
-    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } });
 
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { 
       status: 500, 
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } 
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } 
     });
   }
 });

@@ -10,17 +10,17 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // FIX (auditoria Novidades 2026-06-18, P0): a fonte da verdade de "novidade" é a
 // PIPELINE do banco (colunas `is_new` / `novelty_detected_at` /
-// `novelty_expires_at`, mantidas pela edge function `cleanup-novelties`), e NÃO
-// uma janela de 30 dias derivada de `created_at`. A implementação anterior usava
-// `created_at + 30d`, o que: (1) ocultava ~16% das novidades reais — produtos
-// detectados como novidade DEPOIS de criados no catálogo (lag médio de ~21 dias,
-// até 132); (2) usava janela errada (a pipeline usa ~60 dias); (3) media a idade
-// do badge a partir da criação no catálogo, não da detecção como novidade.
+// `novelty_expires_at`, mantidas pelo trigger fn_set_product_as_new + cron
+// cleanup-novelties), e NÃO uma janela de 30 dias derivada de `created_at`.
+// A implementação anterior usava `created_at + 30d`, o que: (1) ocultava ~16%
+// das novidades reais — produtos detectados como novidade DEPOIS de criados no
+// catálogo (lag médio de ~21 dias, até 132); (2) media a idade do badge a partir
+// da criação no catálogo, não da detecção como novidade.
 //
-// Apesar de a janela real ser ~60 dias, a UX (badge "Novidade X dias", faixas de
-// cor, destaque "recém-chegado") permanece ancorada em DETECÇÃO recente, o que é
-// fiel ao dado: toda novidade ativa hoje foi detectada há ≤ ~12 dias.
-const NOVELTY_DISPLAY_WINDOW_DAYS = 30; // só p/ fallback quando expiry vier nulo
+// A janela do trigger DB (fn_set_product_as_new) é de 30 dias. A UX (badge
+// "Novidade X dias", faixas de cor, destaque "recém-chegado") permanece ancorada
+// em DETECÇÃO recente, fiel ao dado: toda novidade ativa foi detectada há ≤ 30d.
+const NOVELTY_DISPLAY_WINDOW_DAYS = 30; // fallback quando novelty_expires_at vier nulo
 const NOVELTY_FRESH_DAYS = 5; // "recém-chegado" = detectado há ≤ 5 dias
 const NOVELTY_EXPIRING_SOON_DAYS = 7; // "expirando" = expira em ≤ 7 dias
 
@@ -174,8 +174,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
       ? (async () => {
           const { data, error } = await fromTable('categories')
             .select('id, name')
-            .in('id', categoryIds)
-            .range(0, 499);
+            .in('id', categoryIds);
           if (error) return handleQueryError('useNovelties', 'categories', error);
           return (data ?? []) as unknown as CategoryRecord[];
         })()
@@ -184,8 +183,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
       ? (async () => {
           const { data, error } = await fromTable('suppliers')
             .select('id, name, code')
-            .in('id', supplierIds)
-            .range(0, 199);
+            .in('id', supplierIds);
           if (error) return handleQueryError('useNovelties', 'suppliers', error);
           return (data ?? []) as unknown as SupplierRecord[];
         })()
@@ -250,7 +248,7 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
           ? 'expiring_soon'
           : 'active',
     // "Recém-chegado": detectado há poucos dias (não derivado da expiração, que
-    // agora reflete a janela real de ~60 dias da pipeline).
+    // reflete a janela de 30 dias do trigger fn_set_product_as_new).
     is_highlighted: daysAsNovelty <= NOVELTY_FRESH_DAYS,
     is_active: daysRemaining > 0,
     stock_quantity: stock,
