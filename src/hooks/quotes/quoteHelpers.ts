@@ -79,7 +79,9 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
 
   const finalBeforeShipping = subtotal - discountAmount;
   const realDiscountPercent =
-    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
+    realSubtotal > 0
+      ? round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -101,6 +103,7 @@ export function buildInsertPayload(
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
@@ -131,6 +134,7 @@ export function buildUpdatePayload(
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
