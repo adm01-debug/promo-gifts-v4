@@ -460,13 +460,15 @@ export const NoveltyListCard = memo(function NoveltyListCard({
       </div>
 
       {/* Price */}
-      {product.base_price !== null && (
-        <span className="flex-shrink-0 text-sm font-semibold text-primary">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-            product.base_price,
-          )}
-        </span>
-      )}
+      {typeof product.base_price === 'number' &&
+        Number.isFinite(product.base_price) &&
+        product.base_price > 0 && (
+          <span className="flex-shrink-0 text-sm font-semibold text-primary">
+            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+              product.base_price,
+            )}
+          </span>
+        )}
     </article>
   );
 });
@@ -583,7 +585,9 @@ export function NoveltyTableView({
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-sm font-medium">
-                  {product.base_price !== null
+                  {typeof product.base_price === 'number' &&
+                  Number.isFinite(product.base_price) &&
+                  product.base_price > 0
                     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                         product.base_price,
                       )
