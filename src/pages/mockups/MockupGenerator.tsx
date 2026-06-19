@@ -205,7 +205,7 @@ export default function MockupGenerator() {
     mg.logoColorAnalysis.colors,
     mg.productSelection?.colorName,
     mg.productSelection?.colorHex,
-    mg.getProductImage,
+    mg.productSelection?.imageUrl,
   ]);
 
   const handleLayoutCaptured = useCallback(() => {
