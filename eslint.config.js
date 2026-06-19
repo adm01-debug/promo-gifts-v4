@@ -158,6 +158,8 @@ export default [
       'no-div-regex': 'error',
       // Batch 66: 1 rule — no-multi-assign (1 code fix in theme-presets.test.ts)
       'no-multi-assign': 'error',
+      // Batch 67: 1 rule — no-script-url (4 code fixes: 1 prod + 3 test eslint-disable)
+      'no-script-url': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
