@@ -290,33 +290,6 @@ export function KitComponentCard({
                 Cor: {item.color}
               </Badge>
             )}
-            {typeof item.salePrice === 'number' && item.salePrice > 0 && (
-              <SmartBadge
-                icon={DollarSign}
-                tooltip="Preço unitário do componente (referência do produto base)."
-                className="border-success/30 bg-success/10 text-success"
-              >
-                {item.salePrice.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
-              </SmartBadge>
-            )}
-            {typeof item.stockQuantity === 'number' && (
-              <SmartBadge
-                icon={Boxes}
-                tooltip={`Estoque do produto-componente${
-                  item.stockStatus ? ` (${item.stockStatus})` : ''
-                }.`}
-                className={cn(
-                  item.stockQuantity > 0
-                    ? 'border-primary/30 bg-primary/10 text-primary'
-                    : 'border-destructive/30 bg-destructive/10 text-destructive',
-                )}
-              >
-                {item.stockQuantity > 0 ? `${item.stockQuantity} un` : 'Sem estoque'}
-              </SmartBadge>
-            )}
             <SmartBadge
               icon={Layers}
               tooltip="Material principal do item."
