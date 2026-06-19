@@ -19,7 +19,10 @@ interface VirtualizedListProps {
   canAddToCompare: boolean;
 }
 
-const SCROLL_CONTAINER_STYLE = { maxHeight: 'calc(100vh - 280px)' } as const;
+const SCROLL_CONTAINER_STYLE = {
+  maxHeight:
+    'calc(100vh - var(--header-h, 56px) - var(--breadcrumb-h, 0px) - var(--replenishment-sticky-h, 180px) - 1rem)',
+} as const;
 
 export function VirtualizedReplenishmentList({
   products,

@@ -70,6 +70,7 @@ export interface ReplenishmentStatsDisplay {
   readonly restockedToday: number;
   readonly restockedThisWeek: number;
   readonly restockedLast15Days: number;
+  readonly restockedLast30Days: number;
   readonly topSupplierName: string | null;
   readonly topSupplierCount: number;
   readonly reorderedThisWeek: number;
@@ -252,6 +253,7 @@ export function useReplenishmentStats() {
             restockedToday:         0,
             restockedThisWeek:      0,
             restockedLast15Days:    0,
+            restockedLast30Days:    0,
             topSupplierName:        null,
             topSupplierCount:       0,
             reorderedThisWeek:      0,
@@ -265,18 +267,19 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments:     Number(d.restockedThisWeek    ?? 0),
+        totalReplenishments:     Number(d.restockedLast30Days  ?? 0),
         activeReplenishments:    Number(d.activeReplenishments ?? 0),
-        expiringSoon:            0,
+        expiringSoon:            Number(d.expiringSoon         ?? 0),
         totalProducts:           Number(d.totalVariants        ?? 0),
         replenishmentRate:       Number(d.replenishmentRate    ?? 0),
         restockedToday:          Number(d.restockedToday       ?? 0),
         restockedThisWeek:       Number(d.restockedThisWeek    ?? 0),
         restockedLast15Days:     Number(d.restockedLast15Days  ?? 0),
+        restockedLast30Days:     Number(d.restockedLast30Days  ?? 0),
         topSupplierName:         (d.topSupplierName as string) ?? null,
         topSupplierCount:        Number(d.topSupplierCount     ?? 0),
-        reorderedThisWeek:       Number(d.reorderedThisWeek      ?? 0),
-        reorderedThisMonth:      Number(d.reorderedThisMonth     ?? 0),
+        reorderedThisWeek:       Number(d.reorderedThisWeek    ?? 0),
+        reorderedThisMonth:      Number(d.reorderedThisMonth   ?? 0),
         upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
@@ -286,9 +289,11 @@ export function useReplenishmentStats() {
 }
 
 export function useReplenishmentCount() {
-  return useQuery<number, Error>({
-    queryKey: ['replenishment-count'],
-    queryFn: async () => (await fetchReposicao(FETCH_ALL_LIMIT)).length,
+  // Shares the cache key of useReplenishmentsWithDetails(default) — no duplicate fetch.
+  return useQuery<ReplenishmentWithDetails[], Error, number>({
+    queryKey: ['replenishments-details', FETCH_ALL_LIMIT, false],
+    queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
+    select: (data) => data.length,
     staleTime: 2 * 60 * 1000,
     retry: 2,
   });
