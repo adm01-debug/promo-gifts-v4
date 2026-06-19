@@ -11,6 +11,7 @@ import {
 import { Package, Building2 } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { StockBadge } from '@/components/inventory/StockBadge';
 import { ReplenishmentBadge } from '@/components/products/ReplenishmentBadge';
 import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
