@@ -152,7 +152,7 @@ export function useAIRecommendations() {
           }
 
           if (attempt > 0) {
-            await delay(INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1));
+            await delay(INITIAL_BACKOFF_MS * 2 ** (attempt - 1));
           }
 
           try {

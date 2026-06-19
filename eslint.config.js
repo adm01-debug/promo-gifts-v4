@@ -181,6 +181,8 @@ export default [
       // Batch 73: 2 rules — no-lonely-if (5 fixes in 4 files), object-shorthand (1 fix)
       'no-lonely-if': 'error',
       'object-shorthand': 'error',
+      // Batch 74: 1 rule — prefer-exponentiation-operator (20 fixes, auto-fixed in 17 files)
+      'prefer-exponentiation-operator': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

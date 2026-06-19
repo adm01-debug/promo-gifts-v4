@@ -31,7 +31,7 @@ function hslToLuminance(hslStr: string): number {
     b = hue2rgb(p, q, h - 1 / 3);
   }
 
-  const f = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const f = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 }
 
