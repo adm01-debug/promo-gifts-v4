@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DevInfraGate } from '../DevInfraGate';
-import { type GateFlagProvider } from '../types';
-import { type AppRole } from '@/contexts/AuthContext';
+import type { GateFlagProvider } from '../types';
+import type { AppRole } from '@/contexts/AuthContext';
 
 class SpyProvider implements GateFlagProvider {
   public callCount = 0;

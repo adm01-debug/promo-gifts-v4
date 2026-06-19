@@ -2,7 +2,7 @@ import { logger } from '@/lib/logger';
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { type AppRole, type UserWithRole } from './types';
+import type { AppRole, UserWithRole } from './types';
 import { isDuplicateAccountError } from '@/lib/auth/is-duplicate-account-error';
 
 const HAS_UPPERCASE_RE = /[A-Z]/;

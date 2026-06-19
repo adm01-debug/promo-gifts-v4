@@ -5,7 +5,7 @@
  * NOTE: Comparison, Favorites, and RecentlyViewed have been migrated to Zustand stores
  * and no longer need providers. Their context files export no-op providers for compat.
  */
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { CollectionsProvider } from '@/contexts/CollectionsContext';
 import { ProductsProvider } from '@/contexts/ProductsContext';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';

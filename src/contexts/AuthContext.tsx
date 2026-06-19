@@ -8,7 +8,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { type User, type Session, type AuthError } from '@supabase/supabase-js';
+import type { User, Session, AuthError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { checkLoginAllowed, recordFailedAttempt, clearLoginAttempts } from '@/lib/auth/rate-limit';

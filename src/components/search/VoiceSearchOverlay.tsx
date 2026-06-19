@@ -160,7 +160,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
 
     // Border glow
     const borderGlow = useMemo(() => {
-      const match = colors.primary.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+      const match = /hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/.exec(colors.primary);
       const [h, s, l] = match ? [match[1], match[2], match[3]] : ['220', '80', '55'];
       return {
         border: `hsla(${h}, ${s}%, ${l}%, 0.35)`,

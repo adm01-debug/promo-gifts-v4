@@ -7,12 +7,12 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { Json, TablesInsert } from '@/integrations/supabase/types';
-import {
-  type VariationItem,
-  type MagicUpProduct,
-  type Technique,
-  type SelectedClient,
-  type ProductColor,
+import type {
+  VariationItem,
+  MagicUpProduct,
+  Technique,
+  SelectedClient,
+  ProductColor,
 } from '@/hooks/intelligence/useMagicUpState';
 import type { ScenePrompt } from '@/components/magic-up/PromptBank';
 import type { GenerationHistoryItem } from '@/components/magic-up/AdImageResult';

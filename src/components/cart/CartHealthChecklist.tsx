@@ -3,7 +3,7 @@
  * Substitui o "Score" abstrato por uma checklist acionável.
  */
 import { useMemo } from 'react';
-import { type SellerCart } from '@/hooks/products';
+import type { SellerCart } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
 import { CheckCircle2, AlertCircle, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';

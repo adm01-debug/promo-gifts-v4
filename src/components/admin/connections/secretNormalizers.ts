@@ -47,7 +47,7 @@ function stripAllWhitespace(s: string, changes: string[]): string {
 }
 
 function stripBearer(s: string, changes: string[]): string {
-  const m = s.match(BEARER_PREFIX_RE);
+  const m = BEARER_PREFIX_RE.exec(s);
   if (m) {
     changes.push('prefixo Bearer removido');
     return m[1];

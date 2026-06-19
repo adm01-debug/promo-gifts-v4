@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { TechniqueOption } from './TechniqueOption';
 import { VariationSelector } from './VariationSelector';
 import { ConfigurationPanel } from './ConfigurationPanel';
-import { type PrintAreaV2, type CustomizationPriceFlat } from '@/hooks/simulation';
+import type { PrintAreaV2, CustomizationPriceFlat } from '@/hooks/simulation';
 
 export interface LocationGroupData {
   groupKey: string;

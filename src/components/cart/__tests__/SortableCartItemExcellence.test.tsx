@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SortableCartItem } from '../SortableCartItem';
-import { type SellerCartItem } from '@/hooks/products';
+import type { SellerCartItem } from '@/hooks/products';
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock do framer-motion para evitar erros de animação em ambiente de teste

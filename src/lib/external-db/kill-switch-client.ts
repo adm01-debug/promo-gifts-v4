@@ -50,20 +50,20 @@ type KillSwitchRpcResult = {
 };
 
 type KillSwitchTableClient = {
-  from(table: 'system_kill_switches'): {
-    select(columns: 'enabled, legacy_message, rollout_percentage'): {
-      eq(
+  from: (table: 'system_kill_switches') => {
+    select: (columns: 'enabled, legacy_message, rollout_percentage') => {
+      eq: (
         column: 'switch_name',
         value: string,
-      ): {
-        maybeSingle(): Promise<KillSwitchQueryResult>;
+      ) => {
+        maybeSingle: () => Promise<KillSwitchQueryResult>;
       };
     };
   };
-  rpc(
+  rpc: (
     fn: 'fn_should_apply_kill_switch',
     args: { p_switch_name: string; p_bucket_key: string },
-  ): Promise<KillSwitchRpcResult>;
+  ) => Promise<KillSwitchRpcResult>;
 };
 
 const memoryCache = new Map<string, SwitchCheck>();

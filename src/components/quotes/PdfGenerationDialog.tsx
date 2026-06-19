@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { type ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
+import type { ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
 import { PropostaComercialTailwind } from '@/components/pdf/PropostaComercialTailwind';
 import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGenerator';
 import { toast } from 'sonner';

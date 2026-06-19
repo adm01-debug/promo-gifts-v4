@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Code2, ShieldCheck, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { type AppRole, type UserWithRole } from './types';
+import type { AppRole, UserWithRole } from './types';
 
 interface RoleChangeDialogProps {
   user: UserWithRole | null;

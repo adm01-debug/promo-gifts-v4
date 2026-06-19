@@ -1,6 +1,6 @@
 import { fetchPromobrindProducts, fetchPromobrindProductById } from '@/lib/external-db';
 import { mapPromobrindToProduct } from '@/utils/product-mapper';
-import { type Product, type ProductFilters } from '@/types/product-catalog';
+import type { Product, ProductFilters } from '@/types/product-catalog';
 
 const getFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { type Product } from '@/hooks/products';
+import type { Product } from '@/hooks/products';
 
 import { logger } from '@/lib/logger';
 const LEGACY_STORAGE_KEY = 'product-collections';

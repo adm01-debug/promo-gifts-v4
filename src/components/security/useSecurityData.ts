@@ -2,7 +2,7 @@
  * useSecurityData — Hook que carrega métricas, logins e alertas de segurança
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type createClient } from '@supabase/supabase-js';
+import type { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 // 'notifications' table not yet in generated schema — bypass type checking via raw client cast

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getHighestRole, isSupervisorOrAbove } from '../auth-utils';
-import { type AppRole } from '@/contexts/AuthContext';
+import type { AppRole } from '@/contexts/AuthContext';
 
 describe('auth-utils regression tests', () => {
   describe('getHighestRole', () => {

@@ -173,7 +173,7 @@ export function normalizeSecretError(
       retryable: true,
     });
   }
-  if (msg.match(/\b5\d\d\b/) || msg.includes('internal server')) {
+  if (/\b5\d\d\b/.exec(msg) || msg.includes('internal server')) {
     return make('server', 'Erro interno do servidor.', {
       hint: 'Aguarde alguns segundos e tente novamente.',
       retryable: true,

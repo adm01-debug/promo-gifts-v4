@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type Product } from '@/hooks/products';
+import type { Product } from '@/hooks/products';
 
 import { logger } from '@/lib/logger';
 const STORAGE_KEY = 'recently-viewed-products';

@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Star, UserPlus, Edit, Trash2, Download, User } from 'lucide-react';
-import { type QuoteTemplate } from '@/hooks/quotes';
+import type { QuoteTemplate } from '@/hooks/quotes';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { exportSingleTemplate } from '@/utils/templateExport';

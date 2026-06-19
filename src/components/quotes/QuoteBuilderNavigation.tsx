@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { type QuoteBuilderStep } from './QuoteBuilderStepper';
+import type { QuoteBuilderStep } from './QuoteBuilderStepper';
 
 interface QuoteBuilderNavigationProps {
   currentStep: QuoteBuilderStep;

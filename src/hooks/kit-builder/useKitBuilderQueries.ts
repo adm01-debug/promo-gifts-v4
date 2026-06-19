@@ -7,12 +7,12 @@
 import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  type KitBox,
-  type KitItem,
-  type BoxFilters,
-  type ItemFilters,
-  type ExternalProductForKit,
+import type {
+  KitBox,
+  KitItem,
+  BoxFilters,
+  ItemFilters,
+  ExternalProductForKit,
 } from '@/lib/kit-builder';
 import { MOCK_BOXES, MOCK_ITEMS } from '@/lib/kit-builder/mock-data';
 

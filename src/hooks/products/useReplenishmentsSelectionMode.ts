@@ -4,7 +4,7 @@
  * Thin wrapper around useEntitySelectionMode<ReplenishmentWithDetails>.
  * Supplies the entity → Product converter; everything else lives in the generic.
  */
-import { type Product, type ReplenishmentWithDetails } from '@/hooks/products';
+import type { Product, ReplenishmentWithDetails } from '@/hooks/products';
 import { useEntitySelectionMode } from '@/hooks/common';
 
 interface UseReplenishmentsSelectionModeParams {

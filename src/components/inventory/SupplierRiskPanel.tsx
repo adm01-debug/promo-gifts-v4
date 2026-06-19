@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertTriangle, Package, Clock, Search, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type ProductStockSummary } from '@/types/stock';
+import type { ProductStockSummary } from '@/types/stock';
 import { ProductRiskDetail } from './risk/ProductRiskDetail';
 import { deriveSeverity, SEVERITY_ORDER, type RiskProduct, type RiskSeverity } from './risk/types';
 

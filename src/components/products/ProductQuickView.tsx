@@ -27,7 +27,7 @@ import {
   ProductColorSelector,
   type ProductColor,
 } from '@/components/products/ProductColorSelector';
-import { type Product } from '@/types/product-catalog';
+import type { Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
 

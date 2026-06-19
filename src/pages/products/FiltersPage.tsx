@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCallback, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { SharePreviewDialog } from '@/components/products/share/SharePreviewDialog';
 import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
-import { type ExternalVariantStock, type Product } from '@/hooks/products';
+import type { ExternalVariantStock, Product } from '@/hooks/products';
 
 import { PageSEO } from '@/components/seo/PageSEO';
 import { FilterPanel, type FilterState, defaultFilters } from '@/components/filters/FilterPanel';

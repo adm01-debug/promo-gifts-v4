@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as QuoteCalc from '../logic/quotes/calculations';
 import { calculateQuoteTotals } from '../hooks/quotes/quoteHelpers';
-import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
+import type { QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)', () => {
   it('deve realizar o fluxo completo de cálculo: Itens -> Markup -> Desconto -> Total Final', () => {

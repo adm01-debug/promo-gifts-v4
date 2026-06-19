@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type * as AuthServiceModule from '@/services/authService';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({

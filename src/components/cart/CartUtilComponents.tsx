@@ -25,7 +25,7 @@ import {
   MoveRight,
   ChevronDown,
 } from 'lucide-react';
-import { type SellerCart, type CartStatus } from '@/hooks/products';
+import type { SellerCart, CartStatus } from '@/hooks/products';
 import { differenceInDays, differenceInHours, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 

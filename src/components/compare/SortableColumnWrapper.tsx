@@ -2,7 +2,7 @@
  * SortableColumnWrapper (C6 #4) — Wrapper com drag-and-drop horizontal para reordenar colunas.
  * Usa @dnd-kit/sortable; persiste ordem via callback onReorder.
  */
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   DndContext,
   closestCenter,

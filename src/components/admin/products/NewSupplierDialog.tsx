@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
-import { type NewSupplierDialogProps } from './new-supplier/types';
+import type { NewSupplierDialogProps } from './new-supplier/types';
 import { useNewSupplierForm } from './new-supplier/useNewSupplierForm';
 import { BasicDataTab } from './new-supplier/tabs/BasicDataTab';
 import { ContactsTab } from './new-supplier/tabs/ContactsTab';

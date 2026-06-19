@@ -1,4 +1,4 @@
-import { type QuoteTemplate } from '@/hooks/quotes';
+import type { QuoteTemplate } from '@/hooks/quotes';
 
 export interface ExportedTemplate {
   version: string;

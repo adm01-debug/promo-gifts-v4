@@ -1,5 +1,5 @@
 import { dbInvoke } from '@/lib/db/postgrest';
-import { type ExternalTechnique } from '@/types/external-db';
+import type { ExternalTechnique } from '@/types/external-db';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';

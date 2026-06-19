@@ -1,4 +1,4 @@
-import { type RatioSample } from './useNotificationsMetricsPanel';
+import type { RatioSample } from './useNotificationsMetricsPanel';
 
 import { logger } from '@/lib/logger';
 /**

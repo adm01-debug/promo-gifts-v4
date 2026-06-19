@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Camera, X } from 'lucide-react';
-import { type UserWithRole } from './types';
+import type { UserWithRole } from './types';
 
 interface EditUserDialogProps {
   user: UserWithRole | null;

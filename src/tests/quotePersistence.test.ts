@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateQuoteTotals } from '../hooks/quotes/quoteHelpers';
-import { type QuoteItem } from '../hooks/quotes/quoteTypes';
+import type { QuoteItem } from '../hooks/quotes/quoteTypes';
 
 // Mock Supabase to avoid real network calls if needed,
 // but since the user asked for "Integration tests to ensure it's persisted correctly",

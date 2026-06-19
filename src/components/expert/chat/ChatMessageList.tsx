@@ -19,8 +19,8 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { preprocessProductLinks, ProductAwareLink } from '../ProductLinkRenderer';
-import { type RefObject } from 'react';
-import { type Message } from './useExpertChat';
+import type { RefObject } from 'react';
+import type { Message } from './useExpertChat';
 import { ChatEmptyState } from './ChatEmptyState';
 
 interface ChatMessageListProps {

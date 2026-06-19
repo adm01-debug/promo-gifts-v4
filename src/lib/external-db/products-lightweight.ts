@@ -4,7 +4,7 @@
  */
 import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { type InvokeResult } from './bridge';
+import type { InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';

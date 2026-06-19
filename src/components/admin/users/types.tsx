@@ -4,7 +4,7 @@
  * A configuração visual de roles foi movida para `@/lib/roles`
  * (use `RoleBadge` ou `getRoleVisual`).
  */
-import { type AppRole } from '@/lib/roles';
+import type { AppRole } from '@/lib/roles';
 
 export type { AppRole };
 

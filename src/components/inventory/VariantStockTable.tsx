@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
+import type { ProductStockSummary, VariantStock, StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 import {
   computeRuptureRisk,

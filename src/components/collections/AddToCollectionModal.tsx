@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useCollectionsContext } from '@/contexts/CollectionsContext';
-import { type CollectionVariantInfo } from '@/hooks/collections';
+import type { CollectionVariantInfo } from '@/hooks/collections';
 import { toast } from 'sonner';
 
 interface AddToCollectionModalProps {

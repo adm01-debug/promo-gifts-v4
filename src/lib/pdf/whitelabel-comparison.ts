@@ -3,7 +3,7 @@
  * Busca companies.brand_logo_url / brand_color quando há clientId; cai para genérico se ausente.
  */
 import { supabase } from '@/integrations/supabase/client';
-import { type createClient } from '@supabase/supabase-js';
+import type { createClient } from '@supabase/supabase-js';
 const db = supabase as unknown as ReturnType<typeof createClient>;
 
 export interface ClientBranding {

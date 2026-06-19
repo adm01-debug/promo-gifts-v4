@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { selectCrmById } from '@/lib/crm-db';
 import { toast } from 'sonner';
 import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGenerator';
-import { type ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
+import type { ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
 import {
   formatCurrency as formatCurrencyHelper,
   calcPersTotal,

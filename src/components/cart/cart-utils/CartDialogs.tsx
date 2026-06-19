@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Building2, Package, Trash2, Save, BookTemplate, Columns } from 'lucide-react';
-import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
+import type { CartTemplateItem, SellerCart } from '@/hooks/products';
 import { formatCurrency, getStatusCfg } from '../CartUtilComponents';
 
 export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {

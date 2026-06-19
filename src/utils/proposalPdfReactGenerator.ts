@@ -13,7 +13,7 @@ const getJsPDF = () => import('jspdf').then((m) => m.jsPDF);
 const getHtml2Canvas = () => import('html2canvas').then((m) => m.default);
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { type ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
+import type { ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
 import { PropostaComercialTailwind } from '@/components/pdf/PropostaComercialTailwind';
 
 export async function generateProposalPDFv2(

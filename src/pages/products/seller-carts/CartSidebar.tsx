@@ -5,7 +5,7 @@
  * 3) Mais ações (DropdownMenu) + Health Checklist + Outros carrinhos
  */
 import { useState } from 'react';
-import { type CartTemplateItem, type SellerCart, type Product } from '@/hooks/products';
+import type { CartTemplateItem, SellerCart, Product } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

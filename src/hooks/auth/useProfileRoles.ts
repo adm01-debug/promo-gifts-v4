@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { authService } from '@/services/authService';
-import { type AppRole, type Profile } from '@/contexts/AuthContext';
+import type { AppRole, Profile } from '@/contexts/AuthContext';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export function useProfileRoles() {

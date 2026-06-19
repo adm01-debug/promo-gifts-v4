@@ -24,8 +24,8 @@ export interface KillSwitchHit {
 
 type QueuedHit = KillSwitchHit & { source: 'front'; occurred_at: string };
 type KillSwitchHitsClient = {
-  from(table: 'kill_switch_hits'): {
-    insert(rows: QueuedHit[]): Promise<{ error: { message?: string } | null }>;
+  from: (table: 'kill_switch_hits') => {
+    insert: (rows: QueuedHit[]) => Promise<{ error: { message?: string } | null }>;
   };
 };
 

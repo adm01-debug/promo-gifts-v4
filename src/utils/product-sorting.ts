@@ -1,4 +1,4 @@
-import { type Product, type SupplierSalesEntry } from '@/hooks/products';
+import type { Product, SupplierSalesEntry } from '@/hooks/products';
 
 /**
  * Collator pt-BR único e reutilizável para ordenação alfabética de nomes.

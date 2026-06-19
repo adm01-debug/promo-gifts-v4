@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useContext } from 'react';
 import Fuse from 'fuse.js';
 import { useQuery } from '@tanstack/react-query';
-import { type Product } from '@/hooks/products';
+import type { Product } from '@/hooks/products';
 import { CATEGORIES, SUPPLIERS } from '@/data/mockData';
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { dbInvoke } from '@/lib/db/postgrest';

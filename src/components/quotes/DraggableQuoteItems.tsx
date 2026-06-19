@@ -33,7 +33,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
 
-import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
+import type { QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];

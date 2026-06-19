@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { type LucideIcon, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface KpiCardProps {
   icon: LucideIcon;

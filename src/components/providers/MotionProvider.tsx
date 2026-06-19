@@ -11,15 +11,11 @@
  * qualquer uso do componente pesado lança erro, mantendo a migração 100%.
  */
 import { LazyMotion } from 'framer-motion';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // Carrega o conjunto completo de features (drag/layout/Reorder) de forma lazy.
 const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domMax);
 
 export function MotionProvider({ children }: { children: ReactNode }) {
-  return (
-    <LazyMotion features={loadMotionFeatures}>
-      {children}
-    </LazyMotion>
-  );
+  return <LazyMotion features={loadMotionFeatures}>{children}</LazyMotion>;
 }

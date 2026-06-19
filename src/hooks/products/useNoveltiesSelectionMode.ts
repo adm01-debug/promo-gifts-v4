@@ -4,7 +4,7 @@
  * Thin wrapper around useEntitySelectionMode<NoveltyWithDetails>. Supplies
  * the entity → Product converter; everything else lives in the generic.
  */
-import { type NoveltyWithDetails, type Product } from '@/hooks/products';
+import type { NoveltyWithDetails, Product } from '@/hooks/products';
 import { useEntitySelectionMode } from '@/hooks/common';
 
 interface UseNoveltiesSelectionModeParams {

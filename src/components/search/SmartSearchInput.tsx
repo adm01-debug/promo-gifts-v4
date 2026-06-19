@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Search, X, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce, useSearch, useSearchHistory, type SearchResult } from '@/hooks/common';
-import { type Product } from '@/hooks/products';
+import type { Product } from '@/hooks/products';
 import { useSpeechRecognition } from '@/hooks/intelligence';
 import { GroupedSearchResults } from './SearchResultGroups';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DevInfraGate } from '../DevInfraGate';
-import { type GateFlagProvider, type GateValue } from '../types';
-import { type AppRole } from '@/contexts/AuthContext';
+import type { GateFlagProvider, GateValue } from '../types';
+import type { AppRole } from '@/contexts/AuthContext';
 
 class MockProvider implements GateFlagProvider {
   constructor(public value: GateValue = 'auto') {}

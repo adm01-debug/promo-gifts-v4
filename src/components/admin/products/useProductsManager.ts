@@ -18,7 +18,7 @@
 import { dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type PromobrindProduct } from '@/lib/external-db';
+import type { PromobrindProduct } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/hooks/admin';
 import type { ProductFilters } from '../products/ProductFiltersBar';

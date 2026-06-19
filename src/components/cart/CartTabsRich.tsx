@@ -2,7 +2,7 @@
  * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente,
  * indicador de follow-up e botão "+" para criar novo.
  */
-import { type SellerCart } from '@/hooks/products';
+import type { SellerCart } from '@/hooks/products';
 import { Building2, Plus, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';

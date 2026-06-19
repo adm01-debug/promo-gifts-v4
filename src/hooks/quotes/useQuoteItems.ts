@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { type QuoteItem, type QuoteItemPersonalization } from '@/hooks/quotes';
-import { type ExternalVariantStock } from '@/hooks/products';
+import type { QuoteItem, QuoteItemPersonalization } from '@/hooks/quotes';
+import type { ExternalVariantStock } from '@/hooks/products';
 
 interface Product {
   id: string;

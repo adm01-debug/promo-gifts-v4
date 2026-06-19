@@ -1,11 +1,7 @@
 import { dbInvoke } from '@/lib/db/postgrest';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
-import {
-  type Quote,
-  type QuoteItem,
-  type PersonalizationTechnique,
-} from '@/hooks/quotes/quoteTypes';
+import type { Quote, QuoteItem, PersonalizationTechnique } from '@/hooks/quotes/quoteTypes';
 import {
   calculateQuoteTotals,
   buildInsertPayload,

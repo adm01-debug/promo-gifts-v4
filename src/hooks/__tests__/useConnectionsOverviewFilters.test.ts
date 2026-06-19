@@ -3,7 +3,7 @@ import {
   applyFilters,
   type OverviewFilters,
 } from '@/hooks/intelligence/useConnectionsOverviewFilters';
-import { type OverviewRow } from '@/hooks/intelligence/useConnectionsOverview';
+import type { OverviewRow } from '@/hooks/intelligence/useConnectionsOverview';
 
 describe('useConnectionsOverviewFilters regression tests', () => {
   const mockRows: OverviewRow[] = [

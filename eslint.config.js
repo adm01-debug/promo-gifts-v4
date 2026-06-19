@@ -119,6 +119,11 @@ export default [
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       '@typescript-eslint/prefer-for-of': 'error',
       '@typescript-eslint/prefer-readonly': 'error',
+      '@typescript-eslint/no-import-type-side-effects': 'error',
+      '@typescript-eslint/method-signature-style': 'error',
+      '@typescript-eslint/prefer-regexp-exec': 'error',
+      '@typescript-eslint/prefer-reduce-type-parameter': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },

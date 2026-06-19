@@ -1,4 +1,4 @@
-import { type MockupTechnique } from '@/types/external-db';
+import type { MockupTechnique } from '@/types/external-db';
 /**
  * MockupGenerator — Refactored v5.2
  *

@@ -7931,9 +7931,7 @@ export type Database = {
         | "mcp_key_revoke"
         | "mcp_key_rotate"
     }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    CompositeTypes: Record<never, never>
   }
 }
 

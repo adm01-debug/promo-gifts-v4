@@ -1,4 +1,4 @@
-import { type AppRole } from '@/contexts/AuthContext';
+import type { AppRole } from '@/contexts/AuthContext';
 
 export interface AccessPolicy {
   requiredRole?: AppRole;

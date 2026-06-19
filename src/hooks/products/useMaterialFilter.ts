@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useMaterialGroups } from '@/hooks/products/useMaterialGroups';
 import { useMaterialsComplete } from '@/hooks/products/useMaterialTypes';
-import { type MaterialGroup, type MaterialComplete } from '@/services/materialService';
+import type { MaterialGroup, MaterialComplete } from '@/services/materialService';
 
 export interface MaterialFilterState {
   selectedGroups: string[]; // slugs dos grupos selecionados

@@ -20,7 +20,7 @@ import {
 import { Loader2, Plus, Eye, EyeOff } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { useAuth } from '@/contexts/AuthContext';
-import { type AppRole } from './types';
+import type { AppRole } from './types';
 
 interface CreateUserDialogProps {
   open: boolean;

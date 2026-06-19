@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { type createClient } from '@supabase/supabase-js';
+import type { createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 

@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useUserManagement } from '@/components/admin/users/useUserManagement';
 import { PromotionDialog } from '@/components/admin/users/PromotionDialog';
-import { type UserWithRole } from '@/components/admin/users/types';
+import type { UserWithRole } from '@/components/admin/users/types';
 
 type PermissionRow = { label: string; agente: boolean; supervisor: boolean };
 

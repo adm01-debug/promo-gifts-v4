@@ -3,7 +3,7 @@ import { Loader2, MessageSquare, Trash2, Search, CalendarDays } from 'lucide-rea
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { type ExpertConversation } from '@/hooks/intelligence';
+import type { ExpertConversation } from '@/hooks/intelligence';
 import { formatDistanceToNow, isToday, isThisWeek, isThisMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 

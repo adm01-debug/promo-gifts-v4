@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { type createClient } from '@supabase/supabase-js';
+import type { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 // 'roles' table not yet in generated schema — bypass type checking via raw client cast

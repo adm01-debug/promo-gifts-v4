@@ -6,7 +6,7 @@ import {
   getRandomGreeting,
   FLOW_GREETINGS,
 } from './auth-utils';
-import { type AppRole } from '@/contexts/AuthContext';
+import type { AppRole } from '@/contexts/AuthContext';
 
 describe('auth-utils', () => {
   beforeEach(() => {

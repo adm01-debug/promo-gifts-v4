@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs';
 import { cn } from '@/lib/utils';
 

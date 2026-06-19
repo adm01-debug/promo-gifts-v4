@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { type SecretStatus } from '@/hooks/admin';
+import type { SecretStatus } from '@/hooks/admin';
 
 import { useSecretField } from './useSecretField';
 import { MIN_SUFFIX_LENGTH } from './secretValidators';

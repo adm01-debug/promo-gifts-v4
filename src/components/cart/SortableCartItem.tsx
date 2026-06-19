@@ -37,7 +37,7 @@ import {
   CopyPlus,
   AlertTriangle,
 } from 'lucide-react';
-import { type SellerCart, type SellerCartItem } from '@/hooks/products';
+import type { SellerCart, SellerCartItem } from '@/hooks/products';
 import { PriceLabel } from './CartUtilComponents';
 
 interface SortableCartItemProps {

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { searchCrm, selectCrm } from '@/lib/crm-db';
-import { type CrmContact, type CrmContactEmail, type CrmContactPhone } from '@/types/crm';
+import type { CrmContact, CrmContactEmail, CrmContactPhone } from '@/types/crm';
 
 interface CompanyOption {
   id: string;
