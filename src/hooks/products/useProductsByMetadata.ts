@@ -98,7 +98,7 @@ export function useProductsByMetadata({
     try {
       setError(null);
       // fn_super_filtro_product_ids ainda nao consta nos tipos gerados (types.ts).
-      const { data, error } = await (
+      const { data, error: rpcError } = await (
         supabase as unknown as {
           rpc: (
             name: string,
@@ -115,7 +115,7 @@ export function useProductsByMetadata({
       });
 
       if (token !== fetchTokenRef.current) return; // superseded — nova selecao de filtro
-      if (error) throw error;
+      if (rpcError) throw rpcError;
 
       const rows = (data as Array<{ product_id: string }> | null) || [];
       setProductIds(new Set(rows.map((r) => r.product_id)));

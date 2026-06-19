@@ -85,7 +85,7 @@ export function findNearestPantone(hex: string, topN: number = 5): PantoneMatch[
     deltaE: deltaE(targetLab, p.lab),
   }));
 
-  scored.sort((a, b) => a.deltaE - b.deltaE);
+  scored.sort((a, bItem) => a.deltaE - bItem.deltaE);
   return scored.slice(0, topN);
 }
 

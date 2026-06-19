@@ -45,7 +45,7 @@ export async function invokeExternalRpc<T>(
     args: Record<string, unknown>,
   ) => Promise<{ data: T | null; error: { message: string } | null }>;
 
-  let deadlineTimer: ReturnType<typeof setTimeout>;
+  let deadlineTimer: ReturnType<typeof setTimeout> = 0 as unknown as ReturnType<typeof setTimeout>;
   const deadlinePromise = new Promise<never>((_, reject) => {
     deadlineTimer = setTimeout(
       () => reject(new Error(`RPC ${rpcName} timed out after ${TOTAL_TIMEOUT_MS}ms`)),
@@ -70,6 +70,6 @@ export async function invokeExternalRpc<T>(
     }
     throw new Error('Max retries exceeded');
   } finally {
-    clearTimeout(deadlineTimer!);
+    clearTimeout(deadlineTimer);
   }
 }

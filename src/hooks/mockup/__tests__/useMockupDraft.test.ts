@@ -24,25 +24,37 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 const { mockUpsert, mockUpdate, mockSelect, mockDelete, mockMaybeSingle, mockFrom } = vi.hoisted(
   () => {
-    const mockMaybeSingle = vi.fn();
-    const mockSelect = vi.fn(() => ({
+    const _mockMaybeSingle = vi.fn();
+    const _mockSelect = vi.fn(() => ({
       eq: vi.fn().mockReturnThis(),
-      maybeSingle: mockMaybeSingle,
+      maybeSingle: _mockMaybeSingle,
     }));
-    const mockUpsert = vi.fn();
-    const mockUpdate = vi.fn(() => ({
-      eq: vi.fn().mockReturnThis(),
-    }));
-    const mockDelete = vi.fn(() => ({
+    const _mockUpsert = vi.fn();
+    const _mockUpdate = vi.fn(() => ({
       eq: vi.fn().mockReturnThis(),
     }));
-    const mockFrom = vi.fn((table: string) => {
+    const _mockDelete = vi.fn(() => ({
+      eq: vi.fn().mockReturnThis(),
+    }));
+    const _mockFrom = vi.fn((table: string) => {
       if (table === 'mockup_drafts') {
-        return { select: mockSelect, upsert: mockUpsert, update: mockUpdate, delete: mockDelete };
+        return {
+          select: _mockSelect,
+          upsert: _mockUpsert,
+          update: _mockUpdate,
+          delete: _mockDelete,
+        };
       }
       return {};
     });
-    return { mockUpsert, mockUpdate, mockSelect, mockDelete, mockMaybeSingle, mockFrom };
+    return {
+      mockUpsert: _mockUpsert,
+      mockUpdate: _mockUpdate,
+      mockSelect: _mockSelect,
+      mockDelete: _mockDelete,
+      mockMaybeSingle: _mockMaybeSingle,
+      mockFrom: _mockFrom,
+    };
   },
 );
 

@@ -81,7 +81,6 @@ export function MockupHistoryPanel({
   mockupHistory,
   isLoading,
   clients,
-  techniques,
   onLoadFromHistory,
   onDownload,
   onDelete,

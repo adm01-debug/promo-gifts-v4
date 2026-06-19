@@ -28,6 +28,7 @@ import {
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { NoveltyCardSkeleton } from './NoveltyCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
@@ -172,7 +173,7 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
@@ -286,17 +287,15 @@ export function NoveltyProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 15 }).map((_, i) => (
-              <div
-                key={i}
-                data-testid="novelty-loading-card"
-                // Altura reservada idêntica ao card real (min-h-[420px]) para
-                // estabilizar o layout no swap skeleton→dados.
-                className={viewMode === 'list' ? '' : 'min-h-[420px]'}
-              >
-                <ProductCardSkeleton variant={viewMode === 'list' ? 'compact' : 'default'} />
-              </div>
-            ))}
+            {Array.from({ length: 15 }).map((_, i) =>
+              viewMode === 'list' ? (
+                <div key={i} data-testid="novelty-loading-card">
+                  <ProductCardSkeleton variant="compact" />
+                </div>
+              ) : (
+                <NoveltyCardSkeleton key={i} />
+              ),
+            )}
           </div>
         </div>
       );

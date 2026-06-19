@@ -21,13 +21,13 @@ export function QuoteTemplatePicker({ onSelect }: QuoteTemplatePickerProps) {
   const { data } = useQuery({
     queryKey: ['quote-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         .from('quote_templates')
         .select('id, name, description, is_default')
         .order('is_default', { ascending: false })
         .order('name');
       if (error) throw error;
-      return data || [];
+      return rows || [];
     },
   });
 
