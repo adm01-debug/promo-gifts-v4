@@ -43,8 +43,8 @@ export async function exportWhitelabelComparisonPDF(opts: {
     import('html2canvas'),
   ]);
   const html2canvas = html2canvasMod.default;
-  const el = document.querySelector(targetSelector) as HTMLElement | null;
-  if (!el) throw new Error('Área de exportação não encontrada');
+  const el = document.querySelector(targetSelector);
+  if (!(el instanceof HTMLElement)) throw new Error('Área de exportação não encontrada');
 
   const branding = await fetchClientBranding(clientId);
   const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true });

@@ -52,7 +52,7 @@ export function createProductFuseOptions<T extends SearchableProductLike>(
 ): IFuseOptions<T> {
   return {
     ...DEFAULT_FUSE_OPTIONS,
-    keys: DEFAULT_FUSE_OPTIONS.keys as IFuseOptions<T>['keys'],
+    keys: DEFAULT_FUSE_OPTIONS.keys,
     ...overrides,
   };
 }

@@ -65,7 +65,7 @@ export function BIProductCard({
                 loading="lazy"
                 className="h-full w-full object-contain transition-transform group-hover:scale-105"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  e.currentTarget.style.display = 'none';
                 }}
               />
             </div>

@@ -28,7 +28,7 @@ export function useMaterialGroups(): UseMaterialGroupsReturn {
   return {
     groups,
     isLoading,
-    error: error as Error | null,
+    error,
     refetch,
     totalGroups,
     totalMaterials,

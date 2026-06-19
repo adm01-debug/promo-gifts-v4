@@ -150,7 +150,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
-    } as unknown as ReturnType<typeof useConnectionsOverview>);
+    });
 
     render(
       <TooltipProvider>

@@ -21,7 +21,6 @@ import {
   useConnectionTestDetails,
   type TestDetails,
   type ConnectionType,
-  type ErrorKind,
 } from '@/hooks/intelligence';
 import { getErrorCopy, getKindBadgeClass, getKindLabel } from '@/lib/connection-error-copy';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
@@ -311,7 +310,7 @@ export function ConnectionTestDetailsDialog({
               {!details.ok &&
                 (() => {
                   const copy = getErrorCopy(
-                    (details.error?.kind ?? null) as ErrorKind | null,
+                    details.error?.kind ?? null,
                     details.response.status,
                     details.error?.message,
                     details.error?.timeout_ms ?? null,

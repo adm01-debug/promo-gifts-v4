@@ -266,7 +266,7 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
       !Array.isArray(payload) &&
       !('records' in payload)
     ) {
-      out = { records: [payload as T], count: 1 };
+      out = { records: [payload], count: 1 };
     } else {
       out = payload as InvokeResult<T>;
     }

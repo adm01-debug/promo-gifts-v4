@@ -213,7 +213,7 @@ export function useFilterPanelState(
     setOpenSections([]);
   }, []);
 
-  const sectionCounts = useMemo(() => {
+  const sectionCounts = useMemo((): Record<string, number> => {
     const colorCount =
       (filters.colorGroups?.length ?? 0) +
       (filters.colorVariations?.length ?? 0) +
@@ -247,7 +247,7 @@ export function useFilterPanelState(
       tamanhos: (filters.sizes ?? []).length,
       'opcoes-rapidas': quickCount,
       ordenacao: filters.sortBy !== 'newest' ? 1 : 0,
-    } as Record<string, number>;
+    };
   }, [filters, materialFilterState]);
 
   const sectionSummaries = useMemo(() => {

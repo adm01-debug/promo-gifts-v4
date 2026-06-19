@@ -231,7 +231,7 @@ export function useSecretsManager() {
         previous_suffix: data?.previous_suffix ?? null,
         masked_suffix: data?.masked_suffix ?? null,
         length: data?.length ?? value.length,
-        secret: data?.secret as SecretStatus | undefined,
+        secret: data?.secret,
       };
     },
     [],
@@ -264,7 +264,7 @@ export function useSecretsManager() {
         previous_suffix: data?.previous_suffix ?? null,
         masked_suffix: data?.masked_suffix ?? null,
         length: data?.length ?? value.length,
-        secret: data?.secret as SecretStatus | undefined,
+        secret: data?.secret,
       };
     },
     [],

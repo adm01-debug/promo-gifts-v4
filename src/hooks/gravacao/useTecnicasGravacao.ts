@@ -72,7 +72,7 @@ export function useTecnicasGravacao() {
       // antes tentava v.tecnica_gravacao_id que não existe → sempre 0
       const variantesCount: Record<string, number> = {};
       (faixasResult.data ?? []).forEach((f) => {
-        const tid = (f as unknown as { tabela_preco_gravacao_id: string }).tabela_preco_gravacao_id;
+        const tid = f.tabela_preco_gravacao_id;
         if (tid) {
           variantesCount[tid] = (variantesCount[tid] ?? 0) + 1;
         }

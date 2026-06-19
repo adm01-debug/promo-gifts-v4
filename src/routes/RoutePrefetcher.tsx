@@ -45,7 +45,7 @@ function idlePrefetch(imports: Array<() => Promise<unknown>>): () => void {
   return () => {
     ids.forEach((id) => {
       if ('cancelIdleCallback' in window && typeof id === 'number') {
-        (window as Window).cancelIdleCallback(id as number);
+        (window as Window).cancelIdleCallback(id);
       } else {
         clearTimeout(id as ReturnType<typeof setTimeout>);
       }
@@ -105,9 +105,7 @@ export function RoutePrefetcher() {
         () => import('@/pages/clients/ClientsPage'),
       );
     } else if (pathname === '/auth' || pathname === '/login') {
-      idleImports.push(
-        () => import('@/pages/products/FiltersPage'),
-      );
+      idleImports.push(() => import('@/pages/products/FiltersPage'));
     }
 
     // Prefetch genérico do QuoteBuilder se não na página de quotes

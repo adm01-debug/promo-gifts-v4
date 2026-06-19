@@ -125,7 +125,7 @@ export function RoleMigrationPanel() {
         const rolesByUser = new Map<string, AppRole[]>();
         for (const r of roles ?? []) {
           const arr = rolesByUser.get(r.user_id) ?? [];
-          arr.push(r.role as AppRole);
+          arr.push(r.role);
           rolesByUser.set(r.user_id, arr);
         }
         setProfiles(

@@ -163,7 +163,7 @@ export function ClientLookalikes({ clientId, ramoAtividade }: Props) {
                     loading="lazy"
                     className="h-full w-full object-contain"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      e.currentTarget.style.display = 'none';
                     }}
                   />
                 </div>

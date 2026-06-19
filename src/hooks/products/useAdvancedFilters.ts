@@ -4,9 +4,6 @@ import {
   useExternalTechniques,
   useExternalSuppliers,
   useExternalDatabase,
-  type ExternalCategory,
-  type ExternalTechnique,
-  type ExternalSupplier,
 } from '@/hooks/intelligence/useExternalDatabase';
 
 // Re-exportar tipos e constantes dos novos arquivos
@@ -113,7 +110,7 @@ export function useAdvancedFilters() {
 
   // Transformar categorias em arvore hierarquica
   const categoryTree = useMemo((): CategoryOption[] => {
-    const categories = categoriesDB.data as ExternalCategory[];
+    const categories = categoriesDB.data;
     if (!categories?.length) return [];
 
     const categoryMap = new Map<string, CategoryOption>();
@@ -158,7 +155,7 @@ export function useAdvancedFilters() {
 
   // Tecnicas de personalizacao
   const techniqueOptions = useMemo((): TechniqueOption[] => {
-    const techniques = techniquesDB.data as ExternalTechnique[];
+    const techniques = techniquesDB.data;
     return (
       techniques?.map((tech) => ({
         id: tech.id,
@@ -172,7 +169,7 @@ export function useAdvancedFilters() {
 
   // Fornecedores
   const supplierOptions = useMemo((): SupplierOption[] => {
-    const suppliers = suppliersDB.data as ExternalSupplier[];
+    const suppliers = suppliersDB.data;
     return (
       suppliers?.map((sup) => ({
         id: sup.id,
@@ -185,7 +182,7 @@ export function useAdvancedFilters() {
 
   // Cores
   const colorOptions = useMemo((): ColorOption[] => {
-    const colors = colorGroupsDB.data as ColorGroupData[];
+    const colors = colorGroupsDB.data;
     return (
       colors?.map((color) => ({
         id: color.id,
@@ -197,7 +194,7 @@ export function useAdvancedFilters() {
 
   // Tags
   const tagOptions = useMemo(() => {
-    const tags = tagsDB.data as TagData[];
+    const tags = tagsDB.data;
     return (
       tags?.map((tag) => ({
         id: tag.id,

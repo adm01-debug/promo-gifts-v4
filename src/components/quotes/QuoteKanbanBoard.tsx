@@ -74,7 +74,7 @@ const columns: Column[] = [
     bgColor: 'bg-muted/30',
   },
   {
-    id: 'pending_approval' as QuoteStatus,
+    id: 'pending_approval',
     title: 'Aguardando Aprovação',
     icon: AlertTriangle,
     color: 'text-amber-500',
@@ -308,7 +308,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
       }
     });
 
-    return grouped as Record<QuoteStatus, Quote[]>;
+    return grouped;
   }, [quotes]);
 
   const totalsByStatus = useMemo(() => {
@@ -328,7 +328,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
       }
     });
 
-    return totals as Record<QuoteStatus, number>;
+    return totals;
   }, [quotes]);
 
   const handleDragStart = (event: DragStartEvent) => {

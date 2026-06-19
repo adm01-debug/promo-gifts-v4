@@ -392,7 +392,7 @@ export function StockAlertsIndicator() {
                       className="h-10 w-10 flex-shrink-0 rounded-lg border border-border/30 bg-background object-contain p-0.5"
                       loading="lazy"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                        e.currentTarget.src = '/placeholder.svg';
                       }}
                     />
                   ) : (

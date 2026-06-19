@@ -217,9 +217,7 @@ export async function detectCanonicalDbHealth(timeoutMs = 5000): Promise<Canonic
       .select('switch_name')
       .limit(1);
 
-    const result = (await Promise.race([queryPromise, timeoutPromise])) as Awaited<
-      typeof queryPromise
-    >;
+    const result = await Promise.race([queryPromise, timeoutPromise]);
     const latencyMs = Math.round(performance.now() - t0);
 
     if (result.error) {

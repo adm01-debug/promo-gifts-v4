@@ -55,7 +55,7 @@ export function FailedDeliveriesPanel() {
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
       const { data, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as FailedDelivery[], count: count ?? 0 };
+      return { rows: data ?? [], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });
@@ -85,7 +85,7 @@ export function FailedDeliveriesPanel() {
   };
 
   const total = data?.count ?? 0;
-  const rows = data?.rows ?? [];
+  const rows: FailedDelivery[] = data?.rows ?? [];
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -160,7 +160,7 @@ export function FailedDeliveriesPanel() {
                   <TableRow key={d.id}>
                     <TableCell>
                       <div className="text-sm font-medium">{d.outbound_webhooks?.name ?? '—'}</div>
-                      {d.outbound_webhooks?.active === false && (
+                      {!d.outbound_webhooks?.active && (
                         <Badge
                           variant="outline"
                           className="mt-0.5 border-destructive/20 bg-destructive/10 text-[10px] text-destructive"

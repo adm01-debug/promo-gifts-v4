@@ -81,8 +81,8 @@ export default function AdminConexoesStatusPage() {
     if (connErr || credErr) {
       setError(connErr?.message ?? credErr?.message ?? 'Falha ao ler dados');
     } else {
-      setConns((connData ?? []) as ConnectionRow[]);
-      setCreds((credData ?? []) as CredentialRow[]);
+      setConns(connData ?? []);
+      setCreds(credData ?? []);
     }
     setLoading(false);
   }, []);

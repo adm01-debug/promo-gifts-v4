@@ -119,7 +119,7 @@ export function InlinePriceCalculator({
           setIsLoading(false);
           return;
         }
-        const targetVariantId = variants[0].id as string;
+        const targetVariantId = variants[0].id;
         const sourceResponse = await dbInvoke({
           table: 'variant_supplier_sources',
           operation: 'select',

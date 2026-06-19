@@ -48,7 +48,7 @@ export function AutoTestJobStatusCard() {
         _limit: 20,
       });
       if (rpcErr) throw rpcErr;
-      setRuns((data ?? []) as JobRun[]);
+      setRuns(data ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar');
     } finally {

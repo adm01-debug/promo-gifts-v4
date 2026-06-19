@@ -129,7 +129,7 @@ export function ArtFileUpload({
           continue;
         }
 
-        uploaded.push(row as ArtFileAttachment);
+        uploaded.push(row);
       }
 
       if (uploaded.length > 0) {

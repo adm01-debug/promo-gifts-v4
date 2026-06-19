@@ -55,8 +55,8 @@ export function ExportComparisonButton({
     setBusy(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
-      const el = document.querySelector(targetSelector) as HTMLElement | null;
-      if (!el) {
+      const el = document.querySelector(targetSelector);
+      if (!(el instanceof HTMLElement)) {
         toast.error('Área não encontrada');
         return;
       }
@@ -87,8 +87,8 @@ export function ExportComparisonButton({
         import('html2canvas'),
       ]);
       const html2canvas = html2canvasMod.default;
-      const el = document.querySelector(targetSelector) as HTMLElement | null;
-      if (!el) {
+      const el = document.querySelector(targetSelector);
+      if (!(el instanceof HTMLElement)) {
         toast.error('Área não encontrada');
         return;
       }

@@ -86,7 +86,7 @@ export function useFavoriteLists() {
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as FavoriteList[];
+      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 }));
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -110,7 +110,7 @@ export function useFavoriteLists() {
         .select()
         .single();
       if (error) throw error;
-      return data as FavoriteList;
+      return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
@@ -131,7 +131,7 @@ export function useFavoriteLists() {
         .select()
         .single();
       if (error) throw error;
-      return data as FavoriteList;
+      return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: LISTS_KEY }),
     onError: (e: Error) =>
@@ -175,7 +175,7 @@ export function useFavoriteLists() {
         .select()
         .single();
       if (error) throw error;
-      return data as FavoriteList;
+      return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LISTS_KEY });

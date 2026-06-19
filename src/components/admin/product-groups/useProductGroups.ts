@@ -30,7 +30,7 @@ export function useProductGroups() {
     queryFn: async () => {
       const { data, error } = await supabase.from('product_groups').select('*').order('group_name');
       if (error) throw error;
-      return data as ProductGroup[];
+      return data;
     },
   });
 
@@ -39,7 +39,7 @@ export function useProductGroups() {
     queryFn: async () => {
       const { fetchPromobrindProducts } = await import('@/lib/external-db');
       const productsData = await fetchPromobrindProducts();
-      return productsData.map((p) => ({ id: p.id, name: p.name, sku: p.sku })) as SimpleProduct[];
+      return productsData.map((p) => ({ id: p.id, name: p.name, sku: p.sku }));
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -49,7 +49,7 @@ export function useProductGroups() {
     queryFn: async () => {
       const { data, error } = await supabase.from('product_group_members').select('*');
       if (error) throw error;
-      return data as ProductGroupMember[];
+      return data;
     },
   });
 

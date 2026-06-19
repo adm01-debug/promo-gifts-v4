@@ -279,7 +279,7 @@ export function QuoteBuilderSummaryColumn({
                                 className="h-12 w-12 rounded-lg bg-muted object-cover"
                                 loading="lazy"
                                 onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                                  e.currentTarget.src = '/placeholder.svg';
                                 }}
                               />
                             ) : (

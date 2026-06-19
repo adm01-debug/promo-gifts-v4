@@ -67,7 +67,7 @@ export function useGroupPersonalization() {
         .eq('is_active', true)
         .order('group_name');
       if (error) throw error;
-      return data as ProductGroup[];
+      return data;
     },
   });
 

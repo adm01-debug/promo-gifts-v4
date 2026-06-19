@@ -151,7 +151,7 @@ export function useSupplierFiscalData(
             .limit(1);
 
           if (vssResult.data?.length) {
-            vss = vssResult.data[0] as VSSRecord;
+            vss = vssResult.data[0];
             matchedVariantId = variantId;
             break;
           }
@@ -211,7 +211,7 @@ export function useSupplierFiscalData(
           .limit(5);
 
         if (branchesResult.data?.length) {
-          const branch = branchesResult.data[0] as BranchRecord;
+          const branch = branchesResult.data[0];
           const result = buildFromBranch(branch);
           result._variantId = matchedVariantId || undefined;
           return result;

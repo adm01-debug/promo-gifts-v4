@@ -106,7 +106,7 @@ export default function MockupGenerator() {
     // Cast: useMockupGenerator narrows to Technique|TechniqueWithLimits; useTechniqueHandlers
     // expects MockupTechnique (less restrictive due to [key: string]: unknown). Both are compatible
     // structurally, but TS can't widen a Dispatch<SetStateAction<T>> to a (t: U) => void without help.
-    selectedTechnique: mg.selectedTechnique as MockupTechnique | null,
+    selectedTechnique: mg.selectedTechnique,
     setSelectedTechnique: mg.setSelectedTechnique as (t: MockupTechnique | null) => void,
     setGeneratedMockup: mg.setGeneratedMockup,
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
@@ -538,7 +538,7 @@ export default function MockupGenerator() {
                     onApplySuggestion={(suggestion) => {
                       if (suggestion.techniqueId) {
                         const tech = mg.techniques.find((t) => t.id === suggestion.techniqueId);
-                        if (tech) technique.handleTechniqueChange(tech as MockupTechnique);
+                        if (tech) technique.handleTechniqueChange(tech);
                       }
                       if (suggestion.position) {
                         mg.updateActiveArea({

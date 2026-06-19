@@ -11,11 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { applyStockFilters, buildStockIndexes, normalize } from '@/lib/inventory/stock-filter';
-import {
-  defaultStockFilters,
-  type ProductStockSummary,
-  type VariantStock,
-} from '@/types/stock';
+import { defaultStockFilters, type ProductStockSummary, type VariantStock } from '@/types/stock';
 
 const v = (id: string, color: string | undefined, stock = 100): VariantStock => ({
   id,
@@ -70,7 +66,7 @@ describe('normalize — função base', () => {
     [null, ''],
     ['', ''],
   ])('normalize(%j) === %j', (input, expected) => {
-    expect(normalize(input as string | null | undefined)).toBe(expected);
+    expect(normalize(input)).toBe(expected);
   });
 });
 
@@ -141,12 +137,7 @@ describe('regressão — cor', () => {
   const idx = buildStockIndexes(universe, []);
 
   it('colorName exata NÃO casa por substring (Azul ≠ Azul Marinho)', () => {
-    const out = applyStockFilters(
-      universe,
-      { ...defaultStockFilters, colorName: 'Azul' },
-      [],
-      idx,
-    );
+    const out = applyStockFilters(universe, { ...defaultStockFilters, colorName: 'Azul' }, [], idx);
     expect(out.map((x) => x.productId)).toEqual(['p1']);
   });
 
@@ -192,7 +183,12 @@ describe('regressão — listas vazias / borda', () => {
       p('p1', 'A', 'C', 'F', [v('p1-1', 'Azul')]),
       p('p2', 'B', 'C', 'F', [v('p2-1', 'Verde')]),
     ];
-    const out = applyStockFilters(universe, defaultStockFilters, [], buildStockIndexes(universe, []));
+    const out = applyStockFilters(
+      universe,
+      defaultStockFilters,
+      [],
+      buildStockIndexes(universe, []),
+    );
     expect(out).toHaveLength(2);
     // sem filtro de cor → variants é a MESMA referência (identidade preservada)
     expect(out[0].variants).toBe(universe.find((x) => x.productId === out[0].productId)!.variants);
@@ -210,7 +206,6 @@ describe('regressão — listas vazias / borda', () => {
       buildStockIndexes(universe, []),
     );
     expect(out.map((x) => x.productId)).toEqual(['p1']);
-
   });
 });
 

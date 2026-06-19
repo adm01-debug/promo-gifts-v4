@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useExternalProducts } from '@/hooks/intelligence';
-import type { ExternalProduct } from '@/lib/external-db/types';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
@@ -88,9 +87,9 @@ export function BridgeProductsPreviewPanel() {
     const min = minPriceInput.trim() === '' ? null : Number(minPriceInput);
     const max = maxPriceInput.trim() === '' ? null : Number(maxPriceInput);
     const stock = minStockInput.trim() === '' ? null : Number(minStockInput);
-    setAppliedMinPrice(Number.isFinite(min as number) ? (min as number) : null);
-    setAppliedMaxPrice(Number.isFinite(max as number) ? (max as number) : null);
-    setAppliedMinStock(Number.isFinite(stock as number) ? (stock as number) : null);
+    setAppliedMinPrice(Number.isFinite(min) ? min : null);
+    setAppliedMaxPrice(Number.isFinite(max) ? max : null);
+    setAppliedMinStock(Number.isFinite(stock) ? stock : null);
     setPage(1);
   }, [searchInput, activeInput, minPriceInput, maxPriceInput, minStockInput]);
 
@@ -115,7 +114,7 @@ export function BridgeProductsPreviewPanel() {
     appliedMaxPrice !== null ||
     appliedMinStock !== null;
 
-  const products = data as ExternalProduct[];
+  const products = data;
   const startIdx = count === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIdx = Math.min((page - 1) * pageSize + products.length, count ?? 0);
 

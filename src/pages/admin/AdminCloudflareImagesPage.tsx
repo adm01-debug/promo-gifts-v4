@@ -127,7 +127,7 @@ async function fetchCfImages(): Promise<CfImage[]> {
     .order('display_order', { ascending: true })
     .limit(2000);
   if (error) throw error;
-  return (data ?? []) as CfImage[];
+  return data ?? [];
 }
 
 function computeStats(images: CfImage[]): CfStats {

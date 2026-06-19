@@ -182,9 +182,9 @@ export function useProductVariants(productId: string, productName?: string, prod
       try {
         const promises = action.variantIds.map((id) => {
           if (action.type === 'toggle_active')
-            return updateVariantApi(id, { is_active: action.value as boolean });
+            return updateVariantApi(id, { is_active: action.value });
           if (action.type === 'update_stock')
-            return updateVariantApi(id, { stock_quantity: action.value as number });
+            return updateVariantApi(id, { stock_quantity: action.value });
           return Promise.resolve();
         });
         await Promise.all(promises);

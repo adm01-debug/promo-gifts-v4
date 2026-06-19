@@ -38,7 +38,7 @@ export function prefetchCatalog(queryClient: QueryClient) {
       for (const result of batchResults) {
         if (result.records && result.records.length > 0) {
           products.push(
-            ...(result.records as unknown[]).map((p) =>
+            ...result.records.map((p) =>
               mapLightweightToProduct(
                 p as Parameters<typeof mapLightweightToProduct>[0],
                 categoriesById,
@@ -47,7 +47,7 @@ export function prefetchCatalog(queryClient: QueryClient) {
           );
           lastPageSize = result.records.length;
           if (result.count !== null && totalEstimate === null) {
-            totalEstimate = result.count as number;
+            totalEstimate = result.count;
           }
         } else if (result.records) {
           lastPageSize = 0;

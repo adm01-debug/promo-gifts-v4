@@ -30,7 +30,7 @@ export function useVideoVariantLinks(productId?: string) {
       if (productId) q = q.eq('product_id', productId);
       const { data, error } = await q;
       if (error) throw error;
-      return data as VideoVariantLink[];
+      return data;
     },
     enabled: !!productId || productId === undefined,
   });

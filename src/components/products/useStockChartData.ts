@@ -12,7 +12,6 @@ import {
   getActiveFlags,
   type IntelligenceFlag,
   type StockVelocity,
-  type ProductIntelligenceData,
 } from '@/hooks/intelligence/useStockHistory';
 import { useSupplierNames } from '@/hooks/products/useSupplierNames';
 import {
@@ -46,13 +45,13 @@ export function useStockChartData(productId: string) {
     error: velocityError,
     refetch: refetchVelocity,
   } = useStockVelocity(productId);
-  const velocity = _velocity as StockVelocity[] | undefined;
+  const velocity = _velocity;
   const {
     data: _intelligence,
     error: intelligenceError,
     refetch: refetchIntelligence,
   } = useProductIntelligenceData(productId);
-  const intelligence = _intelligence as ProductIntelligenceData | null | undefined;
+  const intelligence = _intelligence;
 
   const hasData = !!summaries?.length;
   const hasError = !!(summaryError || velocityError || intelligenceError);
@@ -215,7 +214,7 @@ export function useStockChartData(productId: string) {
     // Data
     chartData,
     effectiveIntelligence,
-    effectiveVelocities: effectiveVelocities as StockVelocity[],
+    effectiveVelocities,
     bestVelocity,
     flags,
     supplierOptions,

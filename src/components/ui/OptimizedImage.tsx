@@ -162,14 +162,12 @@ export function OptimizedImage({
     <div
       className={cn('relative overflow-hidden bg-white', containerClassName)}
       data-detection-rule={detectionRule}
-      style={
-        {
-          aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto',
-          contain: 'layout paint',
-          backgroundColor: !isLoaded && blurhashColor ? blurhashColor : undefined,
-          transition: 'background-color 0.3s ease',
-        } as React.CSSProperties
-      }
+      style={{
+        aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto',
+        contain: 'layout paint',
+        backgroundColor: !isLoaded && blurhashColor ? blurhashColor : undefined,
+        transition: 'background-color 0.3s ease',
+      }}
     >
       {error ? (
         <div

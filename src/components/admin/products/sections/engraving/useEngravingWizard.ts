@@ -196,7 +196,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
           ...newArea,
           id: `local-${Date.now()}`,
           _techData: selectedTechnique,
-        } as PrintAreaTechnique & { _techData?: ExternalTechnique },
+        },
       ]);
       toast.success('Área adicionada (será salva junto ao produto)');
     }
@@ -278,11 +278,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     const pending = localAreasRef.current;
     if (!pending.length) return;
     for (const area of pending) {
-      const {
-        id: _id,
-        _techData: _td,
-        ...areaData
-      } = area as typeof area & { _techData?: ExternalTechnique };
+      const { id: _id, _techData: _td, ...areaData } = area;
       const { error } = await untypedFrom('print_area_techniques').insert({
         ...areaData,
         product_id: realProductId,

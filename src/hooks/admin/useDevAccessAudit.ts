@@ -32,8 +32,6 @@ export const DEV_EXPECTED_TABLES = [
   'ip_access_control',
 ] as const;
 
-type ExpectedTable = (typeof DEV_EXPECTED_TABLES)[number];
-
 interface UseDevAccessAuditState {
   loading: boolean;
   results: DevAccessProbeResult[];
@@ -66,7 +64,7 @@ export function useDevAccessAudit() {
         try {
           const { error } = await supabase
             // dynamic table name validated against fixed allowlist
-            .from(table as ExpectedTable)
+            .from(table)
             .select('id', { head: true, count: 'exact' })
             .limit(1);
 

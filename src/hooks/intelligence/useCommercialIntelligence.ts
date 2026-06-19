@@ -337,14 +337,16 @@ export function useTrendingProducts(
       });
 
       return [...productMap.values()]
-        .map((p) => ({
-          ...p,
-          conversionRate: p.quoteCount > 0 ? Math.round((p.orderCount / p.quoteCount) * 100) : 100,
-          trend: (p.totalRevenue > 1000 ? 'up' : p.totalRevenue > 200 ? 'stable' : 'down') as
-            | 'up'
-            | 'down'
-            | 'stable',
-        }))
+        .map((p) => {
+          const trend: 'up' | 'stable' | 'down' =
+            p.totalRevenue > 1000 ? 'up' : p.totalRevenue > 200 ? 'stable' : 'down';
+          return {
+            ...p,
+            conversionRate:
+              p.quoteCount > 0 ? Math.round((p.orderCount / p.quoteCount) * 100) : 100,
+            trend,
+          };
+        })
         .sort((a, b) => b.totalRevenue - a.totalRevenue)
         .slice(0, limit);
     },

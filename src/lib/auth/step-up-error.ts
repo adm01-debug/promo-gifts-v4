@@ -28,7 +28,7 @@ interface BackendErrorShape {
 
 function collectCandidates(data: unknown, error: unknown): BackendErrorShape[] {
   const candidates: BackendErrorShape[] = [];
-  if (data && typeof data === 'object') candidates.push(data as BackendErrorShape);
+  if (data && typeof data === 'object') candidates.push(data);
   if (error && typeof error === 'object') {
     const e = error as { context?: { body?: unknown }; message?: string };
     const body = e.context?.body;
@@ -39,7 +39,7 @@ function collectCandidates(data: unknown, error: unknown): BackendErrorShape[] {
         /* noop */
       }
     } else if (body && typeof body === 'object') {
-      candidates.push(body as BackendErrorShape);
+      candidates.push(body);
     }
     if (typeof e.message === 'string') candidates.push({ error: e.message });
   }

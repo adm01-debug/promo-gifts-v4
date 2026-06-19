@@ -38,7 +38,7 @@ export function McpAuditRow({ row }: Props) {
     tone: 'text-muted-foreground',
   };
   const Icon = meta.Icon;
-  const d = (row.details ?? {}) as Record<string, unknown>;
+  const d = row.details ?? {};
   const fields = arr(d.fields_changed);
   const diff = (d.diff ?? {}) as Record<string, { before?: unknown; after?: unknown }>;
   const beforeScopes = arr(diff.scopes?.before ?? d.before_scopes);

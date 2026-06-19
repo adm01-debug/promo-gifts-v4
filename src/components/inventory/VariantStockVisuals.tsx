@@ -83,7 +83,7 @@ export function VariantThumb({
           className="size-full object-cover"
           onError={(e) => {
             // Fallback graceful para placeholder se o CDN falhar
-            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+            e.currentTarget.style.visibility = 'hidden';
           }}
         />
       ) : (

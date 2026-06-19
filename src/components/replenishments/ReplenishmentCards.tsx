@@ -396,7 +396,7 @@ export function ReplenishmentTableView({
                         src={product.product_image}
                         alt={`Foto de ${product.product_name}`}
                         onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
+                          const img = e.currentTarget;
                           img.onerror = null;
                           img.src = '/placeholder.svg';
                         }}

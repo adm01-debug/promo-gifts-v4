@@ -95,7 +95,7 @@ global.IntersectionObserver = class IntersectionObserver {
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
-} as unknown as typeof IntersectionObserver;
+};
 
 // TODO: hook cresceu demais — cascata de imports (Supabase + ProductsContext +
 // favorites/comparison stores + intelligence) estoura memória do worker vitest

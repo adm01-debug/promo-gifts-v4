@@ -160,7 +160,7 @@ export default function AdminSegurancaAcessoPage() {
             request_count:
               (r.request_count as number | null) ?? (meta.request_count as number) ?? null,
             created_at: String(r.created_at),
-          } as BotLog;
+          };
         }),
       );
       setRateLimits(rateRes.data ?? []);

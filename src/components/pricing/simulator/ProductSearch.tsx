@@ -53,7 +53,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                   className="h-full w-full object-cover"
                   loading="lazy"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                    e.currentTarget.src = '/placeholder.svg';
                   }}
                 />
               ) : (
@@ -129,7 +129,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                       className="h-full w-full object-cover"
                       loading="lazy"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                        e.currentTarget.src = '/placeholder.svg';
                       }}
                     />
                   ) : (

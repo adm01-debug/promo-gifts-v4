@@ -20,7 +20,7 @@ import {
   ReferenceDot,
 } from 'recharts';
 import { useMemo } from 'react';
-import { projectForecast, detectAnomalies } from '@/lib/forecast';
+import { projectForecast, detectAnomalies, type ForecastPoint } from '@/lib/forecast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -58,9 +58,7 @@ export function TrendsForecastChart({
 
     const projected = showForecast
       ? projectForecast(viewsSeries, 7)
-      : viewsSeries.map(
-          (s) => ({ ...s, isForecast: false }) as ReturnType<typeof projectForecast>[number],
-        );
+      : viewsSeries.map((s): ForecastPoint => ({ ...s, isForecast: false }));
 
     const anomalies = detectAnomalies(dailyTrends.map((d) => d.views));
 

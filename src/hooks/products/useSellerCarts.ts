@@ -138,7 +138,7 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'novo', items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'novo', items: [] };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });

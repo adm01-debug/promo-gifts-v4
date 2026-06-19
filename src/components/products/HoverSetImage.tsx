@@ -72,7 +72,7 @@ export const HoverSetImage = memo(function HoverSetImage({
           decoding="async"
           className="pointer-events-none absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
+            e.currentTarget.style.display = 'none';
           }}
         />
       )}

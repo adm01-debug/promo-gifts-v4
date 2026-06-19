@@ -1,11 +1,7 @@
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { FilterState } from '@/components/filters/FilterPanel';
-import {
-  getCategoryIcon,
-  useCategoryIcons,
-  type CategoryIcon,
-} from '@/hooks/products/useCategoryIcons';
+import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryIcons';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
 import { useSupplierNames } from '@/hooks/products/useSupplierNames';
 import { toTitleCase } from '@/lib/textUtils';
@@ -24,7 +20,7 @@ export const CatalogActiveFilters = memo(function CatalogActiveFilters({
 }: CatalogActiveFiltersProps) {
   const { data: categories = [] } = useExternalCategoriesQuery();
   const { data: iconsRaw } = useCategoryIcons();
-  const icons = (iconsRaw ?? []) as CategoryIcon[];
+  const icons = iconsRaw ?? [];
   const { data: supplierNamesMap } = useSupplierNames(filters.suppliers);
 
   if (activeFiltersCount === 0) return null;

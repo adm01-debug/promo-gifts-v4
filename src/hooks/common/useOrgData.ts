@@ -53,7 +53,7 @@ export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName
         throw error;
       }
 
-      return (data ?? []) as T[];
+      return data ?? [];
     },
     enabled: !!currentOrg && options.enabled !== false,
   });

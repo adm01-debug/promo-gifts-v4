@@ -55,10 +55,7 @@ async function bridgeInvoke(body: Record<string, unknown>) {
   if (op === 'update') {
     let q = untypedFrom(table).update(body.data as Record<string, unknown>);
     if (body.id)
-      q = (q as unknown as { eq: (c: string, v: unknown) => typeof q }).eq(
-        'id',
-        body.id,
-      ) as unknown as typeof q;
+      q = (q as unknown as { eq: (c: string, v: unknown) => typeof q }).eq('id', body.id);
     const { data, error } = await (
       q as unknown as {
         select: () => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
@@ -68,9 +65,7 @@ async function bridgeInvoke(body: Record<string, unknown>) {
     return { success: true, data: { records: data ?? [], count: (data ?? []).length } };
   }
   if (op === 'delete') {
-    const { error } = await untypedFrom(table)
-      .delete()
-      .eq('id', body.id as string);
+    const { error } = await untypedFrom(table).delete().eq('id', body.id);
     if (error) throw new Error(error.message);
     return { success: true, data: { records: [], count: 0 } };
   }

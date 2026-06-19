@@ -89,7 +89,7 @@ function emit(
 
   // Sentry forwarding
   if (level === 'error') {
-    const err = (fields?.err ?? fields?.error) as unknown;
+    const err = fields?.err ?? fields?.error;
     const errorObj = err instanceof Error ? err : new Error(`${scope}.${event}`);
     captureException(errorObj, { tags: { scope, event, request_id: requestId }, extra: payload });
   }

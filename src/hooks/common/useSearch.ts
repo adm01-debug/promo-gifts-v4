@@ -108,7 +108,7 @@ export function useSearch(products: Product[] = []) {
     [availableProducts],
   );
   const presentSupplierIds = useMemo(
-    () => new Set(availableProducts.map((p) => p.supplier?.id).filter(Boolean) as string[]),
+    () => new Set(availableProducts.map((p) => p.supplier?.id).filter(Boolean)),
     [availableProducts],
   );
   const effectiveCategorySource = useMemo<RealCategory[]>(
@@ -255,7 +255,7 @@ export function useSearch(products: Product[] = []) {
         id: cid,
         label: category.name,
         sublabel: `${productCount} produtos`,
-        icon: (category as RealCategory).icon || '📁',
+        icon: category.icon || '📁',
       });
     });
 
@@ -318,7 +318,7 @@ export function useSearch(products: Product[] = []) {
         id: String(c.id),
         label: c.name,
         sublabel: `${count} produtos`,
-        icon: (c as RealCategory).icon ?? '📁',
+        icon: c.icon ?? '📁',
       }));
   }, [realCategories, availableProducts, effectiveCategorySource]);
 

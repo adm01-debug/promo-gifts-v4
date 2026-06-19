@@ -183,10 +183,7 @@ export function ConnectionErrorDetailsDialog({
   const message = detail?.error_message ?? summary?.message ?? null;
   const latency = detail?.latency_ms ?? summary?.latency_ms ?? null;
   const testedAt = detail?.tested_at ?? summary?.tested_at ?? null;
-  const errorKind: ErrorKind | null =
-    (detail?.error_kind as ErrorKind | null | undefined) ??
-    (summary?.error_kind as ErrorKind | null | undefined) ??
-    null;
+  const errorKind: ErrorKind | null = detail?.error_kind ?? summary?.error_kind ?? null;
   const suggestion = errorKind ? SUGGESTIONS[errorKind] : suggestionFromMessage(message, status);
   const kindMeta = errorKind ? KIND_META[errorKind] : null;
 

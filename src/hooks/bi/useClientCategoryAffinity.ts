@@ -104,7 +104,7 @@ export function useClientCategoryAffinity(clientId?: string) {
         _limit: 50,
       });
       if (error) return [];
-      return (Array.isArray(data) ? data : []) as ClientTopProductRow[];
+      return Array.isArray(data) ? data : [];
     },
   });
 

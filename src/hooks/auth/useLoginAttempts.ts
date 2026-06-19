@@ -47,7 +47,7 @@ export function useLoginAttempts(options: UseLoginAttemptsOptions = {}) {
       if (error) throw error;
 
       return {
-        attempts: (data ?? []) as LoginAttempt[],
+        attempts: data ?? [],
         totalCount: count ?? 0,
         totalPages: Math.ceil((count ?? 0) / pageSize),
       };

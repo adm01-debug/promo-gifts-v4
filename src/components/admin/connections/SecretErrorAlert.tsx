@@ -100,7 +100,7 @@ export function SecretErrorAlert({
                   <span
                     className={cn(
                       'inline-flex items-center gap-1 rounded border px-1.5 py-0 font-mono text-[10px] font-semibold',
-                      statusTone(httpStatus as number),
+                      statusTone(httpStatus),
                     )}
                     title={`HTTP ${httpStatus}`}
                   >
@@ -112,12 +112,12 @@ export function SecretErrorAlert({
                   <span
                     className={cn(
                       'inline-flex items-center gap-1 rounded border px-1.5 py-0 font-mono text-[10px] font-semibold',
-                      latencyTone(latencyMs as number),
+                      latencyTone(latencyMs),
                     )}
                     title={`Latência total: ${latencyMs} ms`}
                   >
                     <Timer className="h-3 w-3" />
-                    {formatLatency(latencyMs as number)}
+                    {formatLatency(latencyMs)}
                   </span>
                 )}
               </div>

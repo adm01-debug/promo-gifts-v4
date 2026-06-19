@@ -94,8 +94,7 @@ export function SeverityFilterControl({ counts, className }: Props) {
           {PILLS.map((pill) => {
             const Icon = pill.icon;
             const active = filter === pill.value;
-            const count =
-              pill.value === 'all' ? counts?.total : counts?.[pill.value as 'P0' | 'P1' | 'P2'];
+            const count = pill.value === 'all' ? counts?.total : counts?.[pill.value];
             return (
               <Tooltip key={pill.value}>
                 <TooltipTrigger asChild>

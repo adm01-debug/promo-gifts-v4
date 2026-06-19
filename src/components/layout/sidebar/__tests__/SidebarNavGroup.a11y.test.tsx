@@ -98,11 +98,11 @@ function setupRouter(initialEntries: string[], initialIndex = 0): Router {
 }
 
 function getHeaderButton(): HTMLButtonElement {
-  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i }) as HTMLButtonElement;
+  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i });
 }
 
 function getNavLink(label: string): HTMLAnchorElement | null {
-  return screen.queryByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement | null;
+  return screen.queryByRole('link', { name: new RegExp(label, 'i') });
 }
 
 async function pushTo(router: Router, path: string) {
@@ -265,7 +265,7 @@ describe('SidebarNavGroup — aria-current nos NavLinks acompanha a rota', () =>
         const link = getNavLink(label);
         expect(link).not.toBeNull();
         const cur = link!.getAttribute('aria-current');
-        if ((expectedActive as string[]).includes(label)) {
+        if (expectedActive.includes(label)) {
           expect(cur).toBe('page');
         } else {
           expect(cur === null || cur === 'false').toBe(true);

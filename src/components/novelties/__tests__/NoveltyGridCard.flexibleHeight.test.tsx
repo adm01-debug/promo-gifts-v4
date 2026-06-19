@@ -61,7 +61,7 @@ const product: NoveltyWithDetails = {
 function getArticle(container: HTMLElement): HTMLElement {
   const el = container.querySelector('article');
   if (!el) throw new Error('article não encontrado');
-  return el as HTMLElement;
+  return el;
 }
 
 describe('NoveltyGridCard › altura flexível (sem max-h / h fixo)', () => {
@@ -75,9 +75,7 @@ describe('NoveltyGridCard › altura flexível (sem max-h / h fixo)', () => {
   });
 
   it('mantém min-h-[420px] (sem h/max-h fixo) também com skeleton de preço/estoque', () => {
-    const { container } = render(
-      <NoveltyGridCard product={product} isPriceStockLoading />,
-    );
+    const { container } = render(<NoveltyGridCard product={product} isPriceStockLoading />);
     const cls = getArticle(container).className;
     expect(cls).toMatch(/min-h-\[420px\]/);
     expect(cls).not.toMatch(/(^|\s)max-h-/);

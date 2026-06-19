@@ -135,7 +135,7 @@ export const quoteService = {
       throw new Error('Não foi possível atualizar o orçamento: nenhum dado retornado.');
     }
 
-    return { ...(updated as Quote), items } as Quote;
+    return { ...(updated as Quote), items };
   },
 
   async insertItemsWithPersonalizations(items: QuoteItem[], quoteId: string) {

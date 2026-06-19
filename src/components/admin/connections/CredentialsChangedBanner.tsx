@@ -40,13 +40,12 @@ export function CredentialsChangedBanner({ onRefreshed }: CredentialsChangedBann
         'postgres_changes',
         { event: '*', schema: 'public', table: 'integration_credentials' },
         (payload) => {
-          const event = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
+          const event = payload.eventType;
           // Coluna real em integration_credentials é `secret_name` —
           // typo histórico (`name`) escondia o nome do secret alterado
           // no aviso de auto-refresh.
-          const row =
-            (payload.new as { secret_name?: string } | null) ??
-            (payload.old as { secret_name?: string } | null);
+          const payloadOld: { secret_name?: string } | null = payload.old;
+          const row = (payload.new as { secret_name?: string } | null) ?? payloadOld;
           const name = row?.secret_name ?? null;
           setPending((prev) => ({
             count: (prev?.count ?? 0) + 1,

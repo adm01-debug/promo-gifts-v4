@@ -41,7 +41,7 @@ describe('cobertura em dias — casos extremos', () => {
     [100, Number.POSITIVE_INFINITY],
     [Number.NEGATIVE_INFINITY, 5],
   ])('stock=%s avg=%s → undefined + danger', (stock, avg) => {
-    const r = run(stock as number, avg as number);
+    const r = run(stock, avg);
     expect(r.days).toBeUndefined();
     expect(r.band).toBe('danger');
   });

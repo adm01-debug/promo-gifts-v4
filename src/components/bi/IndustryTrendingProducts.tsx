@@ -222,7 +222,7 @@ export function IndustryTrendingProducts({ ramoAtividade, clientId }: Props) {
                         loading="lazy"
                         className="h-16 w-16 shrink-0 rounded-lg border bg-background object-contain"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          e.currentTarget.style.display = 'none';
                         }}
                       />
                     ) : (
@@ -282,7 +282,7 @@ export function IndustryTrendingProducts({ ramoAtividade, clientId }: Props) {
                         loading="lazy"
                         className="h-full w-full object-contain"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          e.currentTarget.style.display = 'none';
                         }}
                       />
                     </div>

@@ -72,7 +72,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
     queryFn: async () => {
       const { fetchPromobrindProducts } = await import('@/lib/external-db');
       const productsData = await fetchPromobrindProducts();
-      return productsData.map((p) => ({ id: p.id, name: p.name, sku: p.sku })) as Product[];
+      return productsData.map((p) => ({ id: p.id, name: p.name, sku: p.sku }));
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -85,7 +85,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
         .select('id, group_code, group_name')
         .eq('is_active', true);
       if (error) throw error;
-      return data as ProductGroup[];
+      return data;
     },
   });
 
@@ -96,7 +96,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
         .from('product_group_members')
         .select('product_id, product_group_id');
       if (error) throw error;
-      return data as { product_id: string; product_group_id: string }[];
+      return data;
     },
   });
 
@@ -110,7 +110,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
         .eq('product_id', selectedProduct)
         .maybeSingle();
       if (error) throw error;
-      return data as ProductGroupMember | null;
+      return data;
     },
     enabled: !!selectedProduct,
   });

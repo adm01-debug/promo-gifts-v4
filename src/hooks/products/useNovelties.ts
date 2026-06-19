@@ -124,7 +124,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
             .in('id', categoryIds)
             .range(0, 499);
           if (error) return handleQueryError('useNovelties', 'categories', error);
-          return (data ?? []) as unknown as CategoryRecord[];
+          return data ?? [];
         })()
       : Promise.resolve([] as CategoryRecord[]),
     supplierIds.length > 0
@@ -134,7 +134,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
             .in('id', supplierIds)
             .range(0, 199);
           if (error) return handleQueryError('useNovelties', 'suppliers', error);
-          return (data ?? []) as unknown as SupplierRecord[];
+          return data ?? [];
         })()
       : Promise.resolve([] as SupplierRecord[]),
   ]);
@@ -218,7 +218,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         .range(0, limit - 1);
       if (error) return handleQueryError('useNovelties', 'products', error);
 
-      const records: RawProduct[] = (data ?? []) as unknown as RawProduct[];
+      const records: RawProduct[] = data ?? [];
 
       let novelties = records.map(toNovelty).filter((n) => n.is_active);
 
@@ -388,7 +388,7 @@ export function useNoveltyStats() {
             .eq('id', topSupplierId)
             .range(0, 0);
           if (!supError && supData?.length) {
-            topSupplierName = (supData[0] as unknown as { name: string }).name ?? null;
+            topSupplierName = supData[0].name ?? null;
           }
         } catch {
           /* fallback silencioso */
@@ -435,7 +435,7 @@ export function useNovelties(
           .range(0, 0);
         if (supError) return handleQueryError('useNovelties', 'suppliers', supError);
         if (supData?.length) {
-          supplierId = (supData[0] as unknown as { id: string }).id;
+          supplierId = supData[0].id;
         }
       }
 

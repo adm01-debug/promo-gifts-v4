@@ -50,7 +50,7 @@ import {
 } from '@/hooks/products';
 import type { ProductForRecommendation } from '@/hooks/intelligence';
 import { useToast } from '@/hooks/ui';
-import type { Product, ProductVariation } from '@/types/product-catalog';
+import type { ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -81,7 +81,7 @@ export default function ProductDetail() {
   const { addToRecentlyViewed } = useRecentlyViewedStore();
 
   const { data, isLoading, isError } = useProduct(id ?? '');
-  const product = data as Product | null | undefined;
+  const product = data;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
 
@@ -94,7 +94,7 @@ export default function ProductDetail() {
         category: it.category_name || product?.category?.name || 'Brindes',
         priceRange: formatCurrency(it.price),
         imageUrl: it.image_url,
-        tags: [it.supplier_name].filter(Boolean) as string[],
+        tags: [it.supplier_name].filter(Boolean),
       })),
     [similarItems, product?.category?.name],
   );

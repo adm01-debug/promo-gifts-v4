@@ -70,7 +70,7 @@ export function useOptimizationQueue() {
         .order('priority', { ascending: true })
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as OptimizationItem[];
+      return data ?? [];
     },
   });
 

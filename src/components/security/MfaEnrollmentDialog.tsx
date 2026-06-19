@@ -169,7 +169,14 @@ export function MfaEnrollmentDialog({
               Escaneie o QR code no seu app autenticador:
             </p>
             <div className="flex justify-center rounded-lg border bg-white p-4">
-              <img src={qrCode} alt="QR code MFA" className="h-48 w-48" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <img
+                src={qrCode}
+                alt="QR code MFA"
+                className="h-48 w-48"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
             {secret && (
               <div className="text-center text-xs text-muted-foreground">

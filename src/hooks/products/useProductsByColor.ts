@@ -100,14 +100,12 @@ export function useProductsByColor({
         const gid = groupsBySlug.get(slug);
         if (gid)
           for (const v of variationsData)
-            if ((v as Record<string, unknown>).group_id === gid)
-              targetColorIds.add((v as Record<string, unknown>).id as string);
+            if (v.group_id === gid) targetColorIds.add(v.id as string);
       }
       for (const colorName of colors) {
         const lower = colorName.toLowerCase();
         for (const v of variationsData)
-          if (((v as Record<string, unknown>).name as string)?.toLowerCase() === lower)
-            targetColorIds.add((v as Record<string, unknown>).id as string);
+          if ((v.name as string)?.toLowerCase() === lower) targetColorIds.add(v.id as string);
       }
 
       if (targetColorIds.size === 0 && colorNuances.length === 0) {

@@ -115,7 +115,7 @@ export function InboundEventsPanel() {
       supabase.from('inbound_webhook_endpoints').select('id, name, slug, source_system'),
     ]);
     setRows((ev ?? []) as unknown as EventRow[]);
-    setEndpoints((ep ?? []) as Endpoint[]);
+    setEndpoints(ep ?? []);
     setPage(0);
     setLoading(false);
   }, [period, endpointFilter, onlyInvalid, onlyUnprocessed]);

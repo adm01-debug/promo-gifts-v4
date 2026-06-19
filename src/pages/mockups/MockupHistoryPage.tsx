@@ -23,21 +23,6 @@ import { useDebounce } from '@/hooks/common';
 import { MockupHistorySkeleton } from '@/components/loading/ModernSkeletons';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
 
-interface GeneratedMockup {
-  id: string;
-  product_name: string | null;
-  product_sku: string | null;
-  client_name: string | null;
-  technique_name: string | null;
-  location_name: string | null;
-  colors_count: number | null;
-  logo_width_cm: number | null;
-  logo_height_cm: number | null;
-  mockup_url: string | null;
-  layout_url: string | null;
-  created_at: string;
-}
-
 export default function MockupHistoryPage() {
   const { user } = useAuth();
   const userId = user?.id;
@@ -79,7 +64,7 @@ export default function MockupHistoryPage() {
           logo_height_cm: (cfg.logoHeight as number | null) ?? null,
           colors_count: (cfg.colorsCount as number | null) ?? null,
           layout_url: null,
-        } as unknown as GeneratedMockup;
+        };
       });
       return { mockups, totalCount: count ?? 0 };
     },

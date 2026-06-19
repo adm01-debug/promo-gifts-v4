@@ -316,7 +316,7 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
           ).textSearch(ftsCfg.column, normalized, {
             type: 'websearch',
             config: ftsCfg.config,
-          }) as typeof query;
+          });
         } catch {
           // Coluna ainda não existe / Supabase SDK incompatível -> degrada p/ ILIKE multi-coluna.
           const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];

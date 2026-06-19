@@ -69,7 +69,7 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
       if (switchesRes.error) throw new Error(`switches: ${switchesRes.error.message}`);
       if (summaryRes.error) throw new Error(`summary: ${summaryRes.error.message}`);
 
-      setSwitches((switchesRes.data ?? []) as SwitchState[]);
+      setSwitches(switchesRes.data ?? []);
       setSummary((summaryRes.data ?? []) as SwitchHitSummary[]);
       setError(null);
       setLastRefresh(new Date());

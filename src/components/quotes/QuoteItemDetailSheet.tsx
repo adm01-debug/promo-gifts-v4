@@ -147,7 +147,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 className="h-16 w-16 rounded-lg border border-border object-cover"
                 loading="lazy"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                  e.currentTarget.src = '/placeholder.svg';
                 }}
               />
             )}

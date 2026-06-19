@@ -46,7 +46,7 @@ export function CollectionsTrashView({ collectionId, onCountChange }: Props) {
       toast.error('Erro ao carregar lixeira');
       setItems([]);
     } else {
-      setItems((data as unknown as TrashRow[]) ?? []);
+      setItems(data ?? []);
     }
     setIsLoading(false);
   }, [collectionId]);

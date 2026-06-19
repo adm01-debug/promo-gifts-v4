@@ -100,10 +100,7 @@ function useAllTechniqueDimensions(_techniques: Technique[], shouldFetch: boolea
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          return new Map(Object.entries(parsed)) as Map<
-            string,
-            { maxWidth: number | null; maxHeight: number | null }
-          >;
+          return new Map(Object.entries(parsed));
         }
       } catch {
         /* ignore */

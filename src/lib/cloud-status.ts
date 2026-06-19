@@ -83,13 +83,13 @@ const FAILURE_THRESHOLD = 2;
 const target: EventTarget =
   typeof EventTarget !== 'undefined'
     ? new EventTarget()
-    : ({
+    : {
         addEventListener() {},
         removeEventListener() {},
         dispatchEvent() {
           return true;
         },
-      } as unknown as EventTarget);
+      };
 
 const EVENT_NAME = 'cloud-status-change';
 

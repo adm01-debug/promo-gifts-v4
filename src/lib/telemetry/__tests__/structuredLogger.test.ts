@@ -72,7 +72,7 @@ describe('structuredLogger.ts', () => {
     const lastCall = vi.mocked(captureException).mock.calls[0];
     // If not an Error, it creates one
     expect(lastCall[0]).toBeInstanceOf(Error);
-    expect((lastCall[0] as Error).message).toBe('test.scope.generic_error');
+    expect(lastCall[0].message).toBe('test.scope.generic_error');
   });
 
   it('should create child loggers with appended scopes', () => {

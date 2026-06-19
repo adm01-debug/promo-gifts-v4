@@ -123,7 +123,7 @@ export function ConnectionTimelineDrawer({
             message: maskSensitiveText(error.message) ?? 'unknown',
           });
         }
-        setRows((data ?? []) as TestRow[]);
+        setRows(data ?? []);
         setLoading(false);
       }
     })();

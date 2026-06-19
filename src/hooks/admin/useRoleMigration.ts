@@ -66,7 +66,7 @@ export function useRoleMigration() {
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      setBatches((data ?? []) as BatchRow[]);
+      setBatches(data ?? []);
     } finally {
       setLoadingBatches(false);
     }
@@ -94,7 +94,7 @@ export function useRoleMigration() {
         });
         if (error) throw error;
         await refreshBatches();
-        return data as string; // batch_id
+        return data; // batch_id
       } finally {
         setSubmitting(false);
       }
@@ -109,7 +109,7 @@ export function useRoleMigration() {
       .eq('batch_id', batchId)
       .order('created_at', { ascending: true });
     if (error) throw error;
-    return (data ?? []) as ItemRow[];
+    return data ?? [];
   }, []);
 
   return { batches, loadingBatches, submitting, refreshBatches, executeBatch, fetchItems };

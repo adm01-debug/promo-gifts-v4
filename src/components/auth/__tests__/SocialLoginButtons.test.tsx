@@ -41,7 +41,7 @@ vi.mock('@/lib/auth/auth-debug', () => ({
 }));
 
 function getGoogleButton(): HTMLButtonElement {
-  return screen.getByRole('button', { name: /google/i }) as HTMLButtonElement;
+  return screen.getByRole('button', { name: /google/i });
 }
 
 describe('SocialLoginButtons (Google)', () => {

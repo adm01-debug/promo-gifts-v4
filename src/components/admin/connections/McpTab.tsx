@@ -70,7 +70,7 @@ export function McpTab() {
       toast.error('Erro ao carregar chaves', {
         description: 'Não foi possível carregar as chaves MCP.',
       });
-    else setKeys((data ?? []) as McpKey[]);
+    else setKeys(data ?? []);
     setLoading(false);
   };
 

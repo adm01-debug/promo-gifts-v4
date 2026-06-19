@@ -44,7 +44,6 @@ import {
   useFutureStockPreference,
   useFutureStockShortcut,
   FUTURE_STOCK_WINDOWS,
-  type FutureStockWindow,
 } from '@/hooks/useFutureStockPreference';
 
 interface FilterOption {
@@ -83,7 +82,7 @@ export function StockFilterToolbar({
   useFutureStockPreference(
     {
       includeFutureStock: !!filters.includeFutureStock,
-      futureStockWindowDays: (filters.futureStockWindowDays ?? 15) as FutureStockWindow,
+      futureStockWindowDays: filters.futureStockWindowDays ?? 15,
     },
     (pref) => {
       onUpdateFilter('includeFutureStock', pref.includeFutureStock);

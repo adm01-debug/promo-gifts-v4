@@ -124,7 +124,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
           } catch {
             /* empty */
           }
-          return { id: c.id, name: displayName, cargo: c.cargo, email, phone } as ContactOption;
+          return { id: c.id, name: displayName, cargo: c.cargo, email, phone };
         }),
       );
       return enriched;

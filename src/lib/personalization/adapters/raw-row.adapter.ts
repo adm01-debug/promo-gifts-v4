@@ -146,7 +146,7 @@ function mirrorPairs<T extends Raw>(
  */
 export function adaptTecnicaRow(raw: Raw): TecnicaGravacaoCanonical {
   if (!raw || typeof raw !== 'object') {
-    return { id: '' } as TecnicaGravacaoCanonical;
+    return { id: '' };
   }
   const out: TecnicaGravacaoCanonical = { ...raw, id: String(raw.id ?? '') };
   return mirrorPairs(out as Raw, raw, TECNICA_PAIRS, 'tecnica') as TecnicaGravacaoCanonical;
@@ -184,7 +184,7 @@ export function adaptTabelaPrecoRows(rows: Raw[] | null | undefined): TabelaPrec
  */
 export function adaptFaixaPrecoRow(raw: Raw): FaixaPrecoCanonical {
   if (!raw || typeof raw !== 'object') {
-    return { id: '' } as FaixaPrecoCanonical;
+    return { id: '' };
   }
   const out: FaixaPrecoCanonical = { ...raw, id: String(raw.id ?? '') };
   return mirrorPairs(out as Raw, raw, FAIXA_PAIRS, 'faixa') as FaixaPrecoCanonical;
@@ -201,7 +201,7 @@ export function adaptFaixaPrecoRows(rows: Raw[] | null | undefined): FaixaPrecoC
  */
 export function adaptPrintAreaTechniqueRow(raw: Raw): PrintAreaTechniqueCanonical {
   if (!raw || typeof raw !== 'object') {
-    return { id: '' } as PrintAreaTechniqueCanonical;
+    return { id: '' };
   }
   const out: PrintAreaTechniqueCanonical = { ...raw, id: String(raw.id ?? '') };
   return mirrorPairs(
@@ -229,5 +229,5 @@ export function buildTecnicaUpdatePayload(partial: Raw): Raw {
   const adapted = adaptTecnicaRow({ ...partial, id: partial.id ?? 'tmp' });
   // Remove o id sintético se não vinha originalmente.
   if (partial.id === undefined) delete (adapted as Raw).id;
-  return adapted as Raw;
+  return adapted;
 }

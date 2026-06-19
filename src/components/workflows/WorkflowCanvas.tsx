@@ -111,9 +111,7 @@ export function WorkflowCanvas() {
     if (!editDialog || !editForm) return;
     setWorkflow((prev) => ({
       ...prev,
-      steps: prev.steps.map((s) =>
-        s.id === editDialog.id ? ({ ...s, ...editForm } as WorkflowStep) : s,
-      ),
+      steps: prev.steps.map((s) => (s.id === editDialog.id ? { ...s, ...editForm } : s)),
     }));
     setEditDialog(null);
     toast.success('Etapa atualizada');

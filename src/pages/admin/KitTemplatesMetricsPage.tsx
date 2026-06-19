@@ -20,17 +20,6 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { TrendingUp, Package, Award } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
 
-interface TemplateRow {
-  id: string;
-  name: string;
-  tag: string | null;
-  color: string;
-  total_price: number;
-  usage_count: number;
-  updated_at: string;
-  category: string;
-}
-
 interface KitRow {
   id: string;
   items_data: unknown;
@@ -57,7 +46,7 @@ export default function KitTemplatesMetricsPage() {
         .select('id, name, tag, color, total_price, usage_count, updated_at, category')
         .order('usage_count', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as TemplateRow[];
+      return data ?? [];
     },
   });
 

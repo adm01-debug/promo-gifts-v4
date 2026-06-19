@@ -76,7 +76,7 @@ export function useStepUpAttempts() {
     const base = (data ?? []) as Array<Omit<StepUpAttemptRow, 'reason'>>;
     // Filtra por reason no cliente (json field)
     const onlyStepUp = base.filter((r) => {
-      const reason = (r.details as Record<string, unknown> | null)?.reason as string | undefined;
+      const reason = r.details?.reason as string | undefined;
       return reason && REASONS.includes(reason as StepUpReason);
     });
 
@@ -110,7 +110,7 @@ export function useStepUpAttempts() {
     });
 
     const enriched: StepUpAttemptRow[] = onlyStepUp.map((r) => {
-      const d = (r.details ?? {}) as Record<string, unknown>;
+      const d = r.details ?? {};
       const prof = r.user_id ? profiles[r.user_id] : undefined;
       const key = r.resource_id ? keys[r.resource_id] : undefined;
       return {

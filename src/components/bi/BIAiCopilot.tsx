@@ -149,7 +149,7 @@ export function BIAiCopilot({ open, onOpenChange, clientId, clientName, ramoAtiv
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1" ref={scrollRef as React.RefObject<HTMLDivElement>}>
+        <ScrollArea className="flex-1" ref={scrollRef}>
           <div className="space-y-3 p-4">
             {messages.length === 0 && (
               <div className="space-y-3">

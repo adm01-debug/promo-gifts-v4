@@ -58,7 +58,7 @@ class RamoAtividadeService {
       .select()
       .single();
     if (error) throw new Error(error.message || 'Erro ao criar registro');
-    return row as T;
+    return row;
   }
 
   private async updateRow<T>(table: string, id: string, data: Record<string, unknown>): Promise<T> {
@@ -69,7 +69,7 @@ class RamoAtividadeService {
       .select()
       .single();
     if (error) throw new Error(error.message || 'Erro ao atualizar registro');
-    return row as T;
+    return row;
   }
 
   private async deleteRow(table: string, id: string): Promise<void> {
@@ -123,11 +123,11 @@ class RamoAtividadeService {
   }
 
   async createRamo(data: Partial<RamoAtividade>): Promise<RamoAtividade> {
-    return this.insertRow<RamoAtividade>('ramo_atividade', data as Record<string, unknown>);
+    return this.insertRow<RamoAtividade>('ramo_atividade', data);
   }
 
   async updateRamo(id: string, data: Partial<RamoAtividade>): Promise<RamoAtividade> {
-    return this.updateRow<RamoAtividade>('ramo_atividade', id, data as Record<string, unknown>);
+    return this.updateRow<RamoAtividade>('ramo_atividade', id, data);
   }
 
   async deleteRamo(id: string): Promise<void> {
@@ -204,18 +204,11 @@ class RamoAtividadeService {
   }
 
   async createSegmento(data: Partial<RamoAtividadeFilho>): Promise<RamoAtividadeFilho> {
-    return this.insertRow<RamoAtividadeFilho>(
-      'ramo_atividade_filho',
-      data as Record<string, unknown>,
-    );
+    return this.insertRow<RamoAtividadeFilho>('ramo_atividade_filho', data);
   }
 
   async updateSegmento(id: string, data: Partial<RamoAtividadeFilho>): Promise<RamoAtividadeFilho> {
-    return this.updateRow<RamoAtividadeFilho>(
-      'ramo_atividade_filho',
-      id,
-      data as Record<string, unknown>,
-    );
+    return this.updateRow<RamoAtividadeFilho>('ramo_atividade_filho', id, data);
   }
 
   async deleteSegmento(id: string): Promise<void> {

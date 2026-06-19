@@ -59,11 +59,11 @@ export function useComparisonShortcuts(options: Options = {}) {
       // 1-4 → focus product N
       if (['1', '2', '3', '4'].includes(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const idx = parseInt(e.key, 10) - 1;
-        const el = document.querySelector(`[data-compare-product="${idx}"]`) as HTMLElement | null;
-        if (el) {
+        const el = document.querySelector(`[data-compare-product="${idx}"]`);
+        if (el instanceof HTMLElement) {
           e.preventDefault();
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.focus?.();
+          el.focus();
         }
         return;
       }

@@ -45,7 +45,7 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) return [];
-      return (data ?? []) as HistoricalRow[];
+      return data ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });

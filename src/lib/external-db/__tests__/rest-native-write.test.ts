@@ -97,25 +97,21 @@ describe('rest-native WRITE (Plano A)', () => {
 
   // ── Elegibilidade / whitelist ───────────────────────────────
   it('elegibilidade: write em tabela whitelisted = true; fora = false; select = false', () => {
-    expect(
-      isRestNativeWriteEligible({ table: 'collections', operation: 'insert' } as InvokeOptions),
-    ).toBe(true);
+    expect(isRestNativeWriteEligible({ table: 'collections', operation: 'insert' })).toBe(true);
     expect(
       isRestNativeWriteEligible({
         table: 'products',
         operation: 'update',
         id: 'x',
-      } as InvokeOptions),
+      }),
     ).toBe(true);
     expect(
       isRestNativeWriteEligible({
         table: 'tabela_aleatoria',
         operation: 'insert',
-      } as InvokeOptions),
+      }),
     ).toBe(false);
-    expect(
-      isRestNativeWriteEligible({ table: 'products', operation: 'select' } as InvokeOptions),
-    ).toBe(false);
+    expect(isRestNativeWriteEligible({ table: 'products', operation: 'select' })).toBe(false);
   });
 
   // ── A3: tabela BASE, nunca view ─────────────────────────────
@@ -125,7 +121,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'products',
       operation: 'insert',
       data: { name: 'X' },
-    } as InvokeOptions);
+    });
     expect(cap.table).toBe('products');
     expect(cap.op).toBe('insert');
     expect(cap.selected).toBe(true);
@@ -141,7 +137,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'personalization_techniques',
       operation: 'insert',
       data: { name: 'T', is_active: true },
-    } as InvokeOptions);
+    });
     expect(cap.table).toBe('personalization_techniques');
   });
 
@@ -152,7 +148,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'personalization_techniques',
       operation: 'insert',
       data: { name: 'Tampografia', is_active: true },
-    } as InvokeOptions);
+    });
     // Colunas EN nativas — sem remap para nome/ativo.
     expect(cap.payload).toMatchObject({ name: 'Tampografia', is_active: true });
     expect(cap.payload).not.toHaveProperty('nome');
@@ -165,13 +161,13 @@ describe('rest-native WRITE (Plano A)', () => {
         table: 'products',
         operation: 'update',
         data: { is_active: false },
-      } as InvokeOptions),
+      }),
     ).rejects.toThrow(/mass mutation guard/i);
   });
 
   it('A2: delete SEM filtro/id é proibido', async () => {
     await expect(
-      executeRestNativeWrite({ table: 'products', operation: 'delete' } as InvokeOptions),
+      executeRestNativeWrite({ table: 'products', operation: 'delete' }),
     ).rejects.toThrow(/mass mutation guard/i);
   });
 
@@ -182,7 +178,7 @@ describe('rest-native WRITE (Plano A)', () => {
       operation: 'update',
       id: 'p1',
       data: { is_active: false },
-    } as InvokeOptions);
+    });
     expect(cap.eqCalls).toContainEqual(['id', 'p1']);
   });
 
@@ -192,7 +188,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'products',
       operation: 'delete',
       id: 'p9',
-    } as InvokeOptions);
+    });
     expect(cap.op).toBe('delete');
     expect(cap.eqCalls).toContainEqual(['id', 'p9']);
     expect(cap.selected).toBe(true);
@@ -205,7 +201,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'collections',
       operation: 'insert',
       data: { name: 'C' },
-    } as InvokeOptions);
+    });
     expect(r.records).toEqual([]);
     expect(r.count).toBe(0);
   });
@@ -218,7 +214,7 @@ describe('rest-native WRITE (Plano A)', () => {
         table: 'products',
         operation: 'insert',
         data: { name: 'X' },
-      } as InvokeOptions),
+      }),
     ).rejects.toThrow(/row-level security/);
   });
 
@@ -227,7 +223,7 @@ describe('rest-native WRITE (Plano A)', () => {
       table: 'tabela_aleatoria',
       operation: 'insert',
       data: {},
-    } as InvokeOptions);
+    });
     expect(r).toBeNull();
   });
 

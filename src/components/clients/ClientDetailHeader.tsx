@@ -31,7 +31,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
               className="object-cover"
               containerClassName="h-full w-full"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                e.currentTarget.style.display = 'none';
               }}
             />
           ) : (

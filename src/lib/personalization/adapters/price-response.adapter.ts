@@ -215,15 +215,15 @@ export function adaptPriceResponseWithMeta(
   const version = detectPriceSchema(resp);
   switch (version) {
     case 'v5.9-nested':
-      return { flat: parseNested(resp as AnyRec), schemaVersion: version };
+      return { flat: parseNested(resp), schemaVersion: version };
     case 'v6.x-flat':
-      return { flat: parseFlat(resp as AnyRec), schemaVersion: version };
+      return { flat: parseFlat(resp), schemaVersion: version };
     case 'v7-new':
-      return { flat: parseFlat(normalizeV7Aliases(resp) as AnyRec), schemaVersion: version };
+      return { flat: parseFlat(normalizeV7Aliases(resp)), schemaVersion: version };
     case 'unknown':
     default: {
       warnUnknownSchemaOnce('price-response', resp);
-      return { flat: parseFlat(resp as AnyRec), schemaVersion: 'unknown' };
+      return { flat: parseFlat(resp), schemaVersion: 'unknown' };
     }
   }
 }

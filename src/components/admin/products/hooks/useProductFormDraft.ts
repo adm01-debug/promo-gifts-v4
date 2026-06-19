@@ -40,10 +40,7 @@ export function useProductFormDraft(
       keys.forEach((key) => {
         const val = draft.formData[key];
         if (val !== undefined) {
-          setValue(
-            key as Path<ProductFormData>,
-            val as PathValue<ProductFormData, Path<ProductFormData>>,
-          );
+          setValue(key, val as PathValue<ProductFormData, Path<ProductFormData>>);
         }
       });
       if (draft.images?.length) setImages(draft.images);

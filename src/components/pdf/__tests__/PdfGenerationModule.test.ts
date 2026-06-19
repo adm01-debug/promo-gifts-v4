@@ -489,7 +489,7 @@ describe('downloadPDF', () => {
       click: clickMock,
     } as unknown as HTMLAnchorElement;
 
-    vi.spyOn(document, 'createElement').mockReturnValue(fakeLink as unknown as HTMLElement);
+    vi.spyOn(document, 'createElement').mockReturnValue(fakeLink);
     vi.spyOn(document.body, 'appendChild').mockImplementation(
       appendChildMock as unknown as typeof document.body.appendChild,
     );
@@ -513,7 +513,7 @@ describe('downloadPDF', () => {
   it('define o nome do arquivo corretamente no atributo download', () => {
     const blob = new Blob(['pdf']);
     const fakeLink = { href: '', download: '', click: clickMock } as unknown as HTMLAnchorElement;
-    vi.spyOn(document, 'createElement').mockReturnValue(fakeLink as unknown as HTMLElement);
+    vi.spyOn(document, 'createElement').mockReturnValue(fakeLink);
 
     downloadPDF(blob, 'minha-proposta.pdf');
     expect(fakeLink.download).toBe('minha-proposta.pdf');

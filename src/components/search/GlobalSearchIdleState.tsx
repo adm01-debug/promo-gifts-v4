@@ -62,8 +62,8 @@ export function GlobalSearchIdleState({
                 )}
                 style={staggerStyle(i)}
               >
-                <Clock className="h-4 w-4 shrink-0 [color:hsl(var(--command-text-subtle))] transition-colors group-data-[selected=true]:[color:hsl(var(--command-text-muted))]" />
-                <span className="flex-1 truncate text-[13px] uppercase tracking-wide [color:hsl(var(--command-text-muted))] group-data-[selected=true]:text-foreground group-data-[selected=true]:font-medium">
+                <Clock className="h-4 w-4 shrink-0 transition-colors [color:hsl(var(--command-text-subtle))] group-data-[selected=true]:[color:hsl(var(--command-text-muted))]" />
+                <span className="flex-1 truncate text-[13px] uppercase tracking-wide [color:hsl(var(--command-text-muted))] group-data-[selected=true]:font-medium group-data-[selected=true]:text-foreground">
                   {term}
                 </span>
                 <button
@@ -113,7 +113,9 @@ export function GlobalSearchIdleState({
                       src={product.image_url}
                       alt={product.name}
                       className="h-full w-full object-cover"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
                     />
                   ) : (
                     <RankBadge index={idx} />

@@ -135,7 +135,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
         const result = await dbInvoke<T>({
           table: tableName,
           operation,
-          data: options?.data as Record<string, unknown> | undefined,
+          data: options?.data,
           filters: mergedFilters,
           id: options?.id,
           select: options?.select,
@@ -154,12 +154,12 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
               isLoading: false,
             }));
           }
-          return result as QueryResult<T>;
+          return result;
         }
         if (isMountedRef.current) {
           setState((prev) => ({ ...prev, isLoading: false }));
         }
-        return (result.records[0] ?? null) as T;
+        return result.records[0] ?? null;
       } catch (err) {
         const errorMessage = await extractFunctionErrorMessage(err);
         if (isMountedRef.current) {
@@ -190,7 +190,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
     async (id: string, select?: string) => {
       const result = await invoke('select', { id, select, limit: 1 });
       if (result && typeof result === 'object' && 'records' in result) {
-        return (result as QueryResult<T>).records[0] || null;
+        return result.records[0] || null;
       }
       return null;
     },
@@ -203,16 +203,16 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       if (!result) return null;
 
       if (typeof result === 'object' && 'records' in result) {
-        const created = (result as QueryResult<T>).records[0] || null;
+        const created = result.records[0] || null;
         if (created) {
           toast.success('Registro criado com sucesso!');
-          return created as T;
+          return created;
         }
         return null;
       }
 
       toast.success('Registro criado com sucesso!');
-      return result as T;
+      return result;
     },
     [invoke],
   );
@@ -223,16 +223,16 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       if (!result) return null;
 
       if (typeof result === 'object' && 'records' in result) {
-        const updated = (result as QueryResult<T>).records[0] || null;
+        const updated = result.records[0] || null;
         if (updated) {
           toast.success('Registro atualizado com sucesso!');
-          return updated as T;
+          return updated;
         }
         return null;
       }
 
       toast.success('Registro atualizado com sucesso!');
-      return result as T;
+      return result;
     },
     [invoke],
   );

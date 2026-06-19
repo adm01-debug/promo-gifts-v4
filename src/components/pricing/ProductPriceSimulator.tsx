@@ -17,7 +17,6 @@ import {
   type Product,
   type ProductTechnique,
   type ConfiguredEngraving,
-  type ProductColor,
   type ProductVariant,
 } from './simulator';
 import { EngravingList } from './simulator/EngravingList';
@@ -150,7 +149,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
       }));
     }
     if (!selectedProduct?.colors) return [];
-    return (selectedProduct.colors as ProductColor[]).map((c) => ({
+    return selectedProduct.colors.map((c) => ({
       code: c.code,
       name: c.name,
       hex: c.hex,

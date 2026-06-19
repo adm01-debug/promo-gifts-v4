@@ -24,7 +24,7 @@ export function useMaterialTypes(): UseMaterialTypesReturn {
   return {
     types: data?.types ?? [],
     isLoading,
-    error: error as Error | null,
+    error,
     refetch,
     count: data?.count ?? 0,
   };
@@ -51,7 +51,7 @@ export function useMaterialTypesByGroup(groupSlug: string): UseMaterialTypesByGr
   return {
     types: data?.types ?? [],
     isLoading,
-    error: error as Error | null,
+    error,
     refetch,
     count: data?.count ?? 0,
     groupSlug,
@@ -89,7 +89,7 @@ export function useMaterialsComplete(): UseMaterialsCompleteReturn {
   return {
     materials,
     isLoading,
-    error: error as Error | null,
+    error,
     refetch,
     count: data?.count ?? 0,
     byGroup,
@@ -114,7 +114,7 @@ export function useMaterialSearch() {
   return {
     results: data?.types ?? [],
     isLoading,
-    error: error as Error | null,
+    error,
     count: data?.count ?? 0,
   };
 }

@@ -127,7 +127,7 @@ export function useClientVsIndustry(
         _days: DAYS_WINDOW,
       });
       if (error) throw error;
-      return { rows: (data ?? []) as BenchmarkRow[], sampleSize: ids.length };
+      return { rows: data ?? [], sampleSize: ids.length };
     },
   });
 

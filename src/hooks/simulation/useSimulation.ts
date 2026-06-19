@@ -20,7 +20,6 @@ import {
 } from '@/hooks/simulation/simulationClipboard';
 import type {
   Product,
-  Client,
   Technique,
   TechniqueSettings,
   SimulationOption,
@@ -158,7 +157,7 @@ export function useSimulation() {
         ramo: c.ramo,
         nicho: c.nicho,
         logo_url: c.logo_url,
-      })) as Client[];
+      }));
     },
   });
 

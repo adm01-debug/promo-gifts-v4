@@ -83,12 +83,12 @@ export function SupabaseConnectionsTab() {
         return [
           e.key,
           last
-            ? ({
+            ? {
                 ok: last.ok,
                 tested_at: last.tested_at,
                 latency_ms: last.latency_ms,
                 message: last.message,
-              } as LastTestInfo)
+              }
             : null,
         ] as const;
       }),

@@ -23,7 +23,7 @@ export function SimilarProductsRail({ products, formatCurrency }: Props) {
     staleTime: 10 * 60 * 1000,
   });
   const pool = useMemo((): Product[] => {
-    return Array.isArray(data) ? (data as Product[]) : [];
+    return Array.isArray(data) ? data : [];
   }, [data]);
 
   const suggestions = useMemo(() => {

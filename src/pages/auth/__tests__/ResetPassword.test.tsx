@@ -12,6 +12,7 @@ const mockOnAuthStateChange = vi.fn();
 const mockUnsubscribe = vi.fn();
 
 vi.mock('react-router-dom', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,

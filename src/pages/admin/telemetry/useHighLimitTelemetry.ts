@@ -98,10 +98,7 @@ function resolveRange(filters: HighLimitFiltersState): { fromIso: string; toIso:
   if (filters.range === 'custom' && filters.customFromIso && filters.customToIso) {
     return { fromIso: filters.customFromIso, toIso: filters.customToIso };
   }
-  const span =
-    RANGE_MS[
-      (filters.range === 'custom' ? '24h' : filters.range) as Exclude<RangePreset, 'custom'>
-    ];
+  const span = RANGE_MS[filters.range === 'custom' ? '24h' : filters.range];
   return { fromIso: new Date(now - span).toISOString(), toIso: new Date(now).toISOString() };
 }
 
@@ -124,7 +121,7 @@ async function fetchRows(
 
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as TelemetryRow[];
+  return data ?? [];
 }
 
 function bucketize(

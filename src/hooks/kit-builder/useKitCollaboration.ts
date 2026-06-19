@@ -100,7 +100,7 @@ export function useKitComments(kitId: string | undefined) {
         .eq('kit_id', kitId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as KitCommentRow[];
+      return data ?? [];
     },
     enabled: !!kitId,
   });

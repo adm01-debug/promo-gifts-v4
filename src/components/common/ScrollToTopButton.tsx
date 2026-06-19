@@ -40,9 +40,9 @@ export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButton
 
       const moveFocusToTop = () => {
         const targetFocus =
-          (document.getElementById('main-content') as HTMLElement | null) ??
-          (document.querySelector('main') as HTMLElement | null) ??
-          (document.querySelector('h1') as HTMLElement | null);
+          document.getElementById('main-content') ??
+          document.querySelector('main') ??
+          document.querySelector('h1');
 
         if (!targetFocus) {
           announceStatus('Topo da página.');

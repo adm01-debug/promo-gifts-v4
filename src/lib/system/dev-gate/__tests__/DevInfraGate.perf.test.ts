@@ -31,7 +31,7 @@ describe('DevInfraGate Performance Validation', () => {
 
     // Verificação funcional
     expect(gate.hasAccess(roles)).toBe(true);
-    expect(gate.hasAccess(['agente' as AppRole])).toBe(false);
+    expect(gate.hasAccess(['agente'])).toBe(false);
 
     // O tempo deve ser extremamente baixo para 10k iterações (normalmente < 2ms)
     expect(end - start).toBeLessThan(50);

@@ -133,7 +133,7 @@ function setupRouter(initialEntries: string[], initialIndex = 0): Router {
 
 function getGroupHeader(): HTMLButtonElement {
   // O CollapsibleTrigger é o botão com aria-label do grupo.
-  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i }) as HTMLButtonElement;
+  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i });
 }
 
 function isCollapsed(): boolean {

@@ -125,7 +125,7 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
                   <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> Última operação
                   </div>
-                  <ActionBadge type={(last.action_type ?? 'rotate') as 'set' | 'rotate'} />
+                  <ActionBadge type={last.action_type ?? 'rotate'} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-mono text-xs">
@@ -184,7 +184,7 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
                         <div className="text-muted-foreground">{formatDateTime(e.rotated_at)}</div>
                       </TableCell>
                       <TableCell>
-                        <ActionBadge type={(e.action_type ?? 'rotate') as 'set' | 'rotate'} />
+                        <ActionBadge type={e.action_type ?? 'rotate'} />
                       </TableCell>
                       <TableCell className="font-mono text-xs">
                         {e.previous_suffix ? (

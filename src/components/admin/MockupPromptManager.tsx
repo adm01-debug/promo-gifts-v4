@@ -81,7 +81,7 @@ export function MockupPromptManager() {
       ]);
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
-      setConfigs((cr.data ?? []) as PromptConfig[]);
+      setConfigs(cr.data ?? []);
       setTechniques(tr.data ?? []);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {

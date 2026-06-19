@@ -141,7 +141,7 @@ export async function fetchPrintAreasFromProduct(
           null,
         allowed_technique_ids: techId ? [techId] : [],
         customization_price_table_id: techId,
-        supplier_technique_code: (techCode as string | null) ?? undefined,
+        supplier_technique_code: techCode ?? undefined,
         serv_code: (tech?.codigo_curto as string | null) ?? undefined,
         area_cm2: maxW && maxH ? Number((Number(maxW) * Number(maxH)).toFixed(2)) : null,
         technique_name: techNome,

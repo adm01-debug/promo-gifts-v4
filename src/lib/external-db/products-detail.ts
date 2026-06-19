@@ -131,7 +131,7 @@ export async function fetchPromobrindProductById(
       table: 'categories',
       operation: 'select',
       select: 'id, name',
-      filters: { id: categoryId as string },
+      filters: { id: categoryId },
       limit: 1,
     });
     enrichmentSlots.push('category');

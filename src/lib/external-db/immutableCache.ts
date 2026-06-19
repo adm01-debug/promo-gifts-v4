@@ -132,7 +132,7 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
         filters: { id: inFilter },
         limit: Math.max(missing.length, 20),
       });
-      return res.records as T[];
+      return res.records;
     })()
       .catch((err) => {
         logger.warn(`[immutableCache] fetch failed for ${entity}:`, err);
@@ -141,7 +141,7 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
       .finally(() => {
         INFLIGHT.delete(key);
       });
-    INFLIGHT.set(key, p as Promise<unknown>);
+    INFLIGHT.set(key, p);
 
     // Registra resolvers individuais por id para piggyback de chamadas concorrentes.
     const resolvers = new Map<string, (rec: T | undefined) => void>();
@@ -149,10 +149,7 @@ export async function getCachedByIds<T extends { id: string; name: string; code?
       const perId = new Promise<T | undefined>((resolve) => {
         resolvers.set(id, resolve);
       });
-      INFLIGHT_BY_ID[entity].set(
-        id,
-        perId as Promise<{ id: string; name: string; code?: string } | undefined>,
-      );
+      INFLIGHT_BY_ID[entity].set(id, perId);
     }
     p.then((recs) => {
       const byId = new Map(recs.map((r) => [r.id, r]));

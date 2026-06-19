@@ -78,7 +78,7 @@ describe('ShareKitDialog - modo COMPLETE', () => {
 
   it('gera mensagem com lista de componentes do kit', () => {
     render(<ShareKitDialog open onOpenChange={vi.fn()} product={kitProduct} mode="complete" />);
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
     expect(textarea.value).toContain('Squeeze');
     expect(textarea.value).toContain('Caderno');
     expect(textarea.value).toContain('Kit Boas Vindas');
@@ -123,7 +123,7 @@ describe('ShareKitDialog - modo SEPARATE', () => {
   it('gera mensagem específica ao selecionar item com imagem', () => {
     render(<ShareKitDialog open onOpenChange={vi.fn()} product={kitProduct} mode="separate" />);
     fireEvent.click(screen.getByText('Squeeze').closest('button')!);
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
     expect(textarea.value).toContain('Squeeze');
     expect(textarea.value).toContain('Parte do Kit: Kit Boas Vindas');
   });

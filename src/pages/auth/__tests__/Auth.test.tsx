@@ -16,6 +16,7 @@ vi.mock('@/hooks/admin', () => ({
 
 // Mocking useAuth - we need to wrap with AuthProvider or mock the hook
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,

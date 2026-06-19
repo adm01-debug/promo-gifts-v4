@@ -146,7 +146,7 @@ function coerceSwitchCheck(raw: unknown): SwitchCheck | null {
     enabled: o.enabled,
     legacy_message: typeof o.legacy_message === 'string' ? o.legacy_message : null,
     fetchedAt: o.fetchedAt,
-    shouldApply: o.shouldApply as boolean | undefined,
+    shouldApply: o.shouldApply,
   };
 }
 

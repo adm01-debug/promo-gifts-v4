@@ -89,7 +89,7 @@ export function NotificationPreferences() {
             in_app_enabled: true,
             push_enabled: true,
             [type]: value,
-          } as UserNotificationPreference,
+          },
         ];
       });
       toast.success('Preferências atualizadas');

@@ -9,7 +9,6 @@ import {
 } from '@/hooks/favorites';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
-import type { Product } from '@/hooks/products';
 import { useUndoStack } from '@/hooks/common';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
@@ -25,7 +24,7 @@ const PRICE_DROP_FILTER_KEY = 'favorites-only-drops';
 function loadViewMode(): ViewMode {
   try {
     const v = localStorage.getItem(VIEW_MODE_KEY);
-    if (v === 'grid' || v === 'list' || v === 'table') return v as ViewMode;
+    if (v === 'grid' || v === 'list' || v === 'table') return v;
   } catch {
     // Ignore localStorage errors
   }
@@ -37,7 +36,7 @@ function loadGridColumns(): ColumnCount {
     const v = localStorage.getItem(GRID_COLS_KEY);
     if (v) {
       const n = Number(v) as ColumnCount;
-      if ([3, 4, 5, 6, 8].includes(n)) return n as ColumnCount;
+      if ([3, 4, 5, 6, 8].includes(n)) return n;
     }
   } catch {
     // Ignore localStorage errors
@@ -198,7 +197,7 @@ export function useFavoritesPageState() {
   }, [productsWithVariant, searchQuery, sort, onlyPriceDrops, isRemoteListView]);
 
   // Bulk selection
-  const selection = useCatalogSelection(filteredProducts as Product[], selectionMode);
+  const selection = useCatalogSelection(filteredProducts, selectionMode);
 
   // Handlers
   const handleClearAll = () => {

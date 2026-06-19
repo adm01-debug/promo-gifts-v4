@@ -104,7 +104,7 @@ export function useAiQuotas() {
     queryFn: async () => {
       const { data, error } = await supabase.from('ai_usage_quotas').select('*').order('role');
       if (error) throw error;
-      return (data ?? []) as AiUsageQuota[];
+      return data ?? [];
     },
     staleTime: 60_000,
   });

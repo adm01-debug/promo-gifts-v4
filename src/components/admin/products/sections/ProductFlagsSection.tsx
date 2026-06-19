@@ -128,7 +128,7 @@ export function ProductFlagsSection({ setValue, flags, expirations }: Props) {
             }
           };
 
-          const expiresAt = expiryKey ? (expirations[expiryKey] as string | null) : null;
+          const expiresAt = expiryKey ? expirations[expiryKey] : null;
           const remaining = expiryKey && value ? formatRemaining(expiresAt) : null;
 
           return (

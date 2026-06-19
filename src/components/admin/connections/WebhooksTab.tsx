@@ -64,7 +64,7 @@ export function WebhooksTab() {
         .select('*')
         .order('created_at', { ascending: false }),
     ]);
-    setOutbound((o ?? []) as OutboundHook[]);
+    setOutbound(o ?? []);
     setInbound(i ?? []);
   };
   useEffect(() => {

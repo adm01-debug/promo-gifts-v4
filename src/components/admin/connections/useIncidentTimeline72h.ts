@@ -48,7 +48,7 @@ const WINDOW_MS = 72 * 60 * 60 * 1000;
 
 function severityFromNotification(row: NotifRow): IncidentSeverity {
   const sevMeta = (row.metadata?.severity as string | undefined)?.toUpperCase();
-  if (sevMeta === 'P0' || sevMeta === 'P1' || sevMeta === 'P2') return sevMeta as IncidentSeverity;
+  if (sevMeta === 'P0' || sevMeta === 'P1' || sevMeta === 'P2') return sevMeta;
   const kind = row.metadata?.kind as string | undefined;
   if (kind === 'webhook_auto_disabled' || kind === 'connection_down') return 'P0';
   if (row.type === 'error') return 'P0';

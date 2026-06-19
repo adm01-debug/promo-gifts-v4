@@ -373,10 +373,10 @@ export const ProductListItem = memo(function ProductListItem({
         )}
         style={
           hasColorMatch && matchedHighlightColor
-            ? ({
+            ? {
                 borderColor: `${matchedHighlightColor}70`,
                 boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
-              } as React.CSSProperties)
+              }
             : undefined
         }
         onClick={handleClick}

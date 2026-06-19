@@ -113,7 +113,7 @@ async function fetchRows(fromIso: string, toIso: string): Promise<TelemetryRow[]
     .lt('created_at', toIso)
     .limit(5000);
   if (error) throw error;
-  return (data ?? []) as TelemetryRow[];
+  return data ?? [];
 }
 
 function pctDelta(before: number, after: number): number {

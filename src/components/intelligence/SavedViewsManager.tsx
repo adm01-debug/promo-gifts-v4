@@ -45,7 +45,7 @@ export function SavedViewsManager() {
         .select('id, name, filters, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as SavedView[];
+      return data ?? [];
     },
   });
 

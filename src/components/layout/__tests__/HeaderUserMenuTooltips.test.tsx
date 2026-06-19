@@ -7,12 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ItemSpec {
   testid: string;
@@ -79,9 +74,7 @@ describe('User menu tooltips — Skins & Guia Rápido', () => {
         trigger.focus();
         fireEvent.focus(trigger);
         await waitFor(() => {
-          const content = document.querySelector(
-            `[data-testid="${item.testid}-tooltip"]`,
-          ) as HTMLElement | null;
+          const content = document.querySelector(`[data-testid="${item.testid}-tooltip"]`);
           expect(content).not.toBeNull();
           expect(content!.getAttribute('data-side')).toBe('left');
         });
@@ -98,9 +91,7 @@ describe('User menu tooltips — Skins & Guia Rápido', () => {
           code: 'Escape',
         });
         await waitFor(() => {
-          expect(
-            document.querySelector(`[data-testid="${item.testid}-tooltip"]`),
-          ).toBeNull();
+          expect(document.querySelector(`[data-testid="${item.testid}-tooltip"]`)).toBeNull();
         });
       });
 
@@ -113,9 +104,7 @@ describe('User menu tooltips — Skins & Guia Rápido', () => {
         fireEvent.blur(trigger);
         trigger.blur();
         await waitFor(() => {
-          expect(
-            document.querySelector(`[data-testid="${item.testid}-tooltip"]`),
-          ).toBeNull();
+          expect(document.querySelector(`[data-testid="${item.testid}-tooltip"]`)).toBeNull();
         });
       });
 
@@ -129,41 +118,36 @@ describe('User menu tooltips — Skins & Guia Rápido', () => {
         fireEvent.blur(trigger);
         trigger.blur();
         await waitFor(() => {
-          expect(
-            document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length,
-          ).toBe(0);
+          expect(document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length).toBe(
+            0,
+          );
         });
         trigger.focus();
         fireEvent.focus(trigger);
         await waitFor(() => {
           // exatamente 1 instância, nunca duplicada
-          expect(
-            document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length,
-          ).toBe(1);
+          expect(document.querySelectorAll(`[data-testid="${item.testid}-tooltip"]`).length).toBe(
+            1,
+          );
         });
       });
 
-      it.each([320, 768, 1280, 1920])(
-        'mantém data-side="left" em viewport %ipx',
-        async (width) => {
-          Object.defineProperty(window, 'innerWidth', {
-            configurable: true,
-            value: width,
-          });
-          window.dispatchEvent(new Event('resize'));
-          renderItem(item);
-          const trigger = screen.getByTestId(item.testid);
-          trigger.focus();
-          fireEvent.focus(trigger);
-          await waitFor(() => {
-            const content = document.querySelector(
-              `[data-testid="${item.testid}-tooltip"]`,
-            ) as HTMLElement | null;
-            expect(content).not.toBeNull();
-            expect(content!.getAttribute('data-side')).toBe('left');
-          });
-        },
-      );
+      it.each([320, 768, 1280, 1920])('mantém data-side="left" em viewport %ipx', async (width) => {
+        Object.defineProperty(window, 'innerWidth', {
+          configurable: true,
+          value: width,
+        });
+        window.dispatchEvent(new Event('resize'));
+        renderItem(item);
+        const trigger = screen.getByTestId(item.testid);
+        trigger.focus();
+        fireEvent.focus(trigger);
+        await waitFor(() => {
+          const content = document.querySelector(`[data-testid="${item.testid}-tooltip"]`);
+          expect(content).not.toBeNull();
+          expect(content!.getAttribute('data-side')).toBe('left');
+        });
+      });
     });
   }
 });

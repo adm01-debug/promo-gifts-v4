@@ -9,7 +9,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      theme={sonnerTheme as ToasterProps['theme']}
+      theme={sonnerTheme}
       className="toaster group"
       // Accessibility: aria-live region for screen readers
       toastOptions={{

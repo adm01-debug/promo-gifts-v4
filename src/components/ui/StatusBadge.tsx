@@ -142,8 +142,5 @@ const STATUS_ALIAS_MAP: Record<string, keyof typeof statusLabels> = {
 // Utility function to map any status string to a valid status
 export function mapToStatus(status: string): keyof typeof statusLabels {
   const normalized = status.toLowerCase().replace(/[_-]/g, '');
-  return (
-    STATUS_ALIAS_MAP[normalized] ||
-    (statusLabels[status] ? (status as keyof typeof statusLabels) : 'info')
-  );
+  return STATUS_ALIAS_MAP[normalized] || (statusLabels[status] ? status : 'info');
 }

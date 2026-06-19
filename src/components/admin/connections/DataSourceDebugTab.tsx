@@ -94,7 +94,7 @@ export function DataSourceDebugTab() {
       setExtError(error.message);
       setExtConns([]);
     } else {
-      setExtConns((data ?? []) as ExternalConnRow[]);
+      setExtConns(data ?? []);
     }
     setExtLoading(false);
   }, []);
@@ -242,14 +242,14 @@ export function DataSourceDebugTab() {
                 tone: total > 0 && active === total ? 'ok' : active === 0 ? 'error' : 'warn',
               },
             },
-            ...(extConns ?? []).map((c) => ({
-              label: c.name ?? c.id,
-              display: `status=${c.status ?? '—'} • last_test=${fmtTs(c.last_test_at)}`,
-              badge: {
-                text: c.status ?? '—',
-                tone: (c.status === 'active' ? 'ok' : 'warn') as 'ok' | 'warn',
-              },
-            })),
+            ...(extConns ?? []).map((c) => {
+              const tone: 'ok' | 'warn' = c.status === 'active' ? 'ok' : 'warn';
+              return {
+                label: c.name ?? c.id,
+                display: `status=${c.status ?? '—'} • last_test=${fmtTs(c.last_test_at)}`,
+                badge: { text: c.status ?? '—', tone },
+              };
+            }),
           ],
         };
       }

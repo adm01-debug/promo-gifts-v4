@@ -266,7 +266,7 @@ export function useClientSeasonality(
               'get_industry_seasonality',
               { _company_ids: ids, _months: WINDOW_MONTHS },
             );
-            if (!indErr) industryRows = (indData ?? []) as IndustryRow[];
+            if (!indErr) industryRows = indData ?? [];
           }
         } catch {
           industryRows = [];

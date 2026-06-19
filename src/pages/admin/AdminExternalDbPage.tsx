@@ -52,7 +52,7 @@ export default function AdminExternalDbPage() {
   const [liveLoading, setLiveLoading] = useState<string | null>(null);
 
   const refreshTelemetry = useCallback(() => {
-    setContractCounts(getContractMismatches() as Record<string, number>);
+    setContractCounts(getContractMismatches());
     setRecentMismatches([...getRecentMismatches()]);
   }, []);
 

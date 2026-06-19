@@ -106,8 +106,8 @@ export function useAccessSecurity() {
         );
       }
 
-      if (countriesRes.data) setCountries(countriesRes.data as CountryWhitelistEntry[]);
-      if (logsRes.data) setBlockedLogs(logsRes.data as AccessBlockedLog[]);
+      if (countriesRes.data) setCountries(countriesRes.data);
+      if (logsRes.data) setBlockedLogs(logsRes.data);
     } catch (error) {
       if (!mountedRef.current) return;
       logger.error('Erro ao carregar configurações de acesso:', error);
@@ -144,14 +144,7 @@ export function useAccessSecurity() {
       return false;
     }
     const now = new Date().toISOString();
-    const entry = data as {
-      id: string;
-      ip_address: string;
-      list_type: string;
-      reason: string | null;
-      expires_at: string | null;
-      created_at: string;
-    };
+    const entry = data;
     setIps((prev) => [
       { ...entry, is_active: !entry.expires_at || entry.expires_at > now },
       ...prev,

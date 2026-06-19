@@ -47,7 +47,7 @@ export function useWizardDrafts() {
         ...d,
         product_data: d.product_data as unknown as SelectedProduct,
         personalizations: d.personalizations as unknown as Personalization[],
-      })) as WizardDraft[];
+      }));
     },
     staleTime: 5 * 60 * 1000,
   });

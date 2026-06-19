@@ -20,7 +20,7 @@ export const notificationPreferenceService = {
       return [];
     }
 
-    return data as UserNotificationPreference[];
+    return data;
   },
 
   async updatePreference(

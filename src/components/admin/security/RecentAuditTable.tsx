@@ -73,7 +73,7 @@ export function RecentAuditTable() {
         .in('user_id', ids);
       const map: Record<string, ProfileLite> = {};
       (profs ?? []).forEach((p) => {
-        if (p.user_id) map[p.user_id] = p as ProfileLite;
+        if (p.user_id) map[p.user_id] = p;
       });
       setProfiles(map);
     }

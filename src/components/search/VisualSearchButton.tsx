@@ -193,7 +193,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
                   className="h-48 w-full bg-muted object-contain"
                   loading="lazy"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                    e.currentTarget.src = '/placeholder.svg';
                   }}
                 />
 

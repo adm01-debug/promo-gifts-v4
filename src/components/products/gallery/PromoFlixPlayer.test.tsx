@@ -60,8 +60,8 @@ vi.mock('hls.js', () => {
     autoLevelEnabled = true;
 
     constructor() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      lastHlsInstance = this as any;
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      lastHlsInstance = this;
     }
 
     static isSupported = vi.fn().mockReturnValue(true);

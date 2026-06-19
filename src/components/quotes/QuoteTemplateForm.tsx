@@ -81,7 +81,7 @@ export function QuoteTemplateForm({
                 created.template_data &&
                 typeof created.template_data === 'object' &&
                 !Array.isArray(created.template_data)
-                  ? (created.template_data as Record<string, unknown>)
+                  ? created.template_data
                   : {},
               // DB stores items as JSON; matches the hook's own transformTemplates mapping.
               items: Array.isArray(created.items)

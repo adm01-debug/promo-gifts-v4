@@ -87,7 +87,7 @@ async function fetchWindow(fromIso: string, toIso: string): Promise<TelemetryRow
     .limit(2000);
 
   if (error) throw error;
-  return (data ?? []) as TelemetryRow[];
+  return data ?? [];
 }
 
 export function useProductsListingLatencyAlert() {

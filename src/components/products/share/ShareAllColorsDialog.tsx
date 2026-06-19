@@ -65,9 +65,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
 
   // Collect representative images from selected colors for WhatsApp preview
   const allColorImages = useMemo(() => {
-    return selectedColors
-      .map((c) => c.image || c.images?.[0] || product.images[0])
-      .filter(Boolean) as string[];
+    return selectedColors.map((c) => c.image || c.images?.[0] || product.images[0]).filter(Boolean);
   }, [selectedColors, product.images]);
 
   const allColorImageIndices = useMemo(

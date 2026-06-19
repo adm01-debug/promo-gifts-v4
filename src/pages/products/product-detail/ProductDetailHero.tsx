@@ -184,9 +184,7 @@ export function ProductDetailHero({
           <div className="flex flex-wrap items-center gap-1.5">
             <ProductCategoryBadges
               category={
-                leafCategory
-                  ? { id: leafCategory.id, name: leafCategory.name }
-                  : (product.category as never)
+                leafCategory ? { id: leafCategory.id, name: leafCategory.name } : product.category
               }
               groups={product.groups}
               categoryUuid={leafCategory?.id ?? product.category_id}
@@ -203,7 +201,7 @@ export function ProductDetailHero({
           <ProductGallery
             images={product.images}
             video={product.video ?? undefined}
-            productVideos={product.productVideos as never}
+            productVideos={product.productVideos}
             productName={product.name}
             productId={id}
             productPrice={product.price}

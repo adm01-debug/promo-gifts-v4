@@ -78,7 +78,7 @@ export default function KitBuilderPage() {
                     boxes={state.availableBoxes}
                     isLoading={state.isLoadingBoxes}
                     filters={state.boxFilters}
-                    onFiltersChange={state.setBoxFilters as (f: typeof state.boxFilters) => void}
+                    onFiltersChange={state.setBoxFilters}
                   />
                 )}
                 {state.wizardState.currentStep === 'items' && (
@@ -91,7 +91,7 @@ export default function KitBuilderPage() {
                     items={state.availableItems}
                     isLoading={state.isLoadingItems}
                     filters={state.itemFilters}
-                    onFiltersChange={state.setItemFilters as (f: typeof state.itemFilters) => void}
+                    onFiltersChange={state.setItemFilters}
                     boxSelected={!!state.kitState.box}
                   />
                 )}

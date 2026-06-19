@@ -81,6 +81,6 @@ export const orderService = {
       computedItemsSubtotal,
       expectedCheckoutTotal,
       checkoutConsistent: round2(order.total ?? 0) === expectedCheckoutTotal,
-    } as OrderLookup;
+    };
   },
 };

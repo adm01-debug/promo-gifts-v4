@@ -74,7 +74,7 @@ function setupHistory(initialEntries: string[], initialIndex = 0): Router {
 }
 
 function getLink(label: string): HTMLAnchorElement {
-  return screen.getByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement;
+  return screen.getByRole('link', { name: new RegExp(label, 'i') });
 }
 
 function isActive(label: string): boolean {

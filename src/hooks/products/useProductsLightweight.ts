@@ -243,7 +243,7 @@ async function fetchCatalogPage(
       products.push(...mapped);
       lastPageSize = result.records.length;
       if (result.count !== null && totalEstimate === null) {
-        totalEstimate = result.count as number;
+        totalEstimate = result.count;
       }
     } else if (result.records) {
       lastPageSize = 0;

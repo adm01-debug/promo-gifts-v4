@@ -59,7 +59,7 @@ const PRICE_DROP_FILTER_KEY = 'favorites-only-drops';
 function loadViewMode(): ViewMode {
   try {
     const v = localStorage.getItem(VIEW_MODE_KEY);
-    if (v === 'grid' || v === 'list' || v === 'table') return v as ViewMode;
+    if (v === 'grid' || v === 'list' || v === 'table') return v;
   } catch {
     /* empty */
   }
@@ -71,7 +71,7 @@ function loadGridColumns(): ColumnCount {
     const v = localStorage.getItem(GRID_COLS_KEY);
     if (v) {
       const n = Number(v) as ColumnCount;
-      if ([3, 4, 5, 6, 8].includes(n)) return n as ColumnCount;
+      if ([3, 4, 5, 6, 8].includes(n)) return n;
     }
   } catch {
     /* empty */
@@ -214,7 +214,7 @@ export default function FavoritesPage() {
     if (isRemoteListView) {
       enriched.forEach((e) => {
         if (e.item.variant_info) {
-          map.set(e.item.product_id, e.item.variant_info as FavoriteVariantInfo);
+          map.set(e.item.product_id, e.item.variant_info);
         }
       });
     } else {

@@ -95,7 +95,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
       kitItems.forEach((item) => {
         if (item.imageUrl) images.push(item.imageUrl);
       });
-      return [...new Set(images.filter(Boolean) as string[])];
+      return [...new Set(images.filter(Boolean))];
     } else if (activeItem) {
       const images = [activeItem.imageUrl].filter(Boolean) as string[];
       if (images.length === 0 && (product.images?.[0] || product.image_url)) {

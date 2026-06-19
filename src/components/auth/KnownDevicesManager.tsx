@@ -48,7 +48,7 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
   const loadDevices = useCallback(async () => {
     setIsLoading(true);
     const data = await getKnownDevices();
-    setDevices(data as unknown as KnownDevice[]);
+    setDevices(data);
     setIsLoading(false);
   }, [getKnownDevices]);
 

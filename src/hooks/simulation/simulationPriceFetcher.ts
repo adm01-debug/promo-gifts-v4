@@ -228,7 +228,7 @@ export async function fetchOptionForTechnique(
     );
   }
 
-  const flat = adaptPriceResponse(result as unknown as Record<string, unknown>);
+  const flat = adaptPriceResponse(result);
 
   // Multiplicador por nº de posições (a regra de negócio do simulador
   // legado preserva esse comportamento — o RPC calcula 1 posição).

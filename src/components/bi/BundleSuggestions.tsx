@@ -75,7 +75,7 @@ export function BundleSuggestions({ clientId }: Props) {
         _product_id: anchorId,
       });
       if (error || !Array.isArray(data)) return [];
-      return data as BundleRow[];
+      return data;
     },
   });
 
@@ -163,7 +163,7 @@ export function BundleSuggestions({ clientId }: Props) {
                       loading="lazy"
                       className="h-full w-full object-contain"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        e.currentTarget.style.display = 'none';
                       }}
                     />
                   </div>

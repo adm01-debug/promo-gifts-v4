@@ -214,7 +214,7 @@ export function ScheduledReportsManager() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-2.5 w-2.5" />
-                      {FREQUENCY_LABELS[report.frequency as ReportFrequency]}
+                      {FREQUENCY_LABELS[report.frequency]}
                     </span>
                     {report.last_sent_at && (
                       <span>

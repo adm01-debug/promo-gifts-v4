@@ -44,7 +44,7 @@ export function useSellerDiscountLimits() {
     if (error) {
       logger.error('Error fetching discount limits:', error);
     } else {
-      setLimits((data ?? []) as SellerDiscountLimit[]);
+      setLimits(data ?? []);
     }
     setIsLoading(false);
   }, []);

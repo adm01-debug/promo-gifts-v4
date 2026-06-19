@@ -102,7 +102,7 @@ export function validateSortOption(s: string | null | undefined): SortOption {
   // ES2022 e o tsconfig.app usa lib ES2020; hasOwnProperty.call e ES5, sempre
   // tipado, e considera apenas chaves proprias do objeto literal.
   if (Object.prototype.hasOwnProperty.call(SORT_ALIASES, s)) {
-    return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+    return SORT_ALIASES[s];
   }
   if (VALID_SORT_VALUES.has(s)) return s as SortOption;
   return 'newest';

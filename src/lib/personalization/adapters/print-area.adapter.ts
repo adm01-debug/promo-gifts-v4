@@ -55,18 +55,16 @@ export function adaptPrintAreaRow(raw: Raw, productId: string, idx = 0): Normali
     id: String(pick(raw, 'id') ?? `${productId}-area-${idx}`),
     product_id: productId,
     area_code: String(pick(raw, 'area_code', 'location_code', 'code') ?? ''),
-    area_name: (pick<string>(raw, 'area_name', 'name') ?? null) as string | null,
-    location_code: (pick<string>(raw, 'location_code') ?? null) as string | null,
-    location_name: (pick<string>(raw, 'location_name') ?? null) as string | null,
+    area_name: pick<string>(raw, 'area_name', 'name') ?? null,
+    location_code: pick<string>(raw, 'location_code') ?? null,
+    location_name: pick<string>(raw, 'location_name') ?? null,
     max_width: toNumber(pick(raw, 'max_width', 'largura_max')),
     max_height: toNumber(pick(raw, 'max_height', 'altura_max')),
     shape: String(pick(raw, 'shape') ?? 'rectangle'),
     is_curved: toBool(pick(raw, 'is_curved', 'curved')),
     is_active: toBool(pick(raw, 'is_active', 'ativo'), true),
     technique_order: toNumber(pick(raw, 'technique_order', 'display_order', 'order'), idx),
-    tabela_preco_id: (pick<string>(raw, 'tabela_preco_id', 'price_table_id') ?? null) as
-      | string
-      | null,
+    tabela_preco_id: pick<string>(raw, 'tabela_preco_id', 'price_table_id') ?? null,
   };
 }
 

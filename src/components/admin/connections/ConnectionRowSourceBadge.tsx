@@ -17,11 +17,10 @@ function aggregateSource(
   const per = SUFFIXES.map((suf) => {
     const name = `EXTERNAL_${envKey.toUpperCase()}_${suf}`;
     const s = secrets.find((x) => x.name === name);
-    return {
-      name,
-      source: (s?.has_value ? (s.source ?? 'db') : 'missing') as SecretStatus['source'] | 'missing',
-      hasValue: !!s?.has_value,
-    };
+    const source: SecretStatus['source'] | 'missing' = s?.has_value
+      ? (s.source ?? 'db')
+      : 'missing';
+    return { name, source, hasValue: !!s?.has_value };
   });
 
   const present = per.filter((p) => p.hasValue);

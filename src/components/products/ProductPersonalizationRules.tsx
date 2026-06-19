@@ -281,7 +281,7 @@ export function ProductPersonalizationRules({
             maxHeight: loc.max_height_cm ?? null,
             maxArea: loc.max_area_cm2 ?? null,
             areaImageUrl: loc.area_image_url ?? null,
-            techniques: ((techniques ?? []) as DbTechnique[])
+            techniques: (techniques ?? [])
               .map((tech: DbTechnique): TechniqueInfo | null => {
                 const id = tech.id || tech.personalization_techniques?.id;
                 if (!id) return null;

@@ -15,7 +15,6 @@ import {
   useFutureStockPreference,
   useFutureStockShortcut,
   type FutureStockPreference,
-  type FutureStockWindow,
 } from '../useFutureStockPreference';
 
 // PRNG determinístico (mulberry32) para reprodutibilidade
@@ -41,8 +40,15 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
   it('readFutureStockPreference NUNCA quebra em payloads aleatórios', () => {
     const r = rng(SEED);
     const malformed = [
-      '', 'null', 'undefined', '{}', '[]', '{"a":1}', '{"includeFutureStock":"sim"}',
-      '{"futureStockWindowDays":"15"}', '{"futureStockWindowDays":null}',
+      '',
+      'null',
+      'undefined',
+      '{}',
+      '[]',
+      '{"a":1}',
+      '{"includeFutureStock":"sim"}',
+      '{"futureStockWindowDays":"15"}',
+      '{"futureStockWindowDays":null}',
       '{"includeFutureStock":1,"futureStockWindowDays":7}',
       '{"includeFutureStock":true,"futureStockWindowDays":-1}',
       '{"includeFutureStock":true,"futureStockWindowDays":0}',
@@ -50,7 +56,10 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
       '{"includeFutureStock":true,"futureStockWindowDays":1e308}',
       '{"includeFutureStock":true,"futureStockWindowDays":NaN}',
       '{"includeFutureStock":true,"futureStockWindowDays":"30"}',
-      '{not-json', '{"x":', '\u0000', '🔥',
+      '{not-json',
+      '{"x":',
+      '\u0000',
+      '🔥',
     ];
     for (const payload of malformed) {
       window.localStorage.setItem(FUTURE_STOCK_STORAGE_KEY, payload);
@@ -105,13 +114,12 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
     const r = rng(SEED ^ 0xa5a5);
     let current: FutureStockPreference = { ...DEFAULT_FUTURE_STOCK_PREFERENCE };
     const onHydrate = vi.fn();
-    const { rerender } = renderHook(
-      ({ pref }) => useFutureStockPreference(pref, onHydrate),
-      { initialProps: { pref: current } },
-    );
+    const { rerender } = renderHook(({ pref }) => useFutureStockPreference(pref, onHydrate), {
+      initialProps: { pref: current },
+    });
     for (let i = 0; i < RUNS; i++) {
       const include = r() > 0.5;
-      const win = FUTURE_STOCK_WINDOWS[Math.floor(r() * FUTURE_STOCK_WINDOWS.length)] as FutureStockWindow;
+      const win = FUTURE_STOCK_WINDOWS[Math.floor(r() * FUTURE_STOCK_WINDOWS.length)];
       current = { includeFutureStock: include, futureStockWindowDays: win };
       rerender({ pref: current });
       const stored = readFutureStockPreference();
@@ -123,10 +131,9 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
     writeFutureStockPreference({ includeFutureStock: true, futureStockWindowDays: 30 });
     const onHydrate = vi.fn();
     const initial: FutureStockPreference = { includeFutureStock: false, futureStockWindowDays: 15 };
-    const { rerender } = renderHook(
-      ({ pref }) => useFutureStockPreference(pref, onHydrate),
-      { initialProps: { pref: initial } },
-    );
+    const { rerender } = renderHook(({ pref }) => useFutureStockPreference(pref, onHydrate), {
+      initialProps: { pref: initial },
+    });
     rerender({ pref: initial });
     rerender({ pref: initial });
     rerender({ pref: initial });
@@ -137,10 +144,7 @@ describe(`useFutureStockPreference — fuzz exaustivo (seed=${SEED}, runs=${RUNS
     writeFutureStockPreference({ includeFutureStock: false, futureStockWindowDays: 15 });
     const onHydrate = vi.fn();
     renderHook(() =>
-      useFutureStockPreference(
-        { includeFutureStock: false, futureStockWindowDays: 15 },
-        onHydrate,
-      ),
+      useFutureStockPreference({ includeFutureStock: false, futureStockWindowDays: 15 }, onHydrate),
     );
     expect(onHydrate).not.toHaveBeenCalled();
   });
@@ -177,13 +181,11 @@ describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () 
 
   it.each(['INPUT', 'TEXTAREA', 'SELECT'])('ignora quando target=%s', (tag) => {
     renderHook(() => useFutureStockShortcut(toggle));
-    const el = document.createElement(tag.toLowerCase()) as HTMLElement;
+    const el = document.createElement(tag.toLowerCase());
     document.body.appendChild(el);
     el.focus();
     act(() => {
-      el.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'F', shiftKey: true, bubbles: true }),
-      );
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true, bubbles: true }));
     });
     expect(toggle).not.toHaveBeenCalled();
   });
@@ -195,19 +197,20 @@ describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () 
     document.body.appendChild(div);
     div.focus();
     act(() => {
-      div.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'F', shiftKey: true, bubbles: true }),
-      );
+      div.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true, bubbles: true }));
     });
     expect(toggle).not.toHaveBeenCalled();
   });
 
   it('dispara consistentemente em N rajadas com toggle atualizado (sem stale closure)', () => {
     let counter = 0;
-    const { rerender } = renderHook(
-      ({ cb }) => useFutureStockShortcut(cb),
-      { initialProps: { cb: () => { counter += 1; } } },
-    );
+    const { rerender } = renderHook(({ cb }) => useFutureStockShortcut(cb), {
+      initialProps: {
+        cb: () => {
+          counter += 1;
+        },
+      },
+    });
     for (let i = 0; i < 50; i++) {
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true }));
@@ -216,7 +219,11 @@ describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () 
     expect(counter).toBe(50);
 
     // troca callback — deve refletir sem perder eventos
-    rerender({ cb: () => { counter += 10; } });
+    rerender({
+      cb: () => {
+        counter += 10;
+      },
+    });
     for (let i = 0; i < 5; i++) {
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true }));
@@ -226,10 +233,9 @@ describe(`useFutureStockShortcut — fuzz de teclas/targets (seed=${SEED})`, () 
   });
 
   it('cleanup remove listener (toggle entre enabled true→false)', () => {
-    const { rerender } = renderHook(
-      ({ on }) => useFutureStockShortcut(toggle, on),
-      { initialProps: { on: true } },
-    );
+    const { rerender } = renderHook(({ on }) => useFutureStockShortcut(toggle, on), {
+      initialProps: { on: true },
+    });
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true }));
     });

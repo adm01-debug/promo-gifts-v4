@@ -120,13 +120,13 @@ function setupRouterWithSuspense(initialPath: string, deferredPath: string) {
 }
 
 function getNavLink(label: string): HTMLAnchorElement {
-  return screen.getByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement;
+  return screen.getByRole('link', { name: new RegExp(label, 'i') });
 }
 function isLinkActive(label: string): boolean {
   return getNavLink(label).className.includes('bg-primary/10');
 }
 function getHeader(): HTMLButtonElement {
-  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i }) as HTMLButtonElement;
+  return screen.getByRole('button', { name: /alternar grupo|orçamentos/i });
 }
 function isGroupExpanded(): boolean {
   return getHeader().getAttribute('aria-expanded') === 'true';

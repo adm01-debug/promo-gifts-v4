@@ -118,8 +118,7 @@ export function QuoteVersionHistory({
             <div className="space-y-2">
               {versions.map((version, idx) => {
                 const isCurrent = version.id === currentQuoteId;
-                const statusCfg =
-                  QUOTE_STATUS_CONFIG[version.status as keyof typeof QUOTE_STATUS_CONFIG];
+                const statusCfg = QUOTE_STATUS_CONFIG[version.status];
 
                 return (
                   <div key={version.id}>
@@ -150,13 +149,7 @@ export function QuoteVersionHistory({
                           {isCurrent && <Eye className="h-3 w-3 flex-shrink-0 text-primary" />}
                         </div>
                         <Badge
-                          variant={
-                            (statusCfg?.badgeVariant as
-                              | 'secondary'
-                              | 'default'
-                              | 'destructive'
-                              | 'outline') || 'secondary'
-                          }
+                          variant={statusCfg?.badgeVariant || 'secondary'}
                           className="h-4 flex-shrink-0 px-1 text-[10px]"
                         >
                           {statusCfg?.label || version.status}

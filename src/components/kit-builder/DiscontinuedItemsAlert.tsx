@@ -19,7 +19,7 @@ export function DiscontinuedItemsAlert({ items }: DiscontinuedItemsAlertProps) {
 
   const { data: discontinuedItems = [] } = useQuery({
     queryKey: ['discontinued-check', itemIds.join(',')],
-    queryFn: async () => {
+    queryFn: async (): Promise<Array<{ id: string; name: string; sku: string }>> => {
       if (itemIds.length === 0) return [];
       try {
         // REST native (bridge external-db-bridge foi descontinuada — 410 Gone)
@@ -30,7 +30,7 @@ export function DiscontinuedItemsAlert({ items }: DiscontinuedItemsAlertProps) {
           .eq('is_active', false)
           .limit(50);
         if (error || !data) return [];
-        return data as unknown as Array<{ id: string; name: string; sku: string }>;
+        return data;
       } catch {
         return [];
       }

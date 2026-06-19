@@ -11,7 +11,6 @@
  *  - Elegibilidade: whitelisted é elegível com/sem coluna de busca; não-whitelisted é inelegível.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { InvokeOptions } from './bridge';
 
 // Mocks das dependências de módulo (hoisted p/ vi.mock poder referenciá-los).
 const { fromMock, loggerMock } = vi.hoisted(() => ({
@@ -94,15 +93,11 @@ describe('isRestNativeEligible', () => {
   });
 
   it('não-whitelisted → inelegível', () => {
-    expect(isRestNativeEligible({ table: 'orders', operation: 'select' } as InvokeOptions)).toBe(
-      false,
-    );
+    expect(isRestNativeEligible({ table: 'orders', operation: 'select' })).toBe(false);
   });
 
   it('operação de escrita → inelegível', () => {
-    expect(isRestNativeEligible({ table: 'products', operation: 'insert' } as InvokeOptions)).toBe(
-      false,
-    );
+    expect(isRestNativeEligible({ table: 'products', operation: 'insert' })).toBe(false);
   });
 });
 

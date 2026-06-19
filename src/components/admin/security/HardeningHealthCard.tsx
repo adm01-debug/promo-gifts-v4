@@ -33,7 +33,7 @@ export function HardeningHealthCard() {
     try {
       const { data, error } = await supabase.rpc('check_hardening_status' as never);
       if (error) throw error;
-      setStatus(data as unknown as HardeningStatus);
+      setStatus(data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       toast({ title: 'Erro ao verificar hardening', description: msg, variant: 'destructive' });

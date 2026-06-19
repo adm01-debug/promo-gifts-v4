@@ -52,7 +52,7 @@ export function useCustomizationPriceCalculator() {
           setError(result?.error || 'Erro no cálculo de preço');
           return null;
         }
-        validateRpcPayload(PRICE_CONTRACT, result as unknown as Record<string, unknown>);
+        validateRpcPayload(PRICE_CONTRACT, result);
         return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao calcular preço';
@@ -119,7 +119,7 @@ export function useCustomizationPriceReactive(
         );
 
         if (result?.success) {
-          validateRpcPayload(PRICE_CONTRACT, result as unknown as Record<string, unknown>);
+          validateRpcPayload(PRICE_CONTRACT, result);
           setPrice(result);
         } else {
           setError(result?.error || 'Erro no cálculo');

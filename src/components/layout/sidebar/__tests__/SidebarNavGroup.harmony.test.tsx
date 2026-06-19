@@ -106,7 +106,7 @@ const FORBIDDEN_CTA_CLASSES = [
 ];
 
 function getLink(label: string): HTMLAnchorElement {
-  return screen.getByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement;
+  return screen.getByRole('link', { name: new RegExp(label, 'i') });
 }
 
 describe.skip('SidebarNavGroup — harmonia visual de Novo Orçamento / Orçamentos / Carrinhos', () => {

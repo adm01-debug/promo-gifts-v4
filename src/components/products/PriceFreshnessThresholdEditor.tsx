@@ -37,7 +37,7 @@ export function PriceFreshnessThresholdEditor({ productId, currentEffectiveDays 
 
   // Estado local controla a seleção dentro do popover.
   const initial: FreshnessThreshold =
-    (override?.threshold_days as FreshnessThreshold | undefined) ??
+    override?.threshold_days ??
     (ALLOWED_FRESHNESS_THRESHOLDS.includes(currentEffectiveDays as FreshnessThreshold)
       ? (currentEffectiveDays as FreshnessThreshold)
       : 60);

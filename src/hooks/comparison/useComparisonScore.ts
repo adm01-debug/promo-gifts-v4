@@ -120,7 +120,7 @@ export function useComparisonScore(
         breakdown,
         isWinner: false,
         rank: 0,
-      } as ProductScore;
+      };
     });
 
     // Determina vencedor + rank: sorted é cópia rasa, s já é referência em scores

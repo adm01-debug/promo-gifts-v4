@@ -65,7 +65,7 @@ export function useProductsByMaterial(
     productIds,
     productIdsArray,
     isLoading: shouldFetch ? isLoading : false,
-    error: error as Error | null,
+    error,
     hasFilter,
     refetch,
   };

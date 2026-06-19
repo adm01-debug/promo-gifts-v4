@@ -138,7 +138,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   // quando o backend devolve um payload parcial.
   const stockQty =
     typeof product.stock === 'number' && Number.isFinite(product.stock) ? product.stock : null;
-  const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus as string)
+  const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus)
     ? product.stockStatus
     : stockQty !== null
       ? getCatalogStockStatus(stockQty)
@@ -199,7 +199,9 @@ export const ProductCardImage = memo(function ProductCardImage({
                   transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
                 }}
                 containerClassName="h-full w-full"
-                urlOriginal={deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null}
+                urlOriginal={
+                  deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null
+                }
                 blurhash={cardImageBlurhash}
                 priority={priority}
                 onLoad={onImageLoad}
@@ -228,7 +230,7 @@ export const ProductCardImage = memo(function ProductCardImage({
           }}
           onError={(e) => {
             // Hide broken set image gracefully — main image will remain visible
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
+            e.currentTarget.style.display = 'none';
           }}
         />
       )}

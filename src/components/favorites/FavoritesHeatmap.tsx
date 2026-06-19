@@ -21,7 +21,7 @@ export function FavoritesHeatmap() {
       if (!user) return [];
       const { data, error } = await supabase.rpc('get_favorites_weekly_count', { _weeks: 8 });
       if (error) throw error;
-      return (data ?? []) as WeekRow[];
+      return data ?? [];
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

@@ -7,25 +7,24 @@ import {
 } from '../health-score';
 import type { ProductStockSummary, StockStatus } from '@/types/stock';
 
-const makeProduct = (id: string, overallStatus: StockStatus): ProductStockSummary =>
-  ({
-    productId: id,
-    productName: `P-${id}`,
-    productSku: `SKU-${id}`,
-    totalCurrentStock: 0,
-    totalMinStock: 0,
-    totalReservedStock: 0,
-    totalInTransitStock: 0,
-    totalAvailableStock: 0,
-    overallStatus,
-    variantsInStock: 0,
-    variantsLowStock: 0,
-    variantsCritical: 0,
-    variantsOutOfStock: 0,
-    totalVariants: 0,
-    variants: [],
-    availableColors: [],
-  }) as ProductStockSummary;
+const makeProduct = (id: string, overallStatus: StockStatus): ProductStockSummary => ({
+  productId: id,
+  productName: `P-${id}`,
+  productSku: `SKU-${id}`,
+  totalCurrentStock: 0,
+  totalMinStock: 0,
+  totalReservedStock: 0,
+  totalInTransitStock: 0,
+  totalAvailableStock: 0,
+  overallStatus,
+  variantsInStock: 0,
+  variantsLowStock: 0,
+  variantsCritical: 0,
+  variantsOutOfStock: 0,
+  totalVariants: 0,
+  variants: [],
+  availableColors: [],
+});
 
 describe('calcHealthScore', () => {
   it('retorna 100 quando não há produtos', () => {

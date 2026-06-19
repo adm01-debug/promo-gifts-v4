@@ -34,7 +34,7 @@ export function use2FA(targetUserId?: string) {
         .maybeSingle();
 
       if (error) throw error;
-      setSettings(data as TwoFactorSettings | null);
+      setSettings(data);
     } catch (error) {
       logger.error('Error fetching 2FA settings:', error);
     } finally {
