@@ -47,6 +47,11 @@ import { getGridColsClass, getGridGapClass } from '@/components/replenishments/g
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
+
+const CARD_MIN_HEIGHT_PX = 420;
+const SKELETON_GRID_ROWS = 3;
+const SKELETON_LIST_MIN_H = 600;
+
 type ViewMode = 'grid' | 'list' | 'table';
 
 export function NoveltyProductGrid() {
@@ -170,6 +175,8 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
+    // sel is derived from filteredProducts (already a dep); adding sel would
+    // create a circular update loop (sel → filteredProducts → sel → …).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
@@ -276,7 +283,10 @@ export function NoveltyProductGrid() {
             // Reserva altura mínima do bloco da lista durante o loading para que
             // a transição skeleton→cards não cause oscilação na medição do
             // virtualizer.
-            style={{ minHeight: viewMode === 'list' ? 600 : 1260 }}
+            style={{
+              minHeight:
+                viewMode === 'list' ? SKELETON_LIST_MIN_H : CARD_MIN_HEIGHT_PX * SKELETON_GRID_ROWS,
+            }}
             className={cn(
               'grid',
               viewMode === 'list'
