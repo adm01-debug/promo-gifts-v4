@@ -208,3 +208,224 @@ describe('useCatalogFiltering — Quick Options parity (SF-A fix)', () => {
     expect(run(both, { featured: true, onSale: true }).map((p) => p.id)).toEqual(['x']);
   });
 });
+
+// FIX-16 parity — Gender filter: produtos sem gênero definido são neutros
+// (applyProductFilters FIX-16). Anterior: gender=null excluía o produto.
+describe('useCatalogFiltering — FIX-16 gender neutral parity', () => {
+  const makeP = (id: string, over: Partial<Product> = {}): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+      ...over,
+    }) as unknown as Product;
+
+  const catalog = [
+    makeP('masc', { gender: 'Masculino' }),
+    makeP('fem', { gender: 'Feminino' }),
+    makeP('uni', { gender: 'Unissex' }),
+    makeP('null-gender'),
+    makeP('empty-gender', { gender: '' }),
+  ];
+
+  it('filtra por gênero masculino incluindo produtos sem gênero (neutros)', () => {
+    const result = run(catalog, { gender: ['Masculino'] }).map((p) => p.id);
+    expect(result).toContain('masc');
+    expect(result).toContain('null-gender');
+    expect(result).toContain('empty-gender');
+    expect(result).not.toContain('fem');
+    expect(result).not.toContain('uni');
+  });
+
+  it('filtra por gênero feminino incluindo produtos sem gênero (neutros)', () => {
+    const result = run(catalog, { gender: ['Feminino'] }).map((p) => p.id);
+    expect(result).toContain('fem');
+    expect(result).toContain('null-gender');
+    expect(result).toContain('empty-gender');
+    expect(result).not.toContain('masc');
+    expect(result).not.toContain('uni');
+  });
+
+  it('sem filtro de gênero retorna todos', () => {
+    expect(run(catalog, { gender: [] }).length).toBe(catalog.length);
+  });
+});
+
+// FIX-17 parity — Supplier filter: case-insensitive + partial name match
+// (applyProductFilters FIX-17). Anterior: case-sensitive, só brand (sem supplier.name).
+describe('useCatalogFiltering — FIX-17 supplier parity', () => {
+  const makeP = (id: string, over: Partial<Product> = {}): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+      ...over,
+    }) as unknown as Product;
+
+  const catalog = [
+    makeP('by-id', { supplier: { id: 'SUP-001', name: 'Brinde Master' } }),
+    makeP('by-name', {
+      supplier: { id: 'sup-002', name: 'Gráfica Total' },
+      brand: 'Gráfica Total',
+    }),
+    makeP('by-ref', { supplier: { id: 'sup-003', name: 'Outro' }, supplier_reference: 'REF-XYZ' }),
+    makeP('no-match'),
+  ];
+
+  it('case-insensitive match por supplier.id', () => {
+    const result = run(catalog, { suppliers: ['sup-001'] }).map((p) => p.id);
+    expect(result).toContain('by-id');
+    expect(result).not.toContain('no-match');
+  });
+
+  it('partial name match por supplier.name', () => {
+    const result = run(catalog, { suppliers: ['gráfica total'] }).map((p) => p.id);
+    expect(result).toContain('by-name');
+    expect(result).not.toContain('no-match');
+  });
+
+  it('case-insensitive match por supplier_reference', () => {
+    const result = run(catalog, { suppliers: ['ref-xyz'] }).map((p) => p.id);
+    expect(result).toContain('by-ref');
+    expect(result).not.toContain('no-match');
+  });
+});
+
+// FIX-21/FIX-22 parity — Error guard: RPC failure must not zero the grid
+// (useCatalogFiltering anterior retornava [] incondicionalmente quando productIds.size===0,
+// mesmo quando a causa era timeout/erro de rede — zerando a grade sem razão válida).
+// applyProductFilters.ts resolve isso via guards !colorFilterError / !materialFilterError.
+describe('useCatalogFiltering — FIX-21/FIX-22 error guard parity', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const catalog = [makeP('p1'), makeP('p2'), makeP('p3')];
+
+  const baseArgs = {
+    realProducts: catalog,
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  it('preserva grade quando categoryFilterError ocorre (RPC falhou)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+        categoryFilterError: new Error('RPC timeout'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('retorna [] quando category RPC retorna 0 resultados sem erro (filtro legítimo)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
+    expect(result.current).toHaveLength(0);
+  });
+
+  it('preserva grade quando colorFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(),
+        isLoadingColorFilter: false,
+        colorFilterError: new Error('network error'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando materialFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasMaterialFilter: true,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        materialFilterError: new Error('RPC failed'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando metadataFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasMetadataFilter: true,
+        metadataFilteredProductIds: new Set(),
+        isLoadingMetadataFilter: false,
+        metadataFilterError: new Error('fn_super_filtro_product_ids falhou'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('preserva grade quando sizeFilterError ocorre', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        hasSizeFilter: true,
+        sizeFilteredProductIds: new Set(),
+        isLoadingSizeFilter: false,
+        sizeFilterError: new Error('product_variants query failed'),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+});
