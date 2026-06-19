@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, Building2, FolderTree, Clock } from 'lucide-react';
+import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
@@ -27,16 +28,13 @@ import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
-import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
-
-const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
   selectionMode?: boolean;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
+  onStatusClick?: (type: string) => void;
   colors?: readonly ColorDotLike[];
   /**
    * Quando true, renderiza placeholders no lugar do preço e do estoque.
@@ -80,19 +78,19 @@ export function NoveltyListSkeleton({ count = 5 }: { count?: number }) {
 }
 
 // ── Grid Card ────────────────────────────────────────────────────────────────
-export const NoveltyGridCard = memo(
-  ({
-    product,
-    selectionMode = false,
-    isSelected = false,
-    onSelect,
-    onStatusClick,
-    colors,
-    isPriceStockLoading = false,
-    priority = false,
-  }: NoveltyCardProps) => {
-    // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias).
-    const fresh = product.is_highlighted;
+export const NoveltyGridCard = memo(function NoveltyGridCard({
+  product,
+  selectionMode = false,
+  isSelected = false,
+  onSelect,
+  onStatusClick,
+  colors,
+  isPriceStockLoading = false,
+  priority = false,
+}: NoveltyCardProps) {
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
   // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
   // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -106,10 +104,6 @@ export const NoveltyGridCard = memo(
   return (
     <article
       data-testid="novelty-grid-card"
-      role="button"
-      tabIndex={0}
-      aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
-      aria-pressed={isSelected}
       className={cn(
         'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-md',
@@ -121,12 +115,6 @@ export const NoveltyGridCard = memo(
         isSelected && 'border-primary ring-2 ring-primary/20',
       )}
       onClick={() => onSelect?.(product.product_id)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect?.(product.product_id);
-        }
-      }}
     >
       {/* Selection indicator */}
       {selectionMode && (
@@ -289,24 +277,13 @@ export const NoveltyGridCard = memo(
         >
           {isPriceStockLoading ? (
             <div
-              className={cn(
-                'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
-                isSelected
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-muted-foreground bg-card',
-              )}
+              data-testid="novelty-card-price-skeleton"
+              className="flex flex-col gap-1"
+              aria-busy="true"
+              aria-label="Carregando preço"
             >
-              {isSelected && (
-                <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
-                  <path
-                    d="M2 6L5 9L10 3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-4 w-20" />
             </div>
           ) : typeof product.base_price === 'number' &&
             Number.isFinite(product.base_price) &&
@@ -319,82 +296,68 @@ export const NoveltyGridCard = memo(
                 A partir de
               </span>
               <p className="truncate text-sm font-semibold text-primary">
-                {BRL_FORMATTER.format(product.base_price)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  product.base_price,
+                )}
               </p>
             </div>
-            {fresh && !selectionMode && (
-              <div className="absolute right-2 top-2">
-                <ProductStatusBadge
-                  type="novelty"
-                  value="NEW"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusClick?.('novelty');
-                  }}
-                />
-              </div>
-            )}
-            {product.status === 'expiring_soon' && !fresh && !selectionMode && (
-              <div className="absolute right-2 top-2">
-                <span
-                  data-testid="novelty-expiring-badge"
-                  className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
-                >
-                  <Clock className="h-2.5 w-2.5" />
-                  {product.days_remaining <= 1
-                    ? 'Último dia'
-                    : `Últimos ${product.days_remaining}d`}
-                </span>
-              </div>
-            )}
-          </>
-        )}
-      />
-    );
-  },
-);
+          ) : (
+            <span
+              data-testid="novelty-card-price-unavailable"
+              className="text-xs italic text-muted-foreground"
+            >
+              Sob consulta
+            </span>
+          )}
+          {isPriceStockLoading ? (
+            <Skeleton
+              data-testid="novelty-card-stock-skeleton"
+              className="h-5 w-16 rounded-full"
+              aria-label="Carregando estoque"
+            />
+          ) : (
+            <StockBadge
+              status={product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)}
+              quantity={product.stock_quantity ?? 0}
+              showQuantity
+              size="sm"
+            />
+          )}
+        </div>
+      </div>
+    </article>
+  );
+});
 
 // ── List Card ────────────────────────────────────────────────────────────────
-export const NoveltyListCard = memo(
-  ({
-    product,
-    selectionMode = false,
-    isSelected = false,
-    onSelect,
-    onStatusClick,
-    colors,
-  }: NoveltyCardProps) => {
-    // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
-    // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
-    const fresh = product.is_highlighted;
+export const NoveltyListCard = memo(function NoveltyListCard({
+  product,
+  selectionMode = false,
+  isSelected = false,
+  onSelect,
+  onStatusClick,
+  colors,
+}: NoveltyCardProps) {
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
-    // Mini-carrossel de variantes — mesmo comportamento do grid.
-    const [activeColorName, setActiveColorName] = useState<string | null>(null);
-    const activeImage = useMemo(() => {
-      if (!activeColorName || !colors?.length) return product.product_image;
-      const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
-      return match?.image || product.product_image;
-    }, [activeColorName, colors, product.product_image]);
+  // Mini-carrossel de variantes — mesmo comportamento do grid.
+  const [activeColorName, setActiveColorName] = useState<string | null>(null);
+  const activeImage = useMemo(() => {
+    if (!activeColorName || !colors?.length) return product.product_image;
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+    return match?.image || product.product_image;
+  }, [activeColorName, colors, product.product_image]);
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
-      aria-pressed={isSelected}
       className={cn(
         'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 transition-all',
         'hover:border-primary/40 hover:shadow-sm',
         isSelected && 'border-primary ring-2 ring-primary/20',
       )}
       onClick={() => onSelect?.(product.product_id)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect?.(product.product_id);
-        }
-      }}
     >
       {selectionMode && (
         <div
@@ -414,72 +377,96 @@ export const NoveltyListCard = memo(
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <Package className="h-5 w-5 text-muted-foreground/30" />
-              </div>
-            )}
-          </QuickViewThumb>
+            </svg>
+          )}
         </div>
+      )}
 
-        {/* Info */}
-        <div className="min-w-0 flex-1">
-          <div className="mb-0.5 flex items-center gap-2">
-            <NoveltyBadge
-              daysRemaining={product.days_remaining}
-              daysElapsed={product.days_as_novelty}
+      {/* Thumbnail */}
+      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-list-card-thumb"
+          className="h-full w-full"
+        >
+          {activeImage ? (
+            <img
+              key={activeImage}
+              src={activeImage}
+              alt={product.product_name}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+              }}
+              className="h-full w-full object-contain transition-opacity duration-200"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Package className="h-5 w-5 text-muted-foreground/30" />
+            </div>
+          )}
+        </QuickViewThumb>
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="mb-0.5 flex items-center gap-2">
+          <NoveltyBadge
+            daysRemaining={product.days_remaining}
+            daysElapsed={product.days_as_novelty}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStatusClick?.('novelty');
+            }}
+          />
+          {fresh && (
+            <ProductStatusBadge
+              type="novelty"
+              value="NEW"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onStatusClick?.('novelty');
               }}
             />
-            {fresh && (
-              <ProductStatusBadge
-                type="novelty"
-                value="NEW"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusClick?.('novelty');
-                }}
-              />
-            )}
-          </div>
-          <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
-          <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            {product.category_name && (
-              <span className="flex items-center gap-0.5">
-                <FolderTree className="h-3 w-3" />
-                {product.category_name}
-              </span>
-            )}
-            {product.supplier_name && (
-              <span className="flex items-center gap-0.5">
-                <Building2 className="h-3 w-3" />
-                {product.supplier_name}
-              </span>
-            )}
-            <ProductColorSwatches
-              colors={colors}
-              max={5}
-              size="xs"
-              hideWhenEmpty={false}
-              selectedName={activeColorName}
-              onSelect={(c) => setActiveColorName(c.name)}
-            />
-          </div>
+          )}
         </div>
+        <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
+        <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          {product.category_name && (
+            <span className="flex items-center gap-0.5">
+              <FolderTree className="h-3 w-3" />
+              {product.category_name}
+            </span>
+          )}
+          {product.supplier_name && (
+            <span className="flex items-center gap-0.5">
+              <Building2 className="h-3 w-3" />
+              {product.supplier_name}
+            </span>
+          )}
+          <ProductColorSwatches
+            colors={colors}
+            max={5}
+            size="xs"
+            hideWhenEmpty={false}
+            selectedName={activeColorName}
+            onSelect={(c) => setActiveColorName(c.name)}
+          />
+        </div>
+      </div>
 
       {/* Price */}
-      {typeof product.base_price === 'number' &&
-        Number.isFinite(product.base_price) &&
-        product.base_price > 0 && (
-          <span className="flex-shrink-0 text-sm font-semibold text-primary">
-            {BRL_FORMATTER.format(product.base_price)}
-          </span>
-        )}
+      {product.base_price !== null && (
+        <span className="flex-shrink-0 text-sm font-semibold text-primary">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+            product.base_price,
+          )}
+        </span>
+      )}
     </article>
   );
 });
@@ -490,14 +477,14 @@ export function NoveltyTableView({
   selectionMode = false,
   selectedIds = [],
   onSelect,
-  onStatusClick,
+  onStatusClick: _onStatusClick,
   colorsByProduct,
 }: {
   products: NoveltyWithDetails[];
   selectionMode?: boolean;
   selectedIds?: string[];
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
+  onStatusClick?: (type: string) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
   return (
@@ -576,10 +563,7 @@ export function NoveltyTableView({
                         )}
                       </QuickViewThumb>
                     </div>
-                    <span
-                      className="line-clamp-1 text-sm font-medium"
-                      title={product.product_name ?? undefined}
-                    >
+                    <span className="line-clamp-1 text-sm font-medium">
                       {product.product_name ?? '—'}
                     </span>
                   </div>
@@ -592,17 +576,14 @@ export function NoveltyTableView({
                     daysRemaining={product.days_remaining}
                     daysElapsed={product.days_as_novelty}
                     size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStatusClick?.('novelty');
-                    }}
+                    onClick={() => {}}
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-sm font-medium">
-                  {typeof product.base_price === 'number' &&
-                  Number.isFinite(product.base_price) &&
-                  product.base_price > 0
-                    ? BRL_FORMATTER.format(product.base_price)
+                  {product.base_price !== null
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        product.base_price,
+                      )
                     : '—'}
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
