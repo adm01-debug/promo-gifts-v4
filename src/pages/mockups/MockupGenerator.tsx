@@ -301,13 +301,15 @@ export default function MockupGenerator() {
               </TabsTrigger>
             </TabsList>
             <MockupToolbar
-              canUndo={mg.positionHistory.canUndo}
-              canRedo={mg.positionHistory.canRedo}
+              canUndo={mg.positionHistory.canUndo && !!mg.activeAreaId}
+              canRedo={mg.positionHistory.canRedo && !!mg.activeAreaId}
               onUndo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.undo();
                 if (state) mg.updateActiveArea(state);
               }}
               onRedo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.redo();
                 if (state) mg.updateActiveArea(state);
               }}
