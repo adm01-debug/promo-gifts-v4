@@ -61,6 +61,12 @@ vi.mock('@/lib/security/rls-denial-logger', () => ({
 function setupInsertSuccess() {
   mockInsert.mockReturnValue({ error: null });
   mockUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) });
+  // requestApproval calls .select() on quotes (context), user_roles, and profiles.
+  // Provide a chain that handles .eq().maybeSingle() and .eq() awaited directly.
+  const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
+  mockSelect.mockReturnValue({
+    eq: vi.fn().mockReturnValue({ error: null, maybeSingle: maybeSingleFn }),
+  });
 }
 
 function setupInsertError(msg = 'RLS denied') {
@@ -131,13 +137,22 @@ describe('requestApproval', () => {
 // ── respondToApproval ─────────────────────────────────────────────────────────
 describe('respondToApproval', () => {
   function setupRespondSuccess() {
-    // Responder: update discount_approval_requests
-    const eqUpdate = vi.fn().mockReturnValue({ error: null });
+    // Hook calls: .update().eq().select().single() to get the request back
+    const fakeRequest = {
+      id: 'req-1',
+      quote_id: 'q-test',
+      seller_id: 'seller-001',
+      requested_discount_percent: 20,
+      max_allowed_percent: 15,
+    };
+    const singleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
+    const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
+    const eqUpdate = vi.fn().mockReturnValue({ select: selectAfterEq });
     const chainUpdate = { update: vi.fn().mockReturnValue({ eq: eqUpdate }) };
     // Quote status update
     const eqQuote = vi.fn().mockReturnValue({ error: null });
     const chainQuote = { update: vi.fn().mockReturnValue({ eq: eqQuote }) };
-    // Activity log insert
+    // Activity log insert + workspace_notifications insert
     const chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
 
     let callCount = 0;
@@ -175,31 +190,45 @@ describe('respondToApproval', () => {
 });
 
 // ── getApprovalStatus ─────────────────────────────────────────────────────────
+// getApprovalStatus is async: queries DB directly via .select().eq().order().limit().maybeSingle()
 describe('getApprovalStatus', () => {
-  it('retorna null quando pendingRequests vazio', () => {
+  function buildGetStatusChain(data: unknown) {
+    const maybeSingleFn = vi.fn().mockResolvedValue({ data, error: null });
+    const limitFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+    const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
+    const eqFn = vi.fn().mockReturnValue({ order: orderFn });
+    return { select: vi.fn().mockReturnValue({ eq: eqFn }) };
+  }
+
+  it('retorna null quando nao encontrado no DB', async () => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(null) as never);
+
     const { result } = renderHook(() => useDiscountApproval());
-    const status = result.current.getApprovalStatus('q-qualquer');
+    let status: unknown;
+    await act(async () => {
+      status = await result.current.getApprovalStatus('q-qualquer');
+    });
     expect(status).toBeNull();
   });
 
   it('retorna o request correto pelo quote_id', async () => {
-    // Seed via fetchPendingRequests
-    const fakeRequests = [
-      { id: 'req-1', quote_id: 'q-target', status: 'pending', requested_discount_percent: 20 },
-    ];
-    const eqMock = vi.fn().mockReturnValue(Promise.resolve({ data: fakeRequests, error: null }));
-    const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+    const fakeRequest = {
+      id: 'req-1',
+      quote_id: 'q-target',
+      status: 'pending',
+      requested_discount_percent: 20,
+    };
     const { supabase } = await import('@/integrations/supabase/client');
-    vi.mocked(supabase.from).mockReturnValue({ select: selectMock } as never);
+    vi.mocked(supabase.from).mockReturnValue(buildGetStatusChain(fakeRequest) as never);
 
     const { result } = renderHook(() => useDiscountApproval());
+    let found: unknown;
     await act(async () => {
-      await result.current.fetchPendingRequests();
+      found = await result.current.getApprovalStatus('q-target');
     });
-
-    const found = result.current.getApprovalStatus('q-target');
     expect(found).not.toBeNull();
-    expect(found?.quote_id).toBe('q-target');
+    expect((found as { quote_id: string })?.quote_id).toBe('q-target');
   });
 });
 
