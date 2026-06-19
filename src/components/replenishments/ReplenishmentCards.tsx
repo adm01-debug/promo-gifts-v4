@@ -50,245 +50,85 @@ export interface ReplenishmentCardProps {
   readonly priority?: boolean;
 }
 
-export const ReplenishmentGridCard = memo(
-  ({
-    product,
-    onClick,
-    selectionMode,
-    isSelected,
-    onToggleSelect,
-    colors,
-    priority = false,
-  }: ReplenishmentCardProps) => {
-    const recent = isRecent(product.replenished_at);
-    const stockQty = product.stock_quantity;
-    const stockConfig = STOCK_CONFIG[product.stock_status];
+export const ReplenishmentGridCard = memo(({
+  product,
+  onClick,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+  colors,
+  priority = false,
+}: ReplenishmentCardProps) => {
+  const recent = isRecent(product.replenished_at);
 
-    // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
-    // num swatch troca a foto principal pela imagem da variante selecionada.
-    const [activeColorName, setActiveColorName] = useState<string | null>(null);
-    const activeImage = useMemo(() => {
-      if (!activeColorName || !colors?.length) return product.product_image;
-      const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
-      return match?.image || product.product_image;
-    }, [activeColorName, colors, product.product_image]);
+  const handleClick = useCallback(() => {
+    if (selectionMode) onToggleSelect();
+    else onClick();
+  }, [selectionMode, onToggleSelect, onClick]);
 
-    const handleClick = useCallback(() => {
-      if (selectionMode) onToggleSelect();
-      else onClick();
-    }, [selectionMode, onToggleSelect, onClick]);
+  const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
 
-    const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
-      e.stopPropagation();
-    }, []);
-
-    const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
-
-    return (
-      <Card
-        className={cn(
-          productCardStyles.container,
-          'h-[430px] max-h-[430px] min-h-[430px]', // Altura fixa para paridade no grid
-          recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
-          isSelected && productCardStyles.selected,
-        )}
-        onClick={handleClick}
-        role="article"
-        aria-label={`${product.product_name} — ${stockConfig.label}, ${formatPrice(product.base_price ?? 0)}`}
-        aria-selected={selectionMode ? isSelected : undefined}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleClick();
-          }
-        }}
-      >
-        {/* FAB "+" — paridade total com ProductCard (Carrinho/Orçamento/Coleção/Favoritar/Comparar/QuickView/Compartilhar) */}
-        {!selectionMode && (
-          <ProductQuickActionsFAB
-            productId={product.product_id}
-            productName={product.product_name}
-            productSku={product.product_sku}
-            productImageUrl={activeImage}
-            productPrice={product.base_price ?? 0}
-            productMinQuantity={product.min_quantity || 1}
-            isOutOfStock={product.stock_status === 'out-of-stock'}
-          />
-        )}
-        <CardContent className="flex h-full flex-col p-0">
-          {/* Image Section */}
-          <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
-            <QuickViewThumb
-              productId={product.product_id}
-              productName={product.product_name}
-              testId="replenishment-grid-card-thumb"
-              className="h-full w-full"
-            >
-              <HoverSetImage
-                key={activeImage ?? product.product_image ?? 'placeholder'}
-                primary={activeImage}
-                // Desativa o crossfade "todas as cores" quando o usuário está
-                // navegando pelas variantes — a foto da cor selecionada vence.
-                set={activeColorName ? null : product.product_set_image}
-                alt={`Foto de ${product.product_name}`}
-                priority={priority}
-              />
-            </QuickViewThumb>
-
-            {/* Badge superior esquerdo — Reposição */}
-            <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
-              <ReplenishmentBadge daysSince={product.days_since} size="sm" />
-            </div>
-
-            {/* FAB "+" — paridade total com ProductCard (renderizado fora da área da imagem para overlay) */}
-
-            {/* Checkbox de seleção em massa (mantém posição quando ativa) */}
-            {selectionMode && (
-              <div
-                className="absolute right-2 top-2 z-10"
-                onClick={handleCheckboxClick}
-                role="group"
-                aria-label="Seleção"
-              >
-                <SelectionCheckbox
-                  checked={isSelected}
-                  onChange={onToggleSelect}
-                  size="md"
-                  animateEntry
-                  aria-label={`Selecionar ${product.product_name}`}
-                />
-              </div>
-            )}
-
+  return (
+    <BaseProductGridCard
+      testId="replenishment-grid-card"
+      thumbTestId="replenishment-grid-card-thumb"
+      footerTestId="replenishment-card-footer"
+      productId={product.product_id}
+      productName={product.product_name}
+      productSku={product.product_sku}
+      productImage={product.product_image}
+      productSetImage={product.product_set_image}
+      categoryId={product.category_id}
+      categoryName={product.category_name}
+      supplierName={product.supplier_name}
+      basePrice={product.base_price}
+      minQuantity={product.min_quantity}
+      stockStatus={product.stock_status}
+      stockQuantity={product.stock_quantity}
+      colors={colors}
+      selectionMode={selectionMode}
+      isSelected={isSelected}
+      onClick={handleClick}
+      priority={priority}
+      className={cn(recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]')}
+      renderImageOverlays={() => (
+        <>
+          <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+            <ReplenishmentBadge daysSince={product.days_since} size="sm" />
+          </div>
+          {selectionMode && (
             <div
-              className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              aria-hidden="true"
-            />
-          </div>
-
-          {/* Content Section */}
-          <div className={cn(productCardStyles.infoSection, 'flex flex-1 flex-col')}>
-            {/* 1 — Categoria */}
-            {product.category_id && product.category_name && (
-              <ProductCategoryBadges
-                category={{ id: product.category_id, name: product.category_name }}
-                categoryUuid={product.category_id}
-                className="flex-wrap"
-              />
-            )}
-
-            {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
-            {(product.supplier_name || product.product_sku) && (
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                {product.supplier_name ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span
-                        className="flex min-w-0 max-w-[160px] items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
-                        title={`Fornecedor: ${product.supplier_name}`}
-                      >
-                        <Building2
-                          className={cn(
-                            'h-3 w-3 shrink-0',
-                            getSupplierColors(product.supplier_name).text,
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">{product.supplier_name}</span>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      Fornecedor: {product.supplier_name}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <span />
-                )}
-                {product.product_sku && (
-                  <span
-                    className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
-                    aria-label={`Código do produto: ${product.product_sku}`}
-                  >
-                    {product.product_sku}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* 4 — Nome do produto */}
-            <h3 className={productCardStyles.title}>{product.product_name}</h3>
-
-            {/* Price + Stock */}
-            <div className={productCardStyles.priceStockSection}>
-              <div className={productCardStyles.priceContainer}>
-                {product.base_price !== null && product.base_price > 0 ? (
-                  <>
-                    <p className="mb-0.5 text-[10px] text-muted-foreground sm:text-xs">
-                      A partir de
-                    </p>
-                    <span className="font-display text-base font-bold tabular-nums text-foreground sm:text-xl">
-                      {formatPrice(product.base_price)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Preço sob consulta</span>
-                )}
-              </div>
-
-              <div className="flex flex-col items-end gap-0.5 sm:gap-1">
-                <span
-                  className={cn('stock-indicator text-[10px] sm:text-xs', stockConfig.className)}
-                >
-                  <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
-                  <span className="hidden sm:inline">{stockConfig.label}</span>
-                  <span className="sm:hidden" aria-label={stockConfig.label}>
-                    {stockConfig.mobileIcon}
-                  </span>
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className="cursor-help text-[10px] tabular-nums text-muted-foreground sm:text-xs"
-                      aria-label={stockLabel}
-                    >
-                      {formatStockQty(stockQty)} un.
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    {stockLabel}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-
-            {/* Cores disponíveis — mini-carrossel de variantes */}
-            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-              <ProductColorSwatches
-                colors={colors}
-                max={5}
-                size="sm"
-                hideWhenEmpty={false}
-                selectedName={activeColorName}
-                onSelect={(c) => setActiveColorName(c.name)}
+              className="absolute right-2 top-2 z-10"
+              onClick={handleCheckboxClick}
+              role="group"
+              aria-label="Seleção"
+            >
+              <SelectionCheckbox
+                checked={isSelected}
+                onChange={onToggleSelect}
+                size="md"
+                animateEntry
+                aria-label={`Selecionar ${product.product_name}`}
               />
             </div>
-
-            {/* Sparkline */}
-            <div className={productCardStyles.sparklineSection}>
-              <div className="mb-0.5 flex items-center justify-between">
-                <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-                  Saídas 90d
-                </span>
-              </div>
-              <ProductSparkline productId={product.product_id} />
-            </div>
+          )}
+        </>
+      )}
+      renderFooterExtras={() => (
+        <div className="border-t border-border/40 pt-1.5">
+          <div className="mb-0.5 flex items-center justify-between">
+            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
+              Saídas 90d
+            </span>
           </div>
-        </CardContent>
-      </Card>
-    );
-  },
-);
+          <ProductSparkline productId={product.product_id} />
+        </div>
+      )}
+    />
+  );
+});
 
 
 // ─── Table View ──────────────────────────────────────────────────
