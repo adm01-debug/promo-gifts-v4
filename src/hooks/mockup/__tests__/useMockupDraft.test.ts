@@ -221,14 +221,13 @@ describe('saveToBackend — fallback FK (23503)', () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it('ao receber erro 23503 (FK violation), chama update com IDs nulos', async () => {
+  // BUG-17 FIX: fallback now uses .upsert() (not .update()) so that the row is
+  // created even on first-ever save. Tests updated from mockUpdate → mockUpsert.
+  it('ao receber erro 23503 (FK violation), tenta upsert de fallback com IDs nulos', async () => {
     const { useMockupDraft } = await import('../useMockupDraft');
+    // First upsert (normal path) → 23503 FK violation
     mockUpsert.mockResolvedValueOnce({ error: { code: '23503', message: 'fk violation' } });
-
-    // update retorna sem erro
-    const mockUpdateChain = { eq: vi.fn().mockReturnThis() };
-    mockUpdateChain.eq.mockResolvedValue({ error: null });
-    mockUpdate.mockReturnValue(mockUpdateChain);
+    // Second upsert (fallback path) → success (default from beforeEach)
 
     const { result } = renderHook(() => useMockupDraft());
     act(() => {
@@ -238,24 +237,24 @@ describe('saveToBackend — fallback FK (23503)', () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    // Two upsert calls total: normal + fallback. No .update() ever.
+    expect(mockUpsert).toHaveBeenCalledTimes(2);
+    expect(mockUpdate).not.toHaveBeenCalled();
 
-    const updateCall = (mockUpdate.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
-    expect(updateCall.product_id).toBeNull();
-    expect(updateCall.technique_id).toBeNull();
-    expect(updateCall.client_id).toBeNull();
+    const fallbackCall = (mockUpsert.mock.calls[1] as unknown[])[0] as Record<string, unknown>;
+    expect(fallbackCall.product_id).toBeNull();
+    expect(fallbackCall.technique_id).toBeNull();
+    expect(fallbackCall.client_id).toBeNull();
     // Dados de texto ainda são preservados
-    expect(updateCall.product_name).toBe('Caneca');
+    expect(fallbackCall.product_name).toBe('Caneca');
   });
 
-  it('ao receber erro 409, também faz fallback', async () => {
+  // Only error code '23503' triggers the null-ID fallback. Other codes are
+  // propagated to the catch block and surface as the hook's error state.
+  it('ao receber erro não-23503, não faz fallback — apenas um upsert tentado', async () => {
     const { useMockupDraft } = await import('../useMockupDraft');
     mockUpsert.mockResolvedValueOnce({ error: { code: '409', message: 'conflict' } });
 
-    const mockUpdateChain = { eq: vi.fn().mockReturnThis() };
-    mockUpdateChain.eq.mockResolvedValue({ error: null });
-    mockUpdate.mockReturnValue(mockUpdateChain);
-
     const { result } = renderHook(() => useMockupDraft());
     act(() => {
       result.current.saveDraft(makeDraft());
@@ -264,7 +263,9 @@ describe('saveToBackend — fallback FK (23503)', () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    // Only the first (failing) upsert is attempted, no fallback
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
 

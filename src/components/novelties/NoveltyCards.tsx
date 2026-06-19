@@ -14,7 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, Building2, FolderTree, Clock } from 'lucide-react';
-import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
@@ -23,10 +22,6 @@ import {
   type ColorDotLike,
 } from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
-import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
-import { HoverSetImage } from '@/components/products/HoverSetImage';
-import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
-import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
 

@@ -51,6 +51,9 @@ export const MockupResultCard = memo(function MockupResultCard({
   const [zoom, setZoom] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenZoom, setFullscreenZoom] = useState(1);
+  const [isClientMode, setIsClientMode] = useState(false);
 
   // Trigger success animation when mockup is generated
   useEffect(() => {
@@ -67,9 +70,14 @@ export const MockupResultCard = memo(function MockupResultCard({
     }
   }, [generatedMockup, isLoading]);
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [fullscreenZoom, setFullscreenZoom] = useState(1);
-  const [isClientMode, setIsClientMode] = useState(false);
+  // BUG-RC2 FIX: reset zoom when a new mockup URL is set so the user
+  // doesn't see a newly-generated mockup at whatever zoom they had before.
+  useEffect(() => {
+    if (generatedMockup) {
+      setZoom(1);
+      setFullscreenZoom(1);
+    }
+  }, [generatedMockup]);
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.25, 3));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
