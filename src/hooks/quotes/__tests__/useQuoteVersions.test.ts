@@ -186,7 +186,7 @@ describe('createNewVersion', () => {
   it('retorna null quando quote fonte nao encontrado', async () => {
     mockFetchQuote.mockResolvedValue(null); // quote não encontrado
 
-    const { logger } = await import('@/lib/logger');
+    const { toast } = await import('sonner');
     const { result } = renderHook(() => useQuoteVersions());
 
     let outcome: unknown;
@@ -195,6 +195,7 @@ describe('createNewVersion', () => {
     });
 
     expect(outcome).toBeNull();
-    expect(vi.mocked(logger.error)).toHaveBeenCalled();
+    // Hook catch block calls toast.error, not logger.error
+    expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
 });
