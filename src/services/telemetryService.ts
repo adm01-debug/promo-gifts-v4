@@ -53,6 +53,11 @@ function toBoundedJson(metadata: Record<string, unknown> | undefined): Json {
   } as Json;
 }
 
+function normalizeDuration(durationMs: number | undefined): number | undefined {
+  if (durationMs === undefined || !Number.isFinite(durationMs)) return undefined;
+  return Math.min(Math.max(durationMs, 0), 600000);
+}
+
 /** Formato snake_case que o PostgREST/Supabase espera */
 interface BufferedEvent {
   event_type: TelemetryEventType;
@@ -139,7 +144,7 @@ class TelemetryService {
       this.buffer.push({
         event_type: payload.event_type,
         name: truncateText(payload.name, MAX_NAME_LENGTH, 'unnamed_event'),
-        duration_ms: payload.durationMs,
+        duration_ms: normalizeDuration(payload.durationMs),
         metadata: toBoundedJson(payload.metadata),
         url: truncateText(typeof window !== 'undefined' ? window.location.href : '', MAX_URL_LENGTH),
         user_agent: truncateText(
