@@ -28,7 +28,6 @@ import { MaterialsFilter } from './filter-panel/sections/MaterialsFilter';
 import { RamosFilter } from './filter-panel/sections/RamosFilter';
 import {
   PublicoFilter,
-  EndomarketingFilter,
   TechniquesFilter,
   TagsFilter,
   QuickOptionsFilter,
@@ -199,15 +198,6 @@ export function FilterPanel({
         onToggleDate={(slug) => state.toggleArrayFilter('datasComemorativas', slug)}
         onClearDates={() => onFilterChange({ ...filters, datasComemorativas: [] })}
         compact
-      />
-    ),
-    endomarketing: () => (
-      <EndomarketingFilter
-        filters={filters}
-        endomarketingOptions={state.endomarketingOptions}
-        endoSearch={state.endoSearch}
-        setEndoSearch={state.setEndoSearch}
-        toggleArrayFilter={state.toggleArrayFilter}
       />
     ),
     materiais: () => (

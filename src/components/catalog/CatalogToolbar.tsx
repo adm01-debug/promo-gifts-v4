@@ -112,7 +112,16 @@ function CatalogToolbarInner({
               <Suspense fallback={<FilterPanelSkeleton />}>
                 <LazyFilterPanel
                   filters={filters}
-                  onFilterChange={setFilters}
+                  onFilterChange={(newFilters) => {
+                    // BUG-SORTBY-SYNC FIX: FilterPanel's ordenacao section updates
+                    // filters.sortBy but NOT the separate sortBy state used by
+                    // useCatalogFiltering for actual sorting. Intercept here so both
+                    // paths go through setSortBy (URL, analytics, session pref).
+                    if (newFilters.sortBy !== filters.sortBy) {
+                      setSortBy(newFilters.sortBy as SortOption);
+                    }
+                    setFilters(newFilters);
+                  }}
                   onReset={resetFilters}
                   activeFiltersCount={activeFiltersCount}
                 />

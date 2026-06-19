@@ -3,6 +3,7 @@
  */
 import { useMemo } from 'react';
 import type { Product, SupplierSalesEntry } from '@/hooks/products';
+import type { ProductVariation } from '@/types/product-catalog';
 import type { FilterState } from '@/components/filters/FilterPanel';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import { sortProducts } from '@/utils/product-sorting';
@@ -188,6 +189,37 @@ export function useCatalogFiltering({
       result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
     }
 
+    // BUG-MINSTOCK FIX: filtro de estoque mínimo era aplicado no Super Filtro (/filtros)
+    // mas ignorado no catálogo principal (/produtos). Variações têm precedência sobre
+    // estoque agregado do produto — some(v.stock >= threshold) OR product.stock >= threshold.
+    if (filters.minStock > 0) {
+      const threshold = filters.minStock;
+      result = result.filter((p) => {
+        if (p.variations && p.variations.length > 0)
+          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) >= threshold);
+        return (p.stock || 0) >= threshold;
+      });
+    }
+
+    // BUG-TECHNIQUES-FILTER FIX: técnicas eram filtráveis no painel mas ignoradas no
+    // catálogo. Graceful degradation: se nenhum produto tem metadata.techniques preenchido
+    // (catálogo leve não hidrata esse campo), o filtro é pulado para não zerar a grade.
+    if (filters.techniques?.length) {
+      const techSet = new Set(filters.techniques.map((t: string) => t.toLowerCase()));
+      const techniquesDataAvailable = result.some(
+        (p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0,
+      );
+      if (techniquesDataAvailable) {
+        result = result.filter((p) => {
+          const metaTechs: string[] = (p.metadata?.techniques as string[]) ?? [];
+          if (metaTechs.length > 0) {
+            return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
+          }
+          return true;
+        });
+      }
+    }
+
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -254,6 +286,8 @@ export function useCatalogFiltering({
     supplierSalesMap,
     filters.minSupplierSales90d,
     filters.minPromoSales90d,
+    filters.minStock,
+    filters.techniques,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,
