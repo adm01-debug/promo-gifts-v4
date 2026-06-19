@@ -418,18 +418,43 @@ export function downloadMockupAsPdf(
   mockupUrl: string,
   product: { sku?: string | null },
   technique: Technique,
-): void {
+): Promise<void> {
   const safeSku = product.sku?.replace(/[^a-zA-Z0-9]/g, '-') || 'mockup';
   const safeTechnique = (technique.code || technique.name).replace(/[^a-zA-Z0-9]/g, '-');
   const fileName = `mockup-${safeSku}-${safeTechnique}.pdf`;
-  downloadImageAsPdfFromUrl(mockupUrl, fileName);
+  return downloadImageAsPdfFromUrl(mockupUrl, fileName);
 }
 
 export async function deleteMockupFromDb(id: string, userId?: string): Promise<void> {
-  let query = supabase.from('generated_mockups').delete().eq('id', id);
-  if (userId) query = query.eq('user_id', userId);
-  const { error } = await query;
+  // BUG-22 FIX: fetch logo_url before deleting the row so we can clean up
+  // the uploaded logo from storage. Best-effort — storage failure must not
+  // prevent the DB delete from proceeding.
+  let selectQuery = untypedFrom<Record<string, unknown>>('generated_mockups')
+    .select('logo_url')
+    .eq('id', id);
+  if (userId) selectQuery = selectQuery.eq('user_id', userId);
+  const { data: rows } = await selectQuery.limit(1);
+  const logoUrl = (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]
+    ?.logo_url ?? null;
+
+  let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
+  if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
+  const { error } = await deleteQuery;
   if (error) throw error;
+
+  // Remove logo from storage after successful DB delete (best-effort)
+  if (logoUrl) {
+    try {
+      const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
+      const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
+      if (bucketPublicBase && logoUrl.startsWith(bucketPublicBase + '/')) {
+        const storagePath = logoUrl.slice(bucketPublicBase.length + 1);
+        await supabase.storage.from('mockup-assets').remove([storagePath]);
+      }
+    } catch (storageErr) {
+      logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
+    }
+  }
 }
 
 export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?: string } {
