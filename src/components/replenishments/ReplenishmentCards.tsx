@@ -37,26 +37,6 @@ function formatPrice(price: number): string {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-/**
- * Formata quantidade de estoque de forma compacta para evitar overflow em
- * cards estreitos (ex: 7624 → "7,6 mil"; 1_250_000 → "1,2 mi").
- */
-function formatStockQty(qty: number): string {
-  if (!Number.isFinite(qty) || qty < 0) return '0';
-  const q = Math.floor(qty);
-  if (q >= 1_000_000) {
-    return `${(q / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
-  }
-  // Promove para "mi" quando arredondamento estouraria para 1000 mil
-  if (q >= 950_000) return '1 mi';
-  if (q >= 10_000) {
-    return `${Math.round(q / 1000).toLocaleString('pt-BR')} mil`;
-  }
-  if (q >= 1_000) {
-    return `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
-  }
-  return q.toLocaleString('pt-BR');
-}
 
 const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobileIcon: string }> =
   {
