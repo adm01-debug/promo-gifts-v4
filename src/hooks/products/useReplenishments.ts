@@ -99,6 +99,7 @@ interface ReposicaoRow {
   readonly category_names: string[] | null;
   readonly primary_category_id: string | null;
   readonly primary_category_name: string | null;
+  readonly is_low_stock: boolean | null;
 }
 
 // ─── Date Utilities ──────────────────────────────────────────────
@@ -134,9 +135,9 @@ function addDaysISO(dateStr: string | null, days: number): string {
 
 // ─── Data Logic ──────────────────────────────────────────────────
 
-function deriveStockStatus(totalStock: number, isStockout: boolean): StockStatus {
-  // Sem fabricar "low-stock": só temos estoque total e flag de esgotado.
+function deriveStockStatus(totalStock: number, isStockout: boolean, isLowStock: boolean): StockStatus {
   if (isStockout || totalStock <= 0) return 'out-of-stock';
+  if (isLowStock) return 'low-stock';
   return 'in-stock';
 }
 
@@ -179,7 +180,7 @@ function mapRow(r: ReposicaoRow): ReplenishmentWithDetails {
     is_active: true,
     stock_quantity: totalStock,
     min_quantity: 0,
-    stock_status: deriveStockStatus(totalStock, isStockout),
+    stock_status: deriveStockStatus(totalStock, isStockout, Boolean(r.is_low_stock)),
   };
 }
 
