@@ -89,7 +89,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
     e.stopPropagation();
   }, []);
 
-  const stockLabel = `${stockQty.toLocaleString('pt-BR')} unidades em estoque`;
+
 
   return (
     <article
