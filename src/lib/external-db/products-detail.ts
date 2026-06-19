@@ -301,17 +301,87 @@ export async function fetchPromobrindProductById(
       limit: 200,
     }).then((r) => r.records);
 
+  // Campos críticos auditados em todo fetch de kit (view OU base).
+  // Reportamos cobertura (% de linhas com valor != null) por campo, ajudando
+  // a distinguir "gap de ETL no SSOT" de "gap de fetch/view".
+  const KIT_AUDITED_FIELDS = [
+    'component_name',
+    'component_description',
+    'material',
+    'color',
+    'primary_image_url',
+    'images',
+    'height_mm',
+    'width_mm',
+    'length_mm',
+    'diameter_mm',
+    'circumference_mm',
+    'weight_g',
+    'capacity_ml',
+    'component_type_code',
+    'supplier_component_code',
+    'personalization_notes',
+  ] as const;
+
+  const auditKitFields = (source: 'view' | 'base', rows: KitComponent[]): void => {
+    if (rows.length === 0) return;
+    const coverage: Record<string, { filled: number; total: number; pct: number }> = {};
+    const fullyNullFields: string[] = [];
+    for (const field of KIT_AUDITED_FIELDS) {
+      const filled = rows.filter((r) => {
+        const v = (r as unknown as Record<string, unknown>)[field];
+        if (v === null || v === undefined) return false;
+        if (Array.isArray(v) && v.length === 0) return false;
+        if (typeof v === 'string' && v.trim() === '') return false;
+        return true;
+      }).length;
+      const pct = Math.round((filled / rows.length) * 100);
+      coverage[field] = { filled, total: rows.length, pct };
+      if (filled === 0) fullyNullFields.push(field);
+    }
+    logger.info(
+      `[product:${productId}] kit-components source=${source} rows=${rows.length} ` +
+        `fully_null=[${fullyNullFields.join(',') || '—'}]`,
+      { coverage },
+    );
+    if (fullyNullFields.length > 0) {
+      logger.warn(
+        `[product:${productId}] kit-components source=${source} — ${fullyNullFields.length} ` +
+          `campo(s) 100% null: ${fullyNullFields.join(', ')}. ` +
+          `Provável gap de ETL no SSOT (não de fetch).`,
+      );
+    }
+  };
+
   const kitPromise: Promise<KitComponent[]> = product.is_kit
     ? fetchKitFromView()
         .then(async (rows) => {
-          if (rows.length > 0) return rows;
-          logger.info(`[product:${productId}] view v_kit_component_complete vazia — fallback para tabela base`);
-          return fetchKitFromBase();
+          if (rows.length > 0) {
+            auditKitFields('view', rows);
+            return rows;
+          }
+          logger.info(
+            `[product:${productId}] view v_kit_component_complete vazia — fallback para tabela base`,
+          );
+          const baseRows = await fetchKitFromBase();
+          auditKitFields('base', baseRows);
+          if (baseRows.length > 0) {
+            logger.warn(
+              `[product:${productId}] FALLBACK ATIVO: view retornou 0 linhas mas base retornou ${baseRows.length}. ` +
+                `View pode estar com filtro RLS divergente ou JOIN excluindo linhas.`,
+            );
+          }
+          return baseRows;
         })
         .catch(async (err) => {
-          logger.warn(`[product:${productId}] view v_kit_component_complete falhou, fallback para tabela base:`, err);
+          logger.warn(
+            `[product:${productId}] view v_kit_component_complete falhou, fallback para tabela base:`,
+            err,
+          );
           try {
-            return await fetchKitFromBase();
+            const baseRows = await fetchKitFromBase();
+            auditKitFields('base', baseRows);
+            return baseRows;
           } catch (err2) {
             logger.warn(`[product:${productId}] Não foi possível buscar componentes do kit:`, err2);
             return [] as KitComponent[];
