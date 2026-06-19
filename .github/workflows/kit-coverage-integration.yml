@@ -4,6 +4,15 @@ name: Kit Coverage — Integration
 # - Nightly às 03:00 UTC para detectar regressão da view sem bloquear PRs
 # - On-demand via workflow_dispatch (com KIT_FIXTURE_ID opcional)
 # NÃO roda em push/PR — exige credenciais do SSOT.
+#
+# Precedência do KIT_FIXTURE_ID (do mais alto para o mais baixo):
+#   1. Input do workflow_dispatch (override pontual da execução manual)
+#   2. Repository variable `KIT_FIXTURE_ID` (Settings → Variables — fixture estável)
+#   3. Repository secret `KIT_FIXTURE_ID` (alternativa se quiser tratar como segredo)
+#   4. Descoberta dinâmica (primeiro kit ativo com componentes)
+#
+# Para fixar o fixture: GitHub → Settings → Secrets and variables → Actions →
+# aba "Variables" → New variable → nome `KIT_FIXTURE_ID`, valor = UUID do kit.
 
 on:
   schedule:
@@ -11,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       kit_fixture_id:
-        description: 'UUID de um kit específico (vazio = descobre o primeiro)'
+        description: 'UUID de um kit específico (vazio = usa variable KIT_FIXTURE_ID ou descobre)'
         required: false
         type: string
 
@@ -27,7 +36,12 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
       RUN_INTEGRATION_TESTS: '1'
-      KIT_FIXTURE_ID: ${{ inputs.kit_fixture_id }}
+      # Resolução em cascata: input → variable → secret → vazio (descoberta dinâmica)
+      KIT_FIXTURE_ID: >-
+        ${{ inputs.kit_fixture_id
+            || vars.KIT_FIXTURE_ID
+            || secrets.KIT_FIXTURE_ID
+            || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,5 +49,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Mostra fixture resolvido
+        run: |
+          if [ -n "$KIT_FIXTURE_ID" ]; then
+            echo "✔ Usando KIT_FIXTURE_ID fixo: $KIT_FIXTURE_ID"
+          else
+            echo "ℹ Nenhum KIT_FIXTURE_ID definido — fará descoberta dinâmica."
+          fi
       - name: Run kit-coverage integration test
         run: npm run test:kit-coverage:integration
+
