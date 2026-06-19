@@ -173,7 +173,7 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
