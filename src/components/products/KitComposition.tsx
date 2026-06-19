@@ -42,24 +42,7 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
     const packagingCount = items.filter((i) => i.isPackaging).length;
     const productCount = items.filter((i) => !i.isPackaging).length;
     const personalizableCount = items.filter((i) => i.allowsPersonalization).length;
-    // Sanity check: soma de (salePrice × quantity) dos componentes enriquecidos.
-    // Aparece só quando ao menos 1 componente tem salePrice (view v_kit_component_enriched ativa).
-    const pricedItems = items.filter((i) => typeof i.salePrice === 'number' && i.salePrice > 0);
-    const componentsSum = pricedItems.reduce(
-      (sum, i) => sum + (i.salePrice ?? 0) * i.quantity,
-      0,
-    );
-    const hasComponentPricing = pricedItems.length > 0;
-    return {
-      totalPieces,
-      totalWeight,
-      packagingCount,
-      productCount,
-      personalizableCount,
-      componentsSum,
-      hasComponentPricing,
-      pricedCoverage: items.length > 0 ? pricedItems.length / items.length : 0,
-    };
+    return { totalPieces, totalWeight, packagingCount, productCount, personalizableCount };
   }, [items]);
 
   const formatWeight = (grams: number) =>
