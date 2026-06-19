@@ -153,24 +153,25 @@ export interface ProductNormal {
   supplierN: string;
 }
 
-/** Índices pré-computados para filtragem O(1) por cor, categoria, fornecedor e alertas. */
+/** Índices pré-computados para filtragem O(1) por cor, categoria, fornecedor e normalized strings. */
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
   byColorGroupN: Map<string, Set<string>>; // tokens da cor → productIds (inclui substrings de colorGroup)
   byCategoryN: Map<string, Set<string>>; // categoryN → productIds
   bySupplierN: Map<string, Set<string>>; // supplierN → productIds
-  productsWithAlerts: Set<string>;
   /** Strings normalizadas de produto: eliminam chamadas extras a normalize() no loop principal.
    *  Strings de variação são cobertas pelo _normalizeCache module-level (colorName repete-se
    *  em N×M variações; após a primeira passagem de buildStockIndexes o hit ratio é ~100%). */
   productNormals: Map<string, ProductNormal>;
 }
 
-/** Pré-computa índices invertidos sobre a lista de produtos e alertas para reutilização entre chamadas. */
-export function buildStockIndexes(
-  products: ProductStockSummary[],
-  alerts: StockAlert[],
-): StockIndexes {
+/**
+ * Pré-computa índices invertidos sobre a lista de produtos para reutilização entre chamadas.
+ * Nota: `productsWithAlerts` foi removido desta estrutura — é construído de forma lazy em
+ * `applyStockFilters` somente quando `showOnlyWithAlerts: true`, desacoplando o índice de
+ * cor/categoria/fornecedor das mudanças de estado de alertas descartados.
+ */
+export function buildStockIndexes(products: ProductStockSummary[]): StockIndexes {
   const byColorNameN = new Map<string, Set<string>>();
   const byColorGroupN = new Map<string, Set<string>>();
   const byCategoryN = new Map<string, Set<string>>();
@@ -207,13 +208,11 @@ export function buildStockIndexes(
     }
   }
 
-  const productsWithAlerts = new Set(alerts.map((a) => a.productId));
   return {
     byColorNameN,
     byColorGroupN,
     byCategoryN,
     bySupplierN,
-    productsWithAlerts,
     productNormals,
   };
 }
@@ -329,7 +328,11 @@ export function applyStockFilters(
   indexes?: StockIndexes,
 ): ProductStockSummary[] {
   const ctx = buildFilterContext(filters);
-  const idx = indexes ?? buildStockIndexes(products, alerts);
+  const idx = indexes ?? buildStockIndexes(products);
+  // Construído de forma lazy — só paga o custo de Map<productId> quando o filtro está ativo.
+  const alertProductIds = filters.showOnlyWithAlerts
+    ? new Set(alerts.map((a) => a.productId))
+    : null;
 
   // Pré-seleção via interseção de índices (fast path). Aplica todos os filtros
   // discretos disponíveis (cor exata, grupo de cor, categoria, fornecedor) antes
@@ -388,7 +391,7 @@ export function applyStockFilters(
     )
       continue;
     if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
-    if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
+    if (alertProductIds !== null && !alertProductIds.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
 
