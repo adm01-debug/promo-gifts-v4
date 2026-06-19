@@ -134,7 +134,9 @@ const CloudStatusBannerInner = memo(() => {
             {status === 'down' && (
               <button
                 type="button"
-                onClick={() => void retry()}
+                onClick={() => {
+                  retry();
+                }}
                 disabled={isChecking}
                 className="inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border border-divider bg-secondary px-3 text-sm font-bold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80 disabled:pointer-events-none disabled:opacity-50"
               >

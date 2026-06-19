@@ -61,15 +61,13 @@ export default function IntelligenceBadgeSettingsPage() {
               🔥 Hot Item
             </CardTitle>
             <CardDescription>
-              Exibida quando a Inteligência Comercial classifica o produto como Hot Item
-              (<code>mv_product_intelligence.is_hot_product = true</code>).
+              Exibida quando a Inteligência Comercial classifica o produto como Hot Item (
+              <code>mv_product_intelligence.is_hot_product = true</code>).
             </CardDescription>
           </div>
           <Switch
             checked={draft.hotItem.enabled}
-            onCheckedChange={(v) =>
-              setDraft((d) => ({ ...d, hotItem: { enabled: v } }))
-            }
+            onCheckedChange={(v) => setDraft((d) => ({ ...d, hotItem: { enabled: v } }))}
             aria-label="Habilitar badge Hot Item"
           />
         </CardHeader>
@@ -83,8 +81,8 @@ export default function IntelligenceBadgeSettingsPage() {
               🏅 Best-seller
             </CardTitle>
             <CardDescription>
-              Exibida quando a média de venda diária do produto nos últimos 7 dias
-              (<code>avg_daily_depletion_7d</code>) for ≥ ao limiar abaixo.
+              Exibida quando a média de venda diária do produto nos últimos 7 dias (
+              <code>avg_daily_depletion_7d</code>) for ≥ ao limiar abaixo.
             </CardDescription>
           </div>
           <Switch
@@ -96,9 +94,7 @@ export default function IntelligenceBadgeSettingsPage() {
           />
         </CardHeader>
         <CardContent className="space-y-2">
-          <Label htmlFor="best-seller-threshold">
-            Limiar mínimo (unidades / dia, média 7d)
-          </Label>
+          <Label htmlFor="best-seller-threshold">Limiar mínimo (unidades / dia, média 7d)</Label>
           <Input
             id="best-seller-threshold"
             type="number"
@@ -112,7 +108,8 @@ export default function IntelligenceBadgeSettingsPage() {
                 ...d,
                 bestSeller: {
                   ...d.bestSeller,
-                  minAvgDailyDepletion7d: Number.isFinite(n) && n > 0 ? n : d.bestSeller.minAvgDailyDepletion7d,
+                  minAvgDailyDepletion7d:
+                    Number.isFinite(n) && n > 0 ? n : d.bestSeller.minAvgDailyDepletion7d,
                 },
               }));
             }}
@@ -134,7 +131,9 @@ export default function IntelligenceBadgeSettingsPage() {
           Restaurar padrão
         </Button>
         <Button
-          onClick={() => void save(draft)}
+          onClick={() => {
+            save(draft);
+          }}
           disabled={!dirty || saving}
           data-testid="save-intelligence-badge-settings"
         >

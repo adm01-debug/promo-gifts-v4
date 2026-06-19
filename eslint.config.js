@@ -176,6 +176,8 @@ export default [
       'prefer-template': 'error',
       // Batch 71: 1 rule — prefer-arrow-callback (59 fixes, auto-fixed)
       'prefer-arrow-callback': 'error',
+      // Batch 72: 1 rule — no-void allowAsStatement (24 fixes in 17 files)
+      'no-void': ['error', { allowAsStatement: true }],
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
