@@ -113,6 +113,12 @@ export default function MockupGenerator() {
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
   });
 
+  const handleTechniqueSelect = useCallback(
+    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [technique.handleTechniqueChange],
+  );
+
   useKeyboardShortcuts({
     onGenerate: mg.generateMockup,
     onReset: mg.resetForm,
@@ -205,7 +211,7 @@ export default function MockupGenerator() {
     mg.logoColorAnalysis.colors,
     mg.productSelection?.colorName,
     mg.productSelection?.colorHex,
-    mg.getProductImage,
+    mg.productSelection?.imageUrl,
   ]);
 
   const handleLayoutCaptured = useCallback(() => {
@@ -295,13 +301,15 @@ export default function MockupGenerator() {
               </TabsTrigger>
             </TabsList>
             <MockupToolbar
-              canUndo={mg.positionHistory.canUndo}
-              canRedo={mg.positionHistory.canRedo}
+              canUndo={mg.positionHistory.canUndo && !!mg.activeAreaId}
+              canRedo={mg.positionHistory.canRedo && !!mg.activeAreaId}
               onUndo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.undo();
                 if (state) mg.updateActiveArea(state);
               }}
               onRedo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.redo();
                 if (state) mg.updateActiveArea(state);
               }}
@@ -332,9 +340,7 @@ export default function MockupGenerator() {
                     mg.setProductSelection(sel);
                     mg.setGeneratedMockup(null);
                   }}
-                  onTechniqueSelect={(t) =>
-                    technique.handleTechniqueChange(t as MockupTechnique | null)
-                  }
+                  onTechniqueSelect={handleTechniqueSelect}
                   onClientSelect={mg.setSelectedClient}
                   onReset={mg.resetForm}
                   activeAreaId={mg.activeAreaId}
