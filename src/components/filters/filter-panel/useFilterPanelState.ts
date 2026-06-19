@@ -221,7 +221,9 @@ export function useFilterPanelState(
     const colorCount =
       (filters.colorGroups?.length || 0) +
       (filters.colorVariations?.length || 0) +
-      (filters.colorNuances?.length || 0);
+      (filters.colorNuances?.length || 0) +
+      // BUG-COLOR-COUNT FIX: cores legadas (presets/voz) não entravam na badge da seção.
+      (filters.colors?.length || 0);
     const materialCount =
       materialFilterState.selectedGroups.length + materialFilterState.selectedTypes.length;
     const ramoCount =
