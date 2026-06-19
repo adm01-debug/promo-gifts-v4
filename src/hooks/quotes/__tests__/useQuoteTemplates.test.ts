@@ -16,6 +16,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuoteTemplates } from '../useQuoteTemplates';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 const _mockOrder = vi.fn();
