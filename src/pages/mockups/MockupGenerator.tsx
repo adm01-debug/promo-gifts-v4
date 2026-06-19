@@ -492,7 +492,7 @@ export default function MockupGenerator() {
                                 }
                               } catch (err) {
                                 toast.error('Erro ao salvar mockup no histórico');
-                                console.error('[MockupGenerator] saveMockupToHistory failed:', err);
+                                log.error('save_history_failed', { error: err instanceof Error ? err.message : String(err) });
                               }
                             }
                           }}
