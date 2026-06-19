@@ -424,13 +424,18 @@ export function useQuoteBuilderState() {
       validUntil,
     },
     onRestore: (saved) => {
-      // Exemplo: Restaurar campos se o usuário desejar ou automaticamente
       // Para evitar sobrescrever um carregamento de rascunho real (via URL),
       // só restauramos se não estiver em modo edição.
       if (!isEditMode) {
         if (saved.clientId) setClientId(saved.clientId);
         if (saved.contactId) setContactId(saved.contactId);
+        if (saved.companyInfo) setCompanyInfo(saved.companyInfo);
+        if (saved.contactInfo) setContactInfo(saved.contactInfo);
         if (saved.items) setItems(saved.items);
+        if (saved.discountType) setDiscountType(saved.discountType);
+        if (typeof saved.discountValue === 'number') setDiscountValue(saved.discountValue);
+        if (typeof saved.negotiationMarkup === 'number' && saved.negotiationMarkup > 0)
+          setNegotiationMarkup(saved.negotiationMarkup);
         if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
         if (saved.paymentTerms) setPaymentTerms(saved.paymentTerms);
         if (saved.deliveryTime) {
@@ -524,7 +529,39 @@ export function useQuoteBuilderState() {
           } else {
             setDeliveryMode('prazo');
           }
-          setDeliveryTime(quote.delivery_time);
+          if (quote.client_company) {
+            setCompanyInfo({
+              id: quote.client_id || '',
+              name: quote.client_company,
+              cnpj: quote.client_cnpj || undefined,
+              ramo_atividade: undefined,
+            });
+          }
+          if (quote.discount_percent && quote.discount_percent > 0) {
+            setDiscountType('percent');
+            setDiscountValue(quote.discount_percent);
+          } else if (quote.discount_amount && quote.discount_amount > 0) {
+            setDiscountType('amount');
+            setDiscountValue(quote.discount_amount);
+          }
+          if (typeof quote.negotiation_markup_percent === 'number')
+            setNegotiationMarkup(quote.negotiation_markup_percent);
+          if (quote.payment_method) setPaymentMethod(quote.payment_method);
+          if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
+          if (quote.shipping_type) setShippingType(quote.shipping_type);
+          if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
+          if (quote.delivery_time) {
+            if (quote.delivery_time.startsWith('date:')) {
+              setDeliveryMode('data');
+              setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
+            } else {
+              setDeliveryMode('prazo');
+            }
+            setDeliveryTime(quote.delivery_time);
+          }
+          if (quote.items) setItems(quote.items);
+          // Salva o updated_at como baseline para detecção de conflito
+          baselineUpdatedAtRef.current = quote.updated_at ?? null;
         }
         if (quote.items) setItems(quote.items);
         // Salva o updated_at como baseline para detecção de conflito
@@ -1040,6 +1077,7 @@ export function useQuoteBuilderState() {
       isFormValid,
       validationErrors,
       clientId,
+      contactId,
       contactInfo,
       companyInfo,
       discountType,
