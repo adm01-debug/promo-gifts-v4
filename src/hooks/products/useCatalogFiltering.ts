@@ -69,7 +69,11 @@ export function useCatalogFiltering({
     () => new Set(filters.categories.map(String)),
     [filters.categories],
   );
-  const supplierFilterSet = useMemo(() => new Set(filters.suppliers), [filters.suppliers]);
+  // FIX-17 parity: case-insensitive matching (applyProductFilters normalizes to lowercase).
+  const supplierFilterSet = useMemo(
+    () => new Set(filters.suppliers.map((s) => s.toLowerCase())),
+    [filters.suppliers],
+  );
   const genderFilterSet = useMemo(
     () => new Set(filters.gender?.map((g) => g.toLowerCase().trim())),
     [filters.gender],
@@ -119,16 +123,20 @@ export function useCatalogFiltering({
 
     if (result.length === 0) return result;
 
-    // BUG-SF-11 FIX: implementação era inconsistente com useFiltersPageState.
-    // useFiltersPageState usava supplier.id + supplier.name + supplier_reference.
-    // Aqui, padronizamos para verificar supplier.id (mais confiável) além de brand e supplier_reference.
+    // BUG-SF-11 / FIX-17 parity: case-insensitive, plus partial name match on supplier.name
+    // (applyProductFilters.ts FIX-17). Anterior: case-sensitive + só brand (sem supplier.name).
     if (supplierFilterSet.size > 0) {
-      result = result.filter(
-        (p) =>
-          supplierFilterSet.has(p.supplier?.id ?? '') ||
-          supplierFilterSet.has(p.brand || '') ||
-          supplierFilterSet.has(p.supplier_reference || ''),
-      );
+      const supplierArr = [...supplierFilterSet].filter((s) => s !== '');
+      result = result.filter((p) => {
+        const suppId = (p.supplier?.id ?? '').toLowerCase();
+        const suppRef = (p.supplier_reference ?? '').toLowerCase();
+        const suppName = (p.supplier?.name || p.brand || '').toLowerCase();
+        return (
+          (suppId !== '' && supplierFilterSet.has(suppId)) ||
+          (suppRef !== '' && supplierFilterSet.has(suppRef)) ||
+          supplierArr.some((s) => suppName.includes(s))
+        );
+      });
     }
 
     // BUG-21 FIX: era < 500, deve ser < 9999 para ativar filtro no range completo [0, 9999].
@@ -165,8 +173,13 @@ export function useCatalogFiltering({
     if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
     if (filters.onSale) result = result.filter((p) => p.onSale === true);
 
+    // FIX-16 parity: products without gender defined are neutral — included in any gender filter
+    // (applyProductFilters.ts FIX-16). Anterior: gender=null zerava o produto do resultado.
     if (genderFilterSet.size > 0) {
-      result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
+      result = result.filter((p) => {
+        const g = (p.gender ?? '').toLowerCase().trim();
+        return g === '' || genderFilterSet.has(g);
+      });
     }
 
     // BUG-CATALOG-SIZES FIX: tamanhos eram filtráveis no painel mas ignorados

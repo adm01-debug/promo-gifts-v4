@@ -208,3 +208,107 @@ describe('useCatalogFiltering — Quick Options parity (SF-A fix)', () => {
     expect(run(both, { featured: true, onSale: true }).map((p) => p.id)).toEqual(['x']);
   });
 });
+
+// FIX-16 parity — Gender filter: produtos sem gênero definido são neutros
+// (applyProductFilters FIX-16). Anterior: gender=null excluía o produto.
+describe('useCatalogFiltering — FIX-16 gender neutral parity', () => {
+  const makeP = (id: string, over: Partial<Product> = {}): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+      ...over,
+    }) as unknown as Product;
+
+  const catalog = [
+    makeP('masc', { gender: 'Masculino' }),
+    makeP('fem', { gender: 'Feminino' }),
+    makeP('uni', { gender: 'Unissex' }),
+    makeP('null-gender'),
+    makeP('empty-gender', { gender: '' }),
+  ];
+
+  it('filtra por gênero masculino incluindo produtos sem gênero (neutros)', () => {
+    const result = run(catalog, { gender: ['Masculino'] }).map((p) => p.id);
+    expect(result).toContain('masc');
+    expect(result).toContain('null-gender');
+    expect(result).toContain('empty-gender');
+    expect(result).not.toContain('fem');
+    expect(result).not.toContain('uni');
+  });
+
+  it('filtra por gênero feminino incluindo produtos sem gênero (neutros)', () => {
+    const result = run(catalog, { gender: ['Feminino'] }).map((p) => p.id);
+    expect(result).toContain('fem');
+    expect(result).toContain('null-gender');
+    expect(result).toContain('empty-gender');
+    expect(result).not.toContain('masc');
+    expect(result).not.toContain('uni');
+  });
+
+  it('sem filtro de gênero retorna todos', () => {
+    expect(run(catalog, { gender: [] }).length).toBe(catalog.length);
+  });
+});
+
+// FIX-17 parity — Supplier filter: case-insensitive + partial name match
+// (applyProductFilters FIX-17). Anterior: case-sensitive, só brand (sem supplier.name).
+describe('useCatalogFiltering — FIX-17 supplier parity', () => {
+  const makeP = (id: string, over: Partial<Product> = {}): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+      ...over,
+    }) as unknown as Product;
+
+  const catalog = [
+    makeP('by-id', { supplier: { id: 'SUP-001', name: 'Brinde Master' } }),
+    makeP('by-name', {
+      supplier: { id: 'sup-002', name: 'Gráfica Total' },
+      brand: 'Gráfica Total',
+    }),
+    makeP('by-ref', { supplier: { id: 'sup-003', name: 'Outro' }, supplier_reference: 'REF-XYZ' }),
+    makeP('no-match'),
+  ];
+
+  it('case-insensitive match por supplier.id', () => {
+    const result = run(catalog, { suppliers: ['sup-001'] }).map((p) => p.id);
+    expect(result).toContain('by-id');
+    expect(result).not.toContain('no-match');
+  });
+
+  it('partial name match por supplier.name', () => {
+    const result = run(catalog, { suppliers: ['gráfica total'] }).map((p) => p.id);
+    expect(result).toContain('by-name');
+    expect(result).not.toContain('no-match');
+  });
+
+  it('case-insensitive match por supplier_reference', () => {
+    const result = run(catalog, { suppliers: ['ref-xyz'] }).map((p) => p.id);
+    expect(result).toContain('by-ref');
+    expect(result).not.toContain('no-match');
+  });
+});
