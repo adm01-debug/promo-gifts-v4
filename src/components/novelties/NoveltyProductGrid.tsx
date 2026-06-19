@@ -87,9 +87,6 @@ export function NoveltyProductGrid() {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
-          // Acelera até 85%, depois rasteja até 99% em passos mínimos para
-          // evitar que a barra "congele" visivelmente antes do carregamento
-          // terminar (o valor nunca chega a 100 — isso só ocorre ao concluir).
           if (prev >= 99) return 99;
           if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
