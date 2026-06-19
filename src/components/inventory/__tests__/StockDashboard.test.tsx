@@ -233,22 +233,15 @@ describe('StockDashboard — render states', () => {
     expect(fetchStockData).toHaveBeenCalled();
   });
 
-  it('renderiza visão geral, cartões e tabela quando carregado', () => {
+  it('renderiza cartões de KPI e tabela quando carregado', () => {
     renderDashboard();
-    expect(screen.getByText('Visão Geral')).toBeInTheDocument();
     // StatCards expose unique aria-labels ("<title>: <value>. <hint>").
     expect(screen.getByRole('button', { name: /^Total de Produtos:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Em Estoque:/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estoque Baixo:/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Crítico:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Sem Estoque:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estoque Futuro:/ })).toBeInTheDocument();
     expect(screen.getByTestId('variant-stock-table')).toBeInTheDocument();
-  });
-
-  it('exibe o badge de saúde do estoque', () => {
-    renderDashboard();
-    const badge = screen.getByTestId('health-score-badge');
-    expect(badge).toHaveTextContent(/Saúde:/);
   });
 });
 
@@ -291,21 +284,6 @@ describe('StockDashboard — stat card filters', () => {
 });
 
 describe('StockDashboard — critical alerts & active filter', () => {
-  it('mostra o badge de alertas críticos e abre o dialog ao clicar', async () => {
-    const user = userEvent.setup();
-    mockUseVariantStock.mockReturnValue(
-      buildHookValue({
-        criticalAlerts: [alert({ severity: 'error', productName: 'Crítico A' })],
-      }),
-    );
-    renderDashboard();
-    const badge = screen.getByTestId('critical-alerts-badge');
-    expect(badge).toHaveTextContent('1 alertas');
-    await user.click(badge);
-    // OutOfStockDialog opens
-    await waitFor(() => expect(screen.getByText('Crítico A')).toBeInTheDocument());
-  });
-
   it('mostra o chip de filtro ativo e remove o filtro ao clicar no X', async () => {
     const user = userEvent.setup();
     mockUseVariantStock.mockReturnValue(
@@ -322,13 +300,6 @@ describe('StockDashboard — critical alerts & active filter', () => {
 });
 
 describe('StockDashboard — health drawer & risk panel', () => {
-  it('abre o drawer de saúde ao clicar no badge', async () => {
-    const user = userEvent.setup();
-    renderDashboard();
-    await user.click(screen.getByTestId('health-score-badge'));
-    await waitFor(() => expect(screen.getByTestId('health-drawer')).toBeInTheDocument());
-  });
-
   it('exibe o painel de risco por padrão e permite recolher', async () => {
     const user = userEvent.setup();
     renderDashboard();
