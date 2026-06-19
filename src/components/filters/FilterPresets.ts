@@ -23,7 +23,7 @@ export interface FilterPreset {
  * Hook para gerenciar presets de filtros persistidos no banco de dados.
  * Cada vendedor tem seus próprios presets isolados por RLS.
  */
-export function useFilterPresets(context: string = 'catalog') {
+export function useFilterPresets(context = 'catalog') {
   const { user } = useAuth();
   const [presets, setPresets] = useState<FilterPreset[]>([]);
   const [isLoading, setIsLoading] = useState(false);

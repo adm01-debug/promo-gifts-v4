@@ -127,7 +127,7 @@ export function ExternalCategoryFilter({
     return own + node.children.reduce((sum, child) => sum + getTotalCount(child), 0);
   };
 
-  const renderCategoryNode = (node: CategoryNode, level: number = 0): React.ReactNode => {
+  const renderCategoryNode = (node: CategoryNode, level = 0): React.ReactNode => {
     const hasChildren = node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedCategories.includes(node.id);

@@ -56,7 +56,7 @@ export function useExpertConversations(clientId?: string) {
     fetchConversations();
   }, [fetchConversations]);
 
-  const createConversation = async (title: string = 'Nova conversa'): Promise<string | null> => {
+  const createConversation = async (title = 'Nova conversa'): Promise<string | null> => {
     if (!user) return null;
 
     try {

@@ -91,7 +91,7 @@ export function useActiveCommemorativeDates() {
  * Hook para buscar próximas datas comemorativas (para dashboard/planejamento)
  * @param daysAhead - Número de dias à frente para buscar (padrão: 60)
  */
-export function useUpcomingCommemorativeDates(daysAhead: number = 60) {
+export function useUpcomingCommemorativeDates(daysAhead = 60) {
   return useQuery({
     queryKey: ['commemorative-dates', 'upcoming', daysAhead],
     queryFn: () =>
@@ -125,8 +125,8 @@ export function useCommemorativeDatesWithColors() {
  */
 export function useProductsByCommemorativeDate(
   slug: string | null,
-  limit: number = 100,
-  includeAllColors: boolean = false,
+  limit = 100,
+  includeAllColors = false,
 ) {
   return useQuery({
     queryKey: ['commemorative-dates', 'products', slug, limit, includeAllColors],

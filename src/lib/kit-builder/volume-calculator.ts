@@ -60,7 +60,7 @@ export function checkItemFits(
   item: KitItem,
   box: KitBox,
   existingItems: KitItem[],
-  quantity: number = 1,
+  quantity = 1,
 ): CompatibilityResult {
   const currentVolume = calculateTotalItemsVolume(existingItems);
   const itemVolume = item.volume * quantity;

@@ -90,7 +90,7 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
   }, [history]);
 
   const addCommand = useCallback(
-    (command: string, type?: VoiceCommandRecord['type'], successful: boolean = true) => {
+    (command: string, type?: VoiceCommandRecord['type'], successful = true) => {
       const normalizedCommand = normalizeCommand(command);
       const detectedType = type || detectCommandType(command);
 

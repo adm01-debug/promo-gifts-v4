@@ -44,7 +44,7 @@ export class LocalStorageGateProvider implements GateFlagProvider {
   private lastValue: GateValue | null = null;
   private lastRaw: string | null = null;
 
-  constructor(key: string = 'show_dev_infra_messages') {
+  constructor(key = 'show_dev_infra_messages') {
     this.key = key;
   }
 

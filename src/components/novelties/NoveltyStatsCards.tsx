@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { logger } from '@/lib/logger';
-function useCountUp(end: number, duration: number = 800) {
+function useCountUp(end: number, duration = 800) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (end === 0) {

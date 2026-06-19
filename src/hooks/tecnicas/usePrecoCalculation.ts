@@ -247,7 +247,7 @@ export function usePrecoCalculation() {
 /**
  * Hook para simulador de preços
  */
-export function usePriceSimulator(productBasePrice: number = 0) {
+export function usePriceSimulator(productBasePrice = 0) {
   const { tabelas: _tabelas, isLoading, error, calculateAllPrices } = usePrecoCalculation();
   const [quantity, setQuantity] = useState(100);
   const [selectedTechniqueCode, setSelectedTechniqueCode] = useState<string | null>(null);

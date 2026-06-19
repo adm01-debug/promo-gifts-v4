@@ -214,6 +214,10 @@ export default [
       // Batch 59: no-shadow — rename inner-scope variables to prevent shadowing (36 code fixes across 25 files)
       'no-shadow': 'off',
       '@typescript-eslint/no-shadow': 'error',
+      // Batch 61: 3 rules — array safety + TS type cleanliness
+      'array-callback-return': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
       // Batch 60: 7 zero-violation rules — TS type-safety + base ESLint cleanliness
       '@typescript-eslint/no-empty-object-type': 'error',
       'no-useless-escape': 'error',
