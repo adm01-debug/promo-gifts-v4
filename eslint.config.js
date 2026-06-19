@@ -217,6 +217,18 @@ export default [
       '@typescript-eslint/no-useless-empty-export': 'error',
       '@typescript-eslint/no-duplicate-type-constituents': 'error',
       '@typescript-eslint/no-for-in-array': 'error',
+      // Batch 57: 11 zero-violation TypeScript-ESLint rules (type narrowing + modern patterns)
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/prefer-function-type': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      '@typescript-eslint/prefer-namespace-keyword': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/prefer-reduce-type-parameter': 'error',
+      '@typescript-eslint/unified-signatures': 'error',
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
+      '@typescript-eslint/triple-slash-reference': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       // Batch 55: 30 zero-violation base ESLint rules (safety + best practices + cleanliness)
       'no-eval': 'error',
       'no-extend-native': 'error',
