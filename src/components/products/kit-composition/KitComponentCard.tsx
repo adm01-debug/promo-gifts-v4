@@ -383,6 +383,42 @@ export function KitComponentCard({
         </div>
       )}
 
+      {/* Mini-galeria: fotos adicionais do componente (kit nativo) */}
+      {extraImages.length > 0 && (
+        <div className="px-4 pb-3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Eye className="h-3 w-3" />
+            +{extraImages.length} {extraImages.length === 1 ? 'foto' : 'fotos'}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {extraImages.slice(0, 6).map((url, i) => (
+              <button
+                key={`${url}-${i}`}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onZoomImage) onZoomImage(url);
+                }}
+                aria-label={`Ver foto ${i + 2} de ${item.productName}`}
+                className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 bg-muted/40 transition-all hover:ring-2 hover:ring-primary/40"
+              >
+                <OptimizedImage
+                  src={getCdnUrl(url, 'thumbnail')}
+                  alt={`${item.productName} — foto ${i + 2}`}
+                  className="object-cover"
+                  containerClassName="h-full w-full"
+                />
+              </button>
+            ))}
+            {extraImages.length > 6 && (
+              <span className="flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-border bg-muted/30 text-[10px] font-semibold text-muted-foreground">
+                +{extraImages.length - 6}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Expandable Details */}
       {expanded && hasExpandableInfo && (
         <div className="space-y-3 border-t border-border/50 px-4 pb-4 duration-200 animate-in slide-in-from-top-1">
