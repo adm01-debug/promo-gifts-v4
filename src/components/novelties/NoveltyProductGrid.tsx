@@ -134,7 +134,9 @@ export function NoveltyProductGrid() {
     let filtered = [...products];
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (novidades-search-accent): normaliza acento em ambos os lados
-      // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
+      // antes de comparar — espelha o stripAccents de postgrest.ts (PR #750).
+      // Se search-server-side for adicionado futuramente, DEVE usar normalização
+      // idêntica (mesma função stripAccents), senão os resultados divergem.
       // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
       const norm = (s: string) =>
         s
