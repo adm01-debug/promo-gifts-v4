@@ -103,13 +103,10 @@ export function NoveltyProductGrid() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isFetching) {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
-          // Acelera até 85%, depois rasteja até 99% em passos mínimos para
-          // evitar que a barra "congele" visivelmente antes do carregamento
-          // terminar (o valor nunca chega a 100 — isso só ocorre ao concluir).
           if (prev >= 99) return 99;
           if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
@@ -124,16 +121,17 @@ export function NoveltyProductGrid() {
     return () => {
       if (progressRef.current) clearInterval(progressRef.current);
     };
-  }, [isLoading]);
+  }, [isFetching]);
 
   const { suppliers, categories } = useMemo(() => {
     const supMap = new Map<string, { id: string; name: string; count: number }>();
     const catMap = new Map<string, { id: string; name: string; count: number }>();
     products.forEach((p) => {
-      if (p.supplier_id && p.supplier_name) {
+      if (p.supplier_id) {
+        const name = p.supplier_name || `Fornecedor ${p.supplier_id.slice(0, 6)}`;
         const e = supMap.get(p.supplier_id);
         if (e) e.count++;
-        else supMap.set(p.supplier_id, { id: p.supplier_id, name: p.supplier_name, count: 1 });
+        else supMap.set(p.supplier_id, { id: p.supplier_id, name, count: 1 });
       }
       if (p.category_id && p.category_name) {
         const e = catMap.get(p.category_id);
@@ -223,12 +221,16 @@ export function NoveltyProductGrid() {
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
-    selectedSupplier !== 'all' || selectedCategory !== 'all' || searchQuery.trim() !== '';
+    selectedSupplier !== 'all' ||
+    selectedCategory !== 'all' ||
+    searchQuery.trim() !== '' ||
+    sortMode !== 'newest';
   const handleProductClick = (id: string) => navigate(`/produto/${id}`);
   const clearFilters = () => {
     setSelectedSupplier('all');
     setSelectedCategory('all');
     setSearchQuery('');
+    setSortMode('newest');
   };
   if (error) logger.error('Erro ao carregar novidades:', error);
 
@@ -259,7 +261,9 @@ export function NoveltyProductGrid() {
     return map;
   }, [filteredProducts, sel]);
 
-  // Batch-load cores das variantes para os produtos visíveis (visualização atual)
+  // Batch-load cores das variantes para os produtos visíveis (visualização atual).
+  // Grid: apenas paginatedProducts (virtualizados). List/table: todos filtrados,
+  // pois todos estão no DOM (sem virtualização no momento).
   const visibleProductIds = useMemo(() => {
     if (viewMode === 'list' || viewMode === 'table') {
       return filteredProducts.map((n) => n.product_id);
@@ -476,7 +480,7 @@ export function NoveltyProductGrid() {
               )}
             </Badge>
             <AnimatePresence>
-              {isLoading && loadingProgress > 0 && loadingProgress < 100 && (
+              {isFetching && loadingProgress > 0 && loadingProgress < 100 && (
                 <motion.span
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 48 }}
@@ -679,7 +683,7 @@ export function NoveltyProductGrid() {
             >
               <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm text-muted-foreground">Filtrando...</span>
+                <span className="text-sm text-muted-foreground">Atualizando...</span>
               </div>
             </motion.div>
           )}
