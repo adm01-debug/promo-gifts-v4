@@ -17,7 +17,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
-import { useDiscountApproval } from '../useDiscountApproval';
+import { useDiscountApproval, type DiscountApprovalRequest } from '../useDiscountApproval';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockInsert = vi.fn();
