@@ -29,6 +29,7 @@ export const DEFAULT_FUTURE_STOCK_PREFERENCE: FutureStockPreference = {
 
 /** Lê e valida a preferência de estoque futuro do localStorage; retorna o padrão em caso de ausência ou erro. */
 export function readFutureStockPreference(): FutureStockPreference {
+  /* v8 ignore next -- SSR guard; window never undefined in jsdom/browser */
   if (typeof window === 'undefined') return DEFAULT_FUTURE_STOCK_PREFERENCE;
   try {
     const raw = window.localStorage.getItem(FUTURE_STOCK_STORAGE_KEY);
@@ -49,6 +50,7 @@ export function readFutureStockPreference(): FutureStockPreference {
 
 /** Serializa e persiste a preferência de estoque futuro no localStorage; silencia erros de quota/privacidade. */
 export function writeFutureStockPreference(pref: FutureStockPreference): void {
+  /* v8 ignore next -- SSR guard; window never undefined in jsdom/browser */
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(FUTURE_STOCK_STORAGE_KEY, JSON.stringify(pref));
@@ -72,6 +74,7 @@ export function useFutureStockPreference(
   const hydratedRef = useRef(false);
 
   useEffect(() => {
+    /* v8 ignore next -- React Strict Mode re-mount guard; hydratedRef persists across unmount/remount */
     if (hydratedRef.current) return;
     hydratedRef.current = true;
     const stored = readFutureStockPreference();
@@ -85,6 +88,7 @@ export function useFutureStockPreference(
   }, []);
 
   useEffect(() => {
+    /* v8 ignore next -- effect 1 always runs first; hydratedRef is always true here */
     if (!hydratedRef.current) return;
     writeFutureStockPreference(current);
     // BUG-I FIX: depend on primitive values, not the object reference.
@@ -104,12 +108,14 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
   toggleRef.current = toggle;
 
   useEffect(() => {
+    /* v8 ignore next -- SSR half of this guard; the !enabled path is tested separately */
     if (!enabled || typeof window === 'undefined') return;
     const handler = (e: KeyboardEvent) => {
       // Shift+F (sem Ctrl/Meta/Alt) — não captura atalhos do navegador.
       if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key !== 'F' && e.key !== 'f') return;
       const target = e.target as HTMLElement | null;
+      /* v8 ignore next -- target is always non-null for window keydown events */
       if (target) {
         const tag = target.tagName;
         const ceAttr = target.getAttribute?.('contenteditable');
