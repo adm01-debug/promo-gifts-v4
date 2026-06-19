@@ -1,6 +1,9 @@
 /**
  * Testes — useSupplierSalesRanking
- * Invariantes: avg_depletion_7d→velocity7d, graceful fallback, limit 20000
+ * Invariantes: avg_depletion_7d→velocity7d, graceful fallback, RPC fn_get_product_intelligence_all
+ *
+ * NOTA: o hook foi migrado de dbInvoke para supabase.rpc() (BUG-A fix).
+ * O mock correto é @/integrations/supabase/client, não @/lib/db/postgrest.
  */
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -9,10 +12,12 @@ import React from 'react';
 import { useSupplierSalesRanking } from '../useSupplierSalesRanking';
 import { logger } from '@/lib/logger';
 
-const mockDbInvoke = vi.fn();
+const mockRpc = vi.fn();
 
-vi.mock('@/lib/db/postgrest', () => ({
-  dbInvoke: (...args: unknown[]) => mockDbInvoke(...args),
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    rpc: (...args: unknown[]) => mockRpc(...args),
+  },
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -29,9 +34,20 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('mapeamento de colunas (anti-regressao)', () => {
   it('mapeia avg_depletion_7d velocity7d e avg_depletion_30d velocity30d', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [
-      { product_id: 'p1', turnover_score: 0.85, avg_depletion_7d: 3.2, avg_depletion_30d: 12.5, abc_classification: 'A', total_depleted_30d: 100 }
-    ] });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          product_id: 'p1',
+          turnover_score: 0.85,
+          avg_depletion_7d: 3.2,
+          avg_depletion_30d: 12.5,
+          abc_classification: 'A',
+          total_depleted_30d: 100,
+          total_depleted_90d: 300,
+        },
+      ],
+      error: null,
+    });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const e = result.current.data!.get('p1')!;
@@ -43,10 +59,29 @@ describe('mapeamento de colunas (anti-regressao)', () => {
   });
 
   it('retorna Map com chave product_id', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [
-      { product_id: 'aaa', turnover_score: 1, avg_depletion_7d: 2, avg_depletion_30d: 3, abc_classification: 'B', total_depleted_30d: 10 },
-      { product_id: 'bbb', turnover_score: 0.5, avg_depletion_7d: 0, avg_depletion_30d: 1, abc_classification: 'C', total_depleted_30d: 0 },
-    ] });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          product_id: 'aaa',
+          turnover_score: 1,
+          avg_depletion_7d: 2,
+          avg_depletion_30d: 3,
+          abc_classification: 'B',
+          total_depleted_30d: 10,
+          total_depleted_90d: 30,
+        },
+        {
+          product_id: 'bbb',
+          turnover_score: 0.5,
+          avg_depletion_7d: 0,
+          avg_depletion_30d: 1,
+          abc_classification: 'C',
+          total_depleted_30d: 0,
+          total_depleted_90d: 0,
+        },
+      ],
+      error: null,
+    });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data!.size).toBe(2);
@@ -56,9 +91,20 @@ describe('mapeamento de colunas (anti-regressao)', () => {
 
 describe('defaults e limpeza', () => {
   it('usa 0 como default para campos null', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [
-      { product_id: 'p1', turnover_score: null, avg_depletion_7d: null, avg_depletion_30d: null, abc_classification: null, total_depleted_30d: null }
-    ] });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          product_id: 'p1',
+          turnover_score: null,
+          avg_depletion_7d: null,
+          avg_depletion_30d: null,
+          abc_classification: null,
+          total_depleted_30d: null,
+          total_depleted_90d: null,
+        },
+      ],
+      error: null,
+    });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const e = result.current.data!.get('p1')!;
@@ -68,10 +114,29 @@ describe('defaults e limpeza', () => {
   });
 
   it('ignora linhas sem product_id', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [
-      { product_id: null, turnover_score: 1, avg_depletion_7d: 1, avg_depletion_30d: 1, abc_classification: 'A', total_depleted_30d: 1 },
-      { product_id: 'p1', turnover_score: 0.5, avg_depletion_7d: 0, avg_depletion_30d: 0, abc_classification: 'B', total_depleted_30d: 0 },
-    ] });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          product_id: null,
+          turnover_score: 1,
+          avg_depletion_7d: 1,
+          avg_depletion_30d: 1,
+          abc_classification: 'A',
+          total_depleted_30d: 1,
+          total_depleted_90d: 1,
+        },
+        {
+          product_id: 'p1',
+          turnover_score: 0.5,
+          avg_depletion_7d: 0,
+          avg_depletion_30d: 0,
+          abc_classification: 'B',
+          total_depleted_30d: 0,
+          total_depleted_90d: 0,
+        },
+      ],
+      error: null,
+    });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data!.size).toBe(1);
@@ -82,42 +147,32 @@ describe('graceful fallback MV nao populada', () => {
   it.each([['not been populated'], ['não mapeada'], ['does not exist']])(
     'retorna Map vazia quando erro: %s',
     async (errMsg) => {
-      mockDbInvoke.mockRejectedValue(new Error(errMsg));
+      mockRpc.mockResolvedValue({ data: null, error: { message: errMsg } });
       const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(result.current.data!.size).toBe(0);
       expect(vi.mocked(logger.warn)).toHaveBeenCalled();
-    }
+    },
   );
 
   it('re-lanca erros nao relacionados MV', async () => {
-    mockDbInvoke.mockRejectedValue(new Error('connection timeout'));
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'connection timeout' } });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 });
-    expect((result.current.error as Error).message).toBe('connection timeout');
+    expect((result.current.error as { message: string }).message).toBe('connection timeout');
   });
 });
 
-describe('invariantes de chamada ao dbInvoke', () => {
-  it('usa limit 20000 (fix: era 5000 que truncava MV)', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [] });
+describe('invariantes de chamada ao supabase.rpc', () => {
+  it('chama fn_get_product_intelligence_all (RPC bypassa max_rows=1000 do PostgREST)', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
     renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
-    await waitFor(() => expect(mockDbInvoke).toHaveBeenCalled());
-    expect(mockDbInvoke.mock.calls[0][0].limit).toBe(20000);
-    expect(mockDbInvoke.mock.calls[0][0].table).toBe('mv_product_intelligence');
+    await waitFor(() => expect(mockRpc).toHaveBeenCalled());
+    expect(mockRpc.mock.calls[0][0]).toBe('fn_get_product_intelligence_all');
   });
 
-  it('select usa avg_depletion_* (nao avg_velocity_* que nao existem)', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [] });
-    renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
-    await waitFor(() => expect(mockDbInvoke).toHaveBeenCalled());
-    const { select } = mockDbInvoke.mock.calls[0][0];
-    expect(select).toContain('avg_depletion_7d');
-    expect(select).not.toContain('avg_velocity');
-  });
-
-  it('retorna Map vazia quando records vazio', async () => {
-    mockDbInvoke.mockResolvedValue({ records: [] });
+  it('retorna Map vazia quando data vazio', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data!.size).toBe(0);
