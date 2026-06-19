@@ -33,6 +33,13 @@ export interface ColorDotLike {
   /** Imagem específica desta variante (opcional). Quando presente, módulos como
    *  Novidades/Reposição usam para trocar a foto principal ao clicar no swatch. */
   image?: string | null;
+  /** Onda 1 Reposição (opcional): estoque atual desta variante. Quando definido,
+   *  o swatch aplica overlay visual ("esgotado" / "previsto") e tooltip enriquecido.
+   *  Outros callers (Catálogo, Novidades) não passam estes campos — comportamento intacto. */
+  stockQty?: number;
+  hasUpcomingRestock?: boolean;
+  /** ISO date (YYYY-MM-DD) ou null. Mostrado no tooltip quando há reposição prevista. */
+  nextRestockDate?: string | null;
 }
 
 interface ProductColorSwatchesProps {
@@ -141,6 +148,19 @@ export const ProductColorSwatches = memo(
           const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
           const isSelected =
             normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
+
+          // Onda 1: estado de estoque opcional por cor (somente Reposição passa esses campos)
+          const hasStockInfo = typeof c.stockQty === 'number';
+          const isOutOfStock = hasStockInfo && c.stockQty === 0 && !c.hasUpcomingRestock;
+          const isUpcoming = hasStockInfo && c.stockQty === 0 && c.hasUpcomingRestock === true;
+          const formattedRestock =
+            c.nextRestockDate
+              ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                })
+              : null;
+
           return (
             <Tooltip key={`${c.name}-${idx}`}>
               <TooltipTrigger asChild>
@@ -152,14 +172,32 @@ export const ProductColorSwatches = memo(
                     isSelected
                       ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
                       : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+                    // Esgotado: visual atenuado (overlay "X" via ::before)
+                    isOutOfStock &&
+                      'opacity-40 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
                     SIZE_CLASS[size],
                   )}
                   style={{ backgroundColor: c.hex || 'transparent' }}
-                  aria-label={`Opção de cor: ${c.name}`}
+                  aria-label={
+                    isOutOfStock
+                      ? `Opção de cor: ${c.name} — esgotada`
+                      : isUpcoming
+                        ? `Opção de cor: ${c.name} — reposição prevista${formattedRestock ? ` em ${formattedRestock}` : ''}`
+                        : `Opção de cor: ${c.name}`
+                  }
                   aria-describedby={tooltipId}
                   aria-checked={isSelected}
                   data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
                   data-color-name={c.name}
+                  data-stock-state={
+                    !hasStockInfo
+                      ? undefined
+                      : isOutOfStock
+                        ? 'out'
+                        : isUpcoming
+                          ? 'upcoming'
+                          : 'in-stock'
+                  }
                   onClick={(e) => {
                     if (!onSelect) return;
                     e.stopPropagation();
@@ -173,7 +211,16 @@ export const ProductColorSwatches = memo(
                       onSelect(c, idx);
                     }
                   }}
-                />
+                >
+                  {/* Badge de reposição prevista (somente Onda 1, quando isUpcoming) */}
+                  {isUpcoming && (
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -right-0.5 -top-0.5 inline-flex h-[7px] w-[7px] items-center justify-center rounded-full bg-[hsl(var(--info))] ring-1 ring-background"
+                      data-testid="swatch-upcoming-dot"
+                    />
+                  )}
+                </button>
               </TooltipTrigger>
               <TooltipContent
                 id={tooltipId}
@@ -183,6 +230,15 @@ export const ProductColorSwatches = memo(
                 data-testid="color-tooltip-content"
               >
                 <span className="font-bold">{c.name}</span>
+                {hasStockInfo && (
+                  <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
+                    {isOutOfStock
+                      ? 'Esgotado'
+                      : isUpcoming
+                        ? `Esgotado · reposição${formattedRestock ? ` em ${formattedRestock}` : ' prevista'}`
+                        : `${c.stockQty?.toLocaleString('pt-BR')} un. em estoque`}
+                  </span>
+                )}
               </TooltipContent>
             </Tooltip>
           );
