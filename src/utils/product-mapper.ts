@@ -218,7 +218,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           heightMm: c.height_mm ?? null,
           widthMm: c.width_mm ?? null,
           lengthMm: c.length_mm ?? null,
-          volumeMl: (ck.capacity_ml ?? null) as number | null,
+          volumeMl: (ck.capacity_ml as number | null | undefined) ?? null,
           componentTypeCode: (ck.component_type_code ?? null) as string | null,
           supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,
           description: (ck.component_description ?? null) as string | null,

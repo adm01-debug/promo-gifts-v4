@@ -189,6 +189,7 @@ export function ReplenishmentStatsCards() {
     restockedToday: 0,
     restockedThisWeek: 0,
     restockedLast15Days: 0,
+    restockedLast30Days: 0,
     topSupplierName: null,
     topSupplierCount: 0,
     reorderedThisWeek: 0,

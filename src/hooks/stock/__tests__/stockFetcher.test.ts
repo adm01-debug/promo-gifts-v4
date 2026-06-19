@@ -438,11 +438,11 @@ describe('fetchAndProcessStockData', () => {
     const res = await fetchAndProcessStockData();
     const v = res.productStocks[0].variants[0];
     expect(v.id).toBe('p1');
-    expect(v.colorName).toBe('Padrao');
+    expect(v.colorName).toBe('Padrão');
     expect(v.currentStock).toBe(4);
   });
 
-  it('picks the most recently updated supplier source per variant', async () => {
+  it('aggregates quantities from multiple active supplier sources for the same variant', async () => {
     seedAll({
       products: [{ id: 'p1', name: 'P', sku: 'S' }],
       variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 0, is_active: true }],
@@ -452,10 +452,11 @@ describe('fetchAndProcessStockData', () => {
       ],
     });
     const res = await fetchAndProcessStockData();
-    expect(res.productStocks[0].variants[0].currentStock).toBe(9);
+    // BUG-3 FIX: both sources are active → currentStock = 5 + 9 = 14
+    expect(res.productStocks[0].variants[0].currentStock).toBe(14);
   });
 
-  it('keeps the earlier source when a later one is older (dedup keeps newest)', async () => {
+  it('multi-source aggregation is order-independent (same sum regardless of input order)', async () => {
     seedAll({
       products: [{ id: 'p1', name: 'P', sku: 'S' }],
       variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 0, is_active: true }],
@@ -465,8 +466,8 @@ describe('fetchAndProcessStockData', () => {
       ],
     });
     const res = await fetchAndProcessStockData();
-    // newest (sNew, qty 9) was seen first and must not be replaced by the older one
-    expect(res.productStocks[0].variants[0].currentStock).toBe(9);
+    // reversed order — sum must still be 9 + 5 = 14
+    expect(res.productStocks[0].variants[0].currentStock).toBe(14);
   });
 
   it('falls back to supplier-code image when no variant image exists', async () => {

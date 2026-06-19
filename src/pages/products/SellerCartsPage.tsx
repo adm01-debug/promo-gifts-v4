@@ -88,6 +88,14 @@ const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
 function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
+  const qtyDebounceRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const timers = qtyDebounceRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   // View mode + grid columns (persisted)
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
@@ -224,11 +232,27 @@ function SellerCartsContent() {
       if (qty > 999999) {
         setRowError(itemId, 'Máximo 999.999.');
         toast.warning(`Quantidade máxima para "${productName}" é 999.999.`);
-        s.handleUpdateQuantity(itemId, 999999);
+        const prev = qtyDebounceRef.current.get(itemId);
+        if (prev) clearTimeout(prev);
+        qtyDebounceRef.current.set(
+          itemId,
+          setTimeout(() => {
+            s.handleUpdateQuantity(itemId, 999999);
+            qtyDebounceRef.current.delete(itemId);
+          }, 400),
+        );
         return;
       }
       setRowError(itemId, null);
-      s.handleUpdateQuantity(itemId, qty);
+      const prev = qtyDebounceRef.current.get(itemId);
+      if (prev) clearTimeout(prev);
+      qtyDebounceRef.current.set(
+        itemId,
+        setTimeout(() => {
+          s.handleUpdateQuantity(itemId, qty);
+          qtyDebounceRef.current.delete(itemId);
+        }, 400),
+      );
     },
     [s, setRowError],
   );

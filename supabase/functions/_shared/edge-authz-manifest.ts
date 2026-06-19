@@ -151,4 +151,9 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "hash-product-images": { category: "service", rationale: "Hash perceptual de imagens — cron via authorizeCron (service_role + x-cron-secret)", enforcedBy: "custom" },
   "audit-suite": { category: "dev", rationale: "Suite de auditoria — service_role + has_role(dev) inline", enforcedBy: "custom" },
   "word-magic": { category: "authenticated", rationale: "Geração de copy via IA — authenticateRequest (JWT obrigatório)", enforcedBy: "custom" },
+
+  // ---------------- Test CI edges (não-produção, Lovable 2026-06-19) ----------------
+  "test-cart-concurrency": { category: "dev", rationale: "Teste CI de concorrência de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-limit": { category: "dev", rationale: "Teste CI de limite de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-rls": { category: "dev", rationale: "Teste CI de RLS de carrinho — service_role interno", enforcedBy: "custom" },
 };

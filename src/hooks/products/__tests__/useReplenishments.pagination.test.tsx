@@ -1,3 +1,14 @@
+/**
+ * Testes — useReplenishmentsWithDetails (paginação + consistência)
+ *
+ * Hook migrado de supabase.from() para untypedRpc('fn_get_reposicao_listing').
+ * Mock via supabase.rpc (interceptado por untypedRpc internamente).
+ *
+ * Invariantes:
+ *   - retorna array mapeado a partir de ReposicaoRow
+ *   - product_name mapeia de r.name
+ *   - stock_status deriva de is_stockout/total_stock (só 'in-stock' | 'out-of-stock')
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useReplenishmentsWithDetails } from '../useReplenishments';
@@ -14,9 +25,17 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-);
+function makeWrapper() {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: qc }, children);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 // Minimal ReposicaoRow — fields that fn_get_reposicao_listing returns
 const baseRow = {
@@ -92,7 +111,9 @@ describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
     ];
     vi.mocked(untypedRpc).mockResolvedValue({ data: mockRows, error: null });
 
-    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 2 }), { wrapper });
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 2 }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
 

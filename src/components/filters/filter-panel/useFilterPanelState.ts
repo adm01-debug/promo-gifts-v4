@@ -221,20 +221,26 @@ export function useFilterPanelState(
     const colorCount =
       (filters.colorGroups?.length || 0) +
       (filters.colorVariations?.length || 0) +
-      (filters.colorNuances?.length || 0);
+      (filters.colorNuances?.length || 0) +
+      // BUG-COLOR-COUNT FIX: cores legadas (presets/voz) não entravam na badge da seção.
+      (filters.colors?.length || 0);
     const materialCount =
       materialFilterState.selectedGroups.length + materialFilterState.selectedTypes.length;
     const ramoCount =
       (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    const quickCount = [
-      filters.isKit,
-      filters.featured,
-      filters.isNew,
-      filters.hasPersonalization,
-      filters.onSale,
-      filters.inStock,
-      filters.hasCommercialPackaging,
-    ].filter(Boolean).length;
+    const quickCount =
+      [
+        filters.isKit,
+        filters.featured,
+        filters.isNew,
+        filters.hasPersonalization,
+        filters.onSale,
+        filters.inStock,
+        filters.hasCommercialPackaging,
+      ].filter(Boolean).length +
+      // BUG-MINSTOCK-BADGE FIX: filtro minStock (input na seção opcoes-rapidas,
+      // também ativável via preset/voz) não era contado — badge ficava abaixo do real.
+      (filters.minStock > 0 ? 1 : 0);
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
@@ -250,6 +256,8 @@ export function useFilterPanelState(
       tags: (filters.tags || []).length,
       genero: (filters.gender || []).length,
       tamanhos: (filters.sizes || []).length,
+      'vendas-fornecedor': filters.minSupplierSales90d > 0 ? 1 : 0,
+      'vendas-promo': filters.minPromoSales90d > 0 ? 1 : 0,
       'opcoes-rapidas': quickCount,
       ordenacao: filters.sortBy !== 'newest' ? 1 : 0,
     } as Record<string, number>;

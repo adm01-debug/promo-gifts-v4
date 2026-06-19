@@ -14,10 +14,14 @@
  * — o consumidor deve cair no comportamento estático anterior (≤ min).
  */
 
+/** Janelas válidas (em dias) para a projeção de risco de ruptura. */
 export const RUPTURE_HORIZON_OPTIONS = [3, 7, 15, 30] as const;
+/** Número de dias da janela de ruptura — restrito a `RUPTURE_HORIZON_OPTIONS`. */
 export type RuptureHorizonDays = (typeof RUPTURE_HORIZON_OPTIONS)[number];
+/** Janela padrão (3 dias) aplicada quando o vendedor não configurou outra. */
 export const DEFAULT_RUPTURE_HORIZON: RuptureHorizonDays = 3;
 
+/** Dados de entrada para o cálculo preditivo de risco de ruptura. */
 export interface RuptureRiskInput {
   current: number;
   avgDailyDepletion: number | null | undefined;
@@ -25,6 +29,7 @@ export interface RuptureRiskInput {
   horizonDays: number;
 }
 
+/** Resultado do cálculo preditivo de risco de ruptura para uma variação. */
 export interface RuptureRiskResult {
   /** Verdadeiro se a projeção indica ruptura abaixo do alvo dentro da janela. */
   atRisk: boolean;

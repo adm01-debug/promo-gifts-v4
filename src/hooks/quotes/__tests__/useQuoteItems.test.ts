@@ -225,10 +225,7 @@ describe('removeItem', () => {
       result.current.setExpandedItems(new Set());
     });
     act(() => {
-      result.current.toggleExpanded(1);
-    });
-    act(() => {
-      result.current.toggleExpanded(2);
+      result.current.setExpandedItems(new Set([1, 2]));
     });
     act(() => {
       result.current.removeItem(0);
@@ -255,7 +252,7 @@ describe('removeItem', () => {
       result.current.setExpandedItems(new Set());
     });
     act(() => {
-      result.current.toggleExpanded(0);
+      result.current.setExpandedItems(new Set([0]));
     });
     act(() => {
       result.current.removeItem(2);
@@ -284,7 +281,7 @@ describe('toggleExpanded', () => {
   it('remove do Set quando aberto (toggle off)', () => {
     const { result } = renderHook(() => useQuoteItems());
     act(() => {
-      result.current.addProductWithColor(P1, null);
+      result.current.toggleExpanded(0); // open
     });
     // addProductWithColor auto-expands index 0; reset then open explicitly
     act(() => {

@@ -38,6 +38,7 @@ const FN_ROOT = "supabase/functions";
 //    Novas edges críticas DEVEM ser adicionadas AQUI (não na allowlist legada
 //    do gate de structured-logging).
 const CRITICAL_EDGES = [
+  // ── Rotas críticas originais (snapshot 2026-04-27) ──────────────────────
   "connections-hub-audit",
   "crm-db-bridge",
   "external-db-bridge",
@@ -47,6 +48,18 @@ const CRITICAL_EDGES = [
   "mcp-keys-update",
   "mcp-server",
   "secrets-manager",
+  // ── P1 observability wave (2026-06-18) — protegidas contra regressão Lovable ──
+  // Regressão detectada: commit 8c57c1ed reverteu silenciosamente structured
+  // logger + request-id de todas estas funções sem aviso. Adicionadas ao gate
+  // para que qualquer revert futuro seja bloqueado no CI antes do merge.
+  "asia-ingestion",
+  "audit-suite",
+  "backfill-image-dimensions",
+  "check-login",
+  "generate-blurhashes",
+  "hash-product-images",
+  "simulation-orchestrator",
+  "word-magic",
 ];
 
 // ----------------------------------------------------------------------------

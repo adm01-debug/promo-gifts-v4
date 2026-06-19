@@ -31,6 +31,10 @@ vi.mock('@/hooks/intelligence/useExternalDatabase', () => ({
   useExternalDatabase: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: vi.fn(), log: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 describe('useAdvancedFilters', () => {
   // ── Estado inicial ─────────────────────────────────────────────────────────
   describe('estado inicial', () => {

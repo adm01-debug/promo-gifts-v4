@@ -355,7 +355,10 @@ export function useCollections() {
           return {
             ...col,
             productIds: [...col.productIds, productId],
-            productItems: [...col.productItems, { productId, variant, priceAtSave: priceAtSave ?? null }],
+            productItems: [
+              ...col.productItems,
+              { productId, variant, priceAtSave: priceAtSave ?? null },
+            ],
             updatedAt: new Date().toISOString(),
           };
         }),
@@ -432,14 +435,22 @@ export function useCollections() {
   }, []);
 
   const addProductToMultipleCollections = useCallback(
-    (productId: string, collectionIds: string[], variant?: CollectionVariantInfo, priceAtSave?: number | null) => {
+    (
+      productId: string,
+      collectionIds: string[],
+      variant?: CollectionVariantInfo,
+      priceAtSave?: number | null,
+    ) => {
       setCollections((prev) =>
         prev.map((col) => {
           if (collectionIds.includes(col.id) && !col.productIds.includes(productId)) {
             return {
               ...col,
               productIds: [...col.productIds, productId],
-              productItems: [...col.productItems, { productId, variant, priceAtSave: priceAtSave ?? null }],
+              productItems: [
+                ...col.productItems,
+                { productId, variant, priceAtSave: priceAtSave ?? null },
+              ],
               updatedAt: new Date().toISOString(),
             };
           }

@@ -81,6 +81,17 @@ export default function QuotesDashboardPage() {
     );
   }
 
+  if (s.error) {
+    return (
+      <div className="mx-auto w-full max-w-[1920px] px-3 py-12 text-center sm:px-4 lg:px-6">
+        <p className="text-sm text-destructive">{s.error}</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate('/orcamentos')}>
+          Voltar para orçamentos
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageSEO

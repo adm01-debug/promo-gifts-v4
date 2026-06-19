@@ -235,7 +235,6 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       try {
         await clearCartMutation(cartId);
         setActiveCartId(cartId);
-        toast.success('Carrinho limpo');
       } catch {
         toast.error('Erro ao limpar carrinho');
       }

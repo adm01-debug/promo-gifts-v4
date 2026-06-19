@@ -53,31 +53,37 @@ describe('mapLightweightToProduct', () => {
   });
 
   it('FIX BUG-D: prefere leaf_category_id sobre category_id sobre main_category_id', () => {
-    const result = mapLightweightToProduct(makeLW({
-      leaf_category_id: 'leaf-111',
-      category_id: 'cat-222',
-      main_category_id: 'main-333',
-    }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({
+        leaf_category_id: 'leaf-111',
+        category_id: 'cat-222',
+        main_category_id: 'main-333',
+      }) as never,
+    );
     expect(result.category_id).toBe('leaf-111');
   });
 
   it('FIX BUG-D: usa category_id quando leaf_category_id nulo', () => {
-    const result = mapLightweightToProduct(makeLW({
-      leaf_category_id: null,
-      category_id: 'cat-222',
-      main_category_id: 'main-333',
-    }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({
+        leaf_category_id: null,
+        category_id: 'cat-222',
+        main_category_id: 'main-333',
+      }) as never,
+    );
     expect(result.category_id).toBe('cat-222');
   });
 
   it('price: usa sale_price quando disponivel', () => {
-    const result = mapLightweightToProduct(makeLW({ sale_price: 19.99, cost_price: 10.00 }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({ sale_price: 19.99, cost_price: 10.0 }) as never,
+    );
     expect(result.price).toBe(19.99);
   });
 
   it('price fallback: usa cost_price quando sale_price e nulo', () => {
-    const result = mapLightweightToProduct(makeLW({ sale_price: null, cost_price: 8.50 }) as never);
-    expect(result.price).toBe(8.50);
+    const result = mapLightweightToProduct(makeLW({ sale_price: null, cost_price: 8.5 }) as never);
+    expect(result.price).toBe(8.5);
   });
 
   it('price: retorna 0 quando ambos nulos', () => {
@@ -86,26 +92,32 @@ describe('mapLightweightToProduct', () => {
   });
 
   it('image_url: usa primary_image_url quando disponivel', () => {
-    const result = mapLightweightToProduct(makeLW({
-      primary_image_url: 'https://cf.net/img1.jpg',
-      primary_image_fallback_url: 'https://cdn.net/fallback.jpg',
-    }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({
+        primary_image_url: 'https://cf.net/img1.jpg',
+        primary_image_fallback_url: 'https://cdn.net/fallback.jpg',
+      }) as never,
+    );
     expect(result.image_url).toBe('https://cf.net/img1.jpg');
   });
 
   it('image_url fallback: usa fallback_url quando primary e nulo', () => {
-    const result = mapLightweightToProduct(makeLW({
-      primary_image_url: null,
-      primary_image_fallback_url: 'https://cdn.net/fallback.jpg',
-    }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({
+        primary_image_url: null,
+        primary_image_fallback_url: 'https://cdn.net/fallback.jpg',
+      }) as never,
+    );
     expect(result.image_url).toBe('https://cdn.net/fallback.jpg');
   });
 
   it('image_url: retorna /placeholder.svg quando ambas nulas', () => {
-    const result = mapLightweightToProduct(makeLW({
-      primary_image_url: null,
-      primary_image_fallback_url: null,
-    }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({
+        primary_image_url: null,
+        primary_image_fallback_url: null,
+      }) as never,
+    );
     expect(result.image_url).toBe('/placeholder.svg');
   });
 
@@ -115,7 +127,9 @@ describe('mapLightweightToProduct', () => {
   });
 
   it('set_image_url: propagado quando disponivel', () => {
-    const result = mapLightweightToProduct(makeLW({ set_image_url: 'https://cdn/set.jpg' }) as never);
+    const result = mapLightweightToProduct(
+      makeLW({ set_image_url: 'https://cdn/set.jpg' }) as never,
+    );
     expect(result.set_image_url).toBe('https://cdn/set.jpg');
   });
 
@@ -138,7 +152,7 @@ describe('mapLightweightToProduct', () => {
     const catMap = new Map([['cat-id', 'Canetas']]);
     const result = mapLightweightToProduct(
       makeLW({ leaf_category_id: 'cat-id', leaf_category_name: null }) as never,
-      catMap
+      catMap,
     );
     expect(result.category_name).toBe('Canetas');
   });
@@ -147,7 +161,7 @@ describe('mapLightweightToProduct', () => {
     const catMap = new Map([['cat-id', 'Canetas do mapa']]);
     const result = mapLightweightToProduct(
       makeLW({ leaf_category_id: 'cat-id', leaf_category_name: 'Canetas do produto' }) as never,
-      catMap
+      catMap,
     );
     expect(result.category_name).toBe('Canetas do produto');
   });

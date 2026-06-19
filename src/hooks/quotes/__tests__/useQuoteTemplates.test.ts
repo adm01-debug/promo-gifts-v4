@@ -16,6 +16,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuoteTemplates } from '../useQuoteTemplates';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 const _mockOrder = vi.fn();
@@ -50,6 +51,8 @@ vi.mock('@/lib/logger', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Restaura useAuth: clearAllMocks preserva mockReturnValue entre testes
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
   // Default: DB retorna lista vazia
   const orderFn = vi.fn().mockReturnValue({
     limit: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -92,7 +95,7 @@ describe('user=null guard', () => {
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.loading).toBe(false);
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(_supabase.from).not.toHaveBeenCalled();
   });
 });
 
@@ -162,10 +165,17 @@ describe('fetchAllTemplates — isAdmin guard', () => {
     vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 
     const { result } = renderHook(() => useQuoteTemplates());
+    const callsBefore = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)
+      .mock.calls.length;
     await act(async () => {
       await result.current.fetchAllTemplates?.();
     });
 
+    // allTemplates permanece vazio (isAdmin=false → guard bloqueia)
     expect(result.current.allTemplates ?? []).toEqual([]);
+    // fetchAllTemplates não deve ter adicionado chamadas extras ao DB
+    const callsAfter = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)
+      .mock.calls.length;
+    expect(callsAfter).toBe(callsBefore);
   });
 });

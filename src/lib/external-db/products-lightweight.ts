@@ -35,8 +35,10 @@ export interface LightweightProduct {
   category_id: string | null;
   main_category_id: string | null;
   /** Leaf category (mais profunda) — preenchido por mv_product_leaf_category na view v_products_public. */
+  // FIX BUG-D (2026-06-18): campos pré-computados em v_products_public via mv_product_leaf_category.
   leaf_category_id?: string | null;
   leaf_category_name?: string | null;
+  leaf_category_level?: number | null;
   brand: string | null;
   is_active: boolean;
   active: boolean;

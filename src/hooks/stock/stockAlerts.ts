@@ -3,6 +3,7 @@
  */
 import type { ProductStockSummary, StockAlert } from '@/types/stock';
 
+/** Percorre todos os produtos e variações para gerar alertas de estoque crítico, baixo e chegando. */
 export function generateStockAlerts(products: ProductStockSummary[]): StockAlert[] {
   const alerts: StockAlert[] = [];
 
