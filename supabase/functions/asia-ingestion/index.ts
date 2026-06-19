@@ -101,9 +101,9 @@ Deno.serve(async (req: Request) => {
   const t0 = Date.now();
   try {
     const f1 = await syncCatalogo();
-    return new Response(JSON.stringify({ ok: true, elapsed_ms: Date.now() - t0, ...f1 }), { headers: cors });
+    return new Response(JSON.stringify({ ok: true, elapsed_ms: Date.now() - t0, ...f1 }), { headers: { ...cors, 'X-Request-Id': __reqId } });
   } catch (err: any) {
     console.error('[asia-ingestion] sync failed', { message: err?.message });
-    return new Response(JSON.stringify({ ok: false, error: 'upstream_sync_failed' }), { status: 502, headers: cors });
+    return new Response(JSON.stringify({ ok: false, error: 'upstream_sync_failed' }), { status: 502, headers: { ...cors, 'X-Request-Id': __reqId } });
   }
 });
