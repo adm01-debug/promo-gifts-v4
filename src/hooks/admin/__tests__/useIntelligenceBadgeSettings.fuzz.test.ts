@@ -58,8 +58,20 @@ describe('useIntelligenceBadgeSettings — fuzz na sanitização', () => {
     expectHot: boolean;
     expectBest: boolean;
   }> = [
-    { name: 'valor null → defaults', value: null, expectMin: 15, expectHot: true, expectBest: true },
-    { name: 'objeto vazio → defaults', value: {}, expectMin: 15, expectHot: true, expectBest: true },
+    {
+      name: 'valor null → defaults',
+      value: null,
+      expectMin: 15,
+      expectHot: true,
+      expectBest: true,
+    },
+    {
+      name: 'objeto vazio → defaults',
+      value: {},
+      expectMin: 15,
+      expectHot: true,
+      expectBest: true,
+    },
     {
       name: 'min negativo → fallback 15',
       value: { bestSeller: { minAvgDailyDepletion7d: -5 } },
@@ -126,6 +138,7 @@ describe('useIntelligenceBadgeSettings — fuzz na sanitização', () => {
   ];
 
   for (const c of cases) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
     it(c.name, async () => {
       fetchValue = c.value;
       const { useIntelligenceBadgeSettingsValue } = await freshHook();

@@ -573,9 +573,10 @@ export function useExpertChat({
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   assistantMessage += content;
+                  const msgSnapshot = assistantMessage;
                   setMessages((prev) => {
                     const n = [...prev];
-                    if (n.at(-1)?.role === 'assistant') n[n.length - 1].content = assistantMessage;
+                    if (n.at(-1)?.role === 'assistant') n[n.length - 1].content = msgSnapshot;
                     return n;
                   });
                 }

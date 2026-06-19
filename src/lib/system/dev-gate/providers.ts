@@ -40,10 +40,13 @@ export class EnvGateProvider implements GateFlagProvider {
  * Provedor de flag baseado em localStorage.
  */
 export class LocalStorageGateProvider implements GateFlagProvider {
+  private readonly key: string;
   private lastValue: GateValue | null = null;
   private lastRaw: string | null = null;
 
-  constructor(private readonly key: string = 'show_dev_infra_messages') {}
+  constructor(key: string = 'show_dev_infra_messages') {
+    this.key = key;
+  }
 
   getFlag(): GateValue {
     if (typeof window === 'undefined' || !window.localStorage) return 'auto';
