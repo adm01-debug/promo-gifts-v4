@@ -653,12 +653,11 @@ export function useMockupGenerator() {
       // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
       // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
       // Fall back to name-matching so the technique is correctly pre-selected when loading from history.
-      const techniqueName = mockup.technique_name;
       const technique =
         (mockup.technique_id && techniques.find((t) => t.id === mockup.technique_id)) ||
-        (techniqueName &&
+        (mockup.technique_name &&
           techniques.find(
-            (t) => t.name.toLowerCase() === techniqueName.toLowerCase(),
+            (t) => t.name.toLowerCase() === (mockup.technique_name ?? "").toLowerCase(),
           )) ||
         null;
       if (product)
