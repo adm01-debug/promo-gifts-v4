@@ -234,9 +234,11 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
       if (unreadCount > prevCountRef.current) {
         setShouldShake(true);
         const timer = setTimeout(() => setShouldShake(false), 1000);
+        prevCountRef.current = unreadCount;
         return () => clearTimeout(timer);
       }
       prevCountRef.current = unreadCount;
+      return undefined;
     }, [unreadCount]);
 
     // Announce background refresh transitions for screen readers (independent from spinner)

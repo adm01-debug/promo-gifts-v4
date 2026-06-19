@@ -165,6 +165,7 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
     }
     setPriceData(null);
     onPriceCalculatedRef.current(area.area_id, null);
+    return undefined;
   }, [canCalculate, numCores, larguraNum, alturaNum, quantity, area.area_id]);
 
   if (checkingDimensao) {

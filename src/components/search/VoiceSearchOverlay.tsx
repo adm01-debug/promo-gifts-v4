@@ -78,6 +78,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
         const timer = setTimeout(() => setIsClosing(false), 300);
         return () => clearTimeout(timer);
       }
+      return undefined;
     }, [isOpen]);
 
     // Keyboard shortcuts
@@ -134,6 +135,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
         hasAutoStarted.current = true;
       }
       prevPhaseRef.current = phase;
+      return undefined;
     }, [isOpen, phase]);
 
     // Booting timeout
@@ -148,6 +150,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
         return () => clearTimeout(timer);
       }
       setBootingTimedOut(false);
+      return undefined;
     }, [isOpen, isAutoStarting, phase]);
 
     const showBooting = (isAutoStarting && phase === 'idle') || isClosing;

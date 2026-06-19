@@ -195,6 +195,7 @@ export function ExpandablePanel({
       el.style.height = '0';
       el.style.opacity = '0';
     });
+    return undefined;
   }, [isExpanded]);
 
   return (

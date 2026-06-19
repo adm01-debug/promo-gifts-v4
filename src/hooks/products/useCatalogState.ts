@@ -342,18 +342,19 @@ export function useCatalogState() {
             prefetchScheduledRef.current = false;
           });
         });
-      } else {
-        const prefetchTimer = setTimeout(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
-        }, 1000);
-        return () => {
-          clearTimeout(prefetchTimer);
-          prefetchScheduledRef.current = false;
-        };
+        return undefined;
       }
+      const prefetchTimer = setTimeout(() => {
+        fetchNextPage().finally(() => {
+          prefetchScheduledRef.current = false;
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(prefetchTimer);
+        prefetchScheduledRef.current = false;
+      };
     }
+    return undefined;
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {

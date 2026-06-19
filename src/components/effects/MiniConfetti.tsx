@@ -62,6 +62,7 @@ export function MiniConfetti({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [trigger, count, duration, colors, onComplete, isActive, reducedMotion]);
 
   return (

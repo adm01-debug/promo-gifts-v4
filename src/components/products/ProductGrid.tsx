@@ -100,6 +100,7 @@ const ProductCardWrapper = memo(function ProductCardWrapper({
       const timer = setTimeout(() => setHasAnimated(true), Math.min(index * 80, 800));
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [hasAnimated, index, reducedMotion]);
 
   const isSelected = selectionMode && selectedIds?.has(product.id);

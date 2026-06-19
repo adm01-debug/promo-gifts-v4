@@ -90,6 +90,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
         return () => clearTimeout(timer);
       }
       setIsSearching(false);
+      return undefined;
     }, [debouncedQuery]);
 
     useEffect(() => {

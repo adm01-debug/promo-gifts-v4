@@ -77,6 +77,7 @@ export function BITourGuide({ force = false, onClose }: Props) {
     } catch {
       // ignore
     }
+    return undefined;
   }, [force]);
 
   const currentStep = STEPS[stepIdx];

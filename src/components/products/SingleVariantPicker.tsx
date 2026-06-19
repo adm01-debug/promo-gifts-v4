@@ -45,6 +45,7 @@ export function SingleVariantPicker({
       const t = setTimeout(() => onSelect(null), 150);
       return () => clearTimeout(t);
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, sortedVariants.length]);
 

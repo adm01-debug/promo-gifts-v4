@@ -30,17 +30,15 @@ export function AriaLiveProvider({ children }: { children: ReactNode }) {
 
   // Clear messages after announcement
   useEffect(() => {
-    if (politeMessage) {
-      const timer = setTimeout(() => setPoliteMessage(''), 1000);
-      return () => clearTimeout(timer);
-    }
+    if (!politeMessage) return;
+    const timer = setTimeout(() => setPoliteMessage(''), 1000);
+    return () => clearTimeout(timer);
   }, [politeMessage]);
 
   useEffect(() => {
-    if (assertiveMessage) {
-      const timer = setTimeout(() => setAssertiveMessage(''), 1000);
-      return () => clearTimeout(timer);
-    }
+    if (!assertiveMessage) return;
+    const timer = setTimeout(() => setAssertiveMessage(''), 1000);
+    return () => clearTimeout(timer);
   }, [assertiveMessage]);
 
   const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {

@@ -184,6 +184,7 @@ export default function Auth() {
       }, 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
   const loginForm = useForm<LoginForm>({

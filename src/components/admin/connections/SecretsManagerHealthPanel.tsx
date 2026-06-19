@@ -194,13 +194,12 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
   // amostra (ex.: usuário entrou direto neste painel sem ter aberto a aba
   // Bancos). Mantém a UX coerente com "boot status" sem custos extras.
   useEffect(() => {
-    if (!boot && !pinging) {
-      // Pequeno delay para não competir com o list() inicial da página.
-      const t = window.setTimeout(() => {
-        ping();
-      }, 1200);
-      return () => window.clearTimeout(t);
-    }
+    if (boot || pinging) return;
+    // Pequeno delay para não competir com o list() inicial da página.
+    const t = window.setTimeout(() => {
+      ping();
+    }, 1200);
+    return () => window.clearTimeout(t);
   }, [boot, pinging, ping]);
 
   const { recent, errorCount, totalCount } = useMemo(

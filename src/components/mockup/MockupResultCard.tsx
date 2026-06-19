@@ -65,6 +65,7 @@ export const MockupResultCard = memo(function MockupResultCard({
       const timer = setTimeout(() => setShowSuccess(false), 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [generatedMockup, isLoading]);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
