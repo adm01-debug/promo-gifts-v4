@@ -286,20 +286,6 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   );
 });
 
-        {/* Sparkline — específico de Reposição (mantido p/ contexto de saídas) */}
-        <div className="border-t border-border/40 pt-1.5">
-          <div className="mb-0.5 flex items-center justify-between">
-            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
-              Saídas 90d
-            </span>
-          </div>
-          <ProductSparkline productId={product.product_id} />
-        </div>
-      </div>
-    </article>
-  );
-});
-
 // ─── Table View ──────────────────────────────────────────────────
 
 interface ReplenishmentTableViewProps {
