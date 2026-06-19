@@ -9,6 +9,10 @@ import {
   useReplenishmentsWithDetails,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import {
+  useReposicaoVariantsSummary,
+  normalizeColorKey,
+} from '@/hooks/products/useReposicaoVariantsSummary';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
