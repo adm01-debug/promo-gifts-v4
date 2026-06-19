@@ -961,7 +961,7 @@ export function loadThemeConfig(): ThemeConfig {
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
       // Support both light/dark if ever expanded, but default to dark for now
-      parsed.mode = parsed.mode || 'dark';
+      parsed.mode ||= 'dark';
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }

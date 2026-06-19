@@ -101,9 +101,9 @@ function aggregate(
     else r.orders += 1;
     r.total += Number(row.total ?? 0);
     if (row.updated_at > r.lastInteraction) r.lastInteraction = row.updated_at;
-    r.email = r.email || row.client_email;
-    r.phone = r.phone || row.client_phone;
-    r.company = r.company || row.client_company;
+    r.email ||= row.client_email;
+    r.phone ||= row.client_phone;
+    r.company ||= row.client_company;
   };
   for (const q of quotes) upsert('quote', q);
   for (const o of orders) upsert('order', o);
