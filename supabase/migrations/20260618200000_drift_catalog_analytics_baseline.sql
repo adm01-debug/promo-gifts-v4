@@ -168,7 +168,7 @@ BEGIN
   -- Job 1: mv_product_leaf_category 2× por dia
   PERFORM cron.schedule(
     'refresh-mv-product-leaf-category',
-    '0 3,15 * * *',
+    '0 */4 * * *',  -- M5: 6x/dia (4h max staleness)
     'REFRESH MATERIALIZED VIEW CONCURRENTLY public.mv_product_leaf_category'
   );
 
