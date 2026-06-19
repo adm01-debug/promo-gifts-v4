@@ -289,25 +289,9 @@ export const NoveltyGridCard = memo(
         >
           {isPriceStockLoading ? (
             <div
-              className={cn(
-                'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
-                isSelected
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-muted-foreground bg-card',
-              )}
-            >
-              {isSelected && (
-                <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
-                  <path
-                    d="M2 6L5 9L10 3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
+              data-testid="novelty-card-price-skeleton"
+              className="h-4 w-20 animate-pulse rounded bg-muted"
+            />
           ) : typeof product.base_price === 'number' &&
             Number.isFinite(product.base_price) &&
             product.base_price > 0 ? (
@@ -322,35 +306,9 @@ export const NoveltyGridCard = memo(
                 {BRL_FORMATTER.format(product.base_price)}
               </p>
             </div>
-            {fresh && !selectionMode && (
-              <div className="absolute right-2 top-2">
-                <ProductStatusBadge
-                  type="novelty"
-                  value="NEW"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusClick?.('novelty');
-                  }}
-                />
-              </div>
-            )}
-            {product.status === 'expiring_soon' && !fresh && !selectionMode && (
-              <div className="absolute right-2 top-2">
-                <span
-                  data-testid="novelty-expiring-badge"
-                  className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
-                >
-                  <Clock className="h-2.5 w-2.5" />
-                  {product.days_remaining <= 1
-                    ? 'Último dia'
-                    : `Últimos ${product.days_remaining}d`}
-                </span>
-              </div>
-            )}
-          </>
-        )}
-      />
+          ) : null}
+        </div>
+      </article>
     );
   },
 );
