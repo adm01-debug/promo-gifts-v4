@@ -113,6 +113,12 @@ export default function MockupGenerator() {
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
   });
 
+  const handleTechniqueSelect = useCallback(
+    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [technique.handleTechniqueChange],
+  );
+
   useKeyboardShortcuts({
     onGenerate: mg.generateMockup,
     onReset: mg.resetForm,
@@ -332,9 +338,7 @@ export default function MockupGenerator() {
                     mg.setProductSelection(sel);
                     mg.setGeneratedMockup(null);
                   }}
-                  onTechniqueSelect={(t) =>
-                    technique.handleTechniqueChange(t as MockupTechnique | null)
-                  }
+                  onTechniqueSelect={handleTechniqueSelect}
                   onClientSelect={mg.setSelectedClient}
                   onReset={mg.resetForm}
                   activeAreaId={mg.activeAreaId}

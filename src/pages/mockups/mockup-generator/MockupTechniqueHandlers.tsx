@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   techniqueNeedsColorConfig,
@@ -25,6 +25,7 @@ export function useTechniqueHandlers({
   const [pendingTechnique, setPendingTechnique] = useState<MockupTechnique | null>(null);
   const [techniqueChangeDialogOpen, setTechniqueChangeDialogOpen] = useState(false);
   const [colorConfigDialogOpen, setColorConfigDialogOpen] = useState(false);
+  const colorConfigTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTechniqueChange = useCallback(
     (technique: MockupTechnique | null) => {
@@ -64,7 +65,8 @@ export function useTechniqueHandlers({
     );
     if (techniqueNeedsColorConfig(pendingTechnique.name, pendingTechnique.code)) {
       setTechniqueColorConfig(null);
-      setTimeout(() => setColorConfigDialogOpen(true), 300);
+      if (colorConfigTimeoutRef.current) clearTimeout(colorConfigTimeoutRef.current);
+      colorConfigTimeoutRef.current = setTimeout(() => setColorConfigDialogOpen(true), 300);
     } else {
       setTechniqueColorConfig({
         category: classifyTechnique(pendingTechnique.name, pendingTechnique.code),
@@ -73,6 +75,12 @@ export function useTechniqueHandlers({
     }
     setPendingTechnique(null);
   }, [pendingTechnique, setSelectedTechnique, setGeneratedMockup, setTechniqueColorConfig]);
+
+  useEffect(() => {
+    return () => {
+      if (colorConfigTimeoutRef.current) clearTimeout(colorConfigTimeoutRef.current);
+    };
+  }, []);
 
   return {
     pendingTechnique,
