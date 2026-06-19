@@ -228,15 +228,19 @@ export function useFilterPanelState(
       materialFilterState.selectedGroups.length + materialFilterState.selectedTypes.length;
     const ramoCount =
       (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    const quickCount = [
-      filters.isKit,
-      filters.featured,
-      filters.isNew,
-      filters.hasPersonalization,
-      filters.onSale,
-      filters.inStock,
-      filters.hasCommercialPackaging,
-    ].filter(Boolean).length;
+    const quickCount =
+      [
+        filters.isKit,
+        filters.featured,
+        filters.isNew,
+        filters.hasPersonalization,
+        filters.onSale,
+        filters.inStock,
+        filters.hasCommercialPackaging,
+      ].filter(Boolean).length +
+      // BUG-MINSTOCK-BADGE FIX: minStock slider vive na seção opcoes-rapidas mas
+      // não era contado na badge — badge mostrava menos do que os filtros ativos.
+      (filters.minStock > 0 ? 1 : 0);
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
