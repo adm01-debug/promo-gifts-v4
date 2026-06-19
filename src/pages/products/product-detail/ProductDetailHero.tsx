@@ -614,16 +614,10 @@ export function ProductDetailHero({
         </div>
 
         {/* Kit Composition */}
-        {product.isKit && product.kitItems && (
-          <KitComposition
-            items={product.kitItems}
-            onViewProduct={(componentProductId) => {
-              if (componentProductId && componentProductId !== product.id) {
-                navigate(`/produto/${componentProductId}`);
-              }
-            }}
-          />
-        )}
+        {/* Kit nativo do fornecedor: vendido como conjunto único. Componentes NÃO são produtos
+            avulsos vendáveis — apenas informativos. Por isso não há navegação inter-produto nem
+            preço/estoque por componente. */}
+        {product.isKit && product.kitItems && <KitComposition items={product.kitItems} />}
 
         {/* Quick Actions */}
         <div className="mt-auto">
