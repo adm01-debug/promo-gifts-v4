@@ -25,7 +25,7 @@ export const useProductSelectionStore = create<ProductSelectionState & ProductSe
           const keys = Object.keys(next);
           if (keys.length > 200) {
             const excess = keys.slice(0, keys.length - 200);
-            for (const k of excess) delete next[k];
+            for (const k of excess) Reflect.deleteProperty(next, k);
           }
           return { selectedColors: next };
         });

@@ -33,7 +33,7 @@ export function AiQuotaManager() {
       toast.success(`Quota do ${ROLE_LABELS[role] || role} atualizada`);
       setEditing((prev) => {
         const n = { ...prev };
-        delete n[id];
+        Reflect.deleteProperty(n, id);
         return n;
       });
     } catch {

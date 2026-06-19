@@ -37,7 +37,7 @@ export function checkLoginAllowed(email: string): { allowed: boolean; remainingS
       return { allowed: false, remainingSeconds: Math.ceil((record.lockedUntil - now) / 1000) };
     }
     // Lockout expired — reset
-    delete records[email.toLowerCase()];
+    Reflect.deleteProperty(records, email.toLowerCase());
     saveRecords(records);
     return { allowed: true, remainingSeconds: 0 };
   }
@@ -71,6 +71,6 @@ export function recordFailedAttempt(email: string): { locked: boolean; remaining
 
 export function clearLoginAttempts(email: string) {
   const records = getRecords();
-  delete records[email.toLowerCase()];
+  Reflect.deleteProperty(records, email.toLowerCase());
   saveRecords(records);
 }

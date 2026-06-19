@@ -163,8 +163,8 @@ export function __resetSchemaStatsForTests(): void {
   stats['v6.x-flat'] = 0;
   stats['v7-new'] = 0;
   stats.unknown = 0;
-  for (const k of Object.keys(legacyFieldsSeen)) delete legacyFieldsSeen[k];
-  for (const k of Object.keys(contractMismatches)) delete contractMismatches[k];
+  for (const k of Object.keys(legacyFieldsSeen)) Reflect.deleteProperty(legacyFieldsSeen, k);
+  for (const k of Object.keys(contractMismatches)) Reflect.deleteProperty(contractMismatches, k);
   recentMismatches.length = 0;
   warnedKeys.clear();
 }

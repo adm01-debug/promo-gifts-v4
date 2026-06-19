@@ -126,12 +126,12 @@ export function MockupPromptManager() {
       toast.success(`Prompt "${config.label}" salvo (v${config.version + 1})`);
       setEditedPrompts((p) => {
         const n = { ...p };
-        delete n[config.id];
+        Reflect.deleteProperty(n, config.id);
         return n;
       });
       setChangeNotes((p) => {
         const n = { ...p };
-        delete n[config.id];
+        Reflect.deleteProperty(n, config.id);
         return n;
       });
       fetchAll();

@@ -175,7 +175,7 @@ function SellerCartsContent() {
     setQtyErrors((prev) => {
       const next = { ...prev };
       if (msg) next[id] = msg;
-      else delete next[id];
+      else Reflect.deleteProperty(next, id);
       return next;
     });
   }, []);
