@@ -115,8 +115,7 @@ export function DevAccessDeniedPage({
   role,
   blockedPath,
   blockedFullPath,
-  _blockedState,
-}: DevAccessDeniedPageProps & { _blockedState?: unknown }) {
+}: DevAccessDeniedPageProps) {
   const navigate = useNavigate();
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);

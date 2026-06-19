@@ -19,7 +19,7 @@ interface ProductInsight {
   }>;
 }
 
-export function useProductInsights(productId?: string, productSku?: string) {
+export function useProductInsights(_productId?: string, productSku?: string) {
   return useQuery({
     queryKey: ['product-insights', productSku],
     queryFn: async (): Promise<ProductInsight> => {

@@ -36,7 +36,7 @@ interface FrequentlyBoughtTogether {
   price: number;
 }
 
-export function useProductRecommendations(productId?: string, productSku?: string) {
+export function useProductRecommendations(_productId?: string, productSku?: string) {
   const { user } = useAuth();
 
   const frequentlyBoughtTogether = useQuery({

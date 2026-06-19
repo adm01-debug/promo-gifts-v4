@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QuoteBuilderStepper } from '../QuoteBuilderStepper';
-import React from 'react';
 import type * as LucideReact from 'lucide-react';
 
 // Mocking icons to simplify snapshot/queries

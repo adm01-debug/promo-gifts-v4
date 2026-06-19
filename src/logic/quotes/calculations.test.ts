@@ -29,9 +29,6 @@ describe('Financial Calculations Edge Cases', () => {
   });
 
   it('should handle 2-decimal rounding for complex values', () => {
-    const _complexItems = [
-      { quantity: 3, unitPrice: 10.3333 }, // 30.9999 -> 31.00? No, calculations.ts does round2(q * p)
-    ];
     // In calculations.ts: calculateItemTotal = round2(item.quantity * item.unitPrice + ...)
     expect(Calc.calculateItemTotal({ quantity: 3, unitPrice: 10.3333 })).toBe(31.0);
     expect(Calc.calculateItemTotal({ quantity: 1, unitPrice: 0.3333 })).toBe(0.33);

@@ -110,7 +110,7 @@ function CascadeSelects({
     return result;
   }, [roots, nodeMap, selectedChain]);
 
-  const handleChange = (levelIndex: number, newId: string) => {
+  const handleChange = (_levelIndex: number, newId: string) => {
     onChange(newId);
   };
 

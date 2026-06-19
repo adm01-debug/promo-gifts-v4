@@ -85,7 +85,6 @@ describe('NotificationBell', () => {
   });
 
   it('allows exporting notifications to CSV', async () => {
-    const _mockExport = vi.fn();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: mockNotifications,

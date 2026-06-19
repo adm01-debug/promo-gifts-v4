@@ -157,7 +157,7 @@ export function adjustPriceByArea(
  */
 function calculateTierSavings(
   tiers: PriceTier[],
-  currentTier: PriceTier,
+  _currentTier: PriceTier,
   currentUnitPrice: number,
   quantity: number,
 ): PriceCalculationResult['savings'] {

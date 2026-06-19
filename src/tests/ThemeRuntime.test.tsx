@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useTheme } from '../contexts/ThemeContext';
-import React from 'react';
 
 // Mock component that uses useTheme
 const ThemeConsumer = () => {

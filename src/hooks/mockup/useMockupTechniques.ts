@@ -91,7 +91,7 @@ export function useProductCustomizationOptionsForMockup(productId: string | unde
   });
 }
 
-function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean) {
+function useAllTechniqueDimensions(_techniques: Technique[], shouldFetch: boolean) {
   return useQuery({
     queryKey: ['all-technique-dimensions-v6'],
     queryFn: async () => {

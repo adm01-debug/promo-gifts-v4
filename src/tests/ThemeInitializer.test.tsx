@@ -3,7 +3,6 @@ import { render } from '@testing-library/react';
 import { ThemeInitializer } from '../components/ThemeInitializer';
 import { ThemeContext } from '../contexts/ThemeContext';
 import * as themePresets from '../lib/theme-presets';
-import React from 'react';
 
 // Mock the theme-presets module
 vi.mock('../lib/theme-presets', () => ({

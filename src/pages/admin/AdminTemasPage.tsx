@@ -81,14 +81,6 @@ export default function AdminTemasPage() {
     toast.success('Tema restaurado ao padrão');
   };
 
-  // Reservado para uso futuro pelo botão de importação de tema
-  const _handleImport = (imported: ThemeConfig) => {
-    setConfig(imported);
-    saveThemeConfig(imported);
-    setSavedConfig(imported);
-    // setAppTheme removed as theme is fixed
-  };
-
   return (
     <>
       <PageSEO

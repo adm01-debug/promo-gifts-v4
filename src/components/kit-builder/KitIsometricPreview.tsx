@@ -37,7 +37,7 @@ const PALETTE = [
   'hsl(30 80% 60%)',
 ];
 
-function colorFor(id: string, idx: number): string {
+function colorFor(_id: string, idx: number): string {
   return PALETTE[idx % PALETTE.length];
 }
 

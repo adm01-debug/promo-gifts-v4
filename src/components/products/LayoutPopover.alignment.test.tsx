@@ -2,7 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { LayoutPopover } from './LayoutPopover';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import React from 'react';
 
 // We need to mock the ColumnSelector because it uses matchMedia and other DOM APIs
 vi.mock('@/components/products/ColumnSelector', () => ({

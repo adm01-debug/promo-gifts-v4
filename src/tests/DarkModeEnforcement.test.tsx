@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { renderHook } from '@testing-library/react';
-import React from 'react';
 
 describe('Dark Mode Enforcement', () => {
   it('should always initialize with dark theme', () => {
