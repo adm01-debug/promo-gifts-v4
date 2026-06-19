@@ -45,11 +45,22 @@ export function QuoteAutoSave({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   const dataRef = useRef(data);
   const initialDataRef = useRef<string | null>(null);
 
   // Storage key único para este orçamento
   const storageKey = `${STORAGE_KEY_PREFIX}${quoteId || 'new'}`;
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
 
   // Salvar estado inicial para comparação
   useEffect(() => {
@@ -154,12 +165,14 @@ export function QuoteAutoSave({
         localStorage.removeItem(`${storageKey}_v${draft.version}`);
       });
 
+      if (!mountedRef.current) return;
       setLastSaved(new Date());
       setStatus('saved');
 
       // Reset para idle após 2s
-      setTimeout(() => {
-        setStatus('idle');
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) setStatus('idle');
       }, 2000);
     } catch (error) {
       logger.error('Erro ao salvar draft:', error);
