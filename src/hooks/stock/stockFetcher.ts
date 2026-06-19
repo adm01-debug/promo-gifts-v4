@@ -189,8 +189,13 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     }
 
     const nextCursor = records[records.length - 1]?.id ?? null;
-    // Segurança: se o cursor não avançou, paramos para não loopar.
-    if (nextCursor === null || nextCursor === lastId) break;
+    // Segurança: se o cursor não avançou, paramos para não loopar infinitamente.
+    if (nextCursor === null || nextCursor === lastId) {
+      logger.warn(
+        `[Stock] ${table}: cursor não avançou (lastId=${lastId}) — interrompendo paginação.`,
+      );
+      break;
+    }
     lastId = nextCursor;
 
     if (records.length < pageSize) break;
