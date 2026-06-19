@@ -191,7 +191,15 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       if (productRow) safeProductId = product.id;
     }
 
-    const safeTechniqueId: string | null = technique.id || null;
+    // BUG-10 FIX: generated_mockups.technique_id has a FK constraint pointing to
+    // `personalization_techniques`, but the techniques shown in the UI come from
+    // `tabela_preco_gravacao_oficial`. The two tables have ZERO overlapping UUIDs,
+    // so inserting a `tabela_preco` UUID into `technique_id` always raises a FK
+    // violation, causing saveMockupToDb to silently return null on EVERY invocation.
+    // Solution: always null-out technique_id (the technique name is already persisted
+    // in the `technique_name` text column, which is what all read paths use). The FK
+    // column should only be set once the UI loads techniques from `personalization_techniques`.
+    const safeTechniqueId: null = null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')
@@ -228,10 +236,15 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       .select('id')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.error('Error saving to history:', error);
+      toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
+      return null;
+    }
     return insertedRow?.id || null;
   } catch (error) {
     logger.error('Error saving to history:', error);
+    toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
     return null;
   }
 }
