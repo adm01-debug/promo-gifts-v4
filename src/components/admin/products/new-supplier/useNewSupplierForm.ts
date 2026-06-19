@@ -253,7 +253,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       const { data: urlData } = supabase.storage.from('supplier-logos').getPublicUrl(filePath);
       setLogoUrl(urlData.publicUrl);
       toast.success('Logo enviada');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('Failed to upload supplier logo', err);
       toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
@@ -285,7 +286,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
-    } catch {
+    } catch (err: unknown) {
+      logger.error('Failed to lookup supplier CNPJ', err);
       toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
@@ -515,7 +517,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         setOpen(false);
         resetForm();
       }
-    } catch {
+    } catch (err: unknown) {
+      logger.error('Failed to create supplier', err);
       toast.error('Erro ao criar fornecedor');
     } finally {
       setSaving(false);

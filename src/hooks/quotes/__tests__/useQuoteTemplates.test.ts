@@ -98,12 +98,15 @@ describe('user=null guard', () => {
 
 // ── fetchTemplates ─────────────────────────────────────────────────────────
 describe('fetchTemplates', () => {
+  beforeEach(async () => {
+    const { useAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+  });
+
   it('carrega templates do DB com order updated_at DESC e limit 200', async () => {
     const mockLimitFn = vi.fn().mockResolvedValue({ data: [], error: null });
     const mockOrderFn = vi.fn().mockReturnValue({ limit: mockLimitFn });
     mockSelect.mockReturnValue({ order: mockOrderFn });
-    const { supabase } = await import('@/integrations/supabase/client');
-
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {
       await result.current.fetchTemplates();
