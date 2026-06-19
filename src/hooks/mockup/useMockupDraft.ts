@@ -60,7 +60,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   // BUG-A FIX: removed 3 FK pre-validation queries (product, technique, client).
   // These fired on every auto-save (every 2s during active editing), generating
   // ~90 unnecessary SELECT queries per 5 minutes of work.
-  // The upsert's existing 23503/409 fallback already handles FK violations gracefully.
+  // The upsert's 23503 fallback handles FK violations gracefully.
   const saveToBackend = useCallback(
     async (data: MockupDraftData): Promise<boolean> => {
       if (!user) return false;
@@ -102,7 +102,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           .upsert(payload, { onConflict: 'user_id,draft_key' });
 
         if (upsertError) {
-          if (upsertError.code === '23503' || upsertError.code === '409') {
+          if (upsertError.code === '23503') {
             logger.warn('[useMockupDraft] FK violation on draft save — falling back to null IDs.', {
               productId: safeProductId,
               techniqueId: safeTechniqueId,

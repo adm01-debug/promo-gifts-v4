@@ -49,6 +49,12 @@ import { ShareMenu } from './ShareMenu';
 
 // GeneratedMockup importado de @/hooks/mockup/mockupGenerationService (SSOT)
 
+function safeFormatDistance(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '—';
+  return formatDistanceToNow(d, { addSuffix: true, locale: ptBR });
+}
+
 interface Technique {
   id: string;
   name: string;
@@ -581,7 +587,7 @@ const MockupGridCard = memo(
           )}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
-            {formatDistanceToNow(new Date(mockup.created_at), { addSuffix: true, locale: ptBR })}
+            {safeFormatDistance(mockup.created_at)}
           </div>
         </div>
         <div className="absolute right-2 top-2 flex translate-y-1 gap-1.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
@@ -723,7 +729,7 @@ const MockupListRow = memo(
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {formatDistanceToNow(new Date(mockup.created_at), { addSuffix: true, locale: ptBR })}
+              {safeFormatDistance(mockup.created_at)}
             </span>
           </div>
         </div>
