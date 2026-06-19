@@ -13,10 +13,7 @@ interface ProductSparklineProps {
  * Consumes real data from SparklineSalesProvider context when available,
  * falls back to a deterministic demo seed otherwise.
  */
-export const ProductSparkline = memo(function ProductSparkline({
-  productId,
-  className,
-}: ProductSparklineProps) {
+export const ProductSparkline = memo(({ productId, className }: ProductSparklineProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });

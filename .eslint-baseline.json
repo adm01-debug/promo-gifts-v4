@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-19T18:17:40.302Z",
-  "totalErrors": 86,
+  "generatedAt": "2026-06-19T19:09:34.058Z",
+  "totalErrors": 85,
   "counts": {
     "src/components/admin/DiscountApprovalHeaderBadge.tsx": {
       "@typescript-eslint/no-shadow": 1
@@ -124,8 +124,7 @@
     },
     "src/hooks/quotes/__tests__/useDiscountApproval.test.ts": {
       "@typescript-eslint/no-shadow": 4,
-      "@typescript-eslint/no-unused-vars": 4,
-      "unused-imports/no-unused-imports": 1
+      "@typescript-eslint/no-unused-vars": 3
     },
     "src/hooks/quotes/__tests__/useQuoteConcurrencyGuard.test.ts": {
       "@typescript-eslint/no-shadow": 4

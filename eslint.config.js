@@ -174,6 +174,8 @@ export default [
       'no-useless-return': 'error',
       // Batch 70: 1 rule — prefer-template (19 fixes in 15 files)
       'prefer-template': 'error',
+      // Batch 71: 1 rule — prefer-arrow-callback (59 fixes, auto-fixed)
+      'prefer-arrow-callback': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
