@@ -5203,7 +5203,6 @@ export type Database = {
           client_response: string | null
           client_response_at: string | null
           client_response_notes: string | null
-          contact_id: string | null
           conversion_notes: string | null
           converted_at: string | null
           converted_to_order_id: string | null
@@ -5263,7 +5262,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
@@ -5323,7 +5321,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
