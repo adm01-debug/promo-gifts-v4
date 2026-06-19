@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useCatalogFiltering } from '../useCatalogFiltering';
 import { defaultFilters } from '@/components/filters/filter-panel/types';
 import type { Product } from '@/types/product-catalog';
+import type { SupplierSalesEntry } from '@/hooks/products/useSupplierSalesRanking';
 
 function run(products: Product[], overrides: Partial<typeof defaultFilters>) {
   return renderHook(() =>
@@ -611,5 +612,405 @@ describe('useCatalogFiltering — techniques graceful degradation parity', () =>
     const catalog = [makeP('seri', ['SERIGRAFIA']), makeP('other', ['Laser'])];
     const ids = run(catalog, { techniques: ['serigrafia'] }).map((p) => p.id);
     expect(ids).toContain('seri');
+  });
+});
+
+// BUG-VENDAS-FILTER-CATALOG parity — minSupplierSales90d e minPromoSales90d eram
+// aplicados no Super Filtro (/filtros via applyProductFilters) mas ignorados no
+// catálogo principal. Guard: só filtra quando o mapa está disponível e não vazio
+// (mapa ausente = dados ainda carregando → preserva grade).
+describe('useCatalogFiltering — minSupplierSales90d parity', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const baseArgs = {
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  const catalog = [makeP('low'), makeP('high'), makeP('zero')];
+
+  const makeSupplierMap = (entries: Record<string, number>): Map<string, SupplierSalesEntry> => {
+    const map = new Map<string, SupplierSalesEntry>();
+    Object.entries(entries).forEach(([id, depleted90d]) => {
+      map.set(id, {
+        turnoverScore: 0,
+        velocity7d: 0,
+        velocity30d: 0,
+        abcClass: 'C',
+        depleted30d: 0,
+        depleted90d,
+      });
+    });
+    return map;
+  };
+
+  it('filtra pelo threshold quando supplierSalesMap está disponível', () => {
+    const supplierSalesMap = makeSupplierMap({ low: 10, high: 100, zero: 0 });
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minSupplierSales90d: 50 },
+        supplierSalesMap,
+      }),
+    );
+    const ids = result.current.map((p) => p.id);
+    expect(ids).toContain('high');
+    expect(ids).not.toContain('low');
+    expect(ids).not.toContain('zero');
+  });
+
+  it('não filtra quando supplierSalesMap está vazio (dados ainda carregando)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minSupplierSales90d: 50 },
+        supplierSalesMap: new Map(),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('não filtra quando supplierSalesMap é undefined (hook não carregou)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minSupplierSales90d: 50 },
+        supplierSalesMap: undefined,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('minSupplierSales90d=0 retorna todos (sem filtro)', () => {
+    const supplierSalesMap = makeSupplierMap({ low: 10, high: 100, zero: 0 });
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minSupplierSales90d: 0 },
+        supplierSalesMap,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+});
+
+describe('useCatalogFiltering — minPromoSales90d parity', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const baseArgs = {
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  const catalog = [makeP('few'), makeP('many'), makeP('none')];
+
+  it('filtra pelo threshold quando promoSales90dMap está disponível', () => {
+    const promoSales90dMap = new Map<string, number>([
+      ['few', 5],
+      ['many', 80],
+      ['none', 0],
+    ]);
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minPromoSales90d: 20 },
+        promoSales90dMap,
+      }),
+    );
+    const ids = result.current.map((p) => p.id);
+    expect(ids).toContain('many');
+    expect(ids).not.toContain('few');
+    expect(ids).not.toContain('none');
+  });
+
+  it('não filtra quando promoSales90dMap está vazio (dados ainda carregando)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minPromoSales90d: 20 },
+        promoSales90dMap: new Map(),
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('não filtra quando promoSales90dMap é undefined (hook não carregou)', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minPromoSales90d: 20 },
+        promoSales90dMap: undefined,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('minPromoSales90d=0 retorna todos (sem filtro)', () => {
+    const promoSales90dMap = new Map<string, number>([
+      ['few', 5],
+      ['many', 80],
+    ]);
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        filters: { ...defaultFilters, minPromoSales90d: 0 },
+        promoSales90dMap,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+});
+
+// Server-side filter positive paths — verifica que quando os filtros server-side
+// estão ATIVOS e os IDs estão disponíveis, apenas os produtos correspondentes passam.
+// Complementa o bloco FIX-21/22 que testa apenas o caso de erro (IDs vazio + erro).
+describe('useCatalogFiltering — server-side filter positive paths', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const catalog = [makeP('p1'), makeP('p2'), makeP('p3')];
+
+  const baseArgs = {
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  it('hasCategoryFilter=true + IDs disponíveis → só produtos nos IDs passam', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(['p1']),
+        isLoadingCategoryFilter: false,
+      }),
+    );
+    expect(result.current.map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('hasColorFilter=true + IDs disponíveis → só produtos nos IDs passam', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(['p2']),
+        isLoadingColorFilter: false,
+      }),
+    );
+    expect(result.current.map((p) => p.id)).toEqual(['p2']);
+  });
+
+  it('hasMaterialFilter=true + IDs disponíveis → só produtos nos IDs passam', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasMaterialFilter: true,
+        materialFilteredProductIds: new Set(['p1', 'p3']),
+        isLoadingMaterialFilter: false,
+      }),
+    );
+    const ids = result.current.map((p) => p.id);
+    expect(ids).toContain('p1');
+    expect(ids).toContain('p3');
+    expect(ids).not.toContain('p2');
+  });
+
+  it('hasSizeFilter=true + IDs disponíveis → só produtos nos IDs passam', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasSizeFilter: true,
+        sizeFilteredProductIds: new Set(['p3']),
+        isLoadingSizeFilter: false,
+      }),
+    );
+    expect(result.current.map((p) => p.id)).toEqual(['p3']);
+  });
+
+  it('hasMetadataFilter=true + IDs disponíveis → só produtos nos IDs passam', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasMetadataFilter: true,
+        metadataFilteredProductIds: new Set(['p2', 'p3']),
+        isLoadingMetadataFilter: false,
+      }),
+    );
+    const ids = result.current.map((p) => p.id);
+    expect(ids).toContain('p2');
+    expect(ids).toContain('p3');
+    expect(ids).not.toContain('p1');
+  });
+});
+
+// Loading state guards — quando um filtro server-side está carregando, NÃO deve
+// filtrar produtos (evita apagar a grade enquanto a RPC ainda não respondeu).
+describe('useCatalogFiltering — loading state guards', () => {
+  const makeP = (id: string): Product =>
+    ({
+      id,
+      name: id,
+      price: 10,
+      stock: 5,
+      colors: [],
+      materials: [],
+      sku: id,
+      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+      featured: false,
+      newArrival: false,
+      onSale: false,
+      hasPersonalization: false,
+      hasCommercialPackaging: false,
+      isKit: false,
+    }) as unknown as Product;
+
+  const catalog = [makeP('x1'), makeP('x2'), makeP('x3')];
+
+  const baseArgs = {
+    filters: { ...defaultFilters },
+    sortBy: 'name' as const,
+    hasFuzzySearch: false,
+    fuzzySearchResults: [],
+    hasMaterialFilter: false,
+    materialFilteredProductIds: new Set<string>(),
+    isLoadingMaterialFilter: false,
+    hasCategoryFilter: false,
+    categoryFilteredProductIds: new Set<string>(),
+    isLoadingCategoryFilter: false,
+  };
+
+  it('não filtra categorias enquanto isLoadingCategoryFilter=true', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasCategoryFilter: true,
+        categoryFilteredProductIds: new Set(['x1']),
+        isLoadingCategoryFilter: true,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('não filtra cores enquanto isLoadingColorFilter=true', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasColorFilter: true,
+        colorFilteredProductIds: new Set(['x2']),
+        isLoadingColorFilter: true,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('não filtra materiais enquanto isLoadingMaterialFilter=true', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasMaterialFilter: true,
+        materialFilteredProductIds: new Set(['x1', 'x2']),
+        isLoadingMaterialFilter: true,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
+
+  it('não filtra tamanhos enquanto isLoadingSizeFilter=true', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasSizeFilter: true,
+        sizeFilteredProductIds: new Set(['x3']),
+        isLoadingSizeFilter: true,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
   });
 });
