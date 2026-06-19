@@ -16,6 +16,7 @@ interface UseProductsByColorResult {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsByColor({
@@ -26,6 +27,7 @@ export function useProductsByColor({
 }: UseProductsByColorOptions): UseProductsByColorResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const hasFilter = useMemo(
     () =>
@@ -65,6 +67,7 @@ export function useProductsByColor({
 
     const token = ++fetchTokenRef.current;
     setIsLoading(true);
+    setError(null);
 
     try {
       const refQueries = [
@@ -198,6 +201,7 @@ export function useProductsByColor({
     } catch (err) {
       if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
+      setError(err);
       setProductIds(new Set());
     } finally {
       if (token === fetchTokenRef.current) setIsLoading(false);
@@ -209,5 +213,5 @@ export function useProductsByColor({
     if (filterKey !== lastFetchedKey.current || !hasFilter) fetchProductIds();
   }, [filterKey, hasFilter, fetchProductIds]);
 
-  return { productIds, hasFilter, isLoading };
+  return { productIds, hasFilter, isLoading, error };
 }

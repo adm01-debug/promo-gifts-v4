@@ -259,10 +259,23 @@ export function useFiltersPageState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
   });
+
+  const prevMaterialErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = materialFilterError ? String(materialFilterError) : null;
+    if (materialFilterError && msg !== prevMaterialErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de materiais', {
+        description: 'O filtro de Materiais falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMaterialErrorRef.current = msg;
+  }, [materialFilterError]);
+
   const {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
@@ -292,49 +305,64 @@ export function useFiltersPageState() {
     endomarketing: filters.endomarketing || [],
   });
   // FIX-8: notifica erros de todas as RPCs de filtro server-side.
-  // Padrão consistente: cada RPC tem seu ref para evitar toast duplicado se o erro
-  // persistir entre renders.
-  const prevMetadataErrorRef = useRef<unknown>(null);
+  // FIX-19: compara mensagem (string) em vez de identidade de objeto — o hook de RPC pode
+  // recriar o objeto de erro a cada render com o mesmo conteúdo, disparando toast infinito.
+  const prevMetadataErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (metadataFilterError && metadataFilterError !== prevMetadataErrorRef.current) {
+    const msg = metadataFilterError ? String(metadataFilterError) : null;
+    if (metadataFilterError && msg !== prevMetadataErrorRef.current) {
       toast.error('Erro ao aplicar filtro de metadados', {
         description:
           'O filtro de Datas/Tags/Público/Nichos falhou temporariamente. Tente alterar o filtro.',
       });
     }
-    prevMetadataErrorRef.current = metadataFilterError;
+    prevMetadataErrorRef.current = msg;
   }, [metadataFilterError]);
 
-  const prevSizeErrorRef = useRef<unknown>(null);
+  const prevSizeErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (sizeFilterError && sizeFilterError !== prevSizeErrorRef.current) {
+    const msg = sizeFilterError ? String(sizeFilterError) : null;
+    if (sizeFilterError && msg !== prevSizeErrorRef.current) {
       toast.error('Erro ao aplicar filtro de tamanhos', {
         description: 'O filtro de Tamanhos falhou temporariamente. Tente alterar o filtro.',
       });
     }
-    prevSizeErrorRef.current = sizeFilterError;
+    prevSizeErrorRef.current = msg;
   }, [sizeFilterError]);
 
-  const prevCategoryErrorRef = useRef<unknown>(null);
+  const prevCategoryErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (categoryFilterError && categoryFilterError !== prevCategoryErrorRef.current) {
+    const msg = categoryFilterError ? String(categoryFilterError) : null;
+    if (categoryFilterError && msg !== prevCategoryErrorRef.current) {
       toast.error('Erro ao aplicar filtro de categorias', {
         description: 'O filtro de Categorias falhou temporariamente. Tente alterar o filtro.',
       });
     }
-    prevCategoryErrorRef.current = categoryFilterError;
+    prevCategoryErrorRef.current = msg;
   }, [categoryFilterError]);
 
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
     colors: filters.colors,
   });
+
+  const prevColorErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = colorFilterError ? String(colorFilterError) : null;
+    if (colorFilterError && msg !== prevColorErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de cores', {
+        description: 'O filtro de Cores falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevColorErrorRef.current = msg;
+  }, [colorFilterError]);
 
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
@@ -482,6 +510,7 @@ export function useFiltersPageState() {
         hasColorFilter,
         colorFilteredProductIds,
         isLoadingColorFilter,
+        colorFilterError,
         hasCategoryFilter,
         categoryFilteredProductIds,
         isLoadingCategoryFilter,
@@ -489,6 +518,7 @@ export function useFiltersPageState() {
         hasMaterialFilter,
         materialFilteredProductIds,
         isLoadingMaterialFilter,
+        materialFilterError,
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
@@ -511,6 +541,7 @@ export function useFiltersPageState() {
       hasMaterialFilter,
       materialFilteredProductIds,
       isLoadingMaterialFilter,
+      materialFilterError,
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,
@@ -526,6 +557,7 @@ export function useFiltersPageState() {
       hasColorFilter,
       colorFilteredProductIds,
       isLoadingColorFilter,
+      colorFilterError,
       promoSalesMap,
       supplierSalesMap,
       promoSales90dMap,
