@@ -55,7 +55,7 @@ export async function exportCollectionPDF({
       p.brand || '-',
       p.category_name || '-',
       variant?.color_name || '-',
-      p.price != null ? `R$ ${p.price.toFixed(2)}` : '-',
+      p.price !== null ? `R$ ${p.price.toFixed(2)}` : '-',
     ];
   });
 

@@ -245,10 +245,12 @@ export function applyProductFilters(
       }
     } else {
       // Legado: BUG-17 — match por variações carregadas no produto.
-      const sizeSet = new Set(filters.sizes);
+      // FIX-15: normaliza para lowercase+trim para não depender de casing do catálogo.
+      const sizeSet = new Set(filters.sizes.map((s) => s.toLowerCase().trim()));
       result = result.filter((product) =>
         product.variations?.some(
-          (v: ProductVariation) => v.size_code !== null && sizeSet.has(String(v.size_code)),
+          (v: ProductVariation) =>
+            v.size_code !== null && sizeSet.has(String(v.size_code).toLowerCase().trim()),
         ),
       );
     }

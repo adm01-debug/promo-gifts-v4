@@ -926,4 +926,71 @@ describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva'
     const out = run(f({ priceRange: [9.9, 9.9] }));
     expect(ids(out)).toEqual(['1']);
   });
+
+  // ---------------------------------------------------------------------------
+  // FIX-15: SIZE-FILTER-CASE-SENSITIVITY (legado — sem servidor)
+  // ---------------------------------------------------------------------------
+  describe('FIX-15: size filter — case/trim normalization (legacy path)', () => {
+    // Catálogo auxiliar com variações em casing misto
+    const p_M_upper = makeProduct({
+      id: 'sz-upper',
+      variations: [{ size_code: 'M', stock: 1 } as never],
+    });
+    const p_M_lower = makeProduct({
+      id: 'sz-lower',
+      variations: [{ size_code: 'm', stock: 1 } as never],
+    });
+    const p_XL_mixed = makeProduct({
+      id: 'sz-xl',
+      variations: [{ size_code: ' XL ', stock: 1 } as never],
+    });
+    const catalogSizes = [p_M_upper, p_M_lower, p_XL_mixed];
+    const runSz = (filters: FilterState) =>
+      applyProductFilters(catalogSizes, filters, filters.sortBy, baseCtx());
+
+    it('filtro "m" (minúsculo) deve casar com variação "M" (maiúsculo)', () => {
+      const out = runSz(f({ sizes: ['m'] }));
+      expect(ids(out)).toContain('sz-upper');
+      expect(ids(out)).toContain('sz-lower');
+    });
+
+    it('filtro "M" (maiúsculo) deve casar com variação "m" (minúsculo)', () => {
+      const out = runSz(f({ sizes: ['M'] }));
+      expect(ids(out)).toContain('sz-upper');
+      expect(ids(out)).toContain('sz-lower');
+    });
+
+    it('filtro "xl" deve casar com variação " XL " (com espaços)', () => {
+      const out = runSz(f({ sizes: ['xl'] }));
+      expect(ids(out)).toContain('sz-xl');
+      expect(ids(out)).not.toContain('sz-upper');
+    });
+
+    it('filtro " XL " (com espaços) deve casar com variação "xl" normalizada', () => {
+      const p_xl_clean = makeProduct({
+        id: 'sz-xl-clean',
+        variations: [{ size_code: 'xl', stock: 1 } as never],
+      });
+      const out = applyProductFilters([p_xl_clean], f({ sizes: [' XL '] }), 'name_asc', baseCtx());
+      expect(ids(out)).toContain('sz-xl-clean');
+    });
+
+    it('filtro com casing diferente não deve excluir produto com variação correspondente', () => {
+      // Produto 3 do CATALOG tem variação size_code: 'M'
+      const out = run(f({ sizes: ['m'] }));
+      expect(ids(out)).toContain('3'); // 'm' deve casar 'M'
+    });
+
+    it('filtro com casing correto ainda funciona (não quebra caso normal)', () => {
+      const out = run(f({ sizes: ['M'] }));
+      expect(ids(out)).toContain('3'); // 'M' = 'M' → incluído
+      expect(ids(out)).not.toContain('7'); // produto 7 tem 'P' e 'G', não 'M'
+    });
+
+    it('combinação de tamanhos com casing misto retorna todos os matches', () => {
+      const out = run(f({ sizes: ['m', 'p'] }));
+      expect(ids(out)).toContain('3'); // tem 'M'
+      expect(ids(out)).toContain('7'); // tem 'P'
+    });
+  });
 });
