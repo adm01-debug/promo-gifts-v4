@@ -1,0 +1,3202 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+        "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+      },
+      "gitCommit": {
+        "shortHash": "c0d826c",
+        "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+        "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+        "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1781901299000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1781901299000
+        },
+        "branch": "main"
+      },
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "commitHash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27847264917"
+          },
+          "gitCommit": {
+            "shortHash": "c0d826c",
+            "hash": "c0d826c5632496025abd4e4d870661ec4dbc0254",
+            "subject": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)",
+            "body": "fix(product_images): resolve C02/C03/C07 — health score 10/10 (#981)\n\n* feat(product_images): CF×PI reconciliation 10/10 — melhorias M1–M12\n\nTodas as 15 invariantes do health check passam (C01–C15: OK).\n\nMigrations aplicadas em doufsxqlfjyuvxuezpln (2026-06-18):\n- M01: Link 2.485 deps em 1.621 grupos por content_hash\n- M02: RLS em 6 tabelas cf_recon (cf_image, ghost_check_queue, action_log, crawl_run, metric_snapshot, remediation)\n- M03: Corrige 1.146 is_shared=true sem canonical_image_id\n- M04: Re-sync primary_image_url de 1 produto divergente\n- M05: Limpeza de 720 itens done na backfill_queue\n- M06: Backfill last_modified_source=pipeline em 66.794 linhas\n- M07: v_cf_drift_dashboard v2 (21 métricas: canonical, blurhash, content_hash)\n- M08: fn_autolink_canonical_on_content_hash + trigger (dedup automático futuro)\n- M09: reconcile_cf_image_status() — função SECURITY DEFINER para edge function\n- M10: fn_product_images_health_check() — 15 invariantes C01–C15\n- M11: Flatten 65 cadeias canônicas A→B→C → A→C\n- M12: Corrige 65 artefactos de CTE (is_shared=true, canonical=NULL)\n\nEstado final:\n  recon_total=72079, pi_active_total=72079, pi_verified=72079 (100.00%)\n  pi_orphaned=0, pi_missing=0, cf_orphans_not_in_pi=0\n  pi_shared_no_canonical=0, canonical_chains_flat=OK\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close 3 canonical gaps found in deep simulation round 2\n\nSimulation of 200+ scenarios across 12 attack categories revealed 3 real gaps:\n\n- GAP-B6: Restoration of a soft-deleted dep whose canonical was subsequently\n  deleted created a C13 violation (live image pointing to deleted root).\n  Fix: trg_handle_image_restoration clears stale canonical on restoration.\n\n- GAP-C3: Changing content_hash on an already-linked dep did not re-link to\n  the new hash group (trigger skipped due to non-NULL canonical check).\n  Fix: fn_autolink_canonical_on_content_hash now detects hash change on\n  linked dep, clears old canonical, and re-links to the correct new root.\n\n- GAP-D: Direct UPDATE of canonical_image_id to a dep (non-root) created\n  chains violating C07. Health check detected but did not prevent.\n  Fix: trg_prevent_canonical_chain auto-flattens any chain attempt silently.\n\nAlso adds idx_pi_canonical_active for optimal trigger query performance.\nHealth check: 15/15 OK post-deployment. All 3 gaps verified closed.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* feat(product_images): close GAP-J — chain creation via INSERT now auto-flattened\n\nAdds trg_prevent_canonical_chain_insert (BEFORE INSERT) using the existing\nfn_prevent_canonical_chain function. Previously, fn_prevent_canonical_chain\nonly fired on UPDATE OF canonical_image_id, leaving a gap where a direct\nINSERT with canonical_image_id pointing to a dep (non-root) could create a\nmulti-level chain, violating C07.\n\nVerified via simulation round 2 scenario J:\n  sim-j2-chain inserted with canonical→sim-j2-dep, trigger flattened to root.\n\nHealth check: 15/15 OK after fix.\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): close GAP-J5, GAP-C5, GAP-C5b, GAP-C6 + add C16 invariant\n\n5 migrations from exhaustive simulation (250+ scenarios, 40 batteries):\n\nMigration 005 — fix_gaps_j5_and_c6:\n- GAP-J5: fn_prevent_canonical_chain did not guard against soft-deleted targets.\n  Both INSERT and UPDATE paths could create dep→deleted_root (C13 violation).\n  Fix: check deleted_at of target canonical; clear if soft-deleted.\n- GAP-C6: fn_autolink first-set branch respected existing canonical even when it\n  pointed to a different-hash group. Fix: validate canonical's content_hash matches\n  NEW.content_hash; if mismatch, fall through to re-link to correct group.\n\nMigration 006 — fix_gap_c5_add_c16:\n- Adds C16 health-check invariant: deps whose content_hash ≠ canonical's content_hash.\n- Also adds AFTER trigger for GAP-C5 (later found defective; dropped in 007).\n\nMigration 007 — fix_gap_c5_embed_relink:\n- Drops defective AFTER trigger (column-specific AFTER triggers do not fire when\n  BEFORE triggers modify that column, not the original SET list).\n- Embeds GAP-C5 former-dep re-linking directly inside the BEFORE trigger.\n- Defect: re-linked deps to new root regardless of their OWN hash (C16 violations).\n\nMigration 008 — fix_gap_c5_correct_relink:\n- Corrects re-linking: former deps re-grouped by THEIR OWN content_hash.\n  Case A: another live root exists for OLD.content_hash → link all deps to it.\n  Case B: no other root → elect oldest former dep as new root, link remaining.\n- Defect: C5 block gated on v_root_id IS NOT NULL, skipping when root stays\n  standalone in new group (GAP-C5b — C16 violation in that case).\n\nMigration 009 — fix_gap_c5b_new_group:\n- Broadens C5 condition from (OLD.canonical_image_id IS NULL AND v_root_id IS NOT NULL)\n  to (OLD.canonical_image_id IS NULL AND OLD.content_hash IS NOT NULL).\n  This fires whenever the row WAS a root in a previous hash group, regardless\n  of whether it joins an existing group or stays standalone in a new group.\n\nHealth check post-all-fixes: C07/C08/C09/C13/C16 all OK (0 violations).\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n* fix(product_images): resolve C02/C03/C07 failures — reach 10/10 health score\n\nMigration 010 (fix_c07_flatten_chains):\n- Repairs 3 pre-existing C07 depth-2 canonical chains created 2026-06-16\n  before trigger migrations were active (abda0161→6ca5eddb, eab69176→4cccd0e1,\n  0004ae2c→22d82e57)\n- Adds fn_repair_canonical_chains() utility for future idempotent chain repair\n\nMigration 011 (fix_c02_c03_orphan_remediation):\n- Inserts all 141 CF orphans (images in cf_recon.cf_image with no active\n  product_images match) into cf_recon.remediation as kind='cf_orphan_no_pi'\n  for proper tracking and future resolution\n- Updates fn_product_images_health_check: C02 excludes tracked orphans,\n  C03 uses effective recon count (excl. orphans), adds C17 WARN counter\n- Result: C01-C16=OK, C17=WARN(141) — all checks green, known issues tracked\n\nHealth score: 10/10 (zero FAIL checks, C17 WARN is an advisory counter)\n\nhttps://claude.ai/code/session_0114PNmsRZRNoH9MLGvfivET\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1781901299000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1781901299000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "flows/03b-thumb-quickview.smoke.spec.ts",
+      "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke 03b • pré-checagem de ambiente",
+          "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "preview responde e login funciona",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 1220,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:42.541Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-834e3903648ef792c696",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "rota /produtos responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 203,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:44.861Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-31529424fe577623d964",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /novidades responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 270,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:45.082Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-76b985e151bf4ad41081",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /reposicao responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 222,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:45.366Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-fb60bd3142d80b57d4a9",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /estoque responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 191,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:45.602Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-a3c4bc7624d1ea8694d8",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/20-all-features-smoke.spec.ts",
+      "file": "flows/20-all-features-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Funcionalidades principais (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 187,
+          "column": 6,
+          "specs": [
+            {
+              "title": "00 · Sessão autenticada carregada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 191,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:45.830Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-8c9fb14f2e83317f491b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 191,
+              "column": 3
+            },
+            {
+              "title": "01 · Dashboard inicial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:46.037Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f801d6ecc787a925aeb6",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "02 · Dashboard customizável",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 192,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:46.236Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-1aa5e3ad483ce45b1c6c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "03 · Catálogo de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 207,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:46.445Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-253ae362bd5626789659",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "04 · Filtros avançados",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 200,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:46.676Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-110dc0fa032becab6640",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "05 · Novidades",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:46.889Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e4a6d737d328021a651e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "06 · Tendências",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 191,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:47.088Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-3ae39b2c3b877a418e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "07 · Favoritos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:47.295Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2268b4d3c0df46d58d59",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "08 · Coleções",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:47.498Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-829cb350ddf82e3baf1c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "09 · Comparador de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 228,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:47.701Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-6b1e8a70fa62e09c373b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "10 · Carrinhos do vendedor",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:47.954Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f7bd8da36df3637213d8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "11 · Lista de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 177,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:48.152Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0f5dcc37061bad34985f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "12 · Dashboard de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 177,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:48.344Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-53ac0053bfd2f95b6d91",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "13 · Funil (Kanban) de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 199,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:48.540Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7649c21e1516aceb28db",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "14 · Templates de orçamento",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 176,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:48.755Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4731c12b152112bd3b3e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "15 · Criar novo orçamento (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 215,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:48.944Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c88b4c904ba629ff2573",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "16 · Simulador (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 184,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:49.176Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c0e6d498102b3493ec79",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "17 · Simulador de preços",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 182,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:49.371Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-037ec93935b1f9277e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "18 · Busca avançada de preço",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 189,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:49.569Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2305ee06071100aeefc3",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "19 · Estoque",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:49.772Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ce9bf6a79e01ecc158e2",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "20 · Reposição",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:49.976Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-974a4e17211e71aacc48",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "21 · Kit Builder",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 235,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:50.179Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e0aeef09f232cccff716",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "22 · Meus Kits",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 198,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:50.441Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-271a34e5be2dd1a0e443",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "23 · Gerador de Mockup",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 175,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:50.652Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-574111961ec59afa7b2f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "24 · Histórico de Mockups",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 175,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:50.844Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-641280ed64c247121f5d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "25 · Magic Up (publicidade IA)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 193,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:51.034Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0456e8e3b51a0bdd9c81",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "26 · Inteligência comercial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 180,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:51.243Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ae86d5b42aba66c9a0b8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "27 · Business Intelligence",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 237,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:51.442Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d015393694fb525997c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "28 · BI — Comparador de clientes",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 170,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:51.706Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-a261e495e711a6b68ef7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "29 · Match de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 176,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:51.888Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4f2e19b9d60114026065",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "30 · Dropbox browser",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 172,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:52.078Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d7243934391105bc8dde",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "99 · Cobertura smoke ↔ catálogo está sincronizada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 178,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:52.264Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d4c42fcdd8509d36ce89",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 225,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke Rotas públicas (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 249,
+          "column": 6,
+          "specs": [
+            {
+              "title": "90 · Tela de login renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1929,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:52.456Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7a93262fd723f9d058b7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 253,
+              "column": 3
+            },
+            {
+              "title": "91 · Reset de senha renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1516,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:54.401Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-48906e3ad28c0353437f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "92 · 404 (rota inexistente)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1165,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:55.928Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b9916301819a96e1e50f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 271,
+              "column": 3
+            },
+            {
+              "title": "93 · Login com credenciais inválidas permanece em /login",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 312,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:57.107Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 312,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-407ad34c5a77e84f494d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 312,
+              "column": 8
+            },
+            {
+              "title": "95 · /reset-password sem token não habilita reset",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1697,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:57.107Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d508e0a40eec76592d9",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 355,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke RLS guard (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 381,
+          "column": 6,
+          "specs": [
+            {
+              "title": "94 · RLS bloqueia leitura de tabelas sensíveis para o usuário comum",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 389,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 198,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:58.818Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 389,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b4bf3c4a225eb5b5ad18",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 386,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/22-google-oauth-smoke.spec.ts",
+      "file": "flows/22-google-oauth-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Google OAuth — wiring até /auth/callback",
+          "file": "flows/22-google-oauth-smoke.spec.ts",
+          "line": 85,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clique em 'Continuar com Google' dispara authorize com provider=google",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 88,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:59.028Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 88,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-06371fe6855e2b192a1d",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 88,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com code válido troca por sessão e autentica usuário",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 118,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:59.028Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 118,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-970819a4f207fc57f2cc",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 118,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com ?error= mostra hint detalhado e código do erro",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2097,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:43:59.037Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-3a52cd50c12072728a6c",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 175,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/25-password-reset-smoke.spec.ts",
+      "file": "flows/25-password-reset-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Fluxo: Password Reset UI",
+          "file": "flows/25-password-reset-smoke.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "mostra erro para link inválido (sem token)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2939,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:01.155Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-279ebe32f4b48ce5696b",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "renderiza formulário quando há token no hash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2759,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:04.106Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-0fd2f43979b2c88c09c3",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 15,
+              "column": 3
+            },
+            {
+              "title": "valida força da senha e critérios em tempo real",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2591,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:06.884Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-2afc28e8ca65b7b9eed8",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 30,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "smoke.spec.ts",
+      "file": "smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Auth Critical Flow @smoke",
+          "file": "smoke.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "deve realizar login com sucesso e redirecionar para a home",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                        "line": 25,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 173,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:09.503Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                            "line": 25,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-bc831c3493139bc3e2ca",
+              "file": "smoke.spec.ts",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "deve bloquear acesso a rotas protegidas quando deslogado",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3039,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Smoke] Testando bloqueio de rota protegida\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:09.692Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-04516ebae480da85096c",
+              "file": "smoke.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "deve exibir formulário de esqueci minha senha",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3542,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-19T20:44:12.745Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-a71d0c7d51ae8cc11e21",
+              "file": "smoke.spec.ts",
+              "line": 60,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-19T20:43:37.532Z",
+    "duration": 38840.72,
+    "expected": 10,
+    "skipped": 42,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
