@@ -1,16 +1,14 @@
 {
-  "generatedAt": "2026-06-19T19:47:24.929Z",
-  "totalErrors": 14,
+  "generatedAt": "2026-06-19T20:14:25.868Z",
+  "totalErrors": 3,
   "counts": {
     "src/components/novelties/NoveltyCardSkeleton.tsx": {
       "prefer-arrow-callback": 1
     },
     "src/components/novelties/NoveltyCards.tsx": {
-      "@typescript-eslint/no-unused-vars": 6,
-      "unused-imports/no-unused-imports": 6
+      "<no-rule>": 1
     },
     "src/components/products/BaseProductGridCard.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1,
       "prefer-arrow-callback": 1
     }
   }
