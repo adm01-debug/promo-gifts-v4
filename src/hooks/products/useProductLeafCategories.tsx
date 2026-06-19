@@ -144,7 +144,7 @@ function useGlobalLeafCategories(): LeafCategoryMap {
       );
       if (error) {
         logger.warn('[useProductLeafCategories] RPC falhou; usando fallback vazio', error);
-        return new Map();
+        throw error;
       }
       const rows = (data ?? []) as unknown as LeafCategoryRow[];
       const map = new Map<string, LeafCategory>();

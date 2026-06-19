@@ -61,6 +61,10 @@ export interface LightweightProduct {
   ai_summary?: string | null;
   ai_version?: number | null;
   ai_generated_at?: string | null;
+  // FIX BUG-D (2026-06-18): campos pré-computados em v_products_public via mv_product_leaf_category.
+  leaf_category_id?: string | null;
+  leaf_category_name?: string | null;
+  leaf_category_level?: number | null;
 }
 
 function isTimeoutError(error: unknown): boolean {

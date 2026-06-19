@@ -58,12 +58,9 @@ export function mapLightweightToProduct(
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
   // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda).
-  // leaf_category_id/name são campos extras não mapeados no tipo LightweightProduct.
-  const pExtra = p as unknown as Record<string, unknown>;
-  const resolvedCategoryId =
-    (pExtra['leaf_category_id'] as string | undefined) || p.category_id || p.main_category_id;
+  const resolvedCategoryId = p.leaf_category_id || p.category_id || p.main_category_id;
   const resolvedCategoryName =
-    (pExtra['leaf_category_name'] as string | undefined) ||
+    p.leaf_category_name ||
     (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
 
   // set_image_url: URL da imagem "set" (todas as cores juntas).
