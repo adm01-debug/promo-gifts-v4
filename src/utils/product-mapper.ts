@@ -122,7 +122,11 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   return {
     id: p.id,
     name: p.name,
-    description: (p.description?.trim() || null) ?? (p.short_description?.trim() || null) ?? (p.meta_description?.trim() || null) ?? null,
+    description:
+      (p.description?.trim() || null) ??
+      (p.short_description?.trim() || null) ??
+      (p.meta_description?.trim() || null) ??
+      null,
     shortDescription: p.short_description ?? '',
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
@@ -214,7 +218,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           heightMm: c.height_mm ?? null,
           widthMm: c.width_mm ?? null,
           lengthMm: c.length_mm ?? null,
-          volumeMl: c.capacity_ml ?? null,
+          volumeMl: (ck.capacity_ml ?? null) as number | null,
           componentTypeCode: (ck.component_type_code ?? null) as string | null,
           supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,
           description: (ck.component_description ?? null) as string | null,
