@@ -232,7 +232,11 @@ export function applyProductFilters(
   if (filters.onSale) result = result.filter((product) => product.onSale === true);
   if (filters.gender?.length) {
     const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
-    result = result.filter((product) => genderSet.has((product.gender || '').toLowerCase().trim()));
+    result = result.filter((product) => {
+      const g = (product.gender ?? '').toLowerCase().trim();
+      // FIX-16: produtos sem gênero definido (null/'') são neutros — incluídos em qualquer filtro.
+      return g === '' || genderSet.has(g);
+    });
   }
   // SF-E: filtragem de tamanho server-side (product_variants) quando disponível;
   // fallback legado client-side (product.variations) caso o contexto não traga o Set.

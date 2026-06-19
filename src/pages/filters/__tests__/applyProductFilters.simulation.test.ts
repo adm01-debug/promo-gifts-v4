@@ -253,8 +253,12 @@ describe('SIM — filtros isolados (resultado exato)', () => {
   it('hasCommercialPackaging retorna apenas com embalagem', () => {
     expect(ids(run(f({ hasCommercialPackaging: true })))).toEqual(['2', '8']);
   });
-  it('gender feminino é case-insensitive', () => {
-    expect(ids(run(f({ gender: ['Feminino'] })))).toEqual(['3']);
+  it('gender feminino é case-insensitive: inclui feminino, exclui unissex, inclui neutros', () => {
+    const out = run(f({ gender: ['Feminino'] }));
+    expect(ids(out)).toContain('3'); // gender='feminino' — match case-insensitive
+    expect(ids(out)).not.toContain('1'); // gender='unissex' — definido, mas diferente → excluído
+    // FIX-16: produtos sem gender são neutros → incluídos com qualquer filtro
+    expect(ids(out)).toContain('2'); // gender='' → neutro
   });
   it('isKit usa detecção de kit', () => {
     expect(ids(run(f({ isKit: true })))).toContain('4');
@@ -739,7 +743,54 @@ describe('SIM — regressões e casos extremos adicionais', () => {
     const out = run(f({ gender: ['unissex', 'feminino'] }));
     expect(ids(out)).toContain('1'); // unissex
     expect(ids(out)).toContain('3'); // feminino
-    expect(ids(out)).not.toContain('4'); // sem gender definido
+    // FIX-16: produtos sem gênero (gender='') são neutros → incluídos em qualquer filtro
+    expect(ids(out)).toContain('4'); // Kit Executivo não tem gender definido → neutro
+  });
+
+  // ---------------------------------------------------------------------------
+  // FIX-16: GENDER-NULL-PRODUCTS — neutros incluídos em qualquer filtro de gênero
+  // ---------------------------------------------------------------------------
+  describe('FIX-16: produtos com gender null/vazio são neutros (não excluídos)', () => {
+    const pNull = makeProduct({ id: 'g-null', gender: null as never });
+    const pEmpty = makeProduct({ id: 'g-empty', gender: '' });
+    const pFem = makeProduct({ id: 'g-fem', gender: 'feminino' });
+    const pMasc = makeProduct({ id: 'g-masc', gender: 'masculino' });
+    const catalogG = [pNull, pEmpty, pFem, pMasc];
+    const runG = (filters: FilterState) =>
+      applyProductFilters(catalogG, filters, filters.sortBy, baseCtx());
+
+    it('filtro feminino → inclui produtos com gender=null', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-null');
+    });
+
+    it('filtro feminino → inclui produtos com gender="" (vazio)', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-empty');
+    });
+
+    it('filtro feminino → inclui produto com gender=feminino', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-fem');
+    });
+
+    it('filtro feminino → exclui produto com gender=masculino (gênero definido diferente)', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).not.toContain('g-masc');
+    });
+
+    it('filtro masculino → inclui neutros, exclui feminino', () => {
+      const out = runG(f({ gender: ['masculino'] }));
+      expect(ids(out)).toContain('g-null');
+      expect(ids(out)).toContain('g-empty');
+      expect(ids(out)).toContain('g-masc');
+      expect(ids(out)).not.toContain('g-fem');
+    });
+
+    it('sem filtro gender → todos os produtos aparecem', () => {
+      const out = runG(f());
+      expect(out.length).toBe(catalogG.length);
+    });
   });
 
   it('sizes legado: produto sem variações é excluído mesmo que tamanho coincida', () => {
