@@ -32,12 +32,13 @@ export const AUTH_BLOCKED_PREFIXES = [
 // Nota: '/auth' cobre '/auth/callback' automaticamente via startsWith.
 
 /**
- * Decodifica até 2 níveis de URL-encoding para frustrar bypass com
- * `%2Fauth`, `%252Fauth`, etc. Retorna a string original se decode falhar.
+ * Decodifica até 5 níveis de URL-encoding para frustrar bypass com
+ * `%2Fauth`, `%252Fauth`, `%25252Fauth`, etc. Retorna a string original se decode falhar.
+ * 5 iterations covers triple-encoding (%25252F → %252F → %2F → /) plus margin.
  */
 function safeDecode(path: string): string {
   let current = path;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 5; i++) {
     try {
       const next = decodeURIComponent(current);
       if (next === current) break;

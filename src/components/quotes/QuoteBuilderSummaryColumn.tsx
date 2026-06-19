@@ -259,7 +259,7 @@ export function QuoteBuilderSummaryColumn({
                   const isStale = staleIndexes.has(idx);
                   return (
                     <div
-                      key={idx}
+                      key={item.id ?? `${item.product_id}-${item.product_sku ?? ''}-${item.color_name ?? ''}-${idx}`}
                       className={cn(
                         'cursor-pointer rounded-xl border transition-all',
                         isActive

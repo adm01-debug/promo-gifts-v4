@@ -469,7 +469,7 @@ export const ProductCard = memo(
       }
 
       // Fallback: primary_image_url (é a imagem com is_primary=true, campo canônico)
-      return product.primary_image_url || product.og_image_url || product.images[0] || null;
+      return product.primary_image_url || product.og_image_url || product.images?.[0] || null;
     }, [
       product,
       activeColorFilter,
@@ -490,7 +490,7 @@ export const ProductCard = memo(
       effectiveImageUrl !== '/placeholder.svg' &&
       (effectiveImageUrl === product.primary_image_url ||
         effectiveImageUrl === product.og_image_url ||
-        effectiveImageUrl === product.images[0])
+        effectiveImageUrl === product.images?.[0])
         ? getSrcSet(effectiveImageUrl)
         : undefined;
 
@@ -635,7 +635,7 @@ export const ProductCard = memo(
               productName={product.name}
               productSku={product.sku}
               productImageUrl={
-                product.primary_image_url || product.og_image_url || product.images[0]
+                product.primary_image_url || product.og_image_url || product.images?.[0]
               }
               productPrice={product.price}
               productMinQuantity={product.minQuantity || 1}

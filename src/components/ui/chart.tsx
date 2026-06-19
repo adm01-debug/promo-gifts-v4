@@ -81,9 +81,16 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
                 .map(([key, itemConfig]) => {
                   const color =
                     itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-                  // Validation: Only allow safe color values (hex, rgb, hsl, or named colors)
-                  // This is a simple regex to block injection of closing braces or other CSS properties
-                  if (!color || !/^#?[a-zA-Z0-9(),.\s%]+$/.test(color)) return null;
+                  // Strict whitelist: only hex, rgb/rgba, hsl/hsla, or short CSS named colors.
+                  // The old regex allowed `()`, spaces, and `%` in combination — enough for
+                  // `expression(...)` or `url(...)` injections in legacy IE/edge parsers.
+                  if (
+                    !color ||
+                    !/^(#[0-9a-fA-F]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*[\d.]+\s*\)|hsl\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*\)|hsla\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*,\s*[\d.]+\s*\)|[a-zA-Z]{2,30})$/.test(
+                      color,
+                    )
+                  )
+                    return null;
                   return `  --color-${key}: ${color};`;
                 })
                 .filter(Boolean)
