@@ -370,7 +370,7 @@ export function ProductsManager() {
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="text-sm font-semibold tabular-nums">
-                            R$ {product.price.toFixed(2)}
+                            R$ {product.price?.toFixed(2) ?? '—'}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">

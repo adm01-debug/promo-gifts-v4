@@ -46,7 +46,7 @@ export function useSupplierSalesRanking() {
       try {
         // FIX BUG-A: usar RPC que retorna todas as 7 243+ linhas sem limite.
         // supabase.rpc() não é afetado por db-max-rows do PostgREST.
-        // fn_get_product_intelligence_all é SECURITY DEFINER e não está nos tipos gerados.
+        // fn_get_product_intelligence_all é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
         type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
         const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
           'fn_get_product_intelligence_all',

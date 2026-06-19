@@ -28,8 +28,12 @@ interface CatalogFilteringOptions {
   hasMetadataFilter?: boolean;
   metadataFilteredProductIds?: Set<string>;
   isLoadingMetadataFilter?: boolean;
+  hasSizeFilter?: boolean;
+  sizeFilteredProductIds?: Set<string>;
+  isLoadingSizeFilter?: boolean;
   promoSalesMap?: Map<string, number>;
-  supplierSalesMap?: Map<string, number>;
+  promoSales90dMap?: Map<string, number>;
+  supplierSalesMap?: Map<string, SupplierSalesEntry>;
 }
 
 const EMPTY_ID_SET: ReadonlySet<string> = new Set<string>();
@@ -52,7 +56,11 @@ export function useCatalogFiltering({
   hasMetadataFilter = false,
   metadataFilteredProductIds = EMPTY_ID_SET as Set<string>,
   isLoadingMetadataFilter = false,
+  hasSizeFilter = false,
+  sizeFilteredProductIds = EMPTY_ID_SET as Set<string>,
+  isLoadingSizeFilter = false,
   promoSalesMap,
+  promoSales90dMap,
   supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
@@ -154,6 +162,32 @@ export function useCatalogFiltering({
       result = result.filter((p) => genderFilterSet.has((p.gender || '').toLowerCase().trim()));
     }
 
+    // BUG-CATALOG-SIZES FIX: tamanhos eram filtráveis no painel mas ignorados
+    // no pipeline do catálogo principal. useProductsBySize consulta product_variants
+    // server-side (mesmo padrão de cor/categoria/material).
+    if (hasSizeFilter && !isLoadingSizeFilter) {
+      if (sizeFilteredProductIds.size > 0) {
+        result = result.filter((p) => sizeFilteredProductIds.has(p.id));
+      } else {
+        return [];
+      }
+    }
+
+    // BUG-VENDAS-FILTER-CATALOG FIX: minSupplierSales90d e minPromoSales90d eram
+    // mostrados no painel e aplicados no Super Filtro (/filtros) mas ignorados aqui.
+    // Usa supplierSalesMap.depleted90d (SupplierSalesEntry) e promoSales90dMap
+    // — mesmas fontes que applyProductFilters.ts usa. Guarda: só filtra se o mapa
+    // estiver disponível e não vazio (mapa ausente = dados ainda carregando → não filtra).
+    if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
+      const threshold = filters.minSupplierSales90d;
+      result = result.filter((p) => (supplierSalesMap.get(p.id)?.depleted90d ?? 0) >= threshold);
+    }
+
+    if (filters.minPromoSales90d > 0 && promoSales90dMap && promoSales90dMap.size > 0) {
+      const threshold = filters.minPromoSales90d;
+      result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
+    }
+
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -172,11 +206,10 @@ export function useCatalogFiltering({
 
     // Business Logic - Do not change sorting behavior
     const skipSort = hasFuzzySearch && sortBy === 'name';
-    // supplierSalesMap arrives typed as Map<string, number> via an upstream cast,
-    // but its runtime entries are SupplierSalesEntry (from useSupplierSalesRanking).
-    sortProducts(result, sortBy, {
+    // supplierSalesMap entries são SupplierSalesEntry (from useSupplierSalesRanking).
+    result = sortProducts(result, sortBy, {
       promoSalesMap,
-      supplierSalesMap: supplierSalesMap as unknown as Map<string, SupplierSalesEntry> | undefined,
+      supplierSalesMap,
       skipSort,
     });
 
@@ -213,8 +246,14 @@ export function useCatalogFiltering({
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    hasSizeFilter,
+    sizeFilteredProductIds,
+    isLoadingSizeFilter,
     promoSalesMap,
+    promoSales90dMap,
     supplierSalesMap,
+    filters.minSupplierSales90d,
+    filters.minPromoSales90d,
     categoryFilterSet,
     supplierFilterSet,
     genderFilterSet,

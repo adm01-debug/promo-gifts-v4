@@ -231,6 +231,7 @@ export function useFilterPanelState(
       filters.featured,
       filters.isNew,
       filters.hasPersonalization,
+      filters.onSale,
       filters.inStock,
       filters.hasCommercialPackaging,
     ].filter(Boolean).length;
@@ -249,6 +250,8 @@ export function useFilterPanelState(
       tags: (filters.tags || []).length,
       genero: (filters.gender || []).length,
       tamanhos: (filters.sizes || []).length,
+      'vendas-fornecedor': filters.minSupplierSales90d > 0 ? 1 : 0,
+      'vendas-promo': filters.minPromoSales90d > 0 ? 1 : 0,
       'opcoes-rapidas': quickCount,
       ordenacao: filters.sortBy !== 'newest' ? 1 : 0,
     } as Record<string, number>;

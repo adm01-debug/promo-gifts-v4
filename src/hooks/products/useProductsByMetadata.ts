@@ -3,7 +3,8 @@
  *
  * Resolve product_ids via a RPC `fn_super_filtro_product_ids` para os filtros de
  * metadados cujo dado vive em tabelas relacionais e NAO e hidratado no catalogo
- * lightweight: Datas Comemorativas, Tags, Ramos/Segmentos de Atividade e Publico-Alvo.
+ * lightweight: Datas Comemorativas, Tags, Ramos/Segmentos de Atividade, Publico-Alvo
+ * e Endomarketing (tag slug → filtrado por tags.slug = ANY(_endomarketing)).
  *
  * Antes desta correcao, esses filtros rodavam client-side sobre `product.tags.*`
  * (sempre vazio no fetch lightweight), entao selecionar qualquer um zerava a lista
@@ -23,6 +24,7 @@ interface UseProductsByMetadataOptions {
   ramos: string[]; // ramo_atividade.slug
   segmentos: string[]; // ramo_atividade_filho.slug
   publico: string[]; // products.target_audience values
+  endomarketing: string[]; // tags.slug (e.g. 'endomarketing')
 }
 
 interface UseProductsByMetadataResult {
@@ -38,6 +40,7 @@ export function useProductsByMetadata({
   ramos,
   segmentos,
   publico,
+  endomarketing,
 }: UseProductsByMetadataOptions): UseProductsByMetadataResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +52,16 @@ export function useProductsByMetadata({
       tags.length > 0 ||
       ramos.length > 0 ||
       segmentos.length > 0 ||
-      publico.length > 0,
-    [datas.length, tags.length, ramos.length, segmentos.length, publico.length],
+      publico.length > 0 ||
+      endomarketing.length > 0,
+    [
+      datas.length,
+      tags.length,
+      ramos.length,
+      segmentos.length,
+      publico.length,
+      endomarketing.length,
+    ],
   );
 
   const filterKey = useMemo(
@@ -61,8 +72,9 @@ export function useProductsByMetadata({
         [...ramos].sort().join(','),
         [...segmentos].sort().join(','),
         [...publico].sort().join(','),
+        [...endomarketing].sort().join(','),
       ].join('|'),
-    [datas, tags, ramos, segmentos, publico],
+    [datas, tags, ramos, segmentos, publico, endomarketing],
   );
 
   const lastFetchedKey = useRef('');
@@ -99,6 +111,7 @@ export function useProductsByMetadata({
         _ramos: ramos,
         _segmentos: segmentos,
         _publico: publico,
+        _endomarketing: endomarketing,
       });
 
       if (token !== fetchTokenRef.current) return; // superseded — nova selecao de filtro

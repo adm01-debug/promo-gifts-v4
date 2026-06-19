@@ -83,7 +83,7 @@ describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
     const { useAuth } = await import('@/contexts/AuthContext');
     vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { supabase: _supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {

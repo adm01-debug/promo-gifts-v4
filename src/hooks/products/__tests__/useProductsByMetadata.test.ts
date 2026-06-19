@@ -2,12 +2,13 @@
  * Testes — useProductsByMetadata
  *
  * Filtragem server-side via fn_super_filtro_product_ids para metadados
- * que nao sao hidratados no catalogo lightweight: Datas, Tags, Ramos, Segmentos, Publico.
+ * que nao sao hidratados no catalogo lightweight: Datas, Tags, Ramos, Segmentos, Publico,
+ * e Endomarketing (via tags.slug).
  *
  * Invariantes testadas:
  *   - hasFilter: OR entre grupos (qualquer array nao-vazio => true)
- *   - disabled quando todos arrays vazios: sem RPC call, productIds={} 
- *   - chama RPC com os 5 parametros corretos
+ *   - disabled quando todos arrays vazios: sem RPC call, productIds={}
+ *   - chama RPC com os 6 parametros corretos (inclui _endomarketing)
  *   - retorna Set<product_id>
  *   - erro: retorna Set vazio sem relançar
  */
@@ -25,7 +26,7 @@ vi.mock('@/lib/logger', () => ({
   logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-const EMPTY = { datas: [], tags: [], ramos: [], segmentos: [], publico: [] };
+const EMPTY = { datas: [], tags: [], ramos: [], segmentos: [], publico: [], endomarketing: [] };
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -43,6 +44,7 @@ describe('hasFilter — OR entre grupos', () => {
     [{ ...EMPTY, ramos: ['varejo'] }],
     [{ ...EMPTY, segmentos: ['tech'] }],
     [{ ...EMPTY, publico: ['corporativo'] }],
+    [{ ...EMPTY, endomarketing: ['endomarketing'] }],
   ])('true quando qualquer grupo nao-vazio: %j', (opts) => {
     const { result } = renderHook(() => useProductsByMetadata(opts as typeof EMPTY));
     expect(result.current.hasFilter).toBe(true);
@@ -65,7 +67,7 @@ describe('sem filtro ativo', () => {
 
 // -- com filtro ativo ---------------------------------------------------------
 describe('com filtro ativo', () => {
-  it('chama fn_super_filtro_product_ids com os 5 parametros', async () => {
+  it('chama fn_super_filtro_product_ids com os 6 parametros (inclui _endomarketing)', async () => {
     mockRpc.mockResolvedValue({ data: [], error: null });
     const opts = {
       datas: ['natal'],
@@ -73,6 +75,7 @@ describe('com filtro ativo', () => {
       ramos: ['varejo'],
       segmentos: ['tech'],
       publico: ['corporativo'],
+      endomarketing: ['endomarketing'],
     };
     renderHook(() => useProductsByMetadata(opts));
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
@@ -84,6 +87,19 @@ describe('com filtro ativo', () => {
     expect(args._ramos).toEqual(['varejo']);
     expect(args._segmentos).toEqual(['tech']);
     expect(args._publico).toEqual(['corporativo']);
+    expect(args._endomarketing).toEqual(['endomarketing']);
+  });
+
+  it('endomarketing: hasFilter=true e chama RPC com _endomarketing', async () => {
+    mockRpc.mockResolvedValue({ data: [{ product_id: 'p-endo-1' }], error: null });
+    const { result } = renderHook(() =>
+      useProductsByMetadata({ ...EMPTY, endomarketing: ['endomarketing'] }),
+    );
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.hasFilter).toBe(true);
+    expect(result.current.productIds.has('p-endo-1')).toBe(true);
+    const args = mockRpc.mock.calls[0][1];
+    expect(args._endomarketing).toEqual(['endomarketing']);
   });
 
   it('retorna Set com product_ids da resposta RPC', async () => {
@@ -92,7 +108,7 @@ describe('com filtro ativo', () => {
       error: null,
     });
     const { result } = renderHook(() =>
-      useProductsByMetadata({ ...EMPTY, publico: ['corporativo'] })
+      useProductsByMetadata({ ...EMPTY, publico: ['corporativo'] }),
     );
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.productIds.has('p1')).toBe(true);
@@ -103,7 +119,7 @@ describe('com filtro ativo', () => {
   it('retorna Set vazio quando data=[] (sem matches)', async () => {
     mockRpc.mockResolvedValue({ data: [], error: null });
     const { result } = renderHook(() =>
-      useProductsByMetadata({ ...EMPTY, tags: ['tag-nao-existe'] })
+      useProductsByMetadata({ ...EMPTY, tags: ['tag-nao-existe'] }),
     );
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.productIds.size).toBe(0);
@@ -111,9 +127,7 @@ describe('com filtro ativo', () => {
 
   it('data=null trata como array vazio (sem crash)', async () => {
     mockRpc.mockResolvedValue({ data: null, error: null });
-    const { result } = renderHook(() =>
-      useProductsByMetadata({ ...EMPTY, ramos: ['varejo'] })
-    );
+    const { result } = renderHook(() => useProductsByMetadata({ ...EMPTY, ramos: ['varejo'] }));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.productIds.size).toBe(0);
   });
@@ -125,9 +139,7 @@ describe('tratamento de erro', () => {
     mockRpc.mockResolvedValue({ data: null, error: { message: 'DB error' } });
     const { logger } = await import('@/lib/logger');
 
-    const { result } = renderHook(() =>
-      useProductsByMetadata({ ...EMPTY, publico: ['feminino'] })
-    );
+    const { result } = renderHook(() => useProductsByMetadata({ ...EMPTY, publico: ['feminino'] }));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.productIds.size).toBe(0);
     expect(vi.mocked(logger.error)).toHaveBeenCalled();

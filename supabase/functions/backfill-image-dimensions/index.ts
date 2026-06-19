@@ -2,6 +2,8 @@
 // Fetches first 32KB of each image via Range header, parses binary headers to
 // extract width/height/file_size. Processes BATCH_SIZE images per invocation.
 // Called by pg_cron job #125 (every 5min) via net.http_post.
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { authorizeCron } from '../_shared/dispatcher-auth.ts'
 
@@ -108,6 +110,9 @@ async function fetchDims(img: ImgRow): Promise<{ id: string; width: number; heig
 }
 
 Deno.serve(async (req: Request) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'backfill-image-dimensions', requestId: __reqId, req });
+  log.info('request_start');
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
       status: 405,

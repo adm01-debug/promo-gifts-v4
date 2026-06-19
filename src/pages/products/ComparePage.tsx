@@ -127,7 +127,7 @@ export default function ComparePage() {
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             name: 'Comparar Produtos',
-            url: 'https://criar-together-now.lovable.app/comparar',
+            url: 'https://www.promogifts.com.br/comparar',
           }}
         />
         <CompareEmptyStateSmart />
@@ -339,15 +339,13 @@ export default function ComparePage() {
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Cores:</span>
                             <div className="flex gap-0.5">
-                              {entry.product.colors
-                                .slice(0, 4)
-                                .map((c: ProductColor, i: number) => (
-                                  <div
-                                    key={i}
-                                    className="h-4 w-4 rounded-full border border-border"
-                                    style={{ backgroundColor: c.hex }}
-                                  />
-                                ))}
+                              {entry.product.colors.slice(0, 4).map((c: ProductColor) => (
+                                <div
+                                  key={c.hex}
+                                  className="h-4 w-4 rounded-full border border-border"
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
                               {entry.product.colors.length > 4 && (
                                 <span className="ml-1 text-xs text-muted-foreground">
                                   +{entry.product.colors.length - 4}

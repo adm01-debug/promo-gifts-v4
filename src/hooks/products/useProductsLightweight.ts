@@ -44,8 +44,16 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   };
 }
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
+function getStockStatus(
+  stock: number,
+  minQuantity?: number | null,
+): 'in-stock' | 'low-stock' | 'out-of-stock' {
   if (stock <= 0) return 'out-of-stock';
+  // FIX BUG-STOCK-01 (2026-06-18): 144 produtos ativos com stock > 0 mas
+  // min_quantity > stock — aparecem como "Estoque baixo" mas não podem ser
+  // pedidos (fornecedor exige mínimo que excede o disponível). Correto: out-of-stock.
+  // Proteção: min >= 1 evita falso-positivo quando min_quantity é 0/null.
+  if (minQuantity && minQuantity >= 1 && stock < minQuantity) return 'out-of-stock';
   if (stock < 10) return 'low-stock';
   return 'in-stock';
 }
@@ -89,7 +97,7 @@ export function mapLightweightToProduct(
     brand: p.brand,
     is_active: p.is_active || p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     // Espelha product-mapper.ts: featured = is_featured OR is_bestseller.
     // Antes hardcoded false → toggle "Destaques" do Super Filtro retornava 0.
     featured: Boolean(p.is_featured || p.is_bestseller),

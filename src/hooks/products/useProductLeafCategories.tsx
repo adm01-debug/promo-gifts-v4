@@ -137,7 +137,7 @@ function useGlobalLeafCategories(): LeafCategoryMap {
   const { data } = useQuery({
     queryKey: ['global-leaf-categories'],
     queryFn: async (): Promise<Map<string, LeafCategory>> => {
-      // fn_get_all_leaf_categories é SECURITY DEFINER e não está nos tipos gerados.
+      // fn_get_all_leaf_categories é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
       type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
       const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
         'fn_get_all_leaf_categories',
