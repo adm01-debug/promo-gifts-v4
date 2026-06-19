@@ -50,6 +50,7 @@ function leadTimeProxy(status: string | undefined): number {
       return 2;
     case 'out-of-stock':
       return 4;
+    case undefined:
     default:
       return 2;
   }
@@ -63,6 +64,7 @@ function leadTimeLabel(status: string | undefined): string {
       return '5-10 dias';
     case 'out-of-stock':
       return 'Sob consulta';
+    case undefined:
     default:
       return '—';
   }

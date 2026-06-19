@@ -48,6 +48,8 @@ function leadTimeProxy(stockStatus: string | null | undefined): number {
       return 2;
     case 'out-of-stock':
       return 4;
+    case undefined:
+    case null:
     default:
       return 2;
   }

@@ -220,6 +220,7 @@ export function adaptPriceResponseWithMeta(
       return { flat: parseFlat(resp as AnyRec), schemaVersion: version };
     case 'v7-new':
       return { flat: parseFlat(normalizeV7Aliases(resp) as AnyRec), schemaVersion: version };
+    case 'unknown':
     default: {
       warnUnknownSchemaOnce('price-response', resp);
       return { flat: parseFlat(resp as AnyRec), schemaVersion: 'unknown' };

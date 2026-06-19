@@ -254,7 +254,7 @@ const GENERATE_TIMEOUT_MS = 60000;
 // BEFORE spending an edge-function invocation.
 function assertNotSvg(areas: PersonalizationArea[]): void {
   for (const area of areas) {
-    if (area.logoPreview && area.logoPreview.startsWith('data:image/svg')) {
+    if (area.logoPreview?.startsWith('data:image/svg')) {
       throw new Error(
         'Logos SVG não são suportados. Converta o logo para PNG ou JPG e tente novamente.',
       );

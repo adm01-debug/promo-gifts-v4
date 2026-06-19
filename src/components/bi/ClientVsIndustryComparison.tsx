@@ -51,6 +51,7 @@ function classificationStyles(c: MetricComparison['classification']) {
         Icon: Minus,
         label: 'Na média',
       };
+    case 'no_data':
     default:
       return {
         text: 'text-muted-foreground',

@@ -177,6 +177,7 @@ export function QuoteAutoSave({
         return <AlertCircle className="h-4 w-4 text-destructive" />;
       case 'offline':
         return <CloudOff className="h-4 w-4 text-warning" />;
+      case 'idle':
       default:
         return <Cloud className="h-4 w-4" />;
     }
@@ -199,6 +200,7 @@ export function QuoteAutoSave({
         return 'Erro ao salvar';
       case 'offline':
         return 'Offline';
+      case 'idle':
       default:
         return hasUnsavedChanges
           ? 'Alterações não salvas'

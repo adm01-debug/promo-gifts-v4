@@ -104,7 +104,12 @@ export default [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': ['error', { allowDefaultCaseForExhaustiveSwitch: true }],
+      '@typescript-eslint/consistent-generic-constructors': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'error',
+      '@typescript-eslint/unified-signatures': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },
@@ -127,7 +132,13 @@ export default [
       'no-duplicate-imports': 'error',
       'no-else-return': 'warn',
       'prefer-const': 'error',
-      eqeqeq: ['error', 'always'],
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-else-return': ['error', { allowElseIf: true }],
+      'no-lonely-if': 'error',
+      'no-unneeded-ternary': 'error',
+      'prefer-regex-literals': ['error', { disallowRedundantWrapping: true }],
+      yoda: ['error', 'never'],
+      'dot-notation': 'error',
 
       // Quality guardrails — crystallised from Batches 33-39
       'object-shorthand': ['error', 'always'],

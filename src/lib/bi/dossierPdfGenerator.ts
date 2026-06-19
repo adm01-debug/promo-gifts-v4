@@ -54,6 +54,7 @@ function classificationLabel(c: MetricComparison['classification']): string {
       return 'Abaixo da média';
     case 'on_par':
       return 'Na média';
+    case 'no_data':
     default:
       return 'Sem dados';
   }

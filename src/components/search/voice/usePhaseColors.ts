@@ -119,6 +119,7 @@ export function usePhaseColors(phase: VoiceAgentPhase, isBooting: boolean): Phas
             hsl(violeta, 55, 72),
           ],
         };
+      case 'idle':
       default:
         return {
           primary: hsl(h, s, l),

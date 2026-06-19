@@ -237,6 +237,7 @@ export function RetestButton({
           title: `Aguarde ${secondsLeft}s (debounce)`,
           body: 'Pequena pausa entre testes para evitar disparos acidentais e respeitar limites do serviço externo.',
         };
+      case null:
       default:
         return {
           title: 'Disparar novo teste',

@@ -54,9 +54,7 @@ function filterBoxes(
 function filterItems(items: KitItem[], search: string): KitItem[] {
   if (!search) return items;
   const q = search.toLowerCase();
-  return items.filter(
-    (i) => i.name.toLowerCase().includes(q) || (i.sku && i.sku.toLowerCase().includes(q)),
-  );
+  return items.filter((i) => i.name.toLowerCase().includes(q) || i.sku?.toLowerCase().includes(q));
 }
 
 export function useKitBuilderQueries() {

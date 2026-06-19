@@ -30,6 +30,7 @@ export function ReplenishmentBadge({
         return 'text-[9px] px-1.5 py-0.5 gap-0.5';
       case 'lg':
         return 'text-sm px-3 py-1.5 gap-1.5';
+      case 'md':
       default:
         return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1';
     }

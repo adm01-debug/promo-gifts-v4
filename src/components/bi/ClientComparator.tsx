@@ -40,6 +40,7 @@ function tierBadge(tier: ClientComparisonRow['tier']) {
         icon: AlertTriangle,
         label: 'Risco',
       };
+    case 'unknown':
     default:
       return { color: 'text-muted-foreground bg-muted', icon: Minus, label: '—' };
   }

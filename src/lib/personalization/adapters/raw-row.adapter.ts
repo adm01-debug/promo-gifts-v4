@@ -99,6 +99,7 @@ function coerce(value: unknown, kind: Kind): unknown {
       return toBoolOrNull(value);
     case 'string':
       return value === null ? null : String(value);
+    case 'raw':
     default:
       return value;
   }

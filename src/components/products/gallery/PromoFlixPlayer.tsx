@@ -435,6 +435,9 @@ export function PromoFlixPlayer({
                 onUnrecoverableErrorRef.current?.();
               }
               break;
+            case hlsConstructor.ErrorTypes.KEY_SYSTEM_ERROR:
+            case hlsConstructor.ErrorTypes.MUX_ERROR:
+            case hlsConstructor.ErrorTypes.OTHER_ERROR:
             default:
               logger.error('HLS Fatal Error:', data);
               setHlsError('Falha ao carregar o vídeo. Tente novamente.');
@@ -634,6 +637,7 @@ export function PromoFlixPlayer({
             'Erro ao decodificar o vídeo. O arquivo pode estar corrompido ou em um codec não suportado.',
           );
           break;
+        case undefined:
         case 4:
         default:
           setHlsError(

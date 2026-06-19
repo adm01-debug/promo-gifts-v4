@@ -391,8 +391,8 @@ export function useFiltersPageState() {
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(s) ||
-          (p.sku && p.sku.toLowerCase().includes(s)) ||
-          (p.description && p.description.toLowerCase().includes(s)),
+          p.sku?.toLowerCase().includes(s) ||
+          p.description?.toLowerCase().includes(s),
       );
     }
     if (hasColorFilter && colorFilteredProductIds.size > 0)

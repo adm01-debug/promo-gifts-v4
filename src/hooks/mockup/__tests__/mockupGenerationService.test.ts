@@ -131,8 +131,8 @@ describe('getTechniquePrompt', () => {
 // ─── saveMockupToDb ──────────────────────────────────────────────────────────
 describe('saveMockupToDb', () => {
   it('persists rotation/scale in area_config and thumbnail_url = mockupUrl (G5/T10)', async () => {
-    tableResults['products'] = { data: { id: 'prod-1' }, error: null };
-    tableResults['generated_mockups'] = { data: { id: 'rec-1' }, error: null };
+    tableResults.products = { data: { id: 'prod-1' }, error: null };
+    tableResults.generated_mockups = { data: { id: 'rec-1' }, error: null };
 
     const recordId = await saveMockupToDb({
       userId: 'user-1',
@@ -154,8 +154,8 @@ describe('saveMockupToDb', () => {
   });
 
   it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    tableResults['products'] = { data: null, error: null };
-    tableResults['generated_mockups'] = { data: { id: 'rec-2' }, error: null };
+    tableResults.products = { data: null, error: null };
+    tableResults.generated_mockups = { data: { id: 'rec-2' }, error: null };
 
     const recordId = await saveMockupToDb({
       userId: 'user-1',
@@ -173,8 +173,8 @@ describe('saveMockupToDb', () => {
   });
 
   it('returns null (does not throw) when the insert fails', async () => {
-    tableResults['products'] = { data: { id: 'prod-1' }, error: null };
-    tableResults['generated_mockups'] = { data: null, error: new Error('insert boom') };
+    tableResults.products = { data: { id: 'prod-1' }, error: null };
+    tableResults.generated_mockups = { data: null, error: new Error('insert boom') };
     const recordId = await saveMockupToDb({
       userId: 'user-1',
       product: { id: 'prod-1', name: 'Caneca' },
@@ -190,7 +190,7 @@ describe('saveMockupToDb', () => {
 // ─── fetchMockupHistory ──────────────────────────────────────────────────────
 describe('fetchMockupHistory', () => {
   it('selects layout_url + area_config, limits to 200, and scopes by owner', async () => {
-    tableResults['generated_mockups'] = {
+    tableResults.generated_mockups = {
       data: [{ id: 'm1', mockup_url: 'https://cdn.example.com/m.png' }],
       error: null,
     };
@@ -207,13 +207,13 @@ describe('fetchMockupHistory', () => {
   });
 
   it('omits the owner filter when no userId is given', async () => {
-    tableResults['generated_mockups'] = { data: [], error: null };
+    tableResults.generated_mockups = { data: [], error: null };
     await fetchMockupHistory();
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'user_id')).toBe(false);
   });
 
   it('throws when the query errors', async () => {
-    tableResults['generated_mockups'] = { data: null, error: new Error('select boom') };
+    tableResults.generated_mockups = { data: null, error: new Error('select boom') };
     await expect(fetchMockupHistory('user-1')).rejects.toThrow('select boom');
   });
 });
@@ -221,7 +221,7 @@ describe('fetchMockupHistory', () => {
 // ─── deleteMockupFromDb ──────────────────────────────────────────────────────
 describe('deleteMockupFromDb', () => {
   it('applies an owner-scoped filter when userId is provided (T6)', async () => {
-    tableResults['generated_mockups'] = { data: null, error: null };
+    tableResults.generated_mockups = { data: null, error: null };
     await deleteMockupFromDb('m1', 'user-1');
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'id' && c.args[1] === 'm1')).toBe(
       true,
@@ -232,13 +232,13 @@ describe('deleteMockupFromDb', () => {
   });
 
   it('does not scope by user_id when userId is absent', async () => {
-    tableResults['generated_mockups'] = { data: null, error: null };
+    tableResults.generated_mockups = { data: null, error: null };
     await deleteMockupFromDb('m2');
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'user_id')).toBe(false);
   });
 
   it('throws on delete error', async () => {
-    tableResults['generated_mockups'] = { data: null, error: new Error('delete boom') };
+    tableResults.generated_mockups = { data: null, error: new Error('delete boom') };
     await expect(deleteMockupFromDb('m3', 'user-1')).rejects.toThrow('delete boom');
   });
 });

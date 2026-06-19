@@ -312,7 +312,10 @@ export function sortProducts(
         (a, b) => ((a.daysUntilFullStockout ?? 999) - (b.daysUntilFullStockout ?? 999)) * dir,
       );
       break;
-    // no default
+    case 'color_name':
+    case 'last_updated':
+    default:
+      break;
   }
   return out;
 }

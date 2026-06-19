@@ -83,6 +83,7 @@ export function ProductStatusBadge({
         return 'text-[9px] px-1.5 py-0.5 gap-0.5';
       case 'lg':
         return 'text-sm px-3 py-1.5 gap-1.5';
+      case 'md':
       default:
         return 'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 gap-1';
     }
@@ -94,6 +95,7 @@ export function ProductStatusBadge({
         return 'h-2.5 w-2.5';
       case 'lg':
         return 'h-4 w-4';
+      case 'md':
       default:
         return 'h-2.5 w-2.5 sm:h-3 sm:w-3';
     }
@@ -137,11 +139,11 @@ export function ProductStatusBadge({
         switch (urgencyType) {
           case 'limited-stock':
             return 'bg-warning text-warning-foreground shadow-md';
-
           case 'trending':
             return 'bg-primary/90 text-primary-foreground';
           case 'ending-soon':
             return 'bg-warning/90 text-warning-foreground';
+          case undefined:
           default:
             return 'bg-muted text-muted-foreground';
         }
@@ -228,10 +230,13 @@ export function ProductStatusBadge({
                 <span>{value || 'Termina em breve'}</span>
               </>
             );
-          // no default
+          case undefined:
+          default:
+            break;
         }
         break;
-      // no default
+      default:
+        break;
     }
     return <span>{value}</span>;
   };
@@ -299,6 +304,9 @@ export function ProductStatusBadge({
           </div>
         );
       }
+      case 'out-of-stock':
+      case 'kit':
+      case 'urgency':
       default:
         return null;
     }

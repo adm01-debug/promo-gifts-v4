@@ -96,6 +96,10 @@ export function AdvancedSearch({
           setIsVoiceOverlayOpen(false);
           setQuery('');
           break;
+        case 'sort':
+        case 'answer':
+        case 'open_oracle':
+        case 'open_cart':
         default:
           break;
       }

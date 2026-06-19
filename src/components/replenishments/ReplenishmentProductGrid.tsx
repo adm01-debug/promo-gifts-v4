@@ -123,6 +123,7 @@ export function ReplenishmentProductGrid() {
           return (b.base_price ?? 0) - (a.base_price ?? 0);
         case 'stock':
           return b.stock_quantity - a.stock_quantity;
+        case 'newest':
         default:
           return new Date(b.replenished_at).getTime() - new Date(a.replenished_at).getTime();
       }

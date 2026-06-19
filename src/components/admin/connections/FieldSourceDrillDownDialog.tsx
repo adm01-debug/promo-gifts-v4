@@ -66,6 +66,7 @@ const toneClass = (tone: NonNullable<FieldDrillDownSample['badge']>['tone']) => 
       return 'border-amber-500/40 text-amber-700 bg-amber-500/5';
     case 'error':
       return 'border-destructive/40 text-destructive bg-destructive/5';
+    case 'neutral':
     default:
       return 'border-muted-foreground/30 text-muted-foreground';
   }

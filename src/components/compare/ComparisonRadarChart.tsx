@@ -36,6 +36,7 @@ function leadTimeScore(status: string | undefined): number {
       return 60;
     case 'out-of-stock':
       return 20;
+    case undefined:
     default:
       return 50;
   }

@@ -157,6 +157,8 @@ function computeStats(images: CfImage[]): CfStats {
       case 'skipped':
         stats.skipped++;
         break;
+      case undefined:
+      case null:
       default:
         stats.noStatus++;
     }

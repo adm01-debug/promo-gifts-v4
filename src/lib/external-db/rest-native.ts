@@ -759,6 +759,7 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
     case 'delete':
       builder = scoped(tbl.delete()).select();
       break;
+    case 'select':
     default:
       throw new Error(`rest-native: unsupported write operation '${options.operation}'`);
   }

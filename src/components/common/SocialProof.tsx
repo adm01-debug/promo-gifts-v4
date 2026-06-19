@@ -81,12 +81,7 @@ type TrustBadgeType =
   | 'freeShipping';
 
 // Highlighted badges get colored backgrounds; others stay text-only
-const HIGHLIGHTED_BADGES: Set<TrustBadgeType> = new Set([
-  'new',
-  'sale',
-  'bestseller',
-  'freeShipping',
-]);
+const HIGHLIGHTED_BADGES = new Set<TrustBadgeType>(['new', 'sale', 'bestseller', 'freeShipping']);
 
 interface TrustBadgeProps {
   type: TrustBadgeType;

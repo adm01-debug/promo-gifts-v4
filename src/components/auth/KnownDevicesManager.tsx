@@ -96,6 +96,7 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
         return <Smartphone className="h-5 w-5" />;
       case 'tablet':
         return <Tablet className="h-5 w-5" />;
+      case undefined:
       default:
         return <Monitor className="h-5 w-5" />;
     }

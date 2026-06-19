@@ -94,6 +94,7 @@ export function CategoryRanking({
         return sorted.sort((a, b) => b.internalRevenue - a.internalRevenue);
       case 'market':
         return sorted.sort((a, b) => b.marketDepleted - a.marketDepleted);
+      case 'combined':
       default:
         return sorted.sort((a, b) => b.totalScore - a.totalScore);
     }
@@ -106,6 +107,7 @@ export function CategoryRanking({
           return cat.internalRevenue;
         case 'market':
           return cat.marketDepleted;
+        case 'combined':
         default:
           return cat.totalScore;
       }
@@ -119,6 +121,7 @@ export function CategoryRanking({
         return formatCurrency(cat.internalRevenue);
       case 'market':
         return `${formatNumber(cat.marketDepleted)} un.`;
+      case 'combined':
       default:
         return formatCurrency(cat.internalRevenue);
     }

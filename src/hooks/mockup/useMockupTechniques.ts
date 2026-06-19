@@ -206,8 +206,7 @@ export function useFilteredTechniques(
     selectedProduct?.id,
   );
 
-  const needsTechniqueDims =
-    !!selectedProduct && customizationData?.locations && customizationData.locations.length === 0;
+  const needsTechniqueDims = !!selectedProduct && customizationData?.locations?.length === 0;
 
   const { data: techniqueDims } = useAllTechniqueDimensions(techniques, !!needsTechniqueDims);
 
@@ -222,7 +221,7 @@ export function useFilteredTechniques(
       return techniques.map(toUnlimited);
     }
 
-    if (customizationData?.locations && customizationData.locations.length === 0) {
+    if (customizationData?.locations?.length === 0) {
       return techniques.map((t) => {
         const dims = t.code ? techniqueDims?.get(t.code) : undefined;
         return {

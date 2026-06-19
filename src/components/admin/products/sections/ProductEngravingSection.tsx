@@ -303,12 +303,7 @@ export default function ProductEngravingSection({ productId, isEdit, engravingFl
 
   const renderDetailsStep = () => {
     const maxCores =
-      w.selectedTechnique !== null &&
-      w.selectedTechnique !== undefined &&
-      w.selectedTechnique.max_cores !== null &&
-      w.selectedTechnique.max_cores !== undefined
-        ? Number(w.selectedTechnique.max_cores)
-        : null;
+      w.selectedTechnique?.max_cores != null ? Number(w.selectedTechnique.max_cores) : null;
     const custoSetup = w.selectedTechnique?.custo_setup ?? null;
     return (
       <div className="space-y-4">

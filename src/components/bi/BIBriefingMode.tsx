@@ -97,6 +97,7 @@ export function BIBriefingMode({ open, onOpenChange, clientId, clientName, ramoA
           icon: AlertTriangle,
           label: 'Risco',
         };
+      case 'unknown':
       default:
         return { color: 'text-muted-foreground', bg: 'bg-muted', icon: Sparkles, label: '—' };
     }

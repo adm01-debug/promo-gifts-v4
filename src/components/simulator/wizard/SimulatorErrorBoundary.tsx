@@ -44,7 +44,7 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     logger.error('[SimulatorErrorBoundary]', {
       message: error.message,
       componentStack: errorInfo.componentStack,
@@ -66,7 +66,7 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
     this.props.onReset?.();
   };
 
-  render() {
+  override render() {
     if (!this.state.hasError) {
       return this.props.children;
     }

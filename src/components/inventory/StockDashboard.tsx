@@ -120,6 +120,8 @@ export function StockDashboard() {
         return 'Sem Estoque';
       case 'incoming':
         return 'Estoque Futuro';
+      case 'all':
+      case 'overstocked':
       default:
         return null;
     }
