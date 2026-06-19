@@ -22,14 +22,14 @@ import {
   type ColorDotLike,
 } from '@/components/products/ProductColorSwatches';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
-
-const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
+
+const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
