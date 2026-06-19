@@ -264,29 +264,27 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             <span className="text-xs italic text-muted-foreground">Sob consulta</span>
           )}
 
-          <div className="flex flex-col items-end gap-0.5">
-            <span className={cn('stock-indicator text-[10px] sm:text-xs', stockConfig.className)}>
-              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
-              <span className="hidden sm:inline">{stockConfig.label}</span>
-              <span className="sm:hidden" aria-label={stockConfig.label}>
-                {stockConfig.mobileIcon}
-              </span>
-            </span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className="cursor-help text-[10px] tabular-nums text-muted-foreground sm:text-xs"
-                  aria-label={stockLabel}
-                >
-                  {formatStockQty(stockQty)} un.
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {stockLabel}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          <StockBadge
+            status={product.stock_status}
+            quantity={stockQty}
+            showQuantity
+            size="sm"
+          />
         </div>
+
+        {/* Sparkline — específico de Reposição (mantido p/ contexto de saídas) */}
+        <div className="border-t border-border/40 pt-1.5">
+          <div className="mb-0.5 flex items-center justify-between">
+            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
+              Saídas 90d
+            </span>
+          </div>
+          <ProductSparkline productId={product.product_id} />
+        </div>
+      </div>
+    </article>
+  );
+});
 
         {/* Sparkline — específico de Reposição (mantido p/ contexto de saídas) */}
         <div className="border-t border-border/40 pt-1.5">
