@@ -274,7 +274,7 @@ export async function fetchPromobrindProductById(
           'id, component_name, component_code, component_product_id, component_sku, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, material, primary_image_url, height_mm, width_mm, length_mm, weight_g, notes',
         filters: { kit_product_id: productId },
         orderBy: { column: 'display_order', ascending: true },
-        limit: 50,
+        limit: 200,
       })
         .then((r) => r.records)
         .catch((err) => {
