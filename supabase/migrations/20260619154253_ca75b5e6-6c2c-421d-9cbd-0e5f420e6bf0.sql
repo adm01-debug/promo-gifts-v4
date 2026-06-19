@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.audit_ownership_orphans(text) FROM PUBLIC, anon, authenticated;
