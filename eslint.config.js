@@ -153,6 +153,11 @@ export default [
       // Batch 59: inner-scope shadowing
       'no-shadow': 'off',
       '@typescript-eslint/no-shadow': 'error',
+      // Batch 65: 2 rules — no-alert (3 code fixes) + no-div-regex (1 auto-fix)
+      'no-alert': 'error',
+      'no-div-regex': 'error',
+      // Batch 66: 1 rule — no-multi-assign (1 code fix in theme-presets.test.ts)
+      'no-multi-assign': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

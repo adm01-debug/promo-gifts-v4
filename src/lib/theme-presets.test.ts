@@ -11,7 +11,9 @@ function hslToLuminance(hslStr: string): number {
   let r, g, b;
 
   if (s === 0) {
-    r = g = b = l;
+    r = l;
+    g = l;
+    b = l;
   } else {
     const hue2rgb = (p: number, q: number, t: number) => {
       if (t < 0) t += 1;
