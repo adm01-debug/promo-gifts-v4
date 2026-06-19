@@ -160,11 +160,6 @@ export interface KitComponent {
   description?: string | null;
   personalizationNotes?: string | null;
   color?: string | null;
-  /** Preço de venda do produto-componente (NULL se componente "solto" ou sem preço). */
-  salePrice?: number | null;
-  /** Estoque do produto-componente. */
-  stockQuantity?: number | null;
-  stockStatus?: string | null;
   video?: string;
   productVideos?: Array<{
     id: string;
