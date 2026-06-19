@@ -151,7 +151,9 @@ export function useOptimizationQueue() {
     invalidate();
 
     // Aguarda janela curta para guardrail medir possíveis regressões pós-execução.
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => {
+      setTimeout(r, 1500);
+    });
 
     // Checa guardrail
     const { data: guardrail } = await supabase.rpc('check_telemetry_regression' as never);
@@ -204,7 +206,9 @@ export function useOptimizationQueue() {
         if (result === 'error') {
           break;
         }
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => {
+          setTimeout(r, 800);
+        });
       }
     } finally {
       setIsExecuting(false);

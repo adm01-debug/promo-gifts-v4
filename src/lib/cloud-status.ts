@@ -275,7 +275,9 @@ export async function ensureCloudReady(
     attempt++;
     const delay = Math.min(1500, 200 * 2 ** (attempt - 1));
     if (performance.now() - start + delay >= totalTimeoutMs) break;
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise((r) => {
+      setTimeout(r, delay);
+    });
     snap = await probeCloudStatus(true);
   }
 

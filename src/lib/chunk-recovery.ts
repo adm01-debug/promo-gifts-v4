@@ -244,7 +244,9 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
         logger.warn(
           `[chunk-recovery] asset ainda indisponível, aguardando ${backoffMs}ms antes do reload`,
         );
-        await new Promise((r) => setTimeout(r, backoffMs));
+        await new Promise((r) => {
+          setTimeout(r, backoffMs);
+        });
       }
     }
 

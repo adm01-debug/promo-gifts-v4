@@ -89,10 +89,7 @@ function clearReloadAttempts(): void {
  * Trata um chunk error detectado: tenta 1 reload automático, ou orienta o
  * usuário a fazer hard refresh se já tentamos antes nesta sessão.
  */
-function handleChunkLoadError(
-  error: unknown,
-  log: ReturnType<typeof createClientLogger>,
-): boolean {
+function handleChunkLoadError(error: unknown, log: ReturnType<typeof createClientLogger>): boolean {
   const attempts = getReloadAttempts();
 
   if (attempts >= CHUNK_RELOAD_MAX) {
@@ -120,16 +117,15 @@ function handleChunkLoadError(
  * Uso (futuro, em rotas que sofrem com isso):
  *   const Page = lazy(lazyWithRetry(() => import('./Page')));
  */
-export function lazyWithRetry<T>(
-  importFn: () => Promise<T>,
-  retries = 1,
-): () => Promise<T> {
+export function lazyWithRetry<T>(importFn: () => Promise<T>, retries = 1): () => Promise<T> {
   return async () => {
     try {
       return await importFn();
     } catch (error) {
       if (!isChunkLoadError(error) || retries <= 0) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 800);
+      });
       return await importFn();
     }
   };

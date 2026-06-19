@@ -44,7 +44,9 @@ async function fetchProductWithRetry(
         lastError = err;
         if (shouldFallbackSelect(err)) break; // try next select fields
         if (isTransientError(err) && attempt < maxRetries) {
-          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          await new Promise((r) => {
+            setTimeout(r, 1000 * (attempt + 1));
+          });
           continue;
         }
         if (!isTransientError(err)) throw err;
