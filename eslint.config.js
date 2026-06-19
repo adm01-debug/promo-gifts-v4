@@ -172,6 +172,8 @@ export default [
       'no-useless-concat': 'error',
       'no-var': 'error',
       'no-useless-return': 'error',
+      // Batch 70: 1 rule — prefer-template (19 fixes in 15 files)
+      'prefer-template': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

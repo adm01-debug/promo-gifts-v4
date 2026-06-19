@@ -447,7 +447,7 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     try {
       const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
       const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
-      if (bucketPublicBase && logoUrl.startsWith(bucketPublicBase + '/')) {
+      if (bucketPublicBase && logoUrl.startsWith(`${bucketPublicBase}/`)) {
         const storagePath = logoUrl.slice(bucketPublicBase.length + 1);
         await supabase.storage.from('mockup-assets').remove([storagePath]);
       }
