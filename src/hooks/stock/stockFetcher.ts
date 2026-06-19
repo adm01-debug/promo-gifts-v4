@@ -120,6 +120,20 @@ export function buildVelocityIndex(rows: ExternalStockVelocity[]): Map<string, n
 // BUSCA PAGINADA
 // ============================================
 
+/**
+ * Colunas permitidas como filtros por tabela lógica (pré-GOLD_READ_ALIASES).
+ * Defesa em profundidade: impede que colunas arbitrárias sejam injetadas via
+ * parâmetro `filters` de fetchPaginatedFromBridge. Tabelas ausentes → sem restrição.
+ */
+// Inclui apenas tabelas chamadas com filtros em produção. Tabelas ausentes
+// (categories, suppliers, product_images, mv_stock_velocity) não recebem
+// filtros e portanto não precisam de restrição.
+export const ALLOWED_FILTER_KEYS: Readonly<Record<string, ReadonlySet<string>>> = {
+  products: new Set(['active', 'is_active', 'supplier_id', 'category_id', 'brand']),
+  product_variants: new Set(['is_active', 'product_id', 'color_id', 'supplier_id']),
+  variant_supplier_sources: new Set(['is_active', 'variant_id', 'supplier_id']),
+};
+
 /** Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação. */
 export async function fetchPaginatedFromBridge<T extends { id: string }>(
   table: string,
@@ -153,7 +167,14 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     );
 
     if (filters) {
+      const allowed = ALLOWED_FILTER_KEYS[table];
       for (const [col, val] of Object.entries(filters)) {
+        if (allowed !== undefined && !allowed.has(col)) {
+          logger.warn(
+            `[Stock] fetchPaginatedFromBridge: coluna de filtro não permitida "${col}" em "${table}" — ignorado`,
+          );
+          continue;
+        }
         if (val === null) query = query.is(col, null);
         else if (Array.isArray(val)) query = query.in(col, val);
         else query = query.eq(col, val);
@@ -276,12 +297,38 @@ export function buildFutureEntries(
   return entries;
 }
 
-/** Busca em paralelo todas as entidades do estoque e as processa em `productStocks`, `alerts` e `futureStock`. */
+/**
+ * Busca em paralelo todas as entidades do estoque e as processa em
+ * `productStocks`, `alerts` e `futureStock`.
+ *
+ * Tolerância a falhas por tabela:
+ *  - `products` / `product_variants` — críticas: se falharem, a Promise rejeita.
+ *  - `variant_supplier_sources` — semi-crítica: se falhar, usa stock_quantity
+ *    das variações diretamente (sem agregação multi-fornecedor).
+ *  - `categories` / `suppliers` — opcionais: se falharem, exibe produtos sem
+ *    nomes de categoria/fornecedor.
+ *  - `product_images` / `mv_stock_velocity` — já possuem fallback interno.
+ * Tabelas degradadas são listadas em `degradedTables` no retorno.
+ */
 export async function fetchAndProcessStockData(): Promise<{
   productStocks: ProductStockSummary[];
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
+  degradedTables: string[];
 }> {
+  const t0 = performance.now();
+  const degradedTables: string[] = [];
+  const graceful =
+    <T>(table: string) =>
+    (err: unknown): T[] => {
+      logger.warn(
+        `[Stock] ${table}: falha parcial — degradado, continuando sem dados desta tabela.`,
+        err,
+      );
+      degradedTables.push(table);
+      return [];
+    };
+
   const [
     allProducts,
     allVariants,
@@ -311,14 +358,19 @@ export async function fetchAndProcessStockData(): Promise<{
       1000,
       100000,
       { is_active: true },
-    ),
-    fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+    ).catch(graceful<ExternalSupplierSource>('variant_supplier_sources')),
+    fetchPaginatedFromBridge<{ id: string; name: string }>(
+      'categories',
+      'id,name',
+      1000,
+      100000,
+    ).catch(graceful<{ id: string; name: string }>('categories')),
     fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
       'suppliers',
       'id,name,code',
       1000,
       100000,
-    ),
+    ).catch(graceful<{ id: string; name: string; code?: string }>('suppliers')),
     // Imagens: 1 chamada agregada para enriquecer cards/linhas com thumb por produto
     // e por variante. Filtra image_type='box' no front (igual useExternalVariantStock).
     fetchPaginatedFromBridge<{
@@ -359,6 +411,7 @@ export async function fetchAndProcessStockData(): Promise<{
     ).catch(() => [] as ExternalStockVelocity[]),
   ]);
 
+  const tFetch = performance.now();
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
   allCategories.forEach((c) => categoryMap.set(c.id, c.name));
@@ -438,7 +491,7 @@ export async function fetchAndProcessStockData(): Promise<{
   const futureEntries: FutureStockEntry[] = [];
 
   if (allProducts.length === 0) {
-    return { productStocks: [], alerts: [], futureStock: [] };
+    return { productStocks: [], alerts: [], futureStock: [], degradedTables };
   }
 
   const summaries: ProductStockSummary[] = allProducts.map((product) => {
@@ -612,9 +665,22 @@ export async function fetchAndProcessStockData(): Promise<{
     };
   });
 
+  const tProcess = performance.now();
   const alerts = generateStockAlerts(summaries);
-  logger.log(
-    `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsoes`,
-  );
-  return { productStocks: summaries, alerts, futureStock: futureEntries };
+  const tAlerts = performance.now();
+
+  logger.log('[Stock] perf', {
+    fetchMs: Math.round(tFetch - t0),
+    processMs: Math.round(tProcess - tFetch),
+    alertsMs: Math.round(tAlerts - tProcess),
+    totalMs: Math.round(tAlerts - t0),
+    products: allProducts.length,
+    variants: allVariants.length,
+    sources: allSupplierSources.length,
+    futureEntries: futureEntries.length,
+    alerts: alerts.length,
+    ...(degradedTables.length > 0 && { degradedTables }),
+  });
+
+  return { productStocks: summaries, alerts, futureStock: futureEntries, degradedTables };
 }

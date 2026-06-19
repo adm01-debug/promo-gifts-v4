@@ -1,17 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  ChevronRight,
-  Package,
-  Truck,
-  ChevronLeft,
-  ShoppingCart,
-  Search,
-  X,
-  Copy,
-  Building2,
-  Tag,
-} from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Package, Truck, ShoppingCart, Search, X, Copy, Building2, Tag } from 'lucide-react';
 import { getSupplierColors, getSupplierBadgeClasses } from '@/lib/supplier-colors';
 import { useStockSelection, buildQuoteParam } from './useStockSelection';
 import { StockBulkActionBar } from './StockBulkActionBar';
@@ -51,15 +41,19 @@ import {
  * Não existe mais "agrupar por produto pai" — ver memo `flat-only` no inventário.
  */
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
-const PAGE_STORAGE_KEY = 'stock.currentPage';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
 const RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
 
 /**
- * Chaves legadas (modo agrupar) que devem ser purgadas para evitar
- * estado obsoleto após a mudança de modelo de negócio (variação-first).
+ * Chaves legadas (modo agrupar + paginação) a serem purgadas para evitar
+ * estado obsoleto após a mudança de modelo de negócio (variação-first + scroll virtual).
  */
-const LEGACY_STORAGE_KEYS = ['stock.groupBy', 'stock.viewMode', 'stock.groupingMode'] as const;
+const LEGACY_STORAGE_KEYS = [
+  'stock.groupBy',
+  'stock.viewMode',
+  'stock.groupingMode',
+  'stock.currentPage', // paginação substituída por scroll virtual
+] as const;
 
 /** Filtro rápido por status — 'all' = sem filtro. */
 type StatusFilter = StockStatus | 'all';
@@ -87,7 +81,7 @@ const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
 function readStored(key: string, fallback = ''): string {
   if (typeof window === 'undefined') return fallback;
   try {
-    return window.localStorage.getItem(key) ?? fallback;
+    return window.sessionStorage.getItem(key) ?? fallback;
   } catch {
     return fallback;
   }
@@ -95,7 +89,7 @@ function readStored(key: string, fallback = ''): string {
 function writeStored(key: string, value: string): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
   } catch {
     /* modo privado — ignora */
   }
@@ -343,12 +337,6 @@ function FlatVariantRow({
 }
 
 // ============================================
-// PAGINAÇÃO
-// ============================================
-
-const PAGE_SIZE = 50;
-
-// ============================================
 // TABELA PRINCIPAL
 // ============================================
 
@@ -364,38 +352,32 @@ interface VariantStockTableProps {
   targetQuantity?: number;
 }
 
-/** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com paginação e seleção. */
+/** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com scroll virtual. */
 export function VariantStockTable({
   products,
   className,
   isLoading,
   targetQuantity,
 }: VariantStockTableProps) {
-  // Modo flat-only (1 SKU = 1 linha): não há expansão de produto-pai, logo não existe
-  // estado de "linhas expandidas". Toda a renderização opera sobre pagedRows (SKU-first).
-  const [currentPage, setCurrentPage] = useState<number>(() => {
-    const raw = readStored(PAGE_STORAGE_KEY, '0');
-    const n = parseInt(raw, 10);
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  });
+  // Scroll container ref para o useVirtualizer
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const deepLinkConsumedRef = useRef<string | null>(null);
+
   const [inlineSearch, setInlineSearch] = useState<string>(() =>
     readStored(SEARCH_STORAGE_KEY, ''),
   );
+  // Defer the search computation so the controlled Input updates instantly while
+  // the expensive filter (potentially thousands of SKUs) runs at lower priority.
+  const deferredSearch = useDeferredValue(inlineSearch);
+  const isSearchStale = inlineSearch !== deferredSearch;
   const [searchParams] = useSearchParams();
-  const prevProductsLenRef = useRef(products.length);
-  const deepLinkConsumedRef = useRef<string | null>(null);
 
-  // Persiste busca inline (persistência simples no localStorage)
+  // Persiste busca inline
   useEffect(() => {
     writeStored(SEARCH_STORAGE_KEY, inlineSearch);
   }, [inlineSearch]);
 
-  // Persiste página atual
-  useEffect(() => {
-    writeStored(PAGE_STORAGE_KEY, String(currentPage));
-  }, [currentPage]);
-
-  // Cleanup one-shot: purga chaves legadas do modo "Agrupar" (modelo antigo).
+  // Cleanup one-shot: purga chaves legadas (modo agrupar + paginação).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -424,18 +406,12 @@ export function VariantStockTable({
     writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
   }, [ruptureHorizon]);
 
-  // Reset page when product list changes (filter applied)
-  useEffect(() => {
-    if (prevProductsLenRef.current !== products.length) {
-      setCurrentPage(0);
-      prevProductsLenRef.current = products.length;
-    }
-  }, [products.length]);
-
-  // Inline search filtering
+  // Inline search filtering — runs against deferredSearch so keystrokes never
+  // block the React render. The Input value (inlineSearch) updates immediately;
+  // the filtered list updates once React has capacity (useDeferredValue).
   const searchedProducts = useMemo(() => {
-    if (!inlineSearch.trim()) return products;
-    const q = inlineSearch.toLowerCase();
+    if (!deferredSearch.trim()) return products;
+    const q = deferredSearch.toLowerCase();
     return products.filter(
       (p) =>
         p.productName.toLowerCase().includes(q) ||
@@ -444,7 +420,7 @@ export function VariantStockTable({
           (v) => v.colorName?.toLowerCase().includes(q) || v.variantSku?.toLowerCase().includes(q),
         ),
     );
-  }, [products, inlineSearch]);
+  }, [products, deferredSearch]);
 
   /**
    * Contagem de variações (SKUs) por status — base para chips de filtro.
@@ -528,39 +504,35 @@ export function VariantStockTable({
   }, [searchedProducts, statusFilter, targetQuantity, ruptureHorizon]);
 
   const totalRows = allFlatRows.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-  // safePage SEMPRE em [0, totalPages-1]. O Math.max(0, ...) e defense-in-depth contra
-  // um currentPage negativo vindo de codigo futuro (NaN ja e barrado no init via
-  // Number.isFinite; todos os setCurrentPage atuais passam valores >= 0).
-  const safePage = Math.max(0, Math.min(currentPage, totalPages - 1));
-  // Clamp da página fora de faixa via efeito — NUNCA setState durante o render
-  // (evita warning "Cannot update a component while rendering" e re-render extra no React 18).
-  useEffect(() => {
-    if (currentPage > totalPages - 1) setCurrentPage(Math.max(0, totalPages - 1));
-  }, [currentPage, totalPages]);
 
-  const pagedRows = useMemo(() => {
-    const start = safePage * PAGE_SIZE;
-    return allFlatRows.slice(start, start + PAGE_SIZE);
-  }, [allFlatRows, safePage]);
+  // Virtual scroll: renderiza apenas a janela visível — suporta 5k+ SKUs sem degradação.
+  // estimateSize ≈ 56px/row medido em produção; suficiente para calibrar o scrollbar.
+  const rowVirtualizer = useVirtualizer({
+    count: totalRows,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 56,
+    overscan: 8,
+  });
 
-  // Deep link ?product=ID: posiciona na página que contém a 1a linha (SKU) do
-  // produto, respeitando busca+filtro atuais. Consome o ID uma única vez (ref)
-  // para NÃO re-arrastar o usuário a cada troca de filtro/busca.
+  // Deep link ?product=ID: scroll virtual até a 1a linha do produto.
+  // Consome o ID uma única vez (ref) para NÃO re-arrastar o usuário a cada troca de filtro.
   useEffect(() => {
     const productId = searchParams.get('product');
     if (!productId || productId === deepLinkConsumedRef.current) return;
     const rowIdx = allFlatRows.findIndex((r) => r.product.productId === productId);
     if (rowIdx >= 0) {
-      setCurrentPage(Math.floor(rowIdx / PAGE_SIZE));
+      rowVirtualizer.scrollToIndex(rowIdx, { align: 'start' });
       deepLinkConsumedRef.current = productId;
     }
-  }, [searchParams, allFlatRows]);
+  }, [searchParams, allFlatRows, rowVirtualizer]);
 
   // ── Seleção em lote (paridade catálogo) ─────────────────────────────────
-  const selection = useStockSelection(
-    pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
+  // Com scroll virtual, TODAS as linhas do filtro são selecionáveis (não só a "página").
+  const allSelectableRows = useMemo(
+    () => allFlatRows.map((r) => ({ product: r.product, variant: r.variant })),
+    [allFlatRows],
   );
+  const selection = useStockSelection(allSelectableRows);
   const [bulkCollectionOpen, setBulkCollectionOpen] = useState(false);
 
   // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
@@ -630,6 +602,18 @@ export function VariantStockTable({
     },
   }));
 
+  const colSpan = selection.enabled ? 7 : 6;
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  // Spacers mantêm o scrollbar calibrado sem renderizar todas as linhas.
+  const virtualTopPad = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
+  const virtualBottomPad =
+    virtualItems.length > 0
+      ? Math.max(
+          0,
+          rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end ?? 0),
+        )
+      : 0;
+
   return (
     <div className={cn('space-y-2', className)} data-testid="variant-stock-table">
       {/* Toolbar sticky — fica visível ao rolar a tabela */}
@@ -645,14 +629,17 @@ export function VariantStockTable({
             value={inlineSearch}
             onChange={(e) => {
               setInlineSearch(e.target.value);
-              setCurrentPage(0);
+              rowVirtualizer.scrollToIndex(0);
             }}
             className="h-8 pl-8 text-sm"
           />
           {inlineSearch && (
             <button
               type="button"
-              onClick={() => setInlineSearch('')}
+              onClick={() => {
+                setInlineSearch('');
+                rowVirtualizer.scrollToIndex(0);
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-3 w-3" />
@@ -714,7 +701,7 @@ export function VariantStockTable({
                 data-testid={`stock-status-chip-${value}`}
                 onClick={() => {
                   setStatusFilter(value);
-                  setCurrentPage(0);
+                  rowVirtualizer.scrollToIndex(0);
                 }}
                 className="h-6 gap-1 px-2 text-[11px]"
               >
@@ -728,18 +715,9 @@ export function VariantStockTable({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Pagination info */}
+          {/* Contagem total */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {totalRows > PAGE_SIZE ? (
-              <>
-                {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, totalRows)} de{' '}
-                {totalRows} variações
-              </>
-            ) : (
-              <>
-                {totalRows} {totalRows === 1 ? 'variação' : 'variações'}
-              </>
-            )}
+            {totalRows} {totalRows === 1 ? 'variação' : 'variações'}
           </span>
 
           {/* Toggle de seleção em lote (paridade catálogo) */}
@@ -757,14 +735,21 @@ export function VariantStockTable({
         </div>
       </div>
 
+      {/* Container de scroll virtual — height limitado + overflow-y para o virtualizer operar.
+          opacity-60 durante isSearchStale sinalizaa o usuário que o filtro ainda está processando. */}
       <div
+        ref={scrollContainerRef}
         data-testid="variant-stock-scroll"
-        className="overflow-x-auto rounded-lg border [-webkit-overflow-scrolling:touch] [contain:content] [overscroll-behavior-x:contain]"
+        className={cn(
+          'overflow-x-auto overflow-y-auto rounded-lg border [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]',
+          isSearchStale && 'opacity-60',
+        )}
+        style={{ maxHeight: 'calc(100vh - 14rem)' }}
       >
         <Table className="min-w-[700px]">
           <TableHeader
             data-testid="variant-stock-thead"
-            className="sticky top-[44px] z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))] sm:top-[40px]"
+            className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]"
           >
             <TableRow className="bg-muted/50">
               {selection.enabled && <TableHead className="w-[40px] pr-0"></TableHead>}
@@ -778,28 +763,9 @@ export function VariantStockTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pagedRows.length > 0 ? (
-              pagedRows.map(({ product, variant, effectiveStatus, projection }) => {
-                const k = `${product.productId}::${variant.variantId}`;
-                return (
-                  <FlatVariantRow
-                    key={`${product.productId}::${variant.variantId}`}
-                    product={product}
-                    variant={variant}
-                    effectiveStatus={effectiveStatus}
-                    projection={projection}
-                    selectionEnabled={selection.enabled}
-                    isSelected={selection.isSelected(k)}
-                    onToggleSelect={() => selection.toggle(k)}
-                  />
-                );
-              })
-            ) : (
+            {totalRows === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={selection.enabled ? 7 : 6}
-                  className="py-16 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={colSpan} className="py-16 text-center text-muted-foreground">
                   <div className="flex flex-col items-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                       <Package className="h-8 w-8 opacity-30" />
@@ -815,71 +781,54 @@ export function VariantStockTable({
                   </div>
                 </TableCell>
               </TableRow>
+            ) : (
+              <>
+                {/* Spacer topo — mantém scrollbar calibrado sem renderizar linhas invisíveis */}
+                {virtualTopPad > 0 && (
+                  <tr aria-hidden="true">
+                    <td
+                      colSpan={colSpan}
+                      style={{ height: virtualTopPad, padding: 0, border: 'none' }}
+                    />
+                  </tr>
+                )}
+                {virtualItems.map((virtualRow) => {
+                  const { product, variant, effectiveStatus, projection } =
+                    allFlatRows[virtualRow.index];
+                  const k = `${product.productId}::${variant.variantId}`;
+                  return (
+                    <FlatVariantRow
+                      key={k}
+                      product={product}
+                      variant={variant}
+                      effectiveStatus={effectiveStatus}
+                      projection={projection}
+                      selectionEnabled={selection.enabled}
+                      isSelected={selection.isSelected(k)}
+                      onToggleSelect={() => selection.toggle(k)}
+                    />
+                  );
+                })}
+                {/* Spacer base — garante que scroll total = rowVirtualizer.getTotalSize() */}
+                {virtualBottomPad > 0 && (
+                  <tr aria-hidden="true">
+                    <td
+                      colSpan={colSpan}
+                      style={{ height: virtualBottomPad, padding: 0, border: 'none' }}
+                    />
+                  </tr>
+                )}
+              </>
             )}
           </TableBody>
         </Table>
       </div>
 
-      {/* Pagination controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            disabled={safePage === 0}
-            className="gap-1"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Anterior
-          </Button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              let pageNum: number;
-              if (totalPages <= 7) {
-                pageNum = i;
-              } else if (safePage < 3) {
-                pageNum = i;
-              } else if (safePage > totalPages - 4) {
-                pageNum = totalPages - 7 + i;
-              } else {
-                pageNum = safePage - 3 + i;
-              }
-              return (
-                <Button
-                  key={pageNum}
-                  variant={pageNum === safePage ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum + 1}
-                </Button>
-              );
-            })}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={safePage >= totalPages - 1}
-            className="gap-1"
-          >
-            Próximo
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
       {selection.enabled && (
         <StockBulkActionBar
           selectedCount={selection.selectedCount}
-          totalCount={pagedRows.length}
-          onSelectAll={() =>
-            selection.selectAllVisible(
-              pagedRows.map((r) => ({ product: r.product, variant: r.variant })),
-            )
-          }
+          totalCount={totalRows}
+          onSelectAll={() => selection.selectAllVisible(allSelectableRows)}
           onClear={() => selection.setMode(false)}
           onBulkFavorite={selection.bulkFavorite}
           onBulkCompare={selection.bulkCompare}

@@ -10,10 +10,7 @@
  * Alvo: < 50ms em média por alternância de filtro (CI relaxa p/ 150ms via env).
  */
 import { describe, expect, it } from 'vitest';
-import {
-  applyStockFilters,
-  buildStockIndexes,
-} from '@/lib/inventory/stock-filter';
+import { applyStockFilters, buildStockIndexes } from '@/lib/inventory/stock-filter';
 import {
   defaultStockFilters,
   type ProductStockSummary,
@@ -21,7 +18,6 @@ import {
   type StockStatus,
   type VariantStock,
 } from '@/types/stock';
-
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -108,7 +104,7 @@ describe('stock-filter — fuzz determinístico 1000x', () => {
     const rnd = mulberry32(0xc0ffee16);
     const universe = Array.from({ length: 80 }, (_, i) => makeProduct(rnd, i));
     const ids = new Set(universe.map((p) => p.productId));
-    const indexes = buildStockIndexes(universe, []);
+    const indexes = buildStockIndexes(universe);
 
     let dup = 0;
     let mismatch = 0;
@@ -133,7 +129,7 @@ describe('stock-filter — performance ao alternar filtros', () => {
   it('média < alvo (50ms local / 150ms CI) ao alternar 6 filtros sobre 1500 produtos', () => {
     const rnd = mulberry32(0xdeadbeef);
     const universe = Array.from({ length: 1500 }, (_, i) => makeProduct(rnd, i));
-    const indexes = buildStockIndexes(universe, []);
+    const indexes = buildStockIndexes(universe);
 
     const filterCycle: StockFilters[] = [
       { ...defaultStockFilters, sortBy: 'name', colorName: 'Azul' },
@@ -161,7 +157,9 @@ describe('stock-filter — performance ao alternar filtros', () => {
 
     const target = process.env.CI ? 150 : 50;
     // eslint-disable-next-line no-console
-    console.log(`[stock-filter perf] avg=${avg.toFixed(2)}ms p95=${p95.toFixed(2)}ms target=${target}ms n=${RUNS}`);
+    console.log(
+      `[stock-filter perf] avg=${avg.toFixed(2)}ms p95=${p95.toFixed(2)}ms target=${target}ms n=${RUNS}`,
+    );
     expect(avg).toBeLessThan(target);
     expect(p95).toBeLessThan(target * 2);
   });

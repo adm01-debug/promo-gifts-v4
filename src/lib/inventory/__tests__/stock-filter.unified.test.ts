@@ -152,18 +152,12 @@ describe('stock-filter.unified — fuzz 300 sims combinando todos os filtros', (
     const sups = ['Fornecedor A', 'fornecedor b', 'Fornecedor C'];
     const cols = ['Azul', 'Verde', 'Vermelho', 'Preto'];
     const universe: ProductStockSummary[] = Array.from({ length: 40 }, (_, i) =>
-      mkProduct(
-        `p${i}`,
-        `Prod ${i}`,
-        cats[i % cats.length],
-        sups[i % sups.length],
-        [
-          mkVariant(`p${i}-1`, cols[i % cols.length], Math.floor(rnd() * 800)),
-          mkVariant(`p${i}-2`, cols[(i + 1) % cols.length], Math.floor(rnd() * 800)),
-        ],
-      ),
+      mkProduct(`p${i}`, `Prod ${i}`, cats[i % cats.length], sups[i % sups.length], [
+        mkVariant(`p${i}-1`, cols[i % cols.length], Math.floor(rnd() * 800)),
+        mkVariant(`p${i}-2`, cols[(i + 1) % cols.length], Math.floor(rnd() * 800)),
+      ]),
     );
-    const indexes = buildStockIndexes(universe, []);
+    const indexes = buildStockIndexes(universe);
 
     for (let i = 0; i < 300; i++) {
       const filters: StockFilters = {

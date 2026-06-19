@@ -34,6 +34,8 @@ export function useVariantStock() {
   const productStocks = useMemo(() => data?.productStocks ?? [], [data?.productStocks]);
   const rawAlerts = useMemo(() => data?.alerts ?? [], [data?.alerts]);
   const futureStock = useMemo(() => data?.futureStock ?? [], [data?.futureStock]);
+  const degradedTables = useMemo(() => data?.degradedTables ?? [], [data?.degradedTables]);
+  const isDegraded = degradedTables.length > 0;
 
   const alerts = useMemo(() => {
     if (dismissedAlerts.size === 0) return rawAlerts;
@@ -135,64 +137,52 @@ export function useVariantStock() {
     };
   }, [productStocks, alerts]);
 
-  // Extract unique categories and suppliers for filter dropdowns
-  const availableCategories = useMemo(() => {
-    const map = new Map<string, number>();
-    productStocks.forEach((p) => {
-      const cat = p.categoryName || 'Sem categoria';
-      map.set(cat, (map.get(cat) || 0) + 1);
-    });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [productStocks]);
+  // Uma única passagem O(N×M) para todas as facetas de filtro — 4 scans colapsados em 1.
+  const { availableCategories, availableSuppliers, availableColorGroups, allColors } =
+    useMemo(() => {
+      const catMap = new Map<string, number>();
+      const supMap = new Map<string, number>();
+      const colorGroupMap = new Map<string, number>();
+      const colorSet = new Set<string>();
 
-  const availableSuppliers = useMemo(() => {
-    const map = new Map<string, number>();
-    productStocks.forEach((p) => {
-      const sup = p.supplierName || 'Sem fornecedor';
-      map.set(sup, (map.get(sup) || 0) + 1);
-    });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [productStocks]);
-
-  const availableColorGroups = useMemo(() => {
-    const map = new Map<string, number>();
-    productStocks.forEach((p) => {
-      p.variants.forEach((v) => {
-        if (v.colorName && v.colorName !== 'Padrão') {
-          map.set(v.colorName, (map.get(v.colorName) || 0) + 1);
+      for (const prod of productStocks) {
+        const cat = prod.categoryName || 'Sem categoria';
+        catMap.set(cat, (catMap.get(cat) || 0) + 1);
+        const sup = prod.supplierName || 'Sem fornecedor';
+        supMap.set(sup, (supMap.get(sup) || 0) + 1);
+        for (const v of prod.variants) {
+          if (v.colorName) {
+            colorSet.add(v.colorName);
+            if (v.colorName !== 'Padrão') {
+              colorGroupMap.set(v.colorName, (colorGroupMap.get(v.colorName) || 0) + 1);
+            }
+          }
         }
-      });
-    });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [productStocks]);
+      }
 
-  // Índices normalizados (cor → produtos, produtos com alerta) — reutilizados
-  // entre mudanças de filtro/paginação para evitar varreduras O(N×M).
-  const stockIndexes = useMemo(
-    () => buildStockIndexes(productStocks, alerts),
-    [productStocks, alerts],
-  );
+      return {
+        availableCategories: Array.from(catMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+        availableSuppliers: Array.from(supMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+        availableColorGroups: Array.from(colorGroupMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count),
+        allColors: Array.from(colorSet).sort(),
+      };
+    }, [productStocks]);
+
+  // Índices normalizados (cor/categoria/fornecedor → produtos) — reutilizados entre mudanças de
+  // filtro sem reconstrução. Desacoplado de `alerts` — productsWithAlerts é construído lazy em
+  // applyStockFilters, evitando rebuild do índice inteiro ao descartar alertas.
+  const stockIndexes = useMemo(() => buildStockIndexes(productStocks), [productStocks]);
 
   const filteredProducts = useMemo(
     () => applyStockFilters(productStocks, filters, alerts, stockIndexes),
     [productStocks, filters, alerts, stockIndexes],
   );
-
-  const allColors = useMemo(() => {
-    const s = new Set<string>();
-    productStocks.forEach((p) =>
-      p.variants.forEach((v) => {
-        if (v.colorName) s.add(v.colorName);
-      }),
-    );
-    return Array.from(s).sort();
-  }, [productStocks]);
 
   const criticalAlerts = useMemo(() => alerts.filter((a) => a.severity === 'error'), [alerts]);
 
@@ -261,6 +251,8 @@ export function useVariantStock() {
     dismissAllAlerts,
     dismissAlertsBySeverity,
     error,
+    isDegraded,
+    degradedTables,
     setFilters,
     getProductStock,
     getColorStock,
