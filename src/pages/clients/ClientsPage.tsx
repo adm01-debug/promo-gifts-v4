@@ -153,7 +153,7 @@ export default function ClientsPage() {
                       className="flex flex-1 items-center gap-3 truncate rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                       onClick={() => {
                         if (item.metadata?.id) {
-                          navigate(`/clientes/${item.metadata.id}`);
+                          navigate(`/clientes/${String(item.metadata.id)}`);
                         } else {
                           setSearch(item.label);
                           setIsHistoryOpen(false);

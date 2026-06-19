@@ -198,6 +198,11 @@ export default [
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/prefer-enum-initializers': 'error',
       '@typescript-eslint/prefer-promise-reject-errors': 'error',
+      // Batch 54: template/operator safety + ts-comment rules (8 fixes + 3 zero-violation rules)
+      '@typescript-eslint/restrict-template-expressions': 'error',
+      '@typescript-eslint/restrict-plus-operands': 'error',
+      '@typescript-eslint/no-empty-interface': 'error',
+      '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },

@@ -413,9 +413,9 @@ export function useGlobalSearch() {
             allResults.push({
               id: q.id as string,
               title: q.quote_number as string,
-              subtitle: `${q.client_name || 'Sem cliente'} • ${q.status} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((q.total as number) ?? 0)}`,
+              subtitle: `${String(q.client_name) || 'Sem cliente'} • ${q.status as string} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((q.total as number) ?? 0)}`,
               type: 'quote',
-              href: `/orcamentos/${q.id}`,
+              href: `/orcamentos/${q.id as string}`,
             });
           });
         } catch {

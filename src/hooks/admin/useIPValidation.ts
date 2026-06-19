@@ -111,10 +111,10 @@ export function useIPValidation() {
             errorMsg = `Seu IP (${currentIP}) não está autorizado para acessar o sistema.`;
           } else if (result.reason === 'city_not_whitelisted') {
             const details = result.details ?? {};
-            errorMsg = `Acesso negado: sua localização (${details.detected_city || 'desconhecida'}) não está autorizada.`;
+            errorMsg = `Acesso negado: sua localização (${String(details.detected_city) || 'desconhecida'}) não está autorizada.`;
           } else if (result.reason === 'too_many_attempts') {
             const details = result.details ?? {};
-            errorMsg = `IP bloqueado temporariamente por excesso de tentativas. Tente novamente em ${details.lockout_minutes || 15} minutos.`;
+            errorMsg = `IP bloqueado temporariamente por excesso de tentativas. Tente novamente em ${Number(details.lockout_minutes) || 15} minutos.`;
           }
 
           return {

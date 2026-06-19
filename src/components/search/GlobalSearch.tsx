@@ -156,7 +156,7 @@ export function GlobalSearch({
                 minimumFractionDigits: 2,
               })}`;
             if (row.result_metadata.stock !== null)
-              meta.Estoque = `${row.result_metadata.stock} un`;
+              meta.Estoque = `${String(row.result_metadata.stock)} un`;
           } else if (cat === 'quote') {
             if (row.result_metadata.status) meta.Status = String(row.result_metadata.status);
             if (row.result_metadata.total !== null)
