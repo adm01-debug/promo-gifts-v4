@@ -446,7 +446,7 @@ export async function fetchAndProcessStockData(): Promise<{
         // Most-recently-updated source provides metadata (futureStockDate, supplier_sku).
         const supplierSource =
           variantSources.length > 0
-            ? variantSources.reduce<ExternalSupplierSource>((best, s) =>
+            ? variantSources.reduce((best, s) =>
                 (s.updated_at ?? '') > (best.updated_at ?? '') ? s : best,
               )
             : undefined;

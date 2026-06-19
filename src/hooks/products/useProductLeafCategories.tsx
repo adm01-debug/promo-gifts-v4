@@ -88,7 +88,10 @@ export function pickLeaves(
       displayOrder: a.display_order ?? Number.MAX_SAFE_INTEGER,
     };
     const current = best.get(a.product_id);
-    if (!current) { best.set(a.product_id, candidate); continue; }
+    if (!current) {
+      best.set(a.product_id, candidate);
+      continue;
+    }
     const better =
       candidate.level > current.level ||
       (candidate.level === current.level &&
@@ -134,27 +137,31 @@ function useGlobalLeafCategories(): LeafCategoryMap {
   const { data } = useQuery({
     queryKey: ['global-leaf-categories'],
     queryFn: async (): Promise<Map<string, LeafCategory>> => {
-      const { data, error } = await supabase.rpc('fn_get_all_leaf_categories');
+      // fn_get_all_leaf_categories é SECURITY DEFINER e não está nos tipos gerados.
+      type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
+      const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+        'fn_get_all_leaf_categories',
+      );
       if (error) {
         logger.warn('[useProductLeafCategories] RPC falhou; usando fallback vazio', error);
         return new Map();
       }
-      const rows = (data ?? []) as LeafCategoryRow[];
+      const rows = (data ?? []) as unknown as LeafCategoryRow[];
       const map = new Map<string, LeafCategory>();
       for (const row of rows) {
         if (!row.product_id || !row.leaf_category_id) continue;
         map.set(row.product_id, {
-          id:    row.leaf_category_id,
-          name:  row.leaf_category_name ?? '',
+          id: row.leaf_category_id,
+          name: row.leaf_category_name ?? '',
           level: row.leaf_category_level ?? 0,
-          path:  [],  // caminho não disponível na MV — usar breadcrumb separado se necessário
+          path: [], // caminho não disponível na MV — usar breadcrumb separado se necessário
         });
       }
       logger.info(`[useProductLeafCategories] Loaded ${map.size} leaf categories (RPC global)`);
       return map;
     },
-    staleTime: Infinity,     // mantém em cache toda a sessão
-    gcTime:    Infinity,     // nunca descarta da memória
+    staleTime: Infinity, // mantém em cache toda a sessão
+    gcTime: Infinity, // nunca descarta da memória
     refetchOnWindowFocus: false,
     retry: 1,
   });
@@ -186,7 +193,7 @@ export function useProductLeafCategories(productIds: readonly string[]): {
 
   return {
     leafById,
-    isLoading: false,  // O Map global carrega em background; o consumidor usa fallback enquanto aguarda
+    isLoading: false, // O Map global carrega em background; o consumidor usa fallback enquanto aguarda
   };
 }
 
