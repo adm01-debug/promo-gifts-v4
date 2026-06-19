@@ -246,4 +246,38 @@ describe('applyVoiceFilters — mapeamento de filtros de voz', () => {
     const next = applyVoiceFilters(prev, { minPrice: -Infinity });
     expect(next.priceRange).toEqual([10, 200]);
   });
+
+  // FIX-18 — auto-swap quando resultado invertido (maxPrice < minPrice herdado)
+  it('FIX-18: maxPrice menor que minPrice herdado → auto-swap (sem sentinela)', () => {
+    // Prev: min=500, max=9999 (sentinela). Usuário fala "mostrar até 200".
+    // rawMin=500 (herdado), rawMax=200 → invertido → deve trocar para [200, 500].
+    const prev = { ...base, priceRange: [500, 9999] as [number, number] };
+    const next = applyVoiceFilters(prev, { maxPrice: 200 });
+    expect(next.priceRange[0]).toBe(200);
+    expect(next.priceRange[1]).toBe(500);
+  });
+
+  it('FIX-18: minPrice maior que maxPrice herdado → auto-swap (sem sentinela)', () => {
+    // Prev: min=0, max=100. Usuário fala "mínimo 500".
+    // rawMin=500, rawMax=100 (herdado) → invertido → swap → [100, 500].
+    const prev = { ...base, priceRange: [0, 100] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: 500 });
+    expect(next.priceRange[0]).toBe(100);
+    expect(next.priceRange[1]).toBe(500);
+  });
+
+  it('FIX-18: minPrice > 9999 com sentinela como max → NÃO swap (9999=sem limite superior)', () => {
+    // Prev: min=0, max=9999 (sentinela). Usuário fala "mínimo 10000".
+    // rawMin=10000, rawMax=9999 (herdado sentinela) → [10000, 9999] é VÁLIDO (sem upper bound).
+    const prev = { ...base, priceRange: [0, 9999] as [number, number] };
+    const next = applyVoiceFilters(prev, { minPrice: 10000 });
+    expect(next.priceRange[0]).toBe(10000);
+    expect(next.priceRange[1]).toBe(9999); // sentinela preservado
+  });
+
+  it('FIX-18: range normal (min < max) não é afetado', () => {
+    const prev = { ...base, priceRange: [100, 500] as [number, number] };
+    const next = applyVoiceFilters(prev, { maxPrice: 800 });
+    expect(next.priceRange).toEqual([100, 800]); // não invertido → sem swap
+  });
 });
