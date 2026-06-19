@@ -228,15 +228,19 @@ export function useFilterPanelState(
       materialFilterState.selectedGroups.length + materialFilterState.selectedTypes.length;
     const ramoCount =
       (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    const quickCount = [
-      filters.isKit,
-      filters.featured,
-      filters.isNew,
-      filters.hasPersonalization,
-      filters.onSale,
-      filters.inStock,
-      filters.hasCommercialPackaging,
-    ].filter(Boolean).length;
+    const quickCount =
+      [
+        filters.isKit,
+        filters.featured,
+        filters.isNew,
+        filters.hasPersonalization,
+        filters.onSale,
+        filters.inStock,
+        filters.hasCommercialPackaging,
+      ].filter(Boolean).length +
+      // BUG-MINSTOCK-BADGE FIX: filtro minStock (input na seção opcoes-rapidas,
+      // também ativável via preset/voz) não era contado — badge ficava abaixo do real.
+      (filters.minStock > 0 ? 1 : 0);
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,

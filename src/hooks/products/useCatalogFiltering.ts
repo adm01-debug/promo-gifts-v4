@@ -139,8 +139,14 @@ export function useCatalogFiltering({
       result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
     }
 
+    // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
+    // alinhando com applyProductFilters.ts (FIX-03) e com o bloco minStock abaixo.
     if (filters.inStock) {
-      result = result.filter((p) => (p.stock || 0) > 0);
+      result = result.filter((p) => {
+        if (p.variations && p.variations.length > 0)
+          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
+        return (p.stock || 0) > 0;
+      });
     }
 
     if (filters.hasCommercialPackaging) {
