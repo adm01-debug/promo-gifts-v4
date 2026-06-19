@@ -409,6 +409,7 @@ export function aggregateVariantsToProduct(
       case 'out_of_stock':
         variantsOutOfStock++;
         break;
+      // no default
     }
   }
 

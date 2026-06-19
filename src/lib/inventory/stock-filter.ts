@@ -312,6 +312,7 @@ export function sortProducts(
         (a, b) => ((a.daysUntilFullStockout ?? 999) - (b.daysUntilFullStockout ?? 999)) * dir,
       );
       break;
+    // no default
   }
   return out;
 }

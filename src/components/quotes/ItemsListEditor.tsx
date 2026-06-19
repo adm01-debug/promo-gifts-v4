@@ -62,7 +62,9 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
                   onKeyDown={(e) => {
                     if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
                   }}
-                  onChange={(e) => update(idx, { quantity: Math.max(1, +e.target.value || 1) })}
+                  onChange={(e) =>
+                    update(idx, { quantity: Math.max(1, Number(e.target.value) || 1) })
+                  }
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">

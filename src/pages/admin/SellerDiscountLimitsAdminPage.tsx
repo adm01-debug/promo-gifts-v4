@@ -143,7 +143,7 @@ export default function SellerDiscountLimitsAdminPage() {
       // converter soma em média
       for (const v of map.values()) {
         const total = v.pending + v.approved + v.rejected;
-        v.avg_requested = total ? +(v.avg_requested / total).toFixed(2) : 0;
+        v.avg_requested = total ? Number((v.avg_requested / total).toFixed(2)) : 0;
       }
       return map;
     },
@@ -366,7 +366,10 @@ export default function SellerDiscountLimitsAdminPage() {
                               onChange={(e) =>
                                 setEdits((p) => ({
                                   ...p,
-                                  [row.user_id]: { ...p[row.user_id], percent: +e.target.value },
+                                  [row.user_id]: {
+                                    ...p[row.user_id],
+                                    percent: Number(e.target.value),
+                                  },
                                 }))
                               }
                               className="w-24"

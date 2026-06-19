@@ -864,6 +864,7 @@ export function useCatalogState() {
             setSelectionMode(false);
           }
           break;
+        // no default
       }
     };
 

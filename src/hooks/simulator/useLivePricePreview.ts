@@ -111,7 +111,8 @@ export function useLivePricePreview({
           const usedWidth = usaDimensao && engravingSpecs.width > 0 ? engravingSpecs.width : null;
           const usedHeight =
             usaDimensao && engravingSpecs.height > 0 ? engravingSpecs.height : null;
-          const usedArea = usedWidth && usedHeight ? +(usedWidth * usedHeight).toFixed(2) : null;
+          const usedArea =
+            usedWidth && usedHeight ? Number((usedWidth * usedHeight).toFixed(2)) : null;
           setEstimate({
             cheapestName: flat.technique || tech.techniqueName,
             cheapestCode: flat.tabela_codigo_curto || tech.techniqueCode,

@@ -106,7 +106,7 @@ export function SellerDiscountLimitsPanel() {
                     max={100}
                     step={0.5}
                     value={current}
-                    onChange={(e) => setEdits({ ...edits, [row.user_id]: +e.target.value })}
+                    onChange={(e) => setEdits({ ...edits, [row.user_id]: Number(e.target.value) })}
                     className="w-24"
                   />
                   <span className="text-xs text-muted-foreground">%</span>

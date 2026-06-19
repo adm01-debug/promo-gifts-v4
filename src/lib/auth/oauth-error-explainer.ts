@@ -83,6 +83,7 @@ export function explainOAuthError(input: RawErrorInput): OAuthErrorExplanation {
     case 'otp_expired':
     case 'flow_state_expired':
       return EXPIRED_FLOW(desc);
+    // no default
   }
 
   // --- 2. Matches por palavras-chave na descrição --------------------------

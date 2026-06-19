@@ -110,6 +110,7 @@ export function useQuotesDashboard() {
       case 'year':
         startDate = subMonths(startOfMonth(now), 11);
         break;
+      // no default
     }
 
     let filtered = quotes.filter((q) => new Date(q.created_at ?? 0) >= startDate);

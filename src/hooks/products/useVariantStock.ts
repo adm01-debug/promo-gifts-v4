@@ -76,6 +76,7 @@ export function useVariantStock() {
         case 'out_of_stock':
           productsOutOfStock++;
           break;
+        // no default
       }
       for (const v of p.variants) {
         totalVariants++;
@@ -94,6 +95,7 @@ export function useVariantStock() {
           case 'out_of_stock':
             variantsOutOfStock++;
             break;
+          // no default
         }
       }
     }

@@ -129,6 +129,15 @@ export default [
       'prefer-const': 'error',
       eqeqeq: ['error', 'always'],
 
+      // Quality guardrails — crystallised from Batches 33-39
+      'object-shorthand': ['error', 'always'],
+      'no-return-assign': ['error', 'except-parens'],
+      'no-promise-executor-return': 'error',
+      'prefer-exponentiation-operator': 'error',
+      'default-case': ['error', { commentPattern: '^no default$' }],
+      'operator-assignment': ['error', 'always'],
+      'no-implicit-coercion': ['error', { boolean: false, number: true, string: true }],
+
       // React
       'react/no-danger': 'warn',
       'react-hooks/rules-of-hooks': 'error',

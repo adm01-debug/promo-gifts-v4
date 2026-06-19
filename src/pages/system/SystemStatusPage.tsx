@@ -282,6 +282,7 @@ export default function SystemStatusPage() {
         return <AlertCircle className="h-5 w-5 text-warning" />;
       case 'loading':
         return <AlertCircle className="h-5 w-5 animate-pulse text-warning" />;
+      // no default
     }
   };
 
@@ -297,6 +298,7 @@ export default function SystemStatusPage() {
         return <Badge className="border-warning/30 bg-warning/20 text-warning">Aviso</Badge>;
       case 'loading':
         return <Badge className="border-warning/30 bg-warning/20 text-warning">Verificando</Badge>;
+      // no default
     }
   };
 
