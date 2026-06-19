@@ -160,6 +160,14 @@ export default [
       'no-multi-assign': 'error',
       // Batch 67: 1 rule — no-script-url (4 code fixes: 1 prod + 3 test eslint-disable)
       'no-script-url': 'error',
+      // Batch 68: 7 zero-violation rules (no code changes needed)
+      'no-octal': 'error',
+      'no-proto': 'error',
+      'no-sequences': 'error',
+      'no-template-curly-in-string': 'error',
+      'no-throw-literal': 'error',
+      'no-useless-catch': 'error',
+      'prefer-const': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
