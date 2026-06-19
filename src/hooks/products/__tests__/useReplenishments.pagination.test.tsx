@@ -137,4 +137,39 @@ describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
     expect(result.current.data?.[0].stock_status).toBe('in-stock');
     expect(result.current.data?.[1].stock_status).toBe('out-of-stock');
   });
+
+  it('stock_status é low-stock quando is_low_stock=true', async () => {
+    const mockRow = {
+      product_id: 'p3',
+      name: 'P3',
+      slug: null,
+      sku: 'S3',
+      sale_price: 15,
+      is_stockout: false,
+      is_new: false,
+      total_stock: 5,
+      primary_image_url: null,
+      primary_image_cdn: null,
+      supplier_id: null,
+      supplier_name: null,
+      supplier_code: null,
+      ultimo_restock_date: null,
+      earliest_restock_date: null,
+      earliest_restock_qty: null,
+      has_upcoming_restock: false,
+      category_names: null,
+      primary_category_id: null,
+      primary_category_name: null,
+      is_low_stock: true,
+    };
+
+    mockRpc.mockResolvedValue({ data: [mockRow], error: null });
+
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 1 }), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
+    expect(result.current.data?.[0].stock_status).toBe('low-stock');
+  });
 });
