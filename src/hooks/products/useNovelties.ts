@@ -33,9 +33,10 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const applyNoveltyQualityFilters = (query: any): any =>
-  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0);
+type NoveltyQuery = ReturnType<typeof fromTable>;
+
+const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
+  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0) as NoveltyQuery;
 
 /**
  * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).
@@ -46,11 +47,10 @@ const applyNoveltyQualityFilters = (query: any): any =>
  *    descarta flags vencidas mesmo antes do `cleanup-novelties` rodar).
  * Os filtros de qualidade continuam aplicados.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const applyNoveltyPredicate = (query: any, nowIso: string): any =>
-  applyNoveltyQualityFilters(query.eq('is_active', true))
+const applyNoveltyPredicate = (query: NoveltyQuery, nowIso: string): NoveltyQuery =>
+  applyNoveltyQualityFilters(query.eq('is_active', true) as NoveltyQuery)
     .eq('is_new', true)
-    .gt('novelty_expires_at', nowIso);
+    .gt('novelty_expires_at', nowIso) as NoveltyQuery;
 
 /**
  * Dias restantes como novidade — derivado da expiração REAL da pipeline.
