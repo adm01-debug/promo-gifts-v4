@@ -114,11 +114,17 @@ export function KitComponentCard({
   const [expanded, setExpanded] = useState(false);
 
   const hasDimensions =
-    (item.heightMm ?? 0) > 0 || (item.widthMm ?? 0) > 0 || (item.lengthMm ?? 0) > 0;
+    (item.heightMm ?? 0) > 0 ||
+    (item.widthMm ?? 0) > 0 ||
+    (item.lengthMm ?? 0) > 0 ||
+    (item.diameterMm ?? 0) > 0 ||
+    (item.circumferenceMm ?? 0) > 0;
   const hasExpandableInfo = item.description || item.personalizationNotes;
-  const hasSpecs = hasDimensions || (item.weightG ?? 0) > 0;
+  const hasSpecs = hasDimensions || (item.weightG ?? 0) > 0 || (item.volumeMl ?? 0) > 0;
   const isPackaging = variant === 'packaging';
   const borderColor = isPackaging ? 'border-warning/25' : 'border-border';
+  // Galeria extra (além da capa): mostra mini-thumbs clicáveis se houver >1 foto.
+  const extraImages = (item.images ?? []).filter((url) => url && url !== item.imageUrl);
 
   const formatWeight = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${g} g`);
 
